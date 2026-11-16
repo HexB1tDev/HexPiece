@@ -87,7 +87,7 @@ public final class CreationView {
         if (inside(layout.next(), x, y)) {
             return "next";
         }
-        int[][] cards = layout.cards(state.step == 2 ? 4 : 2);
+        int[][] cards = layout.cards(state.step == 2 ? FightingStyle.choices().length : 2);
         for (int i = 0; i < cards.length; i++) {
             if (inside(cards[i], x, y)) {
                 return "pick:" + i;
@@ -116,7 +116,7 @@ public final class CreationView {
             switch (state.step) {
                 case 0 -> state.gender = index == 0 ? Gender.MALE : Gender.FEMALE;
                 case 1 -> state.faction = index == 0 ? Faction.PIRATE : Faction.MARINE;
-                default -> state.style = FightingStyle.choices()[Math.max(0, Math.min(3, index))];
+                default -> state.style = FightingStyle.choices()[Math.max(0, Math.min(FightingStyle.choices().length - 1, index))];
             }
         }
         return false;
@@ -217,8 +217,8 @@ public final class CreationView {
     }
 
     static void styles(UiCanvas c, Layout l, State state, String hover) {
-        int[][] cards = l.cards(4);
         FightingStyle[] options = FightingStyle.choices();
+        int[][] cards = l.cards(options.length);
         for (int i = 0; i < options.length; i++) {
             int[] b = cards[i];
             FightingStyle style = options[i];
@@ -231,6 +231,15 @@ public final class CreationView {
                 : "Any flag";
             c.centered(lean, cx, b[1] + 19, style.colour(), false);
             int y = b[1] + 32;
+            if (style.sword()) {
+                // 2.1.4: the sword's own moves
+                for (String[] line : new String[][] {{"M1", "Draw Cut, 15 cuts"}, {"RMB", "Charged Slash"}, {"C+M1", "Quick Draw"}}) {
+                    c.fill(b[0] + 4, y - 1, b[0] + 22, y + 8, 0x30603818);
+                    c.centered(line[0], b[0] + 13, y, PirateUi.INK, false);
+                    c.text(c.fit(line[1], w - 22), b[0] + 25, y, PirateUi.INK, false);
+                    y += 11;
+                }
+            }
             for (Slot slot : new Slot[] {Slot.M1_4, Slot.HEAVY, Slot.SPECIAL_A, Slot.SPECIAL_B}) {
                 StyleMove move = StyleMove.of(style, slot);
                 if (move == null) {

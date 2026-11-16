@@ -2,5 +2,6 @@
 package net.minecraftforge.client.event;
 
 public class RegisterGuiOverlaysEvent extends net.minecraftforge.eventbus.api.Event {
+    /** 2.1.4 */ public void registerAboveAll(String id, net.minecraftforge.client.gui.overlay.IGuiOverlay overlay) { throw new UnsupportedOperationException(); }
     public void registerBelowAll(String id, net.minecraftforge.client.gui.overlay.IGuiOverlay overlay) { throw new UnsupportedOperationException(); }
 }

@@ -87,7 +87,11 @@ public final class StyleCombat {
 
     /** The user carried by its move this tick (players are told; NPCs move on their own next tick). */
     public static void carry(LivingEntity user, StyleMove move, int tick) {
-        Motion motion = move.motion();
+        carry(user, move.motion(), tick);
+    }
+
+    /** 2.1.4: the same for any motion (the Swordsman's cuts). */
+    public static void carry(LivingEntity user, Motion motion, int tick) {
         Vec3 look = facing(user);
         Vec3 now = user.m_20184_();
         switch (motion.kind()) {
@@ -182,7 +186,12 @@ public final class StyleCombat {
     }
 
     static Impact.Spec spec(Hit hit, Vec3 launch) {
-        return switch (hit.weight()) {
+        return spec(hit.weight(), launch);
+    }
+
+    /** 2.1.4: the original's impact for a weight of blow. */
+    public static Impact.Spec spec(Hit.Weight weight, Vec3 launch) {
+        return switch (weight) {
             case LIGHT -> Impact.Spec.light(launch);
             case MEDIUM -> Impact.Spec.medium(launch);
             case HEAVY -> Impact.Spec.heavy(launch);

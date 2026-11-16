@@ -13,8 +13,9 @@ import net.minecraftforge.network.simple.SimpleChannel;
  */
 public final class PieceNetwork {
     /** 1 (2.1.1): profiles, the start menu, fighting styles. 2 (2.1.2): C2SCombat (message 5), combat mode; S2CStance
-     * (message 6), who holds a stance; S2CStyleFx stage 3. 3 (2.1.3): S2CRyou (message 7), a player's Ryou colour. */
-    private static final String PROTOCOL = "3";
+     * (message 6), who holds a stance; S2CStyleFx stage 3. 3 (2.1.3): S2CRyou (message 7), a player's Ryou colour. 4 (2.1.4): the
+     * Swordsman: C2SSword (8), S2CSword (9), S2CSwordFx (10), S2CSlash (11), S2CFinisher (12). */
+    private static final String PROTOCOL = "4";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -35,6 +36,11 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(5, C2SCombat.class, C2SCombat::encode, C2SCombat::decode, C2SCombat::handle);
         CHANNEL.registerMessage(6, S2CStance.class, S2CStance::encode, S2CStance::decode, S2CStance::handle);
         CHANNEL.registerMessage(7, S2CRyou.class, S2CRyou::encode, S2CRyou::decode, S2CRyou::handle);
+        CHANNEL.registerMessage(8, C2SSword.class, C2SSword::encode, C2SSword::decode, C2SSword::handle);
+        CHANNEL.registerMessage(9, S2CSword.class, S2CSword::encode, S2CSword::decode, S2CSword::handle);
+        CHANNEL.registerMessage(10, S2CSwordFx.class, S2CSwordFx::encode, S2CSwordFx::decode, S2CSwordFx::handle);
+        CHANNEL.registerMessage(11, S2CSlash.class, S2CSlash::encode, S2CSlash::decode, S2CSlash::handle);
+        CHANNEL.registerMessage(12, S2CFinisher.class, S2CFinisher::encode, S2CFinisher::decode, S2CFinisher::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

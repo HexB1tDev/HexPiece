@@ -2,5 +2,6 @@
 package dev.kosmx.playerAnim.core.util;
 
 public class Vec3f extends Vector3<Float> {
+    public static final Vec3f ZERO = null;
     public Vec3f(float x, float y, float z) { throw new UnsupportedOperationException(); }
 }

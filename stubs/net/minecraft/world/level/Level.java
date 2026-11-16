@@ -2,6 +2,8 @@
 package net.minecraft.world.level;
 
 public abstract class Level implements LevelAccessor {
+    /** getGameRules (2.1.4) */ public net.minecraft.world.level.GameRules m_46469_() { throw new UnsupportedOperationException(); }
+    /** destroyBlock(pos, drop, entity) (2.1.4) */ public boolean m_46953_(net.minecraft.core.BlockPos pos, boolean drop, net.minecraft.world.entity.Entity entity) { throw new UnsupportedOperationException(); }
     /** isClientSide (1.2.1) */ public boolean f_46443_;
     /** OVERWORLD */ public static final net.minecraft.resources.ResourceKey<Level> f_46428_ = null;
     /** dimension */ public net.minecraft.resources.ResourceKey<Level> m_46472_() { throw new UnsupportedOperationException(); }

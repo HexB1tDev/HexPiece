@@ -28,11 +28,17 @@ import org.joml.Vector3f;
  * of the sword shines.
  * <p>
  * Frame: model pixels (the guard at y 0, the blade up +y, its edge to -x, the handle down -y), drawn at {@link #SCALE} (the meshes are
- * 27.5 pixels long; a real katana is a block long beside a player).
+ * 27.5 pixels long: one of them is one of the game's).
  */
 public final class KatanaRenderer {
-    /** Model pixels to blocks: the whole katana about 1.07 blocks, its blade about 0.8. */
-    public static final float SCALE = 0.62F / 16.0F;
+    /** Model pixels to blocks: the owner's meshes are drawn in Minecraft pixels, so one of theirs is one of the game's (the whole
+     * katana about 1.75 blocks, its blade about 1.3; the owner, on 0.62: "the sword is wayyyy too small"). */
+    public static final float SCALE = 1.0F / 16.0F;
+    /** Model pixels: about how long a katana is from pommel to tip, the middle of a sheathed one, and where the right fist's centre
+     * grips the handle (the guard at 0, the fist's top just under it; tools/sword_anims.py uses the same). */
+    public static final float LENGTH = 28.0F;
+    public static final float MIDDLE = 7.4F;
+    public static final float GRIP = -2.4F;
     static final ResourceLocation WHITE = ResourceLocation.m_214293_("hexhaki", "textures/piece/white.png");
     static final int FULL_BRIGHT = 0xF000F0;
     private static final Map<Katana, KatanaMesh> BLADES = new EnumMap<>(Katana.class);

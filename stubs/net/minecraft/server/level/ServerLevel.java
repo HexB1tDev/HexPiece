@@ -2,6 +2,8 @@
 package net.minecraft.server.level;
 
 public class ServerLevel extends net.minecraft.world.level.Level {
+    /** getMinBuildHeight (2.1.4) */ public int m_141937_() { throw new UnsupportedOperationException(); }
+    /** getMaxBuildHeight (2.1.4) */ public int m_151558_() { throw new UnsupportedOperationException(); }
     /** getServer */ public net.minecraft.server.MinecraftServer m_7654_() { throw new UnsupportedOperationException(); }
     /** getDataStorage */ public net.minecraft.world.level.storage.DimensionDataStorage m_8895_() { throw new UnsupportedOperationException(); }
     /** players */ public java.util.List<ServerPlayer> m_6907_() { throw new UnsupportedOperationException(); }

@@ -69,6 +69,12 @@ public final class StyleServer {
         return player.m_9236_().m_46467_();
     }
 
+    /** 2.1.4: is {@code player} in combat mode (R)? */
+    public static boolean inCombat(ServerPlayer player) {
+        State state = STATES.get(player.m_20148_());
+        return state != null && state.combat;
+    }
+
     /** True while {@code player} is in a style move (the client's M1 does nothing else then). */
     public static boolean busy(ServerPlayer player) {
         State state = STATES.get(player.m_20148_());
@@ -96,17 +102,24 @@ public final class StyleServer {
         state.combat = on;
         if (!on) {
             interrupt(player, state);
+            SwordServer.stop(player);
         }
         PieceNetwork.around(player, stance(player, on ? profile.style() : null));
         player.m_5661_(Component.m_237113_(on ? "Combat stance: " + profile.style().display() : "Combat stance dropped"), true);
     }
 
     public static void press(ServerPlayer player, Slot slot) {
+        PieceProfile profile = ProfileServer.of(player);
+        FightingStyle style = profile.style();
+        if (style.sword()) {
+            if (slot.string()) {
+                SwordServer.input(player, com.hexhaki.piece.network.C2SSword.PRESS);
+            }
+            return; // 2.1.4: the Swordsman's moves are the sword's (SwordServer)
+        }
         if (!player.m_6084_() || player.m_5833_() || !player.m_21205_().m_41619_()) {
             return;
         }
-        PieceProfile profile = ProfileServer.of(player);
-        FightingStyle style = profile.style();
         if (!profile.chosen() || !style.choice()) {
             return;
         }

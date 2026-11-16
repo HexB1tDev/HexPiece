@@ -9,6 +9,14 @@ import com.hexhaki.piece.style.FightingStyle;
 import com.hexhaki.piece.style.Hit;
 import com.hexhaki.piece.style.Slot;
 import com.hexhaki.piece.style.StyleMove;
+import com.hexhaki.piece.PieceConfig;
+import com.hexhaki.piece.server.HakiSlashes;
+import com.hexhaki.piece.server.SwordServer;
+import com.hexhaki.piece.sword.Katana;
+import com.hexhaki.piece.sword.SwordAnims;
+import com.hexhaki.piece.sword.SwordCombo;
+import com.hexhaki.piece.sword.SwordMove;
+import com.hexhaki.piece.sword.SwordRules;
 import com.hexhaki.fx.Impact;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -49,6 +57,10 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     /** The move under way (its ordinal + 1; 0: none) and the game tick it began (mod 2^30), for every client's pose. */
     static final EntityDataAccessor<Integer> MOVE = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
     static final EntityDataAccessor<Integer> MOVE_START = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
+    /** 2.1.4: a swordsman's katana (ordinal + 1; 0 none), what its sword is doing (SwordAnims) and since when (mod 2^30). */
+    static final EntityDataAccessor<Integer> KATANA = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
+    static final EntityDataAccessor<Integer> SWORD = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
+    static final EntityDataAccessor<Integer> SWORD_START = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
     static final String SAVED = "HexPieceFighter";
 
     private boolean ready;
@@ -62,6 +74,22 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     private LivingEntity foe;
     private final Map<StyleMove, Long> cooldowns = new EnumMap<>(StyleMove.class);
     private final Set<Integer> struck = new HashSet<>();
+    // 2.1.4: the swordsman's sword (the same strings, cut windows and swept blade as a player's: SwordCombo, SwordServer.sweep)
+    private SwordMove swordMove;
+    private long swordStart;
+    private SwordMove swordLast;
+    private long swordLastEnd = -100000;
+    private boolean drawn;
+    private long sheathingUntil = -1;
+    private long idleSince;
+    private long chargeStart = -1;
+    private int chargeFor;
+    private boolean chargeDrew;
+    private long releaseStart = -1;
+    private double releaseCharge;
+    private long slashReady;
+    private final java.util.List<Set<Integer>> swordStruck = new java.util.ArrayList<>();
+    private final Set<Integer> releaseStruck = new HashSet<>();
 
     public SeaFighter(EntityType<? extends SeaFighter> type, Level level) {
         super(type, level);
@@ -82,6 +110,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         this.f_19804_.m_135372_(STYLE, FightingStyle.BRAWLER.ordinal());
         this.f_19804_.m_135372_(MOVE, 0);
         this.f_19804_.m_135372_(MOVE_START, 0);
+        this.f_19804_.m_135372_(KATANA, 0);
+        this.f_19804_.m_135372_(SWORD, 0);
+        this.f_19804_.m_135372_(SWORD_START, 0);
     }
 
     @Override
@@ -123,11 +154,31 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         return this.f_19804_.m_135370_(MOVE_START);
     }
 
+    /** 2.1.4: its katana (null: none). */
+    public Katana katana() {
+        int k = this.f_19804_.m_135370_(KATANA);
+        return k <= 0 ? null : Katana.byOrdinal(k - 1);
+    }
+
+    /** 2.1.4: what its sword is doing (SwordAnims) and since when (game ticks mod 2^30). */
+    public int shownSword() {
+        return this.f_19804_.m_135370_(SWORD);
+    }
+
+    public int shownSwordStart() {
+        return this.f_19804_.m_135370_(SWORD_START);
+    }
+
     /** Made what it is: its look (so its rank), its style; its health and speed to its rank; named; kept in its saved data. */
     public void setup(int look, FightingStyle style) {
+        this.setup(look, style, style.sword() ? SeaRules.katana(SeaRules.rankOf(look), this.m_217043_().m_188503_(64)) : null);
+    }
+
+    public void setup(int look, FightingStyle style, Katana katana) {
         int rank = SeaRules.rankOf(look);
         this.f_19804_.m_135381_(LOOK, look);
         this.f_19804_.m_135381_(STYLE, style.ordinal());
+        this.f_19804_.m_135381_(KATANA, katana == null ? 0 : katana.ordinal() + 1);
         this.m_21051_(Attributes.f_22276_).m_22100_(SeaRules.HEALTH[rank]);
         this.m_21051_(Attributes.f_22279_).m_22100_(SeaRules.SPEED[rank]);
         this.m_21153_(this.m_21233_());
@@ -135,6 +186,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         CompoundTag saved = new CompoundTag();
         saved.m_128405_("Look", look);
         saved.m_128405_("Style", style.ordinal());
+        saved.m_128405_("Katana", katana == null ? -1 : katana.ordinal());
         this.getPersistentData().m_128365_(SAVED, saved);
         this.ready = true;
     }
@@ -144,7 +196,12 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         CompoundTag data = this.getPersistentData();
         if (data.m_128441_(SAVED)) {
             CompoundTag saved = data.m_128469_(SAVED);
-            this.setup(saved.m_128451_("Look"), FightingStyle.byOrdinal(saved.m_128451_("Style")));
+            FightingStyle style = FightingStyle.byOrdinal(saved.m_128451_("Style"));
+            Katana katana = saved.m_128441_("Katana") ? Katana.byOrdinal(saved.m_128451_("Katana")) : null;
+            if (style.sword() && katana == null) {
+                katana = SeaRules.katana(SeaRules.rankOf(saved.m_128451_("Look")), this.m_217043_().m_188503_(64));
+            }
+            this.setup(saved.m_128451_("Look"), style, katana);
         } else {
             FightingStyle[] styles = SeaRules.styles(this.faction());
             this.setup(SeaRules.look(0, this.m_217043_().m_188503_(8)), styles[this.m_217043_().m_188503_(styles.length)]);
@@ -227,6 +284,10 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
             if (found != null) {
                 this.foe = found;
             }
+        }
+        if (this.style().sword()) {
+            this.swordBrain(level, now);
+            return;
         }
         if (this.move != null) {
             this.tickMove(level, now);
@@ -322,6 +383,187 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
             if (hit.tick() == tick) {
                 StyleCombat.land(this, this.move, hit, mastery, this::foe, this.struck, source);
             }
+        }
+    }
+
+    // --- 2.1.4: the swordsman ---------------------------------------------------------------------------------------------------
+
+    int swordAnim() {
+        if (this.swordMove != null) {
+            return SwordAnims.of(this.swordMove);
+        }
+        if (this.releaseStart >= 0) {
+            return SwordAnims.RELEASE;
+        }
+        if (this.chargeStart >= 0) {
+            return this.chargeDrew ? SwordAnims.CHARGE_DRAW : SwordAnims.CHARGE;
+        }
+        if (this.sheathingUntil >= 0) {
+            return SwordAnims.SHEATHE;
+        }
+        return this.drawn ? SwordAnims.GUARD : SwordAnims.NONE;
+    }
+
+    long swordAnimStart() {
+        if (this.swordMove != null) {
+            return this.swordStart;
+        }
+        if (this.releaseStart >= 0) {
+            return this.releaseStart;
+        }
+        if (this.chargeStart >= 0) {
+            return this.chargeStart;
+        }
+        if (this.sheathingUntil >= 0) {
+            return this.sheathingUntil - SwordRules.SHEATHE_TICKS;
+        }
+        return this.idleSince;
+    }
+
+    void showSword() {
+        int anim = this.swordAnim();
+        int start = (int) (this.swordAnimStart() & 0x3FFFFFFF);
+        if (this.f_19804_.m_135370_(SWORD) != anim) {
+            this.f_19804_.m_135381_(SWORD, anim);
+        }
+        if (this.f_19804_.m_135370_(SWORD_START) != start) {
+            this.f_19804_.m_135381_(SWORD_START, start);
+        }
+    }
+
+    /**
+     * The swordsman's fight: the same strings as a player's ({@link SwordCombo}: drawn from the saya into its draw, then the ground
+     * string; on the move the moving one), the same cut windows and the blade's swept path ({@code SwordServer.sweep}), the same
+     * motions. Officers and captains now and then charge the slash; a captain's flies as a Haki slash (its terrain cut only while the
+     * mobGriefing rule allows it). With no foe left the sword goes back in its saya.
+     */
+    void swordBrain(ServerLevel level, long now) {
+        try {
+            this.swordStep(level, now);
+        } finally {
+            this.showSword();
+        }
+    }
+
+    void swordStep(ServerLevel level, long now) {
+        Katana katana = this.katana();
+        float edge = katana == null ? 1.0F : katana.grade().edge();
+        int mastery = SeaRules.MASTERY[this.rank()];
+        DamageSource source = this.m_269291_().m_269333_(this);
+        if (this.swordMove != null) {
+            int tick = (int) (now - this.swordStart);
+            if (tick >= this.swordMove.duration() || !this.m_6084_()) {
+                this.swordLast = this.swordMove;
+                this.swordLastEnd = now;
+                this.swordMove = null;
+                this.idleSince = now;
+            } else {
+                if (this.foe != null) {
+                    this.face(this.foe);
+                }
+                StyleCombat.carry(this, this.swordMove.motion(), tick);
+                SwordMove.Cut[] cuts = this.swordMove.cuts();
+                for (int i = 0; i < cuts.length; i++) {
+                    SwordMove.Cut cut = cuts[i];
+                    if (tick >= cut.from() && tick <= cut.to()) {
+                        SwordServer.sweep(this, this.swordMove.animation(), tick, SwordRules.EXTEND, this.swordStruck.get(i),
+                            cut.damage() * edge * PieceRules.masteryDamage(mastery), cut.weight(), cut.back(), cut.up(), cut.stun(), this::foe,
+                            source);
+                    }
+                }
+                return;
+            }
+        }
+        if (this.releaseStart >= 0) {
+            int tick = (int) (now - this.releaseStart);
+            if (tick >= 15) {
+                this.releaseStart = -1;
+                this.idleSince = now;
+            } else {
+                StyleCombat.carry(this, com.hexhaki.piece.style.Motion.lunge(1, 0.45), tick);
+                if (this.rank() >= 2 && tick == 2) {
+                    Vec3 aim = this.foe == null ? StyleCombat.facing(this) : this.foe.m_146892_().m_82546_(this.m_146892_()).m_82541_();
+                    double c = this.releaseCharge;
+                    HakiSlashes.launch(this, this.m_146892_().m_82549_(aim.m_82490_(0.6)), aim,
+                        SwordRules.lerp(SwordRules.SLASH_HEIGHT_MIN, SwordRules.SLASH_HEIGHT_MAX, c),
+                        SwordRules.lerp(SwordRules.SLASH_RANGE_MIN, SwordRules.SLASH_RANGE_MAX, c),
+                        (float) (SwordRules.lerp(SwordRules.SLASH_DAMAGE_MIN, SwordRules.SLASH_DAMAGE_MAX, c) * edge * 0.75), 0, false,
+                        PieceConfig.get(PieceConfig.TERRAIN, true), source, this::foe);
+                    StyleCombat.sound(this, "fx.whoosh_heavy", 1.0F);
+                } else if (this.rank() < 2 && tick >= 1 && tick <= 3) {
+                    float damage = (float) SwordRules.lerp(SwordRules.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MAX, this.releaseCharge) * edge * 0.8F;
+                    SwordServer.sweep(this, "sword_release", tick, SwordRules.lerp(SwordRules.CUT_REACH_MIN, SwordRules.CUT_REACH_MAX,
+                        this.releaseCharge), this.releaseStruck, damage, Hit.Weight.FINISHER, 1.1, 0.25, 16, this::foe, source);
+                }
+                return;
+            }
+        }
+        if (this.chargeStart >= 0) {
+            if (this.foe != null) {
+                this.face(this.foe);
+                this.m_21573_().m_26573_();
+            }
+            if (now - this.chargeStart >= this.chargeFor) {
+                this.releaseCharge = SwordRules.charge(now - this.chargeStart, SwordRules.CHARGE_MAX);
+                this.chargeStart = -1;
+                this.releaseStart = now;
+                this.releaseStruck.clear();
+            }
+            return;
+        }
+        if (this.sheathingUntil >= 0 && now >= this.sheathingUntil) {
+            this.sheathingUntil = -1;
+            this.drawn = false;
+        }
+        if (this.foe == null) {
+            if (this.drawn && this.sheathingUntil < 0 && now - this.idleSince >= 30) {
+                this.sheathingUntil = now + SwordRules.SHEATHE_TICKS;
+            }
+            if (now >= this.nextWander && this.m_21573_().m_26571_()) {
+                this.nextWander = now + 80 + this.m_217043_().m_188503_(120);
+                double angle = this.m_217043_().m_188500_() * Math.PI * 2;
+                double reach = 4 + this.m_217043_().m_188500_() * 7;
+                this.m_21573_().m_26519_(this.m_20185_() + Math.cos(angle) * reach, this.m_20186_(), this.m_20189_() + Math.sin(angle) * reach,
+                    0.8);
+            }
+            return;
+        }
+        this.m_21563_().m_24960_(this.foe, 30.0F, 30.0F);
+        double distance = Math.sqrt(this.foe.m_20280_(this));
+        boolean charge = this.rank() >= 1 && now >= this.slashReady && distance < 9.0 && this.m_217043_().m_188501_() < 0.04F;
+        if (charge) {
+            this.chargeDrew = !this.drawn || this.sheathingUntil >= 0;
+            this.drawn = true;
+            this.sheathingUntil = -1;
+            this.chargeStart = now;
+            this.chargeFor = 14 + this.m_217043_().m_188503_(18);
+            this.slashReady = now + 140;
+            return;
+        }
+        if (distance > SeaRules.STRIKE + 0.4) {
+            if (now % 5 == 0) {
+                this.m_21573_().m_5624_(this.foe, this.rank() == 0 ? 1.15 : 1.25);
+            }
+            return;
+        }
+        this.m_21573_().m_26573_();
+        this.face(this.foe);
+        if (now >= this.nextAttack) {
+            boolean sheathed = !this.drawn || this.sheathingUntil >= 0;
+            Vec3 v = this.m_20184_();
+            SwordMove.Branch branch = SwordCombo.branch(this.m_20096_(), Math.sqrt(v.f_82479_ * v.f_82479_ + v.f_82481_ * v.f_82481_));
+            SwordMove move = SwordCombo.next(branch, sheathed, this.swordLast, this.swordLastEnd, now);
+            this.swordMove = move;
+            this.swordStart = now;
+            this.drawn = true;
+            this.sheathingUntil = -1;
+            this.swordStruck.clear();
+            for (int i = 0; i < move.cuts().length; i++) {
+                this.swordStruck.add(new HashSet<>());
+            }
+            int pause = this.rank() == 2 ? 1 : this.rank() == 1 ? 3 : 6;
+            this.nextAttack = now + (move.finisher() ? move.duration() + 8 + this.m_217043_().m_188503_(10)
+                : move.cancel() + this.m_217043_().m_188503_(pause + 1));
         }
     }
 

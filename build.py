@@ -10,6 +10,8 @@ build works on the supplied jar itself. Pipeline (Java 17+ and Python 3, no down
   6. verify bytecode, every external API reference, server safety (patch/PieceVerify) and the archive scope,
   7. check the Imu fruit is gone from the code while its assets are kept,
   8. compile and run the pure-logic tests in src/test/java.
+The owner's katanas (input/Hex_Katana_Atelier_1.20.1.zip, 2.1.4) are packed into the jar at step 5 (tools/katana_mesh.py: every OBJ
+whole, as compact meshes; the atlases as they are; one item model per katana), cached under build/ by the zip's SHA-256.
 """
 from pathlib import Path
 import hashlib
@@ -25,6 +27,12 @@ ROOT = Path(__file__).resolve().parent
 VERSION = "2.1.3"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
+# 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
+KATANA_ZIP = ROOT / "input" / "Hex_Katana_Atelier_1.20.1.zip"
+EXPECTED_KATANA_SHA256 = "fece809eb8699a7f5a562b3975da753bb929089d1a93b75896d25b734e6d9d28"
+KATANA_MESHES = "assets/hexhaki/katana/"
+KATANA_TEXTURES = "assets/hexhaki/textures/katana/"
+KATANA_MODELS = "assets/hexhaki/models/item/katana_"
 BUILD = Path(os.environ.get("HEXPIECE_BUILD_DIR", ROOT / "build"))
 OUTPUT = BUILD / f"hexpiece-{VERSION}.jar"
 BASE = BUILD / "base.jar"
@@ -68,6 +76,9 @@ NEW_PREFIXES = (
     "assets/hexhaki/sounds/piece/",
     "assets/hexhaki/lang/",
     "data/hexhaki/",
+    KATANA_MESHES,
+    KATANA_TEXTURES,
+    KATANA_MODELS,
 )
 # Original lang keys the expansion may change (renamed controls).
 RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament", "key.hexhaki.acoc",
@@ -125,6 +136,64 @@ def merged_json(name, original_bytes):
     return (json.dumps(merged, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
 
 
+def katana_keys():
+    """The katanas the game registers (sword/Katana.java), checked against the owner's poster order (tools/katana_names.py)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    from katana_names import KATANAS
+    java = (ROOT / "src/main/java/com/hexhaki/piece/sword/Katana.java").read_text(encoding="utf-8")
+    keys = re.findall(r'^    [A-Z_]+\("([a-z_]+)", "', java, re.M)
+    if keys != [k for k, _, _ in KATANAS]:
+        raise RuntimeError(f"sword/Katana.java and tools/katana_names.py list different katanas: {keys}")
+    return keys
+
+
+def katana_assets():
+    """{jar entry: bytes} for the owner's katanas: every blade and saya mesh packed whole (tools/katana_mesh.py), the 25 atlases as
+    they are, and one item model per katana (its 3D self everywhere but the inventory, where its icon is drawn: Forge's
+    separate_transforms loader, the base builtin/entity so client/sword/KatanaItemRenderer draws it). Packing takes a few seconds;
+    the result is cached under build/ by the zip's SHA-256."""
+    actual = hashlib.sha256(KATANA_ZIP.read_bytes()).hexdigest()
+    if actual != EXPECTED_KATANA_SHA256:
+        raise RuntimeError(f"The katana zip differs from the one inspected: {actual}")
+    keys = katana_keys()
+    cache = BUILD / "katana-cache" / actual[:16]
+    if not (cache / "done").exists():
+        sys.path.insert(0, str(ROOT / "tools"))
+        import katana_mesh
+        if cache.exists():
+            shutil.rmtree(cache)
+        (cache / "katana").mkdir(parents=True)
+        (cache / "textures").mkdir(parents=True)
+        for name, data in katana_mesh.pack(KATANA_ZIP).items():
+            (cache / "katana" / f"{name}.hkm").write_bytes(data)
+        for name, data in katana_mesh.textures(KATANA_ZIP).items():
+            (cache / "textures" / f"{name}.png").write_bytes(data)
+        (cache / "done").write_text(actual, encoding="utf-8")
+    entries = {}
+    for key in keys:
+        for mesh in (key, key + "_sheath"):
+            path = cache / "katana" / f"{mesh}.hkm"
+            if not path.exists():
+                raise RuntimeError(f"The katana zip has no model {mesh}.obj")
+            entries[f"{KATANA_MESHES}{mesh}.hkm"] = path.read_bytes()
+        texture = cache / "textures" / f"{key}.png"
+        if not texture.exists():
+            raise RuntimeError(f"The katana zip has no texture {key}.png")
+        entries[f"{KATANA_TEXTURES}{key}.png"] = texture.read_bytes()
+        icon = f"hexhaki:piece/katana/{key}_icon"
+        if not (ROOT / "src/main/resources/assets/hexhaki/textures/piece/katana" / f"{key}_icon.png").exists():
+            raise RuntimeError(f"No inventory icon for {key} (tools/katana_render.py icons)")
+        model = {
+            "loader": "forge:separate_transforms",
+            "gui_light": "front",
+            "textures": {"particle": icon},
+            "base": {"parent": "minecraft:builtin/entity"},
+            "perspectives": {"gui": {"parent": "minecraft:item/generated", "textures": {"layer0": icon}}},
+        }
+        entries[f"{KATANA_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
+    return entries
+
+
 def assemble():
     entries = {}
     with zipfile.ZipFile(BASE) as base:
@@ -146,6 +215,10 @@ def assemble():
             if name.startswith(ANIMATIONS):
                 json.loads(path.read_text(encoding="utf-8"))  # every animation must parse
             entries[name] = path.read_bytes()
+    for name, data in katana_assets().items():
+        if name in entries:
+            raise RuntimeError(f"A katana asset would overwrite an entry: {name}")
+        entries[name] = data
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(OUTPUT, "w", zipfile.ZIP_DEFLATED) as out:
         for name, data in entries.items():
@@ -186,8 +259,8 @@ def check_imu():
         for name in names:
             if IMU.search(name.encode("utf-8")):
                 found.append(f"{name} (its name)")
-            if name.endswith((".png", ".ogg")):
-                continue
+            if name.endswith((".png", ".ogg", ".hkm")):
+                continue  # binary (2.1.4: the katana meshes are gzip, whose bytes can spell anything)
             hit = IMU.search(jar.read(name))
             if hit:
                 found.append(f"{name}: {hit.group(0).decode('utf-8', 'replace')}")

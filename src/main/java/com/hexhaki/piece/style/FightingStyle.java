@@ -20,7 +20,11 @@ public enum FightingStyle {
             + "turns blows aside and a fist whose shock passes through."),
     BRAWLER("brawler", "Iron Fist", Faction.UNSET, 0xFFD94848,
         "Pirate street boxing: jab, cross, hook and an uppercut that launches, a haymaker, a gatling of jabs and a shoulder charge that "
-            + "bowls through a crowd.");
+            + "bowls through a crowd."),
+    /** 2.1.4: the sword, one-handed (the owner: "the entire moveset is now right handed only"); its moves are {@code sword/SwordMove}. */
+    SWORDSMAN("swordsman", "Swordsman", Faction.UNSET, 0xFFB9C7D8,
+        "One katana, the right hand: a draw that cuts before the eye sees it, a string of heavy cuts on the ground, on the run and in "
+            + "the air, and a charged slash that, with Haki, flies and splits the ground.");
 
     private final String id;
     private final String display;
@@ -66,7 +70,12 @@ public enum FightingStyle {
      * the game's do until a blow raises them (the owner: "Selecting a combat style must not permanently activate an attacking pose").
      */
     public String stance() {
-        return this == BLACK_LEG || this == SIX_POWERS ? "style_" + this.id + "_stance" : null;
+        return this == BLACK_LEG || this == SIX_POWERS || this == SWORDSMAN ? "style_" + this.id + "_stance" : null;
+    }
+
+    /** 2.1.4: a style that fights with a katana (its moves are SwordMove's, not StyleMove's). */
+    public boolean sword() {
+        return this == SWORDSMAN;
     }
 
     public static FightingStyle byOrdinal(int ordinal) {
@@ -76,6 +85,6 @@ public enum FightingStyle {
 
     /** The styles a player may pick. */
     public static FightingStyle[] choices() {
-        return new FightingStyle[] {BLACK_LEG, SIX_POWERS, FISHMAN_KARATE, BRAWLER};
+        return new FightingStyle[] {BLACK_LEG, SIX_POWERS, FISHMAN_KARATE, BRAWLER, SWORDSMAN};
     }
 }

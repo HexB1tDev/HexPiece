@@ -2,7 +2,9 @@ package com.hexhaki.piece.client;
 
 import com.hexhaki.HexHaki;
 import com.hexhaki.piece.network.S2CStance;
+import com.hexhaki.piece.client.sword.SwordClient;
 import com.hexhaki.piece.style.FightingStyle;
+import com.hexhaki.piece.sword.KatanaItem;
 import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
 import dev.kosmx.playerAnim.api.layered.ModifierLayer;
@@ -66,9 +68,19 @@ public final class StanceLayer {
 
     /** The stance {@code player} should show now, or null. */
     static String wanted(AbstractClientPlayer player, FightingStyle style) {
+        boolean hand = player.m_21205_().m_41619_() || style != null && style.sword() && KatanaItem.of(player.m_21205_()) != null;
         if (style == null || style.stance() == null || !player.m_6084_() || player.m_5833_() || player.m_20159_()
-            || !player.m_21205_().m_41619_() || player.m_6117_() || player.m_6147_()) {
+            || !hand || player.m_6117_() || player.m_6147_()) {
             return null; // 2.1.3: also while using an item (a shield, food in the off hand) or on a ladder or vine
+        }
+        if (style.sword()) {
+            // 2.1.4 (the owner: "whenever combat mode is activated the left hand should rest on the sword handle on a relaxed pose (when
+            // not moving)"): only with a katana at the hip, standing still
+            double dx = player.m_20185_() - player.f_19854_;
+            double dz = player.m_20189_() - player.f_19856_;
+            if (SwordClient.katana(player.m_19879_()) == null || dx * dx + dz * dz > 0.0016) {
+                return null;
+            }
         }
         Pose pose = player.m_20089_();
         return pose == Pose.STANDING || pose == Pose.CROUCHING ? style.stance() : null;

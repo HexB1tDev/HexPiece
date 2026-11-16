@@ -5,8 +5,11 @@ public class RenderLevelStageEvent extends net.minecraftforge.eventbus.api.Event
     public Stage getStage() { throw new UnsupportedOperationException(); }
     public com.mojang.blaze3d.vertex.PoseStack getPoseStack() { throw new UnsupportedOperationException(); }
     public float getPartialTick() { throw new UnsupportedOperationException(); }
+    public net.minecraft.client.Camera getCamera() { throw new UnsupportedOperationException(); }
 
     public static class Stage {
         public static final Stage AFTER_ENTITIES = null;
+        public static final Stage AFTER_SKY = null;
+        public static final Stage AFTER_PARTICLES = null;
     }
 }

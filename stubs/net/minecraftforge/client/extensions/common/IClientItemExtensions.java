@@ -5,4 +5,8 @@ package net.minecraftforge.client.extensions.common;
 public interface IClientItemExtensions {
     /** getCustomRenderer (Forge's name: Forge's own interface) */
     default net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() { throw new UnsupportedOperationException(); }
+
+    /** 2.1.4: getArmPose (Forge's name) */
+    default net.minecraft.client.model.HumanoidModel.ArmPose getArmPose(net.minecraft.world.entity.LivingEntity entity, net.minecraft.world.InteractionHand hand,
+        net.minecraft.world.item.ItemStack stack) { throw new UnsupportedOperationException(); }
 }

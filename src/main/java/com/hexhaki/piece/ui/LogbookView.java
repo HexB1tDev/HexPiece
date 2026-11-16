@@ -238,6 +238,10 @@ public final class LogbookView {
         c.text(m, right - c.width(m), top, PirateUi.BLUE, false);
         PirateUi.bar(c, left, top + 11, right, top + 16, mastery / (float) PieceRules.MAX_MASTERY, style.colour() | 0xFF000000, 0xFFD6E2F0);
         int y = top + 22;
+        if (style.sword()) {
+            swordsman(c, l, left, right, y);
+            return;
+        }
         Slot[] slots = Slot.values();
         int rowH = Math.max(14, Math.min(20, (l.y1 - 30 - y) / slots.length));
         for (Slot slot : slots) {
@@ -265,6 +269,26 @@ public final class LogbookView {
                 c.text(c.fit(move.description(), right - left - 120), left + 32 + Math.max(70, c.width(move.display()) + 8), y + (rowH - 12) / 2,
                     0xFF6A7E9A, false);
             }
+            y += rowH;
+        }
+    }
+
+    /** 2.1.4: the Swordsman's page: its three strings, the charged slash and the quick draw. */
+    static void swordsman(UiCanvas c, Layout l, int left, int right, int y) {
+        String[][] rows = {
+            {"M1", "Ground", "Draw Cut, Kesa, Reverse Kesa, Horizontal, Return, Thrust, Rising, Heaven Splitter"},
+            {"M1", "Moving", "Dashing Draw, Advancing Cut, Pivot Cut"},
+            {"M1", "In the air", "Falling Draw, Aerial Cross, Wheel, Plunge"},
+            {"RMB", "Charged Slash", "Hold to charge, let go: a heavy cut; with Armament Haki a slash that flies and splits the ground"},
+            {"C+M1", "Quick Draw", "Five blocks down the line in a blink, everything on it cut (3s)"},
+        };
+        int rowH = Math.max(18, Math.min(30, (l.y1 - 30 - y) / rows.length));
+        for (String[] row : rows) {
+            c.fill(left - 2, y - 1, right + 2, y + rowH - 3, 0xFFEEF3FA);
+            c.fill(left - 2, y - 1, left + 26, y + rowH - 3, PirateUi.BLUE);
+            c.centered(row[0], left + 12, y + 2, 0xFFFFFFFF, false);
+            c.text(row[1], left + 32, y + 2, PirateUi.BLUE_INK, false);
+            c.wrap(row[2], left + 32, y + 12, right - left - 36, 0xFF6A7E9A, 9, Math.max(1, (rowH - 14) / 9));
             y += rowH;
         }
     }

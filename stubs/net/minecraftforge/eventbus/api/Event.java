@@ -2,5 +2,6 @@
 package net.minecraftforge.eventbus.api;
 
 public class Event {
+    /** 2.1.4 */ public boolean isCanceled() { throw new UnsupportedOperationException(); }
     public void setCanceled(boolean cancel) { throw new UnsupportedOperationException(); }
 }

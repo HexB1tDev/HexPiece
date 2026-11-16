@@ -24,6 +24,9 @@ public final class StyleTests {
 
     static void movesets() {
         for (FightingStyle style : FightingStyle.choices()) {
+            if (style.sword()) {
+                continue; // 2.1.4: the sword's moves are SwordMove's (SwordTests)
+            }
             for (Slot slot : Slot.values()) {
                 StyleMove move = StyleMove.of(style, slot);
                 Check.that(move != null, style + " has a move for " + slot);

@@ -2,5 +2,8 @@
 package dev.kosmx.playerAnim.api.firstPerson;
 
 public enum FirstPersonMode {
-    NONE, VANILLA, THIRD_PERSON_MODEL, DISABLED
+    NONE, VANILLA, THIRD_PERSON_MODEL, DISABLED;
+
+    /** 2.1.4: is this render pass playerAnimator's first-person pass? */
+    public static boolean isFirstPersonPass() { throw new UnsupportedOperationException(); }
 }

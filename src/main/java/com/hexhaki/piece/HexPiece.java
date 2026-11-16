@@ -19,6 +19,8 @@ public final class HexPiece {
     public static void init(IEventBus bus) {
         PieceNetwork.init();
         PieceEntities.register(bus);
-        LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, pirates and marines");
+        PieceItems.register(bus);
+        PieceConfig.register();
+        LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, the katanas, pirates and marines");
     }
 }

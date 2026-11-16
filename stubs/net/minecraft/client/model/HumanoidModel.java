@@ -9,4 +9,7 @@ public class HumanoidModel<T extends net.minecraft.world.entity.LivingEntity> ex
     /** leftArm */ public net.minecraft.client.model.geom.ModelPart f_102812_;
     /** rightLeg */ public net.minecraft.client.model.geom.ModelPart f_102813_;
     /** leftLeg */ public net.minecraft.client.model.geom.ModelPart f_102814_;
+
+    /** 2.1.4: fbs$a (intermediary class_572$class_573); constants keep their names. */
+    public enum ArmPose { EMPTY, ITEM }
 }

@@ -39,11 +39,28 @@ public final class NpcTests {
         }
         for (Faction side : new Faction[] {Faction.PIRATE, Faction.MARINE}) {
             for (FightingStyle style : SeaRules.styles(side)) {
+                if (style.sword()) {
+                    Check.that(side == Faction.PIRATE, "2.1.4: only pirates carry katanas (marines unchanged)");
+                    continue; // its moves are the sword's (SwordTests)
+                }
                 for (Slot slot : Slot.values()) {
                     Check.that(StyleMove.of(style, slot) != null, "an NPC's style has every move");
                 }
             }
             Check.that(SeaRules.title(side, 2).contains("Captain"), "the captain is named so");
+        }
+        // 2.1.4: pirates fight with Fishman Karate, Iron Fist and the sword; marines as before
+        java.util.List<FightingStyle> pirates = java.util.Arrays.asList(SeaRules.styles(Faction.PIRATE));
+        Check.that(pirates.contains(FightingStyle.FISHMAN_KARATE) && pirates.contains(FightingStyle.BRAWLER)
+            && pirates.contains(FightingStyle.SWORDSMAN), "pirates use Fishman Karate, Iron Fist and Swordsman");
+        Check.that(java.util.Arrays.equals(SeaRules.styles(Faction.MARINE), new FightingStyle[] {FightingStyle.SIX_POWERS,
+            FightingStyle.SIX_POWERS, FightingStyle.BRAWLER}), "marines unchanged");
+        for (int rank = 0; rank < 3; rank++) {
+            for (int pick = 0; pick < 30; pick++) {
+                com.hexhaki.piece.sword.Katana k = SeaRules.katana(rank, pick);
+                int grade = k.grade().rarity();
+                Check.that(rank == 0 ? grade <= 1 : rank == 1 ? grade >= 1 && grade <= 2 : grade >= 2, "a pirate's katana fits its rank");
+            }
         }
         Check.done("NpcTests");
     }

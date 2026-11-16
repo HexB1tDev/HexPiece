@@ -43,3 +43,27 @@ M net/minecraft/world/entity/LivingEntity m_6147_ ()Z   # [srg] onClimbable: joi
 
 # --- 2.1.4 (in progress): the katanas' blade highlight ----------------------------------------------------------------------------
 M org/joml/Matrix3f transform (Lorg/joml/Vector3f;)Lorg/joml/Vector3f;   # [lib] JOML 1.10 (bundled with 1.20.1): Matrix3f.transform(Vector3f v), v = this * v
+
+# --- 2.1.4: the katanas as items (sword/KatanaItem, PieceItems, client/sword/KatanaItemRenderer) ---------------------------------
+F net/minecraft/world/item/Rarity COMMON Lnet/minecraft/world/item/Rarity;   # [srg] enum constants keep their names: joined.tsrg cgq a COMMON (cgq = C_1407_ Rarity: d EPIC, which the original's ModItems uses); intermediary class_1814 field_8906
+F net/minecraft/world/item/Rarity UNCOMMON Lnet/minecraft/world/item/Rarity;   # [srg] joined.tsrg cgq b UNCOMMON; intermediary field_8907
+F net/minecraft/world/item/Rarity RARE Lnet/minecraft/world/item/Rarity;   # [srg] joined.tsrg cgq c RARE; intermediary field_8903
+F net/minecraft/world/item/ItemDisplayContext GROUND Lnet/minecraft/world/item/ItemDisplayContext;   # [srg] joined.tsrg cfw h GROUND (cfw = C_268388_, as HexGhoul's THIRD_PERSON_RIGHT_HAND cfw c); intermediary class_811 field_4318
+F net/minecraft/world/item/ItemDisplayContext FIXED Lnet/minecraft/world/item/ItemDisplayContext;   # [srg] joined.tsrg cfw i FIXED; intermediary field_4319
+F net/minecraft/world/item/ItemDisplayContext FIRST_PERSON_LEFT_HAND Lnet/minecraft/world/item/ItemDisplayContext;   # [srg] joined.tsrg cfw d FIRST_PERSON_LEFT_HAND; intermediary field_4321
+C net/minecraft/client/model/HumanoidModel$ArmPose   # [srg] joined.tsrg fbs$a C_3829_$C_3831_ (fbs = HumanoidModel), intermediary class_572$class_573 (yarn BipedEntityModel$ArmPose); Forge's IClientItemExtensions.getArmPose returns it
+F net/minecraft/client/model/HumanoidModel$ArmPose EMPTY Lnet/minecraft/client/model/HumanoidModel$ArmPose;   # [srg] joined.tsrg fbs$a a EMPTY (enum constants keep their names); intermediary field_3409
+
+# --- 2.1.4: the Swordsman (server/SwordServer, HakiSlashes, Finishers; client/sword/*) ----------------------------------------------
+M net/minecraftforge/common/ForgeConfigSpec$Builder <init> ()V   # [forge] common/ForgeConfigSpec.java: public Builder() (the Swordsman's server config, PieceConfig)
+F net/minecraft/world/phys/AABB f_82288_ D   # [srg] minX: joined.tsrg eed a f_82288_ (eed = C_3040_ AABB: the original calls eed.m_82400_ inflate); fields in declaration order minX minY minZ maxX maxY maxZ; intermediary class_238 field_1323
+F net/minecraft/world/phys/AABB f_82289_ D   # [srg] minY: joined.tsrg eed b f_82289_; intermediary field_1322
+F net/minecraft/world/phys/AABB f_82290_ D   # [srg] minZ: joined.tsrg eed c f_82290_; intermediary field_1321
+F net/minecraft/world/phys/AABB f_82291_ D   # [srg] maxX: joined.tsrg eed d f_82291_; intermediary field_1320
+F net/minecraft/world/phys/AABB f_82292_ D   # [srg] maxY: joined.tsrg eed e f_82292_; intermediary field_1325
+F net/minecraft/world/phys/AABB f_82293_ D   # [srg] maxZ: joined.tsrg eed f f_82293_; intermediary field_1324
+M net/minecraftforge/client/event/RegisterGuiOverlaysEvent registerAboveAll (Ljava/lang/String;Lnet/minecraftforge/client/gui/overlay/IGuiOverlay;)V   # [forge] 1.20.1 client/event/RegisterGuiOverlaysEvent.java registerAboveAll(String id, IGuiOverlay overlay), beside registerBelowAll (CombatMode)
+C net/minecraft/client/renderer/ItemInHandRenderer   # [srg] joined.tsrg fjt C_4131_, intermediary class_759 (yarn HeldItemRenderer); the second argument of PlayerItemInHandLayer's constructor
+C net/minecraft/client/renderer/entity/layers/PlayerItemInHandLayer   # [srg] joined.tsrg ftf C_141749_, intermediary class_5697 (yarn PlayerHeldItemFeatureRenderer, extends fsz class_989 ItemInHandLayer extends RenderLayer): playerAnimator's first-person pass keeps only this kind of layer (LivingEntityRendererMixin.filterLayers)
+M net/minecraft/client/renderer/entity/layers/PlayerItemInHandLayer <init> (Lnet/minecraft/client/renderer/entity/RenderLayerParent;Lnet/minecraft/client/renderer/ItemInHandRenderer;)V   # [srg] joined.tsrg ftf <init> (Lfqt;Lfjt;)V (fqt = RenderLayerParent, as HexGhoul's RenderLayer.<init>(Lfqt;)V)
+M dev/kosmx/playerAnim/api/firstPerson/FirstPersonMode isFirstPersonPass ()Z   # [lib] playerAnimator 1.20 coreLib api/firstPerson/FirstPersonMode.java: public static boolean isFirstPersonPass()

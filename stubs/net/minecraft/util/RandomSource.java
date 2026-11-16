@@ -2,6 +2,7 @@
 package net.minecraft.util;
 
 public interface RandomSource {
+    /** nextLong (2.1.4) */ default long m_188505_() { throw new UnsupportedOperationException(); }
     /** nextFloat */ float m_188501_();
     /** nextDouble */ double m_188500_();
     /** nextInt(bound) */ int m_188503_(int bound);

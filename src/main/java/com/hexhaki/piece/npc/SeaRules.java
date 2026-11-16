@@ -2,6 +2,7 @@ package com.hexhaki.piece.npc;
 
 import com.hexhaki.piece.Faction;
 import com.hexhaki.piece.style.FightingStyle;
+import com.hexhaki.piece.sword.Katana;
 
 /**
  * 2.1.1: the pirates' and marines' numbers (pure, tested): their looks (tools/npc_skins.py paints <side>_<look>.png in this order), ranks,
@@ -56,10 +57,26 @@ public final class SeaRules {
         return 0;
     }
 
-    /** The styles a side fights with: pirates kick, box and do karate; marines use the Six Powers and box. */
+    /**
+     * The styles a side fights with: pirates kick, box, do karate and (2.1.4) carry katanas (two in five); marines use the Six Powers
+     * and box (unchanged).
+     */
     public static FightingStyle[] styles(Faction side) {
         return side == Faction.MARINE ? new FightingStyle[] {FightingStyle.SIX_POWERS, FightingStyle.SIX_POWERS, FightingStyle.BRAWLER}
-            : new FightingStyle[] {FightingStyle.BLACK_LEG, FightingStyle.BRAWLER, FightingStyle.FISHMAN_KARATE};
+            : new FightingStyle[] {FightingStyle.BLACK_LEG, FightingStyle.BRAWLER, FightingStyle.FISHMAN_KARATE, FightingStyle.SWORDSMAN,
+                FightingStyle.SWORDSMAN};
+    }
+
+    /** 2.1.4: a pirate swordsman's katana: the grade by rank (grunts the lower grades, captains the great ones), the blade by pick. */
+    public static Katana katana(int rank, int pick) {
+        java.util.List<Katana> fit = new java.util.ArrayList<>();
+        for (Katana katana : Katana.values()) {
+            int grade = katana.grade().rarity();
+            if (rank == 0 ? grade <= 1 : rank == 1 ? grade >= 1 && grade <= 2 : grade >= 2) {
+                fit.add(katana);
+            }
+        }
+        return fit.get(Math.floorMod(pick, fit.size()));
     }
 
     public static String title(Faction side, int rank) {
