@@ -1,0 +1,241 @@
+{
+ "version": 3,
+ "name": "galaxy_beam_charge",
+ "author": "HexHaki, reworked for HexPiece 2.1.1",
+ "description": "Frieza-style held beam charge: right arm points straight forward while the rest of the body stays free.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 20,
+  "stopTick": 20,
+  "isLoop": true,
+  "returnTick": 4,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "bend": -1.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "pitch": 2.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "roll": -1.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "yaw": 1.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "bend": -5.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "pitch": -82.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "roll": 2.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "yaw": -3.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "leftArm": {
+     "bend": -1.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "leftArm": {
+     "pitch": 3.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "leftArm": {
+     "roll": -1.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "leftArm": {
+     "yaw": 1.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "rightArm": {
+     "bend": -2.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "rightArm": {
+     "pitch": -100.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "rightArm": {
+     "roll": 1.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "outexpo",
+    "rightArm": {
+     "yaw": -2.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -1.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 2.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": -1.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 1.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightArm": {
+     "bend": -2.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightArm": {
+     "pitch": -102.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightArm": {
+     "roll": 1.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightArm": {
+     "yaw": -2.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -1.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 3.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": -1.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 1.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightArm": {
+     "bend": -2.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightArm": {
+     "pitch": -100.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightArm": {
+     "roll": 1.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightArm": {
+     "yaw": -2.0
+    }
+   }
+  ]
+ }
+}

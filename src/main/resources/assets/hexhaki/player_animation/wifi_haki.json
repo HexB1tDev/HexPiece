@@ -1,0 +1,157 @@
+{
+ "version": 3,
+ "name": "wifi_haki",
+ "author": "HexHaki, reworked for HexPiece 2.1.1",
+ "description": "WiFi Haki channel: one arm extends and stays projected. Vanilla owns both legs and all ordinary locomotion.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 24,
+  "stopTick": 24,
+  "isLoop": true,
+  "returnTick": 8,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {
+    "tick": 0,
+    "easing": "outcubic",
+    "rightArm": {
+     "bend": -18.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outcubic",
+    "rightArm": {
+     "pitch": -18.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outcubic",
+    "rightArm": {
+     "roll": 3.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outcubic",
+    "rightArm": {
+     "yaw": -2.0
+    }
+   },
+   {
+    "tick": 5,
+    "easing": "outexpo",
+    "rightArm": {
+     "bend": -4.0
+    }
+   },
+   {
+    "tick": 5,
+    "easing": "outexpo",
+    "rightArm": {
+     "pitch": -87.0
+    }
+   },
+   {
+    "tick": 5,
+    "easing": "outexpo",
+    "rightArm": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 5,
+    "easing": "outexpo",
+    "rightArm": {
+     "yaw": -4.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutquad",
+    "rightArm": {
+     "bend": -2.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutquad",
+    "rightArm": {
+     "pitch": -90.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutquad",
+    "rightArm": {
+     "roll": 5.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutquad",
+    "rightArm": {
+     "yaw": -2.0
+    }
+   },
+   {
+    "tick": 18,
+    "easing": "inoutquad",
+    "rightArm": {
+     "bend": -6.0
+    }
+   },
+   {
+    "tick": 18,
+    "easing": "inoutquad",
+    "rightArm": {
+     "pitch": -86.0
+    }
+   },
+   {
+    "tick": 18,
+    "easing": "inoutquad",
+    "rightArm": {
+     "roll": 3.0
+    }
+   },
+   {
+    "tick": 18,
+    "easing": "inoutquad",
+    "rightArm": {
+     "yaw": -5.0
+    }
+   },
+   {
+    "tick": 24,
+    "easing": "inoutquad",
+    "rightArm": {
+     "bend": -2.0
+    }
+   },
+   {
+    "tick": 24,
+    "easing": "inoutquad",
+    "rightArm": {
+     "pitch": -90.0
+    }
+   },
+   {
+    "tick": 24,
+    "easing": "inoutquad",
+    "rightArm": {
+     "roll": 5.0
+    }
+   },
+   {
+    "tick": 24,
+    "easing": "inoutquad",
+    "rightArm": {
+     "yaw": -2.0
+    }
+   }
+  ]
+ }
+}

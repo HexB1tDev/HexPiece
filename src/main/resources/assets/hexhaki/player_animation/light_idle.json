@@ -1,0 +1,101 @@
+{
+ "version": 3,
+ "name": "light_idle",
+ "author": "HexHaki, reworked for HexPiece 2.1.1",
+ "description": "At ease: the left hand in the pocket, the right arm hanging free (the game's), breathing.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 80,
+  "stopTick": 80,
+  "isLoop": true,
+  "returnTick": 0,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -26.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 8.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": 16.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -27.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 9.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": 16.5
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 80,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -26.0
+    }
+   },
+   {
+    "tick": 80,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 8.0
+    }
+   },
+   {
+    "tick": 80,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": 16.0
+    }
+   },
+   {
+    "tick": 80,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 0.0
+    }
+   }
+  ]
+ }
+}

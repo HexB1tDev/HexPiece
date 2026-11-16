@@ -1,0 +1,605 @@
+{
+ "version": 3,
+ "name": "conqueror_charge",
+ "author": "HexHaki, reworked for HexPiece 2.1.1",
+ "description": "Conqueror charge: legs stay fully locomotion-driven while the upper body strains. Hands clutch the sides/top of the head instead of covering the face, elbows flare outward, and the torso stays anchored to the pelvis.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 68,
+  "stopTick": 68,
+  "isLoop": true,
+  "returnTick": 28,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "body": {
+     "bend": 5.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "head": {
+     "pitch": 5.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "head": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "head": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "bend": -58.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "pitch": -63.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "roll": -60.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "leftArm": {
+     "yaw": 12.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "bend": -58.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "pitch": -63.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "roll": 60.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "rightArm": {
+     "yaw": -12.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "torso": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "outquad",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "body": {
+     "bend": 7.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "head": {
+     "pitch": 5.4
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "head": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "head": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "leftArm": {
+     "bend": -62.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "leftArm": {
+     "pitch": -70.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "leftArm": {
+     "roll": -63.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "leftArm": {
+     "yaw": 14.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "rightArm": {
+     "bend": -62.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "rightArm": {
+     "pitch": -70.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "rightArm": {
+     "roll": 63.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "rightArm": {
+     "yaw": -14.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "torso": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "outcubic",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "body": {
+     "bend": 8.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutsine",
+    "body": {
+     "y": 0.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "head": {
+     "pitch": 6.6
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "head": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "head": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "leftArm": {
+     "bend": -66.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "leftArm": {
+     "pitch": -75.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "leftArm": {
+     "roll": -66.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "leftArm": {
+     "yaw": 16.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "rightArm": {
+     "bend": -66.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "rightArm": {
+     "pitch": -75.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "rightArm": {
+     "roll": 66.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "rightArm": {
+     "yaw": -16.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "torso": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutsine",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 28,
+    "easing": "inoutquad",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 48,
+    "easing": "inoutsine",
+    "body": {
+     "y": 0.012
+    }
+   },
+   {
+    "tick": 48,
+    "easing": "inoutsine",
+    "torso": {
+     "pitch": 1.6
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "body": {
+     "bend": 7.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "head": {
+     "pitch": 5.4
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "head": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "head": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "leftArm": {
+     "bend": -62.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "leftArm": {
+     "pitch": -70.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "leftArm": {
+     "roll": -63.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "leftArm": {
+     "yaw": 14.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "rightArm": {
+     "bend": -62.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "rightArm": {
+     "pitch": -70.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "rightArm": {
+     "roll": 63.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "rightArm": {
+     "yaw": -14.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "torso": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 49,
+    "easing": "inoutquad",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "body": {
+     "bend": 9.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutsine",
+    "body": {
+     "y": 0.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "head": {
+     "pitch": 6.8
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "head": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "head": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "leftArm": {
+     "bend": -68.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "leftArm": {
+     "pitch": -77.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "leftArm": {
+     "roll": -68.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "leftArm": {
+     "yaw": 17.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "rightArm": {
+     "bend": -68.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "rightArm": {
+     "pitch": -77.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "rightArm": {
+     "roll": 68.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "rightArm": {
+     "yaw": -17.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "torso": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutsine",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 68,
+    "easing": "inoutquad",
+    "torso": {
+     "yaw": 0.0
+    }
+   }
+  ]
+ }
+}

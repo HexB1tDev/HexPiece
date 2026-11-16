@@ -1,0 +1,248 @@
+{
+ "version": 3,
+ "name": "light_sword_idle",
+ "author": "HexHaki, reworked for HexPiece 2.1.1",
+ "description": "Ama no Murakumo held low in the right hand, the left in the pocket.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 60,
+  "stopTick": 60,
+  "isLoop": true,
+  "returnTick": 0,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -26.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 8.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": 16.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightArm": {
+     "bend": -24.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightArm": {
+     "pitch": -16.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightArm": {
+     "roll": -12.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightArm": {
+     "yaw": 6.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightItem": {
+     "pitch": 62.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightItem": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightItem": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -27.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 9.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": 16.5
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "rightArm": {
+     "bend": -22.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "rightArm": {
+     "pitch": -18.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "rightArm": {
+     "roll": -12.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "rightArm": {
+     "yaw": 6.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "rightItem": {
+     "pitch": 60.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "rightItem": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "rightItem": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -26.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 8.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": 16.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "rightArm": {
+     "bend": -24.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "rightArm": {
+     "pitch": -16.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "rightArm": {
+     "roll": -12.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "rightArm": {
+     "yaw": 6.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "rightItem": {
+     "pitch": 62.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "rightItem": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 60,
+    "easing": "inoutsine",
+    "rightItem": {
+     "yaw": 0.0
+    }
+   }
+  ]
+ }
+}

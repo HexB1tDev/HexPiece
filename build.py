@@ -191,6 +191,30 @@ def check_imu():
         raise RuntimeError(f"The Imu fruit is still named in the jar ({len(found)}): {found[:20]}")
 
 
+# The owner, on the originals' broken frames: "dont you ever pass shit like this". Every packed animation is linted (tools/anim.py, which
+# reproduces PlayerAnimator + bendy-lib as verified in HexGhoul): no head off the neck, torso off the hips, arm off the shoulder or forearm
+# through the head. The only exceptions are listed with why.
+ANIMATION_LINT_EXCEPTIONS = {
+    "haki_pain_clutch": "both hands clutch the head: the hands touch it by design",
+    "light_sword_3": "a sword cut passes the forearm by the face for half a tick",
+}
+
+
+def check_animations():
+    sys.path.insert(0, str(ROOT / "tools"))
+    import anim
+    broken = []
+    with zipfile.ZipFile(OUTPUT) as jar:
+        for name in sorted(jar.namelist()):
+            if name.startswith(ANIMATIONS) and name.endswith(".json"):
+                key = name[len(ANIMATIONS):-5]
+                problems = anim.lint(anim.Anim(json.loads(jar.read(name))))
+                if problems and key not in ANIMATION_LINT_EXCEPTIONS:
+                    broken.append(f"{key}: {problems[0][1]} at tick {problems[0][0]} (+{len(problems) - 1} more)")
+    if broken:
+        raise RuntimeError(f"Animations that come apart ({len(broken)}): {broken}")
+
+
 def main():
     check_version(VERSION)
     actual = hashlib.sha256(INPUT.read_bytes()).hexdigest()
@@ -215,6 +239,7 @@ def main():
         ROOT / "verify" / "api-allowlist.txt", ROOT / "verify" / "hexghoul-allowlist.txt")
     added, animations = check_archive_scope()
     check_imu()
+    check_animations()
 
     test_sources = sources("src/test/java")
     suites = []
