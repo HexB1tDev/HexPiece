@@ -1,5 +1,10 @@
 package com.hexhaki.piece.client.sword;
 
+import java.util.List;
+import java.util.ArrayList;
+import com.hexhaki.piece.haki.DrawCrackle;
+import com.hexhaki.piece.haki.Bolt;
+import com.hexhaki.piece.client.haki.HakiBolts;
 import com.hexhaki.piece.client.fx.PieceFx;
 import com.hexhaki.piece.haki.RyouPalette;
 import com.hexhaki.piece.network.S2CSlash;
@@ -38,6 +43,8 @@ import org.joml.Matrix4f;
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class SlashRenderer {
     static final int SEGMENTS = 14;
+    /** The crackle's own blade length (DrawCrackle works along a katana's blade; the slash scales it to its height). */
+    static final double BLADE = 1.28;
     private static final Map<Integer, S2CSlash> FLYING = new HashMap<>();
     private static final Random RANDOM = new Random();
 
@@ -144,6 +151,63 @@ public final class SlashRenderer {
         }
         buffers.m_109912_(light);
         pose.m_85849_();
+        crackle(pose, cam, level, partial);
+    }
+
+    /**
+     * 2.1.5: the slash crackles with Haki lightning (the same inked bolts as the Conqueror's and the drawn blade's): arcs leaping along
+     * its edge and sparks shed behind it, a new set every two ticks, in its colour, as big as the slash is tall.
+     */
+    static void crackle(PoseStack pose, Vec3 cam, ClientLevel level, float partial) {
+        List<Bolt> bolts = new ArrayList<>();
+        List<Double> ages = new ArrayList<>();
+        long now = level.m_46467_() & 0x3FFFFFFF;
+        for (S2CSlash slash : FLYING.values()) {
+            double d = flown(slash, level, partial);
+            if (d < 0 || d >= slash.range()) {
+                continue;
+            }
+            double ticks = ((now - slash.start()) & 0x3FFFFFFF) + partial;
+            Vec3 dir = new Vec3(slash.dx(), 0.0, slash.dz());
+            dir = dir.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : dir.m_82541_();
+            Vec3 side = new Vec3(-dir.f_82481_, 0.0, dir.f_82479_);
+            Vec3 centre = point(slash, d);
+            double half = slash.height() / 2.0;
+            double bow = slash.height() * 0.2;
+            double k = slash.height() / BLADE;
+            int color = color(slash) | 0xFF000000;
+            long window = (long) Math.floor(ticks / DrawCrackle.WINDOW);
+            for (long w = Math.max(0, window - 2); w <= window; w++) {
+                for (Bolt bolt : DrawCrackle.set(slash.id() * 0x9E3779B97F4A7C15L, w, 0.0, BLADE, Double.NaN, 1.3, color)) {
+                    double age = ticks - w * DrawCrackle.WINDOW - bolt.delay;
+                    if (age < 0 || age > bolt.duration) {
+                        continue;
+                    }
+                    // the crackle's straight blade bent onto the crescent: up the blade is up the crescent, off it is ahead of it
+                    double[] points = new double[bolt.points.length];
+                    for (int i = 0; i < bolt.count(); i++) {
+                        double a = (bolt.points[i * 3 + 1] / BLADE - 0.5) * 2.0;
+                        double ahead = bow * (1.0 - a * a) + 0.275 * (1.0 - a * a * 0.85) + slash.height() * 0.03 + Math.abs(bolt.points[i * 3]) * k;
+                        double across = bolt.points[i * 3 + 2] * k;
+                        points[i * 3] = centre.f_82479_ + dir.f_82479_ * ahead + side.f_82479_ * across - cam.f_82479_;
+                        points[i * 3 + 1] = centre.f_82480_ + a * half - cam.f_82480_;
+                        points[i * 3 + 2] = centre.f_82481_ + dir.f_82481_ * ahead + side.f_82481_ * across - cam.f_82481_;
+                    }
+                    float[] widths = bolt.widths.clone();
+                    float grow = (float) Math.min(3.0, Math.pow(k, 0.75));
+                    for (int i = 0; i < widths.length; i++) {
+                        widths[i] *= grow;
+                    }
+                    bolts.add(new Bolt(points, widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                    ages.add(age);
+                }
+            }
+        }
+        double[] at = new double[ages.size()];
+        for (int i = 0; i < at.length; i++) {
+            at[i] = ages.get(i);
+        }
+        HakiBolts.drawInView(pose, bolts, at, level, partial);
     }
 
     /**

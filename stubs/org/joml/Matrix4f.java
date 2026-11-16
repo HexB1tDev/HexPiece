@@ -5,4 +5,5 @@ public class Matrix4f implements Matrix4fc {
     public Matrix4f() { throw new UnsupportedOperationException(); }
     public Matrix4f(Matrix4fc copy) { throw new UnsupportedOperationException(); }
     public Vector3f transformPosition(Vector3f point) { throw new UnsupportedOperationException(); }
+    /** 2.1.5 */ public Matrix4f invert() { throw new UnsupportedOperationException(); }
 }

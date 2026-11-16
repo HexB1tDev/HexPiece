@@ -1,8 +1,10 @@
 package com.hexhaki.piece.client.haki;
 
 import com.hexhaki.client.vfx.HakiVfx;
+import com.hexhaki.piece.haki.BoltPainter;
 import com.hexhaki.piece.haki.Jag;
 import com.lowdragmc.photon.client.fx.FX;
+import com.lowdragmc.photon.client.gameobject.IFXObject;
 import java.util.SplittableRandom;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
@@ -24,6 +26,10 @@ import org.joml.Vector3f;
  * The original's colours and widths are kept (they are the author's palette); its beams and their Photon setup are reused as they are
  * ({@code HakiVfx.beam}/{@code rageBeam}, widened to public by the patch). A budget keeps a huge Conqueror release from flooding Photon:
  * past it, bolts are drawn straight as before.
+ *
+ * <p>2.1.5: every beam is also painted as 3D lightning ({@link BoltPainter}: crackled, outlined, glowing tubes) and kept with its
+ * composition in {@link HakiBolts}; when the composition is played, the 3D bolts take the flat beams' place. The beams are still made,
+ * as the fallback for a composition played some other way.
  */
 public final class HakiLightning {
     /** Beams this painter may add in one burst window before falling back to the original's straight beams. */
@@ -86,6 +92,12 @@ public final class HakiLightning {
 
     static void draw(FX fx, float ax, float ay, float az, float bx, float by, float bz, float width, int color, int duration, int delay,
                      boolean bloom, boolean rage, boolean forks) {
+        HakiBolts.Pending pending = HakiBolts.pending(fx);
+        double[] a = {ax, ay, az};
+        double[] b = {bx, by, bz};
+        float start = pending.chain.start(a, delay);
+        BoltPainter.strokes(a, b, width, color, duration, start, forks, SALT, pending.bolts);
+        pending.chain.land(a, b, start, duration);
         double length = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay) + (bz - az) * (bz - az));
         int levels = Jag.levels(length);
         if (!spend((1 << levels) + 2)) {
@@ -151,11 +163,10 @@ public final class HakiLightning {
                      boolean bloom, boolean rage) {
         Vector3f from = new Vector3f(ax, ay, az);
         Vector3f to = new Vector3f(bx, by, bz);
-        if (rage) {
-            HakiVfx.add(fx, HakiVfx.rageBeam(from, to, width, color, duration, delay, bloom));
-        } else {
-            HakiVfx.add(fx, HakiVfx.beam(from, to, width, color, duration, delay, bloom));
-        }
+        IFXObject beam = rage ? HakiVfx.rageBeam(from, to, width, color, duration, delay, bloom)
+            : HakiVfx.beam(from, to, width, color, duration, delay, bloom);
+        HakiVfx.add(fx, beam);
+        HakiBolts.pending(fx).beams.add(beam);
     }
 
     /** {@code color} with its alpha scaled by {@code share}. */

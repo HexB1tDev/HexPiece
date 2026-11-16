@@ -43,7 +43,7 @@ import org.joml.Vector3f;
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class SwordFx {
-    static final ResourceLocation WHITE_TEXTURE = ResourceLocation.m_214293_("hexhaki", "textures/piece/white.png");
+    public static final ResourceLocation WHITE_TEXTURE = ResourceLocation.m_214293_("hexhaki", "textures/piece/white.png");
     static final double TRAIL_LIFE = 0.16;
     static final int STEEL = 0xFFE6EEF8;
     private static final Random RANDOM = new Random();

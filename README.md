@@ -17,7 +17,9 @@ Previews (judge every animation you change): `python3 tools/anim_preview.py out.
 front to back), `python3 tools/ryou_preview.py out.png` (Ryou's hand rim, z-buffered), and the style GIFs: `javac -cp build/classes -d build/preview tools/preview/StyleDump.java`,
 `java -cp build/preview:build/classes StyleDump > build/preview/styles.json`, `python3 tools/style_gif.py`. The Swordsman:
 `python3 tools/sword_anims.py` (re-solves and writes every sword animation, `BladePaths` and the NPC poses; `--only a,b` for some)
-and its contact sheets with the blade and saya drawn (`sword_anims.preview`); the start menu and the Captain's Log:
+and its contact sheets with the blade and saya drawn (`sword_anims.preview`); the 3D Haki lightning, rasterised from the game's own
+quads: `javac -cp build/classes -d build/preview tools/preview/BoltPreview.java`, `java -cp build/preview:build/classes BoltPreview <dir>`;
+the start menu and the Captain's Log:
 `javac -cp build/classes -d build/preview tools/preview/UiPreview.java`, `java -cp build/preview:build/classes UiPreview <dir>`.
 
 ## Releases
@@ -38,7 +40,9 @@ and its contact sheets with the blade and saya drawn (`sword_anims.preview`); th
   colour that cuts a thin vertical plane through terrain, the Ryou finisher, and Ctrl + M1's quick draw.
 - Pirate and Marine NPC patrols (pirates also with katanas) that fight each other and the players of the other flag with the same moves; bounty and merit ranks.
 - The Captain's Log: a blue-and-white mastery menu with a ship.
-- New Haki lightning; every animation reworked (and linted so none comes apart); the Imu fruit removed (its assets kept).
+- Haki lightning as real 3D lightning (2.1.5): crackled tubes facing the eye, with a black ink outline, a coloured core, a white-hot heart
+  and a glow, striking, flickering, dancing and thinning away; Haki lightning off the katana as it is drawn, charged and released.
+- Every animation reworked (and linted so none comes apart); the Imu fruit removed (its assets kept).
 - Ryou (the original's Advanced Haki, renamed): it comes with Armament once unlocked, in the player's own saved glow colour, as black
   hands with a coloured rim (no fire, no inflated physique).
 

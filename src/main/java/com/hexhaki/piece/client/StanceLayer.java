@@ -51,7 +51,7 @@ public final class StanceLayer {
     /** Entity id -> what this client last put on that player's layer. */
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
 
-    private record Playing(ModifierLayer<IAnimation> layer, String animation) {
+    private record Playing(ModifierLayer<IAnimation> layer, String animation, long since) {
     }
 
     private StanceLayer() {
@@ -142,8 +142,22 @@ public final class StanceLayer {
         if (want == null) {
             PLAYING.remove(id);
         } else {
-            PLAYING.put(id, new Playing(layer, want));
+            PLAYING.put(id, new Playing(layer, want, level.m_46467_()));
         }
+    }
+
+    /**
+     * 2.1.5: ticks {@code player} has stood in the Swordsman's ready stance (katana at the hip, standing still in combat mode), or -1
+     * when not in it (sword/Koiguchi times the thumb on the guard from it).
+     */
+    public static double swordReady(AbstractClientPlayer player, float partial) {
+        Playing playing = PLAYING.get(player.m_19879_());
+        FightingStyle style = HELD.get(player.m_19879_());
+        if (playing == null || style == null || !style.sword() || !Objects.equals(playing.animation(), style.stance())
+            || player.m_9236_() == null) {
+            return -1.0;
+        }
+        return player.m_9236_().m_46467_() - playing.since() + partial;
     }
 
     @SubscribeEvent

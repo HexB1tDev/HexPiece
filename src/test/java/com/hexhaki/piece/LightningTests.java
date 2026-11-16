@@ -1,7 +1,12 @@
 package com.hexhaki.piece;
 
+import com.hexhaki.piece.haki.Bolt;
+import com.hexhaki.piece.haki.BoltMesh;
+import com.hexhaki.piece.haki.BoltPainter;
 import com.hexhaki.piece.haki.ConquerorBolts;
+import com.hexhaki.piece.haki.DrawCrackle;
 import com.hexhaki.piece.haki.Jag;
+import java.util.ArrayList;
 import java.util.List;
 
 /** 2.1.1: the Haki lightning's shapes (Jag) and the Conqueror's bolts keep the original's contract. */
@@ -9,6 +14,10 @@ public final class LightningTests {
     public static void main(String[] args) {
         jag();
         conqueror();
+        bolts();
+        mesh();
+        painter();
+        crackle();
         Check.done("LightningTests");
     }
 
@@ -86,5 +95,167 @@ public final class LightningTests {
                 }
             }
         }
+    }
+
+    /** 2.1.5: a 3D bolt's shape and kinds. */
+    static void bolts() {
+        Check.that(Bolt.kindOf(0xEC050307) == Bolt.BODY, "the original's near-black beam is the bolt's body");
+        Check.that(Bolt.kindOf(0xFFFF1433) == Bolt.CORE, "its red beam is the core");
+        Check.that(Bolt.kindOf(0xFFFF7889) == Bolt.HEART, "its pale pink beam is the hot heart");
+        Check.that(Bolt.kindOf(0x582A0008) == Bolt.AURA, "its faint crimson beam is an aura");
+        Check.that(Bolt.kindOf(0xD23E5BFF) == Bolt.CORE && Bolt.kindOf(0xC260D9FF) == Bolt.CORE, "the Galaxy Fist's blue and cyan are cores");
+        double[] a = {0, 1, 0};
+        double[] b = {3, 2, 1};
+        Bolt one = Bolt.crackled(a, b, 0.05F, 1.0F, 0xFFFF1433, 0, 14, 0.4F, 77L, 0.22);
+        Bolt two = Bolt.crackled(a, b, 0.02F, 1.0F, 0xFFFF7889, 0, 14, 0.4F, 77L, 0.22);
+        Check.that(java.util.Arrays.equals(one.points, two.points), "strokes on one segment with one seed crackle as one bolt");
+        Check.near(one.points[0], 0, 1e-12, "a stroke starts exactly at A");
+        Check.near(one.points[one.points.length - 3], 3, 1e-12, "a stroke ends exactly at B");
+        double length = Math.sqrt(9 + 1 + 1);
+        Check.that(length / (one.count() - 1) <= Bolt.PIECE + 1e-9 || one.count() - 1 == 1 << Bolt.MOST_LEVELS, "pieces no longer than PIECE");
+        Check.near(one.widths[0], 0.05, 1e-6, "full width at the root");
+        Check.near(one.widths[one.count() - 1], 0.05, 1e-6, "full width at the end: a chain stays joined");
+        double[] here = new double[3];
+        double[] there = new double[3];
+        one.dancing(0, 6.0, here);
+        Check.that(here[0] == one.points[0] && here[1] == one.points[1], "the ends never dance");
+        one.dancing(3, 1.0, here);
+        one.dancing(3, 1.9, there);
+        Check.that(java.util.Arrays.equals(here, there), "the dance holds a shape for two ticks");
+        one.dancing(3, 2.1, there);
+        Check.that(!java.util.Arrays.equals(here, there), "and then takes a new one");
+        Bolt pointed = one.pointed();
+        Check.that(pointed.widths[pointed.count() - 1] < one.widths[one.count() - 1] * 0.3, "a free end comes to a point");
+        Check.near(pointed.widths[0], one.widths[0], 1e-6, "but not at its root");
+    }
+
+    /** 2.1.5: the frame's geometry: every quad faces the eye, nothing out of its life, no NaN from any side. */
+    static void mesh() {
+        double[] a = {-1.5, 1.2, 4};
+        double[] b = {1.5, 1.7, 4.4};
+        List<Bolt> bolts = new ArrayList<>();
+        BoltPainter.strokes(a, b, 0.176F, 0xEC050307, 14, 0, true, 9L, bolts);
+        BoltPainter.strokes(a, b, 0.054F, 0xFFFF1433, 14, 0, true, 9L, bolts);
+        BoltPainter.strokes(a, b, 0.014F, 0xFFFF7889, 12, 0, false, 9L, bolts);
+        BoltPainter.strokes(a, b, 0.13F, 0x582A0008, 15, 0, false, 9L, bolts);
+        double pixel = 2.0 * Math.tan(Math.toRadians(35)) / 1080;
+        int[] counts = new int[2];
+        for (Bolt bolt : bolts) {
+            for (double age : new double[] {0.1, 0.5, 2, 5, 9, 13.9}) {
+                BoltMesh.build(bolt, BoltMesh.Frame.at(0, 0, 0), age - bolt.delay, pixel, (glow, v, c) -> {
+                    counts[glow ? 1 : 0]++;
+                    for (double x : v) {
+                        Check.that(!Double.isNaN(x) && !Double.isInfinite(x), "no NaN in a bolt's geometry");
+                    }
+                    Check.that(facing(v, 0, 1, 2) >= -1e-12 && facing(v, 0, 2, 3) >= -1e-12,
+                        "both triangles of every quad face the eye (the batches cull back faces)");
+                });
+            }
+            int[] none = {0};
+            BoltMesh.build(bolt, BoltMesh.Frame.at(0, 0, 0), -0.5, pixel, (glow, v, c) -> none[0]++);
+            BoltMesh.build(bolt, BoltMesh.Frame.at(0, 0, 0), bolt.duration + 0.5, pixel, (glow, v, c) -> none[0]++);
+            Check.that(none[0] == 0, "nothing before a bolt strikes or after it is gone");
+        }
+        Check.that(counts[0] > 0 && counts[1] > 0, "a bolt has both ink and glow");
+        // looking straight down a bolt
+        Bolt end = Bolt.crackled(new double[] {0, 0, 2}, new double[] {0, 0, 6}, 0.05F, 1.0F, 0xFFFF1433, 0, 10, 0.2F, 3L, 0.0);
+        BoltMesh.build(end, BoltMesh.Frame.at(0, 0, 0), 3, pixel, (glow, v, c) -> {
+            for (double x : v) {
+                Check.that(!Double.isNaN(x), "a bolt seen end-on is still well defined");
+            }
+        });
+        // the strike: early on, only the root's part is drawn
+        Bolt slow = Bolt.crackled(new double[] {-3, 0, 5}, new double[] {3, 0, 5}, 0.05F, 1.0F, 0xFFFF1433, 0, 20, 4.0F, 5L, 0.0);
+        double[] reach = {-99};
+        BoltMesh.build(slow, BoltMesh.Frame.at(0, 0, 0), 1.0, pixel, (glow, v, c) -> {
+            if (!glow) {
+                for (int k = 0; k < 4; k++) {
+                    reach[0] = Math.max(reach[0], v[k * 3]);
+                }
+            }
+        });
+        Check.that(reach[0] < 0, "a quarter into its crawl the strike has not passed the middle (" + reach[0] + ")");
+        // turned frames: XROT puts local +x where the entity faces
+        double[] out = new double[3];
+        BoltMesh.Frame.turned(0, 0, 0, Math.toRadians(-90.0 - 0.0)).getClass();
+        double yaw = 90.0;
+        BoltMesh.Frame frame = BoltMesh.Frame.turned(0, 0, 0, Math.toRadians(-90.0 - yaw));
+        Bolt ahead = Bolt.crackled(new double[] {0, 1, 0}, new double[] {2, 1, 0}, 0.05F, 1.0F, 0xFFFF1433, 0, 10, 0.0F, 4L, 0.0);
+        double[] far = {0, 0, 0};
+        BoltMesh.build(ahead, frame, 2, pixel, (glow, v, c) -> {
+            for (int k = 0; k < 4; k++) {
+                if (Math.abs(v[k * 3]) > Math.abs(far[0])) {
+                    far[0] = v[k * 3];
+                    far[2] = v[k * 3 + 2];
+                }
+            }
+        });
+        Check.that(far[0] < -1.5 && Math.abs(far[2]) < 0.6, "an entity facing west (yaw 90) has its effect's +x to the west (" + far[0] + ", " + far[2] + ")");
+    }
+
+    /** 2.1.5: strokes of a beam, a chain's strike, free ends. */
+    static void painter() {
+        BoltPainter.Chain chain = new BoltPainter.Chain();
+        double[] p0 = {0, 1, 0};
+        double[] p1 = {2.6, 1.2, 0.4};
+        double[] p2 = {5.1, 1.0, 1.0};
+        List<Bolt> bolts = new ArrayList<>();
+        float s0 = chain.start(p0, 0);
+        BoltPainter.strokes(p0, p1, 0.05F, 0xFFFF1433, 14, s0, false, 1L, bolts);
+        chain.land(p0, p1, s0, 14);
+        float s1 = chain.start(p1, 0);
+        Check.that(s1 > s0 && s1 <= s0 + 1.0F, "a piece that starts where another landed waits for it, not long (" + s1 + ")");
+        BoltPainter.strokes(p1, p2, 0.05F, 0xFFFF1433, 14, s1, false, 1L, bolts);
+        chain.land(p1, p2, s1, 14);
+        Check.that(bolts.size() == 4, "a long-lived beam re-strikes once: two strokes each (" + bolts.size() + ")");
+        Check.that(bolts.get(1).delay > bolts.get(0).delay && bolts.get(1).delay <= bolts.get(0).end(), "the re-strike lands as the first shape goes");
+        BoltPainter.point(bolts);
+        Check.that(bolts.get(0).widths[bolts.get(0).count() - 1] > 0.049F, "a joint inside a chain stays full");
+        Bolt last = bolts.get(2);
+        Check.that(last.widths[last.count() - 1] < 0.02F, "the chain's free end comes to a point");
+        Check.that(BoltPainter.crawl(50, 30) <= 1.6F && BoltPainter.crawl(0.5, 30) >= 0.12F, "a strike is fast, never instant");
+    }
+
+    static double facing(double[] v, int i, int j, int k) {
+        double ax = v[j * 3] - v[i * 3];
+        double ay = v[j * 3 + 1] - v[i * 3 + 1];
+        double az = v[j * 3 + 2] - v[i * 3 + 2];
+        double bx = v[k * 3] - v[i * 3];
+        double by = v[k * 3 + 1] - v[i * 3 + 1];
+        double bz = v[k * 3 + 2] - v[i * 3 + 2];
+        return -((ay * bz - az * by) * v[i * 3] + (az * bx - ax * bz) * v[i * 3 + 1] + (ax * by - ay * bx) * v[i * 3 + 2]);
+    }
+
+    /** 2.1.5: the Haki crackle off a katana. */
+    static void crackle() {
+        Check.that(DrawCrackle.set(5L, 3, 0.0, 1.28, Double.NaN, 0.0, 0xFFFF1433).isEmpty(), "no Haki strength, no crackle");
+        List<Bolt> one = DrawCrackle.set(5L, 3, 0.0, 1.28, Double.NaN, 1.0, 0xFFFF1433);
+        List<Bolt> two = DrawCrackle.set(5L, 3, 0.0, 1.28, Double.NaN, 1.0, 0xFFFF1433);
+        Check.that(!one.isEmpty() && one.size() == two.size(), "a set is a pure function of its seed and window");
+        for (int i = 0; i < one.size(); i++) {
+            Check.that(java.util.Arrays.equals(one.get(i).points, two.get(i).points), "the same bolts every frame of the window");
+        }
+        Check.that(!DrawCrackle.set(5L, 4, 0.0, 1.28, Double.NaN, 1.0, 0xFFFF1433).isEmpty(), "every window has its set");
+        boolean body = false;
+        boolean core = false;
+        boolean heart = false;
+        for (Bolt bolt : one) {
+            body |= bolt.kind == Bolt.BODY;
+            core |= bolt.kind == Bolt.CORE;
+            heart |= bolt.kind == Bolt.HEART;
+            Check.that(bolt.end() <= DrawCrackle.WINDOW + DrawCrackle.LIFE + 2, "a crackle bolt burns briefly");
+            for (int p = 0; p < bolt.count(); p++) {
+                double y = bolt.points[p * 3 + 1];
+                double off = Math.hypot(bolt.points[p * 3], bolt.points[p * 3 + 2]);
+                Check.that(y > -0.2 && y < 1.5 && off < 0.4, "the crackle hugs the blade (" + y + ", " + off + ")");
+            }
+        }
+        Check.that(body && core && heart, "inked like the Conqueror's: black body, coloured core, hot heart");
+        List<Bolt> mouth = DrawCrackle.set(9L, 1, 0.0, 0.3, 0.3, 1.0, 0xFFFF1433);
+        boolean spark = false;
+        for (Bolt bolt : mouth) {
+            spark |= Math.abs(bolt.points[1] - 0.3) < 1e-9 && Math.hypot(bolt.points[bolt.points.length - 3], bolt.points[bolt.points.length - 1]) > 0.1;
+        }
+        Check.that(spark, "while the blade leaves the saya, sparks spit out of its mouth");
     }
 }

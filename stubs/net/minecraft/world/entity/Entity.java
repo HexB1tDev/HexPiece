@@ -68,6 +68,7 @@ public abstract class Entity {
     /** hurt */ public boolean m_6469_(net.minecraft.world.damagesource.DamageSource source, float amount) { throw new UnsupportedOperationException(); }
     /** damageSources */ public net.minecraft.world.damagesource.DamageSources m_269291_() { throw new UnsupportedOperationException(); }
     /** getYRot */ public float m_146908_() { throw new UnsupportedOperationException(); }
+    /** getPosition(partialTick): the position between last tick and this one (2.1.5; the original calls it) */ public net.minecraft.world.phys.Vec3 m_20318_(float partialTick) { throw new UnsupportedOperationException(); }
     /** yRotO */ public float f_19859_;
     /** getXRot */ public float m_146909_() { throw new UnsupportedOperationException(); }
     /** setXRot */ public void m_146926_(float pitch) { throw new UnsupportedOperationException(); }

@@ -1,0 +1,519 @@
+import com.hexhaki.piece.haki.Bolt;
+import com.hexhaki.piece.haki.BoltMesh;
+import com.hexhaki.piece.haki.BoltPainter;
+import com.hexhaki.piece.haki.ConquerorBolts;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import javax.imageio.ImageIO;
+
+/**
+ * 2.1.5: renders the 3D Haki lightning off-game to judge it (the house rule). The bolts are made by the game's own BoltPainter and
+ * turned into the game's own quads by BoltMesh; this only rasterises them as Minecraft draws them: the opaque layers with a depth
+ * buffer, then the glow added without depth writes. A ground and a player-sized figure give the scale and hide what is behind them.
+ *
+ * <p>javac -cp build/classes -d build/preview tools/preview/BoltPreview.java; java -cp build/preview:build/classes BoltPreview <dir>
+ */
+public final class BoltPreview {
+    static int W = 300;
+    static int H = 240;
+    static final int SS = 2;
+    static final double FOV = Math.toRadians(70);
+
+    record Call(double[] a, double[] b, float width, int color, int duration, int delay, boolean forks) {
+    }
+
+    record Shot(String label, double[] eye, double[] look, boolean night) {
+    }
+
+    public static void main(String[] args) throws Exception {
+        File dir = new File(args[0]);
+        dir.mkdirs();
+        double[] ages = {0.5, 1.2, 2.2, 4, 7, 10, 13};
+        sheet(new File(dir, "bolt-closeup.png"), closeUp(), ages, new Shot[] {
+            new Shot("night, side", new double[] {0.2, 1.5, -2.6}, new double[] {0.2, 1.4, 0}, true),
+            new Shot("day, side", new double[] {0.2, 1.5, -2.6}, new double[] {0.2, 1.4, 0}, false),
+            new Shot("night, along", new double[] {-2.6, 1.9, -1.2}, new double[] {0.5, 1.3, 0.1}, true)});
+        sheet(new File(dir, "bolt-conqueror.png"), conqueror(1.0F, 1000, true, 8L), new double[] {0.6, 1.5, 3, 5, 8, 11, 14}, new Shot[] {
+            new Shot("night, third person", new double[] {-4.5, 3.4, -7.5}, new double[] {0, 1.0, 0}, true),
+            new Shot("day, third person", new double[] {-4.5, 3.4, -7.5}, new double[] {0, 1.0, 0}, false),
+            new Shot("night, from above", new double[] {0.5, 13, -4}, new double[] {0, 0, 0.5}, true)});
+        sheet(new File(dir, "bolt-segment.png"), segmentStyle(), ages, new Shot[] {
+            new Shot("night", new double[] {0.0, 1.6, -3.0}, new double[] {0.0, 1.3, 0}, true),
+            new Shot("day", new double[] {0.0, 1.6, -3.0}, new double[] {0.0, 1.3, 0}, false)});
+        W = 360;
+        H = 330;
+        drawSheet(new File(dir, "bolt-draw.png"));
+        slashSheet(new File(dir, "bolt-slash.png"));
+        W = 300;
+        H = 240;
+        // large single frames, to judge the tube, the outline and the glow up close
+        W = 900;
+        H = 560;
+        sheet(new File(dir, "bolt-hero-night.png"), closeUp(), new double[] {4}, new Shot[] {
+            new Shot("night, side", new double[] {0.1, 1.45, -2.2}, new double[] {0.1, 1.4, 0}, true)});
+        sheet(new File(dir, "bolt-hero-day.png"), closeUp(), new double[] {2.2}, new Shot[] {
+            new Shot("day, side", new double[] {0.1, 1.45, -2.2}, new double[] {0.1, 1.4, 0}, false)});
+        sheet(new File(dir, "bolt-hero-burst.png"), conqueror(1.0F, 1000, true, 8L), new double[] {3}, new Shot[] {
+            new Shot("night, third person", new double[] {-3.0, 2.6, -5.0}, new double[] {0, 1.1, 0}, true)});
+        W = 300;
+        H = 240;
+        System.out.println("wrote bolt previews to " + dir);
+    }
+
+    /**
+     * The Haki draw: a katana (a dark saya, a black blade: Armament blackens it) standing up, the blade 0.25, 0.6 and 1.0 of the way
+     * out with sparks at the saya's mouth, then drawn with the crackle along it, at three moments each (sets strike every two ticks).
+     */
+    static void drawSheet(File out) throws Exception {
+        double[] outs = {0.25, 0.6, 1.0};
+        double blade = 20.5 / 16.0;
+        double[] times = {0.6, 1.6, 2.6};
+        double x = 0.9;
+        Shot[] shots = {new Shot("night", new double[] {x + 0.75, 1.75, -1.25}, new double[] {x, 1.45, 0}, true),
+            new Shot("day", new double[] {x + 0.75, 1.75, -1.25}, new double[] {x, 1.45, 0}, false)};
+        BufferedImage sheet = new BufferedImage(W * outs.length * times.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        g.setColor(new Color(236, 234, 228));
+        g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        for (int r = 0; r < shots.length; r++) {
+            int col = 0;
+            for (double share : outs) {
+                for (double t : times) {
+                    Raster raster = new Raster(shots[r]);
+                    raster.scene();
+                    // the blade's frame: guard at (0, 0.9, 0), the blade up; the saya's mouth `share` of the blade above the guard
+                    double guard = 0.9;
+                    double exposed = blade * share;
+                    double mouth = share < 1.0 ? exposed : Double.NaN;
+                    raster.box(x - 0.04, guard - 0.25, -0.015, x + 0.04, guard, 0.015, new float[] {0.1F, 0.08F, 0.07F});
+                    raster.box(x - 0.03, guard, -0.006, x + 0.035, guard + exposed, 0.006, new float[] {0.05F, 0.05F, 0.06F});
+                    if (share < 1.0) {
+                        raster.box(x - 0.05, guard + exposed, -0.022, x + 0.05, guard + exposed + 1.35, 0.022, new float[] {0.2F, 0.06F, 0.06F});
+                    }
+                    long window = (long) Math.floor(t / com.hexhaki.piece.haki.DrawCrackle.WINDOW);
+                    List<Bolt> bolts = new ArrayList<>();
+                    for (long w = window - 1; w <= window; w++) {
+                        for (Bolt bolt : com.hexhaki.piece.haki.DrawCrackle.set(7L, w, 0.0, exposed, mouth, 1.0, 0xFFFF1433)) {
+                            bolts.add(new Bolt(bolt.points, bolt.widths, bolt.color, bolt.kind, bolt.delay + w * com.hexhaki.piece.haki.DrawCrackle.WINDOW,
+                                bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                        }
+                    }
+                    double[] eye = shots[r].eye;
+                    raster.boltsAt(bolts, t, new double[] {x, guard, 0});
+                    g.drawImage(raster.image(), col * W, r * (H + 18) + 18, null);
+                    g.setColor(new Color(30, 30, 30));
+                    g.drawString(shots[r].label + "  " + Math.round(share * 100) + "% out  t" + t, col * W + 4, r * (H + 18) + 13);
+                    col++;
+                }
+            }
+        }
+        g.dispose();
+        ImageIO.write(sheet, "png", out);
+    }
+
+    /** The flying Haki slash (a crescent 4 blocks tall in a Ryou colour) with its crackle, as SlashRenderer bends it on. */
+    static void slashSheet(File out) throws Exception {
+        double[] times = {0.5, 1.5, 2.5, 3.5};
+        int[] colors = {0xFF2BFF7A, 0xFFB04BFF};
+        Shot[] shots = {new Shot("night", new double[] {2.5, 2.2, -5.5}, new double[] {2.5, 2.0, 0}, true),
+            new Shot("day", new double[] {2.5, 2.2, -5.5}, new double[] {2.5, 2.0, 0}, false)};
+        BufferedImage sheet = new BufferedImage(W * times.length * colors.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        g.setColor(new Color(236, 234, 228));
+        g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        double height = 4.0;
+        double blade = 1.28;
+        double[] centre = {2.5, 2.2, 0};
+        double[] dir = {1, 0, 0};
+        double[] side = {0, 0, 1};
+        for (int r = 0; r < shots.length; r++) {
+            int col = 0;
+            for (int color : colors) {
+                for (double t : times) {
+                    Raster raster = new Raster(shots[r]);
+                    raster.scene();
+                    double half = height / 2.0;
+                    double bow = height * 0.2;
+                    // the crescent: a black core band and an additive rim of the colour, as SlashRenderer draws it
+                    for (int i = 0; i < 14; i++) {
+                        for (int pass = 0; pass < 2; pass++) {
+                            double grow = pass == 0 ? 0.0 : 0.12;
+                            double[][] q = new double[4][];
+                            for (int k = 0; k < 4; k++) {
+                                double u = (i + (k == 1 || k == 2 ? 1 : 0)) / 14.0;
+                                int sgn = k < 2 ? 1 : -1;
+                                double a = (u - 0.5) * 2.0;
+                                double y = a * (half + grow);
+                                double fwd = bow * (1 - a * a) + ((pass == 0 ? 0.55 : 0.85) * 0.5 * (1 - a * a * 0.85) + grow) * sgn;
+                                q[k] = sub(new double[] {centre[0] + fwd, centre[1] + y, centre[2]}, shots[r].eye);
+                            }
+                            float[] c = pass == 0 ? new float[] {0.02F, 0.02F, 0.02F} : Raster.rgb(BoltMesh.scale(color, shots[r].night ? 0.8 : 0.4));
+                            for (int face = 0; face < 2; face++) {
+                                double[] a0 = q[0], a1 = face == 0 ? q[1] : q[3], a2 = q[2], a3 = face == 0 ? q[3] : q[1];
+                                if (pass == 0) {
+                                    raster.tri(a0, a1, a2, c, c, c, false);
+                                    raster.tri(a0, a2, a3, c, c, c, false);
+                                } else if (face == 0) {
+                                    raster.tri(a0, a1, a2, c, c, c, true);
+                                    raster.tri(a0, a2, a3, c, c, c, true);
+                                }
+                            }
+                        }
+                    }
+                    long window = (long) Math.floor(t / com.hexhaki.piece.haki.DrawCrackle.WINDOW);
+                    List<Bolt> bolts = new ArrayList<>();
+                    double k = height / blade;
+                    for (long w = Math.max(0, window - 2); w <= window; w++) {
+                        for (Bolt bolt : com.hexhaki.piece.haki.DrawCrackle.set(11L, w, 0.0, blade, Double.NaN, 1.3, color)) {
+                            double[] pts = new double[bolt.points.length];
+                            for (int i = 0; i < bolt.count(); i++) {
+                                double a = (bolt.points[i * 3 + 1] / blade - 0.5) * 2.0;
+                                double ahead = bow * (1 - a * a) + 0.275 * (1 - a * a * 0.85) + height * 0.03 + Math.abs(bolt.points[i * 3]) * k;
+                                double across = bolt.points[i * 3 + 2] * k;
+                                pts[i * 3] = centre[0] + dir[0] * ahead + side[0] * across;
+                                pts[i * 3 + 1] = centre[1] + a * half;
+                                pts[i * 3 + 2] = centre[2] + dir[2] * ahead + side[2] * across;
+                            }
+                            float[] widths = bolt.widths.clone();
+                            for (int i = 0; i < widths.length; i++) {
+                                widths[i] *= (float) Math.min(3.0, Math.pow(k, 0.75));
+                            }
+                            bolts.add(new Bolt(pts, widths, bolt.color, bolt.kind, bolt.delay + w * com.hexhaki.piece.haki.DrawCrackle.WINDOW,
+                                bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                        }
+                    }
+                    raster.bolts(bolts, t);
+                    g.drawImage(raster.image(), col * W, r * (H + 18) + 18, null);
+                    g.setColor(new Color(30, 30, 30));
+                    g.drawString(shots[r].label + "  t" + t, col * W + 4, r * (H + 18) + 13);
+                    col++;
+                }
+            }
+        }
+        g.dispose();
+        ImageIO.write(sheet, "png", out);
+    }
+
+    /** One bolt the way the original lays its Conqueror lightning: a black body, a red core and a hot heart on the same segment. */
+    static List<Call> closeUp() {
+        List<Call> calls = new ArrayList<>();
+        double[][] chain = {{-1.6, 1.1, 0.0}, {-0.4, 1.55, 0.2}, {0.7, 1.25, -0.1}, {1.8, 1.7, 0.1}};
+        for (int i = 0; i + 1 < chain.length; i++) {
+            double t = i / (double) (chain.length - 1);
+            calls.add(new Call(chain[i], chain[i + 1], (float) lerp(0.176, 0.06, t), 0xEC050307, 14, i, true));
+            calls.add(new Call(chain[i], chain[i + 1], (float) lerp(0.054, 0.02, t), 0xFFFF1433, 14, i, true));
+            calls.add(new Call(chain[i], chain[i + 1], (float) lerp(0.014, 0.006, t), 0xFFFF7889, 14, i, false));
+        }
+        return calls;
+    }
+
+    /** The original's addHakiLightningSegment layering: a faint crimson aura, the black sheath and the red filament. */
+    static List<Call> segmentStyle() {
+        List<Call> calls = new ArrayList<>();
+        double[][] chain = {{-1.4, 0.9, 0.0}, {-0.2, 1.6, 0.0}, {1.2, 1.2, 0.1}};
+        for (int i = 0; i + 1 < chain.length; i++) {
+            calls.add(new Call(chain[i], chain[i + 1], 0.13F, 0x582A0008, 15, i, false));
+            calls.add(new Call(chain[i], chain[i + 1], 0.072F, 0xF0060008, 14, i, true));
+            calls.add(new Call(chain[i], chain[i + 1], 0.022F, 0xFFFF1E10, 12, i, true));
+        }
+        return calls;
+    }
+
+    /** The Conqueror's charge bolts (the shapes the server stuns with), laid as the original's range lightning lays them. */
+    static List<Call> conqueror(float charge, int mastery, boolean dome, long seed) {
+        double radius = 5.0 + (10.0 + 40.0 * mastery / 1000.0 - 5.0) * Math.max(0, Math.min(1, (charge - 0.04) / 0.96));
+        List<double[]> bolts = ConquerorBolts.generate(charge, mastery, seed, dome, radius);
+        int mains = ConquerorBolts.count(charge, mastery, dome);
+        List<Call> calls = new ArrayList<>();
+        for (int b = 0; b < bolts.size(); b++) {
+            double[] bolt = bolts.get(b);
+            int n = bolt.length / 3 - 1;
+            boolean main = b < mains;
+            for (int i = 0; i < n; i++) {
+                double t = i / (double) Math.max(1, n - 1);
+                double[] a = {bolt[i * 3], bolt[i * 3 + 1], bolt[i * 3 + 2]};
+                double[] c = {bolt[i * 3 + 3], bolt[i * 3 + 4], bolt[i * 3 + 5]};
+                int delay = (int) (t * 2) + (main ? 0 : 2);
+                float k = main ? 1.0F : 0.6F;
+                calls.add(new Call(a, c, (float) lerp(0.176, 0.03, t) * k, 0xEC050307, 14, delay, main));
+                calls.add(new Call(a, c, (float) lerp(0.054, 0.015, t) * k, 0xFFFF1433, 14, delay, main));
+                calls.add(new Call(a, c, (float) lerp(0.014, 0.005, t) * k, 0xFFFF7889, 12, delay, false));
+            }
+        }
+        return calls;
+    }
+
+    static double lerp(double a, double b, double t) {
+        return a + (b - a) * t;
+    }
+
+    static void sheet(File out, List<Call> calls, double[] ages, Shot[] shots) throws Exception {
+        List<Bolt> bolts = new ArrayList<>();
+        BoltPainter.Chain chain = new BoltPainter.Chain();
+        for (Call call : calls) {
+            float start = chain.start(call.a, call.delay);
+            BoltPainter.strokes(call.a, call.b, call.width, call.color, call.duration, start, call.forks, 0x4841_4B49L, bolts);
+            chain.land(call.a, call.b, start, call.duration);
+        }
+        BoltPainter.point(bolts);
+        BufferedImage sheet = new BufferedImage(W * ages.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        g.setColor(new Color(236, 234, 228));
+        g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        int quads = 0;
+        for (int r = 0; r < shots.length; r++) {
+            for (int c = 0; c < ages.length; c++) {
+                Raster raster = new Raster(shots[r]);
+                raster.scene();
+                quads = raster.bolts(bolts, ages[c]);
+                g.drawImage(raster.image(), c * W, r * (H + 18) + 18, null);
+                g.setColor(new Color(30, 30, 30));
+                g.drawString(shots[r].label + "  t" + ages[c] + (c == 0 ? "" : ""), c * W + 4, r * (H + 18) + 13);
+            }
+        }
+        g.dispose();
+        ImageIO.write(sheet, "png", out);
+        System.out.println(out.getName() + ": " + bolts.size() + " strokes, " + quads + " quads at the last frame");
+    }
+
+    /** A tiny software rasteriser: perspective, a depth buffer, opaque and additive triangles. */
+    static final class Raster {
+        final int w = W * SS;
+        final int h = H * SS;
+        final float[] depth = new float[w * h];
+        final float[] r = new float[w * h];
+        final float[] g = new float[w * h];
+        final float[] b = new float[w * h];
+        final double[] eye;
+        final double[] fw;
+        final double[] rt;
+        final double[] up;
+        final double focal;
+        final boolean night;
+
+        Raster(Shot shot) {
+            this.eye = shot.eye;
+            this.night = shot.night;
+            double[] f = norm(sub(shot.look, shot.eye));
+            double[] right = norm(cross(f, new double[] {0, 1, 0}));
+            this.fw = f;
+            this.rt = right;
+            this.up = cross(right, f);
+            this.focal = (this.h / 2.0) / Math.tan(FOV / 2);
+            float[] sky = this.night ? new float[] {0.07F, 0.08F, 0.13F} : new float[] {0.62F, 0.76F, 0.95F};
+            for (int i = 0; i < this.w * this.h; i++) {
+                int y = i / this.w;
+                float k = 0.75F + 0.25F * y / this.h;
+                this.r[i] = sky[0] * k;
+                this.g[i] = sky[1] * k;
+                this.b[i] = sky[2] * k;
+                this.depth[i] = Float.MAX_VALUE;
+            }
+        }
+
+        /** The ground (one-block tiles) and a player-sized figure at the origin, facing +z. */
+        void scene() {
+            float[] grassA = this.night ? new float[] {0.11F, 0.16F, 0.10F} : new float[] {0.42F, 0.62F, 0.30F};
+            float[] grassB = this.night ? new float[] {0.10F, 0.14F, 0.09F} : new float[] {0.38F, 0.57F, 0.27F};
+            for (int x = -16; x < 16; x++) {
+                for (int z = -16; z < 16; z++) {
+                    float[] c = ((x + z) & 1) == 0 ? grassA : grassB;
+                    box(x, -0.2, z, x + 1, 0, z + 1, c);
+                }
+            }
+            float[] skin = {0.78F, 0.6F, 0.48F};
+            float[] shirt = {0.16F, 0.32F, 0.62F};
+            float[] pants = {0.18F, 0.2F, 0.42F};
+            float k = this.night ? 0.45F : 1.0F;
+            box(-0.25, 0, -0.125, 0, 0.75, 0.125, dim(pants, k));
+            box(0, 0, -0.125, 0.25, 0.75, 0.125, dim(pants, k));
+            box(-0.25, 0.75, -0.125, 0.25, 1.5, 0.125, dim(shirt, k));
+            box(-0.5, 0.75, -0.125, -0.25, 1.5, 0.125, dim(skin, k));
+            box(0.25, 0.75, -0.125, 0.5, 1.5, 0.125, dim(skin, k));
+            box(-0.25, 1.5, -0.25, 0.25, 2.0, 0.25, dim(skin, k));
+        }
+
+        static float[] dim(float[] c, float k) {
+            return new float[] {c[0] * k, c[1] * k, c[2] * k};
+        }
+
+        void box(double x0, double y0, double z0, double x1, double y1, double z1, float[] c) {
+            double[][] v = {{x0, y0, z0}, {x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0}, {x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}};
+            int[][] faces = {{0, 1, 2, 3}, {5, 4, 7, 6}, {4, 0, 3, 7}, {1, 5, 6, 2}, {3, 2, 6, 7}, {4, 5, 1, 0}};
+            float[] shade = {0.8F, 0.8F, 0.6F, 0.6F, 1.0F, 0.5F};
+            for (int f = 0; f < 6; f++) {
+                float[] fc = {c[0] * shade[f], c[1] * shade[f], c[2] * shade[f]};
+                double[][] q = new double[4][];
+                for (int k = 0; k < 4; k++) {
+                    q[k] = sub(v[faces[f][k]], this.eye);
+                }
+                tri(q[0], q[1], q[2], fc, fc, fc, false);
+                tri(q[0], q[2], q[3], fc, fc, fc, false);
+            }
+        }
+
+        int bolts(List<Bolt> bolts, double age) {
+            return boltsAt(bolts, age, new double[] {0, 0, 0});
+        }
+
+        int boltsAt(List<Bolt> bolts, double age, double[] origin) {
+            double pixel = 2.0 * Math.tan(FOV / 2) / H;
+            List<double[]> glowV = new ArrayList<>();
+            List<int[]> glowC = new ArrayList<>();
+            int[] quads = {0};
+            for (Bolt bolt : bolts) {
+                BoltMesh.Frame frame = BoltMesh.Frame.at(origin[0] - this.eye[0], origin[1] - this.eye[1], origin[2] - this.eye[2]);
+                BoltMesh.build(bolt, frame, age - bolt.delay, pixel, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
+                    quads[0]++;
+                    if (glow) {
+                        glowV.add(xyz);
+                        glowC.add(argb);
+                    } else {
+                        quad(xyz, argb, false);
+                    }
+                });
+            }
+            for (int i = 0; i < glowV.size(); i++) {
+                quad(glowV.get(i), glowC.get(i), true);
+            }
+            return quads[0];
+        }
+
+        void quad(double[] v, int[] c, boolean add) {
+            double[] a = {v[0], v[1], v[2]};
+            double[] b2 = {v[3], v[4], v[5]};
+            double[] c2 = {v[6], v[7], v[8]};
+            double[] d = {v[9], v[10], v[11]};
+            // the game's quads are front faces seen from the eye: check it, a back face would be culled in game
+            float[] ca = rgb(c[0]);
+            float[] cb = rgb(c[1]);
+            float[] cc = rgb(c[2]);
+            float[] cd = rgb(c[3]);
+            // the game's batches cull back faces: so does the preview, so a hole would show
+            if (front(a, b2, c2)) {
+                tri(a, b2, c2, ca, cb, cc, add);
+            }
+            if (front(a, c2, d)) {
+                tri(a, c2, d, ca, cc, cd, add);
+            }
+        }
+
+        static boolean front(double[] a, double[] b, double[] c) {
+            double[] n = cross(sub(b, a), sub(c, a));
+            return -dot(n, a) >= -1e-12;
+        }
+
+        static float[] rgb(int argb) {
+            return new float[] {((argb >>> 16) & 255) / 255F, ((argb >>> 8) & 255) / 255F, (argb & 255) / 255F};
+        }
+
+        /** Camera-relative world points -> screen, and the triangle filled. */
+        void tri(double[] p0, double[] p1, double[] p2, float[] c0, float[] c1, float[] c2, boolean add) {
+            double[][] s = {project(p0), project(p1), project(p2)};
+            for (double[] q : s) {
+                if (q == null) {
+                    return;
+                }
+            }
+            double area = (s[1][0] - s[0][0]) * (s[2][1] - s[0][1]) - (s[2][0] - s[0][0]) * (s[1][1] - s[0][1]);
+            if (Math.abs(area) < 1.0E-12) {
+                return;
+            }
+            int x0 = (int) Math.max(0, Math.floor(Math.min(s[0][0], Math.min(s[1][0], s[2][0]))));
+            int x1 = (int) Math.min(this.w - 1, Math.ceil(Math.max(s[0][0], Math.max(s[1][0], s[2][0]))));
+            int y0 = (int) Math.max(0, Math.floor(Math.min(s[0][1], Math.min(s[1][1], s[2][1]))));
+            int y1 = (int) Math.min(this.h - 1, Math.ceil(Math.max(s[0][1], Math.max(s[1][1], s[2][1]))));
+            for (int y = y0; y <= y1; y++) {
+                for (int x = x0; x <= x1; x++) {
+                    double px = x + 0.5;
+                    double py = y + 0.5;
+                    double l0 = ((s[1][0] - px) * (s[2][1] - py) - (s[2][0] - px) * (s[1][1] - py)) / area;
+                    double l1 = ((s[2][0] - px) * (s[0][1] - py) - (s[0][0] - px) * (s[2][1] - py)) / area;
+                    double l2 = 1 - l0 - l1;
+                    if (l0 < 0 || l1 < 0 || l2 < 0) {
+                        continue;
+                    }
+                    double iz = l0 * s[0][2] + l1 * s[1][2] + l2 * s[2][2];
+                    float z = (float) (1.0 / iz);
+                    int i = y * this.w + x;
+                    if (z >= this.depth[i]) {
+                        continue;
+                    }
+                    double k0 = l0 * s[0][2] / iz;
+                    double k1 = l1 * s[1][2] / iz;
+                    double k2 = l2 * s[2][2] / iz;
+                    float cr = (float) (c0[0] * k0 + c1[0] * k1 + c2[0] * k2);
+                    float cg = (float) (c0[1] * k0 + c1[1] * k1 + c2[1] * k2);
+                    float cb = (float) (c0[2] * k0 + c1[2] * k1 + c2[2] * k2);
+                    if (add) {
+                        this.r[i] += cr;
+                        this.g[i] += cg;
+                        this.b[i] += cb;
+                    } else {
+                        this.r[i] = cr;
+                        this.g[i] = cg;
+                        this.b[i] = cb;
+                        this.depth[i] = z;
+                    }
+                }
+            }
+        }
+
+        double[] project(double[] p) {
+            double x = dot(p, this.rt);
+            double y = dot(p, this.up);
+            double z = dot(p, this.fw);
+            if (z < 0.05) {
+                return null;
+            }
+            return new double[] {this.w / 2.0 + x / z * this.focal, this.h / 2.0 - y / z * this.focal, 1.0 / z};
+        }
+
+        BufferedImage image() {
+            BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
+            for (int y = 0; y < H; y++) {
+                for (int x = 0; x < W; x++) {
+                    float sr = 0;
+                    float sg = 0;
+                    float sb = 0;
+                    for (int dy = 0; dy < SS; dy++) {
+                        for (int dx = 0; dx < SS; dx++) {
+                            int i = (y * SS + dy) * this.w + x * SS + dx;
+                            sr += Math.min(1F, this.r[i]);
+                            sg += Math.min(1F, this.g[i]);
+                            sb += Math.min(1F, this.b[i]);
+                        }
+                    }
+                    float n = SS * SS;
+                    img.setRGB(x, y, new Color(sr / n, sg / n, sb / n).getRGB());
+                }
+            }
+            return img;
+        }
+    }
+
+    static double[] sub(double[] a, double[] b) {
+        return new double[] {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+    }
+
+    static double dot(double[] a, double[] b) {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    }
+
+    static double[] cross(double[] a, double[] b) {
+        return new double[] {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
+    }
+
+    static double[] norm(double[] a) {
+        double l = Math.sqrt(dot(a, a));
+        return new double[] {a[0] / l, a[1] / l, a[2] / l};
+    }
+}

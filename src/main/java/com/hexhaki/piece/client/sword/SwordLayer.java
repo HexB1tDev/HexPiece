@@ -2,8 +2,10 @@ package com.hexhaki.piece.client.sword;
 
 import com.hexhaki.client.RemoteHakiStates;
 import com.hexhaki.client.render.ArmamentItemBuffers;
+import com.hexhaki.piece.client.StanceLayer;
 import com.hexhaki.piece.sword.BladePaths;
 import com.hexhaki.piece.sword.Katana;
+import com.hexhaki.piece.sword.Koiguchi;
 import com.hexhaki.piece.sword.SwordAnims;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -43,7 +45,8 @@ import org.joml.Quaternionf;
  * <p>
  * It is a {@link PlayerItemInHandLayer}: playerAnimator's first-person pass draws only that kind of layer, so the drawn blade is in the
  * hand in first person too (there the saya, out of sight at the hip, is left out). The katana item itself draws nothing in a hand (its
- * own renderer), so it is never seen twice. Armament Haki blackens the blade as the original blackens a held weapon.
+ * own renderer), so it is never seen twice. Armament Haki blackens the blade as the original blackens a held weapon, and (2.1.5) makes
+ * it crackle with Haki lightning as it is drawn, charged and swung ({@link HakiDraw}).
  */
 public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
     static final float PX = 1.0F / 16.0F;
@@ -88,7 +91,19 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             if (!drawn) {
                 if (!firstPerson) {
                     KatanaRenderer.draw(pose, buffers, katana, false, true, light, 0.0F);
+                    // 2.1.5: standing ready, the thumb breaks the saya's seal now and then (sword/Koiguchi)
+                    double ready = anim == SwordAnims.NONE ? StanceLayer.swordReady(player, partial) : -1.0;
+                    float push = ready < 0 ? 0.0F : Koiguchi.push(ready);
+                    if (push > 0.0F) {
+                        float s = KatanaRenderer.SCALE;
+                        pose.m_252880_(SORI * s, 0.0F, 0.0F);
+                        pose.m_252781_(Axis.f_252403_.m_252977_((float) Math.toDegrees(push / SORI)));
+                        pose.m_252880_(-SORI * s, 0.0F, 0.0F);
+                    }
                     KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 0.0F);
+                    if (push > 0.0F) {
+                        HakiDraw.sliding(pose, buffers, player, SwordAnims.NONE, (float) ready, push, partial);
+                    }
                 }
             } else {
                 if (!firstPerson) {
@@ -102,6 +117,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                     pose.m_252880_(-SORI * s, 0.0F, 0.0F);
                     KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 1.0F);
                     SwordFx.record(player, pose, ticks);
+                    HakiDraw.sliding(pose, buffers, player, anim, ticks, slideOut[0], partial);
                 }
             }
             pose.m_85849_();
@@ -111,6 +127,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             hand(pose, player, model, layer, partial);
             KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 1.0F);
             SwordFx.record(player, pose, ticks);
+            HakiDraw.held(pose, buffers, player, anim, ticks, partial);
             pose.m_85849_();
         }
     }

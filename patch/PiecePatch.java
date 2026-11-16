@@ -15,6 +15,9 @@ import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.internal.org.objectweb.asm.tree.InsnList;
 import jdk.internal.org.objectweb.asm.tree.FieldNode;
+import jdk.internal.org.objectweb.asm.tree.FrameNode;
+import jdk.internal.org.objectweb.asm.tree.JumpInsnNode;
+import jdk.internal.org.objectweb.asm.tree.LabelNode;
 import jdk.internal.org.objectweb.asm.tree.InsnNode;
 import jdk.internal.org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import jdk.internal.org.objectweb.asm.tree.LdcInsnNode;
@@ -50,6 +53,15 @@ public final class PiecePatch implements Opcodes {
     static final String BOOT = "com/hexhaki/piece/HexPiece";
     static final String LIGHTNING = "com/hexhaki/piece/client/haki/HakiLightning";
     static final String PATHS = "com/hexhaki/piece/haki/LightningPaths";
+    /** 2.1.5: the 3D lightning's anchor hooks (client). */
+    static final String BOLTS = "com/hexhaki/piece/client/haki/HakiBolts";
+    static final String[][] PLAY_HOOKS = {
+        {"play", "(Lnet/minecraft/world/entity/Entity;Lcom/lowdragmc/photon/client/fx/FX;)V", "played",
+            "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/entity/Entity;)Z"},
+        {"playAtWorld", "(Lnet/minecraft/world/entity/Entity;DDDLcom/lowdragmc/photon/client/fx/FX;)V", "playedAt",
+            "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/entity/Entity;DDD)Z"},
+        {"playAtFixed", "(Lnet/minecraft/client/multiplayer/ClientLevel;DDDLcom/lowdragmc/photon/client/fx/FX;)V", "playedFixed",
+            "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/client/multiplayer/ClientLevel;DDD)Z"}};
     static final String BUS = "net/minecraftforge/eventbus/api/IEventBus";
     static final String CONTEXT = "net/minecraftforge/fml/javafmlmod/FMLJavaModLoadingContext";
     static final String SEGMENT = "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;II)V";
@@ -292,6 +304,39 @@ public final class PiecePatch implements Opcodes {
                 throw new AssertionError("expected " + entry.getValue() + " lightning beams in HakiVfx." + entry.getKey() + ", found " + redirected);
             }
         }
+        for (String[] hook : PLAY_HOOKS) {
+            playHook(method(node, hook[0], hook[1]), hook[2], hook[3]);
+        }
+    }
+
+    /**
+     * 2.1.5: HakiVfx's three players first hand the composition to {@code HakiBolts} ({@code if (HakiBolts.played...(fx, anchor))
+     * return;}), which sets the composition's 3D bolts going from the same anchor and takes back the flat beams they stand in for; it
+     * answers true only when nothing is left for Photon to play (so the original never logs an empty composition).
+     */
+    static void playHook(MethodNode method, String hook, String desc) {
+        Type[] args = Type.getArgumentTypes(method.desc);
+        int fxSlot = 0;
+        for (int i = 0; i < args.length - 1; i++) {
+            fxSlot += args[i].getSize();
+        }
+        if (!args[args.length - 1].getInternalName().equals("com/lowdragmc/photon/client/fx/FX")) {
+            throw new AssertionError("HakiVfx." + method.name + " no longer takes the composition last");
+        }
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, fxSlot));
+        int slot = 0;
+        for (int i = 0; i < args.length - 1; i++) {
+            head.add(new VarInsnNode(args[i].getOpcode(ILOAD), slot));
+            slot += args[i].getSize();
+        }
+        head.add(new MethodInsnNode(INVOKESTATIC, BOLTS, hook, desc, false));
+        LabelNode play = new LabelNode();
+        head.add(new JumpInsnNode(IFEQ, play));
+        head.add(new InsnNode(RETURN));
+        head.add(play);
+        head.add(new FrameNode(F_SAME, 0, null, 0, null));
+        method.instructions.insert(head);
     }
 
     static AbstractInsnNode nextReal(AbstractInsnNode insn) {

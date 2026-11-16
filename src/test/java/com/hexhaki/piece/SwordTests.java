@@ -29,6 +29,7 @@ public final class SwordTests {
         animations();
         combo();
         rules();
+        koiguchi();
         Check.done("SwordTests");
     }
 
@@ -162,5 +163,28 @@ public final class SwordTests {
         Check.that(SwordRules.CUT_BREAKS_PER_TICK > 0 && SwordRules.CUT_CHECKS_PER_TICK >= SwordRules.CUT_BREAKS_PER_TICK,
             "the terrain cut is budgeted");
         Check.that(SeaRules.katana(2, 0).grade().rarity() >= 2, "a captain's katana is a great one");
+    }
+
+    /** 2.1.5: the thumb on the guard while standing ready. */
+    static void koiguchi() {
+        Check.that(com.hexhaki.piece.sword.Koiguchi.push(-1) == 0.0F, "not standing ready: the seal stays shut");
+        Check.that(com.hexhaki.piece.sword.Koiguchi.push(10) == 0.0F, "settling into the stance first");
+        float most = 0.0F;
+        int open = 0;
+        for (int t = 0; t < 600; t++) {
+            float p = com.hexhaki.piece.sword.Koiguchi.push(t);
+            Check.that(p >= 0.0F && p <= com.hexhaki.piece.sword.Koiguchi.OUT + 0.1F, "a thumb's width at most (" + p + ")");
+            most = Math.max(most, p);
+            if (p > 0.0F) {
+                open++;
+            }
+        }
+        Check.that(most > 1.1F, "the guard does break the seal");
+        Check.that(open > 40 && open < 120, "now and then, not all the time (" + open + " of 600 ticks)");
+        for (double t = 40; t < 600; t += 0.25) {
+            float a = com.hexhaki.piece.sword.Koiguchi.push(t);
+            float b = com.hexhaki.piece.sword.Koiguchi.push(t + 0.25);
+            Check.that(Math.abs(a - b) < 0.6F, "it eases out and home, never jumps (" + t + ")");
+        }
     }
 }

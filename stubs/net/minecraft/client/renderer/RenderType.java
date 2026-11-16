@@ -2,6 +2,7 @@
 package net.minecraft.client.renderer;
 
 public abstract class RenderType {
+    /** textBackground() (2.1.5): position, colour, lightmap; unlit, alpha blended, depth tested and written, with the world's fog */ public static RenderType m_269058_() { throw new UnsupportedOperationException(); }
     /** eyes(texture): additive, full bright, no depth write (spider and enderman eyes) */ public static RenderType m_110488_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
     /** entityTranslucentCull(texture) (2.1.3): alpha blended, back faces culled, depth tested and written */ public static RenderType m_110470_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
     /** entityCutoutNoCull(texture) (2.1.4) */ public static RenderType m_110458_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
