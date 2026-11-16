@@ -18,6 +18,7 @@ public final class LightningTests {
         mesh();
         painter();
         crackle();
+        landing();
         Check.done("LightningTests");
     }
 
@@ -257,5 +258,28 @@ public final class LightningTests {
             spark |= Math.abs(bolt.points[1] - 0.3) < 1e-9 && Math.hypot(bolt.points[bolt.points.length - 3], bolt.points[bolt.points.length - 1]) > 0.1;
         }
         Check.that(spark, "while the blade leaves the saya, sparks spit out of its mouth");
+    }
+
+    /** 2.1.6: a bolt striking the ground: the flash and the scorch. */
+    static void landing() {
+        int[] none = {0};
+        BoltMesh.landing(0, -1.6, 3, -0.1, 0xFFFF1433, 1.0, 1.0, (glow, v, c) -> none[0]++);
+        BoltMesh.landing(0, -1.6, 3, BoltMesh.SCORCH + 0.1, 0xFFFF1433, 1.0, 1.0, (glow, v, c) -> none[0]++);
+        Check.that(none[0] == 0, "nothing before the strike or after the scorch is gone");
+        int[] flash = {0, 0};
+        double[] alpha = {0, 0};
+        for (double age : new double[] {0.5, 30}) {
+            int at = age < 1 ? 0 : 1;
+            BoltMesh.landing(0.4, -1.6, 3, age, 0xFFFF1433, 1.0, 1.0, (glow, v, c) -> {
+                Check.that(facing(v, 0, 1, 2) >= -1e-12 && facing(v, 0, 2, 3) >= -1e-12, "a strike's quads face the eye from above");
+                if (glow) {
+                    flash[at]++;
+                } else {
+                    alpha[at] = Math.max(alpha[at], ((c[0] >>> 24) & 255) / 255.0);
+                }
+            });
+        }
+        Check.that(flash[0] > 0 && flash[1] == 0, "the flash is brief");
+        Check.that(alpha[0] > 0.6 && alpha[1] > 0 && alpha[1] < alpha[0] * 0.4, "the scorch lingers and fades (" + alpha[0] + ", " + alpha[1] + ")");
     }
 }

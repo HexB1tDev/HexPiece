@@ -47,6 +47,9 @@ public final class BoltPreview {
             new Shot("day", new double[] {0.0, 1.6, -3.0}, new double[] {0.0, 1.3, 0}, false)});
         W = 360;
         H = 330;
+        sheet(new File(dir, "bolt-strike.png"), strike(), new double[] {0.4, 1.2, 2.2, 4, 7, 15, 30}, new Shot[] {
+            new Shot("night", new double[] {-1.2, 1.7, -0.6}, new double[] {1.4, 0.6, 3.6}, true),
+            new Shot("day", new double[] {-1.2, 1.7, -0.6}, new double[] {1.4, 0.6, 3.6}, false)});
         drawSheet(new File(dir, "bolt-draw.png"));
         slashSheet(new File(dir, "bolt-slash.png"));
         W = 300;
@@ -214,6 +217,19 @@ public final class BoltPreview {
         return calls;
     }
 
+    /** One bolt coming down to strike the ground in front of the camera (two pieces, the original's three strokes each). */
+    static List<Call> strike() {
+        List<Call> calls = new ArrayList<>();
+        double[][] chain = {{0.2, 2.6, 3.2}, {1.0, 1.3, 3.9}, {1.6, 0.02, 4.2}};
+        for (int i = 0; i + 1 < chain.length; i++) {
+            double t = i / (double) (chain.length - 1);
+            calls.add(new Call(chain[i], chain[i + 1], (float) lerp(0.176, 0.1, t), 0xEC050307, 14, 0, true));
+            calls.add(new Call(chain[i], chain[i + 1], (float) lerp(0.054, 0.035, t), 0xFFFF1433, 14, 0, true));
+            calls.add(new Call(chain[i], chain[i + 1], (float) lerp(0.014, 0.01, t), 0xFFFF7889, 12, 0, false));
+        }
+        return calls;
+    }
+
     /** The original's addHakiLightningSegment layering: a faint crimson aura, the black sheath and the red filament. */
     static List<Call> segmentStyle() {
         List<Call> calls = new ArrayList<>();
@@ -250,6 +266,30 @@ public final class BoltPreview {
         return calls;
     }
 
+    /** As HakiBolts finds them: free ends of coloured strokes that reach the ground (here the ground is y 0), one per half block. */
+    static List<double[]> landings(List<Bolt> bolts) {
+        java.util.Set<Long> roots = new java.util.HashSet<>();
+        for (Bolt bolt : bolts) {
+            roots.add(Math.round(bolt.points[0] * 32) * 31L + Math.round(bolt.points[1] * 32) * 131L + Math.round(bolt.points[2] * 32) * 1313L);
+        }
+        List<double[]> hits = new ArrayList<>();
+        java.util.Set<Long> cells = new java.util.HashSet<>();
+        for (Bolt bolt : bolts) {
+            int last = bolt.points.length - 3;
+            double x = bolt.points[last];
+            double y = bolt.points[last + 1];
+            double z = bolt.points[last + 2];
+            long key = Math.round(x * 32) * 31L + Math.round(y * 32) * 131L + Math.round(z * 32) * 1313L;
+            if (bolt.kind != Bolt.CORE || roots.contains(key) || y > 0.35 || hits.size() >= 16) {
+                continue;
+            }
+            if (cells.add(Math.round(x * 2) * 7919L + Math.round(z * 2))) {
+                hits.add(new double[] {x, y, z, bolt.delay + bolt.crawl});
+            }
+        }
+        return hits;
+    }
+
     static double lerp(double a, double b, double t) {
         return a + (b - a) * t;
     }
@@ -263,6 +303,7 @@ public final class BoltPreview {
             chain.land(call.a, call.b, start, call.duration);
         }
         BoltPainter.point(bolts);
+        List<double[]> landings = landings(bolts);
         BufferedImage sheet = new BufferedImage(W * ages.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = sheet.createGraphics();
         g.setColor(new Color(236, 234, 228));
@@ -273,6 +314,7 @@ public final class BoltPreview {
             for (int c = 0; c < ages.length; c++) {
                 Raster raster = new Raster(shots[r]);
                 raster.scene();
+                raster.landings = landings;
                 quads = raster.bolts(bolts, ages[c]);
                 g.drawImage(raster.image(), c * W, r * (H + 18) + 18, null);
                 g.setColor(new Color(30, 30, 30));
@@ -298,6 +340,9 @@ public final class BoltPreview {
         final double[] up;
         final double focal;
         final boolean night;
+        float[] alpha;
+        float[] triAlpha;
+        List<double[]> landings;
 
         Raster(Shot shot) {
             this.eye = shot.eye;
@@ -381,6 +426,19 @@ public final class BoltPreview {
                     }
                 });
             }
+            if (this.landings != null) {
+                for (double[] hit : this.landings) {
+                    BoltMesh.landing(hit[0] - this.eye[0], 0.0 - this.eye[1], hit[2] - this.eye[2], age - hit[3], 0xFFFF1433, 1.0,
+                        this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
+                            if (glow) {
+                                glowV.add(xyz);
+                                glowC.add(argb);
+                            } else {
+                                quad(xyz, argb, false);
+                            }
+                        });
+                }
+            }
             for (int i = 0; i < glowV.size(); i++) {
                 quad(glowV.get(i), glowC.get(i), true);
             }
@@ -388,6 +446,8 @@ public final class BoltPreview {
         }
 
         void quad(double[] v, int[] c, boolean add) {
+            this.alpha = add ? null : new float[] {((c[0] >>> 24) & 255) / 255F, ((c[1] >>> 24) & 255) / 255F, ((c[2] >>> 24) & 255) / 255F,
+                ((c[3] >>> 24) & 255) / 255F};
             double[] a = {v[0], v[1], v[2]};
             double[] b2 = {v[3], v[4], v[5]};
             double[] c2 = {v[6], v[7], v[8]};
@@ -399,11 +459,15 @@ public final class BoltPreview {
             float[] cd = rgb(c[3]);
             // the game's batches cull back faces: so does the preview, so a hole would show
             if (front(a, b2, c2)) {
+                this.triAlpha = this.alpha == null ? null : new float[] {this.alpha[0], this.alpha[1], this.alpha[2]};
                 tri(a, b2, c2, ca, cb, cc, add);
             }
             if (front(a, c2, d)) {
+                this.triAlpha = this.alpha == null ? null : new float[] {this.alpha[0], this.alpha[2], this.alpha[3]};
                 tri(a, c2, d, ca, cc, cd, add);
             }
+            this.alpha = null;
+            this.triAlpha = null;
         }
 
         static boolean front(double[] a, double[] b, double[] c) {
@@ -457,6 +521,15 @@ public final class BoltPreview {
                         this.r[i] += cr;
                         this.g[i] += cg;
                         this.b[i] += cb;
+                    } else if (this.triAlpha != null && (this.triAlpha[0] < 1F || this.triAlpha[1] < 1F || this.triAlpha[2] < 1F)) {
+                        float a = (float) (this.triAlpha[0] * k0 + this.triAlpha[1] * k1 + this.triAlpha[2] * k2);
+                        if (a < 0.1F) {
+                            continue;
+                        }
+                        this.r[i] = cr * a + this.r[i] * (1 - a);
+                        this.g[i] = cg * a + this.g[i] * (1 - a);
+                        this.b[i] = cb * a + this.b[i] * (1 - a);
+                        this.depth[i] = z;
                     } else {
                         this.r[i] = cr;
                         this.g[i] = cg;

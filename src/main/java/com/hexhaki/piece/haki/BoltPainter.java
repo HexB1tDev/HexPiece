@@ -34,7 +34,7 @@ public final class BoltPainter {
     public static final class Chain {
         private final java.util.Map<Long, Float> landed = new java.util.HashMap<>();
 
-        static long key(double[] p) {
+        public static long key(double[] p) {
             return Math.round(p[0] * 32.0) * 0x9E3779B1L ^ Math.round(p[1] * 32.0) * 0x85EBCA77L ^ Math.round(p[2] * 32.0) * 0xC2B2AE3DL;
         }
 

@@ -280,6 +280,52 @@ public final class BoltMesh {
         }
     }
 
+    /** Ticks a landing's flash lasts on the ground, and its scorch. */
+    public static final double LANDING_FLASH = 7.0;
+    public static final double SCORCH = 40.0;
+
+    /**
+     * 2.1.5: where a bolt's free end strikes the ground, at {@code (x, y, z)} on its surface (camera space), {@code age} ticks after it
+     * landed: a flash of its colour spreading on the ground (additive, a hot white middle), fading fast, and a dark scorch mark that
+     * lingers ({@link #SCORCH} ticks; translucent, so the ground shows through as it fades). {@code size} about 1 for a Conqueror bolt.
+     */
+    public static void landing(double x, double y, double z, double age, int color, double size, double shine, Sink sink) {
+        if (age < 0 || age > SCORCH) {
+            return;
+        }
+        if (age <= LANDING_FLASH) {
+            double k = 1.0 - age / LANDING_FLASH;
+            double spread = size * (0.7 + 0.9 * Math.min(1.0, age / 2.5));
+            flat(x, y + 0.03, z, spread, scale(color, 1.0 * k * k * shine), color & 0xFF000000, true, sink);
+            if (age < 4.0) {
+                double hot = 1.0 - age / 4.0;
+                flat(x, y + 0.035, z, size * 0.32, scale(mix(color, 0xFFFFFFFF, 0.6), hot * shine), color & 0xFF000000, true, sink);
+            }
+        }
+        double fade = 1.0 - age / SCORCH;
+        int ink = mix(INK, color, 0.12) & 0xFFFFFF;
+        int centre = (int) Math.round(0.72 * fade * 255) << 24 | ink;
+        flat(x, y + 0.015, z, size * 0.52, centre, ink, false, sink);
+    }
+
+    /** A flat disc on the ground (twelve wedges), {@code centre} in its middle, {@code edge} at its rim. */
+    static void flat(double x, double y, double z, double radius, int centre, int edge, boolean glow, Sink sink) {
+        int n = 12;
+        double[] rim = new double[n * 3];
+        for (int k = 0; k < n; k++) {
+            double a = Math.PI * 2.0 * k / n;
+            rim[k * 3] = x + Math.cos(a) * radius;
+            rim[k * 3 + 1] = y;
+            rim[k * 3 + 2] = z + Math.sin(a) * radius;
+        }
+        int[] c = {centre, edge, edge, edge};
+        for (int k = 0; k < n; k += 2) {
+            double[] v = {x, y, z, rim[k * 3], rim[k * 3 + 1], rim[k * 3 + 2], rim[((k + 1) % n) * 3], rim[((k + 1) % n) * 3 + 1],
+                rim[((k + 1) % n) * 3 + 2], rim[((k + 2) % n) * 3], rim[((k + 2) % n) * 3 + 1], rim[((k + 2) % n) * 3 + 2]};
+            emit(glow, v, c, sink);
+        }
+    }
+
     /** Unit vectors across the path at each point, square to it and to the line of sight (3 per point). */
     static double[] sides(double[] p, int count) {
         double[] side = new double[count * 3];

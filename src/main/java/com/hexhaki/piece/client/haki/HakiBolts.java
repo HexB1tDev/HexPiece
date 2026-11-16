@@ -1,9 +1,11 @@
 package com.hexhaki.piece.client.haki;
 
+import com.hexhaki.piece.client.fx.PieceFx;
 import com.hexhaki.piece.client.sword.SwordFx;
 import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.BoltMesh;
 import com.hexhaki.piece.haki.BoltPainter;
+import com.hexhaki.registry.ModSounds;
 import com.lowdragmc.photon.client.fx.FX;
 import com.lowdragmc.photon.client.gameobject.IFXObject;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -18,6 +20,8 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -54,6 +58,8 @@ public final class HakiBolts {
     static final double PIXEL = 2.0 * Math.tan(Math.toRadians(35.0)) / 1080.0;
     /** A composition not played within this long is forgotten (its beams stay with it). */
     static final long STALE_NANOS = 5_000_000_000L;
+    /** Most ground strikes one composition leaves. */
+    static final int MOST_LANDINGS = 12;
     static final Map<FX, Pending> PENDING = new IdentityHashMap<>();
     static final List<Live> LIVE = new ArrayList<>();
     static int alive;
@@ -68,8 +74,30 @@ public final class HakiBolts {
         final long made = System.nanoTime();
     }
 
-    /** Bolts set going: at a fixed point, or following {@code entity} (feet, turned with it). */
-    record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end) {
+    /** Bolts set going: at a fixed point, or following {@code entity} (feet, turned with it); where their free ends strike the ground. */
+    record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end, List<Landing> landings) {
+    }
+
+    /** Where a bolt's free end strikes the ground (world, on its surface), when (ticks from the start), how big, and whether it was heard. */
+    static final class Landing {
+        final double x;
+        final double y;
+        final double z;
+        final float at;
+        final int color;
+        final double size;
+        final boolean loud;
+        boolean struck;
+
+        Landing(double x, double y, double z, float at, int color, double size, boolean loud) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.at = at;
+            this.color = color;
+            this.size = size;
+            this.loud = loud;
+        }
     }
 
     private HakiBolts() {
@@ -113,15 +141,95 @@ public final class HakiBolts {
             List<IFXObject> objects = fx.getMainFX().objects();
             objects.removeIf(o -> containsSame(pending.beams, o));
             BoltPainter.point(pending.bolts);
+            List<Landing> landings = landings(pending.bolts, entity, x, y, z, level);
             float end = 0;
             for (Bolt bolt : pending.bolts) {
                 end = Math.max(end, bolt.end());
             }
-            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end));
+            for (Landing landing : landings) {
+                end = Math.max(end, landing.at + (float) BoltMesh.SCORCH);
+            }
+            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings));
             alive += pending.bolts.size();
+            if (!landings.isEmpty() || pending.bolts.size() >= 12) {
+                // the composition's own crackle, at its anchor (the original plays the heavy charge and release sounds itself)
+                Vec3 at = entity != null ? entity.m_20182_() : new Vec3(x, y, z);
+                zap(level, at.f_82479_, at.f_82480_ + 1.0, at.f_82481_, (float) Math.min(0.55, 0.18 + pending.bolts.size() * 0.0004));
+            }
             return objects.isEmpty();
         } catch (RuntimeException failure) {
             return false; // the original plays it as it was
+        }
+    }
+
+    /**
+     * The free ends of the coloured strokes (no other stroke carries on from them) that come down on solid ground, one per half block,
+     * at most {@link #MOST_LANDINGS}; the first few are heard.
+     */
+    static List<Landing> landings(List<Bolt> bolts, Entity entity, double x, double y, double z, Level level) {
+        List<Landing> landings = new ArrayList<>();
+        java.util.Set<Long> roots = new java.util.HashSet<>();
+        for (Bolt bolt : bolts) {
+            roots.add(BoltPainter.Chain.key(new double[] {bolt.points[0], bolt.points[1], bolt.points[2]}));
+        }
+        double ox = x;
+        double oy = y;
+        double oz = z;
+        double cos = 1.0;
+        double sin = 0.0;
+        if (entity != null) {
+            Vec3 at = entity.m_20182_();
+            ox = at.f_82479_;
+            oy = at.f_82480_;
+            oz = at.f_82481_;
+            double turn = Math.toRadians(-90.0 - entity.m_146908_());
+            cos = Math.cos(turn);
+            sin = Math.sin(turn);
+        }
+        java.util.Set<Long> cells = new java.util.HashSet<>();
+        for (Bolt bolt : bolts) {
+            int last = bolt.points.length - 3;
+            double[] end = {bolt.points[last], bolt.points[last + 1], bolt.points[last + 2]};
+            if (bolt.kind != Bolt.CORE || roots.contains(BoltPainter.Chain.key(end))) {
+                continue;
+            }
+            double wx = ox + end[0] * cos + end[2] * sin;
+            double wy = oy + end[1];
+            double wz = oz - end[0] * sin + end[2] * cos;
+            BlockPos below = BlockPos.m_274561_(wx, wy - 0.3, wz);
+            if (level.m_8055_(below).m_60795_() || !cells.add(Math.round(wx * 2) * 0x9E3779B1L ^ Math.round(wz * 2))) {
+                continue;
+            }
+            double size = Math.max(0.5, Math.min(1.4, bolt.widths[0] * 22.0));
+            landings.add(new Landing(wx, below.m_123342_() + 1.0, wz, bolt.delay + bolt.crawl, bolt.color, size, landings.size() < 3));
+            if (landings.size() >= MOST_LANDINGS) {
+                break;
+            }
+        }
+        return landings;
+    }
+
+    /** A short Haki zap (the original's own Armament zap), heard where it happens. */
+    public static void zap(Level level, double x, double y, double z, float volume) {
+        if (level instanceof ClientLevel client) {
+            client.m_7785_(x, y, z, ModSounds.ARMAMENT_AMBIENT_ZAP.get(), SoundSource.PLAYERS, volume,
+                0.85F + (float) Math.random() * 0.3F, false);
+        }
+    }
+
+    /** A landing as it strikes: sparks thrown up off the ground in its colour, and (the first few) a zap. */
+    static void strike(ClientLevel level, Landing landing) {
+        Vec3 at = new Vec3(landing.x, landing.y + 0.05, landing.z);
+        int hot = BoltMesh.mix(landing.color, 0xFFFFFFFF, 0.55);
+        for (int i = 0; i < PieceFx.count(6); i++) {
+            double a = Math.random() * Math.PI * 2.0;
+            double out = 0.06 + Math.random() * 0.12;
+            PieceFx.at(PieceFx.SPARK, true, 6 + (int) (Math.random() * 6), at)
+                .velocity(new Vec3(Math.cos(a) * out, 0.12 + Math.random() * 0.18, Math.sin(a) * out)).fall(0.045)
+                .colors(hot, landing.color & 0x00FFFFFF).size(0.14, 0.02).spawn();
+        }
+        if (landing.loud) {
+            zap(level, landing.x, landing.y, landing.z, 0.35F);
         }
     }
 
@@ -186,6 +294,15 @@ public final class HakiBolts {
             for (Bolt bolt : live.bolts) {
                 BoltMesh.build(bolt, frame, ticks - bolt.delay, PIXEL, shine, sink);
             }
+            for (Landing landing : live.landings) {
+                double age = ticks - landing.at;
+                if (age >= 0 && !landing.struck) {
+                    landing.struck = true;
+                    strike(level, landing);
+                }
+                BoltMesh.landing(landing.x - cam.f_82479_, landing.y - cam.f_82480_, landing.z - cam.f_82481_, age, landing.color, landing.size,
+                    shine, sink);
+            }
         }
         write(Minecraft.m_91087_().m_91269_().m_110104_(), pose.m_85850_().m_252922_(), pose.m_85850_().m_252943_(), 0, 0, 0, true);
     }
@@ -242,7 +359,8 @@ public final class HakiBolts {
                     int c = SOLID.colors[q * 4 + k];
                     buffer.m_252986_(matrix, (float) (SOLID.xyz[q * 12 + k * 3] + ox), (float) (SOLID.xyz[q * 12 + k * 3 + 1] + oy),
                             (float) (SOLID.xyz[q * 12 + k * 3 + 2] + oz))
-                        .m_85950_(((c >>> 16) & 255) / 255.0F, ((c >>> 8) & 255) / 255.0F, (c & 255) / 255.0F, 1.0F).m_85969_(0xF000F0).m_5752_();
+                        .m_85950_(((c >>> 16) & 255) / 255.0F, ((c >>> 8) & 255) / 255.0F, (c & 255) / 255.0F, ((c >>> 24) & 255) / 255.0F)
+                        .m_85969_(0xF000F0).m_5752_();
                 }
             }
             if (end && buffers instanceof MultiBufferSource.BufferSource source) {

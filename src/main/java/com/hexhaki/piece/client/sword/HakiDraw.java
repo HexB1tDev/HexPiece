@@ -33,12 +33,13 @@ import net.minecraft.client.renderer.MultiBufferSource;
  *       Conqueror's red and black otherwise).</li>
  * </ul>
  * The bolts are {@link DrawCrackle}'s, drawn by {@link HakiBolts#drawInFrame} in the blade's own frame, so they ride on it through
- * every cut, in first and third person.
+ * every cut, in first and third person; a soft zap (the original's own Armament zap) goes with every third set.
  */
 public final class HakiDraw {
     /** The blade, guard to tip, in blocks. */
     static final double BLADE = 20.5 * KatanaRenderer.SCALE;
     static final int RED = 0xFFFF1433;
+    private static final java.util.Map<Integer, Long> HEARD = new java.util.HashMap<>();
 
     private HakiDraw() {
     }
@@ -103,6 +104,13 @@ public final class HakiDraw {
                         double strength, int color, float partial) {
         long seed = player.m_19879_() * 0x2545F4914F6CDD1DL;
         long window = (long) Math.floor(ticks / DrawCrackle.WINDOW);
+        Long heard = HEARD.get(player.m_19879_());
+        if (window % 3 == 0 && (heard == null || heard != window)) {
+            // a soft zap every third set (once a player, though the layer may draw twice a frame)
+            HEARD.put(player.m_19879_(), window);
+            HakiBolts.zap(player.m_9236_(), player.m_20185_(), player.m_20186_() + 1.0, player.m_20189_(),
+                (float) (0.05 + 0.07 * Math.min(1.5, strength)));
+        }
         List<Bolt> bolts = new ArrayList<>();
         List<Double> ages = new ArrayList<>();
         for (long w = Math.max(0, window - 2); w <= window; w++) {

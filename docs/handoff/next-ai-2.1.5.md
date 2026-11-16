@@ -1,7 +1,17 @@
-# Next AI: 2.1.5 (3D Haki lightning, Haki on the katana) is DONE and released
+# Next AI: 2.1.6 is released (2.1.5: 3D Haki lightning, Haki on the katana; 2.1.6: ground strikes and sound)
 
 Read `CLAUDE.md`, then this, then `next-ai-2.1.4.md` (the Swordsman: where everything is), `next-ai-2.1.3.md`, `next-ai-2.1.2.md`,
-`next-ai-2.1.1.md`. The next version is 2.1.6 (`tools/next_version.py`). Answer the owner in English. Never claim in-game testing.
+`next-ai-2.1.1.md`. The next version is 2.1.7 (`tools/next_version.py`). Answer the owner in English. Never claim in-game testing.
+
+## 2.1.6 (the owner, asked about poses, sound and colours: "Do what you think is best")
+- Ground strikes: `HakiBolts.landings` finds, at launch, the free ends of CORE strokes that come down on a non-air block (one per half
+  block, at most 12); `BoltMesh.landing` draws an additive flash spreading on the ground (7 ticks) with a hot middle, and a translucent
+  scorch (40 ticks; the ink batch honours alpha now); `HakiBolts.strike` throws sparks (PieceFx) and zaps the first three.
+- Sound: `HakiBolts.zap` plays the original's `ModSounds.ARMAMENT_AMBIENT_ZAP` locally (as its HakiRenderHooks does): one per launched
+  composition at its anchor, one per loud landing, and from `HakiDraw` every third crackle set (once a player).
+- Decided, not done: no new idle poses (the owner's earlier "left hand rests on the hilt" stands); Armament-only blade lightning stays
+  red/black, Ryou colour with Ryou up.
+- Render: `docs/images/haki-lightning-strike.png` (BoltPreview's strike scene).
 
 ## What the owner said after 2.1.4 (quoted, voice-typed: "hockey" is Haki)
 "They're gonna eventually find them [the katanas] in chests and quests. That is not for you to decide now ... for now, just with a give
@@ -46,7 +56,5 @@ outline to it and whatsoever. That is the most important thing about the mod."
   found: if bolts of fist effects appear beside instead of in front, the angle's sign or offset is the first suspect), the first-
   person view of the blade crackle, Fabulous graphics.
 
-## Ideas not done (ask the owner)
-- Ambient poses beyond the thumb on the guard (a Mihawk-style folded-arms idle, a Shanks-style sword-on-shoulder rest when drawn).
-- Lightning sound (a crackle on strike) and a light flash on the ground where bolts land.
-- Should Armament-only (no Ryou) blade lightning be red/black or the player's Ryou colour once they have one?
+## Ideas not done
+- A screen-space light flash for very close strikes; lightning lighting the terrain (no dynamic light in vanilla).

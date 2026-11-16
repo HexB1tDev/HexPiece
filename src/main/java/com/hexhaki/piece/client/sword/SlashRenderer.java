@@ -1,17 +1,17 @@
 package com.hexhaki.piece.client.sword;
 
-import java.util.List;
-import java.util.ArrayList;
-import com.hexhaki.piece.haki.DrawCrackle;
-import com.hexhaki.piece.haki.Bolt;
-import com.hexhaki.piece.client.haki.HakiBolts;
 import com.hexhaki.piece.client.fx.PieceFx;
+import com.hexhaki.piece.client.haki.HakiBolts;
+import com.hexhaki.piece.haki.Bolt;
+import com.hexhaki.piece.haki.DrawCrackle;
 import com.hexhaki.piece.haki.RyouPalette;
 import com.hexhaki.piece.network.S2CSlash;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import net.minecraft.client.Minecraft;
