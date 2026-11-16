@@ -59,16 +59,45 @@ def p(*pieces, **parts):
     return out
 
 
+# 2.1.3 (the owner: "Fix the Fishman and Iron Fist stances so the player's arms remain naturally lowered when idle, walking or
+# sprinting. Selecting a combat style must not permanently activate an attacking pose. Raise the arms only during an attack's
+# anticipation, strike and recovery, then blend smoothly back into normal movement. Preserve natural leg movement during attacks that
+# allow movement."):
+# EASE_IN: no keyframe on tick 0, so every animated part eases out of whatever the player was doing (arms swinging as they walk, a
+#   stance below, the blow before) into the wind-up, and back to it after the recovery (stopTick 5 ticks on).
+# FREE_LEGS: the legs are left out of the file, so the game keeps walking, sprinting or standing them; the body is never raised or
+#   lowered (it would lift or sink the walking feet), its turn, lean and the arms carry the blow. Kicks, the knee, the ground punch
+#   and the shoulder charge keep their legs.
+PUNCHES = ("style_fishman_karate_palm", "style_fishman_karate_backfist", "style_fishman_karate_brick", "style_fishman_karate_bullets",
+           "style_fishman_karate_counter", "style_fishman_karate_counter_strike", "style_brawler_jab", "style_brawler_cross",
+           "style_brawler_hook", "style_brawler_upper", "style_brawler_haymaker", "style_brawler_gatling",
+           "style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
+EASE_IN = set(PUNCHES) | {"style_fishman_karate_knee", "style_fishman_karate_wave", "style_brawler_charge"}
+FREE_LEGS = set(PUNCHES)
+
+
 def write(name, duration, beats, description, stop_extra=3):
     moves = []
+    if name in EASE_IN:
+        beats = [beat for beat in beats if beat[0] > 0]
+        stop_extra = max(stop_extra, 5)
     for tick, easing, q in beats:
         q = spine(q)
+        if name in FREE_LEGS:
+            # the legs walk on their own, so nothing may tip the whole body over them: its height, pitch and roll would sink, lift or
+            # skate the feet; a lean back or forward goes into the bend (which carries the head and arms and leaves the legs)
+            q = {part: dict(values) for part, values in q.items() if part not in ("rightLeg", "leftLeg")}
+            body = q.setdefault("body", {})
+            body["bend"] = body.get("bend", 0.0) - body.get("pitch", 0.0)
+            body["y"] = body["pitch"] = body["roll"] = 0.0
         for part, channels in PARTS.items():
+            if name in FREE_LEGS and part in ("rightLeg", "leftLeg"):
+                continue
             values = q.get(part, {})
             for channel in channels:
                 moves.append({"tick": tick, "easing": easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
     moves.sort(key=lambda m: m["tick"])
-    data = {"version": 3, "name": name, "author": "HexPiece 2.1.1", "description": description,
+    data = {"version": 3, "name": name, "author": "HexPiece 2.1.3" if name in EASE_IN else "HexPiece 2.1.1", "description": description,
             "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration + stop_extra, "isLoop": False, "returnTick": 0,
                       "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
     WRITTEN[name] = data
@@ -112,7 +141,8 @@ def breath(arms_pose, lift=1.0):
 
 
 def stances():
-    """2.1.2: the four combat stances, held while combat mode is on (R), a slow breath (40 ticks, 2 s) each."""
+    """2.1.2: the combat stances, held while combat mode is on (R), a slow breath (40 ticks, 2 s) each: Black Leg's hands and Six
+    Powers' one hand behind the back (relaxed poses, not attacking ones)."""
     def loop(name, arms_pose, description, lift=1.0):
         held = {k: dict(v) for k, v in arms_pose.items()}
         write_stance(name, 40, [(0, "linear", held), (20, "inoutsine", breath(held, lift)), (40, "inoutsine", held)], description)
@@ -121,10 +151,7 @@ def stances():
          "Black Leg combat stance: the hands clasped behind the back, as a cook keeps them out of the fight.", lift=0.5)
     loop("style_six_powers_stance", SP_STANCE,
          "Six Powers combat stance: upright and correct, the left hand behind the back, the right loose at the side.", lift=0.7)
-    loop("style_fishman_karate_stance", FK_STANCE,
-         "Fishman Karate combat stance: the right fist chambered at the hip, the left palm open forward.")
-    loop("style_brawler_stance", IF_STANCE,
-         "Iron Fist combat stance: a boxer's guard, both fists up at the chin, elbows in, bouncing on the breath.", lift=1.6)
+    # 2.1.3: Fishman Karate and Iron Fist hold no stance: their arms hang and swing as the game's do until a blow raises them.
 
 
 def shake(base, ticks, amp, parts=(("body", "roll"),)):
@@ -313,7 +340,6 @@ def six_powers():
 # ------------------------------------------------------------------------------------------------------------- Fishman Karate
 # A wide, low stance: the left palm forward, the right chambered at the hip.
 FK = p(arms(right=arm(20, 0, 12, -100), left=arm(-70, 10, -6, -24)), legs(30, 14), body={"y": -0.12, "yaw": -14})
-FK_STANCE = p(arms(right=arm(20, 0, 12, -100), left=arm(-70, 10, -6, -24)))
 
 
 def fishman_karate():
@@ -393,7 +419,6 @@ def fishman_karate():
 
 # ------------------------------------------------------------------------------------------------------------- Iron Fist
 # A boxer's guard: fists at the chin, elbows in, the left foot and shoulder forward.
-IF_STANCE = p(arms(right=arm(-66, -24, 12, -116), left=arm(-76, 20, -10, -104)))
 IF = p(arms(right=arm(-66, -24, 12, -116), left=arm(-76, 20, -10, -104)), rightLeg=leg(12, 3, 18), leftLeg=leg(-14, -3, 16),
        body={"y": -0.05, "yaw": -16}, head={"pitch": 6})
 

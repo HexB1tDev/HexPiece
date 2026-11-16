@@ -37,3 +37,6 @@ M net/minecraft/server/level/ServerLevel m_7967_ (Lnet/minecraft/world/entity/En
 
 # --- 2.1.2: combat mode (R) and its stance layer -------------------------------------------------------------------------------------
 F net/minecraft/world/entity/Pose CROUCHING Lnet/minecraft/world/entity/Pose;   # [srg] enum constants keep their names: joined.tsrg bgl f CROUCHING (bgl = Pose: d SWIMMING as the original's HakiServerController uses, a STANDING); intermediary FIELD bgl Lbgl; f field_18081 (yarn EntityPose.CROUCHING)
+
+# --- 2.1.3: style moves let go when cut short ----------------------------------------------------------------------------------------
+M net/minecraft/world/entity/LivingEntity m_6147_ ()Z   # [srg] onClimbable: joined.tsrg bfz i_ ()Z m_6147_ (bfz = LivingEntity: eO m_21205_ getMainHandItem and fi m_6117_ isUsingItem as used already); intermediary METHOD bfz ()Z i_ method_6101 (yarn isClimbing)

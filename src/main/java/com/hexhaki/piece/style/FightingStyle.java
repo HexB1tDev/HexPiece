@@ -60,9 +60,13 @@ public enum FightingStyle {
         return this != NONE;
     }
 
-    /** 2.1.2: the stance it holds in combat mode (R): an arms-only loop, {@code tools/style_anims.py}. */
+    /**
+     * 2.1.2: the stance it holds in combat mode (R): an arms-only loop, {@code tools/style_anims.py}. 2.1.3: only the relaxed ones
+     * (Black Leg's and Six Powers' hands behind the back); Fishman Karate and Iron Fist hold none (null), their arms hang and swing as
+     * the game's do until a blow raises them (the owner: "Selecting a combat style must not permanently activate an attacking pose").
+     */
     public String stance() {
-        return "style_" + this.id + "_stance";
+        return this == BLACK_LEG || this == SIX_POWERS ? "style_" + this.id + "_stance" : null;
     }
 
     public static FightingStyle byOrdinal(int ordinal) {

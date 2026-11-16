@@ -94,6 +94,9 @@ public final class StyleServer {
             return;
         }
         state.combat = on;
+        if (!on) {
+            interrupt(player, state);
+        }
         PieceNetwork.around(player, stance(player, on ? profile.style() : null));
         player.m_5661_(Component.m_237113_(on ? "Combat stance: " + profile.style().display() : "Combat stance dropped"), true);
     }
@@ -184,7 +187,7 @@ public final class StyleServer {
         if (state.queuedAt >= 0 && now >= state.queuedAt) {
             state.queuedAt = -1;
             PieceProfile profile = ProfileServer.of(player);
-            if (profile.style().choice() && player.m_21205_().m_41619_()) {
+            if (profile.style().choice() && !interrupted(player)) {
                 begin(player, state, StyleMove.of(profile.style(), StyleCombo.next(state.lastString, state.lastStringStart, now)), now);
             }
         }
@@ -193,8 +196,12 @@ public final class StyleServer {
             return;
         }
         int tick = (int) (now - state.start);
-        if (tick >= move.duration() || !player.m_6084_()) {
+        if (tick >= move.duration()) {
             state.move = null;
+            return;
+        }
+        if (interrupted(player)) {
+            interrupt(player, state);
             return;
         }
         StyleCombat.carry(player, move, tick);
@@ -211,6 +218,34 @@ public final class StyleServer {
                     ProfileServer.addMastery(player, move.style(), PieceRules.masteryGain(mastery, 1 + hit.weight().ordinal()));
                 }
             }
+        }
+    }
+
+    /**
+     * 2.1.3: what cuts a style move short (the owner: "Interrupted attacks, switching styles, item use, swimming, climbing, mounting
+     * and death must release their animation overrides correctly, without leaving either arm stuck"): death, something taken into the
+     * main hand, an item in use, swimming, a ladder or vine, a mount.
+     */
+    static boolean interrupted(ServerPlayer player) {
+        return !player.m_6084_() || !player.m_21205_().m_41619_() || player.m_6117_() || player.m_6069_() || player.m_6147_()
+            || player.m_20159_();
+    }
+
+    /** 2.1.3: the move in hand stops where it is: no more blows, a queued blow dropped, its animation released for everyone. */
+    static void interrupt(ServerPlayer player, State state) {
+        if (state.move == null) {
+            return;
+        }
+        state.move = null;
+        state.queuedAt = -1;
+        FruitUtil.animate(player, "__clear__", 3);
+    }
+
+    /** 2.1.3: switching styles or leaving combat mode lets go of a move in progress the same way. */
+    public static void release(ServerPlayer player) {
+        State state = STATES.get(player.m_20148_());
+        if (state != null) {
+            interrupt(player, state);
         }
     }
 

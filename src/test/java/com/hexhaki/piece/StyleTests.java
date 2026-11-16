@@ -68,13 +68,31 @@ public final class StyleTests {
         Check.that(Files.exists(ANIMATIONS.resolve("style_fishman_karate_counter_strike.json")), "the counter's answering palm exists");
         // 2.1.2: combat mode's stances: one per style, a loop, the arms only (walking, the body and the head stay the game's)
         Pattern part = Pattern.compile("\"(body|torso|head|rightLeg|leftLeg|rightItem|leftItem)\":");
+        Check.that(FightingStyle.FISHMAN_KARATE.stance() == null && FightingStyle.BRAWLER.stance() == null,
+            "Fishman Karate and Iron Fist hold no stance: no attacking pose while idle, walking or sprinting");
         for (FightingStyle style : FightingStyle.choices()) {
+            if (style.stance() == null) {
+                Check.that(!Files.exists(ANIMATIONS.resolve("style_" + style.id() + "_stance.json")), style + ": no stance file left over");
+                continue;
+            }
             Path file = ANIMATIONS.resolve(style.stance() + ".json");
             Check.that(Files.exists(file), style + ": its combat stance " + file + " exists");
             String json = Files.readString(file);
             Check.that(json.contains("\"isLoop\": true"), style + ": its stance loops");
             Check.that(json.contains("\"rightArm\":") && json.contains("\"leftArm\":"), style + ": its stance holds both arms");
             Check.that(!part.matcher(json).find(), style + ": its stance moves the arms only");
+        }
+        // 2.1.3: the punches raise the arms only for the blow (no tick-0 pose: they ease in from the player's own arms) and leave the
+        // legs to the game
+        Pattern legs = Pattern.compile("\"(rightLeg|leftLeg)\":");
+        for (StyleMove move : StyleMove.values()) {
+            if (move.style() != FightingStyle.FISHMAN_KARATE && move.style() != FightingStyle.BRAWLER) {
+                continue;
+            }
+            String json = Files.readString(ANIMATIONS.resolve(move.animation() + ".json"));
+            Check.that(!json.contains("\"tick\": 0,"), move + ": no pose forced on tick 0, the arms rise from where they are");
+            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.FK_WAVE || move == StyleMove.IF_CHARGE;
+            Check.that(legged == legs.matcher(json).find(), move + (legged ? ": its legs are part of the blow" : ": the legs stay the game's"));
         }
     }
 

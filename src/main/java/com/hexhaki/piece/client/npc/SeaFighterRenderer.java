@@ -56,7 +56,18 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
         }
         long now = fighter.m_9236_().m_46467_() & 0x3FFFFFFF;
         float tick = (float) (now - fighter.shownStart()) + partial;
-        return tick < 0 || tick > move.duration() + 1 ? -1.0F : tick;
+        return tick < 0 || tick > move.duration() + RETURN ? -1.0F : tick;
+    }
+
+    /** 2.1.3: ticks after a move's end over which the fighter returns to its own pose (as a player's animation returns by stopTick). */
+    static final float RETURN = 5.0F;
+
+    /** How much of a move still shows at {@code tick}: 1 until its end, then down to 0 over {@link #RETURN} ticks. */
+    static float held(SeaFighter fighter, float tick) {
+        StyleMove move = fighter.shownMove();
+        float over = move == null ? RETURN : tick - move.duration();
+        float t = over <= 0.0F ? 1.0F : Math.max(0.0F, 1.0F - over / RETURN);
+        return t * t * (3.0F - 2.0F * t);
     }
 
     @Override
@@ -67,7 +78,14 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
             return;
         }
         float[][] p = StylePoser.sample(fighter.shownMove().animation(), tick);
-        float[] body = p[0];
+        float out = held(fighter, tick);
+        for (float[] part : p) {
+            part[StylePoser.WEIGHT] *= out;
+        }
+        float[] body = p[0].clone();
+        for (int channel = 0; channel < StylePoser.WEIGHT; channel++) {
+            body[channel] *= p[0][StylePoser.WEIGHT];
+        }
         float bodyYaw = fighter.f_20884_ + (fighter.f_20883_ - fighter.f_20884_) * partial;
         pose.m_85836_();
         // the whole body in the fighter's own facing: its step (blocks), then its turn, lean and roll about the hips (0.7 blocks up)
@@ -98,11 +116,13 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
             super(root, false);
         }
 
+        /** The part posed by the animation, blended over the fighter's own pose by the part's weight (2.1.3). */
         static void apply(ModelPart part, float[] channels, float foldShare) {
             float rad = (float) (Math.PI / 180.0);
-            part.f_104203_ = (channels[3] + channels[6] * foldShare) * rad;
-            part.f_104204_ = channels[4] * rad;
-            part.f_104205_ = channels[5] * rad;
+            float w = channels[StylePoser.WEIGHT];
+            part.f_104203_ += ((channels[3] + channels[6] * foldShare) * rad - part.f_104203_) * w;
+            part.f_104204_ += (channels[4] * rad - part.f_104204_) * w;
+            part.f_104205_ += (channels[5] * rad - part.f_104205_) * w;
         }
 
         @Override
@@ -113,9 +133,10 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
                 return;
             }
             float rad = (float) (Math.PI / 180.0);
-            this.f_102808_.f_104203_ = p[1][3] * rad + headPitch * rad * 0.3F;
-            this.f_102808_.f_104204_ = p[1][4] * rad + netHeadYaw * rad * 0.3F;
-            this.f_102808_.f_104205_ = p[1][5] * rad;
+            float headWeight = p[1][StylePoser.WEIGHT];
+            this.f_102808_.f_104203_ += (p[1][3] * rad + headPitch * rad * 0.3F - this.f_102808_.f_104203_) * headWeight;
+            this.f_102808_.f_104204_ += (p[1][4] * rad + netHeadYaw * rad * 0.3F - this.f_102808_.f_104204_) * headWeight;
+            this.f_102808_.f_104205_ += (p[1][5] * rad - this.f_102808_.f_104205_) * headWeight;
             apply(this.f_102811_, p[2], 0.45F);
             apply(this.f_102812_, p[3], 0.45F);
             apply(this.f_102813_, p[4], 0.45F);
