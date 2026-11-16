@@ -6,6 +6,7 @@ import com.hexhaki.piece.haki.BoltPainter;
 import com.hexhaki.piece.haki.ConquerorBolts;
 import com.hexhaki.piece.haki.ConquerorStorm;
 import com.hexhaki.piece.haki.DrawCrackle;
+import com.hexhaki.piece.haki.Sphere;
 import com.hexhaki.piece.haki.Jag;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ public final class LightningTests {
         crackle();
         landing();
         storm();
+        sphere();
         Check.done("LightningTests");
     }
 
@@ -78,16 +80,21 @@ public final class LightningTests {
                     for (int i = 0; i < mains; i++) {
                         double[] bolt = bolts.get(i);
                         int points = bolt.length / 3;
-                        Check.that(points >= 3 && points <= ConquerorBolts.MOST_POINTS, "a main bolt has 3.." + ConquerorBolts.MOST_POINTS + " points (" + points + ")");
+                        Check.that(points >= 3 && points <= 2 * ConquerorBolts.MOST_POINTS - 1,
+                            "a main bolt has 3.." + (2 * ConquerorBolts.MOST_POINTS - 1) + " points (" + points + ")");
                         double rootOut = Math.hypot(bolt[0], bolt[2]);
                         Check.that(rootOut >= 0.87 && rootOut <= 1.17, "it starts at the body (" + rootOut + ")");
                         Check.that(bolt[1] >= 0.29 && bolt[1] <= 1.49, "waist to shoulder high");
-                        double tipOut = Math.hypot(bolt[bolt.length - 3], bolt[bolt.length - 1]);
-                        Check.that(tipOut >= radius * 0.81 && tipOut <= radius * 1.001, "it reaches the Conqueror radius (" + tipOut + " of " + radius + ")");
-                        Check.that(bolt[bolt.length - 2] >= 0.15 && bolt[bolt.length - 2] <= 2.55, "its tip stays near the ground");
+                        double tx = bolt[bolt.length - 3];
+                        double ty = bolt[bolt.length - 2] - ConquerorBolts.CENTRE;
+                        double tz = bolt[bolt.length - 1];
+                        double tip = Math.sqrt(tx * tx + ty * ty + tz * tz);
+                        boolean ground = bolt[bolt.length - 2] <= ConquerorBolts.FLOOR + 0.6;
+                        Check.that(tip <= radius * 1.02 + 0.6 && (tip >= radius * 0.81 || ground && Math.hypot(tx, tz) >= radius * 0.3 - 1e-6),
+                            "it reaches out to the sphere, or strikes down and runs out along the ground (" + tip + " of " + radius + ")");
                         for (int p = 0; p < points; p++) {
-                            Check.that(bolt[p * 3 + 1] >= ConquerorBolts.FLOOR - 1e-9 && bolt[p * 3 + 1] <= 2.55 + ConquerorBolts.MOST_LIFT + 1.0,
-                                "a bolt skims the ground: never below it, never far above (" + bolt[p * 3 + 1] + ")");
+                            Check.that(bolt[p * 3 + 1] >= ConquerorBolts.FLOOR - 1e-9 && bolt[p * 3 + 1] <= ConquerorBolts.CENTRE + radius + 3.0,
+                                "a bolt never goes under the ground (" + bolt[p * 3 + 1] + ")");
                             Check.that(!Double.isNaN(bolt[p * 3]) && !Double.isNaN(bolt[p * 3 + 1]) && !Double.isNaN(bolt[p * 3 + 2]), "no NaN");
                         }
                     }
@@ -304,15 +311,18 @@ public final class LightningTests {
                         Check.that(!Double.isNaN(v), "no NaN in a storm");
                     }
                     if (call.color() == ConquerorStorm.CORE) {
-                        far = Math.max(far, Math.hypot(call.b()[0], call.b()[2]));
-                        if (Math.hypot(call.a()[0], call.a()[2]) < 1.0 && call.a()[1] == 1.0) {
+                        far = Math.max(far, Math.sqrt(call.b()[0] * call.b()[0] + call.b()[1] * call.b()[1] + call.b()[2] * call.b()[2]));
+                        double cx = call.a()[0];
+                        double cy = call.a()[1] - 1.2;
+                        double cz = call.a()[2];
+                        if (Math.sqrt(cx * cx + cy * cy + cz * cz) <= 0.91) {
                             roots++;
                         }
                     }
                 }
                 double reach = ConquerorStorm.reach(mastery);
                 Check.that(far > reach * 0.65 && far < reach * 1.1, "the storm spreads out to its reach (" + far + " of " + reach + ")");
-                Check.that(roots >= 5 && roots <= 9, "five to eight huge bolts out of the player (" + roots + ")");
+                Check.that(roots >= 8 && roots <= 13, "eight to thirteen huge bolts out of the player, over the whole sphere (" + roots + ")");
             }
         }
         int[] counts = {0, 0};
@@ -324,5 +334,60 @@ public final class LightningTests {
         int[] gone = {0};
         BoltMesh.ring(0, -1.6, 0, BoltMesh.WAVE + 0.5, 100, 0xFFFF1433, 1.0, (glow, v, c) -> gone[0]++);
         Check.that(gone[0] == 0, "the shockwave is gone once it has swept out");
+    }
+
+    /** 2.1.8: the lightning goes out over the whole sphere, fresh every time, no blind spots. */
+    static void sphere() {
+        for (int n : new int[] {3, 8, 13}) {
+            for (long seed = 0; seed < 40; seed++) {
+                double[] d = Sphere.directions(n, new java.util.SplittableRandom(seed));
+                for (int i = 0; i < n; i++) {
+                    Check.near(Math.sqrt(d[i * 3] * d[i * 3] + d[i * 3 + 1] * d[i * 3 + 1] + d[i * 3 + 2] * d[i * 3 + 2]), 1.0, 1e-9, "unit directions");
+                }
+                if (n >= 8) {
+                    // no blind spot: every direction of the sphere is near one of the set
+                    double worst = 1.0;
+                    for (int a = 0; a < 24; a++) {
+                        for (int b = 1; b < 12; b++) {
+                            double y = Math.cos(Math.PI * b / 12.0);
+                            double r = Math.sin(Math.PI * b / 12.0);
+                            double[] probe = {Math.cos(Math.PI * a / 12.0) * r, y, Math.sin(Math.PI * a / 12.0) * r};
+                            double best = -1;
+                            for (int i = 0; i < n; i++) {
+                                best = Math.max(best, probe[0] * d[i * 3] + probe[1] * d[i * 3 + 1] + probe[2] * d[i * 3 + 2]);
+                            }
+                            worst = Math.min(worst, best);
+                        }
+                    }
+                    Check.that(worst > Math.cos(Math.toRadians(n >= 13 ? 62 : 75)),
+                        "no part of the sphere is left far from a bolt (" + Math.toDegrees(Math.acos(worst)) + " degrees with " + n + ")");
+                }
+            }
+        }
+        // fresh every time, and over many releases every part of the sphere is struck
+        double[] one = Sphere.directions(8, new java.util.SplittableRandom(1));
+        double[] two = Sphere.directions(8, new java.util.SplittableRandom(2));
+        Check.that(!java.util.Arrays.equals(one, two), "another release, another set");
+        boolean[] octants = new boolean[8];
+        for (long seed = 0; seed < 30; seed++) {
+            double[] d = Sphere.directions(5, new java.util.SplittableRandom(seed * 7919));
+            for (int i = 0; i < 5; i++) {
+                octants[(d[i * 3] > 0 ? 1 : 0) + (d[i * 3 + 1] > 0 ? 2 : 0) + (d[i * 3 + 2] > 0 ? 4 : 0)] = true;
+            }
+        }
+        for (boolean octant : octants) {
+            Check.that(octant, "every part of the sphere gets struck over a few releases");
+        }
+        // the Conqueror's bolts: up, level and down over releases
+        boolean up = false;
+        boolean down = false;
+        for (long seed = 0; seed < 20; seed++) {
+            for (double[] bolt : ConquerorBolts.generate(1.0F, 1000, seed, true, 50)) {
+                double y = bolt[bolt.length - 2];
+                up |= y > 20;
+                down |= y <= ConquerorBolts.FLOOR + 0.6;
+            }
+        }
+        Check.that(up && down, "the Conqueror's lightning goes up into the sky and down onto the ground");
     }
 }

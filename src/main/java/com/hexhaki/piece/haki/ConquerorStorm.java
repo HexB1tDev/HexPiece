@@ -11,11 +11,10 @@ import java.util.SplittableRandom;
  * <p>On top of the original's own release (its range lightning, burst and dome, which stay), a release at full charge tears the ground
  * open with lightning out to {@link #reach} (60 blocks, up to 120 at full mastery, further than the original's 50 at the very most):
  * <ul>
- *   <li><b>the web</b>: a few huge bolts (5 to 8) racing out along the ground from the player at {@link #SPEED} blocks a tick,
- *       wandering, now and then branching, thick and white-hot at the root, thinning far out (the owner, after the first try: "too
- *       much lightning way too much": few and far, not a carpet);</li>
- *   <li><b>the sky</b>: a few bolts (3 to 6) falling out of the sky onto the field while the web spreads;</li>
- *   <li><b>the crown</b>: three arches of lightning leaping off the player's shoulders, over and down to the ground;</li>
+ *   <li><b>the sphere</b> (2.1.8): 8 to 13 huge bolts racing out from the player at {@link #SPEED} blocks a tick along directions spread
+ *       over the whole sphere, a fresh set every release ({@link Sphere}): up into the sky, level, and down, the ones that go down
+ *       striking the ground and racing along it outward; wandering, now and then a branch, thick and white-hot at the root, thinning far
+ *       out (the owner, after a first dense try: "too much lightning way too much": few and far, not a carpet);</li>
  *   <li><b>the shockwave</b>: an inked ring sweeping out to the reach ({@code client/haki/HakiBolts} draws it from {@link #reach}).</li>
  * </ul>
  * Every piece is laid as the original lays its lightning (a black body, a red core, near the player a hot heart), through
@@ -49,112 +48,88 @@ public final class ConquerorStorm {
         double reach = reach(mastery);
         SplittableRandom random = new SplittableRandom(seed ^ 0x5354_4F52_4DL);
         List<Call> out = new ArrayList<>();
-        // the owner, on the first try: "too much lightning way too much": a few huge bolts reaching far, not a carpet of them
-        int mains = 5 + (int) Math.round(2 * m) + (supreme ? 1 : 0);
-        web(out, random, mains, reach, 1.0, 0.0F, true);
-        int skies = 3 + (int) Math.round(2 * m) + (supreme ? 1 : 0);
-        for (int i = 0; i < skies; i++) {
-            sky(out, random, reach, (float) (2.0 + random.nextDouble() * 12.0));
-        }
-        int arches = 3;
-        double turn = random.nextDouble() * Math.PI * 2.0;
-        for (int i = 0; i < arches; i++) {
-            arch(out, random, turn + Math.PI * 2.0 * i / arches + random.nextDouble(-0.3, 0.3), (float) (random.nextDouble() * 2.0));
+        // 2.1.8 (the owner: "The lightning should spread in a perfect sphere randomly every single time, being able to target random areas
+        // of that sphere"): the huge bolts go out over the whole sphere, a fresh set every release (Sphere); still few of them ("too much
+        // lightning way too much")
+        int count = 8 + (int) Math.round(3 * m) + (supreme ? 2 : 0);
+        double[] directions = Sphere.directions(count, random);
+        for (int i = 0; i < count; i++) {
+            double[] dir = {directions[i * 3], directions[i * 3 + 1], directions[i * 3 + 2]};
+            bolt(out, random, dir, reach * (0.75 + 0.25 * random.nextDouble()), (float) (random.nextDouble() * 1.5));
         }
         return out;
     }
 
-    /** {@code count} bolts out along the ground from the player, {@code scale} of the first wave's thickness, from {@code delay}. */
-    static void web(List<Call> out, SplittableRandom random, int count, double reach, double scale, float delay, boolean heart) {
-        double start = random.nextDouble() * Math.PI * 2.0;
-        for (int i = 0; i < count; i++) {
-            double yaw = start + Math.PI * 2.0 * i / count + random.nextDouble(-0.35, 0.35) * Math.PI * 2.0 / count;
-            double length = reach * (0.7 + 0.3 * random.nextDouble());
-            double[] root = {Math.cos(yaw) * 0.9, 1.0, Math.sin(yaw) * 0.9};
-            branch(out, random, root, yaw, length, 0.0, length, scale, delay, heart, 1);
-        }
-    }
-
     /**
-     * A wandering bolt along the ground from {@code from} heading {@code yaw}, {@code length} blocks; {@code along} blocks of its trunk
-     * already behind it (its thickness and its strike time run on from there); it sheds branches while {@code depth} allows.
+     * One huge bolt from the player out along {@code dir}, {@code length} blocks: in pieces of about {@link #STEP}, wandering a little
+     * round its line; one that goes down strikes the ground and races along it outward for the rest; now and then a branch.
      */
-    static void branch(List<Call> out, SplittableRandom random, double[] from, double yaw, double length, double along, double trunk, double scale,
-                       float delay, boolean heart, int depth) {
-        double[] a = from;
-        double heading = yaw;
+    static void bolt(List<Call> out, SplittableRandom random, double[] dir, double length, float delay) {
+        double[] a = {dir[0] * 0.9, 1.2 + dir[1] * 0.3, dir[2] * 0.9};
+        double[] h = dir.clone();
+        double flat = Math.hypot(dir[0], dir[2]);
+        double yaw = flat < 0.15 ? random.nextDouble() * Math.PI * 2.0 : Math.atan2(dir[2], dir[0]);
+        boolean grounded = false;
         double walked = 0.0;
         while (walked < length - 0.5) {
             double step = Math.min(length - walked, STEP * (0.7 + 0.6 * random.nextDouble()));
-            heading += random.nextDouble(-0.32, 0.32);
-            double height = 0.15 + 0.7 * random.nextDouble() * random.nextDouble();
-            double[] b = {a[0] + Math.cos(heading) * step, height, a[2] + Math.sin(heading) * step};
-            double t = Math.min(1.0, (along + walked) / trunk);
-            float at = delay + (float) ((along + walked) / SPEED);
-            float body = (float) (scale * (0.46 - 0.36 * t));
-            float core = (float) (scale * (0.15 - 0.115 * t));
+            double[] b;
+            if (!grounded) {
+                double[] wander = Sphere.unit(random);
+                h = normalise(new double[] {h[0] * 0.7 + dir[0] * 0.3 + wander[0] * 0.2, h[1] * 0.7 + dir[1] * 0.3 + wander[1] * 0.2,
+                    h[2] * 0.7 + dir[2] * 0.3 + wander[2] * 0.2});
+                b = new double[] {a[0] + h[0] * step, a[1] + h[1] * step, a[2] + h[2] * step};
+                if (b[1] < 0.15) {
+                    // it struck the ground: from here it runs along it, outward
+                    grounded = true;
+                    b[1] = 0.15 + 0.4 * random.nextDouble();
+                }
+            } else {
+                yaw += random.nextDouble(-0.3, 0.3);
+                b = new double[] {a[0] + Math.cos(yaw) * step, 0.15 + 0.6 * random.nextDouble() * random.nextDouble(), a[2] + Math.sin(yaw) * step};
+            }
+            double t = Math.min(1.0, walked / length);
+            float at = delay + (float) (walked / SPEED);
             int life = 20 + random.nextInt(8);
+            float body = (float) (0.46 - 0.36 * t);
+            float core = (float) (0.15 - 0.115 * t);
             if (t < 0.5) {
                 // far out the core's own ink is the outline: the black body only where the bolt is thick
                 out.add(new Call(a, b, body, BODY, life, at));
             }
             out.add(new Call(a, b, core, CORE, life, at));
-            if (heart && t < 0.3) {
+            if (t < 0.3) {
                 out.add(new Call(a, b, core * 0.3F, HEART, life - 2, at));
             }
-            if (depth > 0 && walked > 8.0 && random.nextDouble() < 0.12) {
-                // now and then one branch off a trunk, never a branch off a branch
-                double side = random.nextBoolean() ? 1 : -1;
-                double off = heading + side * random.nextDouble(0.45, 1.0);
-                double rest = length - walked;
-                branch(out, random, b, off, Math.max(6.0, rest * random.nextDouble(0.3, 0.55)), along + walked + step, trunk, scale * 0.6, delay,
-                    false, depth - 1);
+            if (walked > 8.0 && random.nextDouble() < 0.1) {
+                branch(out, random, b, h, grounded, yaw, Math.min(length - walked, 6.0 + random.nextDouble() * 10.0), at + (float) (step / SPEED),
+                    core * 0.6F);
             }
             walked += step;
             a = b;
         }
     }
 
-    /** A bolt falling out of the sky onto the field at {@code delay}. */
-    static void sky(List<Call> out, SplittableRandom random, double reach, float delay) {
-        double r = Math.sqrt(random.nextDouble()) * reach * 0.75 + 6.0;
-        double yaw = random.nextDouble() * Math.PI * 2.0;
-        double[] ground = {Math.cos(yaw) * r, 0.1, Math.sin(yaw) * r};
-        double top = 38.0 + random.nextDouble() * 22.0;
-        double[] a = {ground[0] + random.nextDouble(-8, 8), top, ground[2] + random.nextDouble(-8, 8)};
-        int pieces = 6 + random.nextInt(3);
-        int life = 10 + random.nextInt(5);
+    /** A branch off a bolt at {@code from}: two or three pieces peeling away from its heading, thin, never branching again. */
+    static void branch(List<Call> out, SplittableRandom random, double[] from, double[] heading, boolean grounded, double yaw, double length,
+                       float delay, float core) {
+        double[] a = from;
+        double[] wander = Sphere.unit(random);
+        double[] h = normalise(new double[] {heading[0] + wander[0] * 0.8, heading[1] + wander[1] * 0.8, heading[2] + wander[2] * 0.8});
+        double turn = yaw + random.nextDouble(-1.0, 1.0);
+        int pieces = 2 + random.nextInt(2);
         for (int p = 0; p < pieces; p++) {
-            double t = (p + 1) / (double) pieces;
-            double[] b = p == pieces - 1 ? ground : new double[] {a[0] + (ground[0] - a[0]) / (pieces - p) + random.nextDouble(-2.5, 2.5),
-                top * (1 - t), a[2] + (ground[2] - a[2]) / (pieces - p) + random.nextDouble(-2.5, 2.5)};
-            float at = delay + (float) (p * 0.25);
-            float w = (float) (0.55 - 0.2 * t);
-            out.add(new Call(a, b, w * 0.42F, BODY, life, at));
-            out.add(new Call(a, b, w * 0.24F, CORE, life, at));
-            out.add(new Call(a, b, w * 0.08F, HEART, life - 2, at));
+            double step = length / pieces;
+            double[] b = grounded ? new double[] {a[0] + Math.cos(turn) * step, 0.15 + 0.4 * random.nextDouble(), a[2] + Math.sin(turn) * step}
+                : new double[] {a[0] + h[0] * step, Math.max(0.15, a[1] + h[1] * step), a[2] + h[2] * step};
+            float at = delay + (float) (p * step / SPEED);
+            out.add(new Call(a, b, core * (1.0F - 0.25F * p), CORE, 16 + random.nextInt(6), at));
             a = b;
         }
     }
 
-    /** An arch leaping off the player's shoulders up and over to the ground, heading {@code yaw}. */
-    static void arch(List<Call> out, SplittableRandom random, double yaw, float delay) {
-        double land = 14.0 + random.nextDouble() * 12.0;
-        double rise = 8.0 + random.nextDouble() * 8.0;
-        int pieces = 9;
-        double[] a = {Math.cos(yaw) * 0.5, 1.6, Math.sin(yaw) * 0.5};
-        double bend = random.nextDouble(-0.25, 0.25);
-        for (int p = 1; p <= pieces; p++) {
-            double t = p / (double) pieces;
-            double d = 0.5 + (land - 0.5) * t;
-            double h = 1.6 * (1 - t) + 4.0 * rise * t * (1 - t);
-            double heading = yaw + bend * t;
-            double[] b = {Math.cos(heading) * d, p == pieces ? 0.1 : h, Math.sin(heading) * d};
-            float at = delay + (float) (p * 0.35);
-            out.add(new Call(a, b, 0.3F, BODY, 18, at));
-            out.add(new Call(a, b, 0.1F, CORE, 18, at));
-            out.add(new Call(a, b, 0.03F, HEART, 16, at));
-            a = b;
-        }
+    static double[] normalise(double[] v) {
+        double l = Math.max(1.0E-9, Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]));
+        return new double[] {v[0] / l, v[1] / l, v[2] / l};
     }
 }

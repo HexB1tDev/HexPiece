@@ -14,12 +14,18 @@ import java.util.SplittableRandom;
  * <p>What changed from the original: every bolt arcs (it bows sideways and lifts off the ground in its middle instead of running
  * straight), crackles (midpoint displacement, {@link Jag}), and splits (forks peel off the main bolts and die out fast), and the count
  * grows with charge and mastery. The old bolts were 4 to 9 points jittered along a straight line.
+ *
+ * <p>2.1.8: the bolts no longer fan round the player on the ground: they go out along directions spread over the whole sphere, a fresh
+ * set every time ({@link Sphere}), to the radius: up into the sky, level, or down, a bolt that goes down striking the ground and racing
+ * along it outward. The server stuns along the very same bolts.
  */
 public final class ConquerorBolts {
     /** Longest piece of a main bolt before it is broken again, in blocks. */
     public static final double PIECE = 2.6;
-    /** Most points on one main bolt (the original's longest had 10). */
+    /** Most points on one stretch of a main bolt (the original's longest had 10); a bolt that strikes the ground has two stretches. */
     public static final int MOST_POINTS = 17;
+    /** 2.1.8: the sphere's centre, the player's middle (blocks above the feet). */
+    public static final double CENTRE = 1.0;
     /** Lowest a point may run (the bolts skim the ground, never through it), and the most a bolt bows up in its middle. */
     public static final double FLOOR = 0.1;
     public static final double MOST_LIFT = 1.4;
@@ -48,20 +54,48 @@ public final class ConquerorBolts {
         float c = clampCharge(charge);
         SplittableRandom random = new SplittableRandom(seed ^ (dome ? 0x5245_4744_4F4D_45L : 0x4348_4152_4745L));
         int count = count(charge, mastery, dome);
-        double start = random.nextDouble() * Math.PI * 2.0;
-        double step = Math.PI * 2.0 / count;
+        // 2.1.8 (the owner: "The lightning should spread in a perfect sphere randomly every single time, being able to target random
+        // areas of that sphere"): the bolts go out along directions spread over the whole sphere, fresh every time (Sphere)
+        double[] directions = Sphere.directions(count, random);
         List<double[]> mains = new ArrayList<>();
         List<double[]> forks = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            double yaw = start + i * step + (random.nextDouble() - 0.5) * step * 0.7;
-            double rootYaw = yaw + (random.nextDouble() - 0.5) * 0.5;
+            double dx = directions[i * 3];
+            double dy = directions[i * 3 + 1];
+            double dz = directions[i * 3 + 2];
+            double flat = Math.hypot(dx, dz);
+            double hx;
+            double hz;
+            if (flat < 0.15) {
+                double a = random.nextDouble() * Math.PI * 2.0;
+                hx = Math.cos(a);
+                hz = Math.sin(a);
+            } else {
+                hx = dx / flat;
+                hz = dz / flat;
+            }
             double rootOut = 0.88 + random.nextDouble() * 0.28;
-            double rootUp = 0.3 + random.nextDouble() * 1.18;
+            double rootUp = Math.max(0.3, Math.min(1.48, CENTRE + 0.5 * dy + (random.nextDouble() - 0.5) * 0.3));
             double reach = radius * (0.82 + random.nextDouble() * 0.18);
-            double tipUp = Math.max(0.15, Math.min(2.55, rootUp + (random.nextDouble() - 0.5) * (dome ? 1.95 : 1.3)));
-            double[] root = {Math.cos(rootYaw) * rootOut, rootUp, Math.sin(rootYaw) * rootOut};
-            double[] tip = {Math.cos(yaw) * reach, tipUp, Math.sin(yaw) * reach};
-            double[] bolt = arc(root, tip, random, dome ? 0.15 : 0.1, dome ? 0.09 : 0.06, c);
+            double[] root = {hx * rootOut, rootUp, hz * rootOut};
+            double[] tip = {dx * reach, CENTRE + dy * reach, dz * reach};
+            double[] bolt;
+            if (tip[1] >= FLOOR + 0.05) {
+                // up into the air, or out level: straight out along its line, bowing as it goes
+                bolt = arc(root, tip, random, dome ? 0.15 : 0.1, (dome ? 0.09 : 0.06) * (1.0 - Math.abs(dy)), c);
+            } else {
+                // down: it strikes the ground where its line meets it, then races along the ground outward for what is left of it
+                double t = (CENTRE - FLOOR) / -dy;
+                double[] hit = {dx * t, FLOOR, dz * t};
+                double out = Math.hypot(hit[0], hit[2]);
+                double run = Math.max(radius * 0.3, Math.min(radius - out, reach - t));
+                double[] end = {hx * (out + run), FLOOR + random.nextDouble() * 0.5, hz * (out + run)};
+                double[] down = arc(root, hit, random, 0.05, 0.0, c);
+                double[] along = arc(hit, end, random, dome ? 0.15 : 0.1, dome ? 0.09 : 0.06, c);
+                bolt = new double[down.length + along.length - 3];
+                System.arraycopy(down, 0, bolt, 0, down.length);
+                System.arraycopy(along, 3, bolt, down.length, along.length - 3);
+            }
             mains.add(bolt);
             int forkCount = dome ? 1 + (random.nextDouble() < 0.6 ? 1 : 0) : (c >= 0.58F ? 1 : 0);
             for (int f = 0; f < forkCount; f++) {
@@ -127,14 +161,24 @@ public final class ConquerorBolts {
         return out;
     }
 
-    /** A fork off {@code bolt}: from a point 30..70% along it, peeling away at 25..50 degrees, a fifth to a third of the bolt long. */
+    /** A fork off {@code bolt}: from a point 30..70% along it, peeling away at 25..50 degrees in any direction, a fifth to a third of it long. */
     static double[] fork(double[] bolt, SplittableRandom random, int index) {
         int points = bolt.length / 3;
         int at = Math.max(1, Math.min(points - 2, (int) Math.round(points * (0.3 + random.nextDouble() * 0.4))));
         double[] from = {bolt[at * 3], bolt[at * 3 + 1], bolt[at * 3 + 2]};
-        double[] next = {bolt[(at + 1) * 3], bolt[(at + 1) * 3 + 1], bolt[(at + 1) * 3 + 2]};
-        double heading = Math.atan2(next[2] - from[2], next[0] - from[0]);
-        double turn = Math.toRadians(25 + random.nextDouble() * 25) * (index % 2 == 0 ? 1 : -1) * (random.nextDouble() < 0.5 ? -1 : 1);
+        double dx = bolt[(at + 1) * 3] - from[0];
+        double dy = bolt[(at + 1) * 3 + 1] - from[1];
+        double dz = bolt[(at + 1) * 3 + 2] - from[2];
+        double dl = Math.max(1.0E-9, Math.sqrt(dx * dx + dy * dy + dz * dz));
+        dx /= dl;
+        dy /= dl;
+        dz /= dl;
+        double[] across = Jag.across(dx, dy, dz);
+        double spin = random.nextDouble() * Math.PI * 2.0;
+        double px = across[0] * Math.cos(spin) + across[3] * Math.sin(spin);
+        double py = across[1] * Math.cos(spin) + across[4] * Math.sin(spin);
+        double pz = across[2] * Math.cos(spin) + across[5] * Math.sin(spin);
+        double turn = Math.toRadians(25 + random.nextDouble() * 25) * (index % 2 == 0 ? 1 : -1);
         double total = 0;
         for (int p = 0; p + 1 < points; p++) {
             total += distance(new double[] {bolt[p * 3], bolt[p * 3 + 1], bolt[p * 3 + 2]},
@@ -142,9 +186,9 @@ public final class ConquerorBolts {
         }
         double length = total * (0.2 + random.nextDouble() * 0.13);
         double[] tip = {
-            from[0] + Math.cos(heading + turn) * length,
-            Math.max(0.1, from[1] + (random.nextDouble() - 0.65) * length * 0.35),
-            from[2] + Math.sin(heading + turn) * length};
+            from[0] + (dx * Math.cos(turn) + px * Math.sin(turn)) * length,
+            Math.max(FLOOR, from[1] + (dy * Math.cos(turn) + py * Math.sin(turn)) * length),
+            from[2] + (dz * Math.cos(turn) + pz * Math.sin(turn)) * length};
         double[] fork = Jag.path(from, tip, Math.min(2, Jag.levels(length)), 0.24, random.nextLong(), FLAT);
         for (int i = 1; i < fork.length; i += 3) {
             fork[i] = Math.max(FLOOR, fork[i]);

@@ -1,7 +1,7 @@
-# Next AI: 2.1.7 is released (2.1.5: 3D Haki lightning, Haki on the katana; 2.1.6: ground strikes and sound; 2.1.7: full-power storm)
+# Next AI: 2.1.8 is released (2.1.5: 3D Haki lightning, Haki on the katana; 2.1.6: ground strikes and sound; 2.1.7: full-power storm; 2.1.8: lightning in a sphere)
 
 Read `CLAUDE.md`, then this, then `next-ai-2.1.4.md` (the Swordsman: where everything is), `next-ai-2.1.3.md`, `next-ai-2.1.2.md`,
-`next-ai-2.1.1.md`. The next version is 2.1.8 (`tools/next_version.py`). Answer the owner in English. Never claim in-game testing.
+`next-ai-2.1.1.md`. The next version is 2.1.9 (`tools/next_version.py`). Answer the owner in English. Never claim in-game testing.
 
 ## 2.1.6 (the owner, asked about poses, sound and colours: "Do what you think is best")
 - Ground strikes: `HakiBolts.landings` finds, at launch, the free ends of CORE strokes that come down on a non-air block (one per half
@@ -68,6 +68,17 @@ further etc", then, seeing the first dense try: "too much lightning way too much
 - Far bolts skip invisible detail (`BoltMesh.build`: glow under 2 px, heart under 0.6 px, spurs under 1.2 px, discs under 1.2 px).
 - The gameplay radius is the original's (`ConquerorLightningPath.radius`, max 50; it also sizes SupremeHakiDestruction): not touched.
 - Render: `docs/images/haki-full-power-storm.png`.
+
+## 2.1.8 (the owner: "The lightning should spread in a perfect sphere randomly every single time, being able to target random areas of
+that sphere, currently there's spots where the lightning isn't being shot at")
+- `haki/Sphere.directions(n, random)`: a Fibonacci sphere (equal-area bands), each point jittered a little, the whole set turned by a
+  uniform random rotation; tested: no part of the sphere further than 75 degrees from a bolt with 8, 62 with 13; every octant over a
+  few releases.
+- `ConquerorBolts.generate` (the charge's and the release's bolts, and the server's stun paths): the mains go out along those directions
+  from the body to the radius (centre `CENTRE` 1.0 above the feet); a downward one strikes the floor where its line meets it and runs
+  along the ground outward (two arcs joined: up to 2 x MOST_POINTS - 1 points); forks peel off in 3D.
+- `ConquerorStorm.release`: 8..13 (+2 supreme) huge bolts along sphere directions (`bolt`: wandering pieces of ~5 blocks; striking the
+  ground turns them along it; a branch now and then), no more ring web, sky bolts or arches; the shockwave stays.
 
 ## Ideas not done
 - A screen-space light flash for very close strikes; lightning lighting the terrain (no dynamic light in vanilla).
