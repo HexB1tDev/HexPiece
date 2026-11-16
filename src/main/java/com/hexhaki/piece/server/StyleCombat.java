@@ -135,6 +135,13 @@ public final class StyleCombat {
             return 0;
         }
         Vec3[] end = new Vec3[1];
+        if (!hit.line()) {
+            // 2.1.2: every blow thrown cuts the air on every client near (StyleFx), hit or miss: its weight, + 10 all round.
+            Vec3 look = facing(user);
+            int code = hit.weight().ordinal() + (hit.arc() >= 180.0 ? 10 : 0);
+            PieceNetwork.around(user, new S2CStyleFx(move.ordinal(), 3, user.m_19879_(), user.m_20185_(), user.m_20186_(), user.m_20189_(),
+                look.f_82479_, code, look.f_82481_));
+        }
         List<LivingEntity> targets = hit.line() ? line(user, hit.reach(), hit.arc(), foe, end) : arc(user, hit.reach(), hit.arc(), foe);
         if (hit.line()) {
             Vec3 from = user.m_146892_();

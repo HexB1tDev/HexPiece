@@ -49,6 +49,8 @@ public final class StyleServer {
         long lastStringStart;
         long queuedAt = -1;
         boolean counterUsed;
+        /** 2.1.2: combat mode (R): the style's moves only come out while it is on; its stance is held meanwhile. */
+        boolean combat;
         final Map<StyleMove, Long> ready = new EnumMap<>(StyleMove.class);
         final Set<Integer> struck = new HashSet<>();
     }
@@ -72,6 +74,28 @@ public final class StyleServer {
         return state != null && state.move != null;
     }
 
+    /** The stance a style holds in combat mode (arms only: walking stays the game's). */
+    static String stance(FightingStyle style) {
+        return "style_" + style.id() + "_stance";
+    }
+
+    /** 2.1.2: combat mode on or off: the style's stance taken (or dropped) where everyone sees it, the player told on the action bar. */
+    public static void combat(ServerPlayer player, boolean on) {
+        PieceProfile profile = ProfileServer.of(player);
+        if (on && (!profile.chosen() || !profile.style().choice())) {
+            return;
+        }
+        State state = state(player);
+        if (state.combat == on) {
+            return;
+        }
+        state.combat = on;
+        if (state.move == null) {
+            FruitUtil.animate(player, on ? stance(profile.style()) : "__clear__", 4);
+        }
+        player.m_5661_(Component.m_237113_(on ? "Combat stance: " + profile.style().display() : "Combat stance dropped"), true);
+    }
+
     public static void press(ServerPlayer player, Slot slot) {
         if (!player.m_6084_() || player.m_5833_() || !player.m_21205_().m_41619_()) {
             return;
@@ -82,6 +106,9 @@ public final class StyleServer {
             return;
         }
         State state = state(player);
+        if (!state.combat) {
+            return;
+        }
         long now = now(player);
         if (slot.string()) {
             if (state.move != null && !state.move.slot().string()) {
@@ -166,6 +193,9 @@ public final class StyleServer {
         int tick = (int) (now - state.start);
         if (tick >= move.duration() || !player.m_6084_()) {
             state.move = null;
+            if (state.combat && state.queuedAt < 0 && player.m_6084_()) {
+                FruitUtil.animate(player, stance(move.style()), 3);
+            }
             return;
         }
         StyleCombat.carry(player, move, tick);

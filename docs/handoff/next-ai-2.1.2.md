@@ -8,8 +8,9 @@ Read `CLAUDE.md` and `docs/handoff/next-ai-2.1.1.md` first (house rules, how the
 enable combat."
 (Earlier, also: "show me a gif of each fighting style": done, `tools/style_gif.py`, `docs/images/style-*.gif`.)
 
-## State: all of 2.1.2's code is in `docs/handoff/wip-2.1.2.patch` (NOT committed, NOT pushed)
-Apply it first, from the repository root: `git apply docs/handoff/wip-2.1.2.patch` (it also adds the new files and the sprites).
+## State: all of 2.1.2's code so far is COMMITTED on the branch (after the stop, the repository's hook asked for a clean tree)
+It builds green locally (`hexpiece-2.1.2.jar`, every reference proven, 4 suites pass) but has no release notes yet, so no release was
+published. `docs/handoff/wip-2.1.2.patch` is the same code as a patch, kept for reference only: it is already applied, do NOT apply it again.
 It holds:
 1. **Photon particles (built and verified green before the stop, not pushed):**
    - `client/fx/PieceFx.java`: HexGhoul's `RcFx` ported (Photon `TileParticle` motes on pooled, batched `ParticleEmitter`s; drag,
@@ -24,7 +25,7 @@ It holds:
      water bullets (a flying drop, a dripping trail, a splash on arrival); Flame Leg flames while it spins; dust for Shave and the
      Shoulder Charge; air-step rings for Sky Walk; Iron Body's steel sparks.
    - `server/StyleCombat.land` now sends stage 3 for every non-line blow, hit or miss (dy = weight + 10 if all round).
-2. **Combat mode on R (written, NOT built yet):**
+2. **Combat mode on R (written; builds and verifies; the stances are still missing):**
    - `client/CombatMode.java`: on the client tick at HIGH priority (before the original's `HakiKeys$ForgeBus.tick`), consumes
      `HakiKeys.ARMAMENT` (R) clicks: R toggles combat mode (`C2SCombat`), Ctrl + R (`Screen.m_96637_`) sends the original's
      `HakiAction.ARMAMENT_TOGGLE` (what `HakiKeys.toggles` does). Not in Devil Fruit mode (R = Gear 5's transformation there) and not
@@ -37,9 +38,7 @@ It holds:
    - Lang: `key.hexhaki.armament` = "Combat mode (R) / Armament Haki (Ctrl + R)" (added to `RENAMED` in build.py). `VERSION = "2.1.2"`.
 
 ## To do, in order
-1. Apply the patch; run `python3 build.py`; fix anything (new references must pass `PieceVerify`: `Screen.m_96637_`,
-   `RegisterGuiOverlaysEvent.registerBelowAll`, `IGuiOverlay`, `Window`/`Font` calls are in HexGhoul's stubs; add evidence lines to
-   `verify/api-allowlist.txt` for anything the verifier calls unproven).
+1. Check the branch's latest "Build HexPiece" run ended green (it built locally before the push).
 2. **Write the four stance loops** `style_black_leg_stance`, `style_six_powers_stance`, `style_fishman_karate_stance`, `style_brawler_stance`
    in `tools/style_anims.py`: ARMS ONLY (rightArm, leftArm pinned, so walking legs stay vanilla), `isLoop` true, ~40 ticks, a slight breath;
    poses: Black Leg hands behind the back (`BL_HANDS`), Six Powers left hand behind the back, Fishman Karate right fist at the hip and
