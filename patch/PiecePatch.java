@@ -14,7 +14,10 @@ import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.internal.org.objectweb.asm.tree.InsnList;
+import jdk.internal.org.objectweb.asm.tree.FieldNode;
 import jdk.internal.org.objectweb.asm.tree.InsnNode;
+import jdk.internal.org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import jdk.internal.org.objectweb.asm.tree.LdcInsnNode;
 import jdk.internal.org.objectweb.asm.tree.MethodInsnNode;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
 import jdk.internal.org.objectweb.asm.tree.VarInsnNode;
@@ -73,9 +76,87 @@ public final class PiecePatch implements Opcodes {
      * </ul>
      */
     static final String HOOKS = "com/hexhaki/piece/client/PieceHooks";
+    static final String HAND = "com/hexhaki/client/render/HakiHandLayer";
+    static final String RYOU_HANDS = "com/hexhaki/piece/client/haki/RyouHands";
+    static final String RYOU_FX = "com/hexhaki/piece/client/haki/RyouFx";
+    static final String RYOU_SERVER = "com/hexhaki/piece/server/RyouServer";
+    static final String CONTROLLER = "com/hexhaki/gameplay/HakiServerController";
+    static final String COATING = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/model/geom/ModelPart;FZLnet/minecraft/client/player/AbstractClientPlayer;Z)V";
+    static final String AURA = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZFZZ)V";
+    static final String AMBIENT = "(Lnet/minecraft/world/entity/Entity;FZJZ)V";
+    static final String GROUND_STORM = "(Lnet/minecraft/world/entity/Entity;FZJ)V";
     static final Object[][] CALL_REDIRECTS = {
         {"com/hexhaki/fruit/client/FruitKeys", "tick", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
         {"com/hexhaki/fruit/client/FruitKeys", "interact", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
+        // 2.1.3 Ryou (the owner: "Ryou should look like blackened hands with a strong, clean glow outlining their shape. Keep the black
+        // coating readable beneath the coloured rim. ... instead of covering the arms with red effects. Remove the fire particles from
+        // every Ryou activation, idle and movement effect"): the coating stays plain black, the arm aura is left off while Ryou is up,
+        // the ambient effects of a Ryou player are RyouFx's (no embers, the player's own colour).
+        {HAND, "render", "com/hexhaki/client/devilfruit/render/GearJacketHaki", "renderCoating", COATING, RYOU_HANDS, "coating", 2},
+        {HAND, "renderFirstPerson", "com/hexhaki/client/devilfruit/render/GearJacketHaki", "renderCoating", COATING, RYOU_HANDS, "coating", 1},
+        {HAND, "render", HAND, "renderArmAura", AURA, RYOU_HANDS, "armAura", 2},
+        {HAND, "renderFirstPerson", HAND, "renderArmAura", AURA, RYOU_HANDS, "armAura", 1},
+        {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentAmbient", AMBIENT, RYOU_FX, "ambient", 1},
+        {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentGroundStorm", GROUND_STORM, RYOU_FX, "groundStorm", 1},
+    };
+    /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
+    static final String[][] WIDENED = {{HAND, "renderArmAura"}};
+    /**
+     * 2.1.3: static methods whose whole body becomes a call into HexPiece (same descriptor): class, method, descriptor, new owner, name.
+     * The fist glow becomes Ryou's coloured rim; the fist flames are gone; J (Advanced Haki, now Ryou) is left empty (the owner: "I think
+     * its best whenever Ryou is unlcked it fully replaces regular haki, and we empty out the J key for now").
+     */
+    static final String[][] TRAMPOLINES = {
+        {HAND, "renderAdvancedFistGlow", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZZ)V", RYOU_HANDS, "glow"},
+        {HAND, "renderAdvancedFistFlames", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FFZZ)V", RYOU_HANDS, "flames"},
+        {CONTROLLER, "toggleAcoc", "(Lnet/minecraft/server/level/ServerPlayer;)V", RYOU_SERVER, "acocKey"},
+    };
+    /** 2.1.3: once Ryou is unlocked, switching Armament on brings it (RyouServer.afterArmament runs before every return). */
+    static final String[] AFTER_ARMAMENT = {CONTROLLER, "toggleArmament", "(Lnet/minecraft/server/level/ServerPlayer;)V", RYOU_SERVER, "afterArmament"};
+    /**
+     * 2.1.3 (the owner: "Reduce the excessive muscle size produced by Advanced Haki Armament ... Keep the result close to the normal player
+     * silhouette, with restrained muscular definition rather than inflated shoulders, oversized biceps or an enlarged torso"): the
+     * physique's float constants, class, method, from, to, how many. Arms 1.4x wide at full bulk become 1.07x; the shoulders pushed out
+     * about 3 px become under half a pixel; the chest copy 1.55x wide and 1.36x deep becomes 1.06x and 1.10x (a hint of pectorals).
+     */
+    static final Object[][] FLOATS = {
+        {"com/hexhaki/client/render/HakiPhysiqueLayer", "pre", 0.4F, 0.07F, 1},
+        {"com/hexhaki/client/render/HakiPhysiqueLayer", "armSeparation", 2.2F, 0.24F, 1},
+        {"com/hexhaki/client/render/HakiPhysiqueLayer", "armSeparation", 0.35F, 0.08F, 1},
+        {"com/hexhaki/client/render/HakiChestLayer", "render", 0.55F, 0.06F, 1},
+        {"com/hexhaki/client/render/HakiChestLayer", "render", 0.3575F, 0.10F, 1},
+    };
+    /** The physique's named constants, kept in step with {@link #FLOATS} (class, field, value). */
+    static final Object[][] FLOAT_FIELDS = {
+        {"com/hexhaki/client/render/HakiPhysiqueLayer", "MAX_ARM_GAIN", 0.07F},
+        {"com/hexhaki/client/render/HakiPhysiqueLayer", "MAX_CHEST_GAIN", 0.06F},
+        {"com/hexhaki/client/render/HakiPhysiqueLayer", "ARM_CLEARANCE", 0.08F},
+    };
+    /**
+     * 2.1.3 (the owner: "Rename Advanced Haki Armament to Ryou everywhere visible to the player, including menus, tooltips, notifications
+     * and ability descriptions"): text the player reads, class, from, to, how many (string constants and string-concatenation recipes;
+     * identifiers such as acocOn, advancedHakiUnlocked and the network fields are untouched, so saves and packets stay as they were). The
+     * two Advanced Haki messages of HakiServerController were in toggleAcoc, which is RyouServer.acocKey now (J is empty).
+     */
+    static final Object[][] TEXTS = {
+        {"com/hexhaki/data/HakiTechnique", "Advanced Haki", "Ryou", 1},
+        {"com/hexhaki/data/HakiTechnique", "[J] Late-game multiplier. Requires ARM 850 + HAO 850 and active Armament; upgrades nearly every major technique.",
+            "Late-game multiplier. Requires ARM 850 + HAO 850. Once unlocked it replaces your Armament (Ctrl + R): blackened hands outlined in your own glow colour, and nearly every major technique upgraded.", 1},
+        {"com/hexhaki/data/HakiTechnique", "Flowing Armament / Ryuo", "Flowing Armament", 1},
+        {"com/hexhaki/data/HakiTechnique", "Ember Fists", "Ryou Fists", 1},
+        {"com/hexhaki/data/HakiTechnique", "With Advanced Haki [J] up, both fists ignite: red-to-orange flame trails on the hands and sky-fed bolts landing between the outward arcs.",
+            "With Ryou up, both fists blacken behind a bright outline in your own glow colour, and sky-fed bolts land between the outward arcs.", 1},
+        {"com/hexhaki/data/HakiTechnique", "Late-game Armament control required for Advanced Haki [J].", "Late-game Armament control required for Ryou.", 1},
+        {"com/hexhaki/data/HakiTechnique", "Passive milestone: emitted Armament techniques reach a 16% total mastery-step bonus and prepare the path to Advanced Haki.",
+            "Passive milestone: emitted Armament techniques reach a 16% total mastery-step bonus and prepare the path to Ryou.", 1},
+        {"com/hexhaki/data/HakiTechnique", "[M HOLD, RELEASE TO FIRE] Wind a Haki punch and let go. A tap throws a short close-range burst; a full hold throws a long, wide pressure cylinder that detonates where it lands. Length, width, damage, cost and cooldown all scale continuously with how long you held it, with Armament mastery, and with whether you are bare, coated, or under Advanced Haki.",
+            "[M HOLD, RELEASE TO FIRE] Wind a Haki punch and let go. A tap throws a short close-range burst; a full hold throws a long, wide pressure cylinder that detonates where it lands. Length, width, damage, cost and cooldown all scale continuously with how long you held it, with Armament mastery, and with whether you are bare, coated, or under Ryou.", 1},
+        {"com/hexhaki/data/HakiTechnique", "[K] Midgame cinematic finisher. Hold K on a target in your sights: the wind hauls them in onto a chambered fist, an uppercut launches them straight up, you appear above them mid-flight and hammer them back into the floor with both arms. Most of the damage is in the landing, not the launch, and the crater throws everything else clear. Physical/Haki/Advanced tiers raise the launch height, the damage and the size of the blast.",
+            "[K] Midgame cinematic finisher. Hold K on a target in your sights: the wind hauls them in onto a chambered fist, an uppercut launches them straight up, you appear above them mid-flight and hammer them back into the floor with both arms. Most of the damage is in the landing, not the launch, and the crater throws everything else clear. Physical/Haki/Ryou tiers raise the launch height, the damage and the size of the blast.", 1},
+        {"com/hexhaki/data/HakiTechnique", "Passive milestone for Haki Projection. A full charge reaches roughly 30% further and wider, and past 85% under Advanced Haki its landing scatters grounded Haki strikes around the impact.",
+            "Passive milestone for Haki Projection. A full charge reaches roughly 30% further and wider, and past 85% under Ryou its landing scatters grounded Haki strikes around the impact.", 1},
+        {"com/hexhaki/binds/client/AbilityBook", "Permanent:  \u0001 Armament   \u0001 Observation   \u0001 Advanced Haki   \u0001 powers on/off   \u0001 this book\u0001",
+            "Permanent:  \u0001 style / fruit (Ctrl: Armament, Ryou)   \u0001 Observation   \u0001 (empty)   \u0001 powers on/off   \u0001 this book\u0001", 1},
     };
     static final String BEAM = "(Lorg/joml/Vector3f;Lorg/joml/Vector3f;FIIIZ)Lcom/lowdragmc/photon/client/gameobject/emitter/beam/BeamEmitter;";
     static final String ADD = "(Lcom/lowdragmc/photon/client/fx/FX;Lcom/lowdragmc/photon/client/gameobject/IFXObject;)V";
@@ -104,6 +185,38 @@ public final class PiecePatch implements Opcodes {
         for (Object[] redirect : CALL_REDIRECTS) {
             String owner = (String) redirect[0];
             entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> redirectCalls(node, redirect)));
+        }
+        for (String[] widen : WIDENED) {
+            entries.put(widen[0] + ".class", transform(entries.get(widen[0] + ".class"), node -> {
+                for (int i = 1; i < widen.length; i++) {
+                    MethodNode method = method(node, widen[i], null);
+                    method.access = (method.access & ~(ACC_PRIVATE | ACC_PROTECTED)) | ACC_PUBLIC;
+                }
+            }));
+        }
+        for (String[] t : TRAMPOLINES) {
+            entries.put(t[0] + ".class", transform(entries.get(t[0] + ".class"), node -> trampoline(method(node, t[1], t[2]), t[3], t[4])));
+        }
+        entries.put(AFTER_ARMAMENT[0] + ".class", transform(entries.get(AFTER_ARMAMENT[0] + ".class"), PiecePatch::afterArmament));
+        for (Object[] f : FLOATS) {
+            String owner = (String) f[0];
+            entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> replaceFloat(node, f)));
+        }
+        for (Object[] f : FLOAT_FIELDS) {
+            String owner = (String) f[0];
+            entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> {
+                for (FieldNode field : node.fields) {
+                    if (field.name.equals(f[1])) {
+                        field.value = f[2];
+                        return;
+                    }
+                }
+                throw new AssertionError("missing field " + owner + "." + f[1]);
+            }));
+        }
+        for (Object[] text : TEXTS) {
+            String owner = (String) text[0];
+            entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> replaceText(node, text)));
         }
         entries.put("META-INF/mods.toml", modsToml(entries.get("META-INF/mods.toml"), version));
         entries.put("META-INF/MANIFEST.MF", manifest(entries.get("META-INF/MANIFEST.MF"), version));
@@ -226,6 +339,69 @@ public final class PiecePatch implements Opcodes {
             throw new AssertionError("expected " + redirect[7] + " calls of " + redirect[2] + "." + redirect[3] + " in " + node.name + "."
                 + redirect[1] + ", found " + count);
         }
+    }
+
+    /** RyouServer.afterArmament(player) before every return of HakiServerController.toggleArmament. */
+    static void afterArmament(ClassNode node) {
+        MethodNode method = method(node, AFTER_ARMAMENT[1], AFTER_ARMAMENT[2]);
+        int hooks = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn.getOpcode() == RETURN) {
+                InsnList call = new InsnList();
+                call.add(new VarInsnNode(ALOAD, 0));
+                call.add(new MethodInsnNode(INVOKESTATIC, AFTER_ARMAMENT[3], AFTER_ARMAMENT[4], AFTER_ARMAMENT[2], false));
+                method.instructions.insertBefore(insn, call);
+                hooks++;
+            }
+        }
+        if (hooks < 1) {
+            throw new AssertionError("no return in " + node.name + "." + AFTER_ARMAMENT[1]);
+        }
+    }
+
+    /** One {@link #FLOATS} row: the float constant in the method becomes the new value; the count must match. */
+    static void replaceFloat(ClassNode node, Object[] f) {
+        MethodNode method = method(node, (String) f[1], null);
+        int count = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof LdcInsnNode ldc && ldc.cst instanceof Float value && value.floatValue() == (Float) f[2]) {
+                ldc.cst = f[3];
+                count++;
+            }
+        }
+        if (count != (Integer) f[4]) {
+            throw new AssertionError("expected " + f[4] + " constants " + f[2] + " in " + node.name + "." + f[1] + ", found " + count);
+        }
+    }
+
+    /** One {@link #TEXTS} row: the string constant (or string-concatenation recipe) in any method becomes the new text. */
+    static void replaceText(ClassNode node, Object[] text) {
+        String from = unescape((String) text[1]);
+        String to = unescape((String) text[2]);
+        int count = 0;
+        for (MethodNode method : node.methods) {
+            for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+                if (insn instanceof LdcInsnNode ldc && from.equals(ldc.cst)) {
+                    ldc.cst = to;
+                    count++;
+                } else if (insn instanceof InvokeDynamicInsnNode indy) {
+                    for (int i = 0; i < indy.bsmArgs.length; i++) {
+                        if (from.equals(indy.bsmArgs[i])) {
+                            indy.bsmArgs[i] = to;
+                            count++;
+                        }
+                    }
+                }
+            }
+        }
+        if (count != (Integer) text[3]) {
+            throw new AssertionError("expected " + text[3] + " texts '" + from + "' in " + node.name + ", found " + count);
+        }
+    }
+
+    /** The {@code \\u0001} of a concatenation recipe written in the tables above. */
+    static String unescape(String text) {
+        return text.replace("\\u0001", "\u0001");
     }
 
     /** Renames the one debug-table local {@code from} in {@code owner.method} to {@code to}. */

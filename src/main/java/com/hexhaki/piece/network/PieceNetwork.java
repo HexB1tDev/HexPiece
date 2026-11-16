@@ -13,8 +13,8 @@ import net.minecraftforge.network.simple.SimpleChannel;
  */
 public final class PieceNetwork {
     /** 1 (2.1.1): profiles, the start menu, fighting styles. 2 (2.1.2): C2SCombat (message 5), combat mode; S2CStance
-     * (message 6), who holds a stance; S2CStyleFx stage 3. */
-    private static final String PROTOCOL = "2";
+     * (message 6), who holds a stance; S2CStyleFx stage 3. 3 (2.1.3): S2CRyou (message 7), a player's Ryou colour. */
+    private static final String PROTOCOL = "3";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -34,6 +34,7 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(4, S2CStyleFx.class, S2CStyleFx::encode, S2CStyleFx::decode, S2CStyleFx::handle);
         CHANNEL.registerMessage(5, C2SCombat.class, C2SCombat::encode, C2SCombat::decode, C2SCombat::handle);
         CHANNEL.registerMessage(6, S2CStance.class, S2CStance::encode, S2CStance::decode, S2CStance::handle);
+        CHANNEL.registerMessage(7, S2CRyou.class, S2CRyou::encode, S2CRyou::decode, S2CRyou::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

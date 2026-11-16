@@ -2,6 +2,7 @@
 package com.mojang.blaze3d.vertex;
 
 public interface VertexConsumer {
+    /** color(r, g, b, a) floats (2.1.3) */ VertexConsumer m_85950_(float r, float g, float b, float a);
     /** vertex(pose, x, y, z) */ VertexConsumer m_252986_(org.joml.Matrix4f pose, float x, float y, float z);
     /** color(r, g, b, a) */ VertexConsumer m_6122_(int red, int green, int blue, int alpha);
     /** uv */ VertexConsumer m_7421_(float u, float v);

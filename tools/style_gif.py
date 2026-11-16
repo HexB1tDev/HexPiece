@@ -32,12 +32,13 @@ def neutral():
     return {p: {c: 0.0 for c in anim.CHANNELS[p]} for p in anim.PARTS}
 
 
-STANCE = {"slot": "STANCE", "name": "combat stance"}
+STANCE = {"slot": "STANCE", "name": "combat mode"}
 
 
 def stance_pose(stance, tick):
-    """The stance loop at tick (arms only; every other part standing)."""
-    return stance.pose(tick % max(1, stance.end))
+    """The stance loop at tick (arms only; every other part standing); a style without one (2.1.3: Fishman Karate, Iron Fist) rests
+    with its arms hanging, the game's own."""
+    return neutral() if stance is None else stance.pose(tick % max(1, stance.end))
 
 
 def move_pose(a, t, rest):
@@ -119,7 +120,8 @@ def striking_point(pose, previous, view, origin):
 
 
 def render(style, moves, out):
-    frames = timeline(moves, anim.load(os.path.join(ANIMS, f"style_{style}_stance.json")))
+    stance_file = os.path.join(ANIMS, f"style_{style}_stance.json")
+    frames = timeline(moves, anim.load(stance_file) if os.path.exists(stance_file) else None)
     title_font, label_font, small = font(17), font(15), font(12)
     accent = {"black_leg": (232, 116, 58), "six_powers": (90, 160, 230), "fishman_karate": (40, 170, 150), "brawler": (210, 70, 70)}[style]
     images = []

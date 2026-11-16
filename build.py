@@ -49,6 +49,14 @@ PATCHED = {
     "com/hexhaki/gameplay/ConquerorLightningPath.class",
     "com/hexhaki/command/HakiCommands.class",
     "com/hexhaki/fruit/client/FruitKeys.class",  # 2.1.3: R swaps the kit and the style (PiecePatch CALL_REDIRECTS)
+    # 2.1.3 Ryou (PiecePatch: CALL_REDIRECTS, WIDENED, TRAMPOLINES, AFTER_ARMAMENT, FLOATS, TEXTS)
+    "com/hexhaki/client/render/HakiHandLayer.class",
+    "com/hexhaki/client/render/HakiRenderHooks$ForgeBus.class",
+    "com/hexhaki/client/render/HakiPhysiqueLayer.class",
+    "com/hexhaki/client/render/HakiChestLayer.class",
+    "com/hexhaki/gameplay/HakiServerController.class",
+    "com/hexhaki/data/HakiTechnique.class",
+    "com/hexhaki/binds/client/AbilityBook.class",
     "META-INF/mods.toml",
     "META-INF/MANIFEST.MF",
 }
@@ -62,7 +70,8 @@ NEW_PREFIXES = (
     "data/hexhaki/",
 )
 # Original lang keys the expansion may change (renamed controls).
-RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament"}, SOUNDS: set()}
+RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament", "key.hexhaki.acoc",
+                  "subtitles.hexhaki.acoc_on", "subtitles.hexhaki.acoc_off"}, SOUNDS: set()}
 # 2.1.1 (the owner: "Get rid of the Imu fruit (Devil Devil fruit). Get rid of it ENTIRELY, but keep it's assets, for future use on other
 # things"): no code, text or file name of the jar may name it; its assets (the Black Soul texture, model and name) stay.
 IMU = re.compile(rb"(?<![A-Za-z])(imu|Imu|IMU)(?![A-Za-z])|Akuma Akuma|akuma_akuma|AKUMA_AKUMA|Devil Devil|devil_devil")

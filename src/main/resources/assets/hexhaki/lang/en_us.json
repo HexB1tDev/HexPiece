@@ -5,5 +5,8 @@
   "key.hexpiece.special_b": "Style special 2",
   "entity.hexhaki.pirate": "Pirate",
   "entity.hexhaki.marine": "Marine",
-  "key.hexhaki.armament": "Combat style / fruit (R), the mode's power (Ctrl + R: Armament, Gear 5)"
+  "key.hexhaki.armament": "Combat style / fruit (R), the mode's power (Ctrl + R: Armament, Gear 5)",
+  "key.hexhaki.acoc": "(empty: Ryou comes with Armament)",
+  "subtitles.hexhaki.acoc_on": "Ryou crackles",
+  "subtitles.hexhaki.acoc_off": "Ryou fades"
 }
