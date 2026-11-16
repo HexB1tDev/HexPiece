@@ -8,3 +8,29 @@
 # --- 2.1.1: fighting styles (client input and hit effects) ---------------------------------------------------------------------------
 F net/minecraft/client/Minecraft f_91077_ Lnet/minecraft/world/phys/HitResult;   # [srg] hitResult: joined.tsrg enn w f_91077_ (enn = Minecraft: s f_91073_ level, t f_91074_ player as the original uses); intermediary FIELD enn Leeg; w field_1765 (yarn crosshairTarget; eeg = HitResult)
 F net/minecraft/core/particles/ParticleTypes f_123797_ Lnet/minecraft/core/particles/SimpleParticleType;   # [order] CRIT: joined.tsrg iv g f_123797_, right after CLOUD f f_123796_ which the original uses; intermediary FIELD iv Liy; g field_11205 (yarn CRIT)
+
+# --- 2.1.1: the pirates and marines (entity types, synced data, renderers) -------------------------------------------------------
+# [hexkagune] referenced by HexGhoul's input jar hexkagune-1.0.0.jar (SHA-256 c5ebfd47...7d34, registers its spike entity and renderer with
+#             the same calls), so proven at runtime on the same Minecraft 1.20.1 / Forge 47; checked by javap over its classes.
+C net/minecraft/world/entity/EntityType$Builder                                    # [hexkagune] EntityType.Builder.of(...).sized(...).build(...)
+C net/minecraft/world/entity/EntityType$EntityFactory                              # [hexkagune] the factory passed to EntityType.Builder.of
+F net/minecraftforge/registries/ForgeRegistries ENTITY_TYPES Lnet/minecraftforge/registries/IForgeRegistry;   # [hexkagune] DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, ...)
+M net/minecraft/world/entity/EntityType$Builder m_20704_ (Lnet/minecraft/world/entity/EntityType$EntityFactory;Lnet/minecraft/world/entity/MobCategory;)Lnet/minecraft/world/entity/EntityType$Builder;   # [hexkagune] of
+M net/minecraft/world/entity/EntityType$Builder m_20699_ (FF)Lnet/minecraft/world/entity/EntityType$Builder;   # [hexkagune] sized
+M net/minecraft/world/entity/EntityType$Builder m_20702_ (I)Lnet/minecraft/world/entity/EntityType$Builder;   # [hexkagune] clientTrackingRange
+M net/minecraft/world/entity/EntityType$Builder m_20717_ (I)Lnet/minecraft/world/entity/EntityType$Builder;   # [hexkagune] updateInterval
+M net/minecraft/world/entity/EntityType$Builder m_20712_ (Ljava/lang/String;)Lnet/minecraft/world/entity/EntityType;   # [hexkagune] build
+C net/minecraft/client/renderer/entity/EntityRendererProvider                       # [hexkagune] the renderer factory
+C net/minecraft/client/renderer/entity/EntityRendererProvider$Context               # [hexkagune] its context
+C net/minecraftforge/client/event/EntityRenderersEvent$RegisterRenderers            # [hexkagune] renderer registration event
+M net/minecraftforge/client/event/EntityRenderersEvent$RegisterRenderers registerEntityRenderer (Lnet/minecraft/world/entity/EntityType;Lnet/minecraft/client/renderer/entity/EntityRendererProvider;)V   # [hexkagune]
+C net/minecraft/network/syncher/EntityDataAccessor                                  # [hexkagune] synced entity data
+C net/minecraft/network/syncher/EntityDataSerializer                                # [hexkagune]
+C net/minecraft/network/syncher/EntityDataSerializers                               # [hexkagune]
+C net/minecraft/network/syncher/SynchedEntityData                                   # [hexkagune]
+F net/minecraft/network/syncher/EntityDataSerializers f_135028_ Lnet/minecraft/network/syncher/EntityDataSerializer;   # [hexkagune] INT
+M net/minecraft/network/syncher/SynchedEntityData m_135353_ (Ljava/lang/Class;Lnet/minecraft/network/syncher/EntityDataSerializer;)Lnet/minecraft/network/syncher/EntityDataAccessor;   # [hexkagune] defineId
+M net/minecraft/network/syncher/SynchedEntityData m_135370_ (Lnet/minecraft/network/syncher/EntityDataAccessor;)Ljava/lang/Object;   # [hexkagune] get
+M net/minecraft/network/syncher/SynchedEntityData m_135372_ (Lnet/minecraft/network/syncher/EntityDataAccessor;Ljava/lang/Object;)V   # [hexkagune] define
+M net/minecraft/network/syncher/SynchedEntityData m_135381_ (Lnet/minecraft/network/syncher/EntityDataAccessor;Ljava/lang/Object;)V   # [hexkagune] set
+M net/minecraft/server/level/ServerLevel m_7967_ (Lnet/minecraft/world/entity/Entity;)Z   # [srg] addFreshEntity: joined.tsrg aif b (Lbfj;)Z m_7967_ (aif = ServerLevel: s m_8895_ getDataStorage, n m_7654_ getServer; bfj = Entity); overrides LevelWriter cmu.b (HexGhoul's list)

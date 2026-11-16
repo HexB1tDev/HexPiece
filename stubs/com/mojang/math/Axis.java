@@ -3,6 +3,8 @@ package com.mojang.math;
 
 public interface Axis {
     /** YP (null is not a constant expression, so nothing is inlined) */ Axis f_252436_ = null;
+    /** XP (joined.tsrg Axis b; the original HexHaki jar uses it) */ Axis f_252529_ = null;
+    /** ZP (joined.tsrg Axis f; the original HexHaki jar uses it) */ Axis f_252403_ = null;
 
     /** rotationDegrees */ default org.joml.Quaternionf m_252977_(float degrees) { throw new UnsupportedOperationException(); }
 }
