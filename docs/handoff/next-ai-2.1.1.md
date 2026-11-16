@@ -51,3 +51,8 @@ Mid-session, on two original animations (armament_activate, acoc_activate side v
 - NPCs: no bendy-lib on NPC models, so bent elbows/knees are approximated; no spawn eggs (commands and patrols only); no loot yet.
 - The female bust layer does not follow a body bend during an animation (the head and arms do).
 - The style specials' numbers (damage, cooldowns, mastery thresholds) are first guesses: ask how they play.
+
+## Renders (docs/images/)
+start-menu-1-gender, -2-flag, -3-style (tools/preview/UiPreview), captains-log-overview, -marine-haki, -style, conqueror-lightning
+(tools/lightning_preview.py), npc-skins (front and back of all 16 looks), style-black-leg and style-specials (tools/anim_preview.py),
+armament-acoc-before-after (the two originals the owner flagged, rows 1 and 3, against their reworks, rows 2 and 4).
