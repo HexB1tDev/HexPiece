@@ -63,6 +63,20 @@ public final class PiecePatch implements Opcodes {
         "addAdvancedGalaxyFistLightning", 1, "addConquerorRangeLightning", 7, "addLastStandBodyBolts", 7,
         "addLastStandOverheadArches", 11, "lightningFamilies", 5, "lightningFamiliesAt", 4, "lightningFamiliesDelayed", 2,
         "skyBreak", 4, "skyRift", 4, "horizonCracks", 2);
+    /**
+     * 2.1.3: calls in the original redirected into {@code com.hexhaki.piece} (same descriptor, static): class, method, the call's owner,
+     * name and descriptor, the new owner and name, how many such calls the method must have.
+     * <ul>
+     *   <li>R switches between the fighting style and the fruit (the owner: "tapping R switches from Combat style and fruit (if any is
+     *       eaten)"): a kit fruit's M1 and right click ({@code FruitKeys.tick}, {@code FruitKeys.interact}) ask
+     *       {@code PieceHooks.fruitKeysActive} (the kit is active and combat mode is off) instead of {@code FruitClient.active}.</li>
+     * </ul>
+     */
+    static final String HOOKS = "com/hexhaki/piece/client/PieceHooks";
+    static final Object[][] CALL_REDIRECTS = {
+        {"com/hexhaki/fruit/client/FruitKeys", "tick", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
+        {"com/hexhaki/fruit/client/FruitKeys", "interact", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
+    };
     static final String BEAM = "(Lorg/joml/Vector3f;Lorg/joml/Vector3f;FIIIZ)Lcom/lowdragmc/photon/client/gameobject/emitter/beam/BeamEmitter;";
     static final String ADD = "(Lcom/lowdragmc/photon/client/fx/FX;Lcom/lowdragmc/photon/client/gameobject/IFXObject;)V";
     static final String BOLT = "(Lcom/lowdragmc/photon/client/fx/FX;Lorg/joml/Vector3f;Lorg/joml/Vector3f;FIIIZ)V";
@@ -86,6 +100,10 @@ public final class PiecePatch implements Opcodes {
         entries.put(PATH + ".class", transform(entries.get(PATH + ".class"), PiecePatch::lightningPaths));
         for (String[] local : IMU_LOCALS) {
             entries.put(local[0] + ".class", transform(entries.get(local[0] + ".class"), node -> renameLocal(node, local[1], IMU, local[2])));
+        }
+        for (Object[] redirect : CALL_REDIRECTS) {
+            String owner = (String) redirect[0];
+            entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> redirectCalls(node, redirect)));
         }
         entries.put("META-INF/mods.toml", modsToml(entries.get("META-INF/mods.toml"), version));
         entries.put("META-INF/MANIFEST.MF", manifest(entries.get("META-INF/MANIFEST.MF"), version));
@@ -189,6 +207,25 @@ public final class PiecePatch implements Opcodes {
             }
         }
         return count;
+    }
+
+    /** One {@link #CALL_REDIRECTS} row: every matching static call in the method goes to the new owner instead; the count must match. */
+    static void redirectCalls(ClassNode node, Object[] redirect) {
+        MethodNode method = method(node, (String) redirect[1], null);
+        int count = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.getOpcode() == INVOKESTATIC && call.owner.equals(redirect[2])
+                && call.name.equals(redirect[3]) && call.desc.equals(redirect[4])) {
+                call.owner = (String) redirect[5];
+                call.name = (String) redirect[6];
+                call.itf = false;
+                count++;
+            }
+        }
+        if (count != (Integer) redirect[7]) {
+            throw new AssertionError("expected " + redirect[7] + " calls of " + redirect[2] + "." + redirect[3] + " in " + node.name + "."
+                + redirect[1] + ", found " + count);
+        }
     }
 
     /** Renames the one debug-table local {@code from} in {@code owner.method} to {@code to}. */

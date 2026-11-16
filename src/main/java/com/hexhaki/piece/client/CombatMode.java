@@ -3,8 +3,12 @@ package com.hexhaki.piece.client;
 import com.hexhaki.client.HakiClientState;
 import com.hexhaki.client.HakiKeys;
 import com.hexhaki.client.devilfruit.GearClientState;
+import com.hexhaki.client.devilfruit.GearKeys;
 import com.hexhaki.fruit.client.FruitClient;
+import com.hexhaki.network.GearAction;
 import com.hexhaki.network.HakiAction;
+import com.hexhaki.network.HakiNetwork;
+import com.hexhaki.network.msg.C2SGearAction;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.network.C2SCombat;
 import com.hexhaki.piece.network.PieceNetwork;
@@ -21,17 +25,29 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * 2.1.2 (the owner: "same as HexGhoul tap R to enable combat"): combat mode, as HexGhoul's R puts a ghoul into ghoul mode. R was the
- * original's Armament Haki key, so, as HexGhoul moved its kagune to Ctrl + R: tap R for combat mode, Ctrl + R for Armament Haki. In Devil
- * Fruit mode or with a fruit kit on, R stays the original's (Gear 5's transformation, Armament), and a player who has not set sail yet
- * keeps R as Armament; combat mode switches itself off when any of those starts. The presses are taken before the original's key
- * handling (a higher priority on the same tick, both use consumeClick), so it never sees the ones that were combat mode's. While combat
- * mode is on, the fighting style throws its moves ({@link StyleInput}), the style's stance is held ({@link StanceLayer}) and a badge
- * sits over the hotbar.
+ * 2.1.2 (the owner: "same as HexGhoul tap R to enable combat"): combat mode, as HexGhoul's R puts a ghoul into ghoul mode; R was the
+ * original's Armament Haki key, so Armament moved to Ctrl + R. 2.1.3 (the owner: "tapping R switches from Combat style and fruit (if
+ * any is eaten)"): with a fruit eaten, R swaps between the fighting style and the fruit.
+ * <ul>
+ *   <li>No fruit: R toggles combat mode.</li>
+ *   <li>The Gomu fruit (Devil Fruit mode, {@code GearKeys}): R leaves combat mode for Devil Fruit mode and back ({@code
+ *       GearKeys.switchMode}, the original's X key does the same). Devil Fruit mode had Gear 5 on R: it is on Ctrl + R there now, as
+ *       Armament is in combat mode (Ctrl + R is the mode's own power).</li>
+ *   <li>A kit fruit (the Pika fruit, binds on): R swaps M1 and the right click between the style (combat mode) and the kit ({@link
+ *       PieceHooks#fruitKeysActive}); the kit's bound abilities keep their keys. (The original's "powers off" is not used: it turns
+ *       Haki off too.)</li>
+ * </ul>
+ * A player who has not set sail with a style keeps R as the original had it. The presses are taken before the original's key handling
+ * (a higher priority on the same tick, both use consumeClick), so it never sees the ones that were R's here. While combat mode is on,
+ * the fighting style throws its moves ({@link StyleInput}), a relaxed stance may be held ({@link StanceLayer}) and a badge sits over
+ * the hotbar.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class CombatMode {
+    /** Ticks a switch into combat mode waits for the server to end Devil Fruit mode before deciding it was refused. */
+    private static final int SWITCH_GRACE = 40;
     private static boolean on;
+    private static long switchingUntil;
 
     private CombatMode() {
     }
@@ -49,12 +65,22 @@ public final class CombatMode {
 
     static void reset() {
         on = false;
+        switchingUntil = 0;
     }
 
-    /** Combat mode is there for a player who has set sail with a style, outside Devil Fruit mode and with no fruit kit on. */
-    static boolean allowed() {
+    /** The player has set sail with a fighting style: R is HexPiece's. */
+    static boolean styled() {
         PieceProfile self = PieceClient.self();
-        return self.chosen() && self.style().choice() && !GearClientState.devilFruitMode() && !FruitClient.active();
+        return self.chosen() && self.style().choice();
+    }
+
+    /** Combat mode is there for a styled player outside Devil Fruit mode. */
+    static boolean allowed() {
+        return styled() && !GearClientState.devilFruitMode();
+    }
+
+    static long now(Minecraft minecraft) {
+        return minecraft.f_91073_ == null ? 0L : minecraft.f_91073_.m_46467_();
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
@@ -66,23 +92,54 @@ public final class CombatMode {
         if (minecraft.f_91074_ == null) {
             return;
         }
-        if (!allowed()) {
+        if (!styled()) {
             if (on) {
-                set(false); // Devil Fruit mode, a fruit kit on or no style any more: R is the original's again
+                set(false); // no style any more (a reset): R is the original's again
             }
             return;
+        }
+        if (on && GearClientState.devilFruitMode() && now(minecraft) > switchingUntil) {
+            set(false); // Devil Fruit mode came on another way (the X key): the fruit has the keys
         }
         if (minecraft.f_91080_ != null) {
             return; // the original drains R under a screen
         }
         while (HakiKeys.ARMAMENT.m_90859_()) {
             if (Screen.m_96637_()) {
-                if (HakiClientState.enabled) {
-                    HakiKeys.send(HakiAction.ARMAMENT_TOGGLE);
-                }
+                power();
             } else {
-                set(!on);
+                swap(minecraft);
             }
+        }
+    }
+
+    /** Ctrl + R: the mode's own power, Gear 5 in Devil Fruit mode, Armament Haki otherwise. */
+    static void power() {
+        if (GearClientState.hasFruit && GearClientState.devilFruitMode()) {
+            HakiNetwork.CHANNEL.sendToServer(new C2SGearAction(GearAction.GEAR_FIVE_TOGGLE));
+        } else if (HakiClientState.enabled) {
+            HakiKeys.send(HakiAction.ARMAMENT_TOGGLE);
+        }
+    }
+
+    /** R: combat mode on or off, or, with a fruit eaten, from the style to the fruit and back. */
+    static void swap(Minecraft minecraft) {
+        boolean gear = GearClientState.hasFruit;
+        if (!gear && !FruitClient.owned()) {
+            set(!on);
+            return;
+        }
+        if (on) {
+            set(false);
+            if (gear && !GearClientState.devilFruitMode()) {
+                GearKeys.switchMode();
+            }
+        } else {
+            if (gear && GearClientState.devilFruitMode()) {
+                GearKeys.switchMode();
+                switchingUntil = now(minecraft) + SWITCH_GRACE;
+            }
+            set(true);
         }
     }
 

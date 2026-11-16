@@ -1,7 +1,6 @@
 package com.hexhaki.piece.client;
 
 import com.hexhaki.HexHaki;
-import com.hexhaki.fruit.client.FruitClient;
 import com.hexhaki.piece.network.S2CStance;
 import com.hexhaki.piece.style.FightingStyle;
 import dev.kosmx.playerAnim.api.layered.IAnimation;
@@ -36,7 +35,8 @@ import net.minecraftforge.fml.common.Mod;
  * Armament Haki or anything else the original plays goes over the stance, eases in from it and back into it by itself when it ends:
  * the stance is never re-sent, it survives a respawn or a change of dimension (the layer is made again for the new player object) and
  * reaches players who walk up later ({@link S2CStance} on tracking). It eases out while the player holds something in the main hand,
- * rides, swims, flies, sleeps or lies dead, or has a Devil Fruit kit on, and eases back in after. In first person the stance leaves the
+ * rides, swims, flies, sleeps or lies dead, and eases back in after (2.1.3: a kit fruit no longer hides it: R swaps
+ * the kit and the style, and the server says who is in combat mode). In first person the stance leaves the
  * game's own hand alone (its first-person mode is playerAnimator's default, NONE).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
@@ -67,7 +67,7 @@ public final class StanceLayer {
     /** The stance {@code player} should show now, or null. */
     static String wanted(AbstractClientPlayer player, FightingStyle style) {
         if (style == null || style.stance() == null || !player.m_6084_() || player.m_5833_() || player.m_20159_()
-            || !player.m_21205_().m_41619_() || player.m_6117_() || player.m_6147_() || FruitClient.active(player.m_19879_())) {
+            || !player.m_21205_().m_41619_() || player.m_6117_() || player.m_6147_()) {
             return null; // 2.1.3: also while using an item (a shield, food in the off hand) or on a ladder or vine
         }
         Pose pose = player.m_20089_();

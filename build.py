@@ -22,7 +22,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.1.2"
+VERSION = "2.1.3"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 BUILD = Path(os.environ.get("HEXPIECE_BUILD_DIR", ROOT / "build"))
@@ -48,6 +48,7 @@ PATCHED = {
     "com/hexhaki/client/vfx/HakiVfx.class",
     "com/hexhaki/gameplay/ConquerorLightningPath.class",
     "com/hexhaki/command/HakiCommands.class",
+    "com/hexhaki/fruit/client/FruitKeys.class",  # 2.1.3: R swaps the kit and the style (PiecePatch CALL_REDIRECTS)
     "META-INF/mods.toml",
     "META-INF/MANIFEST.MF",
 }

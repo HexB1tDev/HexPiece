@@ -1,7 +1,6 @@
 package com.hexhaki.piece.client;
 
 import com.hexhaki.client.devilfruit.GearClientState;
-import com.hexhaki.fruit.client.FruitClient;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.network.C2SStyleAction;
 import com.hexhaki.piece.network.PieceNetwork;
@@ -18,7 +17,7 @@ import net.minecraftforge.fml.common.Mod;
 
 /**
  * 2.1.1: a fighting style's inputs. 2.1.2: only in combat mode (R, {@link CombatMode}), with an empty main hand, outside Devil Fruit
- * mode and with no fruit kit active (those keep M1 as the original had it): M1 throws the string (at a block too: to mine, leave combat
+ * mode (2.1.3: a kit fruit's M1 steps aside in combat mode, {@link PieceHooks#fruitKeysActive}): M1 throws the string (at a block too: to mine, leave combat
  * mode), the right click the signature (not at a block: doors and chests still open), Y and U the specials. The server decides what each press does.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
@@ -32,7 +31,7 @@ public final class StyleInput {
             return false;
         }
         PieceProfile self = PieceClient.self();
-        return CombatMode.on() && self.chosen() && self.style().choice() && !FruitClient.active() && !GearClientState.devilFruitMode();
+        return CombatMode.on() && self.chosen() && self.style().choice() && !GearClientState.devilFruitMode();
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
