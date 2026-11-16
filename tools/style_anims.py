@@ -77,6 +77,56 @@ def write(name, duration, beats, description, stop_extra=3):
         handle.write("\n")
 
 
+def write_stance(name, duration, beats, description):
+    """2.1.2: a combat-mode stance (R): a loop of the ARMS only. Every other part is left out of the file, so the game keeps animating it
+    (walking, sneaking, looking round); the stance plays on its own layer under every move (client/StanceLayer), which eases in from it
+    and back into it. The first and last beats are the same pose, so the loop has no seam."""
+    assert beats[0][2] == beats[-1][2] and beats[-1][0] == duration, name + ": a loop ends where it starts"
+    moves = []
+    for tick, easing, q in beats:
+        for part in ("rightArm", "leftArm"):
+            values = q[part]
+            for channel in PARTS[part]:
+                moves.append({"tick": tick, "easing": easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
+    moves.sort(key=lambda m: m["tick"])
+    data = {"version": 3, "name": name, "author": "HexPiece 2.1.2", "description": description,
+            "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration, "isLoop": True, "returnTick": 0,
+                      "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
+    WRITTEN[name] = data
+    with open(os.path.join(OUT, name + ".json"), "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=1)
+        handle.write("\n")
+
+
+def breath(arms_pose, lift=1.0):
+    """The stance breathing in: the shoulders rise a little, the elbows ease (degrees scaled by lift)."""
+    out = {}
+    for part, values in arms_pose.items():
+        v = dict(values)
+        side = 1.0 if part == "rightArm" else -1.0
+        v["pitch"] = v.get("pitch", 0.0) - 1.6 * lift
+        v["roll"] = v.get("roll", 0.0) + 1.2 * lift * side
+        v["bend"] = v.get("bend", 0.0) + 3.0 * lift
+        out[part] = v
+    return out
+
+
+def stances():
+    """2.1.2: the four combat stances, held while combat mode is on (R), a slow breath (40 ticks, 2 s) each."""
+    def loop(name, arms_pose, description, lift=1.0):
+        held = {k: dict(v) for k, v in arms_pose.items()}
+        write_stance(name, 40, [(0, "linear", held), (20, "inoutsine", breath(held, lift)), (40, "inoutsine", held)], description)
+
+    loop("style_black_leg_stance", BL_STANCE,
+         "Black Leg combat stance: the hands clasped behind the back, as a cook keeps them out of the fight.", lift=0.5)
+    loop("style_six_powers_stance", SP_STANCE,
+         "Six Powers combat stance: upright and correct, the left hand behind the back, the right loose at the side.", lift=0.7)
+    loop("style_fishman_karate_stance", FK_STANCE,
+         "Fishman Karate combat stance: the right fist chambered at the hip, the left palm open forward.")
+    loop("style_brawler_stance", IF_STANCE,
+         "Iron Fist combat stance: a boxer's guard, both fists up at the chin, elbows in, bouncing on the breath.", lift=1.6)
+
+
 def shake(base, ticks, amp, parts=(("body", "roll"),)):
     beats = []
     for i, t in enumerate(ticks):
@@ -90,8 +140,12 @@ def shake(base, ticks, amp, parts=(("body", "roll"),)):
 
 # ------------------------------------------------------------------------------------------------------------- Black Leg
 # Hands clasped behind the back the whole time; the weight on the back leg, the kicking leg light.
-BL_HANDS = {"rightArm": arm(28, 22, -6, -48), "leftArm": arm(28, -22, 6, -48)}
+# 2.1.2: the hands truly clasped at the small of the back (solved on the model: the hands meet behind the spine, the elbows out behind,
+# no arm through the torso), where 2.1.1 only hung them at the back of each hip.
+BACK_HAND = arm(94, -48, -75, -81)
+BL_HANDS = {"rightArm": BACK_HAND, "leftArm": mirror(BACK_HAND)}
 BL = p(BL_HANDS, rightLeg=leg(4, 2, 8), leftLeg=leg(-6, -2, 12), body={"y": -0.03, "yaw": -8}, head={"pitch": -2})
+BL_STANCE = p(BL_HANDS)
 
 
 def black_leg():
@@ -181,7 +235,8 @@ def black_leg():
 
 # ------------------------------------------------------------------------------------------------------------- Six Powers
 # Upright and correct: the left hand behind the back, the right relaxed at the side, ready.
-SP = p(arms(right=arm(-8, 0, 6, -14), left=arm(30, -24, 4, -60)), legs(6, 2.5), body={"yaw": -6})
+SP = p(arms(right=arm(-8, 0, 6, -14), left=mirror(BACK_HAND)), legs(6, 2.5), body={"yaw": -6})
+SP_STANCE = p(arms(right=arm(-8, 0, 6, -14), left=mirror(BACK_HAND)))
 
 
 def six_powers():
@@ -258,6 +313,7 @@ def six_powers():
 # ------------------------------------------------------------------------------------------------------------- Fishman Karate
 # A wide, low stance: the left palm forward, the right chambered at the hip.
 FK = p(arms(right=arm(20, 0, 12, -100), left=arm(-70, 10, -6, -24)), legs(30, 14), body={"y": -0.12, "yaw": -14})
+FK_STANCE = p(arms(right=arm(20, 0, 12, -100), left=arm(-70, 10, -6, -24)))
 
 
 def fishman_karate():
@@ -337,6 +393,7 @@ def fishman_karate():
 
 # ------------------------------------------------------------------------------------------------------------- Iron Fist
 # A boxer's guard: fists at the chin, elbows in, the left foot and shoulder forward.
+IF_STANCE = p(arms(right=arm(-66, -24, 12, -116), left=arm(-76, 20, -10, -104)))
 IF = p(arms(right=arm(-66, -24, 12, -116), left=arm(-76, 20, -10, -104)), rightLeg=leg(12, 3, 18), leftLeg=leg(-14, -3, 16),
        body={"y": -0.05, "yaw": -16}, head={"pitch": 6})
 
@@ -467,6 +524,7 @@ def main():
     six_powers()
     fishman_karate()
     iron_fist()
+    stances()
     java_poses()
     print(f"wrote {len(WRITTEN)} style animations and their NPC poses")
 

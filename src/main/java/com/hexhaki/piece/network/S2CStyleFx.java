@@ -9,7 +9,8 @@ import net.minecraftforge.network.NetworkEvent;
 
 /**
  * What a style move looks like as it happens, for every client near it: the move (ordinal), its stage (0 started, 1 a blow landed, 2 a
- * shot fired), the user, and a point (where the blow landed, or a shot's end) and direction.
+ * shot fired, 3 a blow thrown: dy carries its weight, + 10 all round), the user, and a point (where the blow landed, a shot's end, the
+ * thrower's feet) and direction (a shot's start).
  */
 public record S2CStyleFx(int move, int stage, int entity, double x, double y, double z, double dx, double dy, double dz) {
     public static void encode(S2CStyleFx message, FriendlyByteBuf buffer) {

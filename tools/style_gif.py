@@ -2,7 +2,9 @@
 """Animated GIFs of each fighting style's whole moveset, from the real animation files (tools/anim.py's PlayerAnimator model).
 
 The M1 string is chained as the game chains it: each blow cut into at its cancel tick with PlayerAnimator's 2-tick crossfade; then the
-right-click signature and both specials, each easing back to the stance. Two views (3/4 front, side); the move's name and key on top; a
+right-click signature and both specials, each easing back to the stance. 2.1.2: it opens on the combat stance (R) and holds it between
+moves, as the game does (the stance is an arms-only loop on a layer under the moves: a move fades in from it, and after its endTick
+returns to it by its stopTick; the legs are the game's, shown standing). Two views (3/4 front, side); the move's name and key on top; a
 red flash where a blow lands, on its hit tick. Real time: one frame per game tick (50 ms).
 Usage: java -cp build/preview:build/classes StyleDump > build/preview/styles.json; python3 tools/style_gif.py <out dir>
 """
@@ -17,7 +19,7 @@ from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ANIMS = os.path.join(ROOT, "src/main/resources/assets/hexhaki/player_animation")
-KEYS = {"M1_1": "M1 (1)", "M1_2": "M1 (2)", "M1_3": "M1 (3)", "M1_4": "M1 (4)", "HEAVY": "Right click", "SPECIAL_A": "Y", "SPECIAL_B": "U"}
+KEYS = {"STANCE": "R", "M1_1": "M1 (1)", "M1_2": "M1 (2)", "M1_3": "M1 (3)", "M1_4": "M1 (4)", "HEAVY": "Right click", "SPECIAL_A": "Y", "SPECIAL_B": "U"}
 W, H = 300, 330
 SCALE = 6.2
 
@@ -30,9 +32,33 @@ def neutral():
     return {p: {c: 0.0 for c in anim.CHANNELS[p]} for p in anim.PARTS}
 
 
-def timeline(moves):
-    """[(pose, label, hit, move)] one per tick."""
+STANCE = {"slot": "STANCE", "name": "combat stance"}
+
+
+def stance_pose(stance, tick):
+    """The stance loop at tick (arms only; every other part standing)."""
+    return stance.pose(tick % max(1, stance.end))
+
+
+def move_pose(a, t, rest):
+    """A move at local tick t over the stance: after its endTick it returns to the stance (not to 0) by its stopTick."""
+    if t <= a.end or a.stop <= a.end:
+        return a.pose(t)
+    w = min(1.0, (t - a.end) / (a.stop - a.end))
+    return blend(a.pose(a.end), rest, anim.ease("inoutsine", w))
+
+
+def timeline(moves, stance):
+    """[(pose, move, hit)] one per tick."""
     frames = []
+    clock = [0]
+
+    def rest():
+        clock[0] += 1
+        return stance_pose(stance, clock[0])
+
+    for _ in range(30):
+        frames.append((rest(), STANCE, False))
     string = [m for m in moves if m["slot"].startswith("M1")]
     others = [m for m in moves if not m["slot"].startswith("M1")]
     previous = None  # (anim, move, local tick) of what was playing
@@ -42,23 +68,27 @@ def timeline(moves):
         last = i == len(string) - 1
         span = a.length() if last else move["cancel"]
         for t in range(0, span + 1):
-            pose = a.pose(t)
-            if previous is not None and t < 2:
-                old_a, old_t = previous
-                pose = blend(old_a.pose(old_t + t), pose, (t + 1) / 3.0)
+            here = stance_pose(stance, clock[0] + t)
+            pose = move_pose(a, t, here)
+            if t < 2:
+                before = here if previous is None else previous[0].pose(previous[1] + t)
+                pose = blend(before, pose, (t + 1) / 3.0)
             frames.append((pose, move, t in move["hits"]))
+        clock[0] += span
         previous = (a, span)
-    for _ in range(6):
-        frames.append((neutral(), None, False))
+    for _ in range(8):
+        frames.append((rest(), STANCE, False))
     for move in others:
         a = anim.load(os.path.join(ANIMS, move["animation"] + ".json"))
         for t in range(0, a.length() + 1):
-            pose = a.pose(t)
+            here = stance_pose(stance, clock[0] + t)
+            pose = move_pose(a, t, here)
             if t < 2:
-                pose = blend(neutral(), pose, (t + 1) / 3.0)
+                pose = blend(here, pose, (t + 1) / 3.0)
             frames.append((pose, move, t in move["hits"]))
-        for _ in range(6):
-            frames.append((neutral(), None, False))
+        clock[0] += a.length()
+        for _ in range(8):
+            frames.append((rest(), STANCE, False))
     return frames
 
 
@@ -89,7 +119,7 @@ def striking_point(pose, previous, view, origin):
 
 
 def render(style, moves, out):
-    frames = timeline(moves)
+    frames = timeline(moves, anim.load(os.path.join(ANIMS, f"style_{style}_stance.json")))
     title_font, label_font, small = font(17), font(15), font(12)
     accent = {"black_leg": (232, 116, 58), "six_powers": (90, 160, 230), "fishman_karate": (40, 170, 150), "brawler": (210, 70, 70)}[style]
     images = []

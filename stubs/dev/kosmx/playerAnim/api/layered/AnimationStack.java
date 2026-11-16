@@ -2,6 +2,7 @@
 package dev.kosmx.playerAnim.api.layered;
 
 public class AnimationStack implements IAnimation {
+    public void addAnimLayer(int priority, IAnimation layer) { throw new UnsupportedOperationException(); }
     public boolean isActive() { throw new UnsupportedOperationException(); }
     public dev.kosmx.playerAnim.core.util.Vec3f get3DTransform(String modelName, dev.kosmx.playerAnim.api.TransformType type, float tickDelta,
         dev.kosmx.playerAnim.core.util.Vec3f value0) { throw new UnsupportedOperationException(); }

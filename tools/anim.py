@@ -245,17 +245,33 @@ def skeleton(pose):
     out["neck"] = world(carried(hp))
     out["hips"] = [world(add(LIMBS[leg][0], (pose[leg]["x"], pose[leg]["y"], pose[leg]["z"]))) for leg in ("rightLeg", "leftLeg")]
     out["upper"] = (upper, mid)
+    # the cuboids as Minecraft draws them, for draw(): corners in (x, y, z) nested order (index 4 ix + 2 iy + iz)
+    boxes = [("head", out["head"])]
+    for level in (0, 1):
+        boxes.append(("torso", [torso_pts[(level + iy) * 4 + iz * 2 + ix] for ix in (0, 1) for iy in (0, 1) for iz in (0, 1)]))
     for part, (pivot, start, end, _) in LIMBS.items():
         p = pose[part]
         m = zyx(p["pitch"], p["yaw"], p["roll"])
         piv = add(pivot, (p["x"], p["y"], p["z"]))
         midp = ((start[0] + end[0]) / 2, (start[1] + end[1]) / 2, (start[2] + end[2]) / 2)
-        lower = add(apply(rot_x(math.radians(p.get("bend", 0.0))), (end[0] - midp[0], end[1] - midp[1], end[2] - midp[2])), midp)
+        bend = rot_x(math.radians(p.get("bend", 0.0)))
+        lower = add(apply(bend, (end[0] - midp[0], end[1] - midp[1], end[2] - midp[2])), midp)
         pts = [add(apply(m, q), piv) for q in (start, midp, lower)]
+
+        def placed(q, bent):
+            if bent:
+                q = add(apply(bend, (q[0] - midp[0], q[1] - midp[1], q[2] - midp[2])), midp)
+            q = add(apply(m, q), piv)
+            return world(carried(q) if part.endswith("Arm") else q)
+
+        top = start[1] - 1 if part.endswith("Arm") else start[1]  # an arm's box starts 2 px above its pivot, a leg's at it
+        for y0, y1, bent in ((top, midp[1], False), (midp[1], end[1], True)):
+            boxes.append((part, [placed((start[0] + dx, y, dz), bent) for dx in (-2, 2) for y in (y0, y1) for dz in (-2, 2)]))
         if part.endswith("Arm"):
             pts = [carried(q) for q in pts]
             out[part + "_pivot"] = world(carried(piv))
         out[part] = [world(q) for q in pts]
+    out["boxes"] = boxes
     return out
 
 
@@ -290,44 +306,43 @@ COLORS = {
 }
 
 
+# the camera's turn round the player (degrees): 0 we face them, 90 they face right, 180 we see their back
+VIEWS = {"front": 0, "three": 35, "side": 90, "threeback": 145, "back": 180}
+# a box's faces as corner indices (4 ix + 2 iy + iz), with the axis and side each faces
+FACES = (((0, 1, 3, 2), 0, -1), ((4, 5, 7, 6), 0, 1), ((0, 1, 5, 4), 1, -1), ((2, 3, 7, 6), 1, 1), ((0, 2, 6, 4), 2, -1), ((1, 3, 7, 5), 2, 1))
+
+
 def draw(draw_ctx, pose, origin, scale, view):
-    """view: 'front' (we face the player), 'side' (the player faces right), 'three' (3/4)."""
+    """The player as Minecraft draws it: every part a box (the torso and each limb in two halves, as bendy-lib bends them), the faces
+    turned away culled and the rest painted far to near, so a forearm folded behind the back is hidden behind the torso. view: 'front'
+    (we face the player), 'three' (3/4), 'side' (the player faces right), 'threeback' (3/4 from behind), 'back'."""
     sk = skeleton(pose)
+    a = math.radians(VIEWS.get(view, 35))
 
     def project(p):
         x, y, z = p
-        if view == "front":
-            sx, depth = x, z
-        elif view == "side":
-            sx, depth = -z, x
-        else:
-            a = math.radians(35)
-            sx, depth = (x * math.cos(a) - z * math.sin(a)), (x * math.sin(a) + z * math.cos(a))
-        return (origin[0] + sx * scale, origin[1] + y * scale), depth
+        return (origin[0] + (x * math.cos(a) - z * math.sin(a)) * scale, origin[1] + y * scale), x * math.sin(a) + z * math.cos(a)
 
-    items = []
-    t2 = [project(p) for p in sk["torso"]]
-    items.append((sum(d for _, d in t2) / len(t2), "poly", hull([p for p, _ in t2]), COLORS["torso"]))
-    h2 = [project(p) for p in sk["head"]]
-    items.append((sum(d for _, d in h2) / len(h2) - 0.1, "poly", hull([p for p, _ in h2]), COLORS["head"]))
-    f, fd = project(sk["face"])
-    items.append((fd - 0.2, "dot", f, (40, 30, 30)))
-    for part in LIMBS:
-        pts = [project(p) for p in sk[part]]
-        items.append((sum(d for _, d in pts) / len(pts), "line", [p for p, _ in pts], COLORS[part]))
-    # far first: larger depth means further from the viewer (the viewer looks towards +depth)
-    for depth, kind, geom, colour in sorted(items, key=lambda i: -i[0]):
-        if kind == "poly":
-            draw_ctx.polygon(geom, fill=colour, outline=(20, 20, 20))
-        elif kind == "line":
-            draw_ctx.line(geom, fill=(20, 20, 20), width=int(4 * scale) + 2, joint="curve")
-            draw_ctx.line(geom, fill=colour, width=int(4 * scale), joint="curve")
-            for g in geom[1:2]:
-                r = 2 * scale * 0.55
-                draw_ctx.ellipse([g[0] - r, g[1] - r, g[0] + r, g[1] + r], fill=colour)
-        else:
-            r = 1.2 * scale
-            draw_ctx.ellipse([geom[0] - r, geom[1] - r, geom[0] + r, geom[1] + r], fill=colour)
+    faces = []
+    for part, corners in sk["boxes"]:
+        projected = [project(c) for c in corners]
+        centre = sum(d for _, d in projected) / 8
+        colour = COLORS[part]
+        for indices, axis, side in FACES:
+            depth = sum(projected[i][1] for i in indices) / 4
+            if depth > centre - 1e-6:
+                continue  # turned away from us
+            # a little light from above and the front: tops brightest, sides darker
+            shade = {1: 0.82 if side > 0 else 1.12, 0: 0.86, 2: 0.94}[axis]
+            faces.append((depth, [projected[i][0] for i in indices], tuple(min(255, int(c * shade)) for c in colour)))
+    for depth, polygon, colour in sorted(faces, key=lambda f: -f[0]):
+        draw_ctx.polygon(polygon, fill=colour, outline=(20, 20, 20))
+    head = sk["head"]
+    head_centre = sum(project(c)[1] for c in head) / 8
+    eye, eye_depth = project(sk["face"])
+    if eye_depth < head_centre:
+        r = 1.2 * scale
+        draw_ctx.ellipse([eye[0] - r, eye[1] - r, eye[0] + r, eye[1] + r], fill=(40, 30, 30))
 
 
 def dist(a, b):

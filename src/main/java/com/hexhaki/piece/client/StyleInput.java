@@ -17,9 +17,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * 2.1.1: a fighting style's inputs. With an empty main hand, outside Devil Fruit mode and with no fruit kit active (those keep M1 as the
- * original had it): M1 throws the string, the right click the signature, Y and U the specials. Neither M1 nor the right click is taken
- * while the crosshair is on a block: bare hands still mine, doors and chests still open. The server decides what each press does.
+ * 2.1.1: a fighting style's inputs. 2.1.2: only in combat mode (R, {@link CombatMode}), with an empty main hand, outside Devil Fruit
+ * mode and with no fruit kit active (those keep M1 as the original had it): M1 throws the string (at a block too: to mine, leave combat
+ * mode), the right click the signature (not at a block: doors and chests still open), Y and U the specials. The server decides what each press does.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class StyleInput {
@@ -32,7 +32,7 @@ public final class StyleInput {
             return false;
         }
         PieceProfile self = PieceClient.self();
-        return self.chosen() && self.style().choice() && !FruitClient.active() && !GearClientState.devilFruitMode();
+        return CombatMode.on() && self.chosen() && self.style().choice() && !FruitClient.active() && !GearClientState.devilFruitMode();
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
@@ -44,9 +44,6 @@ public final class StyleInput {
         HitResult aimed = minecraft.f_91077_;
         boolean atBlock = aimed != null && aimed.m_6662_() == HitResult.Type.BLOCK;
         if (event.isAttack()) {
-            if (atBlock) {
-                return; // bare hands still mine: a style blow is thrown at the air or at someone
-            }
             event.setCanceled(true);
             event.setSwingHand(false);
             PieceNetwork.toServer(new C2SStyleAction(Slot.M1_1.ordinal()));

@@ -2,6 +2,8 @@
 """Contact sheet of one or more animations: each row is an animation, each column a moment (front view above, side view below).
 
 Usage: python3 tools/anim_preview.py out.png anim.json [anim.json ...] [--frames 10] [--views front,side]
+       python3 tools/anim_preview.py out.png anim.json [...] --turnaround [--views front,three,side,threeback,back]
+       (--turnaround: one pose, tick 0, seen from every view side by side: each row an animation; for stances and holds)
 """
 import os
 import sys
@@ -37,6 +39,23 @@ def sheet(paths, out, frames=10, views=("front", "side")):
     img.save(out)
 
 
+def turnaround(paths, out, views=("front", "three", "side", "threeback", "back")):
+    cell_w, cell_h, scale = 150, 190, 4.4
+    img = Image.new("RGB", (cell_w * len(views) + 10, (cell_h + 22) * len(paths)), (238, 236, 230))
+    d = ImageDraw.Draw(img)
+    for r, path in enumerate(paths):
+        a = anim.load(path)
+        top = r * (cell_h + 22)
+        d.text((4, top + 4), f"{os.path.basename(path)}  ({a.length()} ticks{', loop' if a.loop else ''})", fill=(20, 20, 20))
+        for c, view in enumerate(views):
+            x0, y0 = c * cell_w + 5, top + 20
+            d.rectangle([x0, y0, x0 + cell_w - 4, y0 + cell_h - 4], fill=(250, 250, 248), outline=(200, 200, 200))
+            d.line([(x0, y0 + 36 + 24 * scale), (x0 + cell_w - 4, y0 + 36 + 24 * scale)], fill=(170, 170, 170))
+            anim.draw(d, a.pose(0), (x0 + cell_w / 2, y0 + 36), scale, view)
+            d.text((x0 + 3, y0 + 2), view, fill=(90, 90, 90))
+    img.save(out)
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
     frames = 10
@@ -49,4 +68,8 @@ if __name__ == "__main__":
         i = args.index("--views")
         views = tuple(args[i + 1].split(","))
         del args[i:i + 2]
-    sheet(args[1:], args[0], frames, views)
+    if "--turnaround" in args:
+        args.remove("--turnaround")
+        turnaround(args[1:], args[0], *([views] if views != ("front", "side") else []))
+    else:
+        sheet(args[1:], args[0], frames, views)

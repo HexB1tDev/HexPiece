@@ -22,7 +22,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.1.1"
+VERSION = "2.1.2"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 BUILD = Path(os.environ.get("HEXPIECE_BUILD_DIR", ROOT / "build"))
@@ -61,7 +61,7 @@ NEW_PREFIXES = (
     "data/hexhaki/",
 )
 # Original lang keys the expansion may change (renamed controls).
-RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery"}, SOUNDS: set()}
+RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament"}, SOUNDS: set()}
 # 2.1.1 (the owner: "Get rid of the Imu fruit (Devil Devil fruit). Get rid of it ENTIRELY, but keep it's assets, for future use on other
 # things"): no code, text or file name of the jar may name it; its assets (the Black Soul texture, model and name) stay.
 IMU = re.compile(rb"(?<![A-Za-z])(imu|Imu|IMU)(?![A-Za-z])|Akuma Akuma|akuma_akuma|AKUMA_AKUMA|Devil Devil|devil_devil")

@@ -57,6 +57,7 @@ public abstract class Entity {
     /** isSprinting */ public boolean m_20142_() { throw new UnsupportedOperationException(); }
     /** isCrouching */ public boolean m_6047_() { throw new UnsupportedOperationException(); }
     /** isPassenger */ public boolean m_20159_() { throw new UnsupportedOperationException(); }
+    /** getPose (2.1.2) */ public net.minecraft.world.entity.Pose m_20089_() { throw new UnsupportedOperationException(); }
     /** isShiftKeyDown */ public boolean m_6144_() { throw new UnsupportedOperationException(); }
     /** isAlliedTo */ public boolean m_7307_(Entity other) { throw new UnsupportedOperationException(); }
     /** hasCustomName */ public boolean m_8077_() { throw new UnsupportedOperationException(); }

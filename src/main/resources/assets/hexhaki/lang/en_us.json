@@ -4,5 +4,6 @@
   "key.hexpiece.special_a": "Style special 1",
   "key.hexpiece.special_b": "Style special 2",
   "entity.hexhaki.pirate": "Pirate",
-  "entity.hexhaki.marine": "Marine"
+  "entity.hexhaki.marine": "Marine",
+  "key.hexhaki.armament": "Combat mode (R) / Armament Haki (Ctrl + R)"
 }

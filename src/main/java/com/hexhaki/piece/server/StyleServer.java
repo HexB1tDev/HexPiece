@@ -6,6 +6,7 @@ import com.hexhaki.piece.Faction;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.PieceRules;
 import com.hexhaki.piece.network.PieceNetwork;
+import com.hexhaki.piece.network.S2CStance;
 import com.hexhaki.piece.network.S2CStyleFx;
 import com.hexhaki.piece.style.FightingStyle;
 import com.hexhaki.piece.style.Hit;
@@ -49,6 +50,8 @@ public final class StyleServer {
         long lastStringStart;
         long queuedAt = -1;
         boolean counterUsed;
+        /** 2.1.2: combat mode (R): the style's moves only come out while it is on; its stance is held meanwhile. */
+        boolean combat;
         final Map<StyleMove, Long> ready = new EnumMap<>(StyleMove.class);
         final Set<Integer> struck = new HashSet<>();
     }
@@ -72,6 +75,29 @@ public final class StyleServer {
         return state != null && state.move != null;
     }
 
+    /** 2.1.2: who holds which stance, for every client that sees {@code player} ({@code client/StanceLayer} plays it). */
+    static S2CStance stance(ServerPlayer player, FightingStyle style) {
+        return new S2CStance(player.m_19879_(), style == null ? -1 : style.ordinal());
+    }
+
+    /**
+     * 2.1.2: combat mode on or off: the style's stance taken (or dropped) where everyone sees it, the player told on the action bar.
+     * The stance is the clients' to hold ({@code client/StanceLayer}: a layer under every move), so nothing here re-plays it.
+     */
+    public static void combat(ServerPlayer player, boolean on) {
+        PieceProfile profile = ProfileServer.of(player);
+        if (on && (!profile.chosen() || !profile.style().choice())) {
+            return;
+        }
+        State state = state(player);
+        if (state.combat == on) {
+            return;
+        }
+        state.combat = on;
+        PieceNetwork.around(player, stance(player, on ? profile.style() : null));
+        player.m_5661_(Component.m_237113_(on ? "Combat stance: " + profile.style().display() : "Combat stance dropped"), true);
+    }
+
     public static void press(ServerPlayer player, Slot slot) {
         if (!player.m_6084_() || player.m_5833_() || !player.m_21205_().m_41619_()) {
             return;
@@ -82,6 +108,9 @@ public final class StyleServer {
             return;
         }
         State state = state(player);
+        if (!state.combat) {
+            return;
+        }
         long now = now(player);
         if (slot.string()) {
             if (state.move != null && !state.move.slot().string()) {
@@ -264,8 +293,22 @@ public final class StyleServer {
         }
     }
 
+    /** 2.1.2: someone who starts seeing a player in combat mode sees their stance too. */
+    @SubscribeEvent
+    public static void startTracking(PlayerEvent.StartTracking event) {
+        if (event.getEntity() instanceof ServerPlayer viewer && event.getTarget() instanceof ServerPlayer subject) {
+            State state = STATES.get(subject.m_20148_());
+            if (state != null && state.combat) {
+                PieceNetwork.sendTo(viewer, stance(subject, ProfileServer.of(subject).style()));
+            }
+        }
+    }
+
     @SubscribeEvent
     public static void loggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        STATES.remove(event.getEntity().m_20148_());
+        State gone = STATES.remove(event.getEntity().m_20148_());
+        if (gone != null && gone.combat && event.getEntity() instanceof ServerPlayer player) {
+            PieceNetwork.around(player, stance(player, null));
+        }
     }
 }

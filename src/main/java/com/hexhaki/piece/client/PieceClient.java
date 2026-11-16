@@ -74,6 +74,7 @@ public final class PieceClient {
     public static void loggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
         SEEN.clear();
         self = PieceProfile.EMPTY;
+        CombatMode.reset();
         pendingCreation = false;
     }
 }

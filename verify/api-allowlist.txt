@@ -34,3 +34,6 @@ M net/minecraft/network/syncher/SynchedEntityData m_135370_ (Lnet/minecraft/netw
 M net/minecraft/network/syncher/SynchedEntityData m_135372_ (Lnet/minecraft/network/syncher/EntityDataAccessor;Ljava/lang/Object;)V   # [hexkagune] define
 M net/minecraft/network/syncher/SynchedEntityData m_135381_ (Lnet/minecraft/network/syncher/EntityDataAccessor;Ljava/lang/Object;)V   # [hexkagune] set
 M net/minecraft/server/level/ServerLevel m_7967_ (Lnet/minecraft/world/entity/Entity;)Z   # [srg] addFreshEntity: joined.tsrg aif b (Lbfj;)Z m_7967_ (aif = ServerLevel: s m_8895_ getDataStorage, n m_7654_ getServer; bfj = Entity); overrides LevelWriter cmu.b (HexGhoul's list)
+
+# --- 2.1.2: combat mode (R) and its stance layer -------------------------------------------------------------------------------------
+F net/minecraft/world/entity/Pose CROUCHING Lnet/minecraft/world/entity/Pose;   # [srg] enum constants keep their names: joined.tsrg bgl f CROUCHING (bgl = Pose: d SWIMMING as the original's HakiServerController uses, a STANDING); intermediary FIELD bgl Lbgl; f field_18081 (yarn EntityPose.CROUCHING)

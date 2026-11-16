@@ -60,6 +60,11 @@ public enum FightingStyle {
         return this != NONE;
     }
 
+    /** 2.1.2: the stance it holds in combat mode (R): an arms-only loop, {@code tools/style_anims.py}. */
+    public String stance() {
+        return "style_" + this.id + "_stance";
+    }
+
     public static FightingStyle byOrdinal(int ordinal) {
         FightingStyle[] all = values();
         return ordinal >= 0 && ordinal < all.length ? all[ordinal] : NONE;

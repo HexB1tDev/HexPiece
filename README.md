@@ -13,6 +13,10 @@ python3 build.py
 
 Needs Java 17+ and Python 3 with Pillow for the preview tools; no downloads. Output: `build/hexpiece-<version>.jar`.
 
+Previews (judge every animation you change): `python3 tools/anim_preview.py out.png anim.json ... [--turnaround]` (Minecraft's boxes,
+front to back), and the style GIFs: `javac -cp build/classes -d build/preview tools/preview/StyleDump.java`,
+`java -cp build/preview:build/classes StyleDump > build/preview/styles.json`, `python3 tools/style_gif.py`.
+
 ## Releases
 
 - Every push to a `claude/**` branch publishes the jar as the pre-release `build-<branch>`.
@@ -23,7 +27,8 @@ Needs Java 17+ and Python 3 with Pillow for the preview tools; no downloads. Out
 
 - A start menu (Male/Female, Pirate/Marine, a fighting style) with a pirate UI; female players drawn with HexGhoul's female body.
 - Four fighting styles (Black Leg, Six Powers, Fishman Karate, Iron Fist), each a choreographed M1 string, a right-click signature and two
-  specials (Y, U), with style mastery.
+  specials (Y, U), with style mastery. They fight in combat mode (tap R, as in HexGhoul; Armament Haki moved to Ctrl + R), holding the
+  style's stance, with Photon particles: air cut by every swing, the Air Blade's flying crescent, Fishman Karate's water.
 - Pirate and Marine NPC patrols that fight each other and the players of the other flag with the same moves; bounty and merit ranks.
 - The Captain's Log: a blue-and-white mastery menu with a ship.
 - New Haki lightning; every animation reworked (and linted so none comes apart); the Imu fruit removed (its assets kept).

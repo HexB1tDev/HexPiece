@@ -72,6 +72,7 @@ public final class ProfileServer {
     }
 
     public static void reset(ServerPlayer player) {
+        StyleServer.combat(player, false); // 2.1.2: no style, no combat stance
         CompoundTag root = root(player);
         root.m_128379_("Chosen", false);
         sync(player);

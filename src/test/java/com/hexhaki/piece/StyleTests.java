@@ -66,6 +66,16 @@ public final class StyleTests {
             }
         }
         Check.that(Files.exists(ANIMATIONS.resolve("style_fishman_karate_counter_strike.json")), "the counter's answering palm exists");
+        // 2.1.2: combat mode's stances: one per style, a loop, the arms only (walking, the body and the head stay the game's)
+        Pattern part = Pattern.compile("\"(body|torso|head|rightLeg|leftLeg|rightItem|leftItem)\":");
+        for (FightingStyle style : FightingStyle.choices()) {
+            Path file = ANIMATIONS.resolve(style.stance() + ".json");
+            Check.that(Files.exists(file), style + ": its combat stance " + file + " exists");
+            String json = Files.readString(file);
+            Check.that(json.contains("\"isLoop\": true"), style + ": its stance loops");
+            Check.that(json.contains("\"rightArm\":") && json.contains("\"leftArm\":"), style + ": its stance holds both arms");
+            Check.that(!part.matcher(json).find(), style + ": its stance moves the arms only");
+        }
     }
 
     static void combo() {
