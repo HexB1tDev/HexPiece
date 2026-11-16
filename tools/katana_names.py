@@ -1,0 +1,30 @@
+"""2.1.4: the owner's 25 katanas, in the order of their poster ("Hex / Katana Atelier"): model key, name, hamon (the temper line under
+the name). The game's own list is com.hexhaki.piece.sword.Katana (StyleTests checks the two agree, and that the owner's zip has a
+blade, a saya and a texture for each)."""
+KATANAS = [
+    ("crimson_dawn", "Crimson Dawn", "Choji"),
+    ("silver_crane", "Silver Crane", "Suguha"),
+    ("obsidian_eclipse", "Obsidian Eclipse", "Hitatsura"),
+    ("azure_tide", "Azure Tide", "Notare"),
+    ("jade_serpent", "Jade Serpent", "Saka Choji"),
+    ("sakura_veil", "Sakura Veil", "Gunome"),
+    ("amber_wasp", "Amber Wasp", "Togari"),
+    ("frostglass", "Frostglass", "Icebreak"),
+    ("royal_amethyst", "Royal Amethyst", "Toran"),
+    ("copper_ronin", "Copper Ronin", "Midare"),
+    ("cobalt_storm", "Cobalt Storm", "Inazuma"),
+    ("lotus_bloom", "Lotus Bloom", "Ko Gunome"),
+    ("blood_moon", "Blood Moon", "Choji Midare"),
+    ("pearl_heron", "Pearl Heron", "Hososuguha"),
+    ("sunfire", "Sunfire", "Flame"),
+    ("blackwater", "Blackwater", "Billow"),
+    ("emerald_thorn", "Emerald Thorn", "Thorn"),
+    ("rosegold_whisper", "Rosegold Whisper", "Sugu Notare"),
+    ("ashen_wolf", "Ashen Wolf", "Sambon Sugi"),
+    ("starfall", "Starfall", "Starlight"),
+    ("desert_mirage", "Desert Mirage", "Sudare"),
+    ("venom_orchid", "Venom Orchid", "Poison Bloom"),
+    ("dragonbone", "Dragonbone", "Fossil"),
+    ("imperial_phoenix", "Imperial Phoenix", "Phoenix"),
+    ("midnight_lotus", "Midnight Lotus", "Moonwater"),
+]
