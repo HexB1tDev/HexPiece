@@ -1,0 +1,236 @@
+"""Patch the original HexHaki 2.1.0 JAR, compile the HexPiece expansion and verify the result.
+
+The original Gradle project was never available and Minecraft cannot be downloaded in the cloud sessions, so (as in HexGhoul) the
+build works on the supplied jar itself. Pipeline (Java 17+ and Python 3, no downloads):
+  1. check the version rule (x.y.0 .. x.y.9, then x.(y+1).0) and the SHA-256 of the supplied 2.1.0 JAR,
+  2. compile and run the ASM patcher (patch/PiecePatch) -> build/base.jar,
+  3. compile compile-only API stubs (stubs/) -> build/stubs   (never packaged),
+  4. compile src/main/java against build/base.jar + stubs with --release 17 -> build/classes,
+  5. assemble build/hexpiece-<version>.jar with src/main/resources (lang keys and sound events merged, animations replaced),
+  6. verify bytecode, every external API reference, server safety (patch/PieceVerify) and the archive scope,
+  7. check the Imu fruit is gone from the code while its assets are kept,
+  8. compile and run the pure-logic tests in src/test/java.
+"""
+from pathlib import Path
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import zipfile
+
+ROOT = Path(__file__).resolve().parent
+VERSION = "2.1.1"
+INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
+EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
+BUILD = Path(os.environ.get("HEXPIECE_BUILD_DIR", ROOT / "build"))
+OUTPUT = BUILD / f"hexpiece-{VERSION}.jar"
+BASE = BUILD / "base.jar"
+TOOLS = BUILD / "patch-classes"
+STUBS = BUILD / "stubs"
+CLASSES = BUILD / "classes"
+TEST_CLASSES = BUILD / "test-classes"
+CHANGED_LIST = BUILD / "changed.txt"
+EXPORTS = [
+    "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
+    "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
+    "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree.analysis=ALL-UNNAMED",
+    "--add-exports", "java.base/jdk.internal.org.objectweb.asm.commons=ALL-UNNAMED",
+]
+LANG = "assets/hexhaki/lang/en_us.json"
+SOUNDS = "assets/hexhaki/sounds.json"
+ANIMATIONS = "assets/hexhaki/player_animation/"
+# Original entries the patch changes on purpose (besides the merged JSON and the reworked animations).
+PATCHED = {
+    "com/hexhaki/HexHaki.class",
+    "com/hexhaki/client/vfx/HakiVfx.class",
+    "com/hexhaki/gameplay/ConquerorLightningPath.class",
+    "com/hexhaki/command/HakiCommands.class",
+    "META-INF/mods.toml",
+    "META-INF/MANIFEST.MF",
+}
+# New entries may only live under these prefixes.
+NEW_PREFIXES = (
+    "com/hexhaki/piece/",
+    "assets/hexhaki/textures/piece/",
+    "assets/hexhaki/player_animation/",
+    "assets/hexhaki/sounds/piece/",
+    "assets/hexhaki/lang/",
+    "data/hexhaki/",
+)
+# Original lang keys the expansion may change (renamed controls).
+RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery"}, SOUNDS: set()}
+# 2.1.1 (the owner: "Get rid of the Imu fruit (Devil Devil fruit). Get rid of it ENTIRELY, but keep it's assets, for future use on other
+# things"): no code, text or file name of the jar may name it; its assets (the Black Soul texture, model and name) stay.
+IMU = re.compile(rb"(?<![A-Za-z])(imu|Imu|IMU)(?![A-Za-z])|Akuma Akuma|akuma_akuma|AKUMA_AKUMA|Devil Devil|devil_devil")
+IMU_ASSETS = (
+    "assets/hexhaki/textures/item/black_soul.png",
+    "assets/hexhaki/models/item/black_soul.json",
+)
+
+
+def run(*args):
+    subprocess.run([str(a) for a in args], cwd=ROOT, check=True)
+
+
+def sources(directory):
+    return sorted(str(p) for p in (ROOT / directory).rglob("*.java"))
+
+
+def clean(path):
+    if path.exists():
+        shutil.rmtree(path)
+    path.mkdir(parents=True)
+
+
+def javac(*args):
+    run("javac", "-encoding", "UTF-8", "-proc:none", "-nowarn", *args)
+
+
+def check_version(version):
+    """The owner's rule (HexGhoul's, carried over): every number after the first runs 0..9, then the one before it goes up."""
+    parts = version.split(".")
+    if len(parts) != 3 or not all(p.isdigit() for p in parts):
+        raise RuntimeError(f"Version {version} is not x.y.z")
+    if int(parts[1]) > 9 or int(parts[2]) > 9:
+        raise RuntimeError(f"Version {version} breaks the rule: after x.y.9 comes x.(y+1).0, after x.9.9 comes (x+1).0.0")
+
+
+def merged_json(name, original_bytes):
+    """Original keys stay exactly as they are (but the few in RENAMED); the expansion may only add new ones."""
+    original = json.loads(original_bytes.decode("utf-8"))
+    path = ROOT / "src/main/resources" / name
+    additions = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    renamed = RENAMED.get(name, set())
+    missing = sorted(k for k in renamed if k not in original)
+    if missing:
+        raise RuntimeError(f"RENAMED names entries the original {name} does not have: {missing}")
+    clash = sorted(k for k in additions if k in original and original[k] != additions[k] and k not in renamed)
+    if clash:
+        raise RuntimeError(f"Expansion keys in {name} would change original entries: {clash}")
+    merged = dict(original)
+    merged.update(additions)
+    return (json.dumps(merged, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def assemble():
+    entries = {}
+    with zipfile.ZipFile(BASE) as base:
+        for name in base.namelist():
+            entries[name] = base.read(name)
+    for path in sorted(CLASSES.rglob("*.class")):
+        name = path.relative_to(CLASSES).as_posix()
+        if not name.startswith("com/hexhaki/piece/"):
+            raise RuntimeError(f"Expansion class outside com/hexhaki/piece: {name}")
+        entries[name] = path.read_bytes()
+    resources = ROOT / "src/main/resources"
+    for path in sorted(p for p in resources.rglob("*") if p.is_file()):
+        name = path.relative_to(resources).as_posix()
+        if name in (LANG, SOUNDS):
+            entries[name] = merged_json(name, entries[name])
+        elif name in entries and not name.startswith(ANIMATIONS):
+            raise RuntimeError(f"Resource would overwrite an original entry: {name}")
+        else:
+            if name.startswith(ANIMATIONS):
+                json.loads(path.read_text(encoding="utf-8"))  # every animation must parse
+            entries[name] = path.read_bytes()
+    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(OUTPUT, "w", zipfile.ZIP_DEFLATED) as out:
+        for name, data in entries.items():
+            out.writestr(name, data)
+
+
+def changed_entries():
+    with zipfile.ZipFile(INPUT) as before, zipfile.ZipFile(OUTPUT) as after:
+        old = set(before.namelist())
+        return {n for n in old if n in after.namelist() and before.read(n) != after.read(n)}
+
+
+def check_archive_scope():
+    with zipfile.ZipFile(INPUT) as before, zipfile.ZipFile(OUTPUT) as after:
+        old = set(before.namelist())
+        new = set(after.namelist())
+        missing = old - new
+        if missing:
+            raise RuntimeError(f"Original entries were removed: {sorted(missing)}")
+        changed = {n for n in old if before.read(n) != after.read(n)}
+        allowed = PATCHED | {LANG, SOUNDS}
+        unexpected = sorted(n for n in changed if n not in allowed and not n.startswith(ANIMATIONS))
+        if unexpected:
+            raise RuntimeError(f"Unexpected changes to original entries: {unexpected}")
+        if not PATCHED <= changed:
+            raise RuntimeError(f"Patched entries left unchanged: {sorted(PATCHED - changed)}")
+        added = new - old
+        stray = sorted(n for n in added if not n.startswith(NEW_PREFIXES))
+        if stray:
+            raise RuntimeError(f"Unexpected new entries (stubs must never be packaged): {stray}")
+        return len(added), len([n for n in changed if n.startswith(ANIMATIONS)])
+
+
+def check_imu():
+    found = []
+    with zipfile.ZipFile(OUTPUT) as jar:
+        names = set(jar.namelist())
+        for name in names:
+            if IMU.search(name.encode("utf-8")):
+                found.append(f"{name} (its name)")
+            if name.endswith((".png", ".ogg")):
+                continue
+            hit = IMU.search(jar.read(name))
+            if hit:
+                found.append(f"{name}: {hit.group(0).decode('utf-8', 'replace')}")
+        kept = [a for a in IMU_ASSETS if a not in names]
+        if kept:
+            raise RuntimeError(f"The Imu fruit's assets must be kept for later: missing {kept}")
+        users = [n for n in names if n.endswith(".class") and b"black_soul" in jar.read(n)]
+        if users:
+            raise RuntimeError(f"The Black Soul (Imu) item must not be registered or used by code: {users}")
+    if found:
+        raise RuntimeError(f"The Imu fruit is still named in the jar ({len(found)}): {found[:20]}")
+
+
+def main():
+    check_version(VERSION)
+    actual = hashlib.sha256(INPUT.read_bytes()).hexdigest()
+    if actual != EXPECTED_INPUT_SHA256:
+        raise RuntimeError(f"Baseline JAR differs from the inspected version: {actual}")
+    for directory in (TOOLS, STUBS, CLASSES, TEST_CLASSES):
+        clean(directory)
+
+    run("java", "-m", "jdk.compiler/com.sun.tools.javac.Main", *EXPORTS, "-nowarn", "-d", TOOLS,
+        "patch/PiecePatch.java", "patch/PieceVerify.java")
+    run("java", *EXPORTS, "-cp", TOOLS, "PiecePatch", INPUT, BASE, VERSION)
+
+    javac("--release", "17", "-d", STUBS, *sources("stubs"))
+    main_sources = sources("src/main/java")
+    if main_sources:
+        run("javac", "-encoding", "UTF-8", "-proc:none", "-Xlint:all", "-Xlint:-options", "-Xlint:-classfile", "-Xlint:-serial",
+            "-Xlint:-processing", "-Werror", "--release", "17", "-cp", f"{BASE}{os.pathsep}{STUBS}", "-d", CLASSES, *main_sources)
+
+    assemble()
+    CHANGED_LIST.write_text("\n".join(sorted(n for n in changed_entries() if n.endswith(".class"))) + "\n", encoding="utf-8")
+    run("java", *EXPORTS, "-cp", TOOLS, "PieceVerify", OUTPUT, INPUT, STUBS, CHANGED_LIST,
+        ROOT / "verify" / "api-allowlist.txt", ROOT / "verify" / "hexghoul-allowlist.txt")
+    added, animations = check_archive_scope()
+    check_imu()
+
+    test_sources = sources("src/test/java")
+    suites = []
+    if test_sources:
+        javac("--release", "17", "-cp", os.pathsep.join(map(str, (CLASSES, BASE, STUBS))), "-d", TEST_CLASSES, *test_sources)
+        suites = sorted(p.relative_to(ROOT / "src/test/java").with_suffix("").as_posix().replace("/", ".")
+                        for p in (ROOT / "src/test/java").rglob("*Tests.java"))
+        for suite in suites:
+            run("java", "-ea", "-cp", os.pathsep.join(map(str, (TEST_CLASSES, CLASSES, BASE, STUBS))), suite)
+
+    print(f"Verified {OUTPUT.name}: {added} new entries, {animations} original animations reworked, every external reference proven, "
+          f"the Imu fruit gone (assets kept), {len(suites)} test suites pass.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except subprocess.CalledProcessError as failure:
+        sys.exit(failure.returncode)
