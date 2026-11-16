@@ -101,8 +101,13 @@ public final class Bolt {
         double dx = b[0] - a[0];
         double dy = b[1] - a[1];
         double dz = b[2] - a[2];
-        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        double[] path = path(a, b, levels(length), rough, seed);
+        return crackled(a, b, width, tip, color, delay, duration, crawl, seed, rough, levels(Math.sqrt(dx * dx + dy * dy + dz * dz)));
+    }
+
+    /** As above with the crackle's levels given (a storm's long pieces need fewer than their length would ask for). */
+    public static Bolt crackled(double[] a, double[] b, float width, float tip, int color, float delay, int duration, float crawl, long seed,
+                                double rough, int levels) {
+        double[] path = path(a, b, levels, rough, seed);
         int n = path.length / 3;
         float[] widths = new float[n];
         // lightning is never an even tube: it swells and pinches over its length (a new thickness every few kinks, eased between;

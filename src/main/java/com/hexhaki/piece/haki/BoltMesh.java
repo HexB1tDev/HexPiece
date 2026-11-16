@@ -204,14 +204,24 @@ public final class BoltMesh {
                     halo[i] = c * (4.0 + 1.5 * flash) + 0.05 * fade;
                 }
                 int glowColor = scale(color, (0.75 * bright * fade + 0.3 * flash) * shine);
-                glow(p, count, side, halo, glowColor, sink);
+                // far away a bolt is a few pixels wide: what would not show is left out (the glow under two pixels, the heart and the
+                // crackle under one), so a field of distant lightning stays cheap to draw
+                int middleAt = count / 2;
+                double corePx = core[middleAt] / (pixel * dist[middleAt]);
+                if (halo[middleAt] / (pixel * dist[middleAt]) >= 2.0) {
+                    glow(p, count, side, halo, glowColor, sink);
+                }
                 tube(p, count, side, ink, INK, INK, 0.0, pixel, dist, sink);
                 int rim = scale(color, 0.6 + 0.3 * bright);
                 int middle = mix(scale(color, bright), 0xFFFFFFFF, 0.12 + 0.25 * flash);
                 tube(p, count, side, core, rim, middle, 1.0, pixel, dist, sink);
                 int hot = mix(color, 0xFFFFFFFF, 0.6 + 0.3 * flash);
-                tube(p, count, side, heart, hot, hot, 2.0, pixel, dist, sink);
-                spurs(bolt, p, count, core, age, fade, rim, middle, glowColor, pixel, sink);
+                if (heart[middleAt] / (pixel * dist[middleAt]) >= 0.6) {
+                    tube(p, count, side, heart, hot, hot, 2.0, pixel, dist, sink);
+                }
+                if (corePx >= 1.2) {
+                    spurs(bolt, p, count, core, age, fade, rim, middle, glowColor, pixel, sink);
+                }
                 if (grow < 1.0) {
                     // the spark leading the strike
                     double r = core[count - 1] * 6.0 + 0.07;
@@ -306,6 +316,48 @@ public final class BoltMesh {
         int ink = mix(INK, color, 0.12) & 0xFFFFFF;
         int centre = (int) Math.round(0.72 * fade * 255) << 24 | ink;
         flat(x, y + 0.015, z, size * 0.52, centre, ink, false, sink);
+    }
+
+    /** Ticks the full-power shockwave takes to sweep out. */
+    public static final double WAVE = 14.0;
+
+    /**
+     * 2.1.7: the full-power release's shockwave, {@code age} ticks after it, centred at {@code (x, y, z)} (camera space, the ground under
+     * the player): a flat ring racing out to {@code reach} (fast, then easing), its front an inked line with a red edge, a band of red
+     * light trailing it and fading behind, all of it thinning away as it reaches the end.
+     */
+    public static void ring(double x, double y, double z, double age, double reach, int color, double shine, Sink sink) {
+        if (age < 0 || age > WAVE) {
+            return;
+        }
+        double t = age / WAVE;
+        double radius = reach * (1.0 - Math.pow(1.0 - t, 2.5));
+        double fade = t < 0.6 ? 1.0 : 1.0 - (t - 0.6) / 0.4;
+        double band = 2.0 + radius * 0.12;
+        int segments = 96;
+        int none = color & 0xFF000000;
+        int light = scale(color, 0.8 * fade * shine);
+        double line = (0.12 + radius * 0.004) * (0.4 + 0.6 * fade);
+        for (int k = 0; k < segments; k++) {
+            double a0 = Math.PI * 2.0 * k / segments;
+            double a1 = Math.PI * 2.0 * (k + 1) / segments;
+            double c0 = Math.cos(a0);
+            double s0 = Math.sin(a0);
+            double c1 = Math.cos(a1);
+            double s1 = Math.sin(a1);
+            double inner = Math.max(0.0, radius - band);
+            // the light trailing the front
+            emit(true, new double[] {x + c0 * inner, y + 0.08, z + s0 * inner, x + c1 * inner, y + 0.08, z + s1 * inner, x + c1 * radius, y + 0.08,
+                z + s1 * radius, x + c0 * radius, y + 0.08, z + s0 * radius}, new int[] {none, none, light, light}, sink);
+            // the front: ink, and a red edge just inside it
+            double out = radius + line;
+            emit(false, new double[] {x + c0 * radius, y + 0.1, z + s0 * radius, x + c1 * radius, y + 0.1, z + s1 * radius, x + c1 * out, y + 0.1,
+                z + s1 * out, x + c0 * out, y + 0.1, z + s0 * out}, new int[] {INK, INK, INK, INK}, sink);
+            double in = Math.max(0.0, radius - line * 0.8);
+            int edge = scale(color, Math.min(1.0, 0.7 + 0.3 * fade));
+            emit(false, new double[] {x + c0 * in, y + 0.105, z + s0 * in, x + c1 * in, y + 0.105, z + s1 * in, x + c1 * radius, y + 0.105,
+                z + s1 * radius, x + c0 * radius, y + 0.105, z + s0 * radius}, new int[] {edge, edge, edge, edge}, sink);
+        }
     }
 
     /** A flat disc on the ground (twelve wedges), {@code centre} in its middle, {@code edge} at its rim. */
@@ -429,7 +481,8 @@ public final class BoltMesh {
         }
         for (int i = 0; i < count; i++) {
             // the mitred ribbon already closes gentle bends: a disc only rounds the ends and the sharp kinks (where the mitre gives out)
-            if (i > 0 && i < count - 1 && (m[i] < MITRE * 0.8 || half[i] / (pixel * dist[i]) < 1.6)) {
+            double px = half[i] / (pixel * dist[i]);
+            if (px < 1.2 || i > 0 && i < count - 1 && (m[i] < MITRE * 0.8 || px < 1.6)) {
                 continue;
             }
             disc(p, i, side, half[i], middle, rim, false, layer, pixel, dist[i], sink);

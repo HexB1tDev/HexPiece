@@ -55,6 +55,8 @@ public final class PiecePatch implements Opcodes {
     static final String PATHS = "com/hexhaki/piece/haki/LightningPaths";
     /** 2.1.5: the 3D lightning's anchor hooks (client). */
     static final String BOLTS = "com/hexhaki/piece/client/haki/HakiBolts";
+    /** 2.1.7: the full-power storm (client). */
+    static final String STORM = "com/hexhaki/piece/client/haki/HakiStorm";
     static final String[][] PLAY_HOOKS = {
         {"play", "(Lnet/minecraft/world/entity/Entity;Lcom/lowdragmc/photon/client/fx/FX;)V", "played",
             "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/entity/Entity;)Z"},
@@ -306,6 +308,30 @@ public final class PiecePatch implements Opcodes {
         }
         for (String[] hook : PLAY_HOOKS) {
             playHook(method(node, hook[0], hook[1]), hook[2], hook[3]);
+        }
+        stormHook(method(node, "conquerorRelease", "(FIJ)Lcom/lowdragmc/photon/client/fx/FX;"));
+    }
+
+    /**
+     * 2.1.7: {@code conquerorRelease(charge, variant, seed)} hands its composition to {@code HakiStorm.release(fx, charge, variant, seed)}
+     * as it returns it (the full-power storm is painted into it, to be let go with it). No branch: no frame to add.
+     */
+    static void stormHook(MethodNode method) {
+        int hooks = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn.getOpcode() == ARETURN) {
+                InsnList call = new InsnList();
+                call.add(new InsnNode(DUP));
+                call.add(new VarInsnNode(FLOAD, 0));
+                call.add(new VarInsnNode(ILOAD, 1));
+                call.add(new VarInsnNode(LLOAD, 2));
+                call.add(new MethodInsnNode(INVOKESTATIC, STORM, "release", "(Lcom/lowdragmc/photon/client/fx/FX;FIJ)V", false));
+                method.instructions.insertBefore(insn, call);
+                hooks++;
+            }
+        }
+        if (hooks < 1) {
+            throw new AssertionError("no return in HakiVfx.conquerorRelease");
         }
     }
 

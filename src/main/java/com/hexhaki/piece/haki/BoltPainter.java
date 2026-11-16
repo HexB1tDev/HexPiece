@@ -75,6 +75,12 @@ public final class BoltPainter {
     /** The strokes of one beam, added to {@code out}. */
     public static void strokes(double[] a, double[] b, float width, int color, int duration, float delay, boolean forks, long salt,
                                List<Bolt> out) {
+        strokes(a, b, width, color, duration, delay, forks, salt, -1, out);
+    }
+
+    /** As above; {@code levels} (if not negative) caps the crackle's levels. */
+    public static void strokes(double[] a, double[] b, float width, int color, int duration, float delay, boolean forks, long salt,
+                               int levels, List<Bolt> out) {
         double dx = b[0] - a[0];
         double dy = b[1] - a[1];
         double dz = b[2] - a[2];
@@ -82,15 +88,16 @@ public final class BoltPainter {
         if (length < 1.0E-4) {
             return;
         }
+        int crackle = levels < 0 ? Bolt.levels(length) : Math.min(levels, Bolt.levels(length));
         long seed = Jag.seed(a[0], a[1], a[2], b[0], b[1], b[2], salt);
         float crawl = crawl(length, duration);
         if (duration >= 10 && length >= 1.0) {
             int half = duration / 2;
-            out.add(Bolt.crackled(a, b, width, 1.0F, color, delay, half + 1, crawl, seed, ROUGH));
+            out.add(Bolt.crackled(a, b, width, 1.0F, color, delay, half + 1, crawl, seed, ROUGH, crackle));
             out.add(Bolt.crackled(a, b, width * 0.9F, 1.0F, color, delay + half, duration - half, Math.min(crawl, 0.6F), seed ^ RESTRIKE,
-                ROUGH));
+                ROUGH, crackle));
         } else {
-            out.add(Bolt.crackled(a, b, width, 1.0F, color, delay, duration, crawl, seed, ROUGH));
+            out.add(Bolt.crackled(a, b, width, 1.0F, color, delay, duration, crawl, seed, ROUGH, crackle));
         }
         if (!forks || length < 1.2) {
             return;
@@ -100,7 +107,7 @@ public final class BoltPainter {
             return;
         }
         double at = 0.25 + random.nextDouble() * 0.5;
-        double[] main = Bolt.path(a, b, Bolt.levels(length), ROUGH, seed);
+        double[] main = Bolt.path(a, b, crackle, ROUGH, seed);
         int points = main.length / 3;
         int index = Math.max(1, Math.min(points - 2, (int) Math.round(at * (points - 1))));
         double[] from = {main[index * 3], main[index * 3 + 1], main[index * 3 + 2]};

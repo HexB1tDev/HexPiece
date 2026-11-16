@@ -1,7 +1,7 @@
-# Next AI: 2.1.6 is released (2.1.5: 3D Haki lightning, Haki on the katana; 2.1.6: ground strikes and sound)
+# Next AI: 2.1.7 is released (2.1.5: 3D Haki lightning, Haki on the katana; 2.1.6: ground strikes and sound; 2.1.7: full-power storm)
 
 Read `CLAUDE.md`, then this, then `next-ai-2.1.4.md` (the Swordsman: where everything is), `next-ai-2.1.3.md`, `next-ai-2.1.2.md`,
-`next-ai-2.1.1.md`. The next version is 2.1.7 (`tools/next_version.py`). Answer the owner in English. Never claim in-game testing.
+`next-ai-2.1.1.md`. The next version is 2.1.8 (`tools/next_version.py`). Answer the owner in English. Never claim in-game testing.
 
 ## 2.1.6 (the owner, asked about poses, sound and colours: "Do what you think is best")
 - Ground strikes: `HakiBolts.landings` finds, at launch, the free ends of CORE strokes that come down on a non-air block (one per half
@@ -55,6 +55,19 @@ outline to it and whatsoever. That is the most important thing about the mod."
   frame near the player), the XROT rotation of entity-anchored effects (taken from Photon 2's source; Photon 1.1.17's was not
   found: if bolts of fist effects appear beside instead of in front, the angle's sign or offset is the first suspect), the first-
   person view of the blade crackle, Fabulous graphics.
+
+## 2.1.7 (the owner: "the haki full power explosion should be ridiculously bigger than what it currently is, lightning spreading
+further etc", then, seeing the first dense try: "too much lightning way too much")
+- `haki/ConquerorStorm` (pure, tested): at full charge, 5..8 (+1 supreme) huge ground bolts out to `reach` = 60..120 blocks (pieces
+  of ~5 blocks wandering, one branch now and then, never sub-branches), 3..6 sky bolts, 3 arches; every point a height above the
+  ground; crackled at `LEVELS` 4. NOT more: the owner found the dense version too much.
+- `client/haki/HakiStorm.release` is called by the patch (`PiecePatch.stormHook`, before `conquerorRelease`'s ARETURN: DUP, charge,
+  variant, seed) and paints the storm into the same composition (`pending.ground`, `pending.wave`); variant / 4 is the mastery.
+- `HakiBolts.onGround` lays ground bolts on the terrain at launch (first solid block under air looking down from 14 above the anchor,
+  per column, cached); the shockwave `BoltMesh.ring` (14 ticks); storm landings up to 20, the first 6 with `ModSounds.LAST_STAND_LIGHTNING`.
+- Far bolts skip invisible detail (`BoltMesh.build`: glow under 2 px, heart under 0.6 px, spurs under 1.2 px, discs under 1.2 px).
+- The gameplay radius is the original's (`ConquerorLightningPath.radius`, max 50; it also sizes SupremeHakiDestruction): not touched.
+- Render: `docs/images/haki-full-power-storm.png`.
 
 ## Ideas not done
 - A screen-space light flash for very close strikes; lightning lighting the terrain (no dynamic light in vanilla).

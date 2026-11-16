@@ -72,10 +72,14 @@ public final class HakiBolts {
         final List<IFXObject> beams = new ArrayList<>();
         final BoltPainter.Chain chain = new BoltPainter.Chain();
         final long made = System.nanoTime();
+        /** 2.1.7: bolts given as heights above the ground (the full-power storm): laid on the terrain when let go. */
+        final java.util.Set<Bolt> ground = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        /** 2.1.7: the full-power shockwave's reach (0: none). */
+        double wave;
     }
 
     /** Bolts set going: at a fixed point, or following {@code entity} (feet, turned with it); where their free ends strike the ground. */
-    record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end, List<Landing> landings) {
+    record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end, List<Landing> landings, double wave) {
     }
 
     /** Where a bolt's free end strikes the ground (world, on its surface), when (ticks from the start), how big, and whether it was heard. */
@@ -87,9 +91,11 @@ public final class HakiBolts {
         final int color;
         final double size;
         final boolean loud;
+        final boolean thunder;
         boolean struck;
 
-        Landing(double x, double y, double z, float at, int color, double size, boolean loud) {
+        Landing(double x, double y, double z, float at, int color, double size, boolean loud, boolean thunder) {
+            this.thunder = thunder;
             this.x = x;
             this.y = y;
             this.z = z;
@@ -140,8 +146,12 @@ public final class HakiBolts {
             }
             List<IFXObject> objects = fx.getMainFX().objects();
             objects.removeIf(o -> containsSame(pending.beams, o));
+            if (!pending.ground.isEmpty()) {
+                onGround(pending, entity, x, y, z, level);
+            }
             BoltPainter.point(pending.bolts);
-            List<Landing> landings = landings(pending.bolts, entity, x, y, z, level);
+            boolean storm = pending.wave > 0;
+            List<Landing> landings = landings(pending.bolts, entity, x, y, z, level, storm ? 20 : MOST_LANDINGS, storm ? 6 : 3, storm);
             float end = 0;
             for (Bolt bolt : pending.bolts) {
                 end = Math.max(end, bolt.end());
@@ -149,7 +159,10 @@ public final class HakiBolts {
             for (Landing landing : landings) {
                 end = Math.max(end, landing.at + (float) BoltMesh.SCORCH);
             }
-            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings));
+            if (storm) {
+                end = Math.max(end, (float) BoltMesh.WAVE);
+            }
+            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave));
             alive += pending.bolts.size();
             if (!landings.isEmpty() || pending.bolts.size() >= 12) {
                 // the composition's own crackle, at its anchor (the original plays the heavy charge and release sounds itself)
@@ -166,7 +179,69 @@ public final class HakiBolts {
      * The free ends of the coloured strokes (no other stroke carries on from them) that come down on solid ground, one per half block,
      * at most {@link #MOST_LANDINGS}; the first few are heard.
      */
-    static List<Landing> landings(List<Bolt> bolts, Entity entity, double x, double y, double z, Level level) {
+    /**
+     * 2.1.7: the storm's bolts laid on the real terrain: each point's height above the ground becomes a height above the top of the
+     * ground under it (found looking down from a little above the player, so a cave's ceiling is never taken for the ground), so the
+     * web runs over hills and down into valleys and the sky's bolts come down on the ground where they land.
+     */
+    static void onGround(Pending pending, Entity entity, double x, double y, double z, Level level) {
+        double ox = x;
+        double oy = y;
+        double oz = z;
+        double cos = 1.0;
+        double sin = 0.0;
+        if (entity != null) {
+            Vec3 at = entity.m_20182_();
+            ox = at.f_82479_;
+            oy = at.f_82480_;
+            oz = at.f_82481_;
+            double turn = Math.toRadians(-90.0 - entity.m_146908_());
+            cos = Math.cos(turn);
+            sin = Math.sin(turn);
+        }
+        Map<Long, Double> heights = new java.util.HashMap<>();
+        for (int i = 0; i < pending.bolts.size(); i++) {
+            Bolt bolt = pending.bolts.get(i);
+            if (!pending.ground.contains(bolt)) {
+                continue;
+            }
+            double[] points = bolt.points.clone();
+            for (int k = 0; k < bolt.count(); k++) {
+                double lx = points[k * 3];
+                double lz = points[k * 3 + 2];
+                double wx = ox + lx * cos + lz * sin;
+                double wz = oz - lx * sin + lz * cos;
+                points[k * 3 + 1] += ground(level, wx, wz, oy, heights) - oy;
+            }
+            pending.bolts.set(i, new Bolt(points, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+        }
+    }
+
+    /** The top of the ground in the column at (wx, wz): the first solid block under air, looking down from 14 above {@code near}. */
+    static double ground(Level level, double wx, double wz, double near, Map<Long, Double> heights) {
+        int bx = (int) Math.floor(wx);
+        int bz = (int) Math.floor(wz);
+        long key = (long) bx << 32 ^ (bz & 0xFFFFFFFFL);
+        Double known = heights.get(key);
+        if (known != null) {
+            return known;
+        }
+        int from = (int) Math.floor(near) + 14;
+        double found = near;
+        boolean air = false;
+        for (int by = from; by >= from - 40; by--) {
+            boolean solid = !level.m_8055_(BlockPos.m_274561_(bx + 0.5, by + 0.5, bz + 0.5)).m_60795_();
+            if (solid && air) {
+                found = by + 1.0;
+                break;
+            }
+            air |= !solid;
+        }
+        heights.put(key, found);
+        return found;
+    }
+
+    static List<Landing> landings(List<Bolt> bolts, Entity entity, double x, double y, double z, Level level, int most, int loud, boolean thunder) {
         List<Landing> landings = new ArrayList<>();
         java.util.Set<Long> roots = new java.util.HashSet<>();
         for (Bolt bolt : bolts) {
@@ -201,8 +276,9 @@ public final class HakiBolts {
                 continue;
             }
             double size = Math.max(0.5, Math.min(1.4, bolt.widths[0] * 22.0));
-            landings.add(new Landing(wx, below.m_123342_() + 1.0, wz, bolt.delay + bolt.crawl, bolt.color, size, landings.size() < 3));
-            if (landings.size() >= MOST_LANDINGS) {
+            landings.add(new Landing(wx, below.m_123342_() + 1.0, wz, bolt.delay + bolt.crawl, bolt.color, size, landings.size() < loud,
+                thunder));
+            if (landings.size() >= most) {
                 break;
             }
         }
@@ -228,7 +304,11 @@ public final class HakiBolts {
                 .velocity(new Vec3(Math.cos(a) * out, 0.12 + Math.random() * 0.18, Math.sin(a) * out)).fall(0.045)
                 .colors(hot, landing.color & 0x00FFFFFF).size(0.14, 0.02).spawn();
         }
-        if (landing.loud) {
+        if (landing.loud && landing.thunder) {
+            // the storm's strikes crack like thunder (the original's own Last Stand lightning)
+            level.m_7785_(landing.x, landing.y, landing.z, ModSounds.LAST_STAND_LIGHTNING.get(), SoundSource.PLAYERS, 1.6F,
+                0.8F + (float) Math.random() * 0.25F, false);
+        } else if (landing.loud) {
             zap(level, landing.x, landing.y, landing.z, 0.35F);
         }
     }
@@ -293,6 +373,12 @@ public final class HakiBolts {
             }
             for (Bolt bolt : live.bolts) {
                 BoltMesh.build(bolt, frame, ticks - bolt.delay, PIXEL, shine, sink);
+            }
+            if (live.wave > 0) {
+                double cx = (live.entity != null ? live.entity.m_20318_(partial).f_82479_ : live.x) - cam.f_82479_;
+                double cy = (live.entity != null ? live.entity.m_20318_(partial).f_82480_ : live.y) - cam.f_82480_;
+                double cz = (live.entity != null ? live.entity.m_20318_(partial).f_82481_ : live.z) - cam.f_82481_;
+                BoltMesh.ring(cx, cy, cz, ticks, live.wave, 0xFFFF1433, shine, sink);
             }
             for (Landing landing : live.landings) {
                 double age = ticks - landing.at;

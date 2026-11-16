@@ -4,6 +4,7 @@ import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.BoltMesh;
 import com.hexhaki.piece.haki.BoltPainter;
 import com.hexhaki.piece.haki.ConquerorBolts;
+import com.hexhaki.piece.haki.ConquerorStorm;
 import com.hexhaki.piece.haki.DrawCrackle;
 import com.hexhaki.piece.haki.Jag;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ public final class LightningTests {
         painter();
         crackle();
         landing();
+        storm();
         Check.done("LightningTests");
     }
 
@@ -281,5 +283,46 @@ public final class LightningTests {
         }
         Check.that(flash[0] > 0 && flash[1] == 0, "the flash is brief");
         Check.that(alpha[0] > 0.6 && alpha[1] > 0 && alpha[1] < alpha[0] * 0.4, "the scorch lingers and fades (" + alpha[0] + ", " + alpha[1] + ")");
+    }
+
+    /** 2.1.7: the full-power storm: far, but a few huge bolts (the owner: "too much lightning way too much"). */
+    static void storm() {
+        Check.near(ConquerorStorm.reach(0), 60, 1e-9, "the storm reaches 60 blocks even at no mastery");
+        Check.near(ConquerorStorm.reach(1000), 120, 1e-9, "and 120 at full mastery");
+        for (int mastery : new int[] {0, 500, 1000}) {
+            for (boolean supreme : new boolean[] {false, true}) {
+                List<ConquerorStorm.Call> calls = ConquerorStorm.release(mastery, 77L, supreme);
+                List<ConquerorStorm.Call> again = ConquerorStorm.release(mastery, 77L, supreme);
+                Check.that(calls.size() == again.size(), "a storm is a pure function of its seed");
+                Check.that(calls.size() > 60 && calls.size() < 800, "a few huge bolts, not a carpet (" + calls.size() + " beams)");
+                double far = 0;
+                int roots = 0;
+                for (ConquerorStorm.Call call : calls) {
+                    Check.that(call.delay() >= 0 && call.duration() > 4, "every beam strikes, and burns a while");
+                    Check.that(call.a()[1] >= 0.0 && call.b()[1] >= 0.0, "every point is a height above the ground");
+                    for (double v : new double[] {call.a()[0], call.a()[2], call.b()[0], call.b()[2]}) {
+                        Check.that(!Double.isNaN(v), "no NaN in a storm");
+                    }
+                    if (call.color() == ConquerorStorm.CORE) {
+                        far = Math.max(far, Math.hypot(call.b()[0], call.b()[2]));
+                        if (Math.hypot(call.a()[0], call.a()[2]) < 1.0 && call.a()[1] == 1.0) {
+                            roots++;
+                        }
+                    }
+                }
+                double reach = ConquerorStorm.reach(mastery);
+                Check.that(far > reach * 0.65 && far < reach * 1.1, "the storm spreads out to its reach (" + far + " of " + reach + ")");
+                Check.that(roots >= 5 && roots <= 9, "five to eight huge bolts out of the player (" + roots + ")");
+            }
+        }
+        int[] counts = {0, 0};
+        BoltMesh.ring(0, -1.6, 0, 6, 100, 0xFFFF1433, 1.0, (glow, v, c) -> {
+            counts[glow ? 1 : 0]++;
+            Check.that(facing(v, 0, 1, 2) >= -1e-12 && facing(v, 0, 2, 3) >= -1e-12, "the shockwave's quads face the eye");
+        });
+        Check.that(counts[0] > 0 && counts[1] > 0, "the shockwave has its ink and its light");
+        int[] gone = {0};
+        BoltMesh.ring(0, -1.6, 0, BoltMesh.WAVE + 0.5, 100, 0xFFFF1433, 1.0, (glow, v, c) -> gone[0]++);
+        Check.that(gone[0] == 0, "the shockwave is gone once it has swept out");
     }
 }
