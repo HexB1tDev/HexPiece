@@ -2,6 +2,7 @@
 package net.minecraft.client.multiplayer;
 
 public class ClientLevel extends net.minecraft.world.level.Level implements net.minecraft.world.level.BlockAndTintGetter {
+    /** addParticle (the original HexHaki jar calls it on ClientLevel) */ public void m_7106_(net.minecraft.core.particles.ParticleOptions particle, double x, double y, double z, double vx, double vy, double vz) { throw new UnsupportedOperationException(); }
     /** getGameTime */ public long m_46467_() { throw new UnsupportedOperationException(); }
     /** getSkyDarken(partialTick): 0.2 at night .. 1 by day */ public float m_104805_(float partialTick) { throw new UnsupportedOperationException(); }
     /** getBlockState (3.6.2; the original JAR links it on ClientLevel) */ public net.minecraft.world.level.block.state.BlockState m_8055_(net.minecraft.core.BlockPos pos) { throw new UnsupportedOperationException(); }

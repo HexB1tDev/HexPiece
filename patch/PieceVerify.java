@@ -266,7 +266,7 @@ public final class PieceVerify implements Opcodes {
             if (annotation.desc.equals("Lnet/minecraftforge/fml/common/Mod$EventBusSubscriber;")) {
                 if (annotation.values != null) {
                     for (int i = 0; i + 1 < annotation.values.size(); i += 2) {
-                        if ("value".equals(annotation.values.get(i)) && String.valueOf(annotation.values.get(i + 1)).contains("CLIENT")) {
+                        if ("value".equals(annotation.values.get(i)) && names(annotation.values.get(i + 1)).contains("CLIENT")) {
                             return true;
                         }
                     }
@@ -275,6 +275,21 @@ public final class PieceVerify implements Opcodes {
             }
         }
         return true; // not a subscriber at all
+    }
+
+    /** An annotation value flattened to text: an enum constant is a {descriptor, name} pair, an array a list of them. */
+    static String names(Object value) {
+        if (value instanceof String[] pair) {
+            return String.join(" ", pair);
+        }
+        if (value instanceof java.util.List<?> list) {
+            StringBuilder out = new StringBuilder();
+            for (Object item : list) {
+                out.append(names(item)).append(' ');
+            }
+            return out.toString();
+        }
+        return String.valueOf(value);
     }
 
     public static void main(String[] args) throws Exception {

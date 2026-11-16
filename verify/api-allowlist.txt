@@ -1,0 +1,10 @@
+# HexPiece: external API references made by the expansion that neither the original hexhaki-2.1.0.jar makes (proven at runtime) nor
+# HexGhoul's verified list (verify/hexghoul-allowlist.txt) covers. Each line: C class | M owner name desc | F owner name desc, the DECLARING
+# class, and its evidence. Evidence keys:
+#   [srg]   MCPConfig versions/release/1.20.1/joined.tsrg (obf -> SRG) joined with FabricMC intermediary 1.20.1.tiny (obf -> intermediary,
+#           with the obfuscated descriptor), the owner class identified by members the original jar already uses.
+#   [order] registry declaration order in joined.tsrg, anchored on neighbours the original uses.
+
+# --- 2.1.1: fighting styles (client input and hit effects) ---------------------------------------------------------------------------
+F net/minecraft/client/Minecraft f_91077_ Lnet/minecraft/world/phys/HitResult;   # [srg] hitResult: joined.tsrg enn w f_91077_ (enn = Minecraft: s f_91073_ level, t f_91074_ player as the original uses); intermediary FIELD enn Leeg; w field_1765 (yarn crosshairTarget; eeg = HitResult)
+F net/minecraft/core/particles/ParticleTypes f_123797_ Lnet/minecraft/core/particles/SimpleParticleType;   # [order] CRIT: joined.tsrg iv g f_123797_, right after CLOUD f f_123796_ which the original uses; intermediary FIELD iv Liy; g field_11205 (yarn CRIT)

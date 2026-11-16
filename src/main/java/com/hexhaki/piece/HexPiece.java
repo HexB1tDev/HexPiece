@@ -1,5 +1,6 @@
 package com.hexhaki.piece;
 
+import com.hexhaki.piece.network.PieceNetwork;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.eventbus.api.IEventBus;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ public final class HexPiece {
     }
 
     public static void init(IEventBus bus) {
-        LOGGER.info("HexPiece expansion starting");
+        PieceNetwork.init();
+        LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles");
     }
 }
