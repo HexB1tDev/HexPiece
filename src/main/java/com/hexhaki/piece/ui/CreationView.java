@@ -233,7 +233,7 @@ public final class CreationView {
             int y = b[1] + 32;
             if (style.sword()) {
                 // 2.1.4: the sword's own moves
-                for (String[] line : new String[][] {{"M1", "Draw Cut, 15 cuts"}, {"RMB", "Charged Slash"}, {"C+M1", "Quick Draw"}}) {
+                for (String[] line : new String[][] {{"M1", "15 cuts"}, {"RMB", "Charged Slash"}, {"M1", "Ctrl: Quick Draw"}}) {
                     c.fill(b[0] + 4, y - 1, b[0] + 22, y + 8, 0x30603818);
                     c.centered(line[0], b[0] + 13, y, PirateUi.INK, false);
                     c.text(c.fit(line[1], w - 22), b[0] + 25, y, PirateUi.INK, false);

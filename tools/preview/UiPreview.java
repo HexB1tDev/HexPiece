@@ -134,6 +134,14 @@ public class UiPreview {
             int t = tab;
             save(dir, "logbook-" + tab, w, h, c -> LogbookView.draw(c, log, LogbookView.sample(t), "tab:" + ((t + 1) % LogbookView.TABS.length), 7.0));
         }
+        // 2.1.4: the Swordsman's page of the log
+        int[] mastery = new int[FightingStyle.values().length];
+        mastery[FightingStyle.SWORDSMAN.ordinal()] = 380;
+        com.hexhaki.piece.PieceProfile swordsman = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE, FightingStyle.SWORDSMAN, true,
+            mastery, 48_000_000L);
+        LogbookView.Data swordLog = new LogbookView.Data("HexB1t", swordsman, new int[] {640, 310, 120}, new String[] {"Adept", "Novice",
+            "Awakened"}, "", 0, 2);
+        save(dir, "logbook-swordsman", w, h, c -> LogbookView.draw(c, log, swordLog, "tab:3", 7.0));
         System.out.println("wrote previews to " + dir);
     }
 }

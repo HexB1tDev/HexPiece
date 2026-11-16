@@ -4,7 +4,6 @@ import com.hexhaki.piece.HexPiece;
 import com.hexhaki.piece.sword.Katana;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -41,9 +40,11 @@ public final class KatanaRenderer {
     public static final float GRIP = -2.4F;
     static final ResourceLocation WHITE = ResourceLocation.m_214293_("hexhaki", "textures/piece/white.png");
     static final int FULL_BRIGHT = 0xF000F0;
-    private static final Map<Katana, KatanaMesh> BLADES = new EnumMap<>(Katana.class);
-    private static final Map<Katana, KatanaMesh> SAYA = new EnumMap<>(Katana.class);
+    private static final Map<String, KatanaMesh> MESHES = new java.util.HashMap<>();
     private static final Set<String> FAILED = new HashSet<>();
+    /** Camera distances (blocks) within which the owner's full mesh, then the mid level of detail, are drawn (beyond: the far one). */
+    static final float FULL_WITHIN = 2.5F;
+    static final float MID_WITHIN = 10.0F;
 
     private KatanaRenderer() {
     }
@@ -52,20 +53,28 @@ public final class KatanaRenderer {
         return ResourceLocation.m_214293_("hexhaki", "textures/katana/" + katana.key() + ".png");
     }
 
-    static KatanaMesh mesh(Katana katana, boolean saya) {
-        Map<Katana, KatanaMesh> cache = saya ? SAYA : BLADES;
-        KatanaMesh mesh = cache.get(katana);
-        String name = katana.key() + (saya ? "_sheath" : "");
+    /** The mesh at a level of detail ("" the owner's whole mesh, "_mid", "_far"), read once. */
+    static KatanaMesh mesh(Katana katana, boolean saya, String lod) {
+        String name = katana.key() + (saya ? "_sheath" : "") + lod;
+        KatanaMesh mesh = MESHES.get(name);
         if (mesh == null && !FAILED.contains(name)) {
             try {
                 mesh = KatanaMesh.load(name);
-                cache.put(katana, mesh);
+                MESHES.put(name, mesh);
             } catch (Exception failure) {
                 FAILED.add(name);
                 HexPiece.LOGGER.error("HexPiece could not read the katana mesh {}", name, failure);
             }
         }
         return mesh;
+    }
+
+    /** The level of detail for a katana whose origin the pose puts {@code distance} blocks from the eye. */
+    static String lod(PoseStack.Pose pose) {
+        Vector3f origin = new Vector3f(0.0F, 0.0F, 0.0F);
+        pose.m_252922_().transformPosition(origin);
+        float distance = (float) Math.sqrt(origin.x * origin.x + origin.y * origin.y + origin.z * origin.z);
+        return distance < FULL_WITHIN ? "" : distance < MID_WITHIN ? "_mid" : "_far";
     }
 
     /**
@@ -77,8 +86,9 @@ public final class KatanaRenderer {
         pose.m_85841_(SCALE, SCALE, SCALE);
         PoseStack.Pose last = pose.m_85850_();
         VertexConsumer solid = buffers.m_6299_(RenderType.m_110458_(texture(katana)));
-        KatanaMesh bladeMesh = blade ? mesh(katana, false) : null;
-        KatanaMesh sayaMesh = saya ? mesh(katana, true) : null;
+        String lod = lod(last);
+        KatanaMesh bladeMesh = blade ? mesh(katana, false, lod) : null;
+        KatanaMesh sayaMesh = saya ? mesh(katana, true, lod) : null;
         if (sayaMesh != null) {
             quads(last, solid, sayaMesh, 0, sayaMesh.quadCount(), light);
         }

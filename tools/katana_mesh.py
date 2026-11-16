@@ -146,9 +146,61 @@ def textures(zip_path):
         return {os.path.basename(n)[:-4]: z.read(n) for n in z.namelist() if n.startswith(PREFIX + "textures/") and n.endswith(".png")}
 
 
+# 2.1.4: levels of detail for a katana seen from afar (vertex clustering per part, hard edges kept by bucketing the normals; the owner's
+# full mesh is untouched and drawn whenever it is close): cell size (model px; the blade's half of it), normal buckets per axis
+LODS = {"mid": (0.6, 1.0), "far": (1.0, 0.8)}
+
+
+def simplify(vertices, quads, groups, cell, buckets):
+    """The mesh with every part's vertices merged per grid cell and normal bucket (positions, uvs and normals averaged); faces that
+    collapse are dropped, duplicates removed; the parts keep their names and order."""
+    import math
+    out_v, index, out_q, out_g = [], {}, [], []
+    seen = set()
+    for name, first, count in groups:
+        start = len(out_q)
+        size = cell * (0.5 if name.startswith("01_Blade") else 1.0)
+        for quad in quads[first:first + count]:
+            ids = []
+            for vi in quad:
+                x, y, z, u, v, nx, ny, nz = vertices[vi]
+                key = (name, round(x / size), round(y / size), round(z / size), round(nx * buckets), round(ny * buckets), round(nz * buckets))
+                if key not in index:
+                    index[key] = len(out_v)
+                    out_v.append([0.0] * 9)
+                k = index[key]
+                acc = out_v[k]
+                for i in range(8):
+                    acc[i] += vertices[vi][i]
+                acc[8] += 1
+                ids.append(k)
+            uniq = list(dict.fromkeys(ids))
+            if len(uniq) < 3:
+                continue
+            key = tuple(sorted(uniq))
+            if key in seen:
+                continue
+            seen.add(key)
+            out_q.append(tuple(uniq) if len(uniq) == 4 else (uniq[0], uniq[1], uniq[2], uniq[2]))
+        out_g.append((name, start, len(out_q) - start))
+    verts = []
+    for acc in out_v:
+        n = acc[8] or 1.0
+        x, y, z, u, v, nx, ny, nz = [a / n for a in acc[:8]]
+        length = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
+        verts.append((x, y, z, u, v, nx / length, ny / length, nz / length))
+    return verts, out_q, out_g
+
+
 def pack(zip_path):
-    """{model name: packed mesh bytes} for every model."""
-    return {name: encode(*parse(text)) for name, text in models(zip_path)}
+    """{model name: packed mesh bytes} for every model, and its levels of detail (<name>_mid, <name>_far)."""
+    out = {}
+    for name, text in models(zip_path):
+        mesh = parse(text)
+        out[name] = encode(*mesh)
+        for lod, (cell, buckets) in LODS.items():
+            out[f"{name}_{lod}"] = encode(*simplify(*mesh, cell, buckets))
+    return out
 
 
 if __name__ == "__main__":

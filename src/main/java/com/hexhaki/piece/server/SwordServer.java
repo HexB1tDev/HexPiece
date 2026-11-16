@@ -283,6 +283,9 @@ public final class SwordServer {
             return;
         }
         if (!ready(player, state)) {
+            if (state.katana == null && swordsman(player) && action != C2SSword.RELEASE) {
+                player.m_5661_(Component.m_237113_("No katana: a Swordsman needs one in the inventory"), true);
+            }
             return;
         }
         switch (action) {

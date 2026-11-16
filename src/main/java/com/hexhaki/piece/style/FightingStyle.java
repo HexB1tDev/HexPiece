@@ -22,7 +22,7 @@ public enum FightingStyle {
         "Pirate street boxing: jab, cross, hook and an uppercut that launches, a haymaker, a gatling of jabs and a shoulder charge that "
             + "bowls through a crowd."),
     /** 2.1.4: the sword, one-handed (the owner: "the entire moveset is now right handed only"); its moves are {@code sword/SwordMove}. */
-    SWORDSMAN("swordsman", "Swordsman", Faction.UNSET, 0xFFB9C7D8,
+    SWORDSMAN("swordsman", "Swordsman", Faction.UNSET, 0xFF6F8BAE,
         "One katana, the right hand: a draw that cuts before the eye sees it, a string of heavy cuts on the ground, on the run and in "
             + "the air, and a charged slash that, with Haki, flies and splits the ground.");
 

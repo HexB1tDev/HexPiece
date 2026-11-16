@@ -280,7 +280,7 @@ public final class LogbookView {
             {"M1", "Moving", "Dashing Draw, Advancing Cut, Pivot Cut"},
             {"M1", "In the air", "Falling Draw, Aerial Cross, Wheel, Plunge"},
             {"RMB", "Charged Slash", "Hold to charge, let go: a heavy cut; with Armament Haki a slash that flies and splits the ground"},
-            {"C+M1", "Quick Draw", "Five blocks down the line in a blink, everything on it cut (3s)"},
+            {"M1", "Ctrl: Quick Draw", "Five blocks down the line in a blink, everything on it cut (3s)"},
         };
         int rowH = Math.max(18, Math.min(30, (l.y1 - 30 - y) / rows.length));
         for (String[] row : rows) {
