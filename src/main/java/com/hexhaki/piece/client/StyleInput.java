@@ -65,8 +65,8 @@ public final class StyleInput {
         boolean atBlock = aimed != null && aimed.m_6662_() == HitResult.Type.BLOCK;
         if (event.isAttack()) {
             event.setCanceled(true);
-            // 2.3.3: a Swordsman's hand swings with each cut asked for (first person is the game's own hand now)
-            event.setSwingHand(swordsman());
+            // 2.3.5: the cut itself is seen in first person (SwordClient.swing): no vanilla hand bob over it
+            event.setSwingHand(false);
             if (swordsman()) {
                 // 2.1.4: one press, one cut asked for; Ctrl + M1 the quick draw
                 PieceNetwork.toServer(new C2SSword(Screen.m_96637_() ? C2SSword.QUICK_DRAW : C2SSword.PRESS));

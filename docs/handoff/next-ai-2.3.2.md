@@ -1,6 +1,20 @@
 # HexPiece: handoff after 2.3.2 (the owner's sword bugs, one animation set for every blade, natural arms, the victim's split view, NPC gestures)
 
-## Session 3, part 3: 2.3.4 (newest)
+## Session 3, part 4: 2.3.5 (newest)
+- The owner: "Fix the first person of the swings being lackluster and swings on the blades need more freedom, arm more stretched,
+  longer swings", then "more range".
+- `tools/sword_anims.py`: REACH 8.1 -> 8.4 (the arm nearly straight); `strike()` widens every cut's arc from its middle (`widen`,
+  ARC_WIND 1.2, ARC_END 1.12, ARC_OVER 1.18: fists along their lines, blade and edge along their great circles). The hit volume is
+  the blade's swept path (BladePaths), so the range grows with it. gyaku_kesa's coil and middle 1 px lower (the fist passed the chin).
+- `_best_track` (whole-track Euler unwrap, start and end plain, no spin) used when the greedy chain ends wound or spins; `refine`
+  flags a fist near the face with 0.3 px headroom.
+- First person: `SwordClient.swing(anim)` (cuts, release, quick draw/cut) plays with THIRD_PERSON_MODEL, the right arm and item only;
+  everything else FirstPersonMode.NONE (vanilla hand). No vanilla hand bob on sword M1s. If the owner still finds the first-person
+  arm odd, the alternative is a first-person-only swing on the vanilla hand (RenderHandEvent), not built.
+- `tools/sword_view.EyeCamera` + `sword_gif.py` view "fp": first person as playerAnimator draws a swing (right arm and blade only).
+- All 29 sword animations pass. Still open: the Fishman Karate white screen.
+
+## Session 3, part 3: 2.3.4
 - The owner on 2.3.3's hands (screenshot, their own skin showing again, so the skin report looks resolved): "its not glowing and it's
   not the actual skin blackening, look at Nika, how the skin turns white, why not use that for haki? Also the fists are not
   glowing... its just an outline".

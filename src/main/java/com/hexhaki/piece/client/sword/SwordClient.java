@@ -4,6 +4,7 @@ import com.hexhaki.HexHaki;
 import com.hexhaki.piece.network.S2CSword;
 import com.hexhaki.piece.sword.Katana;
 import com.hexhaki.piece.sword.SwordAnims;
+import dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration;
 import dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode;
 import dev.kosmx.playerAnim.api.layered.IAnimation;
 import dev.kosmx.playerAnim.api.layered.KeyframeAnimationPlayer;
@@ -139,9 +140,14 @@ public final class SwordClient {
         KeyframeAnimationPlayer player2 = null;
         if (data != null) {
             // 2.3.3 (the owner, of the first-person view: "the left arm is showing for some reason. I don't need the left arm on the
-            // screen", "the right arm shows weird ... It's not attached to the body"): the sword's animations leave first person to
-            // the game (its own hand, attached, the katana in it when it is in the hand), as HexGhoul's animations do
-            player2 = new KeyframeAnimationPlayer(data).setFirstPersonMode(FirstPersonMode.NONE);
+            // screen", "the right arm shows weird ... It's not attached to the body"): the guard, the idle, the draws and the
+            // sheathings leave first person to the game (its own hand). 2.3.5 (the owner: "Fix the first person of the swings being
+            // lackluster"): a swing (every cut, the release, the quick draw and cut) is seen in first person as it is: the sword arm
+            // and the blade sweeping across the view, the right arm only, never the left
+            player2 = swing(anim)
+                ? new KeyframeAnimationPlayer(data).setFirstPersonMode(FirstPersonMode.THIRD_PERSON_MODEL).setFirstPersonConfiguration(
+                    new FirstPersonConfiguration().setShowRightArm(true).setShowLeftArm(false).setShowRightItem(true).setShowLeftItem(false))
+                : new KeyframeAnimationPlayer(data).setFirstPersonMode(FirstPersonMode.NONE);
         }
         boolean swap = playing != null && playing.anim() == SwordAnims.GUARD && anim == SwordAnims.GUARD;
         int fade = anim == SwordAnims.NONE ? 4 : swap ? 6 : anim == SwordAnims.GUARD ? 3 : 2;
@@ -151,6 +157,11 @@ public final class SwordClient {
         } else {
             PLAYING.put(id, new Playing(layer, anim, start, name));
         }
+    }
+
+    /** 2.3.5: a swing of the sword (a cut, the release, the quick draw or cut), seen in first person with the arm and the blade. */
+    static boolean swing(int anim) {
+        return anim >= SwordAnims.MOVES || anim == SwordAnims.RELEASE || anim == SwordAnims.QUICK_DRAW || anim == SwordAnims.QUICK_CUT;
     }
 
     @SubscribeEvent

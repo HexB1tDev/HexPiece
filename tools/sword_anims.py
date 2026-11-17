@@ -246,7 +246,8 @@ def gap_problems(a, b, check=None):
             out.append((t, "arm through the head", h))
         hb = head_box(q)
         fist = rig.point(rig.layer_to_entity(q) @ rig.fist_frame(q, "right"), (0, 0, 0))
-        if inside(hb, fist, (-4.5, -8.5, -9.5), (4.5, 1.0, -4.0), -0.3):
+        # 2.3.5: with headroom (the check flags it at 0.0; refine used to wait until it was 0.3 inside)
+        if inside(hb, fist, (-4.5, -8.5, -9.5), (4.5, 1.0, -4.0), 0.3):
             out.append((t, "fist in front of the face", 0.0))
     return out
 
@@ -915,6 +916,57 @@ def _track_cost(part, track, bends):
     return c
 
 
+def _best_track(part, values, bends, start):
+    """2.3.5: the whole track written at once: every keyframe in every spelling (both branches, each channel the plain value or a
+    whole turn either side), the cheapest way through them (the in-between frames' strain, a spin heavily, and how far the numbers
+    jump), starting at start and ending on the plain spelling. A greedy pass, choosing tick by tick, can wind the numbers a full turn
+    on two channels over a move and then has to spin back at its end (sword_yoko's recovery, sword_plunge's); this finds the place
+    where taking the turn back does not show. None if no track ends plain."""
+    states = []
+    for k, v in enumerate(values):
+        if k == 0:
+            states.append([np.array(start, float)])
+            continue
+        c = _canonical(v)
+        out = []
+        for cand in ((c[0], c[1], c[2]), (c[0] + 180.0, 180.0 - c[1], c[2] + 180.0)):
+            for dp in (-360.0, 0.0, 360.0):
+                for dy in (-360.0, 0.0, 360.0):
+                    for dr in (-360.0, 0.0, 360.0):
+                        out.append(np.array((cand[0] + dp, cand[1] + dy, cand[2] + dr)))
+        if k == len(values) - 1:
+            out = [x for x in out if float(np.max(np.abs(x - _canonical(x)))) <= 0.5]
+        states.append(out)
+    cost = [np.zeros(1)]
+    back = [None]
+    for k in range(1, len(values)):
+        prev, cur = states[k - 1], states[k]
+        best = np.full(len(cur), np.inf)
+        arg = np.zeros(len(cur), int)
+        for j, b in enumerate(cur):
+            for i, a in enumerate(prev):
+                if not np.isfinite(cost[-1][i]):
+                    continue
+                d = float(np.max(np.abs(b - a)))
+                if d > 400.0:
+                    continue
+                c = (cost[-1][i] + 0.002 * float(np.sum((b - a) ** 2)) + 5.0 * _between_strain(part, a, b, bends[k - 1], bends[k])
+                     + (1.0e5 if _spun(a, b) else 0.0))
+                if c < best[j]:
+                    best[j], arg[j] = c, i
+        cost.append(best)
+        back.append(arg)
+    if not np.isfinite(cost[-1]).any():
+        return None
+    j = int(np.argmin(cost[-1]))
+    track = [None] * len(values)
+    for k in range(len(values) - 1, -1, -1):
+        track[k] = states[k][j]
+        if k > 0:
+            j = int(back[k][j])
+    return track
+
+
 def unwrap(beats, loop=None, ends=True):
     """2.3.2: every solved arm and wrist written so the game's frames between beats are natural (the game interpolates the numbers:
     two ways of writing the same turn, or -197 then 143 degrees, spin the arm between two beats; and the nearest way is not always the
@@ -931,6 +983,13 @@ def unwrap(beats, loop=None, ends=True):
         bends = [beats[i].solved[part].get("bend", 0.0) for i in idx]
         track = _chain(part, values, bends, _canonical(values[0]))
         end = _canonical(track[-1])
+        if ends and (float(np.max(np.abs(track[-1] - end))) > 0.5
+                     or any(_spun(track[k - 1], track[k]) for k in range(1, len(track)))):
+            # 2.3.5: the whole track at once, ending plain, with no spin anywhere if one can be had
+            best = _best_track(part, values, bends, _canonical(values[0]))
+            if best is not None:
+                track = best
+                end = _canonical(track[-1])
         if ends and float(np.max(np.abs(track[-1] - end))) > 0.5:
             # 2.3.2: first the whole track held to the plain branch (an arm raised forward over the top written past -180, not
             # changed over to the other branch and back): it ends plain with nothing to change back from, if it is as natural
@@ -1030,7 +1089,9 @@ def stance_write(name, beats, description):
 # --- reach and clearance ---------------------------------------------------------------------------------------------------------
 SHOULDER_R = np.array((-5.0, 2.0, 0.0))
 SHOULDER_L = np.array((5.0, 2.0, 0.0))
-REACH = 8.1
+# 2.3.5 (the owner: "swings on the blades need more freedom, arm more stretched, longer swings", "more range"): a fist reaches 8.4 px
+# from its shoulder (the arm straight is 8.5 to the fist's centre); it was held to 8.1, the elbow always a little bent
+REACH = 8.4
 
 
 def reach(target, shoulder=SHOULDER_R, limit=REACH):
@@ -1323,6 +1384,20 @@ BACKHAND_COIL = (H(-1.8, 7.2, 5.0), D(-0.42, 0.04, -0.9), D(0.0, 1.0, 0.0))
 PIVOT_COIL = (H(-1.4, 8.2, 5.8), D(-0.4, -0.06, -0.91), D(0.0, 1.0, 0.0))
 
 
+ARC_WIND, ARC_END, ARC_OVER = 1.2, 1.12, 1.18
+
+
+def widen(pose, ref, k):
+    """2.3.5: a held pose (fist, blade, edge) taken k times as far from ref along the way from ref to it (k > 1: further on)."""
+    f, bd, ed = pose
+    rf, rb, re_ = ref
+    fist = tuple(np.array(rf, float) + (np.array(f, float) - np.array(rf, float)) * k)
+    blade = unit(slerp(rb, bd, k))
+    edge = np.array(slerp(re_, ed, k), float)
+    edge = unit(edge - blade * float(edge @ blade))
+    return (fist, tuple(blade), tuple(edge))
+
+
 def strike(name, duration, wind, mid, end, cut_ticks, description, wind_body, end_body, wind_left=L_AIM, end_left=L_BACK,
            wind_legs=LEGS_BACK, end_legs=LEGS_DEEP, wind_tick=3, hold=2, head_wind=None, head_end=None, overshoot=None,
            cuts=None, start=None, raise_=None):
@@ -1330,6 +1405,12 @@ def strike(name, duration, wind, mid, end, cut_ticks, description, wind_body, en
     ticks (fast out of the coil, the edge leading), an overshoot, a hold at the end of the cut (the weight of it), and an easy
     recovery into the stance. wind/mid/end: (fist, blade, edge) of the coil, the middle of the cut and its end."""
     lo, hi = cut_ticks
+    # 2.3.5 (the owner: "longer swings", "more range"): the cut's arc taken further round both ways from its middle, the coil further
+    # back and the follow-through further through (the blade's directions along their great circles, the fists along their lines,
+    # then held to the arm's reach): the same ticks, a longer swing
+    wind = widen(wind, mid, ARC_WIND)
+    overshoot = widen(overshoot or end, mid, ARC_OVER)
+    end = widen(end, mid, ARC_END)
     beats = [start or stance_beat(0, "linear")]
     coil = dict(wind_body)
     if raise_ is not None:
@@ -1459,8 +1540,9 @@ def moves(with_draws=True):
            head_wind={"yaw": 18, "pitch": -4}, head_end={"yaw": -12, "pitch": 8},
            description="Swordsman: the kesa cut, from high over the right shoulder down through the left hip, the whole body behind it.")
     strike("sword_gyaku_kesa", 14,
-           wind=(H(-0.6, 2.6, 5.4), D(-0.88, 0.42, -0.22), D(-0.2, 0.6, 0.78)),
-           mid=(H(2.8, 2.6, 7.8), D(-0.1, 0.35, 1), D(0, -1, 0.35)),
+           # (2.3.5: the coil and the middle of the strike a pixel lower: the longer swing passed the fist in front of the chin)
+           wind=(H(-0.6, 3.8, 5.4), D(-0.88, 0.42, -0.22), D(-0.2, 0.6, 0.78)),
+           mid=(H(2.8, 3.6, 7.8), D(-0.1, 0.35, 1), D(0, -1, 0.35)),
            end=(H(7.4, 8.4, 3.8), D(0.66, -0.64, 0.38), D(0.6, 0.65, -0.45)),
            overshoot=(H(7.6, 8.8, 3.0), D(0.72, -0.64, 0.25), D(0.6, 0.65, -0.45)),
            cut_ticks=(5, 6), wind_body={"yaw": 46, "bend": -6}, end_body={"yaw": -36, "bend": 20, "y": -0.11, "z": -0.2},

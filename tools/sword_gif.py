@@ -26,6 +26,18 @@ STEP = 0.5
 def tile(move, q, t, view, scale):
     prof = move.profile
     w, h = TILE
+    if view == "fp":
+        # 2.3.5: first person as the game draws a swing (SwordClient.swing: playerAnimator's third-person model, the right arm only)
+        cam = sv.EyeCamera(w, h)
+        cv = sv.Canvas(w, h, bg=(150, 185, 220))
+        sv.draw_figure(cv, cam, q, skip=("head", "torso", "leftArm", "rightLeg", "leftLeg", "hat", "body"))
+        if move.drawn_at(t) or sa.sliding(move, t):
+            sv.draw_katana(cv, cam, prof.key, sa.game_blade(move, q, t))
+        img = cv.image()
+        d = ImageDraw.Draw(img)
+        d.line([(w / 2 - 4, h / 2), (w / 2 + 4, h / 2)], fill=(255, 255, 255))
+        d.line([(w / 2, h / 2 - 4), (w / 2, h / 2 + 4)], fill=(255, 255, 255))
+        return img
     cam = sv.Camera(YAW[view], 10.0, scale, w / 2, h * 0.92)
     cv = sv.Canvas(w, h)
     sv.draw_figure(cv, cam, q)

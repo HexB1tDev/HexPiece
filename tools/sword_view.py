@@ -74,6 +74,35 @@ class Camera:
         return np.stack([self.cx + p[:, 0] * self.scale, self.cy - p[:, 1] * self.scale, -p[:, 2]], axis=1)  # depth: nearer is less
 
 
+# 2.3.5: the depth given to a point behind the eye (EyeCamera); orthographic depths are small, of either sign
+BEHIND = -1.0e9
+
+
+class EyeCamera:
+    """2.3.5: first person, as playerAnimator draws a swing seen from the eyes: a perspective camera at the eye (1.62 blocks over the
+    feet), looking ahead (-z) pitch degrees down, fov degrees from the top of the view to its bottom, the image w x h. Points behind
+    the near plane come out at depth BEHIND (the canvas drops their triangles)."""
+
+    NEAR = 0.05
+
+    def __init__(self, w, h, pitch=12.0, fov=70.0, eye=1.62):
+        b = math.radians(pitch)
+        self.eye = np.array((0.0, eye, 0.0))
+        self.right = np.array((1.0, 0.0, 0.0))
+        self.up = np.array((0.0, math.cos(b), -math.sin(b)))
+        self.ahead = np.array((0.0, -math.sin(b), -math.cos(b)))
+        self.f = (h / 2.0) / math.tan(math.radians(fov) / 2.0)
+        self.cx, self.cy = w / 2.0, h / 2.0
+        # as Camera.rot: E to the view's axes (x right, y up, z towards the eye), for the blade's shine
+        self.rot = np.array([self.right, self.up, -self.ahead])
+
+    def project(self, pts):
+        p = np.asarray(pts, float) - self.eye
+        x, y, z = p @ self.right, p @ self.up, p @ self.ahead
+        zs = np.maximum(z, self.NEAR)
+        return np.stack([self.cx + self.f * x / zs, self.cy - self.f * y / zs, np.where(z < self.NEAR, BEHIND, z)], axis=1)
+
+
 LIGHT = np.array([0.35, 0.85, -0.4]) / np.linalg.norm([0.35, 0.85, -0.4])
 
 
@@ -88,7 +117,7 @@ class Canvas:
         """One triangle (3 screen points with depth). A flat colour, or a texture sampled by uv."""
         (x0, y0, d0), (x1, y1, d1), (x2, y2, d2) = s
         area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
-        if abs(area) < 1e-9:
+        if abs(area) < 1e-9 or min(d0, d1, d2) <= BEHIND:
             return
         minx, maxx = max(int(min(x0, x1, x2)), 0), min(int(max(x0, x1, x2)) + 1, self.w - 1)
         miny, maxy = max(int(min(y0, y1, y2)), 0), min(int(max(y0, y1, y2)) + 1, self.h - 1)
@@ -175,13 +204,14 @@ def draw_katana(canvas, cam, key, matrix, saya=False, blade=True, shine=0.7):
             cen = tri_s[idx].mean(axis=1)
             xs = cen[:, 0].astype(int)
             ys = cen[:, 1].astype(int)
-            ok = (xs >= 0) & (xs < canvas.w) & (ys >= 0) & (ys < canvas.h)
+            ok = (xs >= 0) & (xs < canvas.w) & (ys >= 0) & (ys < canvas.h) & (tri_s[idx][:, :, 2].min(axis=1) > BEHIND)
             idx, xs, ys, dep = idx[ok], xs[ok], ys[ok], cen[ok, 2]
             th, tw = tex.shape[:2]
             tuv = uv[tris[idx]].mean(axis=1)
             texel = tex[np.clip((tuv[:, 1] * (th - 1)).astype(int), 0, th - 1), np.clip((tuv[:, 0] * (tw - 1)).astype(int), 0, tw - 1)]
             keep = texel[:, 3] > 0.1
             idx, xs, ys, dep, texel = idx[keep], xs[keep], ys[keep], dep[keep], texel[keep]
+        if len(idx):
             col = np.minimum(1.0, texel[:, :3] * light[idx, None] + gleam[idx, None])
             order = np.lexsort((dep, ys * canvas.w + xs))
             pix = (ys * canvas.w + xs)[order]

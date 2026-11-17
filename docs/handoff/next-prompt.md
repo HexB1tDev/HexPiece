@@ -1,6 +1,6 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.3.2.md
-(its first section, "Session 3, part 3: 2.3.4", is the newest), then next-ai-2.3.0.md (the clash rules in the owner's words). 2.3.4
-is released (the owner's in-game bug fixes, Haki hands from the skin itself); the next version is 2.3.5 (`python3 tools/next_version.py --write`). Still open from the
+(its first section, "Session 3, part 4: 2.3.5", is the newest), then next-ai-2.3.0.md (the clash rules in the owner's words). 2.3.5
+is released (bigger stretched sword swings, first-person swings); the next version is 2.3.6 (`python3 tools/next_version.py --write`). Still open from the
 owner's test: the Fishman Karate white screen (see the handoff for what to ask). Check the last push's "Build HexPiece" and
 "Release HexPiece" runs are green first.
 
