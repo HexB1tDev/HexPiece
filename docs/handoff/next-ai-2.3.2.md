@@ -1,6 +1,22 @@
-# HexPiece: handoff after 2.3.2 (the owner's sword bugs, one animation set for every blade, natural arms, the victim's split view, NPC gestures)
+# HexPiece: handoff, sessions on 2.3.2 to 2.3.5 (the owner's sword bugs and in-game bug reports, one animation set for every blade, Haki hands from the skin, bigger swings)
 
-## Session 3, part 4: 2.3.5 (newest)
+## STATE WHEN THE OWNER SAID STOP (session 3; read this first)
+- The owner: "DIdnt, test, handoff and prompt please". 2.3.5 is released (v2.3.5 on GitHub; its Build and Release runs were green
+  before the stop). The owner has NOT tested 2.3.5 (nor, as far as said, 2.3.4) in game yet: ask how they went before new work.
+- Released this session: 2.3.2 (sword pose check passes; every blade on one animation set), 2.3.3 (the owner's in-game bugs: Ryou
+  outline, Conqueror particle colour and tap lightning, swordless punches, vanilla first person, healing 2-block Haki slash trench),
+  2.3.4 (Haki blackens the hands in the skin itself, fists glow), 2.3.5 (stretched arms, longer swings, more range, first-person
+  swings). Details per part below.
+- Open, in order: (1) whatever the owner reports from testing 2.3.4/2.3.5 (especially the first-person swing: if the arm looks odd,
+  build a first-person-only swing on the vanilla hand); (2) the Fishman Karate white screen (not found; ask when it happens: right
+  after picking the style or after a move, does it stay, a full screenshot; nothing Fishman-specific draws on screen; suspects:
+  Photon bloom on their GPU, the original's ImpactClient flash); (3) clashes with impact frames (pure `clash/ClashRules` +
+  `ClashTests` done, the world side planned in "Session 3 (running state)" below); (4) Galaxy Fist for Iron Fist, the Fishman Karate
+  rework, Six Powers (next-ai-2.2.6.md).
+- The owner's device: additive and back-face-culled tricks have drawn as solid boxes there (2.1.9 and 2.3.2's Ryou hulls): use
+  alpha-blended, depth-tested geometry that is right with or without culling (entityTranslucentEmissive is the original's).
+
+## Session 3, part 4: 2.3.5
 - The owner: "Fix the first person of the swings being lackluster and swings on the blades need more freedom, arm more stretched,
   longer swings", then "more range".
 - `tools/sword_anims.py`: REACH 8.1 -> 8.4 (the arm nearly straight); `strike()` widens every cut's arc from its middle (`widen`,
