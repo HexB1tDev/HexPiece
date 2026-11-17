@@ -21,6 +21,7 @@ public final class StyleTests {
         rules();
         galaxy();
         waterBullet();
+        brickFist();
         Check.done("StyleTests");
     }
 
@@ -46,7 +47,7 @@ public final class StyleTests {
                     Check.that(hit.damage() > 0 && hit.damage() <= 14, move + ": damage in range");
                     Check.that(hit.reach() > 0 && hit.reach() <= 25, move + ": reach in range");
                 }
-                boolean defensive = move.effect() == StyleMove.Effect.GUARD || move.effect() == StyleMove.Effect.COUNTER;
+                boolean defensive = move.effect() == StyleMove.Effect.GUARD;
                 Check.that(defensive || move.hits().length > 0, move + ": an attack has blows");
                 Check.that(move.animation().startsWith("style_" + style.id() + "_"), move + ": its animation is named for its style");
             }
@@ -70,7 +71,9 @@ public final class StyleTests {
                 Check.that(json.contains("\"tick\": " + hit.tick() + ","), move + ": its animation has a keyframe on its hit tick " + hit.tick());
             }
         }
-        Check.that(Files.exists(ANIMATIONS.resolve("style_fishman_karate_counter_strike.json")), "the counter's answering palm exists");
+        // 2.3.9: the Shark Skin Counter gave its place to the Brick Fist: its stance and its answering palm are gone
+        Check.that(!Files.exists(ANIMATIONS.resolve("style_fishman_karate_counter_strike.json"))
+            && !Files.exists(ANIMATIONS.resolve("style_fishman_karate_counter.json")), "the counter's animations are gone with it");
         // 2.1.2: combat mode's stances: one per style, a loop, the arms only (walking, the body and the head stay the game's)
         Pattern part = Pattern.compile("\"(body|torso|head|rightLeg|leftLeg|rightItem|leftItem)\":");
         Check.that(FightingStyle.FISHMAN_KARATE.stance() == null && FightingStyle.BRAWLER.stance() == null,
@@ -180,5 +183,40 @@ public final class StyleTests {
             "it locks onto foes in front, not behind");
         double[] w = com.hexhaki.piece.water.WaterBullet.world(new double[] {1, 0, 0}, 0, 0, 0, 0);
         Check.that(w[0] < -0.99, "the user's right at yaw 0 is west (-x), as the game turns players");
+    }
+
+    /** 2.3.9: the Brick Fist and the rag doll it makes. */
+    static void brickFist() {
+        StyleMove move = StyleMove.of(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_A);
+        Check.that(move == StyleMove.FK_BRICK_FIST && move.effect() == StyleMove.Effect.SHOCKWAVE, "Y is the Brick Fist");
+        Hit hit = move.hits()[0];
+        Check.that(hit.line() && hit.tick() == com.hexhaki.piece.water.BrickFist.STRIKE && hit.reach() == com.hexhaki.piece.water.BrickFist.REACH,
+            "its shockwave along the look, from the punch, as far as it reaches");
+        Check.that(hit.back() > 1.0 && hit.up() > 0.2, "it throws hard");
+        double last = -1;
+        for (double d = 0; d <= com.hexhaki.piece.water.BrickFist.REACH; d += 0.5) {
+            double open = com.hexhaki.piece.water.BrickFist.major(0, d);
+            Check.that(open >= last, "its ring opens as it goes");
+            last = open;
+            Check.that(com.hexhaki.piece.water.BrickFist.minor(0, d) > 0 && com.hexhaki.piece.water.BrickFist.minor(0, d) < open,
+                "a ring of water, thinner than it is wide");
+        }
+        Check.that(com.hexhaki.piece.water.BrickFist.travelled(0, 0) == 0 && com.hexhaki.piece.water.BrickFist.travelled(1, 0) == -1
+            && com.hexhaki.piece.water.BrickFist.travelled(0, 100) == -1, "its rings set out one a tick and are gone at its reach");
+        Check.that(com.hexhaki.piece.water.BrickFist.left(0) == 1.0 && com.hexhaki.piece.water.BrickFist.left(com.hexhaki.piece.water.BrickFist.REACH) == 0.0,
+            "whole as it sets out, gone at its reach");
+        // the rag doll (HexGhoul's)
+        com.hexhaki.piece.style.Tumble.Frame start = com.hexhaki.piece.style.Tumble.at(0, Double.NaN);
+        Check.that(start.tumble() == 0 && start.flat() == 0, "upright the instant it is struck");
+        com.hexhaki.piece.style.Tumble.Frame air = com.hexhaki.piece.style.Tumble.at(8, Double.NaN);
+        Check.that(air.tumble() > 1.0 && air.head() > 1.0, "over and over in the air, the head snapped round");
+        com.hexhaki.piece.style.Tumble.Frame lying = com.hexhaki.piece.style.Tumble.at(20, 10);
+        Check.near(lying.flat(), 1.0, 1e-9, "flat once down");
+        Check.that(!com.hexhaki.piece.style.Tumble.over(10 + com.hexhaki.piece.style.Tumble.DOWN_TICKS, 10)
+            && com.hexhaki.piece.style.Tumble.over(10 + com.hexhaki.piece.style.Tumble.DOWN_TICKS + com.hexhaki.piece.style.Tumble.GETUP_TICKS, 10),
+            "it lies there, then gets up");
+        com.hexhaki.piece.style.Tumble.Frame up = com.hexhaki.piece.style.Tumble.at(10 + com.hexhaki.piece.style.Tumble.DOWN_TICKS
+            + com.hexhaki.piece.style.Tumble.GETUP_TICKS, 10);
+        Check.that(up.flat() < 1.0e-6 && Math.abs(up.head()) < 1.0e-9, "and stands as it was");
     }
 }

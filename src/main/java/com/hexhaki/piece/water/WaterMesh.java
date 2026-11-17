@@ -125,6 +125,65 @@ public final class WaterMesh {
         }
     }
 
+    /**
+     * 2.3.9: a ring of water (a torus) round {@code axis} through ({@code x}, {@code y}, {@code z}), eye-relative: {@code major} out from
+     * the axis, its tube {@code minor} thick, wobbling, shaded and laid back to front as a body is (the Brick Fist's shockwave).
+     */
+    public record Ring(double x, double y, double z, double[] axis, double major, double minor, double wobble, double time, long seed,
+                       double opacity) {
+    }
+
+    /** The ring's triangles, back to front from the eye at the origin, to {@code sink}. */
+    public static void ring(Ring ring, int around, int tube, Sink sink) {
+        double[] axis = normalise(ring.axis());
+        double[] e1 = Math.abs(axis[1]) < 0.9 ? normalise(cross(axis, new double[] {0, 1, 0})) : normalise(cross(axis, new double[] {1, 0, 0}));
+        double[] e2 = cross(axis, e1);
+        int count = around * tube;
+        double[][] points = new double[count][];
+        double[][] normals = new double[count][];
+        for (int i = 0; i < around; i++) {
+            double u = Math.PI * 2.0 * i / around;
+            double[] out = {e1[0] * Math.cos(u) + e2[0] * Math.sin(u), e1[1] * Math.cos(u) + e2[1] * Math.sin(u), e1[2] * Math.cos(u) + e2[2] * Math.sin(u)};
+            for (int j = 0; j < tube; j++) {
+                double v = Math.PI * 2.0 * j / tube;
+                double[] n = {out[0] * Math.cos(v) + axis[0] * Math.sin(v), out[1] * Math.cos(v) + axis[1] * Math.sin(v),
+                    out[2] * Math.cos(v) + axis[2] * Math.sin(v)};
+                double r = ring.minor() * wobble(new double[] {out[0] * 2, out[1] * 2 + v, out[2] * 2}, ring.time(), ring.seed(), ring.wobble());
+                points[i * tube + j] = new double[] {ring.x() + out[0] * ring.major() + n[0] * r, ring.y() + out[1] * ring.major() + n[1] * r,
+                    ring.z() + out[2] * ring.major() + n[2] * r};
+                normals[i * tube + j] = n;
+            }
+        }
+        List<double[]> tris = new ArrayList<>();
+        for (int i = 0; i < around; i++) {
+            for (int j = 0; j < tube; j++) {
+                int a = i * tube + j;
+                int b = ((i + 1) % around) * tube + j;
+                int c = ((i + 1) % around) * tube + (j + 1) % tube;
+                int d = i * tube + (j + 1) % tube;
+                tris.add(new double[] {a, b, c, depth(points, a, b, c)});
+                tris.add(new double[] {a, c, d, depth(points, a, c, d)});
+            }
+        }
+        tris.sort((p, q) -> Double.compare(q[3], p[3]));
+        int[] colours = new int[count];
+        for (int v = 0; v < count; v++) {
+            colours[v] = shade(points[v], normals[v], ring.opacity());
+        }
+        for (double[] t : tris) {
+            double[] xyz = new double[9];
+            int[] argb = new int[3];
+            for (int k = 0; k < 3; k++) {
+                int v = (int) t[k];
+                xyz[k * 3] = points[v][0];
+                xyz[k * 3 + 1] = points[v][1];
+                xyz[k * 3 + 2] = points[v][2];
+                argb[k] = colours[v];
+            }
+            sink.tri(xyz, argb);
+        }
+    }
+
     /** How far a triangle is from the eye (squared, its middle). */
     static double depth(double[][] points, int a, int b, int c) {
         double x = (points[a][0] + points[b][0] + points[c][0]) / 3.0;

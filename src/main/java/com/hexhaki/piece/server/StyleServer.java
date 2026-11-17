@@ -29,7 +29,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -51,7 +50,6 @@ public final class StyleServer {
         StyleMove lastString;
         long lastStringStart;
         long queuedAt = -1;
-        boolean counterUsed;
         /** 2.1.2: combat mode (R): the style's moves only come out while it is on; its stance is held meanwhile. */
         boolean combat;
         final Map<StyleMove, Long> ready = new EnumMap<>(StyleMove.class);
@@ -182,7 +180,6 @@ public final class StyleServer {
         state.move = move;
         state.start = now;
         state.queuedAt = -1;
-        state.counterUsed = false;
         state.struck.clear();
         if (move.slot().string()) {
             state.lastString = move;
@@ -329,34 +326,6 @@ public final class StyleServer {
                 tick(player, state);
             }
         }
-    }
-
-    /** Shark Skin Counter: while its stance is up, the first blow taken is turned aside and paid back with a palm. */
-    @SubscribeEvent
-    public static void attacked(LivingAttackEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) {
-            return;
-        }
-        State state = STATES.get(player.m_20148_());
-        if (state == null || state.move == null || state.move.effect() != StyleMove.Effect.COUNTER || state.counterUsed) {
-            return;
-        }
-        int tick = (int) (now(player) - state.start);
-        Entity source = event.getSource().m_7639_();
-        if (tick < 2 || tick > state.move.duration() - 3 || !(source instanceof LivingEntity attacker) || attacker == player) {
-            return;
-        }
-        event.setCanceled(true);
-        state.counterUsed = true;
-        int mastery = ProfileServer.of(player).mastery(state.move.style());
-        Vec3 away = attacker.m_20182_().m_82546_(player.m_20182_());
-        double length = Math.max(0.01, Math.sqrt(away.f_82479_ * away.f_82479_ + away.f_82481_ * away.f_82481_));
-        attacker.f_19802_ = 0;
-        attacker.m_6469_(StyleCombat.of(player), 9.0F * PieceRules.masteryDamage(mastery));
-        Impact.hit(player, attacker, Impact.Spec.heavy(new Vec3(away.f_82479_ / length * 1.4, 0.3, away.f_82481_ / length * 1.4)));
-        FruitUtil.animate(player, "style_fishman_karate_counter_strike", 1);
-        StyleCombat.sound(player, "fx.counter", 1.0F);
-        ProfileServer.addMastery(player, state.move.style(), 6);
     }
 
     /** Iron Body: blows taken while it holds barely land, and whoever struck is thrown back. */

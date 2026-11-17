@@ -47,6 +47,8 @@ public final class WaterFx {
     private static final Map<Integer, Flying> FLYING = new HashMap<>();
     /** Droplets thrown off a burst (and fallen drops): small bodies under gravity. */
     private static final List<Bit> BITS = new ArrayList<>();
+    /** 2.3.9: the Brick Fist's shockwaves rushing out (where from, the way, when: game ticks). */
+    private static final List<Shock> SHOCKS = new ArrayList<>();
     private static final int MOST_BITS = 160;
 
     static final class Gathering {
@@ -73,6 +75,10 @@ public final class WaterFx {
             this.velocity = velocity;
             this.seed = seed;
         }
+    }
+
+    /** 2.3.9: a Brick Fist's shockwave: from the fist along the look, from game tick {@code start}. */
+    record Shock(Vec3 from, Vec3 dir, long start, long seed) {
     }
 
     static final class Bit {
@@ -127,9 +133,18 @@ public final class WaterFx {
                 spray(at, dir.m_82490_(0.3), 10, 0.18);
             }
             case S2CWater.SPILL -> spill(level, message.user());
+            case S2CWater.SHOCK -> shock(at, dir.m_82541_(), level.m_46467_());
+            case S2CWater.KNOCKED -> Tumbles.knocked(message.target(), dir);
             default -> {
             }
         }
+    }
+
+    /** 2.3.9: a Brick Fist's shockwave sets out from the fist: a burst of water off it, then its rings (drawn, shedding spray each tick). */
+    static void shock(Vec3 fist, Vec3 dir, long now) {
+        SHOCKS.add(new Shock(fist, dir, now, RANDOM.nextLong()));
+        spray(fist, dir.m_82490_(0.35), 18, 0.25);
+        PieceFx.at(PieceFx.RING, false, 6, fist).colors(0xB0D8F2FF, 0x00D8F2FF).size(0.2, 1.6).bloom(0).spawn();
     }
 
     /** The drops still over a fist fall from it. */
@@ -261,6 +276,36 @@ public final class WaterFx {
                     0.0, r(0.02))).colors(0x80D8F2FF, 0x00E8F8FF).size(0.045, 0.02).fall(0.015).drag(0.92).bloom(0).spawn();
             }
         }
+        for (Iterator<Shock> it = SHOCKS.iterator(); it.hasNext(); ) {
+            Shock shock = it.next();
+            double age = now - shock.start();
+            if (age > com.hexhaki.piece.water.BrickFist.length() + 1) {
+                it.remove();
+                continue;
+            }
+            for (int k = 0; k < com.hexhaki.piece.water.BrickFist.rings(); k++) {
+                double d = com.hexhaki.piece.water.BrickFist.travelled(k, age);
+                if (d < 0) {
+                    continue;
+                }
+                // spray torn off the ring's edge, and a droplet or two flung out of it
+                Vec3 middle = shock.from().m_82549_(shock.dir().m_82490_(d));
+                double open = com.hexhaki.piece.water.BrickFist.major(k, d);
+                Vec3[] across = across(shock.dir());
+                int n = PieceFx.count((float) (5 * com.hexhaki.piece.water.BrickFist.left(d)));
+                for (int i = 0; i < n; i++) {
+                    double a = RANDOM.nextDouble() * Math.PI * 2.0;
+                    Vec3 out = across[0].m_82490_(Math.cos(a)).m_82549_(across[1].m_82490_(Math.sin(a)));
+                    PieceFx.at(PieceFx.DROP, false, 9 + RANDOM.nextInt(5), middle.m_82549_(out.m_82490_(open)))
+                        .velocity(out.m_82490_(0.06).m_82549_(shock.dir().m_82490_(0.25))).colors(MIST, MIST_FADE).size(0.07, 0.03).fall(0.02)
+                        .drag(0.88).bloom(0).spawn();
+                    if (k == 0 && RANDOM.nextFloat() < 0.35F) {
+                        bit(middle.m_82549_(out.m_82490_(open)), out.m_82490_(0.12).m_82549_(shock.dir().m_82490_(0.3)).m_82520_(0.0, 0.06, 0.0),
+                            0.03 + RANDOM.nextDouble() * 0.025, 12 + RANDOM.nextInt(6));
+                    }
+                }
+            }
+        }
         for (Iterator<Bit> it = BITS.iterator(); it.hasNext(); ) {
             Bit bit = it.next();
             bit.age++;
@@ -277,11 +322,19 @@ public final class WaterFx {
         }
     }
 
+    /** Two unit vectors square to {@code dir} and to each other. */
+    static Vec3[] across(Vec3 dir) {
+        Vec3 side = Math.abs(dir.f_82480_) < 0.9 ? dir.m_82537_(new Vec3(0, 1, 0)) : dir.m_82537_(new Vec3(1, 0, 0));
+        side = side.m_82541_();
+        return new Vec3[] {side, side.m_82537_(dir).m_82541_()};
+    }
+
     // ------------------------------------------------------------------------------------------------------------- drawn
 
     @SubscribeEvent
     public static void waterStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || GATHERING.isEmpty() && FLYING.isEmpty() && BITS.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || GATHERING.isEmpty() && FLYING.isEmpty() && BITS.isEmpty()
+            && SHOCKS.isEmpty()) {
             return;
         }
         ClientLevel level = Minecraft.m_91087_().f_91073_;
@@ -328,9 +381,24 @@ public final class WaterFx {
                 new double[] {bit.velocity.f_82479_, bit.velocity.f_82480_, bit.velocity.f_82481_}, 1.0 + Math.min(1.5, speed * 4.0), 0.06,
                 bit.age + partial, bit.seed, WaterMesh.DROP));
         }
-        if (bodies.isEmpty()) {
+        List<WaterMesh.Ring> rings = new ArrayList<>();
+        for (Shock shock : SHOCKS) {
+            double age = now - shock.start() + partial;
+            for (int k = 0; k < com.hexhaki.piece.water.BrickFist.rings(); k++) {
+                double d = com.hexhaki.piece.water.BrickFist.travelled(k, age);
+                if (d < 0) {
+                    continue;
+                }
+                Vec3 at = shock.from().m_82549_(shock.dir().m_82490_(d)).m_82546_(cam);
+                rings.add(new WaterMesh.Ring(at.f_82479_, at.f_82480_, at.f_82481_, new double[] {shock.dir().f_82479_, shock.dir().f_82480_,
+                    shock.dir().f_82481_}, com.hexhaki.piece.water.BrickFist.major(k, d), com.hexhaki.piece.water.BrickFist.minor(k, d), 0.12,
+                    age, shock.seed() + k, WaterMesh.PRISON * com.hexhaki.piece.water.BrickFist.left(d)));
+            }
+        }
+        if (bodies.isEmpty() && rings.isEmpty()) {
             return;
         }
+        rings.sort((p, q) -> Double.compare(q.x() * q.x() + q.y() * q.y() + q.z() * q.z(), p.x() * p.x() + p.y() * p.y() + p.z() * p.z()));
         bodies.sort((p, q) -> Double.compare(q.x() * q.x() + q.y() * q.y() + q.z() * q.z(), p.x() * p.x() + p.y() * p.y() + p.z() * p.z()));
         // the water lit as the sky is: dim at night, full by day
         double day = Math.max(0.0, Math.min(1.0, level.m_104805_(partial)));
@@ -339,22 +407,29 @@ public final class WaterFx {
         MultiBufferSource.BufferSource buffers = Minecraft.m_91087_().m_91269_().m_110104_();
         RenderType type = RenderType.m_269166_();
         VertexConsumer buffer = buffers.m_6299_(type);
+        WaterMesh.Sink sink = (xyz, argb) -> {
+            for (int k = 0; k < 4; k++) {
+                int v = Math.min(k, 2);
+                int c = argb[v];
+                buffer.m_252986_(matrix, (float) xyz[v * 3], (float) xyz[v * 3 + 1], (float) xyz[v * 3 + 2])
+                    .m_85950_(((c >>> 16) & 255) / 255.0F * light, ((c >>> 8) & 255) / 255.0F * light, (c & 255) / 255.0F * light,
+                        ((c >>> 24) & 255) / 255.0F)
+                    .m_5752_();
+            }
+        };
+        for (WaterMesh.Ring ring : rings) {
+            double distance = Math.sqrt(ring.x() * ring.x() + ring.y() * ring.y() + ring.z() * ring.z());
+            int around = distance < 6 ? 40 : distance < 16 ? 28 : 16;
+            WaterMesh.ring(ring, around, distance < 6 ? 10 : 7, sink);
+        }
         for (WaterMesh.Body body : bodies) {
-            WaterMesh.body(body, (xyz, argb) -> {
-                for (int k = 0; k < 4; k++) {
-                    int v = Math.min(k, 2);
-                    int c = argb[v];
-                    buffer.m_252986_(matrix, (float) xyz[v * 3], (float) xyz[v * 3 + 1], (float) xyz[v * 3 + 2])
-                        .m_85950_(((c >>> 16) & 255) / 255.0F * light, ((c >>> 8) & 255) / 255.0F * light, (c & 255) / 255.0F * light,
-                            ((c >>> 24) & 255) / 255.0F)
-                        .m_5752_();
-                }
-            });
+            WaterMesh.body(body, sink);
         }
         buffers.m_109912_(type);
     }
 
     static void clear() {
+        SHOCKS.clear();
         GATHERING.clear();
         FLYING.clear();
         BITS.clear();

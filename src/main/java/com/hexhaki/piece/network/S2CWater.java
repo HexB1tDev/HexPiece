@@ -11,13 +11,18 @@ import net.minecraftforge.network.NetworkEvent;
  * 2.3.8: Fishman Karate's water as it happens ({@code server/WaterServer}): a drop fired ({@link #FIRE}: its number, its user, which of the
  * five it was, the body it is locked onto (-1: none), where it set out, its velocity), a drop bursting ({@link #BURST}: where, the way it
  * flew, the body it struck or -1), a drop falling apart at the end of its flight ({@link #FADE}), the drops still over a fist falling
- * when its move stopped short ({@link #SPILL}: {@code index} of them were fired).
+ * when its move stopped short ({@link #SPILL}: {@code index} of them were fired); 2.3.9: the Brick Fist's shockwave ({@link #SHOCK}), a body
+ * knocked off its feet ({@link #KNOCKED}).
  */
 public record S2CWater(int kind, int id, int user, int index, int target, double x, double y, double z, float dx, float dy, float dz) {
     public static final int FIRE = 0;
     public static final int BURST = 1;
     public static final int FADE = 2;
     public static final int SPILL = 3;
+    /** 2.3.9: the Brick Fist's shockwave rushing out of the fist at (x, y, z) along (dx, dy, dz). */
+    public static final int SHOCK = 4;
+    /** 2.3.9: the body {@code target} knocked off its feet, launched along (dx, dy, dz): a rag doll (client/fx/Tumbles). */
+    public static final int KNOCKED = 5;
 
     public static void encode(S2CWater message, FriendlyByteBuf buffer) {
         buffer.writeByte(message.kind);

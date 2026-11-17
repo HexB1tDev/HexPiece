@@ -69,7 +69,7 @@ def p(*pieces, **parts):
 #   lowered (it would lift or sink the walking feet), its turn, lean and the arms carry the blow. Kicks, the knee, the ground punch
 #   and the shoulder charge keep their legs.
 PUNCHES = ("style_fishman_karate_palm", "style_fishman_karate_backfist", "style_fishman_karate_brick", "style_fishman_karate_bullet",
-           "style_fishman_karate_counter", "style_fishman_karate_counter_strike", "style_brawler_jab", "style_brawler_cross",
+           "style_fishman_karate_brick_fist", "style_brawler_jab", "style_brawler_cross",
            "style_brawler_hook", "style_brawler_upper", "style_brawler_haymaker", "style_brawler_gatling",
            "style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
 EASE_IN = set(PUNCHES) | {"style_fishman_karate_knee", "style_fishman_karate_wave", "style_brawler_charge"}
@@ -402,16 +402,22 @@ def fishman_karate():
     beats += [(23, "inoutsine", p(point, rightArm=arm(-60, 0, 8, -40))), (28, "inoutsine", FK)]
     write(s + "bullet", 28, beats, "Fishman Karate: the hand raised to the sky, five drops of water gathered over it out of the air, then "
           "pushed forward and fired, each locked onto a foe in front.")
-    ready = p(arms(right=arm(-58, -26, 10, -112), left=arm(-72, 12, -6, -30)), legs(34, 15), body={"y": -0.14, "yaw": -18}, head={"pitch": 3})
-    write(s + "counter", 25, [(0, "linear", FK), (3, "outexpo", ready)] + shake(ready, [6, 10, 14, 18], 1.2, (("body", "yaw"),))
-          + [(21, "inoutsine", ready), (25, "inoutsine", FK)],
-          "Fishman Karate: the Shark Skin Counter's ready stance.")
-    write(s + "counter_strike", 10, [
-        (0, "linear", ready),
-        (2, "outexpo", p(ready, rightArm=arm(-90, -4, 4, -2), leftArm=arm(28, 0, -12, -100), body={"y": -0.12, "yaw": 26, "z": -0.14})),
-        (3, "outback", p(ready, rightArm=arm(-93, -4, 4, 0), leftArm=arm(30, 0, -12, -102), body={"y": -0.12, "yaw": 28, "z": -0.16})),
-        (10, "inoutsine", FK),
-    ], "Fishman Karate: the answering palm after a blow is turned aside.")
+    # 2.3.9 (the owner: "Brick Fist: The user punches where he's looking creating a water shockwave"): the right fist drawn back to the
+    # hip and the body wound away from the look, the left hand out ahead sighting (2-6); driven straight out along the look on tick 8
+    # (water/BrickFist.STRIKE), the whole body turned through behind it, held out as the shockwave rushes off it, then back
+    write(s + "brick_fist", 18, [
+        (2, "inoutsine", p(FK, rightArm=arm(34, 8, 14, -112), leftArm=arm(-82, 12, -6, -10), body={"yaw": -34, "bend": 2}, head={"yaw": 26})),
+        (6, "insine", p(FK, rightArm=arm(40, 10, 16, -118), leftArm=arm(-86, 14, -6, -6), body={"yaw": -40, "bend": 4, "z": 0.04},
+                        head={"yaw": 30})),
+        (8, "outexpo", p(FK, rightArm=arm(-90, -4, 2, 0), leftArm=arm(30, 0, -12, -104), body={"yaw": 30, "z": -0.22, "bend": 8},
+                         head={"yaw": -14})),
+        (9, "outback", p(FK, rightArm=arm(-93, -4, 2, 0), leftArm=arm(32, 0, -12, -106), body={"yaw": 33, "z": -0.24, "bend": 9},
+                         head={"yaw": -15})),
+        (12, "inoutsine", p(FK, rightArm=arm(-88, -2, 3, -4), leftArm=arm(26, 0, -12, -100), body={"yaw": 26, "z": -0.18, "bend": 6},
+                            head={"yaw": -11})),
+        (15, "inoutsine", p(FK, rightArm=arm(-46, 0, 8, -50), body={"yaw": 6, "z": -0.06})),
+        (18, "inoutsine", FK),
+    ], "Fishman Karate: the Brick Fist, a punch where he looks, a shockwave of water rushing out of it.")
     write(s + "wave", 22, [
         (0, "linear", FK),
         (4, "outsine", p(FK, legs(8, 8), rightArm=arm(-168, -6, 10, -40), leftArm=arm(-40, 10, -20, -30), body={"y": 0.06, "pitch": 10, "yaw": 0},

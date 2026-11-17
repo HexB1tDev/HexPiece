@@ -298,21 +298,6 @@ public final class StyleFx {
                 }
                 PieceFx.at(PieceFx.RING, false, 8, feet.m_82520_(0, 1.0, 0)).colors(0xA0B8C4D0, 0x00B8C4D0).size(0.5, 2.4).bloom(0).spawn();
             }
-            case COUNTER -> {
-                for (int t = 0; t < move.duration(); t++) {
-                    int tick = t;
-                    PieceFx.later(t, () -> {
-                        Entity user = level.m_6815_(id);
-                        Vec3 at = user == null ? feet : user.m_20182_();
-                        for (int k = 0; k < 3; k++) {
-                            double a = tick * 0.55 + k * Math.PI * 2 / 3;
-                            Vec3 spot = at.m_82520_(Math.cos(a) * 0.95, 0.9 + 0.25 * Math.sin(tick * 0.3 + k), Math.sin(a) * 0.95);
-                            PieceFx.at(PieceFx.DROP, false, 6, spot).velocity(new Vec3(-Math.sin(a) * 0.12, 0, Math.cos(a) * 0.12))
-                                .colors(WATER, 0x20C4ECFF).size(0.16, 0.08).bloom(0).spawn();
-                        }
-                    });
-                }
-            }
             default -> {
             }
         }

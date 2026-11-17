@@ -19,6 +19,7 @@ public final class WaterPreview {
         String scene = args[2];
         double time = args.length > 3 ? Double.parseDouble(args[3]) : 0.0;
         List<WaterMesh.Body> bodies = new ArrayList<>();
+        List<WaterMesh.Ring> rings = new ArrayList<>();
         switch (scene) {
             case "drops" -> {
                 // five drops in a flat arch over a raised fist, the fist 0.55 above the eye, 2.6 ahead
@@ -36,6 +37,9 @@ public final class WaterPreview {
                 }
             }
             case "bullet" -> bullet(bodies, time);
+            case "shock", "shockside" -> {
+                shock(rings, time, scene.equals("shockside"));
+            }
             case "bubble" -> bodies.add(new WaterMesh.Body(0.0, -0.1, -4.2, 1.3, null, 1.0, 0.03, time, 3, WaterMesh.PRISON));
             default -> bodies.add(new WaterMesh.Body(0.0, 0.0, -0.75, 0.16, null, 1.0, 0.07, time, 5, WaterMesh.DROP));
         }
@@ -51,6 +55,24 @@ public final class WaterPreview {
         }
         double focal = h * 0.5 / Math.tan(Math.toRadians(35.0));
         int[] count = {0};
+        WaterMesh.Sink draw = (xyz, argb) -> {
+            double[] sx = new double[3];
+            double[] sy = new double[3];
+            for (int k = 0; k < 3; k++) {
+                double z = -xyz[k * 3 + 2];
+                if (z < 0.05) {
+                    return;
+                }
+                sx[k] = w * 0.5 + xyz[k * 3] / z * focal;
+                sy[k] = h * 0.5 - xyz[k * 3 + 1] / z * focal;
+            }
+            count[0]++;
+            tri(rgb, w, h, sx, sy, argb);
+        };
+        rings.sort((p, q) -> Double.compare(q.z() * q.z() + q.x() * q.x(), p.z() * p.z() + p.x() * p.x()));
+        for (WaterMesh.Ring ring : rings) {
+            WaterMesh.ring(ring, 40, 10, draw);
+        }
         for (WaterMesh.Body body : bodies) {
             WaterMesh.body(body, (xyz, argb) -> {
                 double[] sx = new double[3];
@@ -122,6 +144,25 @@ public final class WaterPreview {
             }
             bodies.add(new WaterMesh.Body(at[0], at[1], at[2], com.hexhaki.piece.water.WaterBullet.RADIUS, v, 2.3, 0.05, age, i,
                 WaterMesh.DROP));
+        }
+    }
+
+    /**
+     * The Brick Fist's shockwave ({@code com.hexhaki.piece.water.BrickFist}) {@code age} ticks after the strike: from behind the figure
+     * in the backdrop (it punches away from the eye, its fist 1.4 above its feet), or from the side (racing left to right across).
+     */
+    static void shock(List<WaterMesh.Ring> rings, double age, boolean side) {
+        double[] from = side ? new double[] {-3.5, -0.3, -6.0} : new double[] {0.25, 0.25, -2.43 - com.hexhaki.piece.water.BrickFist.FIST};
+        double[] axis = side ? new double[] {1, 0, 0} : new double[] {0, 0.05, -1};
+        for (int k = 0; k < com.hexhaki.piece.water.BrickFist.rings(); k++) {
+            double d = com.hexhaki.piece.water.BrickFist.travelled(k, age);
+            if (d < 0) {
+                continue;
+            }
+            double left = com.hexhaki.piece.water.BrickFist.left(d);
+            rings.add(new WaterMesh.Ring(from[0] + axis[0] * d, from[1] + axis[1] * d, from[2] + axis[2] * d, axis,
+                com.hexhaki.piece.water.BrickFist.major(k, d), com.hexhaki.piece.water.BrickFist.minor(k, d), 0.12, age, k,
+                WaterMesh.PRISON * left));
         }
     }
 

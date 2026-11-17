@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 to 2.3.8 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's Water Bullet)
+# HexPiece: handoff after 2.3.6 to 2.3.9 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's Water Bullet and Brick Fist)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.3.9** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.0** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,24 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## Done in 2.3.9: the Fishman Karate rework, part 2 (the Brick Fist, rag dolls)
+- **Brick Fist** (`StyleMove.FK_BRICK_FIST`, Y, in the Shark Skin Counter's place; `Effect.SHOCKWAVE`; pure `water/BrickFist`): a
+  `Hit.line` at STRIKE 8 along the 3D look (REACH 8.5, RADIUS 1.4, damage 9, throwing 1.5 / 0.5), mastery 60, cooldown 140, a small
+  lunge. `StyleCombat.land` (players and NPCs alike): a SHOCKWAVE move sends `S2CWater.SHOCK` (from the fist, eye + look * 0.9, along
+  the look) instead of the shot visual, plays "entity.player.splash.high_speed", throws along the 3D look and knocks each body struck
+  off its feet (`Knockdowns.knocked`). Client `WaterFx`: SHOCK -> a burst off the fist, then RINGS 3 rings (one a tick) of water
+  (`WaterMesh.ring`, a torus: `BrickFist.travelled/major/minor/left`: 1.7 blocks a tick, opening 0.3 -> 1.9, thinning 0.2 -> 0.05,
+  fading over the last 30 %), spray and droplets torn off them. Render: docs/images/brick-fist-shockwave.png (WaterPreview `shock`,
+  `shockside`). Animation `style_fishman_karate_brick_fist` (18 ticks, in PUNCHES: eased in, the legs left to the game).
+- **Rag dolls** (the owner: "Ragdoll mechanic can be taken from HexGhoul"): HexGhoul 6.2.0's Speed Kick tumble ported: pure
+  `style/Tumble` (= KickTumble without Witness This: the head snaps, the body twists and tumbles, thump, DOWN_TICKS 28, GETUP_TICKS 12),
+  server `server/Knockdowns` (= PaleKnockdown: landed when on the ground after 3 ticks or AIRBORNE_MAX 80; held down with slowness 6
+  and staggered (Clashes.stagger: no blows) until up), client `client/fx/Tumbles` (= PaleReactions.tumble: RenderLivingEvent.Pre/Post
+  LOWEST, the head squared on the body and snapped, the pose stack turned about the body's middle; water running off it as it flies,
+  spray where it lands), told by `S2CWater.KNOCKED`. Tests: StyleTests.brickFist.
+- The Shark Skin Counter is gone with its code (StyleServer.attacked, SeaFighter's counter branch, StyleFx's COUNTER effect,
+  `Effect.COUNTER`) and its two animations.
 
 ## Done in 2.3.8: the Fishman Karate rework, part 1 (next-ai-2.2.6.md item 3)
 - The rework's moves, decided (the owner listed three new moves; Fishman has three non-string slots): right click = Water Bullet
@@ -111,12 +129,11 @@ Nothing was ever tested in game (only the owner can).
 2. The Fishman Karate white screen (not found; ask when it happens, a full screenshot; suspects: Photon bloom, ImpactClient's flash).
 3. Not clashable yet: the flying Haki slash (HakiSlashes, a projectile): could meet a slash or a blow later. Iron Body and the
    Shark Skin Counter throw no blow (their own rules hold).
-4. The Fishman Karate rework: the Brick Fist (Y: "The user punches where he's looking creating a water shockwave, causes knockback and
-   ragdoll (Ragdoll mechanic can be taken from HexGhoul)"), then the Water Prison (U: "pulls both hands up into the sky (Needs an
+4. The Fishman Karate rework: the Water Prison (U, in the Five-Thousand Brick Wave's place: "pulls both hands up into the sky (Needs an
    entity to target) the entity selected gets trapped and floats a bit off the ground in a water bubble a bit bigger than the
    entity's or player's size for 5 seconds. (perfect stun, entity can only look around.)": breakable by enough damage or the
    Conqueror's, with a cooldown, unless the owner says otherwise; WaterMesh's PRISON opacity is ready for its bubble). Then Six
-   Powers (next-ai-2.2.6.md item 4). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8.)
+   Powers (next-ai-2.2.6.md item 4). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
 
 ## Not verified (only the owner can)
 Everything in game: clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,

@@ -110,8 +110,7 @@ public final class ClashTests {
                 Check.near(w.reach(), next.reach(), 1e-9, move + ": as far as the blow reaches");
             }
         }
-        Check.that(ClashBlows.style(StyleMove.SP_IRON, 5) == null && ClashBlows.style(StyleMove.FK_COUNTER, 5) == null,
-            "Iron Body and the counter stance throw no blow to clash");
+        Check.that(ClashBlows.style(StyleMove.SP_IRON, 5) == null, "Iron Body throws no blow to clash");
         Check.that(ClashBlows.kind(StyleMove.BL_SNAP) == Kind.KICK && ClashBlows.kind(StyleMove.IF_JAB) == Kind.FIST, "kicks and fists");
         ClashBlows.Window gatling = ClashBlows.style(StyleMove.IF_GATLING, 8);
         Check.that(gatling.began() == 7 && gatling.lands() == 8, "each jab of the gatling sets out after the one before");

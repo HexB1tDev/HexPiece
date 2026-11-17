@@ -147,7 +147,15 @@ public final class StyleCombat {
                 look.f_82479_, code, look.f_82481_));
         }
         List<LivingEntity> targets = hit.line() ? line(user, hit.reach(), hit.arc(), foe, end) : arc(user, hit.reach(), hit.arc(), foe);
-        if (hit.line()) {
+        boolean shock = move.effect() == StyleMove.Effect.SHOCKWAVE;
+        if (shock) {
+            // 2.3.9: the Brick Fist's shockwave of water, seen rushing out of the fist along the look
+            Vec3 look3 = user.m_20154_();
+            Vec3 fist = user.m_146892_().m_82549_(look3.m_82490_(com.hexhaki.piece.water.BrickFist.FIST));
+            PieceNetwork.around(user, new com.hexhaki.piece.network.S2CWater(com.hexhaki.piece.network.S2CWater.SHOCK, 0, user.m_19879_(), 0, -1,
+                fist.f_82479_, fist.f_82480_, fist.f_82481_, (float) look3.f_82479_, (float) look3.f_82480_, (float) look3.f_82481_));
+            WaterServer.vanilla(level, fist, "entity.player.splash.high_speed", 1.0F, 0.8F);
+        } else if (hit.line()) {
             Vec3 from = user.m_146892_();
             PieceNetwork.around(user, new S2CStyleFx(move.ordinal(), 2, user.m_19879_(), end[0].f_82479_, end[0].f_82480_, end[0].f_82481_,
                 from.f_82479_, from.f_82480_, from.f_82481_));
@@ -164,8 +172,12 @@ public final class StyleCombat {
                 continue;
             }
             count++;
-            Vec3 launch = new Vec3(look.f_82479_ * hit.back(), hit.up(), look.f_82481_ * hit.back());
+            Vec3 launch = shock ? user.m_20154_().m_82490_(hit.back()).m_82520_(0.0, hit.up(), 0.0)
+                : new Vec3(look.f_82479_ * hit.back(), hit.up(), look.f_82481_ * hit.back());
             Impact.hit(user, target, spec(hit, launch));
+            if (shock) {
+                Knockdowns.knocked(target, launch); // 2.3.9: off its feet, a rag doll
+            }
             if (hit.stun() > 0) {
                 target.m_7292_(new MobEffectInstance(MobEffects.f_19597_, hit.stun(), 3, false, false, false));
             }

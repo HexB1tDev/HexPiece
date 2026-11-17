@@ -63,8 +63,12 @@ public enum StyleMove {
     FK_BULLET(FightingStyle.FISHMAN_KARATE, Slot.HEAVY, "Water Bullet", "The hand raised to the sky: five drops of water gather over it "
         + "out of the air. Pushed forward, they fire, each locking onto a foe in front.", 28, 28, 90, 0, Motion.NONE, Effect.BULLETS,
         bullets()),
-    FK_COUNTER(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_A, "Shark Skin Counter", "A ready stance: the next blow is turned aside and paid "
-        + "back with a palm.", 25, 25, 160, 60, Motion.NONE, Effect.COUNTER),
+    // 2.3.9 (the owner's rework): a punch where he looks, its water shockwave striking all in its path, knocking them off their feet
+    // (water/BrickFist, style/Tumble); in the Shark Skin Counter's place
+    FK_BRICK_FIST(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_A, "Brick Fist", "A punch where you look: a shockwave of water rushes out of "
+        + "the fist, throwing everything in its path off its feet.", 18, 18, 140, 60, Motion.lunge(6, 0.22), Effect.SHOCKWAVE,
+        Hit.line(com.hexhaki.piece.water.BrickFist.STRIKE, com.hexhaki.piece.water.BrickFist.REACH, com.hexhaki.piece.water.BrickFist.RADIUS,
+            9.0F, Weight.HEAVY).throwing(1.5, 0.5)),
     FK_WAVE(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B, "Five-Thousand Brick Wave", "A fist into the ground: the shock runs out ahead "
         + "and throws everything in its path.", 22, 22, 220, 200, Motion.NONE, Effect.QUAKE,
         Hit.heavy(12, 8.0, 11.0F).wide(70).throwing(1.0, 0.7)),
@@ -101,12 +105,12 @@ public enum StyleMove {
         VANISH,
         /** Blows taken barely land; attackers are thrown back. */
         GUARD,
-        /** The first blow taken is turned aside and paid back. */
-        COUNTER,
         /** Each body is hit once by the whole move, however many of its blows pass through it. */
         ONCE,
         /** 2.3.8: its blows are drops of water gathered over the fist and fired as homing shots (server/WaterServer). */
-        BULLETS
+        BULLETS,
+        /** 2.3.9: its blow is a shockwave of water along the look: all it strikes are knocked off their feet (server/Knockdowns). */
+        SHOCKWAVE
     }
 
     private final FightingStyle style;

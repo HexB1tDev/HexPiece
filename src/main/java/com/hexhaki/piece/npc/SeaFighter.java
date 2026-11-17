@@ -74,7 +74,6 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     private boolean ready;
     private StyleMove move;
     private long moveStart;
-    private boolean counterUsed;
     private Slot nextString = Slot.M1_1;
     private long nextAttack;
     private long nextWander;
@@ -443,7 +442,6 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         }
         this.move = move;
         this.moveStart = now;
-        this.counterUsed = false;
         this.struck.clear();
         if (move.cooldown() > 0) {
             this.cooldowns.put(move, now + move.cooldown() * 2L);
@@ -746,21 +744,12 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         this.nextAttack = Math.max(this.nextAttack, now + 4);
     }
 
-    /** Iron Body takes a fifth of each blow; the Shark Skin Counter turns the first aside and pays it back; whoever strikes is hunted. */
+    /** Iron Body takes a fifth of each blow; whoever strikes is hunted. */
     @Override
     public boolean m_6469_(DamageSource source, float amount) {
         if (this.m_9236_() instanceof ServerLevel && this.move != null && source.m_7639_() instanceof LivingEntity attacker && attacker != this) {
             if (this.move.effect() == StyleMove.Effect.GUARD) {
                 amount *= 0.2F;
-            } else if (this.move.effect() == StyleMove.Effect.COUNTER && !this.counterUsed) {
-                this.counterUsed = true;
-                Vec3 away = attacker.m_20182_().m_82546_(this.m_20182_());
-                double length = Math.max(0.01, Math.sqrt(away.f_82479_ * away.f_82479_ + away.f_82481_ * away.f_82481_));
-                attacker.f_19802_ = 0;
-                attacker.m_6469_(this.m_269291_().m_269333_(this), 9.0F * PieceRules.masteryDamage(SeaRules.MASTERY[this.rank()]));
-                Impact.hit(this, attacker, Impact.Spec.heavy(new Vec3(away.f_82479_ / length * 1.4, 0.3, away.f_82481_ / length * 1.4)));
-                StyleCombat.sound(this, "fx.counter", 1.0F);
-                return false;
             }
         }
         boolean hurt = super.m_6469_(source, amount);
