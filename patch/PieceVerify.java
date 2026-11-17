@@ -17,6 +17,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
 import jdk.internal.org.objectweb.asm.tree.AnnotationNode;
+import jdk.internal.org.objectweb.asm.tree.InnerClassNode;
 import jdk.internal.org.objectweb.asm.tree.ClassNode;
 import jdk.internal.org.objectweb.asm.tree.FieldInsnNode;
 import jdk.internal.org.objectweb.asm.tree.FieldNode;
@@ -41,7 +42,12 @@ import jdk.internal.org.objectweb.asm.tree.analysis.BasicVerifier;
  *       members are matched on their declaring class, found through the stub and jar hierarchy;</li>
  *   <li>dedicated server safety: a class outside a {@code client} package never names a client-only class (Minecraft's
  *       {@code net/minecraft/client}, {@code com/mojang/blaze3d}, or any {@code /client/} package of the mod) except inside a lambda body
- *       (only run where DistExecutor sends it), and every event subscriber in a client package is registered for {@code Dist.CLIENT}.</li>
+ *       (only run where DistExecutor sends it), and every event subscriber in a client package is registered for {@code Dist.CLIENT};</li>
+ *   <li>2.2.9: no two {@code @SubscribeEvent} methods in the jar (the original's or ours) get the same generated handler: Forge's event
+ *       bus names the class it makes for each one from the package, the declaring class's simple name, the method's name and the event's
+ *       simple name ({@link #handlerName}), and a second method with the same name silently gets the first one's class, so its event runs
+ *       the first method twice. That is how 2.2.2 to 2.2.8 crashed on boot ("Overlay already registered: hexhaki:hexpiece_combat":
+ *       {@code AbilityHud.Overlay.register} and {@code CombatMode.Overlay.register} in one package).</li>
  * </ol>
  * Usage: PieceVerify output.jar input.jar stub-classes-dir changed-list.txt allowlist...
  */
@@ -277,6 +283,35 @@ public final class PieceVerify implements Opcodes {
         return true; // not a subscriber at all
     }
 
+    /**
+     * The name Forge's event bus gives the class it generates to call {@code method} (EventBus 6's {@code getUniqueName}: {@code
+     * <package>.__<declaring class simple name>_<method>_<event simple name>}); null if the method is not an event handler.
+     */
+    static String handlerName(ClassNode node, MethodNode method) {
+        boolean handler = false;
+        if (method.visibleAnnotations != null) {
+            for (AnnotationNode annotation : method.visibleAnnotations) {
+                handler |= annotation.desc.equals("Lnet/minecraftforge/eventbus/api/SubscribeEvent;");
+            }
+        }
+        Type[] args = Type.getArgumentTypes(method.desc);
+        if (!handler || args.length == 0) {
+            return null;
+        }
+        String simple = node.name.substring(node.name.lastIndexOf('/') + 1);
+        if (node.innerClasses != null) {
+            for (InnerClassNode inner : node.innerClasses) {
+                if (inner.name.equals(node.name) && inner.innerName != null) {
+                    simple = inner.innerName;
+                }
+            }
+        }
+        String event = args[0].getSort() == Type.OBJECT ? args[0].getInternalName() : args[0].getDescriptor();
+        event = event.substring(Math.max(event.lastIndexOf('/'), event.lastIndexOf('$')) + 1);
+        String pkg = node.name.lastIndexOf('/') < 0 ? "" : node.name.substring(0, node.name.lastIndexOf('/')).replace('/', '.');
+        return pkg + ".__" + simple + "_" + method.name + "_" + event;
+    }
+
     /** An annotation value flattened to text: an enum constant is a {descriptor, name} pair, an array a list of them. */
     static String names(Object value) {
         if (value instanceof String[] pair) {
@@ -394,10 +429,29 @@ public final class PieceVerify implements Opcodes {
                 problems.add("client event subscriber " + name + " is not registered for Dist.CLIENT");
             }
         }
+        // 2.2.9: every event handler in the jar its own generated class (see handlerName)
+        Map<String, String> handlers = new HashMap<>();
+        int subscribed = 0;
+        for (ClassNode node : verify.output.values()) {
+            for (MethodNode method : node.methods) {
+                String handler = handlerName(node, method);
+                if (handler == null) {
+                    continue;
+                }
+                subscribed++;
+                String where = node.name + "." + method.name + method.desc;
+                String first = handlers.putIfAbsent(handler, where);
+                if (first != null) {
+                    problems.add("event handlers " + first + " and " + where + " share Forge's generated handler " + handler
+                        + " (one would run the other's method): rename one");
+                }
+            }
+        }
         if (!problems.isEmpty()) {
             problems.stream().distinct().sorted().forEach(problem -> System.err.println("  " + problem));
             throw new AssertionError(problems.stream().distinct().count() + " verification problems");
         }
-        System.out.println("PieceVerify: " + audited.size() + " classes audited, " + analysed + " methods analysed, every reference proven.");
+        System.out.println("PieceVerify: " + audited.size() + " classes audited, " + analysed + " methods analysed, every reference proven, "
+            + subscribed + " event handlers each their own.");
     }
 }

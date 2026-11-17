@@ -542,7 +542,9 @@ public final class FinisherFx {
         }
 
         @SubscribeEvent
-        public static void register(RegisterGuiOverlaysEvent event) {
+        // 2.2.9: a name of its own: Forge's event bus names the handler it generates from the package, "Overlay", the method and the
+        // event, so two Overlay.register in one package shared one, and the game crashed on boot ("Overlay already registered")
+        public static void registerFinisherOverlay(RegisterGuiOverlaysEvent event) {
             event.registerAboveAll("hexpiece_finisher", (gui, graphics, partialTick, width, height) -> screen(graphics, width, height, partialTick));
         }
     }
