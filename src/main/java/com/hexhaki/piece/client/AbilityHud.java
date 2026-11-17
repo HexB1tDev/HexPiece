@@ -181,16 +181,20 @@ public final class AbilityHud {
 
     /** Gear 5's moves in Devil Fruit mode, on the keys the original's Gear keys read. */
     static void gear(List<AbilityPanel.Move> out) {
+        for (Object[] row : gearKeys()) {
+            GearAbility ability = (GearAbility)row[0];
+            out.add(new AbilityPanel.Move((String)row[1], ability.display, GearClientState.unlocked(ability) ? "" : "locked", 0, 0));
+        }
+    }
+
+    /** {ability, key} for each of Gear 5's moves, as the original's Gear keys read them in Devil Fruit mode ({@code GearKeys.tick}). */
+    static Object[][] gearKeys() {
         Minecraft minecraft = Minecraft.m_91087_();
-        Object[][] table = {{GearAbility.PISTOL, name(minecraft.f_91066_.f_92096_)}, {GearAbility.GEAR_FIVE, "Ctrl+" + name(HakiKeys.ARMAMENT)},
+        return new Object[][] {{GearAbility.PISTOL, name(minecraft.f_91066_.f_92096_)}, {GearAbility.GEAR_FIVE, "Ctrl+" + name(HakiKeys.ARMAMENT)},
             {GearAbility.WHIP, name(HakiKeys.DOMINION)}, {GearAbility.ROCKET, name(HakiKeys.OBSERVATION) + " hold"},
             {GearAbility.GATLING, name(HakiKeys.STRIKE) + " hold"}, {GearAbility.GIANT, name(HakiKeys.CONQUEROR) + " hold"},
             {GearAbility.COIL, name(HakiKeys.CONVERGENCE) + " hold"}, {GearAbility.RUBBER_WORLD, name(HakiKeys.ACOC) + " hold"},
             {GearAbility.STAR_GUN, name(HakiKeys.STAR_GUN)}, {GearAbility.SKY_BOUNCE, "Shift+Space"}};
-        for (Object[] row : table) {
-            GearAbility ability = (GearAbility)row[0];
-            out.add(new AbilityPanel.Move((String)row[1], ability.display, GearClientState.unlocked(ability) ? "" : "locked", 0, 0));
-        }
     }
 
     /** The player's name for each key the panel names, as bound in Controls (Forge's modifier included). */

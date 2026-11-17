@@ -122,57 +122,55 @@ public final class BoltPreview {
         ImageIO.write(sheet, "png", out);
     }
 
-    /** 2.2.0: the full-charge Haki slash (64 tall, flying 220) beside its owner, as SlashRenderer stands it (SwordRules' centre). */
+    /**
+     * 2.2.4: the Haki slash as an energy wave (SlashMesh, the game's own quads, drawn as the game's two batches draw them): the full
+     * charge (64 tall, flying 220) from the side, from behind its owner and three-quarter, and a small one (6 tall) up close; in the
+     * manga panel's turquoise the owner showed, and a red Ryou colour.
+     */
     static void bigSlashSheet(File out) throws Exception {
         int oldW = W;
         int oldH = H;
         W = 520;
         H = 360;
-        double height = com.hexhaki.piece.sword.SwordRules.SLASH_HEIGHT_MAX;
-        double[] alongs = {6, 40, 110, 200};
-        int color = 0xFF2BFF7A;
-        Shot[] shots = {new Shot("night, from the side", new double[] {40, 26, -120}, new double[] {80, 22, 0}, true),
-            new Shot("day, behind the owner", new double[] {-14, 6, -6}, new double[] {40, 18, 0}, false)};
-        BufferedImage sheet = new BufferedImage(W * alongs.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
+        Object[][] rows = {
+            {64.0, new double[] {6, 40, 110, 200}, new Shot("day, from the side", new double[] {60, 26, -95}, new double[] {80, 22, 0}, false), 0xFF3FF2D2},
+            {64.0, new double[] {6, 40, 110, 200}, new Shot("night, from the side", new double[] {60, 26, -95}, new double[] {80, 22, 0}, true), 0xFF3FF2D2},
+            {64.0, new double[] {6, 40, 110, 200}, new Shot("day, behind the owner", new double[] {-14, 6, -6}, new double[] {40, 18, 0}, false), 0xFF3FF2D2},
+            {64.0, new double[] {6, 40, 110, 200}, new Shot("night, three-quarter", new double[] {-40, 30, -90}, new double[] {60, 20, 0}, true), 0xFFFF2A3A},
+            {6.0, new double[] {3, 6, 9, 12}, new Shot("day, a small one", new double[] {4, 3.2, -9}, new double[] {7, 2.4, 0}, false), 0xFF3FF2D2}};
+        BufferedImage sheet = new BufferedImage(W * 4, (H + 18) * rows.length, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = sheet.createGraphics();
         g.setColor(new Color(236, 234, 228));
         g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
         g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-        double half = height / 2.0;
-        double bow = height * 0.2;
-        double thickScale = Math.max(com.hexhaki.piece.sword.SwordRules.slashThickness(height) / com.hexhaki.piece.sword.SwordRules.SLASH_THICKNESS,
-            height * 0.12);
-        double up = com.hexhaki.piece.sword.SwordRules.slashCentre(height);
-        for (int r = 0; r < shots.length; r++) {
+        for (int r = 0; r < rows.length; r++) {
+            double height = (Double) rows[r][0];
+            double[] alongs = (double[]) rows[r][1];
+            Shot shot = (Shot) rows[r][2];
+            int color = (Integer) rows[r][3];
+            double foot = 1.6 + com.hexhaki.piece.sword.SwordRules.slashCentre(height) - height / 2.0;
             for (int c = 0; c < alongs.length; c++) {
-                Raster raster = new Raster(shots[r]);
+                Raster raster = new Raster(shot);
                 raster.scene();
-                double[] centre = {alongs[c], 1.6 + up, 0};
-                for (int i = 0; i < 48; i++) {
-                    boolean across = i >= 24;
-                    for (int pass = 0; pass < 2; pass++) {
-                        double grow = pass == 0 ? 0.0 : 0.12;
-                        double[][] q = new double[4][];
-                        for (int k = 0; k < 4; k++) {
-                            double u = (i % 24 + (k == 1 || k == 2 ? 1 : 0)) / 24.0;
-                            int sgn = k < 2 ? 1 : -1;
-                            double a = (u - 0.5) * 2.0;
-                            double y = a * (half + grow);
-                            double w = ((pass == 0 ? 0.55 : 0.85) * thickScale * (across ? 0.6 : 1.0) * 0.5 * (1 - a * a * 0.85) + grow) * sgn;
-                            double fwd = bow * (1 - a * a) + (across ? 0 : w);
-                            q[k] = sub(new double[] {centre[0] + fwd, centre[1] + y, centre[2] + (across ? w : 0)}, shots[r].eye);
-                        }
-                        float[] col = pass == 0 ? new float[] {0.02F, 0.02F, 0.02F} : Raster.rgb(BoltMesh.scale(color, 1.0));
-                        for (int face = 0; face < 2; face++) {
-                            double[] a0 = q[0], a1 = face == 0 ? q[1] : q[3], a2 = q[2], a3 = face == 0 ? q[3] : q[1];
-                            raster.tri(a0, a1, a2, col, col, col, pass == 1);
-                            raster.tri(a0, a2, a3, col, col, col, pass == 1);
-                        }
-                    }
+                raster.minAlpha = 0.002F;
+                com.hexhaki.piece.sword.SlashMesh.Quads glow = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                com.hexhaki.piece.sword.SlashMesh.Quads solid = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                double grown = Math.min(1.0, alongs[c] / (height * com.hexhaki.piece.sword.SwordRules.SLASH_BACK));
+                com.hexhaki.piece.sword.SlashMesh.Frame frame = com.hexhaki.piece.sword.SlashMesh.Frame.of(sub(new double[] {alongs[c], foot, 0}, shot.eye),
+                    1, 0, height, grown);
+                com.hexhaki.piece.sword.SlashMesh.wave(solid, glow, frame, 7L + r, color, alongs[c] / 4.0, 1.0);
+                // the solid batch first (opaque, back faces culled), then the glow's (sorted far to near, both faces)
+                for (int q = 0; q < solid.n; q++) {
+                    raster.quad(java.util.Arrays.copyOfRange(solid.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(solid.c, q * 4, q * 4 + 4), false);
+                }
+                glow.sortBackToFront();
+                for (int q = 0; q < glow.n; q++) {
+                    raster.quadNoCull(java.util.Arrays.copyOfRange(glow.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(glow.c, q * 4, q * 4 + 4));
                 }
                 g.drawImage(raster.image(), c * W, r * (H + 18) + 18, null);
                 g.setColor(new Color(30, 30, 30));
-                g.drawString(shots[r].label + "  " + Math.round(alongs[c]) + " blocks out", c * W + 4, r * (H + 18) + 13);
+                g.drawString(shot.label + "  " + Math.round(height) + " tall, " + Math.round(alongs[c]) + " blocks out (" + (solid.n + glow.n) + " quads)",
+                    c * W + 4, r * (H + 18) + 13);
             }
         }
         g.dispose();
@@ -453,6 +451,8 @@ public final class BoltPreview {
         final boolean night;
         float[] alpha;
         float[] triAlpha;
+        /** Below this a blended pixel is skipped (2.2.4: the slash's faint halo is drawn). */
+        float minAlpha = 0.1F;
         List<double[]> landings;
         double wave;
 
@@ -578,6 +578,20 @@ public final class BoltPreview {
             return quads[0];
         }
 
+        /** 2.2.4: a quad as the game's debug-quads batch draws it: alpha blended, depth tested and written, both faces. */
+        void quadNoCull(double[] v, int[] c) {
+            float[] al = {((c[0] >>> 24) & 255) / 255F, ((c[1] >>> 24) & 255) / 255F, ((c[2] >>> 24) & 255) / 255F, ((c[3] >>> 24) & 255) / 255F};
+            double[] a = {v[0], v[1], v[2]};
+            double[] b2 = {v[3], v[4], v[5]};
+            double[] c2 = {v[6], v[7], v[8]};
+            double[] d = {v[9], v[10], v[11]};
+            this.triAlpha = new float[] {al[0], al[1], al[2]};
+            tri(a, b2, c2, rgb(c[0]), rgb(c[1]), rgb(c[2]), false);
+            this.triAlpha = new float[] {al[0], al[2], al[3]};
+            tri(a, c2, d, rgb(c[0]), rgb(c[2]), rgb(c[3]), false);
+            this.triAlpha = null;
+        }
+
         void quad(double[] v, int[] c, boolean add) {
             this.alpha = add ? null : new float[] {((c[0] >>> 24) & 255) / 255F, ((c[1] >>> 24) & 255) / 255F, ((c[2] >>> 24) & 255) / 255F,
                 ((c[3] >>> 24) & 255) / 255F};
@@ -656,7 +670,7 @@ public final class BoltPreview {
                         this.b[i] += cb;
                     } else if (this.triAlpha != null && (this.triAlpha[0] < 1F || this.triAlpha[1] < 1F || this.triAlpha[2] < 1F)) {
                         float a = (float) (this.triAlpha[0] * k0 + this.triAlpha[1] * k1 + this.triAlpha[2] * k2);
-                        if (a < 0.1F) {
+                        if (a < this.minAlpha) {
                             continue;
                         }
                         this.r[i] = cr * a + this.r[i] * (1 - a);

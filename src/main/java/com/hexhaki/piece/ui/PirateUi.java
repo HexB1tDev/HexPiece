@@ -264,30 +264,4 @@ public final class PirateUi {
         }
         border(c, x0, y0, x1, y1, 0x60000000);
     }
-
-    /** A simple standing figure (head, body, arms, legs), with a ponytail and a waist for a woman. */
-    public static void figure(UiCanvas c, float cx, float top, float height, boolean woman, int skin, int cloth, int trousers) {
-        float u = height / 32F;
-        if (woman) {
-            c.fill((int) (cx + 1 * u), (int) (top + 2 * u), (int) (cx + 6 * u), (int) (top + 13 * u), 0xFF4A2E1C);
-        }
-        c.fill((int) (cx - 4 * u), (int) top, (int) (cx + 4 * u), (int) (top + 8 * u), skin);
-        c.fill((int) (cx - 4 * u), (int) top, (int) (cx + 4 * u), (int) (top + 2 * u), woman ? 0xFF4A2E1C : 0xFF2E2016);
-        c.fill((int) (cx - 2 * u), (int) (top + 4 * u), (int) (cx - 1 * u), (int) (top + 5 * u), 0xFF201810);
-        c.fill((int) (cx + 1 * u), (int) (top + 4 * u), (int) (cx + 2 * u), (int) (top + 5 * u), 0xFF201810);
-        if (woman) {
-            quad(c, cx - 4 * u, top + 8 * u, cx + 4 * u, top + 8 * u, cx + 3 * u, top + 14 * u, cx - 3 * u, top + 14 * u, cloth);
-            quad(c, cx - 3 * u, top + 14 * u, cx + 3 * u, top + 14 * u, cx + 4.5F * u, top + 20 * u, cx - 4.5F * u, top + 20 * u, cloth);
-            c.fill((int) (cx - 7 * u), (int) (top + 8 * u), (int) (cx - 4 * u), (int) (top + 19 * u), skin);
-            c.fill((int) (cx + 4 * u), (int) (top + 8 * u), (int) (cx + 7 * u), (int) (top + 19 * u), skin);
-            c.fill((int) (cx - 4 * u), (int) (top + 20 * u), (int) (cx - 0.3F * u), (int) (top + 32 * u), trousers);
-            c.fill((int) (cx + 0.3F * u), (int) (top + 20 * u), (int) (cx + 4 * u), (int) (top + 32 * u), trousers);
-        } else {
-            c.fill((int) (cx - 4 * u), (int) (top + 8 * u), (int) (cx + 4 * u), (int) (top + 20 * u), cloth);
-            c.fill((int) (cx - 8 * u), (int) (top + 8 * u), (int) (cx - 4 * u), (int) (top + 20 * u), skin);
-            c.fill((int) (cx + 4 * u), (int) (top + 8 * u), (int) (cx + 8 * u), (int) (top + 20 * u), skin);
-            c.fill((int) (cx - 4 * u), (int) (top + 20 * u), (int) (cx - 0.2F * u), (int) (top + 32 * u), trousers);
-            c.fill((int) (cx + 0.2F * u), (int) (top + 20 * u), (int) (cx + 4 * u), (int) (top + 32 * u), trousers);
-        }
-    }
 }

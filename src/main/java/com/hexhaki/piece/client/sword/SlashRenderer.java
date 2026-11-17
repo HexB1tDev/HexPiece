@@ -6,6 +6,7 @@ import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.DrawCrackle;
 import com.hexhaki.piece.haki.RyouPalette;
 import com.hexhaki.piece.network.S2CSlash;
+import com.hexhaki.piece.sword.SlashMesh;
 import com.hexhaki.piece.sword.SwordRules;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -19,7 +20,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -27,7 +27,6 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 /**
@@ -36,14 +35,13 @@ import org.joml.Matrix4f;
  * hardcode it to red ... use a neutral visual fallback until their personal Ryou colour exists ... Make the attack's visible shape,
  * entity hit volume and removed blocks agree."
  * <p>
- * Drawn where the server's plane is: a crescent standing in the vertical plane of its flight, as tall as the plane, its two tips at the
- * plane's top and bottom and bowed forward a little; a dark core (the cutting edge of Armament) with a bright rim of the colour round
- * it and a fainter halo, and a trail of three fading ghosts behind it; flecks of the colour shed as it flies. Additive light and the
- * dark core are depth tested: walls hide it. The colour is the owner's Ryou colour as the server sent it, or the neutral pale steel.
+ * 2.2.4: drawn where the server's plane is as the energy wave of the manga's panel the owner showed ({@link SlashMesh}): rising out of
+ * its trench, a sharp peak as tall as the plane, its back torn into tongues of light, thick across its flight, inked and glowing, its
+ * Haki crackle running up its leading edge, flecks of the colour shed off its back. Depth tested: walls hide it. The colour is the
+ * owner's Ryou colour as the server sent it (every player has one from their first login), or the neutral pale steel (a pirate captain).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class SlashRenderer {
-    static final int SEGMENTS = 14;
     /** The crackle's own blade length (DrawCrackle works along a katana's blade; the slash scales it to its height). */
     static final double BLADE = 1.28;
     private static final Map<Integer, S2CSlash> FLYING = new HashMap<>();
@@ -84,12 +82,17 @@ public final class SlashRenderer {
             }
             if (d < slash.range()) {
                 // flecks of its colour shed along the way
-                Vec3 at = middle(slash, d);
+                // flecks of its colour shed off its back slope as it goes (2.2.4: the wave's body, trench to peak)
+                Vec3 foot = point(slash, d).m_82520_(0.0, SwordRules.slashCentre(slash.height()) - slash.height() / 2.0, 0.0);
+                Vec3 flat = new Vec3(slash.dx(), 0.0, slash.dz());
+                flat = flat.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : flat.m_82541_();
                 int tint = color(slash) | 0xFF000000;
-                for (int i = 0; i < PieceFx.count(3); i++) {
-                    double up = (RANDOM.nextDouble() - 0.5) * slash.height();
-                    PieceFx.at(PieceFx.MOTE, true, 8 + RANDOM.nextInt(6), at.m_82520_(0.0, up, 0.0)).colors(tint, tint & 0x00FFFFFF)
-                        .size(0.16, 0.02).drag(0.9).spawn();
+                for (int i = 0; i < PieceFx.count(4); i++) {
+                    double v = RANDOM.nextDouble() * 0.85;
+                    double back = -SwordRules.SLASH_BACK * slash.height() * Math.pow(1.0 - v, 1.25) * RANDOM.nextDouble();
+                    Vec3 at = foot.m_82549_(flat.m_82490_(back)).m_82520_(0.0, v * slash.height(), 0.0);
+                    PieceFx.at(PieceFx.MOTE, true, 8 + RANDOM.nextInt(6), at).colors(tint, tint & 0x00FFFFFF)
+                        .velocity(flat.m_82490_(-0.15).m_82520_(0.0, 0.12, 0.0)).size(0.16 + slash.height() * 0.004, 0.02).drag(0.9).spawn();
                 }
             }
         }
@@ -97,11 +100,6 @@ public final class SlashRenderer {
 
     static Vec3 point(S2CSlash slash, double along) {
         return new Vec3(slash.x() + slash.dx() * along, slash.y() + slash.dy() * along, slash.z() + slash.dz() * along);
-    }
-
-    /** 2.2.0: the middle of the slash's plane at {@code along}: standing up from under its owner's feet, as the server's (SwordRules). */
-    static Vec3 middle(S2CSlash slash, double along) {
-        return point(slash, along).m_82520_(0.0, SwordRules.slashCentre(slash.height()), 0.0);
     }
 
     @SubscribeEvent
@@ -120,44 +118,72 @@ public final class SlashRenderer {
         }
     }
 
+    /** 2.2.4: the wave's quads, rebuilt every frame: the solid body, streaks and outline, and the glow. */
+    private static final SlashMesh.Quads SOLID = new SlashMesh.Quads();
+    private static final SlashMesh.Quads GLOW = new SlashMesh.Quads();
+
+    /** The wave's frame at this frame: the foot of its line (relative to the eye), its flight, its height, how far it has grown out. */
+    static SlashMesh.Frame frame(S2CSlash slash, double along, Vec3 cam) {
+        Vec3 foot = point(slash, Math.min(along, slash.range())).m_82520_(0.0, SwordRules.slashCentre(slash.height()) - slash.height() / 2.0, 0.0);
+        double grown = along / Math.max(0.5, slash.height() * SwordRules.SLASH_BACK);
+        return SlashMesh.Frame.of(new double[] {foot.f_82479_ - cam.f_82479_, foot.f_82480_ - cam.f_82480_, foot.f_82481_ - cam.f_82481_},
+            slash.dx(), slash.dz(), slash.height(), grown);
+    }
+
+    /**
+     * 2.2.4: the wave ({@link SlashMesh}): its body, streaks and ink outline in a batch of their own (unlit, depth written, back faces
+     * culled: the Haki lightning's ink), then its glow (alpha blended, sorted far to near). As it reaches its range it sinks and fades
+     * over three ticks.
+     */
     static void draw(PoseStack pose, Vec3 cam, ClientLevel level, float partial) {
         MultiBufferSource.BufferSource buffers = Minecraft.m_91087_().m_91269_().m_110104_();
-        RenderType dark = RenderType.m_110470_(SwordFx.WHITE_TEXTURE);
-        // 2.1.9: the light alpha blended, not additive (some setups draw additive geometry opaque)
-        RenderType light = RenderType.m_269166_();
-        pose.m_85836_();
-        pose.m_252880_((float) -cam.f_82479_, (float) -cam.f_82480_, (float) -cam.f_82481_);
-        Matrix4f matrix = pose.m_85850_().m_252922_();
-        Matrix3f normal = pose.m_85850_().m_252943_();
-        VertexConsumer core = buffers.m_6299_(dark);
-        for (S2CSlash slash : FLYING.values()) {
-            double d = flown(slash, level, partial);
-            if (d >= 0 && d < slash.range()) {
-                crescent(core, matrix, normal, slash, d, 0.0, 0x000000, 0.86F, 0.55, false);
-            }
-        }
-        buffers.m_109912_(dark);
-        VertexConsumer glow = buffers.m_6299_(light);
+        SOLID.clear();
+        GLOW.clear();
+        long now = level.m_46467_() & 0x3FFFFFFF;
         for (S2CSlash slash : FLYING.values()) {
             double d = flown(slash, level, partial);
             if (d < 0) {
                 continue;
             }
-            int color = color(slash);
-            double fade = d >= slash.range() ? Math.max(0.0, 1.0 - (flown(slash, level, partial) - slash.range()) / (slash.speed() * 3.0)) : 1.0;
-            if (d < slash.range()) {
-                crescent(glow, matrix, normal, slash, d, 0.12, color, 0.95F, 0.85, true);
-                crescent(glow, matrix, normal, slash, d, 0.32, color, 0.35F, 0.9, true);
+            double fade = d >= slash.range() ? Math.max(0.0, 1.0 - (d - slash.range()) / (slash.speed() * 3.0)) : 1.0;
+            double over = ((now - slash.start()) & 0x3FFFFFFF) + partial - slash.range() / slash.speed();
+            if (over > 0) {
+                fade = Math.max(0.0, 1.0 - over / 3.0);
             }
-            for (int ghost = 1; ghost <= 3; ghost++) {
-                double back = d - ghost * slash.speed() * 0.45;
-                if (back > 0) {
-                    crescent(glow, matrix, normal, slash, Math.min(back, slash.range()), 0.1, color, (float) (0.5 / ghost * fade), 0.8, true);
+            if (fade <= 0.01) {
+                continue;
+            }
+            double ticks = ((now - slash.start()) & 0x3FFFFFFF) + partial;
+            SlashMesh.wave(SOLID, GLOW, frame(slash, d, cam), slash.id(), color(slash), ticks, fade);
+        }
+        Matrix4f matrix = pose.m_85850_().m_252922_();
+        if (SOLID.n > 0) {
+            RenderType ink = RenderType.m_269058_();
+            VertexConsumer solid = buffers.m_6299_(ink);
+            for (int q = 0; q < SOLID.n; q++) {
+                for (int k = 0; k < 4; k++) {
+                    int c = SOLID.c[q * 4 + k];
+                    solid.m_252986_(matrix, (float) SOLID.v[q * 12 + k * 3], (float) SOLID.v[q * 12 + k * 3 + 1], (float) SOLID.v[q * 12 + k * 3 + 2])
+                        .m_85950_(((c >>> 16) & 255) / 255.0F, ((c >>> 8) & 255) / 255.0F, (c & 255) / 255.0F, ((c >>> 24) & 255) / 255.0F)
+                        .m_85969_(0xF000F0).m_5752_();
                 }
             }
+            buffers.m_109912_(ink);
         }
-        buffers.m_109912_(light);
-        pose.m_85849_();
+        if (GLOW.n > 0) {
+            GLOW.sortBackToFront();
+            RenderType light = RenderType.m_269166_();
+            VertexConsumer glow = buffers.m_6299_(light);
+            for (int q = 0; q < GLOW.n; q++) {
+                for (int k = 0; k < 4; k++) {
+                    int c = GLOW.c[q * 4 + k];
+                    glow.m_252986_(matrix, (float) GLOW.v[q * 12 + k * 3], (float) GLOW.v[q * 12 + k * 3 + 1], (float) GLOW.v[q * 12 + k * 3 + 2])
+                        .m_85950_(((c >>> 16) & 255) / 255.0F, ((c >>> 8) & 255) / 255.0F, (c & 255) / 255.0F, ((c >>> 24) & 255) / 255.0F)
+                        .m_5752_();
+                }
+            }
+            buffers.m_109912_(light);
+        }
         crackle(pose, cam, level, partial);
     }
 
@@ -175,12 +201,7 @@ public final class SlashRenderer {
                 continue;
             }
             double ticks = ((now - slash.start()) & 0x3FFFFFFF) + partial;
-            Vec3 dir = new Vec3(slash.dx(), 0.0, slash.dz());
-            dir = dir.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : dir.m_82541_();
-            Vec3 side = new Vec3(-dir.f_82481_, 0.0, dir.f_82479_);
-            Vec3 centre = middle(slash, d);
-            double half = slash.height() / 2.0;
-            double bow = slash.height() * 0.2;
+            SlashMesh.Frame frame = frame(slash, d, cam);
             double k = slash.height() / BLADE;
             int color = color(slash) | 0xFF000000;
             long window = (long) Math.floor(ticks / DrawCrackle.WINDOW);
@@ -190,15 +211,15 @@ public final class SlashRenderer {
                     if (age < 0 || age > bolt.duration) {
                         continue;
                     }
-                    // the crackle's straight blade bent onto the crescent: up the blade is up the crescent, off it is ahead of it
+                    // 2.2.4: the crackle's straight blade laid along the wave's leading edge: up the blade is up the edge (trench to
+                    // peak), off it is ahead of it
                     double[] points = new double[bolt.points.length];
                     for (int i = 0; i < bolt.count(); i++) {
-                        double a = (bolt.points[i * 3 + 1] / BLADE - 0.5) * 2.0;
-                        double ahead = bow * (1.0 - a * a) + 0.275 * (1.0 - a * a * 0.85) + slash.height() * 0.03 + Math.abs(bolt.points[i * 3]) * k;
-                        double across = bolt.points[i * 3 + 2] * k;
-                        points[i * 3] = centre.f_82479_ + dir.f_82479_ * ahead + side.f_82479_ * across - cam.f_82479_;
-                        points[i * 3 + 1] = centre.f_82480_ + a * half - cam.f_82480_;
-                        points[i * 3 + 2] = centre.f_82481_ + dir.f_82481_ * ahead + side.f_82481_ * across - cam.f_82481_;
+                        double v = Math.max(0.0, Math.min(0.97, bolt.points[i * 3 + 1] / BLADE * 0.97));
+                        double[] p = SlashMesh.edge(frame, v, slash.height() * 0.01 + Math.abs(bolt.points[i * 3]) * k, bolt.points[i * 3 + 2] * k);
+                        points[i * 3] = p[0];
+                        points[i * 3 + 1] = p[1];
+                        points[i * 3 + 2] = p[2];
                     }
                     float[] widths = bolt.widths.clone();
                     float grow = (float) Math.min(3.0, Math.pow(k, 0.75));
@@ -215,66 +236,6 @@ public final class SlashRenderer {
             at[i] = ages.get(i);
         }
         HakiBolts.drawInView(pose, bolts, at, level, partial);
-    }
-
-    /**
-     * The crescent at {@code along} blocks: its chord the plane's height (centred on the path), bowed forward by a fifth of it, a band
-     * {@code thickness} blocks thick plus {@code grow} each side, in {@code color} at {@code strength}; both faces.
-     */
-    static void crescent(VertexConsumer buffer, Matrix4f matrix, Matrix3f normal, S2CSlash slash, double along, double grow, int color, float strength,
-                         double thickness, boolean plain) {
-        Vec3 dir = new Vec3(slash.dx(), slash.dy(), slash.dz());
-        Vec3 side = new Vec3(-dir.f_82481_, 0.0, dir.f_82479_);
-        side = side.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : side.m_82541_();
-        Vec3 centre = middle(slash, along);
-        double half = slash.height() / 2.0;
-        double bow = slash.height() * 0.2;
-        // 2.2.0: the band widens with the slash's height (a 64-block slash is a bold crescent, not a wire)
-        thickness *= Math.max(SwordRules.slashThickness(slash.height()) / SwordRules.SLASH_THICKNESS, slash.height() * 0.12);
-        float r = ((color >> 16) & 255) / 255.0F * strength;
-        float g = ((color >> 8) & 255) / 255.0F * strength;
-        float b = (color & 255) / 255.0F * strength;
-        float alpha = color == 0 ? strength : 1.0F;
-        // two bands: the crescent in the plane of its flight, and (2.2.0) one across it a little narrower, so seen from behind or ahead it
-        // is a tall blade of light, not an edge-on line
-        for (int i = 0; i < SEGMENTS * 2; i++) {
-            boolean across = i >= SEGMENTS;
-            double u0 = (i % SEGMENTS) / (double) SEGMENTS;
-            double u1 = (i % SEGMENTS + 1) / (double) SEGMENTS;
-            double t = across ? thickness * 0.6 : thickness;
-            Vec3[] q = {edge(centre, dir, side, half, bow, t, grow, u0, 1, across), edge(centre, dir, side, half, bow, t, grow, u1, 1, across),
-                edge(centre, dir, side, half, bow, t, grow, u1, -1, across), edge(centre, dir, side, half, bow, t, grow, u0, -1, across)};
-            for (int face = 0; face < 2; face++) {
-                for (int k = 0; k < 4; k++) {
-                    Vec3 p = q[face == 0 ? k : 3 - k];
-                    if (plain) {
-                        // light: its hue at full brightness, as opaque as it is strong
-                        buffer.m_252986_(matrix, (float) p.f_82479_, (float) p.f_82480_, (float) p.f_82481_)
-                            .m_85950_(((color >> 16) & 255) / 255.0F, ((color >> 8) & 255) / 255.0F, (color & 255) / 255.0F, Math.min(0.9F, strength))
-                            .m_5752_();
-                        continue;
-                    }
-                    buffer.m_252986_(matrix, (float) p.f_82479_, (float) p.f_82480_, (float) p.f_82481_).m_85950_(r, g, b, alpha).m_7421_(0.5F, 0.5F)
-                        .m_86008_(OverlayTexture.f_118083_).m_85969_(0xF000F0).m_252939_(normal, (float) side.f_82479_, 0.0F,
-                            (float) side.f_82481_).m_5752_();
-                }
-            }
-        }
-    }
-
-    /**
-     * A point of the crescent's band: u 0 the bottom tip, 1 the top; s +1 one edge, -1 the other: the front (convex) and back edges of the
-     * band in the flight's plane, or (across) its two sides.
-     */
-    static Vec3 edge(Vec3 centre, Vec3 dir, Vec3 side, double half, double bow, double thickness, double grow, double u, int s, boolean across) {
-        double a = (u - 0.5) * 2.0;
-        double y = a * (half + grow);
-        double forward = bow * (1.0 - a * a);
-        double width = (thickness * 0.5 * (1.0 - a * a * 0.85) + grow) * s;
-        Vec3 flat = new Vec3(dir.f_82479_, 0.0, dir.f_82481_);
-        flat = flat.m_82556_() < 1.0E-6 ? dir : flat.m_82541_();
-        Vec3 spine = centre.m_82520_(0.0, y, 0.0).m_82549_(flat.m_82490_(forward));
-        return across ? spine.m_82549_(side.m_82490_(width)) : spine.m_82549_(flat.m_82490_(width));
     }
 
     @SubscribeEvent

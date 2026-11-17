@@ -112,6 +112,11 @@ public final class PiecePatch implements Opcodes {
     static final Object[][] CALL_REDIRECTS = {
         {"com/hexhaki/fruit/client/FruitKeys", "tick", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
         {"com/hexhaki/fruit/client/FruitKeys", "interact", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
+        // 2.2.4 (the owner: "The keys should be usable just like that in any form"): the fruit's "powers off" switch no longer
+        // silences Haki: its keys, the Haki leap and the server's Haki actions stop asking it
+        {"com/hexhaki/client/HakiKeys$ForgeBus", "tick", "com/hexhaki/binds/client/BindsClient", "off", "()Z", HOOKS, "hakiKeysOff", 1},
+        {"com/hexhaki/client/HakiKeys$ForgeBus", "movementInput", "com/hexhaki/binds/client/BindsClient", "off", "()Z", HOOKS, "hakiKeysOff", 1},
+        {CONTROLLER, "onAction", "com/hexhaki/binds/Binds", "off", "(Lnet/minecraft/world/entity/player/Player;)Z", RYOU_SERVER, "hakiOff", 1},
         // 2.1.3 Ryou (the owner: "Ryou should look like blackened hands with a strong, clean glow outlining their shape. Keep the black
         // coating readable beneath the coloured rim. ... instead of covering the arms with red effects. Remove the fire particles from
         // every Ryou activation, idle and movement effect"): the coating stays plain black, the arm aura is left off while Ryou is up,

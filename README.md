@@ -30,21 +30,24 @@ the start menu and the Captain's Log:
 
 ## What HexPiece adds
 
-- A start menu (Male/Female, Pirate/Marine, a fighting style) with a pirate UI; female players drawn with HexGhoul's female body.
+- A start menu (Male/Female as black silhouettes, Pirate/Marine, a fighting style) with a pirate UI; female players drawn with HexGhoul's female body.
 - Five fighting styles (Black Leg, Six Powers, Fishman Karate, Iron Fist, Swordsman), each a choreographed M1 string and a right-click
   signature (the four unarmed ones also two specials, Y and U), with style mastery. They fight in combat mode (R, as in HexGhoul; with a fruit eaten R swaps the style and the fruit;
   Ctrl + R is the mode's power: Armament or Ryou, Gear 5), with Photon particles: air cut by every swing, the Air Blade's flying
   crescent, Fishman Karate's water.
 - The Swordsman (2.1.4): the owner's 25 katanas and their saya as items with grades, rarities and descriptions, worn at the hip;
   right-handed draw cuts and 12 more cuts in standing, moving and aerial strings, sheathing, a charged cut or Haki slash in the Ryou
-  colour that cuts a thin vertical plane through terrain, the Ryou finisher, and Ctrl + M1's quick draw.
+  colour (2.2.4: a torn energy wave rising out of the ground, as the manga draws Mihawk's) that cuts a trench as wide as its body,
+  the Ryou finisher, and Ctrl + M1's quick draw.
 - Pirate and Marine NPC patrols (pirates also with katanas) that fight each other and the players of the other flag with the same moves; bounty and merit ranks.
-- The Captain's Log: a blue-and-white mastery menu with a ship.
+- The Captain's Log (2.2.4: the one menu, the original's Ability Book, Haki Techniques and Gear mastery screens gone into it):
+  overview, Style & Haki (moves, techniques, quick slots), Devil Fruit (moves, quick slots, the Nika fruit's upgrades).
 - Haki lightning as real 3D lightning (2.1.5): crackled tubes facing the eye, with a black ink outline, a coloured core, a white-hot heart
   and a glow, striking, flickering, dancing and thinning away; Haki lightning off the katana as it is drawn, charged and released.
 - Every animation reworked (and linted so none comes apart); the Imu fruit removed (its assets kept).
 - Ryou (the original's Advanced Haki, renamed): it comes with Armament once unlocked, in the player's own saved glow colour, as black
-  hands with a coloured rim (no fire, no inflated physique).
+  hands with a coloured rim (no fire, no inflated physique). 2.2.4: every player has that colour from their first login, and all
+  their Haki lightning and their Haki slash wear it.
 
 ## Changes
 

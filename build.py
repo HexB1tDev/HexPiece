@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.2.3"
+VERSION = "2.2.4"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
@@ -57,6 +57,7 @@ PATCHED = {
     "com/hexhaki/gameplay/ConquerorLightningPath.class",
     "com/hexhaki/command/HakiCommands.class",
     "com/hexhaki/fruit/client/FruitKeys.class",
+    "com/hexhaki/client/HakiKeys$ForgeBus.class",  # 2.2.4: Haki's keys ignore the fruit's "powers off" (PiecePatch CALL_REDIRECTS)
     # 2.2.2: the original's HUDs give way to the one abilities panel (PiecePatch HUDS_REPLACED)
     "com/hexhaki/client/HakiHud.class",
     "com/hexhaki/fruit/client/FruitHud.class",

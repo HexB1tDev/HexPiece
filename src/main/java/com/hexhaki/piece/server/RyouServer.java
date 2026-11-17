@@ -10,6 +10,7 @@ import com.hexhaki.piece.network.S2CRyou;
 import com.hexhaki.registry.ModSounds;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -44,11 +45,16 @@ public final class RyouServer {
         return ProfileServer.root(player).m_128451_(COLOR);
     }
 
-    /** The colour, given now if Ryou is unlocked and none was given yet; 0 while Ryou is locked. */
+    /**
+     * The colour, given now if none was given yet. 2.2.4 (the owner: "make sure it matches the color of RYOU always, same for the
+     * conquerors haki releases, all lightnings in the game are to reflect the same color as RYOU"): every player has it from their first
+     * login, Ryou unlocked or not (it was given at the unlock), since all their Haki lightning and their Haki slash wear it; it is still
+     * given once and kept for good.
+     */
     static int ensure(ServerPlayer player) {
         CompoundTag root = ProfileServer.root(player);
         int color = root.m_128451_(COLOR);
-        if (color == 0 && HakiProgression.advancedHakiUnlocked(player)) {
+        if (color == 0) {
             color = RyouPalette.pick(player.m_217043_().m_188503_(RyouPalette.COLORS.length));
             root.m_128405_(COLOR, color);
             PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color));
@@ -115,5 +121,13 @@ public final class RyouServer {
                 PieceNetwork.sendTo(viewer, new S2CRyou(subject.m_19879_(), color));
             }
         }
+    }
+
+    /**
+     * 2.2.4: the server half of {@code PieceHooks.hakiKeysOff}: {@code HakiServerController.onAction} asked the original's "powers off"
+     * switch ({@code Binds.off}) and dropped every Haki action while it was on. Haki answers whatever the fruit's switch says.
+     */
+    public static boolean hakiOff(Player player) {
+        return false;
     }
 }

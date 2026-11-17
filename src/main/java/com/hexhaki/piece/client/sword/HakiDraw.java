@@ -29,8 +29,11 @@ import net.minecraft.client.renderer.MultiBufferSource;
  *       is;</li>
  *   <li><b>the release</b>: a last burst along the blade as the cut goes;</li>
  *   <li><b>the sheathing</b>: a few sparks at the mouth as the steel goes home;</li>
- *   <li>with <b>Ryou</b> up the blade hums with a faint crackle all the time it is drawn, in the player's own Ryou colour (the
- *       Conqueror's red and black otherwise).</li>
+ *   <li>with <b>Ryou</b> up the blade hums with a faint crackle all the time it is drawn.</li>
+ * </ul>
+ * 2.2.4: every crackle is in the player's own Ryou colour (the owner: "all lightnings in the game are to reflect the same color as
+ * RYOU").
+ * <ul>
  * </ul>
  * The bolts are {@link DrawCrackle}'s, drawn by {@link HakiBolts#drawInFrame} in the blade's own frame, so they ride on it through
  * every cut, in first and third person; a soft zap (the original's own Armament zap) goes with every third set.
@@ -38,7 +41,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 public final class HakiDraw {
     /** The blade, guard to tip, in blocks. */
     static final double BLADE = 20.5 * KatanaRenderer.SCALE;
-    static final int RED = 0xFFFF1433;
     private static final java.util.Map<Integer, Long> HEARD = new java.util.HashMap<>();
 
     private HakiDraw() {
@@ -53,8 +55,9 @@ public final class HakiDraw {
         return state == null || !state.armament() ? 0 : state.acoc() ? 2 : 1;
     }
 
+    /** 2.2.4 (the owner: "all lightnings in the game are to reflect the same color as RYOU"): the player's Ryou colour, Ryou up or not. */
     static int color(AbstractClientPlayer player, int haki) {
-        return haki == 2 ? RyouColors.orNeutral(player.m_19879_()) : RED;
+        return RyouColors.orNeutral(player.m_19879_());
     }
 
     /** In the blade's frame while it slides along the saya, {@code out} model px out of it. */

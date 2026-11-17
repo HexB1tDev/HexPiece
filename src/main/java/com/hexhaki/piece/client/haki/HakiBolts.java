@@ -4,6 +4,7 @@ import com.hexhaki.piece.client.fx.PieceFx;
 import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.BoltMesh;
 import com.hexhaki.piece.haki.BoltPainter;
+import com.hexhaki.piece.haki.RyouPalette;
 import com.hexhaki.registry.ModSounds;
 import com.lowdragmc.photon.client.fx.FX;
 import com.lowdragmc.photon.client.gameobject.IFXObject;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
@@ -77,7 +79,8 @@ public final class HakiBolts {
     }
 
     /** Bolts set going: at a fixed point, or following {@code entity} (feet, turned with it); where their free ends strike the ground. */
-    record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end, List<Landing> landings, double wave) {
+    record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end, List<Landing> landings, double wave,
+                int color) {
     }
 
     /** Where a bolt's free end strikes the ground (world, on its surface), when (ticks from the start), how big, and whether it was heard. */
@@ -144,6 +147,9 @@ public final class HakiBolts {
             }
             List<IFXObject> objects = fx.getMainFX().objects();
             objects.removeIf(o -> containsSame(pending.beams, o));
+            // 2.2.4: the lightning is its owner's Ryou colour (the player it plays on, or the nearest one to a fixed point)
+            int color = colorOf(entity != null ? entity : nearestPlayer(level, x, y, z));
+            pending.bolts.replaceAll(bolt -> bolt.tinted(color));
             if (!pending.ground.isEmpty()) {
                 onGround(pending, entity, x, y, z, level);
             }
@@ -160,7 +166,7 @@ public final class HakiBolts {
             if (storm) {
                 end = Math.max(end, (float) BoltMesh.WAVE);
             }
-            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave));
+            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave, color | 0xFF000000));
             alive += pending.bolts.size();
             if (!landings.isEmpty() || pending.bolts.size() >= 12) {
                 // the composition's own crackle, at its anchor (the original plays the heavy charge and release sounds itself)
@@ -311,6 +317,32 @@ public final class HakiBolts {
         }
     }
 
+    /**
+     * 2.2.4: the colour of the lightning an entity throws: a player's Ryou colour (every player has one from their first login), the
+     * neutral pale steel for anyone else (a pirate captain) or while a player's has not arrived yet.
+     */
+    static int colorOf(Entity owner) {
+        return (owner instanceof Player ? RyouColors.orNeutral(owner.m_19879_()) : RyouPalette.NEUTRAL) & 0xFFFFFF;
+    }
+
+    /** The player nearest a fixed point (a world effect's), within 24 blocks, or null. */
+    static Entity nearestPlayer(Level level, double x, double y, double z) {
+        if (!(level instanceof ClientLevel client)) {
+            return null;
+        }
+        Entity best = null;
+        double bestDistance = 24.0 * 24.0;
+        for (Player player : client.m_6907_()) {
+            Vec3 at = player.m_20182_();
+            double d = (at.f_82479_ - x) * (at.f_82479_ - x) + (at.f_82480_ - y) * (at.f_82480_ - y) + (at.f_82481_ - z) * (at.f_82481_ - z);
+            if (d < bestDistance) {
+                bestDistance = d;
+                best = player;
+            }
+        }
+        return best;
+    }
+
     static boolean containsSame(List<IFXObject> list, Object o) {
         for (IFXObject item : list) {
             if (item == o) {
@@ -376,7 +408,7 @@ public final class HakiBolts {
                 double cx = (live.entity != null ? live.entity.m_20318_(partial).f_82479_ : live.x) - cam.f_82479_;
                 double cy = (live.entity != null ? live.entity.m_20318_(partial).f_82480_ : live.y) - cam.f_82480_;
                 double cz = (live.entity != null ? live.entity.m_20318_(partial).f_82481_ : live.z) - cam.f_82481_;
-                BoltMesh.ring(cx, cy, cz, ticks, live.wave, 0xFFFF1433, shine, sink);
+                BoltMesh.ring(cx, cy, cz, ticks, live.wave, live.color, shine, sink);
             }
             for (Landing landing : live.landings) {
                 double age = ticks - landing.at;

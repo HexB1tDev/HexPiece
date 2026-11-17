@@ -23,6 +23,7 @@ public final class LightningTests {
         landing();
         storm();
         sphere();
+        tinted();
         Check.done("LightningTests");
     }
 
@@ -389,5 +390,22 @@ public final class LightningTests {
             }
         }
         Check.that(up && down, "the Conqueror's lightning goes up into the sky and down onto the ground");
+    }
+
+    /** 2.2.4: every Haki lightning in its owner's Ryou colour: the black body stays black, the rest takes the colour, alpha kept. */
+    static void tinted() {
+        double[] points = {0, 0, 0, 1, 1, 1};
+        float[] widths = {0.1F, 0.1F};
+        int ryou = 0x2E9BFF;
+        Bolt body = new Bolt(points, widths, 0xF0060008, Bolt.BODY, 0, 5, 0, 1L, 0);
+        Check.that(body.tinted(ryou) == body, "the black body stays black");
+        Bolt core = new Bolt(points, widths, 0xFFFF1E10, Bolt.CORE, 0, 5, 0, 1L, 0).tinted(ryou);
+        Check.that(core.color == (0xFF000000 | ryou), "a red core becomes the Ryou colour");
+        Bolt aura = new Bolt(points, widths, 0x582A0008, Bolt.AURA, 0, 5, 0, 1L, 0).tinted(ryou);
+        Check.that(aura.color == (0x58000000 | ryou), "an aura takes the colour as faint as it was");
+        Bolt heart = new Bolt(points, widths, 0xFFFFE0D0, Bolt.HEART, 0, 5, 0, 1L, 0).tinted(ryou);
+        Check.that((heart.color >>> 24) == 0xFF && (heart.color & 0xFF) >= (ryou & 0xFF) && ((heart.color >> 16) & 0xFF) > ((ryou >> 16) & 0xFF),
+            "a hot heart is the colour whitened");
+        Check.that(core.points == points && core.seed == 1L, "the bolt itself is unchanged");
     }
 }

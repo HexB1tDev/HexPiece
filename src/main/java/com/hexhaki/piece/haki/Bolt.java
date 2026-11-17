@@ -82,6 +82,29 @@ public final class Bolt {
         return Math.min(r, Math.min(g, b)) >= 100 ? HEART : CORE;
     }
 
+    /**
+     * 2.2.4 (the owner: "make sure it matches the color of RYOU always, same for the conquerors haki releases, all lightnings in the game
+     * are to reflect the same color as RYOU"): this stroke in {@code rgb} (a player's Ryou colour) by its part of the bolt: the black
+     * body stays black, a core becomes the colour, a hot heart the colour whitened, an aura the colour as faint as it was.
+     */
+    public Bolt tinted(int rgb) {
+        int alpha = this.color & 0xFF000000;
+        int tinted = switch (this.kind) {
+            case BODY -> this.color;
+            case HEART -> alpha | (mixWhite(rgb, 0.55) & 0xFFFFFF);
+            default -> alpha | (rgb & 0xFFFFFF);
+        };
+        return tinted == this.color ? this
+            : new Bolt(this.points, this.widths, tinted, this.kind, this.delay, this.duration, this.crawl, this.seed, this.dance);
+    }
+
+    static int mixWhite(int rgb, double t) {
+        int r = (int) Math.round(((rgb >> 16) & 255) * (1 - t) + 255 * t);
+        int g = (int) Math.round(((rgb >> 8) & 255) * (1 - t) + 255 * t);
+        int b = (int) Math.round((rgb & 255) * (1 - t) + 255 * t);
+        return r << 16 | g << 8 | b;
+    }
+
     /** Crackle levels for a stroke of this length: pieces no longer than {@link #PIECE}, and never fewer than eight. */
     public static int levels(double length) {
         // even a short spark zigzags: at least eight pieces

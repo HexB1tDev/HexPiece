@@ -16,4 +16,14 @@ public final class PieceHooks {
     public static boolean fruitKeysActive() {
         return FruitClient.active() && !CombatMode.on();
     }
+
+    /**
+     * 2.2.4 (the owner: "The keys should be usable just like that in any form"): the original's "powers off" switch (X without the Gomu
+     * fruit, {@code BindsClient.off}) also silenced Armament, Observation, Ryou, the Haki leap and every Haki quick slot. Haki's keys
+     * ({@code HakiKeys$ForgeBus.tick}, {@code movementInput}) no longer ask it: it turns the fruit off ({@code FruitClient.active} still
+     * reads it), never Haki. Only an open screen pauses them, as before.
+     */
+    public static boolean hakiKeysOff() {
+        return false;
+    }
 }

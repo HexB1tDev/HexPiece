@@ -74,6 +74,69 @@ public interface UiCanvas {
         }
     }
 
+    /** Runs {@code draws} as one batch where the canvas can (the game's drawManaged: one flush for many fills). */
+    default void batch(Runnable draws) {
+        draws.run();
+    }
+
+    /** Rows per pixel {@link #shape} fills: a quarter pixel, so curves stay smooth at the GUI scales the game uses (2 to 4). */
+    int SHAPE_ROWS = 4;
+
+    /**
+     * 2.2.4: fills any simple polygon, concave or not (even-odd), in rows of a quarter pixel, the runs of equal rows merged into one
+     * fill. ({@link #polygon} fills convex ones only, a pixel row at a time.)
+     */
+    default void shape(float[] xs, float[] ys, int argb) {
+        int n = xs.length;
+        float top = Float.MAX_VALUE;
+        float bottom = -Float.MAX_VALUE;
+        for (float y : ys) {
+            top = Math.min(top, y);
+            bottom = Math.max(bottom, y);
+        }
+        int s = SHAPE_ROWS;
+        int first = (int) Math.floor(top * s);
+        int last = (int) Math.ceil(bottom * s);
+        float[] cuts = new float[n];
+        int[] previous = new int[0];
+        int runFrom = first;
+        this.push();
+        this.scale(1.0F / s);
+        for (int row = first; row <= last; row++) {
+            int[] spans = new int[0];
+            if (row < last) {
+                float centre = (row + 0.5F) / s;
+                int count = 0;
+                for (int i = 0; i < n; i++) {
+                    int j = (i + 1) % n;
+                    if (ys[i] <= centre && ys[j] > centre || ys[j] <= centre && ys[i] > centre) {
+                        cuts[count++] = xs[i] + (centre - ys[i]) / (ys[j] - ys[i]) * (xs[j] - xs[i]);
+                    }
+                }
+                java.util.Arrays.sort(cuts, 0, count);
+                int[] found = new int[count];
+                int kept = 0;
+                for (int k = 0; k + 1 < count; k += 2) {
+                    int from = Math.round(cuts[k] * s);
+                    int to = Math.round(cuts[k + 1] * s);
+                    if (to > from) {
+                        found[kept++] = from;
+                        found[kept++] = to;
+                    }
+                }
+                spans = java.util.Arrays.copyOf(found, kept);
+            }
+            if (!java.util.Arrays.equals(spans, previous)) {
+                for (int k = 0; k + 1 < previous.length; k += 2) {
+                    this.fill(previous[k], runFrom, previous[k + 1], row, argb);
+                }
+                previous = spans;
+                runFrom = row;
+            }
+        }
+        this.pop();
+    }
+
     /** {@code text} shortened with "..." until it fits {@code width} pixels. */
     default String fit(String text, int width) {
         if (this.width(text) <= width) {

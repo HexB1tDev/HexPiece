@@ -32,9 +32,20 @@ public final class SwordRules {
     /** Blocks a tick, least to full charge. */
     public static final double SLASH_SPEED = 1.8;
     public static final double SLASH_SPEED_MAX = 4.0;
-    /** The slash's thickness (blocks), least to full height: it hits what this plane passes through, and cuts the blocks it passes. */
+    /**
+     * The slash's thickness across its flight (blocks): it hits what this wall passes through, and cuts the blocks it passes. 2.2.4 (the
+     * owner: "it's not about just being tall. It's meant to be like an energy wave ... see Mihawk's energy projectile from his blade. It is
+     * much bigger than that, and it's thick", and the manga's panel: a wave of light tearing up out of the ground): the wave has a body
+     * ({@link SlashMesh}), {@link #SLASH_SIDE} of its height thick each side where it leaves the ground (so 9 blocks across at full
+     * charge), thinning to its peak ({@link #slashThicknessAt}); the trench it cuts is as wide as the body at each height. Never under
+     * {@link #SLASH_THICKNESS}.
+     */
     public static final double SLASH_THICKNESS = 0.6;
-    public static final double SLASH_THICKNESS_MAX = 1.8;
+    public static final double SLASH_SIDE = 0.07;
+    public static final double SLASH_THICKNESS_MAX = 2 * SLASH_SIDE * SLASH_HEIGHT_MAX;
+    /** The wave's shape, in its height: how far its leading edge stands ahead of the cutting line and its back slope runs behind it. */
+    public static final double SLASH_FRONT = 0.18;
+    public static final double SLASH_BACK = 0.48;
     public static final int SLASH_COOLDOWN = 60;
     /** A captain's slash stays the size it was (a pirate captain is not to carve the world). */
     public static final double NPC_SLASH_HEIGHT_MAX = 6.0;
@@ -67,10 +78,19 @@ public final class SwordRules {
         return height / 2.0 - 1.6 - Math.min(2.5, height * 0.1);
     }
 
-    /** How thick a slash this tall is. */
+    /** How thick (across its flight, where it leaves the ground) a slash this tall is: its body's width there. */
     public static double slashThickness(double height) {
-        double t = Math.max(0.0, Math.min(1.0, (height - SLASH_HEIGHT_MIN) / (SLASH_HEIGHT_MAX - SLASH_HEIGHT_MIN)));
-        return SLASH_THICKNESS + (SLASH_THICKNESS_MAX - SLASH_THICKNESS) * t;
+        return Math.max(SLASH_THICKNESS, 2.0 * SLASH_SIDE * height);
+    }
+
+    /** The share of that thickness the wave has {@code v} of the way up (0 the trench, 1 the peak). */
+    public static double slashProfile(double v) {
+        return Math.pow(Math.max(0.0, 1.0 - Math.max(0.0, v)), 0.6);
+    }
+
+    /** How thick the wave (and its trench) is {@code v} of the way up: the body's width there, never under a block's tenth. */
+    public static double slashThicknessAt(double height, double v) {
+        return Math.max(0.1, slashThickness(height) * slashProfile(v));
     }
 
     /**

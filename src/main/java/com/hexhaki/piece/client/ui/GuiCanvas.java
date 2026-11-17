@@ -47,6 +47,11 @@ public final class GuiCanvas implements UiCanvas {
     }
 
     @Override
+    public void batch(Runnable draws) {
+        this.graphics.m_286007_(draws);
+    }
+
+    @Override
     public void push() {
         this.graphics.m_280168_().m_85836_();
     }

@@ -41,6 +41,8 @@ import net.minecraftforge.fml.common.Mod;
  * duplication. Pirate terrain destruction must also respect the server's mob-griefing settings. Bound both block checks and block
  * changes per tick, deduplicate affected positions and impose finite projectile range and lifetime."
  * <ul>
+ *   <li>2.2.4: the wave's body ({@code SlashMesh}) is the plane's thickness: {@link SwordRules#slashThicknessAt} at each height (9 blocks
+ *       in the ground at full charge, thinning to its peak); each row of the trench is that wide.</li>
  *   <li>The slash is a vertical plane {@code height} tall and {@link SwordRules#slashThickness} thick, standing up from a little under
  *       its owner's feet ({@link SwordRules#slashCentre}; 2.2.0: up to 64 blocks tall, flying up to 220), flying {@code speed} blocks a
  *       tick for {@code range} blocks; everything whose body that plane passes through is hit
@@ -59,7 +61,8 @@ import net.minecraftforge.fml.common.Mod;
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class HakiSlashes {
-    static final int LINGER = 40;
+    /** Ticks a slash may keep cutting after its flight (2.2.4: the wave's wider trench takes longer within the same budgets). */
+    static final int LINGER = 120;
     private static final List<Slash> ACTIVE = new ArrayList<>();
     private static int nextId = 1;
 
@@ -230,13 +233,20 @@ public final class HakiSlashes {
             sx /= sl;
             sz /= sl;
         }
-        int across = Math.max(1, (int) Math.ceil(slash.thick / 0.5));
+        // 2.2.4: each row as wide as the wave's body at its height (widest in the ground, thin at the peak: SwordRules.slashThicknessAt)
+        double[] widths = new double[rows];
+        int[] acrosses = new int[rows];
+        for (int row = 0; row < rows; row++) {
+            widths[row] = SwordRules.slashThicknessAt(slash.height, (row + 0.5) / rows);
+            acrosses[row] = Math.max(1, (int) Math.ceil(widths[row] / 0.5));
+        }
         for (int k = 1; k <= samples; k++) {
             Vec3 c = a.m_82549_(b.m_82546_(a).m_82490_(k / (double) samples));
             for (int row = 0; row < rows; row++) {
                 double y = c.f_82480_ + bottom + (row + 0.5) * rowHeight;
+                int across = acrosses[row];
                 for (int w = 0; w < across; w++) {
-                    double off = across == 1 ? 0.0 : (w / (double) (across - 1) - 0.5) * slash.thick;
+                    double off = across == 1 ? 0.0 : (w / (double) (across - 1) - 0.5) * widths[row];
                     BlockPos pos = BlockPos.m_274561_(c.f_82479_ + sx * off, y, c.f_82481_ + sz * off);
                     long key = pos.m_121878_();
                     if (slash.seen.add(key)) {

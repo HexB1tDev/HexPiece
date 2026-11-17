@@ -31,6 +31,7 @@ public final class SwordTests {
         rules();
         koiguchi();
         bigSlash();
+        wave();
         Check.done("SwordTests");
     }
 
@@ -214,5 +215,64 @@ public final class SwordTests {
         Check.that(SwordRules.dropChance(64) <= 0.07, "a giant cut drops few items (vanilla's explosion rule)");
         Check.that(SwordRules.slashThickness(64) > SwordRules.slashThickness(2), "a taller slash is a wider gash");
         Check.that(SwordRules.NPC_SLASH_HEIGHT_MAX <= 8 && SwordRules.NPC_SLASH_RANGE_MAX <= 40, "a pirate captain's slash stays small");
+    }
+
+    /**
+     * 2.2.4: the Haki slash as the manga's energy wave: its solid quads all face the eye (they survive back-face culling: no holes),
+     * its glow is there, its body is exactly as thick as the trench the server cuts at every height, and it reaches from the trench
+     * to its peak.
+     */
+    static void wave() {
+        for (double height : new double[] {2.0, 6.0, 24.0, 64.0}) {
+            for (double[] eye : new double[][] {{-30, 10, -40}, {-12, 3, -2}, {40, 30, 0}, {10, 2, 60}}) {
+                com.hexhaki.piece.sword.SlashMesh.Quads solid = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                com.hexhaki.piece.sword.SlashMesh.Quads glow = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                double[] base = {20 - eye[0], -2 - eye[1], 0 - eye[2]};
+                com.hexhaki.piece.sword.SlashMesh.Frame frame = com.hexhaki.piece.sword.SlashMesh.Frame.of(base, 1, 0, height, 1.0);
+                com.hexhaki.piece.sword.SlashMesh.wave(solid, glow, frame, 9L, 0x2CF6D2, 12.0, 1.0);
+                Check.that(solid.n > 400 && glow.n > 100, "a " + height + " wave has a body and a glow");
+                double top = -Double.MAX_VALUE;
+                double bottom = Double.MAX_VALUE;
+                for (int q = 0; q < solid.n; q++) {
+                    double[][] p = new double[4][];
+                    for (int k = 0; k < 4; k++) {
+                        p[k] = new double[] {solid.v[q * 12 + k * 3], solid.v[q * 12 + k * 3 + 1], solid.v[q * 12 + k * 3 + 2]};
+                    }
+                    // the two triangles the game draws of it, each a front face (or too thin to see)
+                    for (int[] t : new int[][] {{0, 1, 2}, {0, 2, 3}}) {
+                        Check.that(awayShare(p[t[0]], p[t[1]], p[t[2]]) < 2e-3, "every triangle of the wave's solid faces the eye (" + height + ")");
+                    }
+                    for (int k = 0; k < 4; k++) {
+                        top = Math.max(top, solid.v[q * 12 + k * 3 + 1] - base[1]);
+                        bottom = Math.min(bottom, solid.v[q * 12 + k * 3 + 1] - base[1]);
+                    }
+                }
+                Check.that(top >= height * 0.98 && bottom >= -0.2 - height * 0.01, "the wave rises from its trench to its peak (" + height + ")");
+            }
+            com.hexhaki.piece.sword.SlashMesh.Frame frame = com.hexhaki.piece.sword.SlashMesh.Frame.of(new double[3], 0, 1, height, 1.0);
+            for (double v = 0.0; v <= 1.0; v += 0.05) {
+                Check.near(frame.across(v) * 2.0, SwordRules.slashThicknessAt(height, v), 1e-9, "the body is the trench's width " + v + " up");
+                Check.that(frame.front(v) > frame.back(v), "the body has length along its flight " + v + " up");
+            }
+            Check.that(SwordRules.slashThicknessAt(height, 0.0) >= SwordRules.slashThicknessAt(height, 0.5)
+                && SwordRules.slashThicknessAt(height, 0.5) >= SwordRules.slashThicknessAt(height, 0.95), "widest in the ground, thin at the peak");
+        }
+        Check.near(SwordRules.slashThickness(64), 2 * SwordRules.SLASH_SIDE * 64, 1e-9, "a full wave is 9 blocks thick in the ground");
+    }
+
+    /** How far a triangle turns its back on the eye at the origin: 0 facing it (or edge on, or a sliver), up to 1 facing away. */
+    static double awayShare(double[] a, double[] b, double[] c) {
+        double nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+        double ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+        double nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        double mx = a[0] + b[0] + c[0];
+        double my = a[1] + b[1] + c[1];
+        double mz = a[2] + b[2] + c[2];
+        double n = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        double m = Math.sqrt(mx * mx + my * my + mz * mz);
+        if (n < 1e-12 || m < 1e-12) {
+            return 0.0;
+        }
+        return Math.max(0.0, (nx * mx + ny * my + nz * mz) / (n * m));
     }
 }

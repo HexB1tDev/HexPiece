@@ -173,9 +173,7 @@ public final class CreationView {
             int cx = (b[0] + b[2]) / 2;
             int figureTop = b[1] + 14;
             int figureHeight = Math.max(40, b[3] - b[1] - 62);
-            PirateUi.figure(c, cx, figureTop, figureHeight, i == 1, 0xFFE2B48A, i == 0 ? 0xFF3C6EA8 : 0xFFB04C7A, 0xFF2E3A58);
-            int head = Math.max(8, figureHeight / 4);
-            c.face(cx - head / 2, figureTop, head);
+            Silhouette.draw(c, cx, figureTop, figureHeight, i == 1);
             c.centered(options[i].display(), cx, b[3] - 40, PirateUi.INK, false);
             c.centered(c.fit(lines[i], b[2] - b[0] - 10), cx, b[3] - 26, PirateUi.INK_SOFT, false);
         }

@@ -5,4 +5,9 @@ public interface Holder<T> {
     /** unwrapKey (4.2.1) */ default java.util.Optional<net.minecraft.resources.ResourceKey<T>> m_203543_() { throw new UnsupportedOperationException(); }
     /** is(TagKey) (4.1.1: a wet biome) */
     boolean m_203656_(net.minecraft.tags.TagKey<?> tag);
+
+    /** Holder.Reference (2.2.4: SoundEvents' holders) */
+    class Reference<T> implements Holder<T> {
+        public boolean m_203656_(net.minecraft.tags.TagKey<?> tag) { throw new UnsupportedOperationException(); }
+    }
 }

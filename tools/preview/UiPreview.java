@@ -101,15 +101,20 @@ public class UiPreview {
     }
 
     static void save(String dir, String name, int w, int h, java.util.function.Consumer<UiCanvas> draw) throws Exception {
+        save(dir, name, w, h, 2, draw);
+    }
+
+    /** {@code up}: the image's pixels made {@code up} x {@code up} blocks (1 when the drawing scales itself). */
+    static void save(String dir, String name, int w, int h, int up, java.util.function.Consumer<UiCanvas> draw) throws Exception {
         BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 8));
         draw.accept(new ImageCanvas(g));
         g.dispose();
-        BufferedImage big = new BufferedImage(w * 2, h * 2, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage big = new BufferedImage(w * up, h * up, BufferedImage.TYPE_INT_ARGB);
         Graphics2D bg = big.createGraphics();
-        bg.drawImage(image.getScaledInstance(w * 2, h * 2, Image.SCALE_REPLICATE), 0, 0, null);
+        bg.drawImage(image.getScaledInstance(w * up, h * up, Image.SCALE_REPLICATE), 0, 0, null);
         bg.dispose();
         ImageIO.write(big, "png", new File(dir, name + ".png"));
     }
@@ -129,19 +134,57 @@ public class UiPreview {
             int s = step;
             save(dir, "creation-" + step, w, h, c -> CreationView.draw(c, layout, state, s == 2 ? "pick:0" : "next", 12.0 + s));
         }
-        LogbookView.Layout log = LogbookView.Layout.of(w, h);
-        for (int tab = 0; tab < LogbookView.TABS.length; tab++) {
-            int t = tab;
-            save(dir, "logbook-" + tab, w, h, c -> LogbookView.draw(c, log, LogbookView.sample(t), "tab:" + ((t + 1) % LogbookView.TABS.length), 7.0));
+        // 2.2.4: the silhouettes as the game draws them at GUI scale 3 (a 1080p screen): quarter-pixel rows on real pixels
+        CreationView.State genders = new CreationView.State();
+        genders.gender = Gender.MALE;
+        CreationView.Layout small = CreationView.Layout.of(427, 240);
+        save(dir, "creation-0-x3", 427 * 3, 240 * 3, 1, c -> {
+            c.scale(3.0F);
+            CreationView.draw(c, small, genders, "pick:1", 12.0);
+        });
+        // 2.2.4: the one menu: the overview, Style & Haki, the Devil Fruit (a kit fruit and the Nika fruit), at GUI scale 2 and on a
+        // small screen (427 x 240, GUI scale 3 at 720p)
+        int[][] sizes = {{640, 360}, {427, 240}};
+        String[] tags = {"", "-small"};
+        for (int z = 0; z < sizes.length; z++) {
+            int lw = sizes[z][0];
+            int lh = sizes[z][1];
+            LogbookView.Layout log = LogbookView.Layout.of(lw, lh);
+            Object[][] pages = {
+                {"logbook-overview", 0, false, 0, "tab:1"}, {"logbook-marine", 1, false, 0, "close"},
+                {"logbook-style-haki", 1, false, 6, "row:4"}, {"logbook-haki-bind", 1, false, 13, "slot:2"},
+                {"logbook-fruit-kit", 2, false, 1, "row:2"}, {"logbook-fruit-nika", 2, true, 4, "buy"}};
+            for (Object[] page : pages) {
+                int tab = (Integer) page[1];
+                LogbookView.Data data = LogbookView.sample(page[0].equals("logbook-marine") ? 1 : tab == 1 ? 0 : 2, (Boolean) page[2]);
+                LogbookView.State state = new LogbookView.State(page[0].equals("logbook-marine") ? 0 : tab);
+                state.picked = (Integer) page[3];
+                java.util.List<LogbookView.Row> rows = LogbookView.rows(data.page(state.tab));
+                if (state.picked > 0) {
+                    state.scroll = Math.min(LogbookView.maxScroll(log, rows), Math.max(0, state.picked - 6));
+                }
+                if (page[0].equals("logbook-haki-bind")) {
+                    state.flashed = 1;
+                    state.flashedAt = 7.0;
+                }
+                String hover = (String) page[4];
+                save(dir, page[0] + tags[z], lw, lh, c -> LogbookView.draw(c, log, data, state, hover, 7.2));
+            }
         }
-        // 2.1.4: the Swordsman's page of the log
-        int[] mastery = new int[FightingStyle.values().length];
-        mastery[FightingStyle.SWORDSMAN.ordinal()] = 380;
+        // the Swordsman's moves on the Style & Haki page
+        int[] swordMastery = new int[FightingStyle.values().length];
+        swordMastery[FightingStyle.SWORDSMAN.ordinal()] = 380;
         com.hexhaki.piece.PieceProfile swordsman = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE, FightingStyle.SWORDSMAN, true,
-            mastery, 48_000_000L);
-        LogbookView.Data swordLog = new LogbookView.Data("HexB1t", swordsman, new int[] {640, 310, 120}, new String[] {"Adept", "Novice",
-            "Awakened"}, "", 0, 2);
-        save(dir, "logbook-swordsman", w, h, c -> LogbookView.draw(c, log, swordLog, "tab:3", 7.0));
+            swordMastery, 48_000_000L);
+        LogbookView.Data base = LogbookView.sample(0, false);
+        java.util.List<LogbookView.Section> swordPage = new java.util.ArrayList<>(base.styleHaki());
+        swordPage.set(0, LogbookView.style(swordsman));
+        LogbookView.Data swordLog = new LogbookView.Data("HexB1t", swordsman, base.haki(), base.hakiRanks(), "", 0, swordPage, java.util.List.of(),
+            base.slotKeys(), base.slotNames(), base.slotAbilities(), -1);
+        LogbookView.State swordState = new LogbookView.State(LogbookView.STYLE_HAKI);
+        swordState.picked = 4;
+        LogbookView.Layout swordLayout = LogbookView.Layout.of(640, 360);
+        save(dir, "logbook-swordsman", 640, 360, c -> LogbookView.draw(c, swordLayout, swordLog, swordState, "row:2", 7.0));
         // 2.2.2: the one abilities panel on the left (HexGhoul's), in each mode, at the game's scale over a scene and a chat
         java.util.Map<String, String> keys = java.util.Map.of("attack", "LMB", "use", "RMB", "special_a", "Y", "special_b", "U", "toggle", "R",
             "armament", "Ctrl+R", "observation", "V", "menu", "P");
