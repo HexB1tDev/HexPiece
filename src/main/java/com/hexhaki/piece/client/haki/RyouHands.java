@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 /**
  * 2.1.3: Ryou's hands (the owner: "Ryou should look like blackened hands with a strong, clean glow outlining their shape. Keep the black
@@ -46,6 +47,10 @@ public final class RyouHands {
     static final float EDGE = 0.55F * PX;
     static final float LIFT = 0.06F * PX;
     static final int FULL_BRIGHT = 0xF000F0;
+    /** 2.3.4: the fist's glow: a soft round sprite (white, its alpha falling off to the rim), and its two discs' radii (blocks). */
+    static final ResourceLocation GLOW = ResourceLocation.m_214293_("hexhaki", "textures/piece/particle/mote.png");
+    static final float HALO_INNER = 4.2F * PX;
+    static final float HALO_OUTER = 7.5F * PX;
 
     private RyouHands() {
     }
@@ -57,7 +62,9 @@ public final class RyouHands {
      */
     public static void coating(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
                                AbstractClientPlayer player, boolean right) {
-        if (!arm.f_104207_) {
+        // 2.3.4 (the owner: "it's not the actual skin blackening"): the hands are blackened in the skin itself (HakiSkin); this coat
+        // is only drawn where that copy could not be made
+        if (!arm.f_104207_ || HakiSkin.blackened(player)) {
             return;
         }
         boolean slim = "slim".equals(player.m_108564_());
@@ -147,7 +154,8 @@ public final class RyouHands {
         float half = slim ? 1.5F * PX : 2.0F * PX;
         float centre = (slim ? 0.5F : 1.0F) * PX * (right ? -1.0F : 1.0F);
         float[] box = {centre / PX - half / PX, centre / PX + half / PX};
-        VertexConsumer buffer = buffers.m_6299_(RenderType.m_110470_(WHITE));
+        // 2.3.4: emissive (full bright, no shading, no depth written: the hand in front still hides what is behind it)
+        VertexConsumer buffer = buffers.m_6299_(RenderType.m_234338_(WHITE));
         float r = ((color >> 16) & 255) / 255.0F;
         float g = ((color >> 8) & 255) / 255.0F;
         float b = (color & 255) / 255.0F;
@@ -187,7 +195,28 @@ public final class RyouHands {
         for (float[][] rim : rims) {
             band(last, buffer, bend, box, rim, new float[] {1, 1, 1, 1}, 0, 1, 0, r, g, b, strength);
         }
+        // 2.3.4 (the owner: "the fists are not glowing... its just an outline"): the fist glows, a soft light round it facing the
+        // eye (a halo: the fist in front hides its middle), a tight bright one and a wide faint one, breathing with the outline
+        float[] fist = bent(bend, box[0], box[1], centre, FIST - 1.6F * PX, 0.0F);
+        VertexConsumer glow = buffers.m_6299_(RenderType.m_234338_(GLOW));
+        halo(last, glow, fist, HALO_INNER, r, g, b, 0.85F * strength);
+        halo(last, glow, fist, HALO_OUTER, r, g, b, 0.42F * strength);
         pose.m_85849_();
+    }
+
+    /** A soft disc of light {@code radius} (blocks) round {@code at} (arm space), facing the eye whichever way the arm turns. */
+    static void halo(PoseStack.Pose pose, VertexConsumer buffer, float[] at, float radius, float r, float g, float b, float alpha) {
+        Matrix4f matrix = pose.m_252922_();
+        Matrix4f inverse = new Matrix4f(matrix).invert();
+        // the centre where the eye sees it, the disc laid square to the view there, its corners taken back into the arm's space
+        Vector3f centre = matrix.transformPosition(new Vector3f(at[0], at[1], at[2]));
+        Vector3f facing = inverse.transformDirection(new Vector3f(0.0F, 0.0F, 1.0F));
+        float[][] corners = {{-1, -1, 0, 1}, {1, -1, 1, 1}, {1, 1, 1, 0}, {-1, 1, 0, 0}};
+        for (float[] corner : corners) {
+            Vector3f p = inverse.transformPosition(new Vector3f(centre.x + corner[0] * radius, centre.y + corner[1] * radius, centre.z));
+            buffer.m_252986_(matrix, p.x, p.y, p.z).m_85950_(r, g, b, Math.min(1.0F, alpha)).m_7421_(corner[2], corner[3])
+                .m_86008_(OverlayTexture.f_118083_).m_85969_(FULL_BRIGHT).m_252939_(pose.m_252943_(), facing.x, facing.y, facing.z).m_5752_();
+        }
     }
 
     /**

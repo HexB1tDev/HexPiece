@@ -1,6 +1,23 @@
 # HexPiece: handoff after 2.3.2 (the owner's sword bugs, one animation set for every blade, natural arms, the victim's split view, NPC gestures)
 
-## Session 3, part 2: 2.3.3 (the owner's in-game bug reports, read this first)
+## Session 3, part 3: 2.3.4 (newest)
+- The owner on 2.3.3's hands (screenshot, their own skin showing again, so the skin report looks resolved): "its not glowing and it's
+  not the actual skin blackening, look at Nika, how the skin turns white, why not use that for haki? Also the fists are not
+  glowing... its just an outline".
+- `client/haki/HakiSkin` + pure `haki/HandCoat`: as the original's `GearJacketSkin` (Gear 5's white skin: the skin read back from its
+  texture, recoloured into a DynamicTexture), while `RemoteHakiStates` says armament or ryuo, the player's skin is a copy with the
+  hands blackened (arm rows 6-11 of 12: 15/45/80/100 %, the fist's end, both layers; slim, HD and 64x32 skins). The patch
+  (`hakiSkinHook`) passes every result of `GearJacketSkin.resolve` (the mixin on getSkinTextureLocation) through
+  `HakiSkin.resolve`; Gear's own `dynamic/` skins are left alone. build.py PATCHED lists GearJacketSkin.class. `RyouHands.coating`
+  only draws the old box when the copy could not be made.
+- `RyouHands.glow`: the outline bands now `entityTranslucentEmissive` (m_234338_, the original's); plus `halo`: two camera-facing
+  discs of `particle/mote.png` (radii 4.2 and 7.5 px) at the fist's middle, built in view space and mapped back through the inverse
+  pose matrix. `tools/ryou_preview.py` renders all of it; judged.
+- New stubs (each a call the original makes): GL11, GlStateManager._bindTexture, RenderSystem.isOnRenderThread,
+  TextureManager.release, ResourceLocation(String, String), RenderType.entityTranslucentEmissive, Matrix4f.transformDirection.
+- Still open: the Fishman Karate white screen (ask the owner when it happens; a full screenshot).
+
+## Session 3, part 2: 2.3.3 (the owner's in-game bug reports)
 The owner tested 2.3.2 in game and reported, in their words: "the hockey armament in Rio [Ryou] is completely coding the hands ... I
 said the outline with the color and the rest black. And the outline isn't even covering the inner part of the arm"; "The player's
 skin is completely fucked ... my skin is gone every time I try this mod. My arm in first person is gone, sort of, partially"; "the

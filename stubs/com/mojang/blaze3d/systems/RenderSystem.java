@@ -13,6 +13,7 @@ public final class RenderSystem {
     public static void disableCull() { throw new UnsupportedOperationException(); }
     public static void enableCull() { throw new UnsupportedOperationException(); }
     public static void colorMask(boolean red, boolean green, boolean blue, boolean alpha) { throw new UnsupportedOperationException(); }
+    /** 2.3.4 */ public static boolean isOnRenderThread() { throw new UnsupportedOperationException(); }
     public static void depthFunc(int function) { throw new UnsupportedOperationException(); }
     public static void setShader(java.util.function.Supplier<net.minecraft.client.renderer.ShaderInstance> shader) { throw new UnsupportedOperationException(); }
 }

@@ -19,6 +19,9 @@ PX = 1.0 / 16.0
 WRIST, LIT, FIST = 6.5, 7.7, 10.0          # pixels below the shoulder pivot
 COAT_TOP = 5.4                             # 2.1.9: where the hand's black coat begins to fade in up the wrist
 COAT, LIFT, EDGE = 0.35, 0.06, 0.55         # 2.3.3: the coat off the hand, the outline off the coat, its band's width (pixels)
+HALO_INNER, HALO_OUTER = 4.2, 7.5             # 2.3.4: the fist's glow discs' radii (pixels)
+SPRITE = np.asarray(Image.open(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)), "..",
+                    "src/main/resources/assets/hexhaki/textures/piece/particle/mote.png")).convert("RGBA"), float)[:, :, 3] / 255.0
 
 
 def bent(bend_axis, amount, min_x, max_x, q):
@@ -116,7 +119,8 @@ class Canvas:
             a = (blend[0] * w0 + blend[1] * w1 + blend[2] * w2)[..., None]
             mixed = self.color[region] * (1 - a) + np.array(rgb, float)[None, None, :] * a
             self.color[region] = np.where(visible[..., None], mixed, self.color[region])
-            self.depth[region] = np.where(visible, d, self.depth[region])
+            if write_depth:
+                self.depth[region] = np.where(visible, d, self.depth[region])
         elif additive:
             k = intensity[0] * w0 + intensity[1] * w1 + intensity[2] * w2
             add = np.array(rgb, float)[None, None, :] * k[..., None]
@@ -125,6 +129,24 @@ class Canvas:
             self.color[region] = np.where(visible[..., None], np.array(rgb, float)[None, None, :], self.color[region])
             if write_depth:
                 self.depth[region] = np.where(visible, d, self.depth[region])
+
+    def disc(self, cx, cy, depth, radius, rgb, alpha):
+        """The mote sprite (textures/piece/particle/mote.png) as a disc facing the eye: its alpha profile by distance from the middle,
+        times alpha; depth tested at its middle's depth, not written; pixels under a tenth of opacity dropped (the shader's discard)."""
+        x0, x1 = max(int(cx - radius), 0), min(int(cx + radius) + 1, self.w - 1)
+        y0, y1 = max(int(cy - radius), 0), min(int(cy + radius) + 1, self.h - 1)
+        if x0 > x1 or y0 > y1:
+            return
+        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+        u = (xs - cx) / (2 * radius) + 0.5
+        v = (ys - cy) / (2 * radius) + 0.5
+        inside = (u >= 0) & (u < 1) & (v >= 0) & (v < 1)
+        sw, sh = SPRITE.shape
+        a = SPRITE[np.clip((v * sh).astype(int), 0, sh - 1), np.clip((u * sw).astype(int), 0, sw - 1)] * alpha
+        region = (slice(y0, y1 + 1), slice(x0, x1 + 1))
+        ok = inside & (a >= 0.1) & (depth <= self.depth[region] + 1e-6)
+        mixed = self.color[region] * (1 - a[..., None]) + np.array(rgb, float)[None, None, :] * a[..., None]
+        self.color[region] = np.where(ok[..., None], mixed, self.color[region])
 
     def image(self):
         return Image.fromarray((self.color * 255).clip(0, 255).astype(np.uint8))
@@ -145,11 +167,12 @@ def draw_arm(canvas, view, place, bend_axis, bend, slim, right, color, pulse=1.0
         w = view @ (place @ np.array(n, float))
         return 0.55 + 0.45 * max(0.0, -w[2])
 
-    # 2.1.9: the arm in its own sleeve and skin; the coat is black over the hand only (the owner: "The whole arm is black instead of just
-    # the hands"), fading in over the wrist from COAT_TOP
-    sleeve, skin, coat = (0.86, 0.84, 0.78), (0.82, 0.62, 0.5), (0.07, 0.07, 0.09)
-    fade = tuple(0.5 * (a + b) for a, b in zip(skin, coat))
-    for y0, y1, base in ((-2, 4, sleeve), (4, COAT_TOP, skin), (COAT_TOP, WRIST, fade), (WRIST, 10, coat)):
+    # 2.3.4: the arm in its own sleeve and skin, the hand blackened in the skin itself (haki/HandCoat: the arm's rows 6..11, 15%, 45%,
+    # 80%, then black; each colour channel c -> c + (0.1 c + 6/255 - c) * amount)
+    sleeve, skin = (0.86, 0.84, 0.78), (0.82, 0.62, 0.5)
+    rows = [(-2, 4, sleeve, 0.0), (4, 5, skin, 0.15), (5, 6, skin, 0.45), (6, 7, skin, 0.8), (7, 10, skin, 1.0)]
+    for y0, y1, base0, amount in rows:
+        base = tuple(c + (0.1 * c + 6 / 255 - c) * amount for c in base0)
         for pts, n in box_faces(min_x, max_x, y0, y1, -2, 2):
             pts, n = oriented((pts, n))
             sp = [project(p) for p in pts]
@@ -163,8 +186,13 @@ def draw_arm(canvas, view, place, bend_axis, bend, slim, right, color, pulse=1.0
     for pts, n, lit in outline(min_x, max_x):
         sp = [project(q) for q in pts]
         k = [min(1.0, pulse * lit[i]) for i in range(4)]
-        canvas.tri([sp[0], sp[1], sp[2]], rgb, cull_back=False, blend=[k[0], k[1], k[2]])
-        canvas.tri([sp[0], sp[2], sp[3]], rgb, cull_back=False, blend=[k[0], k[2], k[3]])
+        canvas.tri([sp[0], sp[1], sp[2]], rgb, cull_back=False, blend=[k[0], k[1], k[2]], write_depth=False)
+        canvas.tri([sp[0], sp[2], sp[3]], rgb, cull_back=False, blend=[k[0], k[2], k[3]], write_depth=False)
+    # 2.3.4: the fist's glow (RyouHands.halo): two discs of the mote sprite facing the eye, at the fist's middle, depth tested, no depth
+    # written (the fist hides their middles), alpha blended
+    c = project((centre, FIST - 1.6, 0.0))
+    for radius, alpha in ((HALO_INNER, 0.85), (HALO_OUTER, 0.42)):
+        canvas.disc(c[0], c[1], c[2], radius * scale, rgb, alpha * pulse)
 
 
 def outline(min_x, max_x):

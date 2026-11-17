@@ -81,6 +81,11 @@ public final class PiecePatch implements Opcodes {
     static final String GENERATE = "(FIJZ)Ljava/util/List;";
     /** HakiVfx helpers the new painters reuse (access widened only, bodies untouched). */
     static final String[] VFX_WIDENED = {"rageBeam", "beam", "add", "fx", "play", "playAtWorld", "playAtFixed", "particleTex"};
+    /** 2.3.4: the original's skin swap (Gear 5's white skin) and HexPiece's Armament hands on it. */
+    static final String JACKET = "com/hexhaki/client/devilfruit/render/GearJacketSkin";
+    static final String HAKI_SKIN = "com/hexhaki/piece/client/haki/HakiSkin";
+    static final String SKIN_DESC = "(Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/resources/ResourceLocation;)"
+        + "Lnet/minecraft/resources/ResourceLocation;";
     /** 2.3.3: the original's other bolt painter, handed to HakiLightning.fxBolt. */
     static final String HAKI_FX = "com/hexhaki/client/vfx/HakiFx";
     static final String FX_BOLT = "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;FIIIII)V";
@@ -239,6 +244,9 @@ public final class PiecePatch implements Opcodes {
         }
         entries.put(MOD + ".class", transform(entries.get(MOD + ".class"), PiecePatch::bootstrap));
         entries.put(VFX + ".class", transform(entries.get(VFX + ".class"), PiecePatch::lightningPainters));
+        // 2.3.4: every skin the original's GearJacketSkin.resolve hands back goes through HakiSkin.resolve (Armament blackens the
+        // hands in the skin itself, as Gear 5 whitens it)
+        entries.put(JACKET + ".class", transform(entries.get(JACKET + ".class"), PiecePatch::hakiSkinHook));
         // 2.3.3: HakiFx's bolt (the tap release's, King's Grip's, Thragg's lightning) is the 3D lightning too
         entries.put(HAKI_FX + ".class", transform(entries.get(HAKI_FX + ".class"),
             node -> trampoline(method(node, "bolt", FX_BOLT), LIGHTNING, "fxBolt")));
@@ -368,6 +376,25 @@ public final class PiecePatch implements Opcodes {
         }
         stormHook(method(node, "conquerorRelease", "(FIJ)Lcom/lowdragmc/photon/client/fx/FX;"));
         conquerorTint(node);
+    }
+
+    /** 2.3.4: before each return of {@code GearJacketSkin.resolve(player, skin)}: {@code result = HakiSkin.resolve(player, result)}. */
+    static void hakiSkinHook(ClassNode node) {
+        MethodNode method = method(node, "resolve", SKIN_DESC);
+        int hooks = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn.getOpcode() == ARETURN) {
+                InsnList call = new InsnList();
+                call.add(new VarInsnNode(ALOAD, 0));
+                call.add(new InsnNode(SWAP));
+                call.add(new MethodInsnNode(INVOKESTATIC, HAKI_SKIN, "resolve", SKIN_DESC, false));
+                method.instructions.insertBefore(insn, call);
+                hooks++;
+            }
+        }
+        if (hooks < 2) {
+            throw new AssertionError("expected the returns of GearJacketSkin.resolve, found " + hooks);
+        }
     }
 
     /**

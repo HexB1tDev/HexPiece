@@ -9,4 +9,5 @@ public abstract class RenderType {
     /** entityCutoutNoCull(texture) (2.1.4) */ public static RenderType m_110458_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
     /** entityTranslucent(texture) */ public static RenderType m_110473_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
     /** armorCutoutNoCull (4.0.0: the owner's outfits and masks) */ public static RenderType m_110431_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
+    /** entityTranslucentEmissive(texture) (2.3.4): alpha blended, full bright and unshaded, both faces, depth tested, no depth written */ public static RenderType m_234338_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
 }

@@ -5,4 +5,5 @@ public class ResourceLocation {
     /** fromNamespaceAndPath */ public static ResourceLocation m_214293_(String namespace, String path) { throw new UnsupportedOperationException(); }
     /** getPath */ public String m_135815_() { throw new UnsupportedOperationException(); }
     /** getNamespace */ public String m_135827_() { throw new UnsupportedOperationException(); }
+    /** ResourceLocation(namespace, path) (2.3.4) */ public ResourceLocation(String namespace, String path) { throw new UnsupportedOperationException(); }
 }

@@ -6,6 +6,7 @@ public class GlStateManager {
     /** glBlitFramebuffer (2.3.2) */ public static void _glBlitFrameBuffer(int srcX0, int srcY0, int srcX1, int srcY1, int dstX0, int dstY0, int dstX1,
         int dstY1, int mask, int filter) { throw new UnsupportedOperationException(); }
     /** glGetTexLevelParameteri on the bound texture */ public static int _getTexLevelParameter(int target, int level, int parameter) { throw new UnsupportedOperationException(); }
+    /** glBindTexture (2.3.4: as the original's GearJacketSkin) */ public static void _bindTexture(int texture) { throw new UnsupportedOperationException(); }
     public enum DestFactor {
         ONE, ONE_MINUS_SRC_ALPHA
     }

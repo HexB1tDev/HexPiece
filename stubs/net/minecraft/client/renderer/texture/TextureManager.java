@@ -4,4 +4,5 @@ package net.minecraft.client.renderer.texture;
 public class TextureManager {
     /** register(location, texture) */ public void m_118495_(net.minecraft.resources.ResourceLocation location, AbstractTexture texture) { throw new UnsupportedOperationException(); }
     /** getTexture(location) */ public AbstractTexture m_118506_(net.minecraft.resources.ResourceLocation location) { throw new UnsupportedOperationException(); }
+    /** release(location) (2.3.4) */ public void m_118513_(net.minecraft.resources.ResourceLocation location) { throw new UnsupportedOperationException(); }
 }

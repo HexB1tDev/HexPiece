@@ -11,7 +11,29 @@ public final class RyouTests {
         palette();
         bend();
         tint();
+        handCoat();
         Check.done("RyouTests");
+    }
+
+    /** 2.3.4: Armament blackens the hand in the skin itself: the arm's lowest rows and the fist's end, both layers, nothing else. */
+    static void handCoat() {
+        java.util.function.IntBinaryOperator wide = (x, y) -> Math.round(com.hexhaki.piece.haki.HandCoat.amount(x, y, 64, 64, false) * 100);
+        Check.that(wide.applyAsInt(44, 31) == 100 && wide.applyAsInt(40, 29) == 100, "the right hand's last rows are black");
+        Check.that(wide.applyAsInt(44, 20) == 0 && wide.applyAsInt(44, 25) == 0, "the arm above the wrist keeps its skin");
+        Check.that(wide.applyAsInt(44, 27) == 45 && wide.applyAsInt(44, 28) == 80, "fading in over the wrist");
+        Check.that(wide.applyAsInt(48, 16) == 100 && wide.applyAsInt(44, 16) == 0, "the fist's end black, the shoulder's top not");
+        Check.that(wide.applyAsInt(36, 63) == 100 && wide.applyAsInt(52, 63) == 100 && wide.applyAsInt(44, 47) == 100,
+            "the left hand and both sleeves too");
+        Check.that(wide.applyAsInt(20, 31) == 0 && wide.applyAsInt(8, 8) == 0 && wide.applyAsInt(4, 31) == 0, "the body, head and legs untouched");
+        Check.that(com.hexhaki.piece.haki.HandCoat.amount(53, 31, 64, 64, true) == 1.0F
+            && com.hexhaki.piece.haki.HandCoat.amount(55, 31, 64, 64, true) == 0.0F, "a slim arm's strip is 14 wide");
+        Check.that(com.hexhaki.piece.haki.HandCoat.amount(88, 62, 128, 128, false) == 1.0F, "a 128 skin scaled");
+        Check.that(com.hexhaki.piece.haki.HandCoat.amount(36, 63, 64, 32, false) == 0.0F
+            && com.hexhaki.piece.haki.HandCoat.amount(44, 31, 64, 32, false) == 1.0F, "an old 64 x 32 skin: the one arm both use");
+        int coated = com.hexhaki.piece.haki.HandCoat.coat(0xFFB08070, 1.0F);
+        Check.that((coated >>> 24) == 0xFF && (coated & 255) < 24 && ((coated >> 16) & 255) < 30, "black, its shading kept faintly");
+        Check.that(com.hexhaki.piece.haki.HandCoat.coat(0x00B08070, 1.0F) >>> 24 == 0, "an empty sleeve pixel stays empty");
+        Check.that(com.hexhaki.piece.haki.HandCoat.coat(0xFFB08070, 0.0F) == 0xFFB08070, "untouched at nothing");
     }
 
     /** 2.3.3: the Conqueror's red particles take the player's Ryou hue, keeping their brightness and alpha. */
