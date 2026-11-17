@@ -90,11 +90,15 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             back(pose, buffers, bladeBuffers, light, player, katana, model, layer, anim, ticks, drawn, firstPerson, partial);
             return;
         }
-        float[] slideOut = drawn ? notoOut(SwordAnims.name(anim, katana), ticks) : null;
-        if (!firstPerson || slideOut != null && drawn) {
+        // 2.3.2 (the owner, of a draw: "pulls sword out, but nothing goes with the arm?"): between its noto beats the blade slides along
+        // the saya's line with the hand, whether or not it is out yet: a draw's blade counts as drawn only once it has left the saya
+        // (its draw tick), and before 2.3.2 it stayed home in the saya all the while the hand drew it out
+        float[] slideOut = notoOut(SwordAnims.name(anim, katana), ticks);
+        boolean sliding = slideOut != null && (drawn || slideOut[0] > 0.0F);
+        if (!firstPerson || sliding) {
             pose.m_85836_();
             saya(pose, player, model, layer, partial);
-            if (!drawn) {
+            if (!drawn && !sliding) {
                 if (!firstPerson) {
                     KatanaRenderer.draw(pose, buffers, katana, false, true, light, 0.0F);
                     // 2.1.5: standing ready, the thumb breaks the saya's seal now and then (sword/Koiguchi)
@@ -115,7 +119,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                 if (!firstPerson) {
                     KatanaRenderer.draw(pose, buffers, katana, false, true, light, 0.0F);
                 }
-                if (slideOut != null) {
+                if (sliding) {
                     // along the saya's own curve, out the interpolated amount
                     float s = KatanaRenderer.SCALE;
                     pose.m_252880_(SORI * s, 0.0F, 0.0F);
@@ -128,7 +132,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             }
             pose.m_85849_();
         }
-        if (drawn && slideOut == null) {
+        if (drawn && !sliding) {
             pose.m_85836_();
             hand(pose, player, model, layer, partial);
             // its black steel only glints (the owner's unsheath reference: white glints running along a black blade)

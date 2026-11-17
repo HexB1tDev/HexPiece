@@ -305,12 +305,29 @@ def densify(beats):
     return out
 
 
+def noto_out(move, t):
+    """Between the move's noto beats, how far out of the saya the blade is at tick t (model px); None outside them."""
+    pairs = getattr(move, "noto", None)
+    if not pairs or not pairs[0][0] <= t <= pairs[-1][0]:
+        return None
+    for (t0, o0), (t1, o1) in zip(pairs, pairs[1:]):
+        if t0 <= t <= t1:
+            return o0 + (o1 - o0) * ((t - t0) / max(1e-9, t1 - t0))
+    return pairs[-1][1]
+
+
+def sliding(move, t):
+    """2.3.2: the blade on the saya's line with the hand (a draw before its draw tick too: it slides out with the arm), as SwordLayer."""
+    out = noto_out(move, t)
+    return out is not None and (move.drawn_at(t) or out > 0.0)
+
+
 def game_blade(move, q, t):
     """The katana's matrix (model px -> E) as the game draws it at tick t: in the hand, except while it slides along the saya's line
     (between its noto beats: drawn out or slid home), where it is laid exactly along the saya's curve, out the interpolated amount, so
     no frame between two ticks can put it through the saya's side (client/sword/SwordLayer does the same from BladePaths.notoOut)."""
     pairs = move.noto
-    if pairs and move.drawn_at(t) and pairs[0][0] <= t <= pairs[-1][0]:
+    if sliding(move, t):
         for (t0, o0), (t1, o1) in zip(pairs, pairs[1:]):
             if t0 <= t <= t1:
                 out = o0 + (o1 - o0) * ((t - t0) / max(1e-9, t1 - t0))
@@ -1107,7 +1124,7 @@ def preview(names, out, frames=9, views=("front", "three", "side"), key="crimson
                 cam = sv.Camera(yaw_of[view], 10.0, scale, tw / 2, th * 0.9)
                 cv = sv.Canvas(tw, th)
                 sv.draw_figure(cv, cam, q)
-                drawn = move.drawn_at(t) if move else False
+                drawn = (move.drawn_at(t) or sliding(move, t)) if move else False
                 if name.endswith("_back"):
                     # 2.2.7: Yoru, on the back in its ropes or in the hand
                     sv.draw_ropes(cv, cam, q)

@@ -58,6 +58,14 @@ public final class ArmorPreview {
                 ATLAS.put(name, ImageIO.read(new ByteArrayInputStream(zip.getInputStream(zip.getEntry(TEXTURES + name + ".png")).readAllBytes())));
             }
         }
+        if (args[0].equals("skins")) {
+            skins(new File(args[1]), java.util.Arrays.copyOfRange(args, 2, args.length), false);
+            return;
+        }
+        if (args[0].equals("outfits")) {
+            skins(new File(args[1]), java.util.Arrays.copyOfRange(args, 2, args.length), true);
+            return;
+        }
         skin = ImageIO.read(new File(args.length > 2 ? args[2] : "art/user_skin.png"));
         if (args[0].equals("icons")) {
             icons(new File(args[1]));
@@ -391,6 +399,31 @@ public final class ArmorPreview {
             }
         }
         write(out, "The owner's One Piece armor: the pack's own model and textures as the game draws them", tiles, labels, 6, tw, th);
+    }
+
+    /** Skins on the player model (their own fit), front and back; {@code outfit}: in the Marine outfit as a Marine wears it. */
+    static void skins(File out, String[] files, boolean outfit) throws Exception {
+        int tw = 200;
+        int th = 300;
+        List<BufferedImage> tiles = new ArrayList<>();
+        List<String> labels = new ArrayList<>();
+        for (String file : files) {
+            BufferedImage s = ImageIO.read(new File(file));
+            boolean slim = (s.getRGB(s.getWidth() * 54 / 64, s.getHeight() * 20 / 64) >>> 24) == 0
+                && (s.getRGB(s.getWidth() * 55 / 64, s.getHeight() * 25 / 64) >>> 24) == 0;
+            for (double[] eye : new double[][] {{0.9, 1.3, 3.3}, {-1.2, 1.4, -3.2}}) {
+                Raster r = new Raster(tw * 2, th * 2, eye, new double[] {0, 1.0, 0}, 40, false, 0, 0xFF2A2F38);
+                HumanoidModel<LivingEntity> body = player(slim);
+                pose(body, "idle");
+                humanoid(r, body, s);
+                if (outfit) {
+                    armor(r, body, OnePieceArmorModel.Style.MARINE, slim, slots(OnePieceArmorModel.Style.MARINE), "marine_outfit");
+                }
+                tiles.add(down(r, tw, th));
+                labels.add(new File(file).getName() + (slim ? " (slim)" : ""));
+            }
+        }
+        write(out, outfit ? "In the Marine outfit" : "Skins", tiles, labels, 10, tw, th);
     }
 
     static BufferedImage down(Raster r, int w, int h) {

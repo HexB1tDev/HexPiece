@@ -21,6 +21,7 @@ import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -35,16 +36,22 @@ import net.minecraftforge.fml.common.Mod;
  */
 public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, PlayerModel<SeaFighter>> {
     private static final ResourceLocation[][] SKINS = new ResourceLocation[2][8];
+    /** 2.3.2: each skin's shut eyes (tools/npc_skins.py: the same face's, from HexGhoul), laid over it while it blinks. */
+    private static final ResourceLocation[][] CLOSED = new ResourceLocation[2][8];
 
     static {
         for (int i = 0; i < 8; i++) {
             SKINS[0][i] = ResourceLocation.m_214293_("hexhaki", "textures/piece/npc/pirate_" + i + ".png");
             SKINS[1][i] = ResourceLocation.m_214293_("hexhaki", "textures/piece/npc/marine_" + i + ".png");
+            CLOSED[0][i] = ResourceLocation.m_214293_("hexhaki", "textures/piece/npc/pirate_" + i + "_closed.png");
+            CLOSED[1][i] = ResourceLocation.m_214293_("hexhaki", "textures/piece/npc/marine_" + i + "_closed.png");
         }
     }
 
     public SeaFighterRenderer(EntityRendererProvider.Context context) {
-        super(context, new Model(context.m_174023_(ModelLayers.f_171162_)), 0.5F);
+        // 2.3.2 (the owner: "the NPCS are all alex"): the slim-armed player model
+        super(context, new Model(context.m_174023_(ModelLayers.f_171166_)), 0.5F);
+        this.m_115326_(new Blink(this));
         this.m_115326_(new Bust(this));
         this.m_115326_(new KatanaLayer(this));
         // 2.3.1: what it wears (a Marine's uniform: the owner's armor, drawn by its own model through Forge's armor-model hook)
@@ -141,7 +148,7 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
         static float[][] pose;
 
         Model(ModelPart root) {
-            super(root, false);
+            super(root, true);
         }
 
         /** The part posed by the animation, blended over the fighter's own pose by the part's weight (2.1.3). */
@@ -234,6 +241,30 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
                     KatanaRenderer.draw(pose, buffers, katana, true, false, light, 1.0F);
                     pose.m_85849_();
                 }
+            } catch (RuntimeException failure) {
+                // a broken layer never stops the fighter from being drawn
+            }
+        }
+    }
+
+    /**
+     * 2.3.2: its eyes shut now and then, a short blink (now and then twice), as HexGhoul's Eto, Touka, Ken and villagers blink
+     * ({@link com.hexhaki.piece.npc.Blinks}): the skin's shut-eyes overlay drawn over the model.
+     */
+    static final class Blink extends RenderLayer<SeaFighter, PlayerModel<SeaFighter>> {
+        Blink(RenderLayerParent<SeaFighter, PlayerModel<SeaFighter>> parent) {
+            super(parent);
+        }
+
+        @Override
+        public void m_6494_(PoseStack pose, MultiBufferSource buffers, int light, SeaFighter fighter, float limbSwing, float limbSwingAmount,
+                            float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+            if (fighter.m_20145_() || !com.hexhaki.piece.npc.Blinks.shut(fighter.m_19879_() * 31 + 7, ageInTicks)) {
+                return;
+            }
+            try {
+                ResourceLocation shut = CLOSED[fighter.faction() == com.hexhaki.piece.Faction.MARINE ? 1 : 0][Math.floorMod(fighter.look(), 8)];
+                this.m_117386_().m_7695_(pose, buffers.m_6299_(RenderType.m_110473_(shut)), light, OverlayTexture.f_118083_, 1.0F, 1.0F, 1.0F, 1.0F);
             } catch (RuntimeException failure) {
                 // a broken layer never stops the fighter from being drawn
             }

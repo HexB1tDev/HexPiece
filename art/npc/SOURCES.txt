@@ -1,0 +1,22 @@
+Faces and hair for the pirates' and marines' skins (tools/npc_skins.py takes each head from here and paints the clothes).
+From HexGhoul (the owner's other mod; the owner: "you CAN take skins from HexGhoul"): its villagers' skins
+src/main/resources/assets/hexkagune/textures/entity/human/human_NN.png (HexGhoul's tools/human_skins.py: the owner's children's skins
+with other hair and clothes), and each one's shut eyes, its child skin's <child>_closed.png (HexGhoul's tools/blink_skins.py: only the
+eyes' pixels, boxed by hand), saved here as human_NN_closed.png. The same face in the same place at the same size: the overlay fits.
+human_02.png: HexGhoul human/human_02.png; human_02_closed.png: HexGhoul child/skins/daughter_18_closed.png
+human_03.png: HexGhoul human/human_03.png; human_03_closed.png: HexGhoul child/skins/daughter_19_closed.png
+human_05.png: HexGhoul human/human_05.png; human_05_closed.png: HexGhoul child/skins/son_04_closed.png
+human_06.png: HexGhoul human/human_06.png; human_06_closed.png: HexGhoul child/skins/son_08_closed.png
+human_08.png: HexGhoul human/human_08.png; human_08_closed.png: HexGhoul child/skins/son_06_closed.png
+human_10.png: HexGhoul human/human_10.png; human_10_closed.png: HexGhoul child/skins/daughter_01_closed.png
+human_12.png: HexGhoul human/human_12.png; human_12_closed.png: HexGhoul child/skins/daughter_15_closed.png
+human_13.png: HexGhoul human/human_13.png; human_13_closed.png: HexGhoul child/skins/daughter_16_closed.png
+human_14.png: HexGhoul human/human_14.png; human_14_closed.png: HexGhoul child/skins/daughter_16_closed.png
+human_15.png: HexGhoul human/human_15.png; human_15_closed.png: HexGhoul child/skins/daughter_18_closed.png
+human_16.png: HexGhoul human/human_16.png; human_16_closed.png: HexGhoul child/skins/daughter_18_closed.png
+human_17.png: HexGhoul human/human_17.png; human_17_closed.png: HexGhoul child/skins/son_04_closed.png
+human_19.png: HexGhoul human/human_19.png; human_19_closed.png: HexGhoul child/skins/son_05_closed.png
+human_20.png: HexGhoul human/human_20.png; human_20_closed.png: HexGhoul child/skins/son_06_closed.png
+human_22.png: HexGhoul human/human_22.png; human_22_closed.png: HexGhoul child/skins/son_07_closed.png
+human_23.png: HexGhoul human/human_23.png; human_23_closed.png: HexGhoul child/skins/son_10_closed.png
+human_25.png: HexGhoul human/human_25.png; human_25_closed.png: HexGhoul child/skins/son_15_closed.png
