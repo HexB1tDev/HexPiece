@@ -42,9 +42,15 @@ public final class SwordRules {
     /** The terrain cut's budget: block positions looked at and blocks removed, per slash per tick (four times that for all slashes). */
     public static final int CUT_CHECKS_PER_TICK = 2400;
     public static final int CUT_BREAKS_PER_TICK = 240;
-    /** Ticks without a cut before the sword goes back in its saya, and the sheathing animation's length. */
+    /**
+     * Ticks without a cut before the sword goes back in its saya, and the sheathing animation's length; 2.2.1 the draw's (the owner:
+     * "the sheath and unsheath is too fast. Slow those animations down. Don't make the blade usable until it's fully unsheathed ... It
+     * should be the only drawback from having the swordsman ... Unless it's a quick draw"): from the saya, a cut or the charge waits
+     * for the whole draw; the quick draw does not.
+     */
     public static final int SHEATHE_DELAY = 8;
-    public static final int SHEATHE_TICKS = 6;
+    public static final int SHEATHE_TICKS = 20;
+    public static final int DRAW_TICKS = 22;
     /** Past the blade's tip, the cut's swept volume reaches this far (blocks): the air the cut moves. And the volume's radius. */
     public static final double EXTEND = 0.8;
     public static final double RADIUS = 0.35;

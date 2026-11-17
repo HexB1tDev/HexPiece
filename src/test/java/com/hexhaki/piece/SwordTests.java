@@ -125,7 +125,17 @@ public final class SwordTests {
         }
         Check.that(SwordAnims.drawn(SwordAnims.SHEATHE, 0) && !SwordAnims.drawn(SwordAnims.SHEATHE, SwordAnims.duration(SwordAnims.SHEATHE)),
             "the sheathing ends in the saya");
-        Check.that(SwordAnims.duration(SwordAnims.SHEATHE) >= 4 && SwordAnims.duration(SwordAnims.SHEATHE) <= 6, "a 4 to 6 tick sheathing");
+        // 2.2.1 (the owner: "the sheath and unsheath is too fast ... Don't make the blade usable until it's fully unsheathed ... Unless
+        // it's a quick draw"): a slow sheathing, a slow draw that ends drawn, both a second or so; the quick draw as fast as ever
+        Check.that(SwordAnims.duration(SwordAnims.SHEATHE) >= 16 && SwordAnims.duration(SwordAnims.SHEATHE) <= 24, "a slow sheathing, about a second");
+        Check.that(SwordAnims.duration(SwordAnims.DRAW) == SwordRules.DRAW_TICKS && SwordRules.DRAW_TICKS >= 16 && SwordRules.DRAW_TICKS <= 26,
+            "a slow draw, about a second");
+        Check.that(!SwordAnims.drawn(SwordAnims.DRAW, 0) && !SwordAnims.drawn(SwordAnims.DRAW, BladePaths.drawTick("sword_draw") - 1)
+            && SwordAnims.drawn(SwordAnims.DRAW, SwordRules.DRAW_TICKS), "the draw: in the saya until its point leaves the mouth, in the hand at its end");
+        Check.that(BladePaths.drawTick("sword_draw") >= 12, "the blade comes out slowly, not at once");
+        Check.that(BladePaths.notoOut("sword_draw") != null, "drawn out along the saya's line");
+        Check.that(BladePaths.drawTick("sword_quick_draw") <= 3, "the quick draw is out of the saya as fast as ever");
+        Check.that(Files.exists(ANIMATIONS.resolve("sword_draw.json")), "the slow draw's animation");
         Check.that(Files.exists(ANIMATIONS.resolve("style_swordsman_stance.json")), "the relaxed stance: the left hand on the hilt");
     }
 

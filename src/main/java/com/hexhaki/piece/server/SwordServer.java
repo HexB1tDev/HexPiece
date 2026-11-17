@@ -55,9 +55,13 @@ import net.minecraftforge.fml.common.Mod;
  *       still carried (each katana carries an id in its NBT, so moving it round the inventory keeps it the same sword); else the first
  *       by slot. Everyone sees it at the hip ({@link S2CSword}), whatever their style.</li>
  *   <li><b>Drawing</b>: only a Swordsman in combat mode (R) with nothing but the katana (or nothing) in the main hand draws it, and
- *       only by attacking: a cut, the charge or the quick draw. Sheathed, the first cut is its string's draw ({@link SwordCombo});
- *       {@link PieceConfig#SHEATHE_DELAY} ticks after the last action it is sheathed (a six-tick animation); a cut asked for while it
- *       is being sheathed carries on from where the blade is. Drawing never touches the inventory.</li>
+ *       only by attacking: a cut, the charge or the quick draw. 2.2.1 (the owner: "Don't make the blade usable until it's fully
+ *       unsheathed ... It should be the only drawback from having the swordsman ... Unless it's a quick draw"): from the saya, a cut
+ *       or the charge first plays the slow draw ({@link SwordRules#DRAW_TICKS}) and nothing can be done until the blade is out; a
+ *       press during it is kept for the moment it is (the first cut of the string), the charge held through it begins then. The quick
+ *       draw alone goes straight from the saya. {@link PieceConfig#SHEATHE_DELAY} ticks after the last action it is sheathed (a
+ *       {@link SwordRules#SHEATHE_TICKS}-tick animation); a cut asked for while it is being sheathed carries on from where the blade
+ *       is while it is still in the hand, and needs the whole draw once it is home. Drawing never touches the inventory.</li>
  *   <li><b>Cuts</b>: one press, one cut; one press kept from {@link SwordCombo#BUFFER} ticks before the cut's cancel tick, never more.
  *       A cut hurts only inside its windows, along the blade's path swept from tick to tick ({@link BladePaths}, the clients' own
  *       keyframes) in four steps a tick and lengthened by {@link SwordRules#EXTEND}, each body once per window.</li>
@@ -83,6 +87,10 @@ public final class SwordServer {
         Katana katana;
         boolean drawn;
         long sheathingUntil = -1;
+        /** 2.2.1: the slow draw from the saya (when it began, -1 none), and what was asked for during it: a cut, the charge held. */
+        long drawStart = -1;
+        boolean drawCut;
+        boolean drawCharge;
         long idleSince;
         SwordMove move;
         long moveStart;
@@ -224,6 +232,9 @@ public final class SwordServer {
         if (state.chargeStart >= 0) {
             return state.chargeDrew ? SwordAnims.CHARGE_DRAW : SwordAnims.CHARGE;
         }
+        if (state.drawStart >= 0) {
+            return SwordAnims.DRAW;
+        }
         if (state.sheathingUntil >= 0) {
             return SwordAnims.SHEATHE;
         }
@@ -242,6 +253,9 @@ public final class SwordServer {
         }
         if (state.chargeStart >= 0) {
             return state.chargeStart;
+        }
+        if (state.drawStart >= 0) {
+            return state.drawStart;
         }
         if (state.sheathingUntil >= 0) {
             return state.sheathingUntil - SwordRules.SHEATHE_TICKS;
@@ -275,6 +289,7 @@ public final class SwordServer {
         scan(player, state);
         long now = now(player);
         if (action == C2SSword.CANCEL) {
+            state.drawCharge = false;
             if (state.chargeStart >= 0) {
                 state.chargeStart = -1;
                 state.idleSince = now;
@@ -299,13 +314,47 @@ public final class SwordServer {
         sync(player, state);
     }
 
-    /** Sheathed now? (or near enough: the sheathing's last tick, the blade home). */
+    /** Sheathed now? (2.2.1: or being sheathed with the blade already home in the saya; while it is still in the hand, it is not). */
     static boolean sheathed(State state, long now) {
-        return !state.drawn || (state.sheathingUntil >= 0 && now >= state.sheathingUntil - 1);
+        if (!state.drawn) {
+            return true;
+        }
+        if (state.sheathingUntil < 0) {
+            return false;
+        }
+        return !SwordAnims.drawn(SwordAnims.SHEATHE, now - (state.sheathingUntil - SwordRules.SHEATHE_TICKS));
+    }
+
+    /**
+     * 2.2.1: a cut or the charge asked for with the blade in its saya starts the slow draw instead ({@link SwordRules#DRAW_TICKS});
+     * true if it did (or one is under way): what was asked for waits for its end. The quick draw never waits.
+     */
+    static boolean drawFirst(State state, long now) {
+        if (state.drawStart >= 0) {
+            return true;
+        }
+        if (!sheathed(state, now)) {
+            if (state.sheathingUntil >= 0) {
+                state.sheathingUntil = -1; // still in the hand: it carries on from where the blade is
+            }
+            return false;
+        }
+        state.drawStart = now;
+        state.drawCut = false;
+        state.drawCharge = false;
+        state.sheathingUntil = -1;
+        state.drawn = true;
+        return true;
     }
 
     static void press(ServerPlayer player, State state, long now) {
         if (state.chargeStart >= 0 || state.releaseStart >= 0 || state.quickStart >= 0) {
+            return;
+        }
+        if (state.move == null && drawFirst(state, now)) {
+            if (now - state.drawStart > 0) {
+                state.drawCut = true; // pressed again while drawing: the first cut the moment the blade is out
+            }
             return;
         }
         if (state.move != null) {
@@ -349,6 +398,11 @@ public final class SwordServer {
         if (state.chargeStart >= 0 || state.releaseStart >= 0 || state.quickStart >= 0 || state.move != null) {
             return;
         }
+        if (drawFirst(state, now)) {
+            state.drawCharge = true; // held through the draw: the charge begins the moment the blade is out
+            state.drawCut = false;
+            return;
+        }
         boolean haki = HakiData.flag(player, "armamentOn");
         long ready = haki ? state.slashReady : state.cutReady;
         if (now < ready) {
@@ -363,6 +417,7 @@ public final class SwordServer {
     }
 
     static void release(ServerPlayer player, State state, long now) {
+        state.drawCharge = false;
         if (state.chargeStart < 0) {
             return;
         }
@@ -403,7 +458,11 @@ public final class SwordServer {
                 + "s"), true);
             return;
         }
-        state.quickDrew = sheathed(state, now);
+        // the quick draw never waits: from the saya (or half drawn), straight down the line
+        state.quickDrew = sheathed(state, now) || state.drawStart >= 0 && !SwordAnims.drawn(SwordAnims.DRAW, now - state.drawStart);
+        state.drawStart = -1;
+        state.drawCut = false;
+        state.drawCharge = false;
         state.quickStart = now;
         state.quickReady = now + QUICK_COOLDOWN;
         state.quickLast = player.m_20182_();
@@ -422,6 +481,9 @@ public final class SwordServer {
     }
 
     static void reset(State state) {
+        state.drawStart = -1;
+        state.drawCut = false;
+        state.drawCharge = false;
         state.move = null;
         state.bufferedAt = -1;
         state.chargeStart = -1;
@@ -455,7 +517,8 @@ public final class SwordServer {
     }
 
     static void tick(ServerPlayer player, State state, long now) {
-        boolean busy = state.drawn || state.move != null || state.chargeStart >= 0 || state.releaseStart >= 0 || state.quickStart >= 0;
+        boolean busy = state.drawn || state.drawStart >= 0 || state.move != null || state.chargeStart >= 0 || state.releaseStart >= 0
+            || state.quickStart >= 0;
         if (!busy) {
             return;
         }
@@ -472,7 +535,20 @@ public final class SwordServer {
         if (state.quickStart >= 0) {
             tickQuick(player, state, now);
         }
-        boolean acting = state.move != null || state.chargeStart >= 0 || state.releaseStart >= 0 || state.quickStart >= 0;
+        if (state.drawStart >= 0 && now - state.drawStart >= SwordRules.DRAW_TICKS) {
+            // fully drawn: now (and only now) the blade can be used
+            state.drawStart = -1;
+            state.idleSince = now;
+            if (state.drawCharge) {
+                state.drawCharge = false;
+                charge(player, state, now);
+            } else if (state.drawCut) {
+                state.drawCut = false;
+                begin(player, state, now);
+            }
+        }
+        boolean acting = state.drawStart >= 0 || state.move != null || state.chargeStart >= 0 || state.releaseStart >= 0
+            || state.quickStart >= 0;
         if (state.drawn && !acting && state.sheathingUntil < 0
             && now - state.idleSince >= Math.round(PieceConfig.get(PieceConfig.SHEATHE_DELAY, SwordRules.SHEATHE_DELAY))) {
             state.sheathingUntil = now + SwordRules.SHEATHE_TICKS;

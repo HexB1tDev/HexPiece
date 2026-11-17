@@ -15,9 +15,11 @@ public final class SwordAnims {
     public static final int RELEASE = 5;
     public static final int QUICK_DRAW = 6;
     public static final int QUICK_CUT = 7;
+    /** 2.2.1: the slow draw from the saya into the guard (nothing can be done with the blade until it is out). */
+    public static final int DRAW = 8;
     public static final int MOVES = 10;
     private static final String[] NAMES = {null, "sword_guard", "sword_sheathe", "sword_charge", "sword_charge_draw", "sword_release",
-        "sword_quick_draw", "sword_quick_cut"};
+        "sword_quick_draw", "sword_quick_cut", "sword_draw"};
 
     private SwordAnims() {
     }
@@ -43,7 +45,8 @@ public final class SwordAnims {
         }
         return switch (anim) {
             case GUARD -> 24;
-            case SHEATHE -> 6;
+            case SHEATHE -> SwordRules.SHEATHE_TICKS;
+            case DRAW -> SwordRules.DRAW_TICKS;
             case CHARGE, CHARGE_DRAW -> 26;
             case RELEASE -> 15;
             case QUICK_DRAW, QUICK_CUT -> 16;

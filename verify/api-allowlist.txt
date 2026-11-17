@@ -72,3 +72,6 @@ M net/minecraft/client/renderer/RenderType m_269058_ ()Lnet/minecraft/client/ren
 M org/joml/Matrix4f invert ()Lorg/joml/Matrix4f;   # [lib] JOML 1.10 (bundled with 1.20.1): Matrix4f.invert(): the eye in a katana's frame (client/haki/HakiBolts.drawInFrame)
 # --- 2.1.9: glows and trails alpha blended (the owner saw the sword swings black: additive "eyes" drawn opaque on their setup) ---------
 M net/minecraft/client/renderer/RenderType m_269166_ ()Lnet/minecraft/client/renderer/RenderType;   # [srg] debugQuads: joined.tsrg fkf A ()Lfkf; m_269166_, intermediary method_49042 (yarn RenderLayer.getDebugQuads): POSITION_COLOR, the position_color shader (unlit), translucent blend, no cull
+
+# --- 2.2.1: the finisher taken from HexGhoul 4.2.9 and turned upright (server/Finishers, client/sword/FinisherFx) ----------------------
+M net/minecraft/client/renderer/entity/EntityRenderer m_5478_ (Lnet/minecraft/world/entity/Entity;)Lnet/minecraft/resources/ResourceLocation;   # [srg] getTextureLocation: joined.tsrg fox a (Lbfj;)Lacq; m_5478_ (fox = EntityRenderer C_4331_, bfj = Entity; intermediary method_3931, yarn EntityRenderer.getTexture); HexGhoul 4.2.9 FinisherClient's own line for it: a mob's own texture on its pieces

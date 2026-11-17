@@ -832,17 +832,39 @@ def moves():
     ], "Swordsman: the charged slash released: straight down from high behind the shoulder, the step in behind it.",
         cuts=((1, 3),)))
 
-    # sheathing (noto): the blade flicked clean (chiburi), its back laid to the koiguchi, slid home along the saya
-    write(Move("sword_sheathe", 6, [
+    # 2.2.1 (the owner: "the sheath and unsheath is too fast. Slow those animations down. Don't make the blade usable until it's fully
+    # unsheathed ... It should be the only drawback from having the swordsman ... Unless it's a quick draw"): the draw, slow and
+    # deliberate: the right hand settles on the hilt, the left thumb pushes the guard out (koiguchi wo kiru), the blade slides out of
+    # the saya along the noto line a little at a time, and only when its point is at the mouth does it swing free, out to the right and
+    # down into the low guard. Nothing is cut and nothing can be done with it until it is there.
+    calm = {"bend": 5, "yaw": 8, "y": -0.04}
+    write(Move("sword_draw", 22, [
         stance_beat(0, "linear"),
-        b(1, "outexpo", held(H(5.6, 8.8, 5.4), D(0.12, -0.78, 0.6), D(0.05, -0.6, -0.8)), L_REST, {"yaw": -4, "bend": 6},
+        noto(3, "inoutsine", 0.0, body=calm, legs=LEGS_EASY, head={"pitch": -6}),
+        noto(6, "outsine", 1.2, body=calm, legs=LEGS_EASY, head={"pitch": -8}),
+        noto(8, "linear", 1.2, body=calm, legs=LEGS_EASY, head={"pitch": -8}),
+        noto(13, "inoutsine", 8.0, body=dict(calm, yaw=10), legs=DRAW_LEGS, head={"pitch": -8}),
+        noto(16, "outsine", NOTO_OUT, body=dict(calm, yaw=8), legs=DRAW_LEGS, head={"pitch": -6}),
+        b(18, "outsine", held(H(8.6, 3.0, 2.2), D(1, 0.32, -0.05), D(0.1, 0.1, -1)), L_REST, {"yaw": -10, "bend": 4}, LEGS_EASY,
+          {"pitch": -4, "yaw": 8}),
+        stance_beat(22, "inoutsine"),
+    ], "Swordsman: the draw, slow and deliberate: the thumb pushes the guard out, the blade slides out of the saya, swings free and "
+       "settles into the low guard.", draw=16))
+
+    # sheathing (noto), as slow: the blade flicked clean (chiburi), held a beat, its back laid to the koiguchi, slid home along the saya
+    # a little at a time, the guard clicking home at the end
+    write(Move("sword_sheathe", 20, [
+        stance_beat(0, "linear"),
+        b(3, "outexpo", held(H(5.6, 8.8, 5.4), D(0.12, -0.78, 0.6), D(0.05, -0.6, -0.8)), L_REST, {"yaw": -4, "bend": 6},
           LEGS_EASY),
-        noto(2, "inoutsine", NOTO_OUT, body={"bend": 6, "yaw": 6}),
-        noto(3, "linear", 10.0, body={"bend": 6, "yaw": 6}),
-        noto(4, "linear", 5.0, body={"bend": 6, "yaw": 6}),
-        noto(5, "outsine", 0.0, body={"bend": 6, "yaw": 6}),
-        Beat(6, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left="saya", body={"bend": 3}, legs=LEGS_EASY),
-    ], "Swordsman: the blade flicked clean and slid home along the saya.", sheath=5, stop_extra=6))
+        b(5, "linear", held(H(5.6, 8.8, 5.4), D(0.12, -0.78, 0.6), D(0.05, -0.6, -0.8)), L_REST, {"yaw": -4, "bend": 6},
+          LEGS_EASY),
+        noto(8, "inoutsine", NOTO_OUT, body={"bend": 6, "yaw": 6}),
+        noto(10, "linear", NOTO_OUT, body={"bend": 6, "yaw": 6}),
+        noto(15, "inoutsine", 3.0, body={"bend": 6, "yaw": 6}),
+        noto(17, "outsine", 0.0, body={"bend": 5, "yaw": 6}),
+        Beat(20, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left="saya", body={"bend": 3}, legs=LEGS_EASY),
+    ], "Swordsman: the blade flicked clean, laid to the mouth of the saya and slid home, slowly.", sheath=17, stop_extra=6))
 
 
 def stance():
