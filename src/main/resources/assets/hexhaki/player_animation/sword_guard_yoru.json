@@ -2256,35 +2256,35 @@
     "tick": 40,
     "easing": "linear",
     "rightArm": {
-     "pitch": -43.65
+     "pitch": -43.84
     }
    },
    {
     "tick": 40,
     "easing": "linear",
     "rightArm": {
-     "yaw": 15.95
+     "yaw": 15.97
     }
    },
    {
     "tick": 40,
     "easing": "linear",
     "rightArm": {
-     "roll": 33.67
+     "roll": 33.78
     }
    },
    {
     "tick": 40,
     "easing": "linear",
     "rightArm": {
-     "bend": -102.63
+     "bend": -102.09
     }
    },
    {
     "tick": 40,
     "easing": "linear",
     "rightItem": {
-     "pitch": 1.5
+     "pitch": 0.78
     }
    },
    {
@@ -2298,7 +2298,7 @@
     "tick": 40,
     "easing": "linear",
     "rightItem": {
-     "roll": -1.81
+     "roll": -2.28
     }
    },
    {

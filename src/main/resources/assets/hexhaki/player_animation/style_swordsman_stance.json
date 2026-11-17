@@ -156,28 +156,28 @@
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "pitch": -39.94
+     "pitch": -37.94
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "yaw": 50.34
+     "yaw": 53.44
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "roll": -37.91
+     "roll": -52.66
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "bend": -40.19
+     "bend": -52.97
     }
    }
   ]
