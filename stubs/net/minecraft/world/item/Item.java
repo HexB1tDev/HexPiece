@@ -10,6 +10,10 @@ public class Item implements net.minecraft.world.level.ItemLike {
 
     /** 4.1.20: Forge's (Item.java.patch: called from the constructor on a client only), its own name. */
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) { }
+    /** 2.3.1: getArmorTexture (Forge's IForgeItem, its own name): an armor item's texture, or null for the material's */
+    public String getArmorTexture(ItemStack stack, net.minecraft.world.entity.Entity entity, net.minecraft.world.entity.EquipmentSlot slot, String type) {
+        return null;
+    }
     /** getUseAnimation (1.3.40) */ public UseAnim m_6164_(ItemStack stack) { throw new UnsupportedOperationException(); }
     /** getUseDuration (1.3.40) */ public int m_8105_(ItemStack stack) { throw new UnsupportedOperationException(); }
     /** appendHoverText (2.1.4; the original's FruitItem overrides it) */

@@ -10,6 +10,7 @@ import com.hexhaki.piece.sword.SwordAnims;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.model.geom.ModelPart;
@@ -18,6 +19,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
+import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -45,6 +47,9 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
         super(context, new Model(context.m_174023_(ModelLayers.f_171162_)), 0.5F);
         this.m_115326_(new Bust(this));
         this.m_115326_(new KatanaLayer(this));
+        // 2.3.1: what it wears (a Marine's uniform: the owner's armor, drawn by its own model through Forge's armor-model hook)
+        this.m_115326_(new HumanoidArmorLayer<>(this, new HumanoidModel<>(context.m_174023_(ModelLayers.f_171164_)),
+            new HumanoidModel<>(context.m_174023_(ModelLayers.f_171165_)), context.m_266367_()));
     }
 
     /** What the fighter plays now: a style move's or (2.1.4) its sword's animation, how long it is, and the moment (-1: nothing). */

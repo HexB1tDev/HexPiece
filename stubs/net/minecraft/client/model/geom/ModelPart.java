@@ -7,6 +7,7 @@ public final class ModelPart {
     /** xRot, yRot, zRot (1.0.41) */ public float f_104203_;
     public float f_104204_;
     public float f_104205_;
+    /** getChild (the original's HakiChestLayer) */ public ModelPart m_171324_(String name) { throw new UnsupportedOperationException(); }
     /** copyFrom */ public void m_104315_(ModelPart other) { throw new UnsupportedOperationException(); }
     /** x (the pivot, model pixels) */ public float f_104200_;
     /** y (the pivot) */ public float f_104201_;

@@ -24,13 +24,22 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.3.0"
+VERSION = "2.3.1"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
 LEGENDS_ZIP = ROOT / "input" / "Yoru_Gryphon_Models_Textures_1.20.1.zip"
 EXPECTED_LEGENDS_SHA256 = "03669b1bb759458fe873a3ebe225e403a67db2c86aefdb8fab0bac4a0c7a9a2e"
 LEGEND_KEYS = ["gryphon", "yoru"]
+# 2.3.1: the owner's One Piece armor (marine outfit, admiral coat, straw hat, blackbeard coat), never altered: its Forge model and
+# client extension (Mojang names) are translated to SRG names at build time (armor_sources), its textures packed under hexhaki.
+ARMOR_ZIP = ROOT / "input" / "OnePiece_Armor_1.20.1.zip"
+EXPECTED_ARMOR_SHA256 = "f3cd6a2abefbe8c02796d23cd58fa70654cab39d9e48a97a9a9e231d31d12811"
+ARMOR_ROOT = "OnePiece_Armor_1.20.1/forge_1.20.1/src/main/"
+ARMOR_JAVA = ["OnePieceArmorModel", "OnePieceArmorExtensions"]
+ARMOR_TEXTURES = "assets/hexhaki/textures/models/armor/"
+ARMOR_KEYS = ["marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat"]
+ARMOR_ICONS = "assets/hexhaki/textures/item/armor/"
 # 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
 KATANA_ZIP = ROOT / "input" / "Hex_Katana_Atelier_1.20.1.zip"
 EXPECTED_KATANA_SHA256 = "fece809eb8699a7f5a562b3975da753bb929089d1a93b75896d25b734e6d9d28"
@@ -48,6 +57,7 @@ STUBS = BUILD / "stubs"
 CLASSES = BUILD / "classes"
 TEST_CLASSES = BUILD / "test-classes"
 CHANGED_LIST = BUILD / "changed.txt"
+ARMOR_GENERATED = BUILD / "generated"
 EXPORTS = [
     "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
     "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
@@ -92,7 +102,9 @@ NEW_PREFIXES = (
     KATANA_TEXTURES,
     KATANA_MODELS,
     KATANA_ICONS,
-)
+    ARMOR_TEXTURES,
+    ARMOR_ICONS,
+) + tuple(f"assets/hexhaki/models/item/{key}.json" for key in ARMOR_KEYS)
 # Original lang keys the expansion may change (renamed controls).
 RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament", "key.hexhaki.acoc",
                   "subtitles.hexhaki.acoc_on", "subtitles.hexhaki.acoc_off"}, SOUNDS: set()}
@@ -253,6 +265,104 @@ def legend_assets():
     return entries
 
 
+# --- 2.3.1: the owner's armor ---------------------------------------------------------------------------------------------------------
+# Mojang (official) names in the pack's two classes -> the SRG names the game runs with (joined.tsrg; verify/api-allowlist.txt and the
+# original jar's HakiChestLayer prove each). Applied outside string literals only, so part names ("head", "body") stay as they are.
+ARMOR_SRG = [
+    (r"\.addOrReplaceChild\(", ".m_171599_("),
+    (r"\bCubeListBuilder\.create\(\)", "CubeListBuilder.m_171558_()"),
+    (r"\.texOffs\(", ".m_171514_("),
+    (r"\.addBox\(", ".m_171488_("),
+    (r"\bPartPose\.offsetAndRotation\(", "PartPose.m_171423_("),
+    (r"\bPartPose\.ZERO\b", "PartPose.f_171404_"),
+    (r"\.getRoot\(\)", ".m_171576_()"),
+    (r"\bLayerDefinition\.create\(", "LayerDefinition.m_171565_("),
+    (r"\.bakeRoot\(\)", ".m_171564_()"),
+    (r"\.copyFrom\(", ".m_104315_("),
+    (r"\.visible\b", ".f_104207_"),
+    (r"\.getChild\(", ".m_171324_("),
+    (r"\bsetAllVisible\(", "m_8009_("),
+    (r"\.getModelName\(\)", ".m_108564_()"),
+    (r"\battackTime\b", "f_102608_"),
+    (r"\briding\b", "f_102609_"),
+    (r"\byoung\b", "f_102610_"),
+    (r"\bcrouching\b", "f_102817_"),
+    (r"\bleftArmPose\b", "f_102815_"),
+    (r"\brightArmPose\b", "f_102816_"),
+    (r"\bhead\b", "f_102808_"),
+    (r"\bhat\b", "f_102809_"),
+    (r"\bbody\b", "f_102810_"),
+    (r"\brightArm\b", "f_102811_"),
+    (r"\bleftArm\b", "f_102812_"),
+    (r"\brightLeg\b", "f_102813_"),
+    (r"\bleftLeg\b", "f_102814_"),
+    (r"\bpackage dev\.hexb1t\.onepiecearmor\.client;", "package com.hexhaki.piece.client.armor;"),
+]
+STRING = re.compile(r'"(?:[^"\\]|\\.)*"')
+
+
+def srg(code):
+    """The pack's Java in the names the game runs with (string literals and comments' quoted text untouched)."""
+    out = []
+    for line in code.splitlines():
+        stripped = line.lstrip()
+        if stripped.startswith("//") or stripped.startswith("/*") or stripped.startswith("*"):
+            out.append(line)
+            continue
+        pieces = []
+        last = 0
+        for m in STRING.finditer(line):
+            pieces.append((line[last:m.start()], True))
+            pieces.append((m.group(0), False))
+            last = m.end()
+        pieces.append((line[last:], True))
+        text = ""
+        for piece, code_part in pieces:
+            if code_part:
+                for pattern, repl in ARMOR_SRG:
+                    piece = re.sub(pattern, repl, piece)
+            text += piece
+        out.append(text)
+    return "\n".join(out) + "\n"
+
+
+def armor_zip():
+    actual = hashlib.sha256(ARMOR_ZIP.read_bytes()).hexdigest()
+    if actual != EXPECTED_ARMOR_SHA256:
+        raise RuntimeError(f"The armor zip differs from the one inspected: {actual}")
+    return zipfile.ZipFile(ARMOR_ZIP)
+
+
+def armor_sources():
+    """The pack's model and client extension, translated, as sources in build/generated (package com.hexhaki.piece.client.armor)."""
+    target = ARMOR_GENERATED / "com/hexhaki/piece/client/armor"
+    clean(ARMOR_GENERATED)
+    target.mkdir(parents=True, exist_ok=True)
+    paths = []
+    with armor_zip() as z:
+        for name in ARMOR_JAVA:
+            code = z.read(ARMOR_ROOT + f"java/dev/hexb1t/onepiecearmor/client/{name}.java").decode("utf-8")
+            header = (f"// Generated by build.py from input/{ARMOR_ZIP.name} ({name}.java, the owner's pack, Mojang names), translated to SRG\n"
+                      "// names. Never edit: change the translation in build.py (ARMOR_SRG).\n")
+            path = target / f"{name}.java"
+            path.write_text(header + srg(code), encoding="utf-8")
+            paths.append(str(path))
+    return paths
+
+
+def armor_assets():
+    """The pack's four armor textures (1024 px atlases, 256 logical), under hexhaki."""
+    entries = {}
+    prefix = ARMOR_ROOT + "resources/assets/hexpiece/textures/models/armor/"
+    with armor_zip() as z:
+        for name in z.namelist():
+            if name.startswith(prefix) and name.endswith(".png"):
+                entries[ARMOR_TEXTURES + name[len(prefix):]] = z.read(name)
+    if len(entries) != 4:
+        raise RuntimeError(f"Expected the pack's four armor textures, found {sorted(entries)}")
+    return entries
+
+
 def assemble():
     entries = {}
     with zipfile.ZipFile(BASE) as base:
@@ -277,6 +387,10 @@ def assemble():
     for name, data in katana_assets().items():
         if name in entries:
             raise RuntimeError(f"A katana asset would overwrite an entry: {name}")
+        entries[name] = data
+    for name, data in armor_assets().items():
+        if name in entries:
+            raise RuntimeError(f"An armor texture would overwrite an entry: {name}")
         entries[name] = data
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(OUTPUT, "w", zipfile.ZIP_DEFLATED) as out:
@@ -370,7 +484,7 @@ def main():
     run("java", *EXPORTS, "-cp", TOOLS, "PiecePatch", INPUT, BASE, VERSION)
 
     javac("--release", "17", "-d", STUBS, *sources("stubs"))
-    main_sources = sources("src/main/java")
+    main_sources = sources("src/main/java") + armor_sources()
     if main_sources:
         run("javac", "-encoding", "UTF-8", "-proc:none", "-Xlint:all", "-Xlint:-options", "-Xlint:-classfile", "-Xlint:-serial",
             "-Xlint:-processing", "-Werror", "--release", "17", "-cp", f"{BASE}{os.pathsep}{STUBS}", "-d", CLASSES, *main_sources)

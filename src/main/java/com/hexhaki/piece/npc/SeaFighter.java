@@ -3,7 +3,9 @@ package com.hexhaki.piece.npc;
 import com.hexhaki.piece.Faction;
 import com.hexhaki.piece.PieceEntities;
 import com.hexhaki.piece.PieceRules;
+import com.hexhaki.piece.PieceItems;
 import com.hexhaki.piece.PieceSounds;
+import com.hexhaki.piece.armor.PieceArmor;
 import com.hexhaki.piece.server.ProfileServer;
 import com.hexhaki.piece.server.StyleCombat;
 import com.hexhaki.piece.style.FightingStyle;
@@ -34,6 +36,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
@@ -192,6 +195,15 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         saved.m_128405_("Style", style.ordinal());
         saved.m_128405_("Katana", katana == null ? -1 : katana.ordinal());
         this.getPersistentData().m_128365_(SAVED, saved);
+        // 2.3.1 (the owner: "NPCS for now only spawn with the Marine Armor"): a Marine in the Marine outfit, head to feet (not again
+        // after a load: it keeps what it wears)
+        if (this.faction() == Faction.MARINE && this.m_6844_(EquipmentSlot.CHEST).m_41619_()) {
+            EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+            PieceArmor[] outfit = PieceArmor.marineOutfit();
+            for (int i = 0; i < slots.length; i++) {
+                this.m_8061_(slots[i], PieceItems.stack(outfit[i]));
+            }
+        }
         this.ready = true;
     }
 

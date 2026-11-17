@@ -42,6 +42,9 @@ the start menu and the Captain's Log:
 - Gryphon and Yoru (2.2.7, the owner's own models): the two strongest blades, Yoru the strongest. Gryphon a saber worn at the hip in
   its blue scabbard; Yoru a cross-hilted great sword tied on the back with two ropes, its own draw over the shoulder, a longer reach,
   never blackened by Haki. Both drawn whenever combat mode is on, put away when it goes off.
+- The owner's One Piece armor (2.3.1, from input/OnePiece_Armor_1.20.1.zip): Marine cap, shirt, trousers and boots, the Admiral's
+  Coat, the Straw Hat and Blackbeard's Coat, drawn by the pack's own models (slim and wide fits), in their own creative tab; Marines
+  spawn in the Marine outfit.
 - Sword sounds (2.2.9), every clip CC0 from OpenGameArt.org and credited in `sounds/piece/sword/SOURCES.txt`: the draw's click,
   slide and ring, the sheathe, a swing on every cut, the Haki slash's rush; Yoru deeper, Gryphon higher; NPC swordsmen too.
 - Pirate and Marine NPC patrols (pirates also with katanas) that fight each other and the players of the other flag with the same moves; bounty and merit ranks.

@@ -75,3 +75,26 @@ M net/minecraft/client/renderer/RenderType m_269166_ ()Lnet/minecraft/client/ren
 
 # --- 2.2.1: the finisher taken from HexGhoul 4.2.9 and turned upright (server/Finishers, client/sword/FinisherFx) ----------------------
 M net/minecraft/client/renderer/entity/EntityRenderer m_5478_ (Lnet/minecraft/world/entity/Entity;)Lnet/minecraft/resources/ResourceLocation;   # [srg] getTextureLocation: joined.tsrg fox a (Lbfj;)Lacq; m_5478_ (fox = EntityRenderer C_4331_, bfj = Entity; intermediary method_3931, yarn EntityRenderer.getTexture); HexGhoul 4.2.9 FinisherClient's own line for it: a mob's own texture on its pieces
+
+# --- 2.3.1: the owner's One Piece armor (input/OnePiece_Armor_1.20.1.zip: its OnePieceArmorModel and OnePieceArmorExtensions, translated
+# to SRG by build.py), the Marines wearing it (SeaFighterRenderer's armor layer). The model's builders (CubeListBuilder create/texOffs/
+# addBox, CubeDeformation, MeshDefinition getRoot, PartDefinition addOrReplaceChild, PartPose ZERO, LayerDefinition create/bakeRoot,
+# ModelPart getChild/copyFrom/visible), EntityModel attackTime and HumanoidModel crouching are made by the original jar (HakiChestLayer and
+# its models); ArmorItem, ArmorMaterials IRON, EquipmentSlot, the creative tab builder and setItemSlot by HexGhoul's verified list.
+# fbf = EntityModel (class_583), fbs = HumanoidModel (class_572), fbs$a = HumanoidModel$ArmPose, fcb = Model (class_3879), fee = ModelPart,
+# feg = PartPose (class_5603 ModelTransform), fed = ModelLayers (class_5602 EntityModelLayers), fec = ModelLayerLocation, fqt =
+# RenderLayerParent (class_3883), fsw = HumanoidArmorLayer (class_970 ArmorFeatureRenderer), fwx = ModelManager (class_1092
+# BakedModelManager), foy$a = EntityRendererProvider$Context (class_5617$class_5618); yarn 1.20.1 names in brackets.
+C net/minecraft/client/model/Model                                                  # [srg] fcb (intermediary class_3879, yarn Model): EntityModel's super class, what IClientItemExtensions.getGenericArmorModel returns
+M net/minecraft/client/model/HumanoidModel <init> (Lnet/minecraft/client/model/geom/ModelPart;)V  # [srg] joined.tsrg fbs <init> (Lfee;)V 170676 (yarn BipedEntityModel(ModelPart root))
+M net/minecraft/client/model/HumanoidModel m_8009_ (Z)V                             # [srg] setAllVisible: joined.tsrg fbs d_ (Z)V m_8009_; intermediary METHOD fbs (Z)V d_ method_2805 (yarn setVisible)
+F net/minecraft/client/model/HumanoidModel f_102815_ Lnet/minecraft/client/model/HumanoidModel$ArmPose;  # [srg] leftArmPose: joined.tsrg fbs r f_102815_; intermediary FIELD fbs Lfbs$a; r field_3399 (yarn leftArmPose)
+F net/minecraft/client/model/HumanoidModel f_102816_ Lnet/minecraft/client/model/HumanoidModel$ArmPose;  # [srg] rightArmPose: joined.tsrg fbs s f_102816_; intermediary FIELD fbs Lfbs$a; s field_3395 (yarn rightArmPose)
+F net/minecraft/client/model/EntityModel f_102609_ Z                               # [srg] riding: joined.tsrg fbf d f_102609_; intermediary FIELD fbf Z d field_3449 (yarn riding)
+M net/minecraft/client/model/geom/PartPose m_171423_ (FFFFFF)Lnet/minecraft/client/model/geom/PartPose;  # [srg] offsetAndRotation: joined.tsrg feg a (FFFFFF)Lfeg; m_171423_; intermediary METHOD feg (FFFFFF)Lfeg; a method_32091 (yarn ModelTransform.of)
+F net/minecraft/client/model/geom/ModelLayers f_171164_ Lnet/minecraft/client/model/geom/ModelLayerLocation;  # [srg] PLAYER_INNER_ARMOR: joined.tsrg fed aO f_171164_; intermediary FIELD fed Lfec; aO field_27579 (yarn PLAYER_INNER_ARMOR)
+F net/minecraft/client/model/geom/ModelLayers f_171165_ Lnet/minecraft/client/model/geom/ModelLayerLocation;  # [srg] PLAYER_OUTER_ARMOR: joined.tsrg fed aP f_171165_; intermediary FIELD fed Lfec; aP field_27580 (yarn PLAYER_OUTER_ARMOR)
+C net/minecraft/client/renderer/entity/layers/HumanoidArmorLayer                   # [srg] fsw C_4437_ (intermediary class_970, yarn ArmorFeatureRenderer)
+M net/minecraft/client/renderer/entity/layers/HumanoidArmorLayer <init> (Lnet/minecraft/client/renderer/entity/RenderLayerParent;Lnet/minecraft/client/model/HumanoidModel;Lnet/minecraft/client/model/HumanoidModel;Lnet/minecraft/client/resources/model/ModelManager;)V  # [srg] joined.tsrg fsw <init> (Lfqt;Lfbs;Lfbs;Lfwx;)V 266192 (yarn ArmorFeatureRenderer(context, innerModel, outerModel, bakery))
+C net/minecraft/client/resources/model/ModelManager                                 # [srg] fwx C_4535_ (intermediary class_1092, yarn BakedModelManager)
+M net/minecraft/client/renderer/entity/EntityRendererProvider$Context m_266367_ ()Lnet/minecraft/client/resources/model/ModelManager;  # [srg] getModelManager: joined.tsrg foy$a g ()Lfwx; m_266367_; intermediary METHOD foy$a ()Lfwx; g method_48481 (yarn getModelManager)
