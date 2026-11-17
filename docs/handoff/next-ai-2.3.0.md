@@ -10,6 +10,9 @@ version is **2.3.1**.
   pehkui, bendylib, libraryferret, citadel, hexpiece 2.2.9): "also the game crashes on boot."
 - "add to the to-do list that every move is clashable (combat style wise, and yes you can take the impacts from HexGhoul's latest
   version, however I want a impact frame whenever a clash happens.)" (item 1 below).
+- Then, on the same item: "also idk if I mentioned but to clash with swords man, any form of armament haki HAS TO BE ON, otherwise
+  the sword cant be clashed and since it has more range, will come up on top, if haki is on, clash is possible. When 2 ryou hakis
+  clash, both lightning colors explode outwards from the clash area in a sphere (similar to conquerors but smaller)."
 
 ## Released in 2.3.0: the crash on boot
 - `IllegalArgumentException: Overlay already registered: hexhaki:hexpiece_combat` in `CombatMode$Overlay.register`, called through
@@ -22,6 +25,11 @@ version is **2.3.1**.
 - Fix: the handlers are `registerCombatOverlay`, `registerAbilityOverlay`, `registerFinisherOverlay`.
 - `PieceVerify` check 5 (`handlerName`): every `@SubscribeEvent` method in the output jar (the original's and ours, 216 now) must get
   its own generated name, or the build fails naming both. Name new handlers after what they do, never a bare `register`.
+- The naming rule is in Forge's EventBus source (`IEventListenerFactory.getUniqueName`, `ModLauncherFactory`: `PENDING.computeIfAbsent
+  (name, k -> callback)` keeps the first method, `Class.forName(name)` hands its class to every later one). HexGhoul has the same bug
+  (told to the owner, not changed: not this repository): six `Registration.renderers(RegisterRenderers)` in
+  `control/client/render` (GhoulNpc, FleshThrall, Child, Human, Agent, Eto renderers: only one of them runs, six times) and two
+  `Frame.after(RenderLevelStageEvent)` (GhoulNpcRenderer, EtoRenderer).
 - The other start-up handlers were read again (key mappings, entity renderers, the two AddLayers in different packages, entity
   attributes, the sound and entity registers): nothing else registers twice. Past this point the game has not started since 2.2.1,
   so a later failure (world join, first render) is possible: ask the owner for the next crash report if there is one.
@@ -31,6 +39,11 @@ version is **2.3.1**.
    you can take the impacts from HexGhoul's latest version, however I want a impact frame whenever a clash happens.)"). Every
    fighting-style move (the Swordsman's cuts and slashes, Iron Fist, Fishman Karate, Six Powers; player against player and against
    NPC fighters) meets an opposing move landing at the same moment: both stopped and thrown back, an impact frame plays.
+   - **Against a Swordsman's blade**: only with some form of Armament Haki on (Armament, Ryou, Gear's...; `HakiData.flag(player,
+     "armamentOn")` is how SwordServer reads it). Without it the blade cannot be clashed: the cut goes through, and with its longer
+     reach the sword wins.
+   - **Ryou meets Ryou**: both fighters' lightning colours (`RyouServer.color`) burst outward from the clash point in a sphere, like
+     the Conqueror's full release (`haki/ConquerorBolts`, the storm) but smaller; the 3D inked bolts (`BoltMesh`) in both colours.
    HexGhoul (read only; `git clone --depth 1 --branch claude/eager-ritchie-xni1ms https://github.com/HexB1tDev/hexghoul`, public, no
    add_repo needed; its newest commit when read: "HexKagune 4.3.0") has it: `control/pale/MoveClashRules` (pure: families of moves
    that cancel each other, `window`, `reach`, `power` never below `BIG` 2.4, `STAGGER` 14 ticks), `control/server/MoveClash` (moves
