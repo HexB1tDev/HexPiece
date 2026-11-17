@@ -1,0 +1,116 @@
+{
+  "piece.sword.draw": {
+    "subtitle": "subtitles.hexhaki.piece.sword.draw",
+    "sounds": [
+      "hexhaki:piece/sword/draw_slide1",
+      "hexhaki:piece/sword/draw_slide2",
+      "hexhaki:piece/sword/draw_slide3"
+    ]
+  },
+  "piece.sword.draw_ring": {
+    "subtitle": "subtitles.hexhaki.piece.sword.draw_ring",
+    "sounds": [
+      "hexhaki:piece/sword/draw_ring1",
+      "hexhaki:piece/sword/draw_ring2",
+      "hexhaki:piece/sword/draw_ring3",
+      "hexhaki:piece/sword/draw_ring4",
+      "hexhaki:piece/sword/draw_ring5"
+    ]
+  },
+  "piece.sword.guard_click": {
+    "subtitle": "subtitles.hexhaki.piece.sword.guard_click",
+    "sounds": [
+      "hexhaki:piece/sword/guard_click1",
+      "hexhaki:piece/sword/guard_click2"
+    ]
+  },
+  "piece.sword.sheathe": {
+    "subtitle": "subtitles.hexhaki.piece.sword.sheathe",
+    "sounds": [
+      "hexhaki:piece/sword/sheathe_slide1",
+      "hexhaki:piece/sword/sheathe_slide2"
+    ]
+  },
+  "piece.sword.swing": {
+    "subtitle": "subtitles.hexhaki.piece.sword.swing",
+    "sounds": [
+      "hexhaki:piece/sword/swing1",
+      "hexhaki:piece/sword/swing2",
+      "hexhaki:piece/sword/swing3",
+      "hexhaki:piece/sword/swing4",
+      "hexhaki:piece/sword/swing5",
+      "hexhaki:piece/sword/swing6",
+      "hexhaki:piece/sword/swing7",
+      "hexhaki:piece/sword/swing8",
+      "hexhaki:piece/sword/swing9",
+      "hexhaki:piece/sword/swing10",
+      "hexhaki:piece/sword/swing11",
+      "hexhaki:piece/sword/swing12",
+      "hexhaki:piece/sword/swing13"
+    ]
+  },
+  "piece.sword.swing_heavy": {
+    "subtitle": "subtitles.hexhaki.piece.sword.swing_heavy",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/sword/whoosh1",
+        "pitch": 1.15,
+        "volume": 0.85
+      },
+      {
+        "name": "hexhaki:piece/sword/whoosh2",
+        "pitch": 1.1,
+        "volume": 0.85
+      },
+      {
+        "name": "hexhaki:piece/sword/swing3",
+        "pitch": 0.75
+      },
+      {
+        "name": "hexhaki:piece/sword/swing4",
+        "pitch": 0.75
+      },
+      {
+        "name": "hexhaki:piece/sword/swing7",
+        "pitch": 0.72
+      },
+      {
+        "name": "hexhaki:piece/sword/swing9",
+        "pitch": 0.76
+      }
+    ]
+  },
+  "piece.sword.shing": {
+    "subtitle": "subtitles.hexhaki.piece.sword.shing",
+    "sounds": [
+      "hexhaki:piece/sword/shing1",
+      "hexhaki:piece/sword/shing2",
+      "hexhaki:piece/sword/shing3",
+      "hexhaki:piece/sword/shing4",
+      "hexhaki:piece/sword/shing5"
+    ]
+  },
+  "piece.sword.clash": {
+    "subtitle": "subtitles.hexhaki.piece.sword.clash",
+    "sounds": [
+      "hexhaki:piece/sword/clash1",
+      "hexhaki:piece/sword/clash2",
+      "hexhaki:piece/sword/clash3",
+      "hexhaki:piece/sword/clash4",
+      "hexhaki:piece/sword/clash5"
+    ]
+  },
+  "piece.sword.slash": {
+    "subtitle": "subtitles.hexhaki.piece.sword.slash",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/sword/whoosh1",
+        "pitch": 0.62
+      },
+      {
+        "name": "hexhaki:piece/sword/whoosh2",
+        "pitch": 0.56
+      }
+    ]
+  }
+}

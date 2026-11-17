@@ -7,4 +7,6 @@ public class ForgeRegistries {
     public static final IForgeRegistry<net.minecraft.world.entity.ai.memory.MemoryModuleType<?>> MEMORY_MODULE_TYPES = null;
     /** 1.3.40: the kitchen's effects (the original registers its bleeding effect here) */
     public static final IForgeRegistry<net.minecraft.world.effect.MobEffect> MOB_EFFECTS = null;
+    /** 2.2.9: HexPiece's own sound events (the original registers its own here: Fruits.SOUNDS) */
+    public static final IForgeRegistry<net.minecraft.sounds.SoundEvent> SOUND_EVENTS = null;
 }

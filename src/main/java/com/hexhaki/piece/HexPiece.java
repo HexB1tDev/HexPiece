@@ -20,6 +20,7 @@ public final class HexPiece {
         PieceNetwork.init();
         PieceEntities.register(bus);
         PieceItems.register(bus);
+        PieceSounds.register(bus);
         PieceConfig.register();
         LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, the katanas, pirates and marines");
     }

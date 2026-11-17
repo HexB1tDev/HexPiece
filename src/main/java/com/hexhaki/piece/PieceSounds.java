@@ -1,0 +1,46 @@
+package com.hexhaki.piece;
+
+import com.hexhaki.HexHaki;
+import com.hexhaki.piece.sword.SwordSounds;
+import java.util.HashMap;
+import java.util.Map;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+/**
+ * 2.2.9: HexPiece's own sound events ({@code hexhaki:piece.*}, defined in the merged {@code sounds.json}): the Swordsman's, from the
+ * web (CC0, OpenGameArt: {@link SwordSounds}). Played on the server for everyone near.
+ */
+public final class PieceSounds {
+    private static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, HexPiece.MODID);
+    private static final Map<String, RegistryObject<SoundEvent>> BY_NAME = new HashMap<>();
+
+    static {
+        for (String name : SwordSounds.ALL) {
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
+    }
+
+    private PieceSounds() {
+    }
+
+    public static void register(IEventBus modBus) {
+        SOUNDS.register(modBus);
+    }
+
+    /** {@code name} heard where {@code user} is, by everyone near, at {@code volume} and about {@code pitch} (a little varied). */
+    public static void play(LivingEntity user, String name, float volume, float pitch) {
+        RegistryObject<SoundEvent> sound = BY_NAME.get(name);
+        if (sound == null || user == null) {
+            return;
+        }
+        float vary = 0.95F + user.m_217043_().m_188501_() * 0.1F;
+        user.m_9236_().m_6263_(null, user.m_20185_(), user.m_20186_() + 1.0, user.m_20189_(), sound.get(), SoundSource.PLAYERS, volume,
+            pitch * vary);
+    }
+}
