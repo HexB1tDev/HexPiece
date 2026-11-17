@@ -1,7 +1,7 @@
-# HexPiece: handoff after 2.2.7
+# HexPiece: handoff after 2.2.8 (2.2.7: Gryphon and Yoru; 2.2.8: the slash's foam and ink)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.2.6.md covers 2.2.6 (the 3D inked lightning, needle tips, lightning off the
-body, the slash as light, the saya never black, the icon fix), next-ai-2.2.5.md and older the rest. The next version is 2.2.8. The
+body, the slash as light, the saya never black, the icon fix), next-ai-2.2.5.md and older the rest. The next version is 2.2.9. The
 work branch is `claude/nice-bell-gam7qf`. Nothing has ever been tested in game (only the owner can).
 
 ## The owner, this session (after 2.2.6, quoted)
@@ -49,14 +49,19 @@ work branch is `claude/nice-bell-gam7qf`. Nothing has ever been tested in game (
   half-ticks left (as the katana's own draws have).
 - Renders: `docs/images/yoru-draw.png`, `yoru-sheathe-charge.png`, `gryphon-hip.png`, `legend-icons.png`.
 
+## Released in 2.2.8 (the slash after the owner's Marineford clip)
+- `SlashMesh.foam`: 18 cells a flank (lumpy ovals lying on the skin, stretched along the flow: a pale fill, a ring of the deep colour
+  x `INK_SHADE` 0.42, a fading halo), born at the leading edge, swelling and drifting back (u 0.035..0.07 a tick) and up, popping
+  before the back; layer STREAKS. Inked edges: the skin's silhouette (`(1 - facing)^6`, not at the white leading edge) and the
+  tongues' grazing edges darkened to the deep colour x 0.42, denser.
+- Fix: `HALO_NEAR` is the last layer now (it was drawn before the streaks and the cutting edge, and debugQuads writes depth: they were
+  hidden behind it in 2.2.6/2.2.7). `STREAKS` 6, `HALO_NEAR` 7.
+
 ## Open: the owner's requests, in order
-1. **The slash after the Marineford reference** (the owner's `SwordBeam2.gif`): add foam cells (lighter blobs ringed in a darker shade of
-   the colour, drifting back along the flow and up into the tongues) and darker cel outlines on the torn edges (the skin's rim a
-   darker, denser shade); the Ryou colour stays.
-2. **Galaxy Fist becomes Iron Fist's** (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU
+1. **Galaxy Fist becomes Iron Fist's** (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU
    haki. ONLY for iron fist."): see next-ai-2.2.6.md item 2.
-3. **Fishman Karate rework**: see next-ai-2.2.6.md item 3 (Brick Fist, Water Bullet, Water Prison, water condensing out of the air).
-4. **Six Powers**: faster 3D air, Haki finger pistol shots (next-ai-2.2.6.md item 4).
+2. **Fishman Karate rework**: see next-ai-2.2.6.md item 3 (Brick Fist, Water Bullet, Water Prison, water condensing out of the air).
+3. **Six Powers**: faster 3D air, Haki finger pistol shots (next-ai-2.2.6.md item 4).
 
 ## Not verified (only the owner can test in game)
 - Everything of 2.2.7 in game: the blades' size and placement, the ropes on other skins (slim arms, 3D skin layers), Yoru's draw and

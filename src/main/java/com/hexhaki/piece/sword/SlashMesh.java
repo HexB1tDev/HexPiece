@@ -398,6 +398,7 @@ public final class SlashMesh {
             tongue(glow, f, k, colour, ticks, phase, alpha);
         }
         glow.layer = STREAKS;
+        foam(glow, f, seed, colour, ticks, alpha);
         streaks(glow, f, seed, colour, ticks, alpha);
         edgeLine(glow, f, colour, ticks, alpha);
         // the halo round the body: faint, most opaque at its edge
@@ -431,6 +432,10 @@ public final class SlashMesh {
 
     /** Rows round the body's section for the energy shells (more than the halo's: the flowing bands need the points). */
     static final int SHELL_RING = 32;
+    /** 2.2.7: how dark the inked edges are, as a share of the deep colour. */
+    static final double INK_SHADE = 0.42;
+    /** 2.2.7: foam cells on each flank of a full wave. */
+    static final int FOAM = 18;
     /** 2.2.6: the see-through layers, in the order they are drawn. */
     static final int HALO_FAR = 0;
     static final int SKIN_FAR = 1;
@@ -438,8 +443,12 @@ public final class SlashMesh {
     static final int TONGUES = 3;
     static final int CORE_NEAR = 4;
     static final int SKIN_NEAR = 5;
-    static final int HALO_NEAR = 6;
-    static final int STREAKS = 7;
+    static final int STREAKS = 6;
+    /**
+     * Last: the halo's near half is outside everything (2.2.7: drawn before the streaks, foam and cutting edge, it hid them: the batch
+     * writes depth wherever a quad is drawn, however faint).
+     */
+    static final int HALO_NEAR = 7;
 
     /**
      * 2.2.6: how bright the flowing light is at {@code u} (0 the leading edge .. 1 the back) and {@code v} (0 the trench .. 1 the peak),
@@ -511,10 +520,18 @@ public final class SlashMesh {
                 double k = clamp(white);
                 // the deep colour: saturated (its weakest channels pulled down a little), toward white where it burns hottest
                 double[] deep = saturated(colour);
-                double dr = deep[0];
-                double dg = deep[1];
-                double db = deep[2];
-                colours[at] = argb(Math.min(0.9, a) * alpha, dr + (1 - dr) * k, dg + (1 - dg) * k, db + (1 - db) * k);
+                double dr = deep[0] + (1 - deep[0]) * k;
+                double dg = deep[1] + (1 - deep[1]) * k;
+                double db = deep[2] + (1 - deep[2]) * k;
+                if (!core) {
+                    // 2.2.7 (the owner's Marineford clip): a darker line of the colour round the wave's edges, as the anime inks it
+                    double ink = Math.pow(1.0 - facing, 6.0) * (1.0 - edge);
+                    dr += (deep[0] * INK_SHADE - dr) * ink;
+                    dg += (deep[1] * INK_SHADE - dg) * ink;
+                    db += (deep[2] * INK_SHADE - db) * ink;
+                    a = Math.max(a, 0.82 * ink);
+                }
+                colours[at] = argb(Math.min(0.9, a) * alpha, dr, dg, db);
             }
         }
         for (int i = 0; i < ROWS; i++) {
@@ -565,10 +582,16 @@ public final class SlashMesh {
                 double a = 0.78 * Math.pow(1.0 - s, 0.85) * root * (0.35 + 0.65 * Math.pow(facing, 0.7)) * (0.6 + 0.5 * pulse);
                 double white = clamp(0.5 * (1.0 - s) * (1.0 - s) + 0.2 * pulse * (1.0 - s));
                 double[] deep = saturated(colour);
-                double dr = deep[0];
-                double dg = deep[1];
-                double db = deep[2];
-                c[i][j] = argb(Math.min(0.9, a) * alpha, dr + (1 - dr) * white, dg + (1 - dg) * white, db + (1 - db) * white);
+                double dr = deep[0] + (1 - deep[0]) * white;
+                double dg = deep[1] + (1 - deep[1]) * white;
+                double db = deep[2] + (1 - deep[2]) * white;
+                // 2.2.7: their torn edges inked darker, as the anime draws them
+                double ink = Math.pow(1.0 - facing, 4.0) * Math.min(1.0, s * 3.0);
+                dr += (deep[0] * INK_SHADE - dr) * ink;
+                dg += (deep[1] * INK_SHADE - dg) * ink;
+                db += (deep[2] * INK_SHADE - db) * ink;
+                a = Math.max(a, 0.7 * ink * Math.pow(1.0 - s, 0.6));
+                c[i][j] = argb(Math.min(0.9, a) * alpha, dr, dg, db);
             }
         }
         for (int i = 0; i < rows; i++) {
@@ -632,6 +655,81 @@ public final class SlashMesh {
                 }
             }
         }
+    }
+
+    /**
+     * 2.2.7 (the owner's Marineford clip: the wave full of foam, lighter blobs ringed in a darker shade of its colour): foam cells
+     * drifting back along each flank with the flow and rising toward the back, each born small at the leading edge, swelling, and
+     * bursting away before the tongues; an oval lying on the skin (stretched along the flow), a pale middle in a darker ring.
+     */
+    static void foam(Quads out, Frame f, long seed, double[] colour, double ticks, double alpha) {
+        Random random = new Random(seed * 131 + 17);
+        double[] deep = saturated(colour);
+        int ringR = 0;
+        int sides = 12;
+        for (int cell = 0; cell < FOAM * 2; cell++) {
+            int sign = cell % 2 == 0 ? 1 : -1;
+            double u0 = random.nextDouble();
+            double v0 = 0.05 + 0.75 * random.nextDouble();
+            double speed = 0.035 + 0.035 * random.nextDouble();
+            double size = f.height * (0.03 + 0.045 * random.nextDouble());
+            double rise = 0.12 + 0.12 * random.nextDouble();
+            double u = (u0 + ticks * speed) % 1.0;
+            double life = Math.sin(Math.PI * u);
+            if (life < 0.08) {
+                continue;
+            }
+            u = 0.06 + 0.86 * u;
+            double v = Math.min(0.9, v0 + rise * u);
+            double r = size * (0.5 + 0.5 * life) * (1.0 - 0.45 * v);
+            double front = f.front(v);
+            double back = f.back(v);
+            double mid = (front + back) / 2;
+            double rf = (front - back) / 2;
+            double cos = 1.0 - 2.0 * u;
+            double sin = Math.sqrt(Math.max(0.0, 1.0 - cos * cos));
+            double across = sign * (sin * f.across(v) * 1.02 + 0.015);
+            // the surface's two directions there: along the flow (round the section) and up
+            double[] centre = {mid + rf * cos, v * f.height, across};
+            double[] flowDir = {-rf * Math.sqrt(Math.max(0.0, 1.0 - cos * cos)) * 2.0, 0.0, -sign * f.across(v) * cos * 2.0};
+            double fl = Math.max(1.0E-9, Math.sqrt(flowDir[0] * flowDir[0] + flowDir[2] * flowDir[2]));
+            flowDir = new double[] {flowDir[0] / fl, 0.0, flowDir[2] / fl};
+            double[] upDir = {0.0, 1.0, 0.0};
+            double fade = Math.min(1.0, life * 2.4) * alpha;
+            int fill = argb(0.62 * fade, deep[0] + (1 - deep[0]) * 0.72, deep[1] + (1 - deep[1]) * 0.72, deep[2] + (1 - deep[2]) * 0.72);
+            int ring = argb(0.9 * fade, deep[0] * INK_SHADE, deep[1] * INK_SHADE, deep[2] * INK_SHADE);
+            int ringOut = argb(0.0, deep[0] * INK_SHADE, deep[1] * INK_SHADE, deep[2] * INK_SHADE);
+            double[][] inner = new double[sides][];
+            double[][] outer = new double[sides][];
+            double[][] halo = new double[sides][];
+            double wobble = random.nextDouble() * Math.PI * 2;
+            for (int k = 0; k < sides; k++) {
+                double a = Math.PI * 2.0 * k / sides;
+                // a little lumpy, as foam is
+                double lump = 1.0 + 0.12 * Math.sin(3 * a + wobble + ticks * 0.4);
+                double ca = Math.cos(a) * 1.5 * lump;
+                double sa = Math.sin(a) * lump;
+                inner[k] = onSkin(f, centre, flowDir, upDir, ca * r * 0.78, sa * r * 0.78, sign);
+                outer[k] = onSkin(f, centre, flowDir, upDir, ca * r, sa * r, sign);
+                halo[k] = onSkin(f, centre, flowDir, upDir, ca * r * 1.22, sa * r * 1.22, sign);
+            }
+            double[] middle = onSkin(f, centre, flowDir, upDir, 0.0, 0.0, sign);
+            for (int k = 0; k < sides; k++) {
+                int k1 = (k + 1) % sides;
+                out.add(middle, inner[k], inner[k1], inner[k1], fill, fill, fill, fill);
+                out.add(inner[k], outer[k], outer[k1], inner[k1], fill, ring, ring, fill);
+                out.add(outer[k], halo[k], halo[k1], outer[k1], ring, ringOut, ringOut, ring);
+            }
+            ringR++;
+        }
+    }
+
+    /** 2.2.7: a point on the skin near {@code centre} (ahead, up, side), {@code a} along the flow and {@code b} up, lifted off it a hair. */
+    static double[] onSkin(Frame f, double[] centre, double[] flowDir, double[] upDir, double a, double b, int sign) {
+        double fa = centre[0] + flowDir[0] * a;
+        double y = centre[1] + upDir[1] * b;
+        double s = centre[2] + flowDir[2] * a + sign * 0.02;
+        return f.at(fa, y, s);
     }
 
     /** 2.2.6: the cutting edge: a white-hot line up the wave's front, turned to the eye, flickering, thinning to the peak. */
