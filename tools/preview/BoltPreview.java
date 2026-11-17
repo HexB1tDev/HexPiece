@@ -35,13 +35,17 @@ public final class BoltPreview {
             gifs(new File(args[1]));
             return;
         }
+        if (args.length == 2 && args[0].equals("slashgif")) {
+            slashGif(new File(args[1]));
+            return;
+        }
         File dir = new File(args[0]);
         dir.mkdirs();
         double[] ages = {0.5, 1.2, 2.2, 4, 7, 10, 13};
-        sheet(new File(dir, "bolt-closeup.png"), closeUp(), ages, new Shot[] {
-            new Shot("night, side", new double[] {0.2, 1.5, -2.6}, new double[] {0.2, 1.4, 0}, true),
-            new Shot("day, side", new double[] {0.2, 1.5, -2.6}, new double[] {0.2, 1.4, 0}, false),
-            new Shot("night, along", new double[] {-2.6, 1.9, -1.2}, new double[] {0.5, 1.3, 0.1}, true)});
+        sheet(new File(dir, "bolt-closeup.png"), conqueror(0.9F, 500, true, 23L), ages, new Shot[] {
+            new Shot("night, side", new double[] {0.6, 2.0, -6.5}, new double[] {0.0, 1.6, 0}, true),
+            new Shot("day, side", new double[] {0.6, 2.0, -6.5}, new double[] {0.0, 1.6, 0}, false),
+            new Shot("night, along", new double[] {-5.0, 2.6, -3.5}, new double[] {0.5, 1.4, 0.1}, true)});
         sheet(new File(dir, "bolt-conqueror.png"), conqueror(1.0F, 1000, true, 8L), new double[] {0.6, 1.5, 3, 5, 8, 11, 14}, new Shot[] {
             new Shot("night, third person", new double[] {-4.5, 3.4, -7.5}, new double[] {0, 1.0, 0}, true),
             new Shot("day, third person", new double[] {-4.5, 3.4, -7.5}, new double[] {0, 1.0, 0}, false),
@@ -63,10 +67,12 @@ public final class BoltPreview {
         // large single frames, to judge the tube, the outline and the glow up close
         W = 900;
         H = 560;
-        sheet(new File(dir, "bolt-hero-night.png"), closeUp(), new double[] {4}, new Shot[] {
-            new Shot("night, side", new double[] {0.1, 1.45, -2.2}, new double[] {0.1, 1.4, 0}, true)});
-        sheet(new File(dir, "bolt-hero-day.png"), closeUp(), new double[] {2.2}, new Shot[] {
-            new Shot("day, side", new double[] {0.1, 1.45, -2.2}, new double[] {0.1, 1.4, 0}, false)});
+        sheet(new File(dir, "bolt-hero-night.png"), conqueror(0.9F, 500, true, 23L), new double[] {4}, new Shot[] {
+            new Shot("night, side", new double[] {0.6, 2.0, -6.5}, new double[] {0.0, 1.6, 0}, true)});
+        sheet(new File(dir, "bolt-hero-day.png"), conqueror(0.9F, 500, true, 23L), new double[] {2.2}, new Shot[] {
+            new Shot("day, side", new double[] {0.6, 2.0, -6.5}, new double[] {0.0, 1.6, 0}, false)});
+        sheet(new File(dir, "bolt-hero-tube.png"), conqueror(0.9F, 500, true, 23L), new double[] {3}, new Shot[] {
+            new Shot("day, close", new double[] {-1.2, 2.3, -3.6}, new double[] {1.6, 1.7, 0.4}, false)});
         sheet(new File(dir, "bolt-hero-burst.png"), conqueror(1.0F, 1000, true, 8L), new double[] {3}, new Shot[] {
             new Shot("night, third person", new double[] {-3.0, 2.6, -5.0}, new double[] {0, 1.1, 0}, true)});
         W = 300;
@@ -439,6 +445,91 @@ public final class BoltPreview {
         H = oldH;
     }
 
+    /**
+     * 2.2.6: frames of a Haki slash flowing, the camera keeping pace with it (java -cp build/preview:build/classes BoltPreview slashgif
+     * &lt;dir&gt;): a 24-tall wave at night and by day, three-quarter from the side, its crackle on, in a cyan Ryou colour.
+     */
+    static void slashGif(File dir) throws Exception {
+        int oldW = W;
+        int oldH = H;
+        W = 560;
+        H = 420;
+        dir.mkdirs();
+        double height = 24.0;
+        double speed = 2.4;
+        double foot = 1.6 + com.hexhaki.piece.sword.SwordRules.slashCentre(height) - height / 2.0;
+        int frame = 0;
+        for (boolean night : new boolean[] {true, false}) {
+            for (double ticks = 4; ticks <= 16; ticks += 0.5) {
+                double along = 10 + ticks * speed;
+                Shot shot = new Shot(night ? "night" : "day", new double[] {along - 14, 12, -34}, new double[] {along - 2, 11, 0}, night);
+                Raster raster = new Raster(shot);
+                raster.plain = 12;
+                raster.scene();
+                raster.minAlpha = 0.002F;
+                com.hexhaki.piece.sword.SlashMesh.Quads glow = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                com.hexhaki.piece.sword.SlashMesh.Quads solid = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                com.hexhaki.piece.sword.SlashMesh.Frame f = com.hexhaki.piece.sword.SlashMesh.Frame.of(sub(new double[] {along, foot, 0}, shot.eye), 1, 0,
+                    height, along / (height * com.hexhaki.piece.sword.SwordRules.SLASH_BACK));
+                com.hexhaki.piece.sword.SlashMesh.wave(solid, glow, f, 7L, 0xFF2AE6FF, ticks, 1.0);
+                for (int q = 0; q < solid.n; q++) {
+                    raster.quad(java.util.Arrays.copyOfRange(solid.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(solid.c, q * 4, q * 4 + 4), false);
+                }
+                // the crackle up its leading edge, as SlashRenderer lays it
+                List<Bolt> bolts = new ArrayList<>();
+                List<Double> ages = new ArrayList<>();
+                double k = height / 1.28;
+                long window = (long) Math.floor(ticks / com.hexhaki.piece.haki.DrawCrackle.WINDOW);
+                for (long w = Math.max(0, window - 2); w <= window; w++) {
+                    for (Bolt bolt : com.hexhaki.piece.haki.DrawCrackle.set(7L * 0x9E3779B97F4A7C15L, w, 0.0, 1.28, Double.NaN, 1.3, 0xFF2AE6FF)) {
+                        double age = ticks - w * com.hexhaki.piece.haki.DrawCrackle.WINDOW - bolt.delay;
+                        if (age < 0 || age > bolt.duration) {
+                            continue;
+                        }
+                        double[] pts = new double[bolt.points.length];
+                        for (int i = 0; i < bolt.count(); i++) {
+                            double v = Math.max(0.0, Math.min(0.97, bolt.points[i * 3 + 1] / 1.28 * 0.97));
+                            double[] p = com.hexhaki.piece.sword.SlashMesh.edge(f, v, height * 0.01 + Math.abs(bolt.points[i * 3]) * k, bolt.points[i * 3 + 2] * k);
+                            pts[i * 3] = p[0];
+                            pts[i * 3 + 1] = p[1];
+                            pts[i * 3 + 2] = p[2];
+                        }
+                        float[] widths = bolt.widths.clone();
+                        for (int i = 0; i < widths.length; i++) {
+                            widths[i] *= (float) Math.min(3.0, Math.pow(k, 0.75));
+                        }
+                        bolts.add(new Bolt(pts, widths, bolt.color, bolt.kind, 0, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                        ages.add(age);
+                    }
+                }
+                raster.light();
+                double pixel = 2.0 * Math.tan(FOV / 2) / H;
+                List<double[]> gv = new ArrayList<>();
+                List<int[]> gc = new ArrayList<>();
+                for (int i = 0; i < bolts.size(); i++) {
+                    BoltMesh.build(bolts.get(i), BoltMesh.Frame.at(0, 0, 0), ages.get(i), pixel, night ? 1.0 : 0.5, (g, xyz, argb) -> {
+                        if (g) {
+                            gv.add(xyz);
+                            gc.add(argb);
+                        } else {
+                            raster.quad(xyz, argb, false);
+                        }
+                    });
+                }
+                for (int i = 0; i < gv.size(); i++) {
+                    raster.glowQuad(gv.get(i), gc.get(i));
+                }
+                glow.sortBackToFront();
+                for (int q = 0; q < glow.n; q++) {
+                    raster.quadNoCull(java.util.Arrays.copyOfRange(glow.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(glow.c, q * 4, q * 4 + 4));
+                }
+                ImageIO.write(raster.image(), "png", new File(dir, String.format("f%03d.png", frame++)));
+            }
+        }
+        W = oldW;
+        H = oldH;
+    }
+
     /** One bolt coming down to strike the ground in front of the camera (two pieces, the original's three strokes each). */
     static List<Call> strike() {
         List<Call> calls = new ArrayList<>();
@@ -524,6 +615,11 @@ public final class BoltPreview {
             BoltPainter.strokes(call.a, call.b, call.width, call.color, call.duration, start, call.forks, 0x4841_4B49L, bolts);
             chain.land(call.a, call.b, start, call.duration);
         }
+        // as the game does at launch: lightning off the body (2.2.6), every stroke in the owner's Ryou colour (here the original's red),
+        // free ends pointed
+        bolts.replaceAll(bolt -> new Bolt(com.hexhaki.piece.haki.ConquerorBolts.offBody(bolt.points), bolt.widths, bolt.color, bolt.kind,
+            bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+        bolts.replaceAll(bolt -> bolt.tinted(0xFF1433));
         BoltPainter.point(bolts);
         List<double[]> landings = landings(bolts);
         BufferedImage sheet = new BufferedImage(W * ages.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
@@ -649,7 +745,15 @@ public final class BoltPreview {
             return boltsAt(bolts, age, new double[] {0, 0, 0});
         }
 
+        /** 2.2.6: the key light as the game sets it: BoltMesh.VIEW_LIGHT turned from the view into the camera-space frame. */
+        void light() {
+            double[] l = BoltMesh.VIEW_LIGHT;
+            BoltMesh.light(this.rt[0] * l[0] + this.up[0] * l[1] - this.fw[0] * l[2], this.rt[1] * l[0] + this.up[1] * l[1] - this.fw[1] * l[2],
+                this.rt[2] * l[0] + this.up[2] * l[1] - this.fw[2] * l[2]);
+        }
+
         int boltsAt(List<Bolt> bolts, double age, double[] origin) {
+            light();
             double pixel = 2.0 * Math.tan(FOV / 2) / H;
             List<double[]> glowV = new ArrayList<>();
             List<int[]> glowC = new ArrayList<>();
@@ -699,10 +803,51 @@ public final class BoltPreview {
                 }
             }
             for (int i = 0; i < glowV.size(); i++) {
-                quad(glowV.get(i), glowC.get(i), true);
+                glowQuad(glowV.get(i), glowC.get(i));
             }
             return quads[0];
         }
+
+        /**
+         * 2.2.6: a glow quad as HakiBolts.write hands it to the game (2.1.9: alpha blended, not added): every corner the hue of the quad's
+         * brightest at full brightness, as opaque as it was bright (times 0.9); depth tested, not written here (glow over glow blends).
+         */
+        void glowQuad(double[] v, int[] c) {
+            int top = 0;
+            int hue = 0xFFFFFF;
+            for (int k = 0; k < 4; k++) {
+                int bright = Math.max((c[k] >>> 16) & 255, Math.max((c[k] >>> 8) & 255, c[k] & 255));
+                if (bright > top) {
+                    top = bright;
+                    hue = c[k];
+                }
+            }
+            if (top == 0) {
+                return;
+            }
+            float k = 1.0F / top;
+            float[] col = {((hue >>> 16) & 255) * k, ((hue >>> 8) & 255) * k, (hue & 255) * k};
+            float[] al = new float[4];
+            for (int i = 0; i < 4; i++) {
+                al[i] = Math.max((c[i] >>> 16) & 255, Math.max((c[i] >>> 8) & 255, c[i] & 255)) / 255F * 0.9F;
+            }
+            double[] a = {v[0], v[1], v[2]};
+            double[] b2 = {v[3], v[4], v[5]};
+            double[] c2 = {v[6], v[7], v[8]};
+            double[] d = {v[9], v[10], v[11]};
+            float old = this.minAlpha;
+            this.minAlpha = 0.004F;
+            this.noDepthWrite = true;
+            this.triAlpha = new float[] {al[0], al[1], al[2]};
+            tri(a, b2, c2, col, col, col, false);
+            this.triAlpha = new float[] {al[0], al[2], al[3]};
+            tri(a, c2, d, col, col, col, false);
+            this.triAlpha = null;
+            this.noDepthWrite = false;
+            this.minAlpha = old;
+        }
+
+        boolean noDepthWrite;
 
         /** 2.2.4: a quad as the game's debug-quads batch draws it: alpha blended, depth tested and written, both faces. */
         void quadNoCull(double[] v, int[] c) {
@@ -802,7 +947,9 @@ public final class BoltPreview {
                         this.r[i] = cr * a + this.r[i] * (1 - a);
                         this.g[i] = cg * a + this.g[i] * (1 - a);
                         this.b[i] = cb * a + this.b[i] * (1 - a);
-                        this.depth[i] = z;
+                        if (!this.noDepthWrite) {
+                            this.depth[i] = z;
+                        }
                     } else {
                         this.r[i] = cr;
                         this.g[i] = cg;

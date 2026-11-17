@@ -63,7 +63,23 @@ public final class LightningTests {
         Check.that(s1 != Jag.seed(4, 5, 6, 1, 2, 3, 9), "a reversed segment is another bolt");
     }
 
+    /** 2.2.6: lightning laid on a player's body moves out onto the shell round it; what is outside stays where it is. */
+    static void offBody() {
+        double[] on = {0.1, 1.2, 0.0, 0.3, 0.6, 0.1, 5.0, 2.0, 0.0};
+        double[] off = ConquerorBolts.offBody(on);
+        Check.that(off != on && on[0] == 0.1, "a new array, the old one untouched");
+        for (int i = 0; i < 2; i++) {
+            Check.near(ConquerorBolts.through(off[i * 3], off[i * 3 + 1], off[i * 3 + 2]), 1.0, 1e-6, "on the shell");
+        }
+        Check.that(off[6] == 5.0 && off[7] == 2.0, "a point outside the shell stays");
+        double[] free = {4, 1, 0, 6, 1, 0};
+        Check.that(ConquerorBolts.offBody(free) == free, "nothing inside: the same array");
+        double[] middle = ConquerorBolts.offBody(new double[] {0, ConquerorBolts.CENTRE, 0, 3, 1, 0});
+        Check.that(!Double.isNaN(middle[1]) && middle[1] > ConquerorBolts.CENTRE, "the very middle goes up");
+    }
+
     static void conqueror() {
+        offBody();
         for (boolean dome : new boolean[] {false, true}) {
             for (float charge : new float[] {0.04F, 0.3F, 0.6F, 1.0F}) {
                 for (int mastery : new int[] {0, 400, 1000}) {
@@ -83,9 +99,16 @@ public final class LightningTests {
                         int points = bolt.length / 3;
                         Check.that(points >= 3 && points <= 2 * ConquerorBolts.MOST_POINTS - 1,
                             "a main bolt has 3.." + (2 * ConquerorBolts.MOST_POINTS - 1) + " points (" + points + ")");
-                        double rootOut = Math.hypot(bolt[0], bolt[2]);
-                        Check.that(rootOut >= 0.87 && rootOut <= 1.17, "it starts at the body (" + rootOut + ")");
-                        Check.that(bolt[1] >= 0.29 && bolt[1] <= 1.49, "waist to shoulder high");
+                        double through = ConquerorBolts.through(bolt[0], bolt[1], bolt[2]);
+                        boolean foot = Math.abs(bolt[1] - (ConquerorBolts.FLOOR + 0.15)) < 1e-9 && through <= 1.0 + 1e-9;
+                        Check.that(through >= 0.95 && through <= 1.07 || foot,
+                            "2.2.6: it starts on the shell round the body, never at the body (" + through + ")");
+                        Check.that(Math.hypot(bolt[0], bolt[2]) >= 0.6 || bolt[1] >= 2.6,
+                            "not in the player, nor just over the head (" + Math.hypot(bolt[0], bolt[2]) + ", " + bolt[1] + ")");
+                        for (int p = 1; p < points; p++) {
+                            Check.that(ConquerorBolts.through(bolt[p * 3], bolt[p * 3 + 1], bolt[p * 3 + 2]) >= 0.8,
+                                "2.2.6: and never runs back through the body");
+                        }
                         double tx = bolt[bolt.length - 3];
                         double ty = bolt[bolt.length - 2] - ConquerorBolts.CENTRE;
                         double tz = bolt[bolt.length - 1];
@@ -137,6 +160,7 @@ public final class LightningTests {
         Check.that(!java.util.Arrays.equals(here, there), "and then takes a new one");
         Bolt pointed = one.pointed();
         Check.that(pointed.widths[pointed.count() - 1] < one.widths[one.count() - 1] * 0.3, "a free end comes to a point");
+        Check.that(pointed.widths[pointed.count() - 1] == 0.0F, "2.2.6: a needle, not a square stub");
         Check.near(pointed.widths[0], one.widths[0], 1e-6, "but not at its root");
     }
 
@@ -433,7 +457,9 @@ public final class LightningTests {
         float[] widths = {0.1F, 0.1F};
         int ryou = 0x2E9BFF;
         Bolt body = new Bolt(points, widths, 0xF0060008, Bolt.BODY, 0, 5, 0, 1L, 0);
-        Check.that(body.tinted(ryou) == body, "the black body stays black");
+        Bolt dark = body.tinted(ryou);
+        Check.that(Bolt.kindOf(dark.color) == Bolt.BODY && (dark.color >>> 24) == 0xF0, "the black body stays black (a body, its alpha kept)");
+        Check.that((dark.color & 0xFF) > ((dark.color >> 16) & 0xFF), "with a hint of the Ryou colour (its edge light)");
         Bolt core = new Bolt(points, widths, 0xFFFF1E10, Bolt.CORE, 0, 5, 0, 1L, 0).tinted(ryou);
         Check.that(core.color == (0xFF000000 | ryou), "a red core becomes the Ryou colour");
         Bolt aura = new Bolt(points, widths, 0x582A0008, Bolt.AURA, 0, 5, 0, 1L, 0).tinted(ryou);

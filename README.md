@@ -37,7 +37,7 @@ the start menu and the Captain's Log:
   crescent, Fishman Karate's water.
 - The Swordsman (2.1.4): the owner's 25 katanas and their saya as items with grades, rarities and descriptions, worn at the hip;
   right-handed draw cuts and 12 more cuts in standing, moving and aerial strings, sheathing, a charged cut or Haki slash in the Ryou
-  colour (2.2.4: a torn energy wave rising out of the ground, as the manga draws Mihawk's) that cuts a trench as wide as its body,
+  colour (2.2.4: a torn energy wave rising out of the ground, as the manga draws Mihawk's; 2.2.6: drawn as flowing light, not a solid) that cuts a trench as wide as its body,
   the Ryou finisher, and Ctrl + M1's quick draw.
 - Pirate and Marine NPC patrols (pirates also with katanas) that fight each other and the players of the other flag with the same moves; bounty and merit ranks.
 - The Captain's Log (2.2.4: the one menu, the original's Ability Book, Haki Techniques and Gear mastery screens gone into it):
@@ -45,8 +45,10 @@ the start menu and the Captain's Log:
 - The Conqueror's full-power release (2.2.5): every full charge is the JoyBoy one; enormous black bolts with a rim of the Ryou colour
   tear out of a flash in every direction, and where they strike the ground it splits into fissures that grow back on their own
   (HexGhoul's self-repairing terrain).
-- Haki lightning as real 3D lightning (2.1.5): crackled tubes facing the eye, with a black ink outline, a coloured core, a white-hot heart
-  and a glow, striking, flickering, dancing and thinning away; Haki lightning off the katana as it is drawn, charged and released.
+- Haki lightning as real 3D lightning (2.1.5; 2.2.6: lit 3D tubes, every stroke inked, needle-sharp tips, tearing out of a shell round
+  the player, never out of the body): crackled, with a black ink outline, a coloured core white-hot down its middle, black bodies
+  edge-lit in the Ryou colour, and a glow, striking, flickering, dancing and thinning away; Haki lightning off the katana as it is
+  drawn, charged and released.
 - Every animation reworked (and linted so none comes apart); the Imu fruit removed (its assets kept).
 - Ryou (the original's Advanced Haki, renamed): it comes with Armament once unlocked, in the player's own saved glow colour, as black
   hands with a coloured rim (no fire, no inflated physique). 2.2.4: every player has that colour from their first login, and all

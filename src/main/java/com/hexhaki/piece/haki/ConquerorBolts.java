@@ -7,8 +7,8 @@ import java.util.SplittableRandom;
 /**
  * 2.1.1: the Conqueror's black lightning that tears out of a charging or releasing player (pure, tested). It replaces the body of the
  * original {@code ConquerorLightningPath.generate} through {@link LightningPaths}, keeping its contract: the same inputs (charge 0..1,
- * Conqueror mastery 0..1000, a seed, dome or not), bolts relative to the player's feet that start at the body (0.9..1.2 blocks out, waist
- * to shoulder high) and run out to the original's radius, and a pure function of the seed, so the server's contact stuns land exactly
+ * Conqueror mastery 0..1000, a seed, dome or not), bolts relative to the player's feet that start round the body (2.2.6: on the shell,
+ * {@link #SHELL_OUT} out) and run out to the original's radius, and a pure function of the seed, so the server's contact stuns land exactly
  * where every client draws the bolts.
  *
  * <p>What changed from the original: every bolt arcs (it bows sideways and lifts off the ground in its middle instead of running
@@ -31,6 +31,15 @@ public final class ConquerorBolts {
     public static final double MOST_LIFT = 1.4;
     /** Up-and-down crackle as a share of the sideways crackle. */
     public static final double FLAT = 0.3;
+    /**
+     * 2.2.6 (the owner, drawing a dome round the player with the bolts tearing out of it: "Haki is not meant to come directly from the
+     * player's body"): the shell the lightning comes out of, an egg round the body centred on {@link #CENTRE}: this far out level with
+     * its middle, this far above (and below: the ground cuts it) its middle.
+     */
+    public static final double SHELL_OUT = 2.0;
+    public static final double SHELL_UP = 1.9;
+    /** Where a root on the ground sits (the shell's foot, a ring round the player). */
+    static final double GROUND_ROOT = FLOOR + 0.15;
 
     private ConquerorBolts() {
     }
@@ -74,27 +83,36 @@ public final class ConquerorBolts {
                 hx = dx / flat;
                 hz = dz / flat;
             }
-            double rootOut = 0.88 + random.nextDouble() * 0.28;
-            double rootUp = Math.max(0.3, Math.min(1.48, CENTRE + 0.5 * dy + (random.nextDouble() - 0.5) * 0.3));
-            double reach = radius * (0.82 + random.nextDouble() * 0.18);
-            double[] root = {hx * rootOut, rootUp, hz * rootOut};
+            // 2.2.6: out of the shell round the body (a little in or out of it), never out of the body itself
+            double[] root = shell(dx, dy, dz, 0.96 + random.nextDouble() * 0.1);
+            if (root[1] < GROUND_ROOT) {
+                root = ring(hx, hz);
+            }
+            double reach = Math.max(radius * (0.82 + random.nextDouble() * 0.18), Math.hypot(root[0], root[2]) + 2.0);
             double[] tip = {dx * reach, CENTRE + dy * reach, dz * reach};
             double[] bolt;
             if (tip[1] >= FLOOR + 0.05) {
                 // up into the air, or out level: straight out along its line, bowing as it goes
                 bolt = arc(root, tip, random, dome ? 0.15 : 0.1, (dome ? 0.09 : 0.06) * (1.0 - Math.abs(dy)), c);
             } else {
-                // down: it strikes the ground where its line meets it, then races along the ground outward for what is left of it
+                // down: it strikes the ground where its line meets it (never inside the shell), then races along the ground outward
                 double t = (CENTRE - FLOOR) / -dy;
-                double[] hit = {dx * t, FLOOR, dz * t};
-                double out = Math.hypot(hit[0], hit[2]);
+                double rootOut = Math.hypot(root[0], root[2]);
+                double out = Math.max(Math.hypot(dx * t, dz * t), rootOut + 0.4);
+                double[] hit = {hx * out, FLOOR, hz * out};
                 double run = Math.max(radius * 0.3, Math.min(radius - out, reach - t));
                 double[] end = {hx * (out + run), FLOOR + random.nextDouble() * 0.5, hz * (out + run)};
-                double[] down = arc(root, hit, random, 0.05, 0.0, c);
                 double[] along = arc(hit, end, random, dome ? 0.15 : 0.1, dome ? 0.09 : 0.06, c);
-                bolt = new double[down.length + along.length - 3];
-                System.arraycopy(down, 0, bolt, 0, down.length);
-                System.arraycopy(along, 3, bolt, down.length, along.length - 3);
+                if (root[1] <= GROUND_ROOT + 1.0E-9) {
+                    // a root on the shell's foot: it runs out along the ground from there
+                    along = arc(root, end, random, dome ? 0.15 : 0.1, dome ? 0.09 : 0.06, c);
+                    bolt = along;
+                } else {
+                    double[] down = arc(root, hit, random, 0.05, 0.0, c);
+                    bolt = new double[down.length + along.length - 3];
+                    System.arraycopy(down, 0, bolt, 0, down.length);
+                    System.arraycopy(along, 3, bolt, down.length, along.length - 3);
+                }
             }
             mains.add(bolt);
             int forkCount = dome ? 1 + (random.nextDouble() < 0.6 ? 1 : 0) : (c >= 0.58F ? 1 : 0);
@@ -105,6 +123,76 @@ public final class ConquerorBolts {
         List<double[]> all = new ArrayList<>(mains);
         all.addAll(forks);
         return all;
+    }
+
+    /** 2.2.6: the point of the shell along the direction (dx, dy, dz) from its centre (unit), {@code scale} times as far. */
+    public static double[] shell(double dx, double dy, double dz, double scale) {
+        double r = scale / Math.sqrt((dx * dx + dz * dz) / (SHELL_OUT * SHELL_OUT) + dy * dy / (SHELL_UP * SHELL_UP));
+        return new double[] {dx * r, CENTRE + dy * r, dz * r};
+    }
+
+    /** 2.2.6: the shell's foot along the heading (hx, hz): where it meets the ground round the player. */
+    static double[] ring(double hx, double hz) {
+        double k = (GROUND_ROOT - CENTRE) / SHELL_UP;
+        double out = SHELL_OUT * Math.sqrt(Math.max(0.0, 1.0 - k * k));
+        return new double[] {hx * out, GROUND_ROOT, hz * out};
+    }
+
+    /** 2.2.6: how far a point (relative to the feet) is through the shell: under 1 inside it, 1 on it. */
+    public static double through(double x, double y, double z) {
+        double h = (x * x + z * z) / (SHELL_OUT * SHELL_OUT);
+        double v = (y - CENTRE) / SHELL_UP;
+        return Math.sqrt(h + v * v);
+    }
+
+    /**
+     * 2.2.6: a stroke's points (relative to the feet of the player it plays on) moved off the body: every point inside the shell goes out
+     * onto it along the line from the shell's middle (above the ground), so lightning laid on the body crawls over the shell round it
+     * instead. The same points move the same way, so the strokes of one bolt stay one bolt. {@code points} itself is never changed.
+     */
+    public static double[] offBody(double[] points) {
+        double[] out = null;
+        for (int i = 0; i < points.length / 3; i++) {
+            double x = points[i * 3];
+            double y = points[i * 3 + 1];
+            double z = points[i * 3 + 2];
+            double e = through(x, y, z);
+            if (e >= 1.0) {
+                continue;
+            }
+            if (out == null) {
+                out = points.clone();
+            }
+            double dx = x;
+            double dy = y - CENTRE;
+            double dz = z;
+            if (e < 1.0E-6) {
+                dy = 1.0;
+                e = 1.0 / SHELL_UP;
+            }
+            double k = 1.0 / Math.max(1.0E-6, e);
+            double onto = CENTRE + dy * k;
+            if (onto >= GROUND_ROOT) {
+                out[i * 3] = dx * k;
+                out[i * 3 + 1] = onto;
+                out[i * 3 + 2] = dz * k;
+                continue;
+            }
+            // low by the feet: out level to the shell's foot (the ground cuts the shell there), never under the ground
+            double low = Math.max(GROUND_ROOT, y0(onto, points[i * 3 + 1]));
+            double v = (low - CENTRE) / SHELL_UP;
+            double reach = SHELL_OUT * Math.sqrt(Math.max(0.0, 1.0 - v * v));
+            double flat = Math.hypot(dx, dz);
+            out[i * 3] = flat < 1.0E-9 ? reach : dx / flat * reach;
+            out[i * 3 + 1] = low;
+            out[i * 3 + 2] = flat < 1.0E-9 ? 0.0 : dz / flat * reach;
+        }
+        return out == null ? points : out;
+    }
+
+    /** The height a low point keeps: its own, if it is above the shell's foot. */
+    static double y0(double projected, double own) {
+        return Math.max(projected, own);
     }
 
     /**

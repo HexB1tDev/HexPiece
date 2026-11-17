@@ -3,7 +3,7 @@
 textured rasteriser (numpy) with the lighting the game will use (two directional lights and ambient, as Minecraft lights entities) and
 the blade's moving highlight (client/sword/KatanaRenderer: a band of light reflected off the steel, by the view-space normal).
 
-  python3 tools/katana_render.py icons <out dir>          the 25 inventory icons (32x32, blade up to the right as Minecraft draws swords)
+  python3 tools/katana_render.py icons <out dir>          the 25 inventory icons (32x32, blade up to the right as Minecraft draws swords; 2.2.6: they belong in src/main/resources/assets/hexhaki/textures/item/katana, where the item atlas stitches them)
   python3 tools/katana_render.py sheet <out.png>          all 25 blades and their saya side by side, to judge them
 Both read input/Hex_Katana_Atelier_1.20.1.zip.
 """

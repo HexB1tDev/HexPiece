@@ -230,22 +230,31 @@ public final class SwordTests {
                 double[] base = {20 - eye[0], -2 - eye[1], 0 - eye[2]};
                 com.hexhaki.piece.sword.SlashMesh.Frame frame = com.hexhaki.piece.sword.SlashMesh.Frame.of(base, 1, 0, height, 1.0);
                 com.hexhaki.piece.sword.SlashMesh.wave(solid, glow, frame, 9L, 0x2CF6D2, 12.0, 1.0);
-                Check.that(solid.n > 400 && glow.n > 100, "a " + height + " wave has a body and a glow");
+                // 2.2.6: light, not a solid: nothing opaque, every corner see-through, the world shows through it
+                Check.that(solid.n == 0 && glow.n > 2000, "a " + height + " wave is all light (" + solid.n + " solid, " + glow.n + ")");
                 double top = -Double.MAX_VALUE;
                 double bottom = Double.MAX_VALUE;
-                for (int q = 0; q < solid.n; q++) {
-                    double[][] p = new double[4][];
+                int most = 0;
+                for (int q = 0; q < glow.n; q++) {
                     for (int k = 0; k < 4; k++) {
-                        p[k] = new double[] {solid.v[q * 12 + k * 3], solid.v[q * 12 + k * 3 + 1], solid.v[q * 12 + k * 3 + 2]};
+                        most = Math.max(most, glow.c[q * 4 + k] >>> 24);
+                        top = Math.max(top, glow.v[q * 12 + k * 3 + 1] - base[1]);
+                        bottom = Math.min(bottom, glow.v[q * 12 + k * 3 + 1] - base[1]);
                     }
-                    // the two triangles the game draws of it, each a front face (or too thin to see)
-                    for (int[] t : new int[][] {{0, 1, 2}, {0, 2, 3}}) {
-                        Check.that(awayShare(p[t[0]], p[t[1]], p[t[2]]) < 2e-3, "every triangle of the wave's solid faces the eye (" + height + ")");
-                    }
-                    for (int k = 0; k < 4; k++) {
-                        top = Math.max(top, solid.v[q * 12 + k * 3 + 1] - base[1]);
-                        bottom = Math.min(bottom, solid.v[q * 12 + k * 3 + 1] - base[1]);
-                    }
+                }
+                Check.that(most <= 0.92 * 255 && most >= 0.6 * 255, "see-through everywhere, bright somewhere (" + most + ")");
+                // it flows: the same wave a few ticks on is lit differently
+                com.hexhaki.piece.sword.SlashMesh.Quads later = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                com.hexhaki.piece.sword.SlashMesh.wave(new com.hexhaki.piece.sword.SlashMesh.Quads(), later, frame, 9L, 0x2CF6D2, 14.5, 1.0);
+                int changed = 0;
+                for (int q = 0; q < Math.min(later.n, glow.n) * 4; q++) {
+                    changed += later.c[q] != glow.c[q] ? 1 : 0;
+                }
+                Check.that(changed > glow.n, "its light moves from tick to tick (" + changed + ")");
+                // drawn in layers: the sort keeps each layer together, the far skin before the tongues before the near skin
+                later.sortBackToFront();
+                for (int q = 1; q < later.n; q++) {
+                    Check.that(later.layers[q] >= later.layers[q - 1], "layers in order after the sort");
                 }
                 Check.that(top >= height * 0.98 && bottom >= -0.2 - height * 0.01, "the wave rises from its trench to its peak (" + height + ")");
             }

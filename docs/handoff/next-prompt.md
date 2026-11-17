@@ -1,9 +1,10 @@
-Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/cool-einstein-uhqsh9). Read CLAUDE.md, then docs/handoff/next-ai-2.2.5.md
-(newest: 2.2.5 is released: the JoyBoy release is every full-charge Conqueror's release, the release is drawn like the owner's anime
-frames (black bolts with a Ryou-coloured rim tearing out of a flash in every direction), and it tears self-repairing fissures in the
-ground, ported from HexGhoul), then next-ai-2.2.4.md (the silhouettes, Haki keys in every form, the one menu, the Haki slash as the
-manga's torn energy wave, every Haki lightning in the Ryou colour), next-ai-2.2.3.md, next-ai-2.2.1.md, next-ai-2.1.5.md (the 3D Haki
-lightning), next-ai-2.1.4.md (the Swordsman) and the older ones. HexGhoul (the owner's other mod: the finisher, the abilities panel
-and the self-repairing terrain came from it) is at HexB1tDev/HexGhoul, branch claude/eager-ritchie-xni1ms. The next version is
-2.2.6. Ask the owner what they saw in game of 2.2.4 and 2.2.5 before changing those parts. House rules: versions roll over at 9, keep
-only 5 releases, judge every render yourself (GIFs too: BoltPreview gifs), never claim in-game testing.
+Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.2.6.md
+(newest: 2.2.6 is released: the Haki lightning as lit 3D tubes with black ink on every stroke and needle tips, tearing out of a shell
+round the player instead of the body, the Haki slash as flowing see-through light, the saya never black, the katana icons fixed; it
+lists the owner's open requests in order: Gryphon and Yoru from input/Yoru_Gryphon_Models_Textures_1.20.1.zip, the Galaxy Fist as Iron
+Fist's Ryou move, the Fishman Karate rework (Brick Fist, Water Bullet, Water Prison, water condensing out of the air), Six Powers' 3D
+fast air and Haki finger pistol shots), then next-ai-2.2.5.md, next-ai-2.2.4.md, next-ai-2.1.5.md (the first 3D lightning),
+next-ai-2.1.4.md (the Swordsman) and the older ones. HexGhoul (the owner's other mod: the finisher, the abilities panel, the
+self-repairing terrain and a ragdoll came from it) is at HexB1tDev/HexGhoul, branch claude/eager-ritchie-xni1ms. The next version is
+2.2.7. House rules: versions roll over at 9, keep only 5 releases, judge every render yourself (GIFs too: BoltPreview gifs/slashgif),
+never claim in-game testing.

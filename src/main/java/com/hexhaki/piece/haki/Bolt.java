@@ -96,12 +96,23 @@ public final class Bolt {
     public Bolt tinted(int rgb) {
         int alpha = this.color & 0xFF000000;
         int tinted = switch (this.kind) {
-            case BODY -> this.color;
+            // 2.2.6: the black body keeps the colour as a hint (near black still): its edge light is drawn in it
+            case BODY -> alpha | (body(rgb) & 0xFFFFFF);
             case HEART -> alpha | (mixWhite(rgb, 0.55) & 0xFFFFFF);
             default -> alpha | (rgb & 0xFFFFFF);
         };
         return tinted == this.color ? this
             : new Bolt(this.points, this.widths, tinted, this.kind, this.delay, this.duration, this.crawl, this.seed, this.dance);
+    }
+
+    /** 2.2.6: a black body's colour for lightning of colour {@code rgb}: that colour, so dark it reads black (its hue kept). */
+    public static int body(int rgb) {
+        int r = (rgb >> 16) & 255;
+        int g = (rgb >> 8) & 255;
+        int b = rgb & 255;
+        int top = Math.max(1, Math.max(r, Math.max(g, b)));
+        double k = 30.0 / top;
+        return (int) Math.round(r * k) << 16 | (int) Math.round(g * k) << 8 | (int) Math.round(b * k);
     }
 
     static int mixWhite(int rgb, double t) {
@@ -170,7 +181,11 @@ public final class Bolt {
             this.dance);
     }
 
-    /** This stroke with its last stretch drawn to a point (a bolt that ends here, not one that hands over to the next piece). */
+    /**
+     * This stroke with its last stretch drawn to a point (a bolt that ends here, not one that hands over to the next piece). 2.2.6 (the
+     * owner: "I dont like the ending tips of the lightning it's like they're stopping in a square"): down to nothing at the very end,
+     * a needle, not a stub.
+     */
     public Bolt pointed() {
         int n = this.count();
         float[] narrowed = this.widths.clone();
@@ -178,9 +193,10 @@ public final class Bolt {
             double t = n == 1 ? 1 : i / (double) (n - 1);
             if (t > 0.45) {
                 double k = (t - 0.45) / 0.55;
-                narrowed[i] = (float) (narrowed[i] * (1.0 - 0.85 * k * k));
+                narrowed[i] = (float) (narrowed[i] * (1.0 - k * k) * (1.0 - 0.25 * k));
             }
         }
+        narrowed[n - 1] = 0.0F;
         return new Bolt(this.points, narrowed, this.color, this.kind, this.delay, this.duration, this.crawl, this.seed, this.dance);
     }
 

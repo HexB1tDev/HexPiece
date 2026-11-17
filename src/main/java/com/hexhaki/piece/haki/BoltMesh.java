@@ -6,19 +6,24 @@ import java.util.SplittableRandom;
  * 2.1.5: a {@link Bolt}'s geometry for one frame (pure: the game feeds it to its buffers, {@code tools/preview/BoltPreview} rasterises
  * the very same quads to judge them).
  *
- * <p>Everything is in camera space (the eye at the origin, so the numbers stay small and the floats exact). Every layer is a ribbon
- * that turns to face the eye at each point of the path, with a round disc at every joint and end, so from any side it reads as a round
- * tube that bends with the lightning:
+ * <p>Everything is in camera space (the eye at the origin, so the numbers stay small and the floats exact).
+ *
+ * <p>2.2.6 (the owner: "THE haki lightning has to be more 3d with black outlines, all of it, literally all of it", and "I dont like the
+ * ending tips of the lightning it's like they're stopping in a square"): every stroke is a real tube now, not a flat ribbon turned to the
+ * eye. Its near half is built round its path (rings of up to nine points, mitred at the joints, a dome on its ends and sharp kinks) and
+ * lit by a key light from above and to the left of the view ({@link #light}): a shadow side, a lit side, a hard highlight, and for the
+ * coloured core a white-hot middle where it faces the eye. Round every one of them, a black ink outline (a ribbon behind it, wider by
+ * about a pixel and a half at any distance, coming to a point past a pointed end). The kinds:
  * <ol>
- *   <li><b>outline</b>: black, a little wider than the core, at least about a pixel and a half thick at any distance (the anime's ink
- *       line);</li>
- *   <li><b>body</b>: the original's near-black strokes, a black tube;</li>
- *   <li><b>core</b>: the colour, shaded across like a lit tube (darker at its rims, lighter along its middle);</li>
- *   <li><b>heart</b>: a thin white-hot line in the middle of the core;</li>
- *   <li><b>glow</b>: an additive halo in the colour, strongest at the bolt, nothing at its rims (drawn without depth writes).</li>
+ *   <li><b>body</b>: the original's near-black strokes: a black tube, glossy, edge-lit in its colour (the anime's black lightning);</li>
+ *   <li><b>core</b>: the colour, lifted out of the body toward the eye ({@link #CORE_LIFT}), its own ink, a halo and spurs;</li>
+ *   <li><b>heart</b>: the core's own white-hot middle (nothing of its own);</li>
+ *   <li><b>edge</b>: the storm's coloured rim round its huge black bolts, inked outside, glowing;</li>
+ *   <li><b>aura</b>: a faint glow only.</li>
  * </ol>
- * In time: the bolt races out from its root (a hot spark leads it), flashes wide and white the moment it lands, flickers tick by tick,
- * dances into a new crackle every two ticks, and in the last part of its life thins away, core first, outline last.
+ * In time: the bolt races out from its root behind a sharp point (a hot spark leads it), flashes wide and white the moment it lands,
+ * flickers tick by tick, dances into a new crackle every two ticks, and in the last part of its life thins away, core first, outline
+ * last. A free end always comes to a point, never a square.
  */
 public final class BoltMesh {
     /** Ink colour of the outline (not pure black: a hint of blood, as the anime's Conqueror ink). */
@@ -35,10 +40,37 @@ public final class BoltMesh {
     static final double BODY = 0.62;
     /** The core drawn this much fuller than the original's beam, so its colour carries. */
     static final double CORE = 1.25;
+    /**
+     * 2.2.6: how many of its radii a core's path is lifted toward the eye: a body round it is up to 1.6 times as wide (and {@link #DEPTH}
+     * as deep), and the core's whole near half (to its rims) must stand in front of the body's surface.
+     */
+    static final double CORE_LIFT = 0.8;
+    /**
+     * 2.2.6: how deep a tube is toward the eye, as a share of its width (lit as a round tube all the same): a shallower tube pokes less
+     * through what it passes behind (a body, a wall) while it shades exactly as a round one.
+     */
+    static final double DEPTH = 0.5;
+    /** 2.2.6: the key light in view space (right, up, toward the eye): above and to the left, a little in front. */
+    public static final double[] VIEW_LIGHT = unit(-0.42, 0.78, 0.46);
+    /** The free end of a stroke is pointed when its last width is under this share of its widest. */
+    static final double POINTED = 0.15;
 
-    /** Where the geometry goes: {@code glow} quads are additive and write no depth; the others are opaque. */
+    /** The key light in the frame the quads are built in (unit, toward the light); set by the caller for each frame it draws. */
+    private static double lightX = VIEW_LIGHT[0];
+    private static double lightY = VIEW_LIGHT[1];
+    private static double lightZ = VIEW_LIGHT[2];
+
+    /** Where the geometry goes: {@code glow} quads are blended light that writes no colour of its own; the others are opaque. */
     public interface Sink {
         void quad(boolean glow, double[] xyz, int[] argb);
+    }
+
+    /**
+     * 2.2.6: how a tube is coloured at a point of its surface: {@code facing} 1 where it faces the eye, 0 edge-on; {@code lambert} the
+     * cosine to the key light (-1..1); {@code spec} the highlight (0..1).
+     */
+    interface Shade {
+        int at(double facing, double lambert, double spec);
     }
 
     /** How a bolt's frame sits in camera space: its origin and a turn about the vertical (JOML's rotateY: x' = x cos + z sin). */
@@ -62,6 +94,22 @@ public final class BoltMesh {
     }
 
     private BoltMesh() {
+    }
+
+    /**
+     * 2.2.6: the key light for what is built next, as a direction in its frame (toward the light; any length): the caller turns
+     * {@link #VIEW_LIGHT} into the frame it builds in, so the light always comes from the same side of the screen.
+     */
+    public static void light(double x, double y, double z) {
+        double[] u = unit(x, y, z);
+        lightX = u[0];
+        lightY = u[1];
+        lightZ = u[2];
+    }
+
+    static double[] unit(double x, double y, double z) {
+        double l = Math.sqrt(x * x + y * y + z * z);
+        return l < 1.0E-9 ? new double[] {0, 1, 0} : new double[] {x / l, y / l, z / l};
     }
 
     /** 0..1: how strongly the bolt shows at {@code age} ticks into its life (for its thinning and the glow). */
@@ -120,10 +168,12 @@ public final class BoltMesh {
         double[] all = new double[n * 3];
         float[] widths = new float[n];
         double[] local = new double[3];
+        float widest = 0;
         for (int i = 0; i < n; i++) {
             bolt.dancing(i * step, age, local);
             frame.place(local, all, i * 3);
             widths[i] = bolt.widths[i * step];
+            widest = Math.max(widest, widths[i]);
         }
         // the strike: only the part the bolt has raced along so far
         double grow = bolt.crawl <= 0 ? 1.0 : Math.min(1.0, age / bolt.crawl);
@@ -150,47 +200,63 @@ public final class BoltMesh {
             return;
         }
         int count = m + 1;
+        if (grow < 1.0) {
+            // 2.2.6: the racing front is a spear point, never a cut-off square
+            spear(p, w, count, reach);
+        }
         double life = age / bolt.duration;
         double fade = fade(life);
         double flash = flash(bolt, age);
         double flicker = flicker(bolt, age);
         double[] dist = new double[count];
+        double[] tip = new double[count];
         for (int i = 0; i < count; i++) {
-            dist[i] = Math.sqrt(p[i * 3] * p[i * 3] + p[i * 3 + 1] * p[i * 3 + 1] + p[i * 3 + 2] * p[i * 3 + 2]);
+            dist[i] = Math.max(1.0E-6, Math.sqrt(p[i * 3] * p[i * 3] + p[i * 3 + 1] * p[i * 3 + 1] + p[i * 3 + 2] * p[i * 3 + 2]));
+            // the least width a stroke keeps far away (a pixel or so) gives way where the stroke itself comes to a point
+            tip[i] = widest <= 0 ? 1.0 : Math.min(1.0, w[i] / (0.35 * widest));
         }
+        boolean pointed = widest > 0 && w[count - 1] <= POINTED * widest;
         double[] side = sides(p, count);
         int color = bolt.color;
         switch (bolt.kind) {
             case Bolt.BODY -> {
                 double scale = Math.sqrt(fade) * (1.0 + 0.15 * flash);
                 double[] half = new double[count];
+                double[] ink = new double[count];
+                double[] lift = new double[count];
+                double[] inkLift = new double[count];
                 for (int i = 0; i < count; i++) {
-                    half[i] = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade);
+                    half[i] = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade * tip[i]);
+                    ink[i] = half[i] + outline(half[i], pixel, dist[i], fade) * tip[i];
+                    inkLift[i] = -push(1.0, dist[i]);
                 }
-                int body = 0xFF000000 | (color & 0xFFFFFF);
-                tube(p, count, side, half, body, body, 0.0, pixel, dist, sink);
+                int hue = hue(color);
+                double bright = Math.min(1.0, flicker * (0.85 + 0.15 * fade) + 0.4 * flash);
+                inked(p, count, side, ink, inkLift, pointed, pixel, dist, sink);
+                tube3d(p, count, side, half, lift, bodyShade(hue, bright, flash), pixel, dist, sink);
             }
             case Bolt.EDGE -> {
-                // behind the black body (the same width rule as BODY's), a hot line in the colour hugging it and a wide glow round it
+                // round the black body (the same width rule as BODY's), a hot line in the colour hugging it, inked outside, and a wide
+                // glow beyond the ink: only bands outside the black (nothing of them lies behind the body to show through where a
+                // ribbon blocks wide twists at a kink: 2.2.5's "pink facets")
                 double scale = Math.sqrt(fade) * (1.0 + 0.15 * flash);
                 double bright = Math.min(1.0, flicker * (0.85 + 0.15 * fade) + 0.4 * flash);
+                double[] inner = new double[count];
                 double[] rim = new double[count];
+                double[] ink = new double[count];
                 double[] halo = new double[count];
                 for (int i = 0; i < count; i++) {
-                    double body = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade);
-                    rim[i] = body * 1.12 + 1.8 * pixel * dist[i] * fade;
-                    halo[i] = body * 2.3 + 0.12;
+                    double body = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade * tip[i]);
+                    inner[i] = body * 0.96;
+                    rim[i] = body * 1.07 + 1.2 * pixel * dist[i] * fade * tip[i];
+                    ink[i] = rim[i] + (0.05 * body + 1.6 * pixel * dist[i]) * Math.min(1.0, fade * 1.6) * tip[i];
+                    halo[i] = body * 2.3 + 0.12 * tip[i];
                 }
                 int glowColor = scale(color, (0.6 * bright * fade + 0.35 * flash) * shine);
-                // the glow too only outside the rim: a full halo ribbon would twist in front of the black where the bolt turns
-                glowBand(p, count, side, rim, halo, glowColor, sink);
+                glowBand(p, count, side, ink, halo, glowColor, sink);
                 int hot = mix(scale(color, bright), 0xFFFFFFFF, 0.3 + 0.35 * flash);
-                // only the bands outside the black (nothing of the rim lies behind the body to show through where a wide ribbon twists)
-                double[] inner = new double[count];
-                for (int i = 0; i < count; i++) {
-                    inner[i] = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade) * 0.96;
-                }
                 band(p, count, side, inner, rim, hot, scale(color, 0.75 + 0.25 * bright), -0.5, dist, sink);
+                band(p, count, side, rim, ink, INK, INK, -0.5, dist, sink);
             }
             case Bolt.AURA -> {
                 double strength = ((color >>> 24) & 255) / 255.0 * 0.7 * fade * flicker * (1.0 + 0.6 * flash);
@@ -203,73 +269,361 @@ public final class BoltMesh {
                 glow(p, count, side, half, scale(color, strength * shine * 255.0 / top), sink);
             }
             case Bolt.HEART -> {
-                double scale = fade * (1.0 + 0.4 * flash);
-                double[] half = new double[count];
-                for (int i = 0; i < count; i++) {
-                    half[i] = Math.max(w[i] * 0.5 * scale, 0.5 * pixel * dist[i] * fade);
-                }
-                int hot = mix(color, 0xFFFFFFFF, 0.35 + 0.4 * flash);
-                tube(p, count, side, half, hot, hot, 3.0, pixel, dist, sink);
+                // 2.2.6: nothing of its own: the original lays a heart only inside a core, and a lit 3D core is white-hot down its
+                // middle already (a flat white stripe on top of it read as a sticker on the tube)
             }
             default -> {
                 double scale = fade * (1.0 + 0.3 * flash);
                 double bright = Math.min(1.0, flicker * (0.82 + 0.18 * fade) + 0.4 * flash);
                 double[] core = new double[count];
                 double[] ink = new double[count];
-                double[] heart = new double[count];
                 double[] halo = new double[count];
+                double[] lift = new double[count];
+                double[] inkLift = new double[count];
                 for (int i = 0; i < count; i++) {
-                    double c = Math.max(w[i] * 0.5 * CORE * scale, 0.75 * pixel * dist[i] * fade);
+                    double c = Math.max(w[i] * 0.5 * CORE * scale, 0.75 * pixel * dist[i] * fade * tip[i]);
                     core[i] = c;
-                    ink[i] = c + (0.38 * c + 1.5 * pixel * dist[i]) * Math.min(1.0, fade * 1.6);
-                    heart[i] = c * (0.34 + 0.2 * flash);
-                    halo[i] = c * (4.0 + 1.5 * flash) + 0.05 * fade;
+                    ink[i] = c + outline(c, pixel, dist[i], fade) * tip[i];
+                    halo[i] = c * (4.0 + 1.5 * flash) + 0.05 * fade * tip[i];
+                    lift[i] = c * CORE_LIFT;
+                    inkLift[i] = lift[i] - push(1.0, dist[i]);
                 }
                 int glowColor = scale(color, (0.75 * bright * fade + 0.3 * flash) * shine);
-                // far away a bolt is a few pixels wide: what would not show is left out (the glow under two pixels, the heart and the
-                // crackle under one), so a field of distant lightning stays cheap to draw
+                // far away a bolt is a few pixels wide: what would not show is left out (the glow under two pixels, the crackle under
+                // one), so a field of distant lightning stays cheap to draw
                 int middleAt = count / 2;
                 double corePx = core[middleAt] / (pixel * dist[middleAt]);
                 if (halo[middleAt] / (pixel * dist[middleAt]) >= 2.0) {
                     glow(p, count, side, halo, glowColor, sink);
                 }
-                tube(p, count, side, ink, INK, INK, 0.0, pixel, dist, sink);
-                int rim = scale(color, 0.6 + 0.3 * bright);
-                int middle = mix(scale(color, bright), 0xFFFFFFFF, 0.12 + 0.25 * flash);
-                tube(p, count, side, core, rim, middle, 1.0, pixel, dist, sink);
-                int hot = mix(color, 0xFFFFFFFF, 0.6 + 0.3 * flash);
-                if (heart[middleAt] / (pixel * dist[middleAt]) >= 0.6) {
-                    tube(p, count, side, heart, hot, hot, 2.0, pixel, dist, sink);
-                }
+                inked(p, count, side, ink, inkLift, pointed, pixel, dist, sink);
+                tube3d(p, count, side, core, lift, coreShade(color, bright, flash), pixel, dist, sink);
                 if (corePx >= 1.2) {
-                    spurs(bolt, p, count, core, age, fade, rim, middle, glowColor, pixel, sink);
+                    spurs(bolt, p, count, core, lift, age, fade, color, bright, flash, glowColor, pixel, sink);
                 }
                 if (grow < 1.0) {
                     // the spark leading the strike
-                    double r = core[count - 1] * 6.0 + 0.07;
+                    double r = core[Math.max(0, count - 2)] * 5.0 + 0.06;
                     disc(p, count - 1, side, r, scale(mix(color, 0xFFFFFFFF, 0.55), shine), 0, true, 0.0, pixel, dist[count - 1], sink);
                 }
             }
         }
     }
 
+    /** 2.2.6: the ink's width outside a tube of half width {@code half}: about a pixel and a half at any distance, more on a fat one. */
+    static double outline(double half, double pixel, double dist, double fade) {
+        return (0.3 * half + 1.5 * pixel * dist) * Math.min(1.0, fade * 1.6);
+    }
+
+    /**
+     * 2.2.6: the racing front of a strike drawn to a spear point: the last stretch (a few of its widths, never more than two fifths of
+     * what has raced out) narrows to nothing at the front.
+     */
+    static void spear(double[] p, float[] w, int count, double reach) {
+        double front = 0;
+        for (int i = Math.max(0, count - 4); i < count; i++) {
+            front = Math.max(front, w[i]);
+        }
+        double taper = Math.min(reach * 0.4, Math.max(front * 4.0, 0.06));
+        if (taper <= 0) {
+            return;
+        }
+        double back = 0;
+        w[count - 1] = 0;
+        for (int i = count - 2; i >= 0; i--) {
+            back += distance(p, i, i + 1);
+            if (back >= taper) {
+                break;
+            }
+            w[i] = (float) (w[i] * Math.pow(back / taper, 0.75));
+        }
+    }
+
+    /**
+     * 2.2.6: a black ink line behind a tube: the ribbon {@code ink} wide each side of the path (lifted toward the eye by {@code lift}),
+     * round at its sharp kinks and its root, and past a pointed end drawn on to a point of its own, so the outline wraps the tip.
+     */
+    static void inked(double[] p, int count, double[] side, double[] ink, double[] lift, boolean pointed, double pixel, double[] dist,
+                      Sink sink) {
+        if (!pointed || count < 2) {
+            ribbon(p, count, side, ink, lift, INK, INK, pixel, dist, true, sink);
+            return;
+        }
+        int last = count - 1;
+        double tx = p[last * 3] - p[(last - 1) * 3];
+        double ty = p[last * 3 + 1] - p[(last - 1) * 3 + 1];
+        double tz = p[last * 3 + 2] - p[(last - 1) * 3 + 2];
+        double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+        if (tl < 1.0E-9) {
+            ribbon(p, count, side, ink, lift, INK, INK, pixel, dist, true, sink);
+            return;
+        }
+        double reach = ink[last] * 2.2;
+        double[] q = java.util.Arrays.copyOf(p, (count + 1) * 3);
+        q[count * 3] = p[last * 3] + tx / tl * reach;
+        q[count * 3 + 1] = p[last * 3 + 1] + ty / tl * reach;
+        q[count * 3 + 2] = p[last * 3 + 2] + tz / tl * reach;
+        double[] h = java.util.Arrays.copyOf(ink, count + 1);
+        h[count] = 0.0;
+        double[] l = java.util.Arrays.copyOf(lift, count + 1);
+        l[count] = lift[last];
+        double[] d = java.util.Arrays.copyOf(dist, count + 1);
+        d[count] = Math.max(1.0E-6, Math.sqrt(q[count * 3] * q[count * 3] + q[count * 3 + 1] * q[count * 3 + 1] + q[count * 3 + 2] * q[count * 3 + 2]));
+        ribbon(q, count + 1, sides(q, count + 1), h, l, INK, INK, pixel, d, true, sink);
+    }
+
+    /** 2.2.6: a coloured core: shadowed on the far side from the light, lit, white-hot down its middle, a hard highlight. */
+    static Shade coreShade(int color, double bright, double flash) {
+        int lit = scale(color, bright);
+        int deep = scale(color, 0.56 * bright);
+        int hot = mix(color, 0xFFFFFFFF, 0.78);
+        return (facing, lambert, spec) -> {
+            int c = mix(deep, lit, smooth(-0.45, 0.35, lambert));
+            c = mix(c, hot, 0.62 * Math.pow(facing, 5.0));
+            c = mix(c, 0xFFFFFFFF, 0.85 * spec + 0.3 * flash);
+            return c;
+        };
+    }
+
+    /** 2.2.6: the black body: glossy black, a dark sheen of its colour where the light falls, edge-lit in its colour. */
+    static Shade bodyShade(int hue, double bright, double flash) {
+        int black = mix(0xFF050407, hue, 0.03);
+        int sheen = mix(0xFF0A090D, hue, 0.2);
+        int gloss = scale(mix(hue, 0xFFFFFFFF, 0.55), 0.55);
+        int rim = scale(hue, 0.9 * bright);
+        return (facing, lambert, spec) -> {
+            int c = mix(black, sheen, smooth(-0.1, 0.9, lambert));
+            c = mix(c, gloss, 0.7 * spec);
+            c = mix(c, rim, Math.min(1.0, 0.9 * Math.pow(1.0 - facing, 4.5) + 0.2 * flash));
+            return c;
+        };
+    }
+
+    static double smooth(double from, double to, double x) {
+        double k = Math.max(0.0, Math.min(1.0, (x - from) / (to - from)));
+        return k * k * (3.0 - 2.0 * k);
+    }
+
+    /** 2.2.6: a colour's hue at full brightness (a near-black body's colour is its owner's colour, very dark). */
+    static int hue(int argb) {
+        int r = (argb >>> 16) & 255;
+        int g = (argb >>> 8) & 255;
+        int b = argb & 255;
+        int top = Math.max(r, Math.max(g, b));
+        if (top == 0) {
+            return 0xFFFF1433;
+        }
+        return scale(0xFF000000 | r << 16 | g << 8 | b, 255.0 / top);
+    }
+
+    /**
+     * 2.2.6: the near half of a tube round the path, {@code half} its radius at each point (mitred across the joints), its path lifted
+     * {@code lift} toward the eye: rings of points from one rim through the middle (nearest the eye) to the other, each coloured by
+     * {@code shade} from its normal; a dome on the ends and the sharp kinks (where the mitre gives out). Hair-thin on screen it is a flat
+     * ribbon of its lit colour.
+     */
+    static void tube3d(double[] p, int count, double[] side, double[] half, double[] lift, Shade shade, double pixel, double[] dist,
+                       Sink sink) {
+        double most = 0;
+        for (int i = 0; i < count; i++) {
+            most = Math.max(most, half[i] / (pixel * dist[i]));
+        }
+        if (most <= 0) {
+            return;
+        }
+        if (most < 1.4) {
+            int c = shade.at(0.8, 0.35, 0.0);
+            ribbon(p, count, side, half, lift, c, c, pixel, dist, false, sink);
+            return;
+        }
+        int k = most < 4 ? 2 : most < 10 ? 4 : most < 26 ? 6 : 8;
+        // a coarse ring spreads its rim's colour over the whole of each face: its rims are lit as a little nearer the middle
+        double rough = k <= 2 ? 0.5 : k <= 4 ? 0.28 : k <= 6 ? 0.12 : 0.0;
+        double[] m = mitres(p, count, side);
+        double[] axis = new double[count * 3];
+        double[] toward = new double[count * 3];
+        for (int i = 0; i < count; i++) {
+            double back = 1.0 - lift[i] / dist[i];
+            axis[i * 3] = p[i * 3] * back;
+            axis[i * 3 + 1] = p[i * 3 + 1] * back;
+            axis[i * 3 + 2] = p[i * 3 + 2] * back;
+            int a = Math.max(0, i - 1);
+            int b = Math.min(count - 1, i + 1);
+            double tx = p[b * 3] - p[a * 3];
+            double ty = p[b * 3 + 1] - p[a * 3 + 1];
+            double tz = p[b * 3 + 2] - p[a * 3 + 2];
+            double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+            double ex = -p[i * 3] / dist[i];
+            double ey = -p[i * 3 + 1] / dist[i];
+            double ez = -p[i * 3 + 2] / dist[i];
+            double ux = ex;
+            double uy = ey;
+            double uz = ez;
+            if (tl > 1.0E-9) {
+                tx /= tl;
+                ty /= tl;
+                tz /= tl;
+                double along = ex * tx + ey * ty + ez * tz;
+                ux = ex - along * tx;
+                uy = ey - along * ty;
+                uz = ez - along * tz;
+            }
+            double ul = Math.sqrt(ux * ux + uy * uy + uz * uz);
+            if (ul < 1.0E-6) {
+                // looking straight down the stroke: the eye's own direction
+                ux = ex;
+                uy = ey;
+                uz = ez;
+                ul = 1.0;
+            }
+            toward[i * 3] = ux / ul;
+            toward[i * 3 + 1] = uy / ul;
+            toward[i * 3 + 2] = uz / ul;
+        }
+        double[] row = new double[(k + 1) * 3];
+        double[] last = new double[(k + 1) * 3];
+        int[] colours = new int[k + 1];
+        int[] lastColours = new int[k + 1];
+        double[] v = new double[12];
+        int[] c = new int[4];
+        double[] n = new double[3];
+        for (int i = 0; i < count; i++) {
+            for (int j = 0; j <= k; j++) {
+                double theta = -Math.PI / 2 + Math.PI * j / k;
+                double s = Math.sin(theta);
+                double co = Math.cos(theta);
+                for (int a = 0; a < 3; a++) {
+                    n[a] = side[i * 3 + a] * s + toward[i * 3 + a] * co;
+                    row[j * 3 + a] = axis[i * 3 + a] + side[i * 3 + a] * s * half[i] * m[i] + toward[i * 3 + a] * co * half[i] * DEPTH;
+                }
+                colours[j] = shadeAt(shade, n, axis, i, rough);
+            }
+            if (i > 0) {
+                for (int j = 0; j < k; j++) {
+                    System.arraycopy(last, j * 3, v, 0, 3);
+                    System.arraycopy(row, j * 3, v, 3, 3);
+                    System.arraycopy(row, (j + 1) * 3, v, 6, 3);
+                    System.arraycopy(last, (j + 1) * 3, v, 9, 3);
+                    c[0] = lastColours[j];
+                    c[1] = colours[j];
+                    c[2] = colours[j + 1];
+                    c[3] = lastColours[j + 1];
+                    emit(false, v, c, sink);
+                }
+            }
+            double[] swap = last;
+            last = row;
+            row = swap;
+            int[] swapColours = lastColours;
+            lastColours = colours;
+            colours = swapColours;
+        }
+        for (int i = 0; i < count; i++) {
+            // the mitred tube already closes gentle bends: a dome only rounds the ends and the sharp kinks
+            double px = half[i] / (pixel * dist[i]);
+            if (px < 1.2 || i > 0 && i < count - 1 && (m[i] < MITRE * 0.8 || px < 1.6)) {
+                continue;
+            }
+            dome(axis, i, side, half[i], shade, px, rough, sink);
+        }
+    }
+
+    /** A colour of {@code shade} for a surface normal {@code n} at the path's point {@code i}. */
+    static int shadeAt(Shade shade, double[] n, double[] axis, int i, double rough) {
+        double px = axis[i * 3];
+        double py = axis[i * 3 + 1];
+        double pz = axis[i * 3 + 2];
+        double l = Math.max(1.0E-9, Math.sqrt(px * px + py * py + pz * pz));
+        double vx = -px / l;
+        double vy = -py / l;
+        double vz = -pz / l;
+        double facing = Math.max(rough, n[0] * vx + n[1] * vy + n[2] * vz);
+        double lambert = n[0] * lightX + n[1] * lightY + n[2] * lightZ;
+        double hx = lightX + vx;
+        double hy = lightY + vy;
+        double hz = lightZ + vz;
+        double hl = Math.max(1.0E-9, Math.sqrt(hx * hx + hy * hy + hz * hz));
+        double spec = Math.max(0.0, (n[0] * hx + n[1] * hy + n[2] * hz) / hl);
+        spec = Math.pow(spec, 22.0);
+        return shade.at(facing, lambert, spec);
+    }
+
+    /**
+     * 2.2.6: a dome toward the eye over point {@code i} of a tube's (lifted) path, its radius {@code r}: two rings and a crown, lit as
+     * the tube is, so an end or a sharp kink is round from every side.
+     */
+    static void dome(double[] axis, int i, double[] side, double r, Shade shade, double px, double rough, Sink sink) {
+        double cx = axis[i * 3];
+        double cy = axis[i * 3 + 1];
+        double cz = axis[i * 3 + 2];
+        double l = Math.max(1.0E-9, Math.sqrt(cx * cx + cy * cy + cz * cz));
+        double vx = -cx / l;
+        double vy = -cy / l;
+        double vz = -cz / l;
+        double ux = side[i * 3];
+        double uy = side[i * 3 + 1];
+        double uz = side[i * 3 + 2];
+        double wx = vy * uz - vz * uy;
+        double wy = vz * ux - vx * uz;
+        double wz = vx * uy - vy * ux;
+        int around = px > 12 ? 12 : ROUND;
+        double[] rings = {0.0, 0.55, 1.05};
+        double[][] pts = new double[rings.length + 1][];
+        int[][] cols = new int[rings.length + 1][];
+        double[] n = new double[3];
+        double[] at = {cx, cy, cz};
+        for (int ring = 0; ring <= rings.length; ring++) {
+            int size = ring == rings.length ? 1 : around;
+            pts[ring] = new double[size * 3];
+            cols[ring] = new int[size];
+            double phi = ring == rings.length ? Math.PI / 2 : rings[ring];
+            for (int k = 0; k < size; k++) {
+                double a = Math.PI * 2.0 * k / around;
+                double ca = Math.cos(a) * Math.cos(phi);
+                double sa = Math.sin(a) * Math.cos(phi);
+                double sp = Math.sin(phi);
+                n[0] = ux * ca + wx * sa + vx * sp;
+                n[1] = uy * ca + wy * sa + vy * sp;
+                n[2] = uz * ca + wz * sa + vz * sp;
+                double deep = sp * r * (DEPTH - 1.0);
+                pts[ring][k * 3] = cx + n[0] * r + vx * deep;
+                pts[ring][k * 3 + 1] = cy + n[1] * r + vy * deep;
+                pts[ring][k * 3 + 2] = cz + n[2] * r + vz * deep;
+                cols[ring][k] = shadeAt(shade, n, at, 0, rough);
+            }
+        }
+        double[] v = new double[12];
+        int[] c = new int[4];
+        for (int ring = 0; ring < rings.length; ring++) {
+            boolean crown = ring + 1 == rings.length;
+            for (int k = 0; k < around; k++) {
+                int k1 = (k + 1) % around;
+                System.arraycopy(pts[ring], k * 3, v, 0, 3);
+                System.arraycopy(pts[ring], k1 * 3, v, 3, 3);
+                System.arraycopy(pts[ring + 1], crown ? 0 : k1 * 3, v, 6, 3);
+                System.arraycopy(pts[ring + 1], crown ? 0 : k * 3, v, 9, 3);
+                c[0] = cols[ring][k];
+                c[1] = cols[ring][k1];
+                c[2] = cols[ring + 1][crown ? 0 : k1];
+                c[3] = cols[ring + 1][crown ? 0 : k];
+                emit(false, v, c, sink);
+            }
+        }
+    }
+
     /**
      * The crackle around a live bolt: short spurs that flick out of its kinks, a new set every two ticks (most kinks bare), each a
-     * tiny bolt of its own (outline and core) thinning to nothing.
+     * tiny bolt of its own (an inked, lit tube and a glow) thinning to a point.
      */
-    static void spurs(Bolt bolt, double[] p, int count, double[] core, double age, double fade, int rim, int middle, int glowColor,
-                      double pixel, Sink sink) {
+    static void spurs(Bolt bolt, double[] p, int count, double[] core, double[] lift, double age, double fade, int color, double bright,
+                      double flash, int glowColor, double pixel, Sink sink) {
         if (fade < 0.35 || count < 3) {
             return;
         }
         long frame = (long) Math.floor(Math.max(0.0, age) / 2.0);
         SplittableRandom random = new SplittableRandom(bolt.seed ^ 0x5350_5552L ^ frame * 0xD1B54A32D192ED03L);
         int points = 4;
-        double[] spur = new double[points * 3];
-        double[] half = new double[points];
-        double[] ink = new double[points];
-        double[] halo = new double[points];
-        double[] dist = new double[points];
+        Shade shade = coreShade(color, bright, flash);
         for (int i = 1; i + 1 < count; i++) {
             double roll = random.nextDouble();
             double length = (0.5 + 1.2 * random.nextDouble()) * (core[i] * 6.0 + 0.04);
@@ -294,21 +648,31 @@ public final class BoltMesh {
             double[] a = {p[i * 3], p[i * 3 + 1], p[i * 3 + 2]};
             double[] b = {a[0] + dx / dl * length, a[1] + dy / dl * length, a[2] + dz / dl * length};
             double[] path = Bolt.path(a, b, 2, 0.3, kinks);
+            double[] spur = new double[points * 3];
+            double[] half = new double[points];
+            double[] ink = new double[points];
+            double[] halo = new double[points];
+            double[] dist = new double[points];
+            double[] up = new double[points];
+            double[] inkUp = new double[points];
             for (int k = 0; k < points; k++) {
                 int from = k < 3 ? k : 4;
                 spur[k * 3] = path[from * 3];
                 spur[k * 3 + 1] = path[from * 3 + 1];
                 spur[k * 3 + 2] = path[from * 3 + 2];
-                dist[k] = Math.sqrt(spur[k * 3] * spur[k * 3] + spur[k * 3 + 1] * spur[k * 3 + 1] + spur[k * 3 + 2] * spur[k * 3 + 2]);
+                dist[k] = Math.max(1.0E-6, Math.sqrt(spur[k * 3] * spur[k * 3] + spur[k * 3 + 1] * spur[k * 3 + 1] + spur[k * 3 + 2] * spur[k * 3 + 2]));
                 double t = k / (double) (points - 1);
-                half[k] = Math.max(core[i] * 0.36 * (1.0 - 0.75 * t), 0.7 * pixel * dist[k] * fade);
-                ink[k] = half[k] + (0.3 * half[k] + 0.9 * pixel * dist[k]) * Math.min(1.0, fade * 1.6);
-                halo[k] = half[k] * 3.0 + 0.012;
+                // thinning to a point at its far end
+                half[k] = Math.max(core[i] * 0.36 * (1.0 - t), 0.7 * pixel * dist[k] * fade * (1.0 - t));
+                ink[k] = half[k] + (0.3 * half[k] + 0.9 * pixel * dist[k]) * Math.min(1.0, fade * 1.6) * (1.0 - 0.7 * t);
+                halo[k] = half[k] * 3.0 + 0.012 * (1.0 - t);
+                up[k] = lift[i];
+                inkUp[k] = lift[i] - push(1.0, dist[k]);
             }
             double[] side = sides(spur, points);
             glow(spur, points, side, halo, scale(glowColor, 0.55), sink);
-            tube(spur, points, side, ink, INK, INK, 0.0, pixel, dist, sink);
-            tube(spur, points, side, half, middle, middle, 1.0, pixel, dist, sink);
+            inked(spur, points, side, ink, inkUp, true, pixel, dist, sink);
+            tube3d(spur, points, side, half, up, shade, pixel, dist, sink);
         }
     }
 
@@ -464,24 +828,25 @@ public final class BoltMesh {
         return m;
     }
 
-    /** An opaque tube: the ribbon (rims {@code rim}, middle {@code middle}) and a round disc at every point. */
-    static void tube(double[] p, int count, double[] side, double[] half, int rim, int middle, double layer, double pixel, double[] dist,
-                     Sink sink) {
+    /**
+     * An opaque ribbon turned to the eye (rims {@code rim}, middle {@code middle}), its path lifted {@code lift} toward the eye at each
+     * point; with {@code discs}, a round disc on its ends and sharp kinks (2.2.6: the ink lines; a hair-thin tube).
+     */
+    static void ribbon(double[] p, int count, double[] side, double[] half, double[] lift, int rim, int middle, double pixel, double[] dist,
+                       boolean discs, Sink sink) {
         double[] v = new double[12];
         int[] c = new int[4];
         double[] m = mitres(p, count, side);
         for (int i = 0; i + 1 < count; i++) {
-            double pushA = push(layer, dist[i]);
-            double pushB = push(layer, dist[i + 1]);
             double ha = half[i] * m[i];
             double hb = half[i + 1] * m[i + 1];
             // shaded across only where it is wide enough on screen to show it
             boolean shaded = rim != middle && Math.max(half[i] / (pixel * dist[i]), half[i + 1] / (pixel * dist[i + 1])) > 2.5;
             if (!shaded) {
-                corner(p, side, i, -ha, pushA, dist[i], v, 0);
-                corner(p, side, i + 1, -hb, pushB, dist[i + 1], v, 3);
-                corner(p, side, i + 1, hb, pushB, dist[i + 1], v, 6);
-                corner(p, side, i, ha, pushA, dist[i], v, 9);
+                corner(p, side, i, -ha, lift[i], dist[i], v, 0);
+                corner(p, side, i + 1, -hb, lift[i + 1], dist[i + 1], v, 3);
+                corner(p, side, i + 1, hb, lift[i + 1], dist[i + 1], v, 6);
+                corner(p, side, i, ha, lift[i], dist[i], v, 9);
                 c[0] = middle;
                 c[1] = middle;
                 c[2] = middle;
@@ -489,10 +854,10 @@ public final class BoltMesh {
                 emit(false, v, c, sink);
             } else {
                 for (int s = -1; s <= 1; s += 2) {
-                    corner(p, side, i, s * ha, pushA, dist[i], v, 0);
-                    corner(p, side, i + 1, s * hb, pushB, dist[i + 1], v, 3);
-                    corner(p, side, i + 1, 0, pushB, dist[i + 1], v, 6);
-                    corner(p, side, i, 0, pushA, dist[i], v, 9);
+                    corner(p, side, i, s * ha, lift[i], dist[i], v, 0);
+                    corner(p, side, i + 1, s * hb, lift[i + 1], dist[i + 1], v, 3);
+                    corner(p, side, i + 1, 0, lift[i + 1], dist[i + 1], v, 6);
+                    corner(p, side, i, 0, lift[i], dist[i], v, 9);
                     c[0] = rim;
                     c[1] = rim;
                     c[2] = middle;
@@ -501,13 +866,16 @@ public final class BoltMesh {
                 }
             }
         }
+        if (!discs) {
+            return;
+        }
         for (int i = 0; i < count; i++) {
             // the mitred ribbon already closes gentle bends: a disc only rounds the ends and the sharp kinks (where the mitre gives out)
             double px = half[i] / (pixel * dist[i]);
             if (px < 1.2 || i > 0 && i < count - 1 && (m[i] < MITRE * 0.8 || px < 1.6)) {
                 continue;
             }
-            disc(p, i, side, half[i], middle, rim, false, layer, pixel, dist[i], sink);
+            disc(p, i, side, half[i], middle, rim, false, lift[i], pixel, dist[i], sink);
         }
     }
 
@@ -632,13 +1000,13 @@ public final class BoltMesh {
         }
     }
 
-    /** A round disc facing the eye at point {@code i}: {@code centre} in its middle, {@code edge} at its rim. */
-    static void disc(double[] p, int i, double[] side, double radius, int centre, int edge, boolean glow, double layer, double pixel,
+    /** A round disc facing the eye at point {@code i} (lifted {@code lift} toward it): {@code centre} in its middle, {@code edge} at its rim. */
+    static void disc(double[] p, int i, double[] side, double radius, int centre, int edge, boolean glow, double lift, double pixel,
                      double dist, Sink sink) {
         if (radius <= 0) {
             return;
         }
-        double push = glow ? -0.02 : push(layer, dist);
+        double push = glow ? -0.02 : lift;
         double px = p[i * 3];
         double py = p[i * 3 + 1];
         double pz = p[i * 3 + 2];

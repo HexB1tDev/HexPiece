@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.2.5"
+VERSION = "2.2.6"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
@@ -33,6 +33,9 @@ EXPECTED_KATANA_SHA256 = "fece809eb8699a7f5a562b3975da753bb929089d1a93b75896d25b
 KATANA_MESHES = "assets/hexhaki/katana/"
 KATANA_TEXTURES = "assets/hexhaki/textures/katana/"
 KATANA_MODELS = "assets/hexhaki/models/item/katana_"
+# 2.2.6: the katanas' inventory icons, where the item atlas finds them (textures/item/...)
+KATANA_ICONS = "assets/hexhaki/textures/item/katana/"
+ICONS = "src/main/resources/" + KATANA_ICONS
 BUILD = Path(os.environ.get("HEXPIECE_BUILD_DIR", ROOT / "build"))
 OUTPUT = BUILD / f"hexpiece-{VERSION}.jar"
 BASE = BUILD / "base.jar"
@@ -84,6 +87,7 @@ NEW_PREFIXES = (
     KATANA_MESHES,
     KATANA_TEXTURES,
     KATANA_MODELS,
+    KATANA_ICONS,
 )
 # Original lang keys the expansion may change (renamed controls).
 RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament", "key.hexhaki.acoc",
@@ -185,8 +189,11 @@ def katana_assets():
         if not texture.exists():
             raise RuntimeError(f"The katana zip has no texture {key}.png")
         entries[f"{KATANA_TEXTURES}{key}.png"] = texture.read_bytes()
-        icon = f"hexhaki:piece/katana/{key}_icon"
-        if not (ROOT / "src/main/resources/assets/hexhaki/textures/piece/katana" / f"{key}_icon.png").exists():
+        # 2.2.6 (the owner: "The current blades in game all show as missing texture icons"): since 1.19.3 only textures under
+        # textures/item and textures/block (or ones an atlas file names) are stitched into the item atlas; the icons were under
+        # textures/piece, so the inventory drew the missing texture. They live under textures/item now.
+        icon = f"hexhaki:item/katana/{key}_icon"
+        if not (ROOT / ICONS / f"{key}_icon.png").exists():
             raise RuntimeError(f"No inventory icon for {key} (tools/katana_render.py icons)")
         model = {
             "loader": "forge:separate_transforms",
@@ -195,6 +202,8 @@ def katana_assets():
             "base": {"parent": "minecraft:builtin/entity"},
             "perspectives": {"gui": {"parent": "minecraft:item/generated", "textures": {"layer0": icon}}},
         }
+        if not icon.startswith("hexhaki:item/"):
+            raise RuntimeError(f"{key}'s icon is outside textures/item: the item atlas would never stitch it (missing texture)")
         entries[f"{KATANA_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
     return entries
 

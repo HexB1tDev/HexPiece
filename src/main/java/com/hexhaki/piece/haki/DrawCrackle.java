@@ -82,7 +82,7 @@ public final class DrawCrackle {
         for (int p = 0; p < 2; p++) {
             float start = Math.max(delay, chain.start(pieces[p], 0));
             float w = width * (p == 0 ? 1.0F : 0.8F);
-            BoltPainter.strokes(pieces[p], pieces[p + 1], w * 2.6F, 0xEC050307, life, start, false, salt, out);
+            BoltPainter.strokes(pieces[p], pieces[p + 1], w * 2.6F, 0xEC000000 | Bolt.body(color), life, start, false, salt, out);
             BoltPainter.strokes(pieces[p], pieces[p + 1], w, color, life, start, false, salt, out);
             BoltPainter.strokes(pieces[p], pieces[p + 1], w * 0.3F, heart, life, start, false, salt, out);
             chain.land(pieces[p], pieces[p + 1], start, life);

@@ -20,7 +20,8 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
  * do) and in an item frame. In the inventory its icon is drawn instead (its model's GUI view is the icon, Forge's separate_transforms;
  * build.py writes the models). In a hand it draws nothing at all: the player's sword layer ({@link SwordLayer}) shows the active katana,
  * sheathed at the hip or drawn in the hand, so a katana is never seen twice. The one exception is the game's own first-person view of a
- * katana held without a sword move playing: there the hand holds it sheathed, as one carries a sword.
+ * katana held without a sword move playing: there the hand holds it sheathed, as one carries a sword. Armament Haki blackens the sword
+ * there, never its saya (2.2.6).
  */
 public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static KatanaItemRenderer instance;
@@ -95,7 +96,11 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.m_252781_(Axis.f_252403_.m_252977_(-45.0F));
         pose.m_252880_(0.0F, -0.36F, 0.0F);
         pose.m_252880_(0.0F, -KatanaRenderer.GRIP * KatanaRenderer.SCALE, 0.0F);
-        KatanaRenderer.draw(pose, buffers, katana, true, true, light, 0.0F);
+        // 2.2.6 (the owner: "the sheath of the blade is never to be black when haki is on, it's just the sword itself"): the original
+        // blackens whatever an Armament user holds by handing this renderer black buffers (its ItemInHandRendererMixin); the sword takes
+        // them, the saya is drawn into the game's own buffers (the ones the first-person hand is drawn with), in its own colours
+        KatanaRenderer.draw(pose, buffers, katana, true, false, light, 0.0F);
+        KatanaRenderer.draw(pose, Minecraft.m_91087_().m_91269_().m_110104_(), katana, false, true, light, 0.0F);
         pose.m_85849_();
     }
 }

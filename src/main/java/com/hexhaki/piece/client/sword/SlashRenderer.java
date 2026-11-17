@@ -131,9 +131,10 @@ public final class SlashRenderer {
     }
 
     /**
-     * 2.2.4: the wave ({@link SlashMesh}): its body, streaks and ink outline in a batch of their own (unlit, depth written, back faces
-     * culled: the Haki lightning's ink), then its glow (alpha blended, sorted far to near). As it reaches its range it sinks and fades
-     * over three ticks.
+     * 2.2.4: the wave ({@link SlashMesh}). 2.2.6: all of it light (the owner: "its a solid thing, its clearly not a flowing energy
+     * beam"): its skin, core, flowing bands, streaks, cutting edge, tongues and halo alpha blended, sorted layer by layer and far to near
+     * ({@code SlashMesh.Quads.sortBackToFront}); the solid batch stays for anything opaque (nothing now). As it reaches its range it
+     * sinks and fades over three ticks.
      */
     static void draw(PoseStack pose, Vec3 cam, ClientLevel level, float partial) {
         MultiBufferSource.BufferSource buffers = Minecraft.m_91087_().m_91269_().m_110104_();

@@ -13,15 +13,12 @@ import java.util.Random;
  * ({@link SwordRules#slashCentre}): a steep leading edge up to a sharp peak {@code height} above the trench, a long back slope torn into
  * spikes that stream back and up (longest halfway up, flickering), two short ones at the crest. Its body is thick across its flight
  * ({@link SwordRules#slashThicknessAt}: widest in the ground, thin at the peak), so from behind its owner it is a spiked wall of light,
- * from the side the manga's wave. Drawn as the manga draws it:</p>
- * <ul>
- *   <li>the body: the colour (a little toward white), shaded flat with a touch of the light where it faces the eye, streaked whiter
- *       along its flow (thin bands up the body and down each spike);</li>
- *   <li>an ink outline round the whole shape (its back hull pushed out a pixel or two: the Haki lightning's outline);</li>
- *   <li>a soft glow of the colour round the body.</li>
- * </ul>
- * The body, the streaks and the outline are opaque quads wound counter-clockwise as the eye sees them (a batch that writes depth and
- * culls back faces); the glow is translucent (a batch drawn after, both faces). Coordinates are relative to the eye (the eye at the origin).
+ * from the side the manga's wave.</p>
+ *
+ * <p>2.2.6 (the owner: "the shape is right but its a solid thing, its clearly not a flowing energy beam"): drawn as light, not a solid
+ * (see {@link #wave}): a see-through saturated skin dense at its rims, a white-hot core, bands of light pouring back from the cutting edge
+ * into the tongues, racing streaks, a white-hot cutting edge, flickering see-through tongues and a halo, all alpha blended and sorted far
+ * to near (the batch writes depth). Coordinates are relative to the eye (the eye at the origin).
  */
 public final class SlashMesh {
     public static final int ROWS = 26;
@@ -34,19 +31,29 @@ public final class SlashMesh {
     /** A tongue's section: across the wave (thin) and in its plane (broad), times its radius. */
     static final double BLADE_THIN = 0.6;
     static final double BLADE_BROAD = 1.5;
-    static final int SPIKE_RING = 7;
+    static final int SPIKE_RING = 10;
 
     /** Quads: four corners (x, y, z each) and four ARGB colours a quad. */
     public static final class Quads {
         public double[] v = new double[12 * 512];
         public int[] c = new int[4 * 512];
         public int n;
+        /**
+         * 2.2.6: the drawing layer of each quad, and the one quads get as they are added: see-through layers are drawn in this order
+         * (the back of the wave first, its near skin last), each sorted far to near, so no see-through layer hides one behind it.
+         */
+        public int[] layers = new int[512];
+        public int layer;
 
         void add(double[] p0, double[] p1, double[] p2, double[] p3, int c0, int c1, int c2, int c3) {
             if ((this.n + 1) * 12 > this.v.length) {
                 this.v = java.util.Arrays.copyOf(this.v, this.v.length * 2);
                 this.c = java.util.Arrays.copyOf(this.c, this.c.length * 2);
             }
+            if (this.n >= this.layers.length) {
+                this.layers = java.util.Arrays.copyOf(this.layers, this.layers.length * 2);
+            }
+            this.layers[this.n] = this.layer;
             int o = this.n * 12;
             double[][] p = {p0, p1, p2, p3};
             for (int k = 0; k < 4; k++) {
@@ -121,11 +128,12 @@ public final class SlashMesh {
 
         public void clear() {
             this.n = 0;
+            this.layer = 0;
         }
 
         /**
          * Puts the quads in order from the farthest to the nearest (their middles' distance from the eye), as Minecraft sorts a
-         * translucent batch. Stable: quads as far as each other keep their order.
+         * translucent batch, 2.2.6: layer by layer ({@link #layers}). Stable: quads as far as each other keep their order.
          */
         public void sortBackToFront() {
             Integer[] order = new Integer[this.n];
@@ -142,15 +150,19 @@ public final class SlashMesh {
                 }
                 far[q] = x * x + y * y + z * z;
             }
-            java.util.Arrays.sort(order, (a, b) -> Double.compare(far[b], far[a]));
+            int[] layer = this.layers;
+            java.util.Arrays.sort(order, (a, b) -> layer[a] != layer[b] ? Integer.compare(layer[a], layer[b]) : Double.compare(far[b], far[a]));
             double[] v = new double[this.v.length];
             int[] c = new int[this.c.length];
+            int[] l = new int[this.layers.length];
             for (int i = 0; i < this.n; i++) {
                 System.arraycopy(this.v, order[i] * 12, v, i * 12, 12);
                 System.arraycopy(this.c, order[i] * 4, c, i * 4, 4);
+                l[i] = layer[order[i]];
             }
             this.v = v;
             this.c = c;
+            this.layers = l;
         }
     }
 
@@ -275,34 +287,6 @@ public final class SlashMesh {
         return new Spike(k.f, k.y, k.s, k.elevation, k.heading, length, k.radius, k.curl);
     }
 
-    /** The body's surface: rows up from the trench (closer together toward the peak), round its section: {point, normal}. */
-    static double[][][][] body(Frame f, double grow) {
-        double[][][][] grid = new double[ROWS + 1][RING][][];
-        for (int i = 0; i <= ROWS; i++) {
-            double v = 1.0 - Math.pow(1.0 - i / (double) ROWS, 1.35);
-            double front = f.front(v);
-            double back = f.back(v);
-            double mid = (front + back) / 2.0;
-            double rf = (front - back) / 2.0;
-            double rs = f.across(v);
-            for (int j = 0; j < RING; j++) {
-                double t = j * Math.PI * 2 / RING;
-                double cos = Math.cos(t);
-                double sin = Math.sin(t);
-                double[] p = f.at(mid + rf * cos, v * f.height, rs * sin);
-                double g = grow > 0 ? grow * ink(p) : 0.0;
-                double[] q = f.at(mid + (rf + g) * cos, v * f.height + (i == ROWS ? g : 0.0), (rs + g) * sin);
-                double nx = cos / Math.max(1.0E-6, rf);
-                double ny = sin / Math.max(1.0E-6, rs);
-                double l = Math.hypot(nx, ny);
-                double[] n = {f.flat[0] * nx + f.side[0] * ny, 0.35 * l * v, f.flat[2] * nx + f.side[2] * ny};
-                double nl = Math.max(1.0E-9, length(n));
-                grid[i][j] = new double[][] {q, {n[0] / nl, n[1] / nl, n[2] / nl}};
-            }
-        }
-        return grid;
-    }
-
     /** A tongue's surface: rows from its root to its point, a round section tapering to nothing: {point, normal}. */
     static double[][][][] spike(Frame f, Spike k, double grow) {
         double[][][][] grid = new double[SPIKE_ROWS + 1][SPIKE_RING][][];
@@ -380,32 +364,45 @@ public final class SlashMesh {
     }
 
     /**
-     * The wave of slash {@code seed}: {@code rgb} its colour, {@code ticks} its age (the spikes' flicker), {@code fade} 0..1 as it dies.
-     * The body, its streaks and its outline go to {@code solid}, its glow to {@code glow}.
+     * 2.2.6 (the owner: "the energy slice from the swordsman M2 looks horrible, it's meant to be a energy wave, the shape is right but its
+     * a solid thing, its clearly not a flowing energy beam"): the wave of slash {@code seed}, {@code rgb} its colour, {@code ticks} its
+     * age (its flow and the tongues' flicker), {@code fade} 0..1 as it dies. Same shape as 2.2.4's, but light, not a solid: every layer
+     * goes to {@code glow} (alpha blended, the world seen through it), {@code solid} gets nothing.
+     * <ol>
+     *   <li>the skin: the colour, deep and saturated, thin where it faces the eye and dense at its rims (a glowing volume seen through),
+     *       its leading edge whitening into the cutting edge;</li>
+     *   <li>the core: inside it, white-hot where it faces the eye;</li>
+     *   <li>both swept by bands of light streaming back from the edge and up into the tongues ({@link #flow}), so it pours;</li>
+     *   <li>streaks: thin white dashes racing back along its flanks and rising, as the panel's speed lines;</li>
+     *   <li>the cutting edge: a white-hot line up the front;</li>
+     *   <li>the tongues: see-through flames, white at the root, the colour toward a tip that thins to nothing, pulses running out;</li>
+     *   <li>the halo round it all.</li>
+     * </ol>
      */
     public static void wave(Quads solid, Quads glow, Frame f, long seed, int rgb, double ticks, double fade) {
         double r = ((rgb >> 16) & 255) / 255.0;
         double g = ((rgb >> 8) & 255) / 255.0;
         double b = (rgb & 255) / 255.0;
-        // the body's colour: the colour a little toward white (light, not paint)
-        double br = r + (1 - r) * 0.12;
-        double bg = g + (1 - g) * 0.12;
-        double bb = b + (1 - b) * 0.12;
         double alpha = clamp(fade);
+        if (alpha <= 0.0) {
+            return;
+        }
+        double phase = (seed & 1023) / 1023.0 * Math.PI * 2.0;
         Spike[] spikes = spikes(f, seed, ticks);
-        // the body and the spikes: their near sides, then their outlines (the hulls' far sides, pushed out)
-        surface(solid, body(f, 0.0), true, br, bg, bb, alpha);
+        double[] colour = {r, g, b};
+        // the skin and the core, their far halves first; the tongues; their near halves; then what lies on the skin
+        shell(glow, f, 1.0, 0.0, colour, ticks, phase, alpha, false);
+        shell(glow, f, 0.5, 0.0, colour, ticks, phase, alpha, true);
+        glow.layer = TONGUES;
         for (Spike k : spikes) {
-            surface(solid, spike(f, k, 0.0), true, br, bg, bb, alpha, true);
+            tongue(glow, f, k, colour, ticks, phase, alpha);
         }
-        surface(solid, body(f, 1.0), false, br, bg, bb, alpha);
-        for (Spike k : spikes) {
-            surface(solid, spike(f, k, 1.0), false, br, bg, bb, alpha, true);
-        }
-        streaks(solid, f, spikes, seed, br, bg, bb, alpha);
-        // the glow round the body: most opaque at its edge, both halves
-        double[][][][] halo = new double[ROWS + 1][RING][][];
+        glow.layer = STREAKS;
+        streaks(glow, f, seed, colour, ticks, alpha);
+        edgeLine(glow, f, colour, ticks, alpha);
+        // the halo round the body: faint, most opaque at its edge
         double grow = f.height * 0.035 + 0.15;
+        double[][][][] halo = new double[ROWS + 1][RING][][];
         for (int i = 0; i <= ROWS; i++) {
             double v = 1.0 - Math.pow(1.0 - i / (double) ROWS, 1.35);
             double front = f.front(v);
@@ -424,105 +421,249 @@ public final class SlashMesh {
                 int[] c = new int[4];
                 for (int m = 0; m < 4; m++) {
                     double edge = Math.pow(1.0 - square(q[m]), 1.5);
-                    c[m] = argb(alpha * 0.34 * (0.15 + 0.85 * edge) * (1.0 - q[m][2][0] * 0.5), r, g, b);
+                    c[m] = argb(alpha * 0.2 * (0.15 + 0.85 * edge) * (1.0 - q[m][2][0] * 0.5), r, g, b);
                 }
+                glow.layer = facing(q[0], q[1], q[2], q[3]) ? HALO_NEAR : HALO_FAR;
                 glow.add(q[0][0], q[1][0], q[2][0], q[3][0], c[0], c[1], c[2], c[3]);
             }
         }
     }
 
-    /** A grid's quads: {@code near} its side facing the eye, lit; else its far side (an outline hull), in ink. */
-    static void surface(Quads out, double[][][][] grid, boolean near, double r, double g, double b, double alpha) {
-        surface(out, grid, near, r, g, b, alpha, false);
+    /** Rows round the body's section for the energy shells (more than the halo's: the flowing bands need the points). */
+    static final int SHELL_RING = 32;
+    /** 2.2.6: the see-through layers, in the order they are drawn. */
+    static final int HALO_FAR = 0;
+    static final int SKIN_FAR = 1;
+    static final int CORE_FAR = 2;
+    static final int TONGUES = 3;
+    static final int CORE_NEAR = 4;
+    static final int SKIN_NEAR = 5;
+    static final int HALO_NEAR = 6;
+    static final int STREAKS = 7;
+
+    /**
+     * 2.2.6: how bright the flowing light is at {@code u} (0 the leading edge .. 1 the back) and {@code v} (0 the trench .. 1 the peak),
+     * {@code ticks} into the wave's life: two sets of bands sweeping back from the edge and up (the slower broad, the faster narrow and
+     * slanted the other way), 0..1.
+     */
+    static double flow(double u, double v, double ticks, double phase) {
+        double broad = 0.5 + 0.5 * Math.sin(Math.PI * 2.0 * (1.5 * u + 0.45 * v - 0.2 * ticks) + phase);
+        double fine = 0.5 + 0.5 * Math.sin(Math.PI * 2.0 * (3.4 * u - 1.1 * v - 0.38 * ticks) + phase * 1.7);
+        return 0.62 * broad + 0.38 * fine;
     }
 
-    /** {@code split}: as two triangles each wound toward the eye (a tongue's quads twist where it curls; a culled half would leave a hole). */
-    static void surface(Quads out, double[][][][] grid, boolean near, double r, double g, double b, double alpha, boolean split) {
-        int rows = grid.length - 1;
-        int ring = grid[0].length;
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < ring; j++) {
-                double[][][] q = {grid[i][j], grid[i + 1][j], grid[i + 1][(j + 1) % ring], grid[i][(j + 1) % ring]};
-                if (facing(q[0], q[1], q[2], q[3]) != near) {
+    /**
+     * 2.2.6: one of the body's two energy shells, its section {@code scale} of the body's ({@code pad} blocks more): the skin
+     * ({@code core} false: the deep colour, see-through where it faces the eye, dense at its rims, white along its leading edge) or the
+     * core ({@code core} true: white-hot where it faces the eye, nothing at its rims). Both faces (the batch does not cull).
+     */
+    static void shell(Quads out, Frame f, double scale, double pad, double[] colour, double ticks, double phase, double alpha, boolean core) {
+        double[][] pts = new double[(ROWS + 1) * SHELL_RING][];
+        double[] us = new double[SHELL_RING];
+        double[] vs = new double[ROWS + 1];
+        double[][] normals = new double[(ROWS + 1) * SHELL_RING][];
+        for (int i = 0; i <= ROWS; i++) {
+            double v = 1.0 - Math.pow(1.0 - i / (double) ROWS, 1.35);
+            vs[i] = v;
+            double front = f.front(v);
+            double back = f.back(v);
+            double mid = (front + back) / 2.0;
+            double rf = (front - back) / 2.0 * scale + pad;
+            double rs = f.across(v) * scale + pad;
+            for (int j = 0; j < SHELL_RING; j++) {
+                double t = j * Math.PI * 2 / SHELL_RING;
+                double cos = Math.cos(t);
+                double sin = Math.sin(t);
+                us[j] = (1.0 - cos) / 2.0;
+                double top = i == ROWS ? pad : 0.0;
+                pts[i * SHELL_RING + j] = f.at(mid + rf * cos, v * f.height + top, rs * sin);
+                double nx = cos / Math.max(1.0E-6, rf);
+                double ny = sin / Math.max(1.0E-6, rs);
+                double l = Math.hypot(nx, ny);
+                double[] n = {f.flat[0] * nx + f.side[0] * ny, 0.35 * l * v, f.flat[2] * nx + f.side[2] * ny};
+                double nl = Math.max(1.0E-9, length(n));
+                normals[i * SHELL_RING + j] = new double[] {n[0] / nl, n[1] / nl, n[2] / nl};
+            }
+        }
+        int[] colours = new int[pts.length];
+        for (int i = 0; i <= ROWS; i++) {
+            for (int j = 0; j < SHELL_RING; j++) {
+                int at = i * SHELL_RING + j;
+                double facing = square(new double[][] {pts[at], normals[at]});
+                double u = us[j];
+                double v = vs[i];
+                double light = flow(u, v, ticks, phase);
+                // the leading edge (u near 0) whitens into the cutting edge; the back thins out into the tongues
+                double edge = Math.max(0.0, 1.0 - u / 0.16);
+                edge *= edge;
+                double a;
+                double white;
+                if (core) {
+                    a = 0.72 * Math.pow(facing, 1.2) * (0.4 + 0.8 * light) * (1.0 - 0.5 * u) * (1.0 - 0.3 * v);
+                    white = 0.35 + 0.45 * light * light;
+                } else {
+                    double rim = Math.pow(1.0 - facing, 1.6);
+                    a = (0.28 + 0.6 * rim) * (0.4 + 0.8 * light) * (1.0 - 0.35 * u) + 0.45 * edge;
+                    white = 0.04 + 0.55 * light * light * light + 0.7 * edge;
+                }
+                // the very top thins away too, so the peak is a point of light, not a cap
+                a *= 1.0 - 0.5 * Math.max(0.0, (v - 0.85) / 0.15);
+                double k = clamp(white);
+                // the deep colour: saturated (its weakest channels pulled down a little), toward white where it burns hottest
+                double[] deep = saturated(colour);
+                double dr = deep[0];
+                double dg = deep[1];
+                double db = deep[2];
+                colours[at] = argb(Math.min(0.9, a) * alpha, dr + (1 - dr) * k, dg + (1 - dg) * k, db + (1 - db) * k);
+            }
+        }
+        for (int i = 0; i < ROWS; i++) {
+            for (int j = 0; j < SHELL_RING; j++) {
+                int a0 = i * SHELL_RING + j;
+                int a1 = (i + 1) * SHELL_RING + j;
+                int a2 = (i + 1) * SHELL_RING + (j + 1) % SHELL_RING;
+                int a3 = i * SHELL_RING + (j + 1) % SHELL_RING;
+                if (((colours[a0] | colours[a1] | colours[a2] | colours[a3]) >>> 24) == 0) {
                     continue;
                 }
-                int[] c = new int[4];
-                for (int m = 0; m < 4; m++) {
-                    if (near) {
-                        // flat colour, a touch brighter where it faces the eye, a touch darker where it turns away
-                        double light = 0.8 + 0.25 * square(q[m]);
-                        c[m] = argb(alpha, r * light, g * light, b * light);
-                    } else {
-                        c[m] = argb(alpha, 0.03 + r * 0.06, 0.03 + g * 0.06, 0.04 + b * 0.06);
-                    }
-                }
-                if (split) {
-                    out.triangle(q[0][0], q[1][0], q[2][0], c[0], c[1], c[2]);
-                    out.triangle(q[0][0], q[2][0], q[3][0], c[0], c[2], c[3]);
-                } else {
-                    out.facing(q[0][0], q[1][0], q[2][0], q[3][0], c[0], c[1], c[2], c[3]);
-                }
+                boolean near = facing(new double[][] {pts[a0], normals[a0]}, new double[][] {pts[a1], normals[a1]},
+                    new double[][] {pts[a2], normals[a2]}, new double[][] {pts[a3], normals[a3]});
+                out.layer = core ? near ? CORE_NEAR : CORE_FAR : near ? SKIN_NEAR : SKIN_FAR;
+                out.add(pts[a0], pts[a1], pts[a2], pts[a3], colours[a0], colours[a1], colours[a2], colours[a3]);
             }
         }
     }
 
-    /** The streaks: thin whiter bands along the flow, up the body's both faces and down the middle of each spike. */
-    static void streaks(Quads out, Frame f, Spike[] spikes, long seed, double r, double g, double b, double alpha) {
+    /** 2.2.6: the colour made richer: its weaker channels pulled down toward nothing, its strongest kept (light seen through light). */
+    static double[] saturated(double[] c) {
+        double top = Math.max(c[0], Math.max(c[1], c[2]));
+        double[] out = new double[3];
+        for (int i = 0; i < 3; i++) {
+            double share = top <= 0 ? 0 : c[i] / top;
+            out[i] = top * Math.pow(share, 1.6) * 0.95;
+        }
+        return out;
+    }
+
+    /**
+     * 2.2.6: a tongue as a see-through flame: white-hot at its root, the colour toward its tip, thinning to nothing there, densest down
+     * its middle as the eye sees it, pulses of light running out along it.
+     */
+    static void tongue(Quads out, Frame f, Spike k, double[] colour, double ticks, double phase, double alpha) {
+        double[][][][] grid = spike(f, k, 0.0);
+        int rows = grid.length - 1;
+        int ring = grid[0].length;
+        double pulse0 = (k.f * 0.37 + k.y * 0.61) / Math.max(1.0E-6, f.height);
+        int[][] c = new int[rows + 1][ring];
+        for (int i = 0; i <= rows; i++) {
+            double s = i / (double) rows;
+            double pulse = 0.5 + 0.5 * Math.sin(Math.PI * 2.0 * (2.2 * s - 0.33 * ticks + pulse0 * 3.0) + phase);
+            for (int j = 0; j < ring; j++) {
+                double facing = square(grid[i][j]);
+                // its root fades into the body it pours out of (no stack of hard roots seen through the skin)
+                double root = Math.min(1.0, 0.1 + s / 0.22);
+                double a = 0.78 * Math.pow(1.0 - s, 0.85) * root * (0.35 + 0.65 * Math.pow(facing, 0.7)) * (0.6 + 0.5 * pulse);
+                double white = clamp(0.5 * (1.0 - s) * (1.0 - s) + 0.2 * pulse * (1.0 - s));
+                double[] deep = saturated(colour);
+                double dr = deep[0];
+                double dg = deep[1];
+                double db = deep[2];
+                c[i][j] = argb(Math.min(0.9, a) * alpha, dr + (1 - dr) * white, dg + (1 - dg) * white, db + (1 - db) * white);
+            }
+        }
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < ring; j++) {
+                int j1 = (j + 1) % ring;
+                out.add(grid[i][j][0], grid[i + 1][j][0], grid[i + 1][j1][0], grid[i][j1][0], c[i][j], c[i + 1][j], c[i + 1][j1], c[i][j1]);
+            }
+        }
+    }
+
+    /**
+     * 2.2.6: the streaks: thin white dashes on both flanks, each racing back from the leading edge and rising toward the back, a new
+     * dash every so often, as the manga's speed lines run along a wave.
+     */
+    static void streaks(Quads out, Frame f, long seed, double[] colour, double ticks, double alpha) {
         Random random = new Random(seed * 31 + 5);
-        int white = argb(alpha, r + (1 - r) * 0.75, g + (1 - g) * 0.75, b + (1 - b) * 0.75);
-        int bands = 4;
-        for (int k = 0; k < bands; k++) {
-            double w = -0.7 + 1.35 * (k + 0.3 + random.nextDouble() * 0.4) / bands;
-            double top = 0.55 + 0.35 * random.nextDouble();
-            double width = f.height * (0.008 + 0.006 * random.nextDouble());
-            for (int sideSign = -1; sideSign <= 1; sideSign += 2) {
-                int n = 12;
+        int lines = 7;
+        int n = 26;
+        double wr = colour[0] + (1 - colour[0]) * 0.82;
+        double wg = colour[1] + (1 - colour[1]) * 0.82;
+        double wb = colour[2] + (1 - colour[2]) * 0.82;
+        for (int line = 0; line < lines; line++) {
+            double v0 = 0.04 + 0.7 * (line + 0.2 + random.nextDouble() * 0.6) / lines;
+            double rise = (1.0 - v0) * (0.15 + 0.2 * random.nextDouble());
+            double width = f.height * (0.006 + 0.005 * random.nextDouble());
+            double offset = random.nextDouble();
+            double speed = 0.07 + 0.05 * random.nextDouble();
+            double dash = 0.28 + 0.2 * random.nextDouble();
+            for (int sign = -1; sign <= 1; sign += 2) {
+                double head = (offset + ticks * speed + (sign > 0 ? 0.5 : 0.0)) % 1.0;
                 double[][] left = new double[n + 1][];
                 double[][] right = new double[n + 1][];
+                int[] c = new int[n + 1];
                 for (int i = 0; i <= n; i++) {
-                    double v = 0.03 + (top - 0.03) * i / n;
+                    double s = i / (double) n;
+                    double u = 0.03 + 0.9 * s;
+                    double v = Math.min(0.97, v0 + rise * Math.pow(s, 1.3));
                     double front = f.front(v);
                     double back = f.back(v);
                     double mid = (front + back) / 2;
                     double rf = (front - back) / 2;
-                    double half = width * (0.3 + 0.7 * Math.sin(Math.PI * i / n));
-                    // on the surface where cos t = w, a little outside it (never inside the body)
-                    double s = Math.sqrt(Math.max(0.0, 1.0 - w * w)) * f.across(v) * 1.012 + 0.01;
-                    left[i] = f.at(mid + rf * w - half, v * f.height, sideSign * s);
-                    right[i] = f.at(mid + rf * w + half, v * f.height, sideSign * s);
-                }
-                strip(out, left, right, white);
-            }
-        }
-        for (Spike k : spikes) {
-            double[][] basis = basis(k);
-            for (int sideSign = -1; sideSign <= 1; sideSign += 2) {
-                int n = 6;
-                double[][] left = new double[n + 1][];
-                double[][] right = new double[n + 1][];
-                for (int i = 0; i <= n; i++) {
-                    double s = 0.05 + 0.7 * i / n;
-                    double[] axis = spikeAxis(k, s);
-                    double radius = k.radius * Math.pow(1.0 - s, 0.85);
-                    double lift = sideSign * (radius * BLADE_THIN * 1.03 + 0.01);
-                    double half = radius * BLADE_BROAD * 0.14;
-                    double[] l = new double[3];
-                    double[] rr = new double[3];
-                    for (int a = 0; a < 3; a++) {
-                        l[a] = axis[a] + basis[1][a] * lift - basis[2][a] * half;
-                        rr[a] = axis[a] + basis[1][a] * lift + basis[2][a] * half;
+                    double cos = 1.0 - 2.0 * u;
+                    double sin = Math.sqrt(Math.max(0.0, 1.0 - cos * cos));
+                    double across = sign * (sin * f.across(v) * 1.015 + 0.01);
+                    left[i] = f.at(mid + rf * cos, v * f.height - width, across);
+                    right[i] = f.at(mid + rf * cos, v * f.height + width, across);
+                    // the dash: bright behind its head, trailing off, nothing ahead of it
+                    double behind = head - s;
+                    if (behind < 0) {
+                        behind += 1.0;
                     }
-                    left[i] = f.at(l[0], l[1], l[2]);
-                    right[i] = f.at(rr[0], rr[1], rr[2]);
+                    double a = behind > dash ? 0.0 : Math.pow(1.0 - behind / dash, 1.4);
+                    a *= Math.min(1.0, s / 0.06) * Math.min(1.0, (1.0 - s) / 0.15);
+                    c[i] = argb(0.9 * a * alpha, wr, wg, wb);
                 }
-                strip(out, left, right, white);
+                for (int i = 0; i < n; i++) {
+                    if (((c[i] | c[i + 1]) >>> 24) == 0) {
+                        continue;
+                    }
+                    out.add(left[i], right[i], right[i + 1], left[i + 1], c[i], c[i], c[i + 1], c[i + 1]);
+                }
             }
         }
     }
 
-    static void strip(Quads out, double[][] left, double[][] right, int colour) {
-        for (int i = 0; i + 1 < left.length; i++) {
-            out.facing(left[i], right[i], right[i + 1], left[i + 1], colour, colour, colour, colour);
+    /** 2.2.6: the cutting edge: a white-hot line up the wave's front, turned to the eye, flickering, thinning to the peak. */
+    static void edgeLine(Quads out, Frame f, double[] colour, double ticks, double alpha) {
+        int n = 24;
+        double[][] p = new double[n + 1][];
+        for (int i = 0; i <= n; i++) {
+            double v = 0.97 * i / n;
+            p[i] = f.at(f.front(v) + f.height * 0.004, v * f.height, 0.0);
+        }
+        double wr = colour[0] + (1 - colour[0]) * 0.9;
+        double wg = colour[1] + (1 - colour[1]) * 0.9;
+        double wb = colour[2] + (1 - colour[2]) * 0.9;
+        double flick = 0.85 + 0.15 * Math.sin(ticks * 2.3);
+        for (int i = 0; i < n; i++) {
+            double[][] q = new double[4][];
+            int[] c = new int[4];
+            for (int e = 0; e < 2; e++) {
+                int at = i + e;
+                double[] a = p[Math.max(0, at - 1)];
+                double[] b = p[Math.min(n, at + 1)];
+                double[] t = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
+                double[] eye = p[at];
+                double[] s = {t[1] * eye[2] - t[2] * eye[1], t[2] * eye[0] - t[0] * eye[2], t[0] * eye[1] - t[1] * eye[0]};
+                double sl = Math.max(1.0E-9, length(s));
+                double half = (f.height * 0.011 + 0.03) * (1.0 - 0.75 * at / (double) n);
+                q[e * 2] = new double[] {p[at][0] - s[0] / sl * half, p[at][1] - s[1] / sl * half, p[at][2] - s[2] / sl * half};
+                q[e * 2 + 1] = new double[] {p[at][0] + s[0] / sl * half, p[at][1] + s[1] / sl * half, p[at][2] + s[2] / sl * half};
+                c[e * 2] = argb(0.88 * flick * alpha, wr, wg, wb);
+                c[e * 2 + 1] = c[e * 2];
+            }
+            out.add(q[0], q[1], q[3], q[2], c[0], c[1], c[3], c[2]);
         }
     }
 

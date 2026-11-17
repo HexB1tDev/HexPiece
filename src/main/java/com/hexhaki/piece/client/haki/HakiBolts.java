@@ -46,9 +46,9 @@ import org.joml.Vector3f;
  * A composition that never goes through those players (the Galaxy Fist's charge, which keeps its own effect) keeps its beams: nothing
  * is ever lost.
  *
- * <p>Every frame each live bolt becomes {@link BoltMesh} geometry in camera space: the outline, the body, the core and its heart in one
- * opaque, unlit, fogged batch ({@code RenderType.textBackground}), then the glow in one additive batch ({@code eyes}), so the world and
- * the bodies in front of a bolt hide it, and the glow never paints over its own ink.
+ * <p>Every frame each live bolt becomes {@link BoltMesh} geometry in camera space: the outline, the body and the core (2.2.6: lit 3D
+ * tubes, inked, the key light set from the view by {@link #light}) in one opaque, unlit, fogged batch ({@code RenderType.textBackground}),
+ * then the glow in one blended batch, so the world and the bodies in front of a bolt hide it, and the glow never paints over its own ink.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class HakiBolts {
@@ -150,6 +150,21 @@ public final class HakiBolts {
             }
             List<IFXObject> objects = fx.getMainFX().objects();
             objects.removeIf(o -> containsSame(pending.beams, o));
+            if (entity != null) {
+                // 2.2.6 (the owner: "Haki is not meant to come directly from the player's body"): lightning laid on the body it plays on
+                // crawls over the shell round it instead (the storm's strands start outside it already, and are found by identity below)
+                for (int i = 0; i < pending.bolts.size(); i++) {
+                    Bolt bolt = pending.bolts.get(i);
+                    if (pending.ground.contains(bolt)) {
+                        continue;
+                    }
+                    double[] moved = com.hexhaki.piece.haki.ConquerorBolts.offBody(bolt.points);
+                    if (moved != bolt.points) {
+                        pending.bolts.set(i, new Bolt(moved, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed,
+                            bolt.dance));
+                    }
+                }
+            }
             if (!pending.ground.isEmpty()) {
                 onGround(pending, entity, x, y, z, level);
             }
@@ -384,9 +399,22 @@ public final class HakiBolts {
         return 1.0 - 0.5 * Math.max(0.0, Math.min(1.0, (sky - 0.25) / 0.75));
     }
 
+    /**
+     * 2.2.6: the bolts' key light for quads drawn through {@code matrix}: {@link BoltMesh#VIEW_LIGHT} (above and to the left of the
+     * view) taken back into the frame the quads are built in, so every tube is lit from the same side of the screen.
+     */
+    static void light(Matrix4f matrix) {
+        Matrix4f inverse = new Matrix4f(matrix).invert();
+        Vector3f origin = inverse.transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
+        double[] l = BoltMesh.VIEW_LIGHT;
+        Vector3f toward = inverse.transformPosition(new Vector3f((float) l[0], (float) l[1], (float) l[2]));
+        BoltMesh.light(toward.x - origin.x, toward.y - origin.y, toward.z - origin.z);
+    }
+
     static void draw(PoseStack pose, Vec3 cam, ClientLevel level, float partial) {
         long now = level.m_46467_();
         double shine = shine(level, partial);
+        light(pose.m_85850_().m_252922_());
         SOLID.clear();
         GLOW.clear();
         BoltMesh.Sink sink = (glow, xyz, argb) -> (glow ? GLOW : SOLID).add(xyz, argb);
@@ -447,6 +475,7 @@ public final class HakiBolts {
         double shine = level == null ? 1.0 : shine(level, partial);
         Matrix4f matrix = pose.m_85850_().m_252922_();
         Vector3f eye = new Matrix4f(matrix).invert().transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
+        light(matrix);
         SOLID.clear();
         GLOW.clear();
         BoltMesh.Sink sink = (glow, xyz, argb) -> (glow ? GLOW : SOLID).add(xyz, argb);
@@ -466,6 +495,7 @@ public final class HakiBolts {
             return;
         }
         double shine = shine(level, partial);
+        light(pose.m_85850_().m_252922_());
         SOLID.clear();
         GLOW.clear();
         BoltMesh.Sink sink = (glow, xyz, argb) -> (glow ? GLOW : SOLID).add(xyz, argb);
