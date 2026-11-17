@@ -25,5 +25,7 @@ public class Minecraft {
     /** getCameraEntity (3.6.8) */ public net.minecraft.world.entity.Entity m_91288_() { throw new UnsupportedOperationException(); }
     /** getBlockEntityRenderDispatcher (4.1.20): joined.tsrg enn.ao ()Lflt; m_167982_ */ public net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher m_167982_() { throw new UnsupportedOperationException(); }
     /** getEntityModels (4.1.20): joined.tsrg enn.aO ()Lfea; m_167973_ */ public net.minecraft.client.model.geom.EntityModelSet m_167973_() { throw new UnsupportedOperationException(); }
+    /** ON_OSX (2.3.2) */ public static boolean f_91002_;
+    /** getMainRenderTarget (2.3.2) */ public com.mojang.blaze3d.pipeline.RenderTarget m_91385_() { throw new UnsupportedOperationException(); }
     /** getFrameTime (partial tick) */ public float m_91296_() { throw new UnsupportedOperationException(); }
 }

@@ -38,29 +38,65 @@ public final class SwordAnims {
     }
 
     /**
-     * 2.2.7: the animation a player with {@code katana} plays for {@code anim}: Yoru, worn on the back with no saya, has its own draw
-     * (over the shoulder), sheathe and draw into the charge; everything else (every cut, the guard, the charge, the release, the quick
-     * draw) is the katana's: the owner: "Yoru swings and is held the same way as the katana, same for the saber".
+     * 2.2.7, 2.3.2: the animation a player with {@code katana} plays for {@code anim}. Gryphon and Yoru have every animation of their
+     * own ({@code <name>_gryphon}, {@code <name>_yoru}: their own draw, sheathing, guard and idle, and every cut written again for the
+     * blade, kept off the floor; the owner: "yoru clips through the floor", "Gyphon and Yoru's pull outs are broken"). A legendary
+     * blade is drawn the moment combat begins and never drawn mid-fight (the owner, of Yoru's draw cut: "HERE IT IS the bug", Yoru on
+     * the back and in the hand at once): what would draw it from a saya plays its drawn counterpart (a draw cut: its branch's first
+     * cut; the quick draw: the quick cut; the charge from the saya: the charge).
      */
     public static String name(int anim, Katana katana) {
-        if (katana != null && katana.carry() == Katana.Carry.BACK) {
-            switch (anim) {
-                case DRAW:
-                    return "sword_draw_back";
-                case SHEATHE:
-                    return "sword_sheathe_back";
-                case CHARGE_DRAW:
-                    return "sword_charge_draw_back";
-                default:
-                    break;
+        String suffix = suffix(katana);
+        if (suffix.isEmpty()) {
+            return name(anim);
+        }
+        int own = anim;
+        if (anim == QUICK_DRAW) {
+            own = QUICK_CUT;
+        } else if (anim == CHARGE_DRAW && katana != Katana.YORU) {
+            own = CHARGE;
+        } else if (anim >= MOVES) {
+            SwordMove move = SwordMove.byOrdinal(anim - MOVES);
+            if (move != null && move.draw()) {
+                own = of(SwordCombo.string(move.branch())[0]);
             }
         }
-        return name(anim);
+        String base = name(own);
+        return base == null ? null : base + suffix;
+    }
+
+    /** 2.3.2: the suffix of a blade's own animations ("" for a katana). */
+    public static String suffix(Katana katana) {
+        if (katana == Katana.GRYPHON) {
+            return "_gryphon";
+        }
+        return katana == Katana.YORU ? "_yoru" : "";
+    }
+
+    /**
+     * 2.3.2 (the owner: "using sword makes the player's body too stiff, the head doesnt move ... more ambient animation with all
+     * swords", "the left arm is not even moving... why is it frozen"): the guard between cuts is the right arm alone (the walk, the
+     * look and the free arm stay the game's); standing still, the client plays this instead: the whole body breathing and shifting,
+     * the blade alive in the hand, the head still free.
+     */
+    public static String idle(Katana katana) {
+        return "sword_idle" + suffix(katana);
     }
 
     /** 2.2.7: {@link #drawn(int, float)} for the animation a player with {@code katana} plays. */
     public static boolean drawn(int anim, float ticks, Katana katana) {
         return drawnIn(name(anim, katana), ticks);
+    }
+
+    /** 2.3.2: how long {@code anim} lasts with {@code katana} (the draws and sheathings are each blade's own: Yoru slowest). */
+    public static int duration(int anim, Katana katana) {
+        if (anim == DRAW) {
+            return SwordRules.drawTicks(katana);
+        }
+        if (anim == SHEATHE) {
+            return SwordRules.sheatheTicks(katana);
+        }
+        return duration(anim);
     }
 
     /** How long it lasts (ticks; a loop: its whole length, looping from {@link #loopFrom}). */
@@ -70,7 +106,7 @@ public final class SwordAnims {
             return move == null ? 0 : move.duration();
         }
         return switch (anim) {
-            case GUARD -> 24;
+            case GUARD -> 40;
             case SHEATHE -> SwordRules.SHEATHE_TICKS;
             case DRAW -> SwordRules.DRAW_TICKS;
             case CHARGE, CHARGE_DRAW -> 26;

@@ -139,6 +139,10 @@ public final class FinisherFx {
             return;
         }
         Stunned stunned = STUNNED.remove(message.entity());
+        Player self = Minecraft.m_91087_().f_91074_;
+        if (self != null && self.m_19879_() == message.entity()) {
+            selfSplit = now;
+        }
         if (!(level.m_6815_(message.entity()) instanceof LivingEntity body)) {
             return;
         }
@@ -515,7 +519,20 @@ public final class FinisherFx {
 
     // ------------------------------------------------------------------ the victim's own view
 
-    /** The victim's own view: a thin red line down the middle, drawn from the centre up and down as the line goes round them, and staying. */
+    /** When this client's own player was cut in two (world ticks), for the line that stays on its view after the split. */
+    private static double selfSplit = -1.0;
+    /** How long the victim's view lies split in two after the body comes apart (ticks). */
+    static final double LINGER = 80.0;
+    /** How much faster than the line round the body the line on the view runs its full height. */
+    static final double SCREEN_RUN = 3.0;
+
+    /**
+     * The victim's own view (2.3.2, the owner: "when a player suffers the finisher, a line also should show on the middle of their
+     * screen vertically (same as the cut)"): the cut's own line of light down the middle of the view, the same red as it runs round
+     * the body ({@link Carcass#GLOW}): drawn out from the middle up and down the whole height of the view (in the first third of the
+     * stun), its two running ends hot white, a soft glow either side; when the body comes apart the view itself is cut in two along it
+     * ({@link ScreenSplit}: the owner, "the bar should split the whole screen in 2").
+     */
     static void screen(GuiGraphics graphics, int width, int height, float partial) {
         Minecraft minecraft = Minecraft.m_91087_();
         Player self = minecraft.f_91074_;
@@ -523,17 +540,19 @@ public final class FinisherFx {
             return;
         }
         Stunned stunned = STUNNED.get(self.m_19879_());
-        if (stunned == null) {
-            return;
+        if (stunned != null) {
+            // the line runs the whole height of the view in the first third of the stun, then burns there until the body comes apart
+            double amount = Finisher.round((now(partial) - stunned.from) * Finisher.STUN / stunned.ticks);
+            if (amount > 0.0) {
+                for (int[] band : ScreenLine.bands(width, height, Math.min(1.0, amount * SCREEN_RUN), 1.0, now(partial))) {
+                    graphics.m_280509_(band[0], band[1], band[2], band[3], band[4]);
+                }
+            }
+        } else if (selfSplit >= 0.0 && now(partial) - selfSplit < LINGER && (now(partial) - selfSplit < 6.0 || !self.m_6084_())) {
+            // the body came apart: the view does too (the owner: "the bar should split the whole screen in 2")
+            double age = now(partial) - selfSplit;
+            ScreenSplit.draw(graphics, width, height, age, Math.max(0.0, 1.0 - age / LINGER) * 0.7 + 0.3);
         }
-        double amount = Finisher.round((now(partial) - stunned.from) * Finisher.STUN / stunned.ticks);
-        if (amount <= 0.0) {
-            return;
-        }
-        int x = width / 2;
-        int reach = (int)Math.round(height * 0.5 * Math.min(1.0, amount * 1.15));
-        graphics.m_280509_(x - 3, height / 2 - reach, x + 3, height / 2 + reach, 0x40FF1F2E);
-        graphics.m_280509_(x - 1, height / 2 - reach, x + 1, height / 2 + reach, 0xFFFF2B3A);
     }
 
     @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -550,6 +569,7 @@ public final class FinisherFx {
     }
 
     static void clear() {
+        selfSplit = -1.0;
         STUNNED.clear();
         HIDDEN.clear();
         CORPSES.clear();

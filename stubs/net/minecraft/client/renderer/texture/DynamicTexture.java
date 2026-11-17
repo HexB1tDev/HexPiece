@@ -2,5 +2,6 @@
 package net.minecraft.client.renderer.texture;
 
 public class DynamicTexture extends AbstractTexture {
+    /** load (2.3.2: AbstractTexture declares it) */ @Override public void m_6704_(net.minecraft.server.packs.resources.ResourceManager manager) { }
     /** DynamicTexture(image): uploaded at once */ public DynamicTexture(com.mojang.blaze3d.platform.NativeImage image) { throw new UnsupportedOperationException(); }
 }

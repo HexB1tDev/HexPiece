@@ -7,6 +7,7 @@ import com.hexhaki.piece.sword.BladePaths;
 import com.hexhaki.piece.sword.BackCarry;
 import com.hexhaki.piece.sword.Katana;
 import com.hexhaki.piece.sword.Koiguchi;
+import com.hexhaki.piece.sword.SayaSlide;
 import com.hexhaki.piece.sword.SwordAnims;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -42,7 +43,7 @@ import org.joml.Quaternionf;
  * part, bent with the forearm as the game bends a held item, at the fist's centre, turned by the animation's rightItem rotation (the
  * wrist) and slid along the handle by its rightItem y, then the grip (the blade along the fist, the edge down). While the blade slides
  * along the saya's line (a draw leaving it, a sheathing going home, BladePaths.notoOut) it is laid exactly along the saya's curve, so
- * no frame between two ticks can put it through the saya's side.
+ * no frame between two ticks can put it through the saya's side (2.3.2: each blade along its own curve, {@link SayaSlide}).
  * <p>
  * It is a {@link PlayerItemInHandLayer}: playerAnimator's first-person pass draws only that kind of layer, so the drawn blade is in the
  * hand in first person too (there the saya, out of sight at the hip, is left out). The katana item itself draws nothing in a hand (its
@@ -56,8 +57,6 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
     static final float HIP_PITCH = 114.953F;
     static final float HIP_YAW = 22.4011F;
     static final float HIP_ROLL = 95.6825F;
-    /** The blades' curve (model px): drawn out of the saya a blade turns about (SORI, 0, 0) (tools/sword_rig.py arc). */
-    static final float SORI = 180.0F;
 
     public SwordLayer(RenderLayerParent<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> parent) {
         super(parent, null);
@@ -105,10 +104,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                     double ready = anim == SwordAnims.NONE ? StanceLayer.swordReady(player, partial) : -1.0;
                     float push = ready < 0 ? 0.0F : Koiguchi.push(ready);
                     if (push > 0.0F) {
-                        float s = KatanaRenderer.SCALE;
-                        pose.m_252880_(SORI * s, 0.0F, 0.0F);
-                        pose.m_252781_(Axis.f_252403_.m_252977_((float) Math.toDegrees(push / SORI)));
-                        pose.m_252880_(-SORI * s, 0.0F, 0.0F);
+                        slide(pose, katana, push);
                     }
                     KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 0.0F);
                     if (push > 0.0F) {
@@ -120,11 +116,8 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                     KatanaRenderer.draw(pose, buffers, katana, false, true, light, 0.0F);
                 }
                 if (sliding) {
-                    // along the saya's own curve, out the interpolated amount
-                    float s = KatanaRenderer.SCALE;
-                    pose.m_252880_(SORI * s, 0.0F, 0.0F);
-                    pose.m_252781_(Axis.f_252403_.m_252977_((float) Math.toDegrees(slideOut[0] / SORI)));
-                    pose.m_252880_(-SORI * s, 0.0F, 0.0F);
+                    // along the saya's own curve (2.3.2: each blade its own), out the interpolated amount
+                    slide(pose, katana, slideOut[0]);
                     KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 1.0F);
                     SwordFx.record(player, pose, ticks);
                     HakiDraw.sliding(pose, buffers, player, anim, ticks, slideOut[0], partial);
@@ -173,6 +166,17 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             HakiDraw.held(pose, buffers, player, anim, ticks, partial);
             pose.m_85849_();
         }
+    }
+
+    /**
+     * 2.3.2: the blade drawn {@code out} model px out of its saya along its own curve (sword/SayaSlide, fitted from its mesh: before,
+     * one circle for every blade, and Gryphon's saber, curved three times as hard, came out through its scabbard's side).
+     */
+    static void slide(PoseStack pose, Katana katana, float out) {
+        float[] r = SayaSlide.at(katana, out);
+        float s = KatanaRenderer.SCALE;
+        pose.m_252880_(r[1] * s, r[2] * s, 0.0F);
+        pose.m_252781_(Axis.f_252403_.m_252977_(r[0]));
     }
 
     static boolean blackened(AbstractClientPlayer player) {

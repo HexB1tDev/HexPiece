@@ -98,3 +98,23 @@ C net/minecraft/client/renderer/entity/layers/HumanoidArmorLayer                
 M net/minecraft/client/renderer/entity/layers/HumanoidArmorLayer <init> (Lnet/minecraft/client/renderer/entity/RenderLayerParent;Lnet/minecraft/client/model/HumanoidModel;Lnet/minecraft/client/model/HumanoidModel;Lnet/minecraft/client/resources/model/ModelManager;)V  # [srg] joined.tsrg fsw <init> (Lfqt;Lfbs;Lfbs;Lfwx;)V 266192 (yarn ArmorFeatureRenderer(context, innerModel, outerModel, bakery))
 C net/minecraft/client/resources/model/ModelManager                                 # [srg] fwx C_4535_ (intermediary class_1092, yarn BakedModelManager)
 M net/minecraft/client/renderer/entity/EntityRendererProvider$Context m_266367_ ()Lnet/minecraft/client/resources/model/ModelManager;  # [srg] getModelManager: joined.tsrg foy$a g ()Lfwx; m_266367_; intermediary METHOD foy$a ()Lfwx; g method_48481 (yarn getModelManager)
+
+# --- 2.3.2: the finisher's victim sees their own view cut in two (the owner: "the bar should split the whole screen in 2"): the frame
+# copied with a framebuffer blit (as RenderTarget.copyDepthFrom does it), its colour texture registered as a texture the GUI blits.
+# egv = RenderTarget (yarn class_276 Framebuffer), egw = TextureTarget (class_6367 SimpleFramebuffer), enn = Minecraft, fug = AbstractTexture,
+# akx = ResourceManager (class_3300); yarn 1.20.1 mappings from raw GitHub (FabricMC/yarn, branch 1.20.1).
+C com/mojang/blaze3d/pipeline/RenderTarget                                       # [srg] joined.tsrg egv C_3106_; intermediary CLASS egv class_276 (yarn Framebuffer)
+C com/mojang/blaze3d/pipeline/TextureTarget                                      # [srg] joined.tsrg egw C_141533_; intermediary CLASS egw class_6367 (yarn SimpleFramebuffer)
+M com/mojang/blaze3d/pipeline/TextureTarget <init> (IIZZ)V                       # [srg] joined.tsrg egw <init> (IIZZ)V; yarn SimpleFramebuffer(width, height, useDepth, getError)
+F com/mojang/blaze3d/pipeline/RenderTarget f_83915_ I                            # [srg] width: joined.tsrg egv c f_83915_; intermediary FIELD egv I c field_1482 (yarn textureWidth)
+F com/mojang/blaze3d/pipeline/RenderTarget f_83916_ I                            # [srg] height: joined.tsrg egv d f_83916_; intermediary FIELD egv I d field_1481 (yarn textureHeight)
+F com/mojang/blaze3d/pipeline/RenderTarget f_83920_ I                            # [srg] frameBufferId: joined.tsrg egv h f_83920_; intermediary FIELD egv I h field_1476 (yarn fbo)
+M com/mojang/blaze3d/pipeline/RenderTarget m_83947_ (Z)V                         # [srg] bindWrite: joined.tsrg egv a (Z)V m_83947_; intermediary METHOD egv (Z)V a method_1235 (yarn beginWrite)
+M com/mojang/blaze3d/pipeline/RenderTarget m_83975_ ()I                          # [srg] getColorTextureId: joined.tsrg egv f ()I m_83975_; intermediary METHOD egv ()I f method_30277 (yarn getColorAttachment)
+M com/mojang/blaze3d/pipeline/RenderTarget m_83941_ (IIZ)V                       # [srg] resize: joined.tsrg egv a (IIZ)V m_83941_; intermediary METHOD egv (IIZ)V a method_1234 (yarn resize)
+M net/minecraft/client/Minecraft m_91385_ ()Lcom/mojang/blaze3d/pipeline/RenderTarget;   # [srg] getMainRenderTarget: joined.tsrg enn f ()Legv; m_91385_; intermediary METHOD enn ()Legv; f method_1522 (yarn getFramebuffer)
+F net/minecraft/client/Minecraft f_91002_ Z                                      # [srg] ON_OSX: joined.tsrg enn a f_91002_; intermediary FIELD enn Z a field_1703 (yarn IS_SYSTEM_MAC)
+M net/minecraft/client/renderer/texture/AbstractTexture m_6704_ (Lnet/minecraft/server/packs/resources/ResourceManager;)V   # [srg] load (overridden): joined.tsrg fug a (Lakx;)V m_6704_; intermediary METHOD fug (Lakx;)V a method_4625 (yarn load(ResourceManager))
+M net/minecraft/client/renderer/texture/AbstractTexture <init> ()V                # [srg] joined.tsrg fug <init> ()V (a subclass's constructor calls it)
+M com/mojang/blaze3d/platform/GlStateManager _glBindFramebuffer (II)V           # [srg] unobfuscated: listed by name in joined.tsrg (_glBindFramebuffer (II)V, id 84486)
+M com/mojang/blaze3d/platform/GlStateManager _glBlitFrameBuffer (IIIIIIIIII)V  # [srg] unobfuscated: listed by name in joined.tsrg (_glBlitFrameBuffer, id 84188)

@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "style_swordsman_stance",
- "author": "HexPiece 2.1.4",
+ "author": "HexPiece 2.3.2",
  "description": "Swordsman combat stance: the left hand resting on the hilt at the hip, the right arm loose.",
  "emote": {
   "beginTick": 0,
@@ -44,28 +44,28 @@
     "tick": 0,
     "easing": "linear",
     "leftArm": {
-     "pitch": -37.81
+     "pitch": -21.16
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "leftArm": {
-     "yaw": 11.22
+     "yaw": 29.09
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "leftArm": {
-     "roll": 16.0
+     "roll": -1.16
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "leftArm": {
-     "bend": -1.62
+     "bend": -37.94
     }
    },
    {
@@ -100,28 +100,28 @@
     "tick": 20,
     "easing": "inoutsine",
     "leftArm": {
-     "pitch": -37.94
+     "pitch": -37.28
     }
    },
    {
     "tick": 20,
     "easing": "inoutsine",
     "leftArm": {
-     "yaw": 11.81
+     "yaw": 45.62
     }
    },
    {
     "tick": 20,
     "easing": "inoutsine",
     "leftArm": {
-     "roll": 16.0
+     "roll": -24.04
     }
    },
    {
     "tick": 20,
     "easing": "inoutsine",
     "leftArm": {
-     "bend": -3.75
+     "bend": -31.78
     }
    },
    {
@@ -156,28 +156,28 @@
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "pitch": -38.1
+     "pitch": -38.06
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "yaw": 11.22
+     "yaw": 46.96
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "roll": 16.0
+     "roll": -25.38
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "leftArm": {
-     "bend": -1.09
+     "bend": -29.34
     }
    }
   ]

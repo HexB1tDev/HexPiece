@@ -25,6 +25,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      # 2.3.2: the sword poses are checked with the animation tools' own rig (numpy) and the katanas' meshes (Pillow reads nothing
+      # here, but tools/sword_view.py imports it)
+      - name: Python packages for the pose checks
+        run: python3 -m pip install --quiet numpy pillow
       - name: Compile patch and verify mod JAR
         id: build
         run: |

@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Python packages for the pose checks
+        run: python3 -m pip install --quiet numpy pillow
       - name: Build and verify the mod JAR
         id: build
         run: |

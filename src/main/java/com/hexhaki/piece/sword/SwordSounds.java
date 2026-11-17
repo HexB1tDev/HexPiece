@@ -37,6 +37,8 @@ public final class SwordSounds {
     }
 
     private static final Beat[] NONE = new Beat[0];
+    /** Yoru's own draw, sheathing and draw into the charge: their beats are pitched for the great sword already. */
+    private static final java.util.Set<String> PITCHED = java.util.Set.of("sword_draw_yoru", "sword_sheathe_yoru", "sword_charge_draw_yoru");
     /** A beat missed by at most this many ticks (a tick skipped, the animation begun after this tick's sounds) is still played. */
     public static final int CATCH_UP = 2;
 
@@ -49,30 +51,40 @@ public final class SwordSounds {
             return NONE;
         }
         return switch (name) {
-            // the slow draw: the thumb pushes the guard (3-6), the blade slides out (8-16), clears the mouth at 16
-            case "sword_draw" -> new Beat[] {new Beat(4, GUARD_CLICK, 0.55F, 1.3F), new Beat(9, DRAW, 0.9F, 0.95F),
-                new Beat(15, DRAW_RING, 0.95F, 1.0F)};
-            // the sheathe: the chiburi flick (3), laid to the mouth (8), slid home (10-17), the guard clicking home at 17
-            case "sword_sheathe" -> new Beat[] {new Beat(2, SWING, 0.6F, 1.1F), new Beat(10, SHEATHE, 0.9F, 1.0F),
-                new Beat(17, GUARD_CLICK, 0.9F, 1.0F)};
+            // 2.3.2: the slow draw, 28 ticks: the hand on the hilt (5), the thumb pushes the guard (8), the blade slides out (11-20),
+            // clears the mouth at 20
+            case "sword_draw" -> new Beat[] {new Beat(8, GUARD_CLICK, 0.55F, 1.3F), new Beat(12, DRAW, 0.9F, 0.95F),
+                new Beat(19, DRAW_RING, 0.95F, 1.0F)};
+            // the sheathe, 24: the chiburi flick (4), laid to the mouth (10), slid home (12-21), the guard clicking home at 21
+            case "sword_sheathe" -> new Beat[] {new Beat(3, SWING, 0.6F, 1.1F), new Beat(12, SHEATHE, 0.9F, 1.0F),
+                new Beat(21, GUARD_CLICK, 0.9F, 1.0F)};
+            // Gryphon's saber, 32: the thumb on the bell guard (9), drawn out along its hard curve (13-24), ringing free (23), whirled
+            // up and out (26)
+            case "sword_draw_gryphon" -> new Beat[] {new Beat(9, GUARD_CLICK, 0.55F, 1.2F), new Beat(14, DRAW, 0.9F, 1.0F),
+                new Beat(23, DRAW_RING, 1.0F, 1.05F), new Beat(26, SWING, 0.75F, 1.1F)};
+            case "sword_sheathe_gryphon" -> new Beat[] {new Beat(3, SWING, 0.65F, 1.1F), new Beat(13, SHEATHE, 0.9F, 1.05F),
+                new Beat(24, GUARD_CLICK, 0.9F, 1.05F)};
             // drawing straight up into the charge, and the iai from the saya
             case "sword_charge_draw" -> new Beat[] {new Beat(0, DRAW, 0.8F, 1.2F), new Beat(2, DRAW_RING, 0.95F, 1.05F)};
             // the quick draw: out of the saya and straight down the line, the dash rushing the air (3-6)
             case "sword_quick_draw" -> new Beat[] {new Beat(0, DRAW, 0.7F, 1.35F), new Beat(2, SHING, 1.0F, 1.05F),
                 new Beat(3, SWING_HEAVY, 0.9F, 1.1F)};
-            case "sword_quick_cut" -> new Beat[] {new Beat(2, SWING, 0.9F, 1.0F), new Beat(3, SWING_HEAVY, 0.9F, 1.1F)};
+            case "sword_quick_cut", "sword_quick_cut_gryphon", "sword_quick_cut_yoru" -> new Beat[] {new Beat(2, SWING, 0.9F, 1.0F),
+                new Beat(3, SWING_HEAVY, 0.9F, 1.1F)};
             // the charged cut let go (1-3): the deep swish and the steel ringing through it (a Haki slash adds its rush as it flies)
-            case "sword_release" -> new Beat[] {new Beat(1, SWING_HEAVY, 1.0F, 0.95F), new Beat(1, SHING, 0.8F, 0.95F)};
+            case "sword_release", "sword_release_gryphon", "sword_release_yoru" -> new Beat[] {new Beat(1, SWING_HEAVY, 1.0F, 0.95F),
+                new Beat(1, SHING, 0.8F, 0.95F)};
             // the draws from the saya into a cut (the blade clears the mouth at 1-2; the cut's own swing follows)
             case "sword_draw_cut", "sword_advancing_draw" -> new Beat[] {new Beat(0, DRAW, 0.75F, 1.3F)};
             case "sword_aerial_draw" -> new Beat[] {new Beat(0, DRAW, 0.7F, 1.4F)};
-            // Yoru on the back: the hand closes on the hilt (7), the great sword pulled up out of its ropes (8-11), swept over the
-            // shoulder and over the head (12-15), brought down and round (16)
-            case "sword_draw_back" -> new Beat[] {new Beat(7, GUARD_CLICK, 0.5F, 0.7F), new Beat(8, DRAW, 1.0F, 0.62F),
-                new Beat(12, SWING_HEAVY, 0.9F, 0.7F), new Beat(14, SHING, 0.85F, 0.68F), new Beat(16, SWING_HEAVY, 0.8F, 0.8F)};
-            case "sword_sheathe_back" -> new Beat[] {new Beat(3, SWING_HEAVY, 0.8F, 0.75F), new Beat(9, SHEATHE, 0.95F, 0.6F),
-                new Beat(14, GUARD_CLICK, 0.85F, 0.6F)};
-            case "sword_charge_draw_back" -> new Beat[] {new Beat(2, GUARD_CLICK, 0.5F, 0.7F), new Beat(3, DRAW, 1.0F, 0.65F),
+            // 2.3.2: Yoru off the back, 44 ticks: the hand closes on the hilt behind the head (11), the great sword pulled up out of its
+            // ropes (15-21), swung out behind (24), over the head (31) and down in front (34)
+            case "sword_draw_yoru" -> new Beat[] {new Beat(11, GUARD_CLICK, 0.5F, 0.7F), new Beat(15, DRAW, 1.0F, 0.62F),
+                new Beat(24, SWING_HEAVY, 0.9F, 0.7F), new Beat(31, SHING, 0.85F, 0.68F), new Beat(34, SWING_HEAVY, 0.8F, 0.8F)};
+            // and back, 36: swung up in front (4), over the head and behind (12), lowered into its ropes (22-28)
+            case "sword_sheathe_yoru" -> new Beat[] {new Beat(4, SWING_HEAVY, 0.8F, 0.75F), new Beat(12, SWING_HEAVY, 0.7F, 0.7F),
+                new Beat(22, SHEATHE, 0.95F, 0.6F), new Beat(28, GUARD_CLICK, 0.85F, 0.6F)};
+            case "sword_charge_draw_yoru" -> new Beat[] {new Beat(2, GUARD_CLICK, 0.5F, 0.7F), new Beat(3, DRAW, 1.0F, 0.65F),
                 new Beat(4, SWING_HEAVY, 0.85F, 0.75F)};
             default -> NONE;
         };
@@ -102,7 +114,7 @@ public final class SwordSounds {
                 }
             }
         }
-        float pitch = name != null && name.endsWith("_back") ? 1.0F : pitch(katana);
+        float pitch = name != null && PITCHED.contains(name) ? 1.0F : pitch(katana);
         Beat[] out = new Beat[beats.size()];
         for (int i = 0; i < out.length; i++) {
             Beat b = beats.get(i);

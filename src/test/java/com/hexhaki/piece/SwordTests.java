@@ -58,16 +58,33 @@ public final class SwordTests {
                 Check.that(!SeaRules.katana(rank, pick).legend(), "no patrol carries a legendary blade");
             }
         }
-        // the animation names: Yoru's own draw, sheathe and draw into the charge; everything else the katana's
-        Check.that("sword_draw_back".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.YORU))
-            && "sword_draw".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.GRYPHON))
-            && "sword_guard".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.GUARD, Katana.YORU)),
-            "Yoru's own draw, the katana's moves");
-        for (String name : new String[] {"sword_draw_back", "sword_sheathe_back", "sword_charge_draw_back"}) {
+        // 2.3.2: the animation names: Gryphon and Yoru each have every animation of their own
+        Check.that("sword_draw_yoru".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.YORU))
+            && "sword_draw_gryphon".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.GRYPHON))
+            && "sword_guard_yoru".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.GUARD, Katana.YORU))
+            && "sword_draw".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.values()[0]))
+            && "sword_kesa_gryphon".equals(com.hexhaki.piece.sword.SwordAnims.name(
+                com.hexhaki.piece.sword.SwordAnims.of(com.hexhaki.piece.sword.SwordMove.KESA), Katana.GRYPHON)),
+            "Gryphon's and Yoru's own animations, the katanas' theirs");
+        for (String name : new String[] {"sword_draw_yoru", "sword_sheathe_yoru", "sword_charge_draw_yoru", "sword_draw_gryphon",
+            "sword_sheathe_gryphon"}) {
             Check.that(com.hexhaki.piece.sword.BladePaths.of(name) != null, name + ": its blade path is written");
         }
-        Check.that(com.hexhaki.piece.sword.BladePaths.drawTick("sword_draw_back") > 0
-            && com.hexhaki.piece.sword.BladePaths.sheathTick("sword_sheathe_back") > 0, "Yoru's draw and sheathe hand it over mid-way");
+        Check.that(com.hexhaki.piece.sword.BladePaths.drawTick("sword_draw_yoru") > 0
+            && com.hexhaki.piece.sword.BladePaths.sheathTick("sword_sheathe_yoru") > 0, "Yoru's draw and sheathe hand it over mid-way");
+        Check.that(com.hexhaki.piece.sword.BladePaths.notoOut("sword_draw_gryphon") != null
+            && com.hexhaki.piece.sword.BladePaths.notoOut("sword_sheathe_gryphon") != null, "Gryphon's saber slides out of its own scabbard");
+        // 2.3.2: each blade slides out of its own saya along its own curve (sword/SayaSlide, fitted from its mesh)
+        for (Katana katana : Katana.values()) {
+            float[] home = com.hexhaki.piece.sword.SayaSlide.at(katana, 0.0F);
+            Check.that(Math.abs(home[0]) < 0.05F && Math.abs(home[1]) < 0.05F && Math.abs(home[2]) < 0.05F, katana + ": home in its saya");
+            if (katana.carry() == Katana.Carry.HIP) {
+                float[] out = com.hexhaki.piece.sword.SayaSlide.at(katana, 10.0F);
+                Check.that(out[2] < -9.0F && out[2] > -10.5F && out[0] > 0.0F, katana + ": drawn out of the mouth, turning with its curve");
+            }
+        }
+        Check.that(com.hexhaki.piece.sword.SayaSlide.at(Katana.GRYPHON, 10.0F)[0] > 2.0F * com.hexhaki.piece.sword.SayaSlide.at(Katana.values()[0], 10.0F)[0],
+            "Gryphon's saber curves far harder than a katana (the owner: its pull-out was broken)");
         // the game's back frame and the animations' (tools/sword_rig.py) are the same, or a draw would not close on the handle
         try {
             String rig = Files.readString(Path.of("tools/sword_rig.py"));
@@ -199,8 +216,41 @@ public final class SwordTests {
         // 2.2.1 (the owner: "the sheath and unsheath is too fast ... Don't make the blade usable until it's fully unsheathed ... Unless
         // it's a quick draw"): a slow sheathing, a slow draw that ends drawn, both a second or so; the quick draw as fast as ever
         Check.that(SwordAnims.duration(SwordAnims.SHEATHE) >= 16 && SwordAnims.duration(SwordAnims.SHEATHE) <= 24, "a slow sheathing, about a second");
-        Check.that(SwordAnims.duration(SwordAnims.DRAW) == SwordRules.DRAW_TICKS && SwordRules.DRAW_TICKS >= 16 && SwordRules.DRAW_TICKS <= 26,
-            "a slow draw, about a second");
+        Check.that(SwordAnims.duration(SwordAnims.DRAW) == SwordRules.DRAW_TICKS && SwordRules.DRAW_TICKS >= 24 && SwordRules.DRAW_TICKS <= 32,
+            "a slow draw, about a second and a half");
+        // 2.3.2 (the owner: "The pull out animation is way too fast on some swords, yoru should be slower than all")
+        Check.that(SwordRules.drawTicks(Katana.YORU) > SwordRules.drawTicks(Katana.GRYPHON)
+            && SwordRules.drawTicks(Katana.GRYPHON) > SwordRules.drawTicks(Katana.values()[0])
+            && SwordRules.drawTicks(Katana.values()[0]) == SwordRules.DRAW_TICKS && SwordRules.drawTicks(null) == SwordRules.DRAW_TICKS,
+            "Yoru draws slowest of all, then Gryphon, then a katana");
+        Check.that(SwordRules.sheatheTicks(Katana.YORU) > SwordRules.sheatheTicks(Katana.GRYPHON)
+            && SwordRules.sheatheTicks(Katana.GRYPHON) > SwordRules.SHEATHE_TICKS, "and sheathes likewise");
+        // 2.3.2: every blade's every animation exists, as long as the server holds it, its blade path written; a legendary blade
+        // never plays a draw from a saya (the owner, of Yoru's draw cut: "HERE IT IS the bug": on the back and in the hand at once)
+        for (Katana katana : new Katana[] {Katana.values()[0], Katana.GRYPHON, Katana.YORU}) {
+            for (int anim = 1; anim < SwordAnims.MOVES + SwordMove.values().length; anim++) {
+                String name = SwordAnims.name(anim, katana);
+                if (name == null) {
+                    continue;
+                }
+                Path file = ANIMATIONS.resolve(name + ".json");
+                Check.that(Files.exists(file), name + ": its animation exists");
+                Matcher m = end.matcher(Files.readString(file));
+                Check.that(m.find(), name + ": its length");
+                int length = Integer.parseInt(m.group(1));
+                if (name.equals(SwordAnims.name(anim) + SwordAnims.suffix(katana))) {
+                    Check.that(length == SwordAnims.duration(anim, katana), name + ": as long as the server holds it");
+                }
+                float[] path = BladePaths.of(name);
+                Check.that(path != null && path.length == (length * 2 + 1) * 6, name + ": its blade path, every half tick");
+                if (katana.legend()) {
+                    Check.that(name.endsWith(SwordAnims.suffix(katana)), name + ": the legend's own");
+                    boolean draws = anim == SwordAnims.DRAW || katana == Katana.YORU && anim == SwordAnims.CHARGE_DRAW;
+                    Check.that(draws == (BladePaths.drawTick(name) > 0), name + ": a legendary blade is drawn only by its own draw");
+                }
+            }
+            Check.that(Files.exists(ANIMATIONS.resolve(SwordAnims.idle(katana) + ".json")), katana + ": its idle");
+        }
         Check.that(!SwordAnims.drawn(SwordAnims.DRAW, 0) && !SwordAnims.drawn(SwordAnims.DRAW, BladePaths.drawTick("sword_draw") - 1)
             && SwordAnims.drawn(SwordAnims.DRAW, SwordRules.DRAW_TICKS), "the draw: in the saya until its point leaves the mouth, in the hand at its end");
         Check.that(BladePaths.drawTick("sword_draw") >= 12, "the blade comes out slowly, not at once");
@@ -414,7 +464,7 @@ public final class SwordTests {
         SwordSounds.Beat katanaCut = SwordSounds.of(SwordAnims.of(SwordMove.KESA), Katana.values()[0])[0];
         Check.that(SwordSounds.of(SwordAnims.of(SwordMove.KESA), Katana.YORU)[0].pitch() < katanaCut.pitch()
             && SwordSounds.of(SwordAnims.of(SwordMove.KESA), Katana.GRYPHON)[0].pitch() > katanaCut.pitch(), "each blade its own voice");
-        String[] sheathes = {"sword_sheathe", "sword_sheathe_back"};
+        String[] sheathes = {"sword_sheathe", "sword_sheathe_gryphon", "sword_sheathe_yoru"};
         for (String name : sheathes) {
             SwordSounds.Beat[] beats = SwordSounds.of(name);
             SwordSounds.Beat close = beats[beats.length - 1];

@@ -6,6 +6,8 @@ import com.hexhaki.piece.npc.SeaFighter;
 import com.hexhaki.piece.client.sword.KatanaRenderer;
 import com.hexhaki.piece.style.StyleMove;
 import com.hexhaki.piece.sword.Katana;
+import com.hexhaki.piece.npc.Gesture;
+import com.hexhaki.piece.npc.GesturePose;
 import com.hexhaki.piece.sword.SwordAnims;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -63,6 +65,9 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
     record Shown(String animation, int duration, float tick, int anim) {
     }
 
+    /** 2.3.3: Shown.anim of an idle gesture (its own envelope: never faded by {@link #held}). */
+    static final int GESTURE = -2;
+
     static Shown shown(SeaFighter fighter, float partial) {
         if (fighter.m_9236_() == null) {
             return null;
@@ -78,6 +83,12 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
         }
         StyleMove move = fighter.shownMove();
         if (move == null) {
+            // 2.3.3: standing idle, a gesture (npc/GesturePose eases it in and out itself)
+            Gesture gesture = fighter.gesture();
+            if (gesture != Gesture.NONE) {
+                float age = (float) ((now - fighter.gestureStart()) & 0x3FFFFFFF) + partial;
+                return age > gesture.ticks ? null : new Shown("gesture", gesture.ticks, age, GESTURE);
+            }
             return null;
         }
         float tick = (float) (now - fighter.shownStart()) + partial;
@@ -95,7 +106,7 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
 
     /** How much of a move still shows at {@code tick}: 1 until its end, then down to 0 over {@link #RETURN} ticks. */
     static float held(Shown shown) {
-        if (shown.anim() >= 0 && SwordAnims.loops(shown.anim())) {
+        if (shown.anim() == GESTURE || shown.anim() >= 0 && SwordAnims.loops(shown.anim())) {
             return 1.0F;
         }
         float tick = shown.tick();
@@ -112,7 +123,7 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
             super.m_7392_(fighter, yaw, partial, pose, buffers, light);
             return;
         }
-        float[][] p = StylePoser.sample(shown.animation(), shown.tick());
+        float[][] p = shown.anim() == GESTURE ? GesturePose.pose(fighter.gesture(), shown.tick()) : StylePoser.sample(shown.animation(), shown.tick());
         float out = held(shown);
         for (float[] part : p) {
             part[StylePoser.WEIGHT] *= out;

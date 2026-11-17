@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "style_swordsman_back_stance",
- "author": "HexPiece 2.1.4",
+ "author": "HexPiece 2.3.2",
  "description": "Swordsman combat stance with Yoru on the back: both arms loose.",
  "emote": {
   "beginTick": 0,

@@ -66,6 +66,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     static final EntityDataAccessor<Integer> KATANA = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
     static final EntityDataAccessor<Integer> SWORD = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
     static final EntityDataAccessor<Integer> SWORD_START = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
+    /** 2.3.3: what it is doing with its body while idle ({@link Gesture} ordinal) and since when (game ticks mod 2^30). */
+    static final EntityDataAccessor<Integer> GESTURE = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
+    static final EntityDataAccessor<Integer> GESTURE_START = SynchedEntityData.m_135353_(SeaFighter.class, EntityDataSerializers.f_135028_);
     static final String SAVED = "HexPieceFighter";
 
     private boolean ready;
@@ -75,6 +78,8 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     private Slot nextString = Slot.M1_1;
     private long nextAttack;
     private long nextWander;
+    private long nextGesture = -1;
+    private long gestureStart;
     private int retarget;
     private LivingEntity foe;
     private final Map<StyleMove, Long> cooldowns = new EnumMap<>(StyleMove.class);
@@ -120,6 +125,8 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         this.f_19804_.m_135372_(KATANA, 0);
         this.f_19804_.m_135372_(SWORD, 0);
         this.f_19804_.m_135372_(SWORD_START, 0);
+        this.f_19804_.m_135372_(GESTURE, 0);
+        this.f_19804_.m_135372_(GESTURE_START, 0);
     }
 
     @Override
@@ -174,6 +181,55 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
 
     public int shownSwordStart() {
         return this.f_19804_.m_135370_(SWORD_START);
+    }
+
+    /** 2.3.3: its idle gesture as every client sees it (NONE: none), and since when (game ticks mod 2^30). */
+    public Gesture gesture() {
+        return Gesture.byOrdinal(this.f_19804_.m_135370_(GESTURE));
+    }
+
+    public int gestureStart() {
+        return this.f_19804_.m_135370_(GESTURE_START);
+    }
+
+    void setGesture(Gesture gesture, long now) {
+        this.f_19804_.m_135381_(GESTURE, gesture.ordinal());
+        this.f_19804_.m_135381_(GESTURE_START, (int) (now & 0x3FFFFFFF));
+        this.gestureStart = now;
+    }
+
+    /**
+     * 2.3.3 (the owner: "the NPCS ... can have the same ambient animations as HexGhoul"): with no foe, now and then, standing still, a
+     * gesture of its side's ({@link Gesture#pick}); it stands for it (no wandering off mid-gesture) and is gone the moment a foe is
+     * found. Otherwise it wanders as before. True if it is standing for a gesture.
+     */
+    boolean idle(long now) {
+        if (this.nextGesture < 0) {
+            this.nextGesture = now + Gesture.pause(this.m_217043_().m_188500_());
+        }
+        Gesture shown = this.gesture();
+        if (shown != Gesture.NONE) {
+            if (!shown.over(now - this.gestureStart)) {
+                return true;
+            }
+            this.setGesture(Gesture.NONE, now);
+            this.nextGesture = now + Gesture.pause(this.m_217043_().m_188500_());
+        }
+        if (now >= this.nextGesture && this.m_21573_().m_26571_() && this.shownSword() == com.hexhaki.piece.sword.SwordAnims.NONE
+            && this.m_20096_() && !this.m_20069_()) {
+            this.setGesture(Gesture.pick(this.faction(), this.m_217043_().m_188500_()), now);
+            this.m_21573_().m_26573_();
+            return true;
+        }
+        return false;
+    }
+
+    /** 2.3.3: any gesture dropped at once (a foe found, a move begun). */
+    void endGesture(long now) {
+        if (this.gesture() != Gesture.NONE) {
+            this.setGesture(Gesture.NONE, now);
+            this.nextGesture = now + Gesture.pause(this.m_217043_().m_188500_());
+        }
     }
 
     /** Made what it is: its look (so its rank), its style; its health and speed to its rank; named; kept in its saved data. */
@@ -301,6 +357,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
                 this.foe = found;
             }
         }
+        if (this.foe != null || this.move != null) {
+            this.endGesture(now);
+        }
         if (this.style().sword()) {
             this.swordBrain(level, now);
             return;
@@ -310,6 +369,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
             return;
         }
         if (this.foe == null) {
+            if (this.idle(now)) {
+                return;
+            }
             if (now >= this.nextWander && this.m_21573_().m_26571_()) {
                 this.nextWander = now + 80 + this.m_217043_().m_188503_(120);
                 double angle = this.m_217043_().m_188500_() * Math.PI * 2;
@@ -537,6 +599,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         if (this.foe == null) {
             if (this.drawn && this.sheathingUntil < 0 && now - this.idleSince >= 30) {
                 this.sheathingUntil = now + SwordRules.SHEATHE_TICKS;
+            }
+            if (!this.drawn && this.idle(now)) {
+                return;
             }
             if (now >= this.nextWander && this.m_21573_().m_26571_()) {
                 this.nextWander = now + 80 + this.m_217043_().m_188503_(120);

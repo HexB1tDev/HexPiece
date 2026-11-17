@@ -225,9 +225,344 @@ def with_arm(pose, part, vals):
     return q
 
 
-def solve_blade(pose, target, blade_dir, edge_dir, seed=None, arm="wide", elbow=None, wrist_limit=55.0, slide=0.0, dir_weight=900.0):
+# --- 2.3.2: a natural arm (the owner: "the arm is twisted in a bunch of these, how does this pass") ------------------------------
+# The IK used to weigh only where the fist and the blade go, so it twisted the arms freely: upper arms turned past what a shoulder turns,
+# wrists bent to their stops, elbows folding the forearm out to the side or crumpled shut, arms through the chest. A human arm:
+# the upper arm turns about itself (humeral rotation) about 70 degrees in and 45 out; the elbow folds the forearm towards the arm's
+# front, up to about 125 degrees; a hand holding a sword in a hammer grip (the blade out of the thumb side) tilts it towards the
+# fingers about 40 degrees (ulnar) and towards the elbow 25 (radial), turns it round the forearm about 80 each way (pronation), and
+# bends it at the wrist about 65 (which spins the blade about itself); and no arm goes through the body. The solvers keep to these
+# (arm_strain) and tools/sword_anims.py's clearance check fails an animation that does not.
+TWIST_IN, TWIST_OUT = 70.0, 45.0
+# 2.3.2: the elbow's fold, which is how a turned arm shows on a box arm (a straight box arm looks the same however it is turned): with
+# the elbow bent past FOLD_FROM degrees, the forearm may not fold out away from the body further than FOLD_OUT degrees from the body's
+# side plane, nor, the arm hanging, back behind it further than FOLD_BACK
+FOLD_FROM = 25.0
+FOLD_OUT = 50.0
+FOLD_BACK = 35.0
+# what the solvers pay (per degree past a limit, squared; per px of arm or sword through a body, squared): a natural arm and nothing
+# through anything outweigh following the choreography's blade to the degree (the blade gives way, never the body)
+STRAIN_WEIGHT = 3.0
+COLLIDE_WEIGHT = 220.0
+ELBOW_MAX = 125.0
+ULNAR, RADIAL = 40.0, 25.0
+PRONATION = 80.0
+WRIST_BEND = 65.0
+
+
+def _cross(a, b):
+    """a x b for 3-vectors (numpy's cross is slow for one pair, and the solvers make thousands)."""
+    return np.array((a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]))
+
+
+def _rot_between(a, b):
+    """The smallest rotation (3x3) taking unit vector a to unit vector b."""
+    a = np.asarray(a, float)
+    b = np.asarray(b, float)
+    v = _cross(a, b)
+    c = float(a @ b)
+    if c < -0.9999:
+        axis = _cross(a, (1.0, 0.0, 0.0))
+        if np.linalg.norm(axis) < 1e-6:
+            axis = _cross(a, (0.0, 0.0, 1.0))
+        axis /= np.linalg.norm(axis)
+        return 2.0 * np.outer(axis, axis) - np.eye(3)
+    k = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    return np.eye(3) + k + k @ k / (1.0 + c)
+
+
+def fold_strain(rot, bend, side):
+    """2.3.2: (degrees past FOLD_OUT that the elbow folds the forearm out away from the body, degrees past FOLD_BACK that it folds back
+    with the arm hanging), 0 for an elbow bent less than FOLD_FROM. Measured on the fold's direction itself (the upper arm's front
+    face), so it has no blind spot (a turn of the upper arm about itself has one wherever its zero is put)."""
+    if abs(bend) < FOLD_FROM:
+        return 0.0, 0.0
+    f = rot @ np.array((0.0, 0.0, -1.0))
+    u = rot @ np.array((0.0, 1.0, 0.0))
+    out = np.array((-1.0, 0.0, 0.0)) if side == "right" else np.array((1.0, 0.0, 0.0))
+    over_out = max(0.0, math.degrees(math.asin(max(-1.0, min(1.0, float(f @ out))))) - FOLD_OUT)
+    over_back = 0.0
+    if u[1] > 0.3:
+        over_back = max(0.0, math.degrees(math.asin(max(-1.0, min(1.0, float(f[2]))))) - FOLD_BACK)
+    return over_out, over_back
+
+
+def arm_twist(rot, side):
+    """The upper arm's turn about itself (degrees; + inwards, the forearm folding across the body; - outwards), from its rotation
+    (3x3, the part's): against the smallest swing that takes the hanging arm to where it points."""
+    u = rot @ np.array((0.0, 1.0, 0.0))
+    if u[1] < -0.8:
+        # an arm raised near straight up: the swing from hanging is undefined there (a half turn about any level axis), so from the
+        # arm raised straight forward instead (its front face up), which agrees with it for an arm raised in front
+        v = _rot_between((0.0, 0.0, -1.0), u) @ np.array((0.0, -1.0, 0.0))
+    else:
+        v = _rot_between((0.0, 1.0, 0.0), u) @ np.array((0.0, 0.0, -1.0))
+    w = rot @ np.array((0.0, 0.0, -1.0))
+    ang = math.degrees(math.atan2(float(_cross(v, w) @ u), float(v @ w)))
+    return -ang if side == "right" else ang
+
+
+def wrist_angles(wr):
+    """A hand's hold on the blade (degrees) from the wrist (rightItem rotation, 3x3 or 4x4): ulnar deviation (+, the blade tipped
+    towards the fingers; - radial), pronation (the blade turned round the forearm) and the wrist's bend (the blade spun about itself)."""
+    r = np.asarray(wr, float)[:3, :3]
+    b = r @ np.array((0.0, 0.0, -1.0))
+    e = r @ np.array((0.0, 1.0, 0.0))
+    dev = math.degrees(math.asin(max(-1.0, min(1.0, float(b[1])))))
+    pro = math.degrees(math.atan2(float(b[0]), float(-b[2])))
+    flat = np.array((0.0, 1.0, 0.0)) - b * float(b[1])
+    n = np.linalg.norm(flat)
+    if n < 1e-6:
+        return dev, pro, 0.0
+    flat /= n
+    spin = math.degrees(math.atan2(float(_cross(flat, e) @ b), float(flat @ e)))
+    return dev, pro, spin
+
+
+# what a degree of turn of the upper arm or the hand from one beat to the next costs (squared)
+TURN_WEIGHT = 0.012
+
+
+def _turn(a, b):
+    """The angle (degrees) of the turn from rotation a to rotation b (3x3)."""
+    c = (float(np.sum(a * b)) - 1.0) * 0.5
+    return math.degrees(math.acos(max(-1.0, min(1.0, c))))
+
+
+def _over(x, lo, hi):
+    return lo - x if x < lo else (x - hi if x > hi else 0.0)
+
+
+def arm_points(pose, side, arm="wide"):
+    """The arm's centre line (layer frame px) where it may not touch the body: the upper arm's middle, the elbow, the forearm's middle
+    (a hand may rest on the body: a hand on the hip, on the saya, on the hilt)."""
+    part = side + "Arm"
+    m = part_matrix(pose, part, ARM_PIVOT[part])
+    cx = (FIST if side == "right" else LEFT_FIST)[arm][0]
+    fore = m @ forearm_bend(pose, part)
+    return [point(m, (cx, 2.0, 0.0)), point(m, (cx, 4.0, 0.0)), point(fore, (cx, 6.0, 0.0))]
+
+
+# the arm's half-thickness, less a little (an arm brushing the body is no arm through it)
+ARM_MARGIN = 1.4
+
+
+def through_body(pose, side, arm="wide", margin=ARM_MARGIN):
+    """How deep (px) the arm's centre line goes into the torso (grown by margin: the arm's own half-thickness)."""
+    inv = np.linalg.inv(part_matrix(pose, "torso", (0.0, 0.0, 0.0)))
+    worst = 0.0
+    for p in arm_points(pose, side, arm):
+        q = point(inv, p)
+        d = min(q[0] - (-4 - margin), (4 + margin) - q[0], q[1] - 0.5, 12 - q[1], q[2] - (-2 - margin), (2 + margin) - q[2])
+        worst = max(worst, d)
+    return worst
+
+
+def arm_strain(pose, side, arm="wide"):
+    """[(what, by how many degrees or px it is past what a body does)] for one arm of a pose (and the right hand's hold)."""
+    part = side + "Arm"
+    p = pose.get(part, {})
+    rot = zyx(rad(p.get("pitch", 0.0)), rad(p.get("yaw", 0.0)), rad(p.get("roll", 0.0)))[:3, :3]
+    out = []
+    fo, fb = fold_strain(rot, p.get("bend", 0.0), side)
+    if fo > 0:
+        out.append(("elbow folding out", fo))
+    if fb > 0:
+        out.append(("elbow folding back", fb))
+    bend = -p.get("bend", 0.0)
+    if _over(bend, -2.0, ELBOW_MAX) > 0:
+        out.append(("elbow " + ("backwards" if bend < 0 else "crumpled"), _over(bend, -2.0, ELBOW_MAX)))
+    if side == "right":
+        dev, pro, spin = wrist_angles(wrist(pose))
+        for name, v, lo, hi in (("wrist tipped", dev, -RADIAL, ULNAR), ("hand turned", pro, -PRONATION, PRONATION),
+                                ("wrist bent", spin, -WRIST_BEND, WRIST_BEND)):
+            if _over(v, lo, hi) > 0:
+                out.append((name, _over(v, lo, hi)))
+    depth = through_body(pose, side, arm)
+    if depth > 0:
+        out.append(("arm through the body", depth))
+    return out
+
+
+def strain_cost(pose, side, arm="wide"):
+    """The solvers' price for an unnatural arm (squared, past the limits)."""
+    c = 0.0
+    for what, by in arm_strain(pose, side, arm):
+        c += (40.0 * by * by) if what == "arm through the body" else by * by
+    return c
+
+
+# the sword being posed (model px along it: its pommel and its point): its handle and blade are kept out of the arms, the body and
+# the head (2.3.2, the owner of Yoru carried on the shoulder: "the sword handle clipping through the shoulder?"); set per blade
+SWORD = (-6.61, 20.9)
+# the part of the handle the fist holds (px either side of the grip point): inside the hand, where it belongs
+HELD = 2.1
+# the forearm ends and the hand begins this far down the arm (px): the guard against the fist is the hand holding the sword
+HAND = 6.6
+
+
+def _box_depth(pts, inv, lo, hi, margin):
+    """How deep (px) the deepest of pts (n x 4, homogeneous) goes into the box lo..hi of the frame whose inverse is inv (grown by
+    margin), 0 if none does."""
+    q = pts @ inv.T
+    d = np.minimum.reduce([q[:, 0] - (lo[0] - margin), (hi[0] + margin) - q[:, 0], q[:, 1] - (lo[1] - margin),
+                           (hi[1] + margin) - q[:, 1], q[:, 2] - (lo[2] - margin), (hi[2] + margin) - q[:, 2]])
+    return float(max(0.0, d.max()))
+
+
+_SWORD_MESH = {}
+SWORD_KEY = "crimson_dawn"
+
+
+def set_sword(key):
+    """The sword being posed (its mesh: blade, guard, handle)."""
+    global SWORD_KEY, SWORD
+    SWORD_KEY = key
+    pts = _sword_mesh(key)
+    SWORD = (float(pts[:, 1].min()), float(pts[:, 1].max()))
+
+
+def _sword_mesh(key):
+    """About 160 points of the sword's mesh (model px): its outline, the blade's width, the guard, the handle."""
+    if key not in _SWORD_MESH:
+        import sword_view as sv
+        v = sv.mesh(key)[0][:, :3]
+        # a grid's worth: one point per 1.2 px cell, so a long blade is not under-sampled
+        cells = {}
+        for p in v:
+            cells.setdefault(tuple(np.floor(p / 1.2).astype(int)), p)
+        _SWORD_MESH[key] = np.array(list(cells.values()), float)
+    return _SWORD_MESH[key]
+
+
+_THIN = {}
+
+
+def sword_points(slide=0.0, n=None):
+    """Points of the sword's mesh (model px, homogeneous), leaving out the part of the handle in the hand; n: about that many of them
+    (the solvers' quick look; the checks take them all)."""
+    pts = _sword_mesh(SWORD_KEY)
+    if n is not None:
+        key = (SWORD_KEY, n)
+        if key not in _THIN:
+            step = max(1, len(pts) // n)
+            order = np.lexsort((pts[:, 0], pts[:, 2], pts[:, 1]))
+            _THIN[key] = pts[order[::step]]
+        pts = _THIN[key]
+    keep = ~((np.abs(pts[:, 1] - (GRIP - slide)) < HELD) & (np.hypot(pts[:, 0], pts[:, 2]) < 1.8))
+    pts = pts[keep]
+    return np.c_[pts, np.ones(len(pts))]
+
+
+def rigid_inv(m):
+    """The inverse of a rotation-and-shift matrix (4x4), without a general inverse."""
+    r = m[:3, :3].T
+    out = np.eye(4)
+    out[:3, :3] = r
+    out[:3, 3] = -r @ m[:3, 3]
+    return out
+
+
+def sword_hits(pose, arm="wide", slide=None, blade=None):
+    """[(what, depth px)]: the sword in the right hand (or blade: its matrix in the layer frame) through the right arm, the left arm,
+    the body or the head."""
+    slide = slide_of(pose) if slide is None else slide
+    m = blade if blade is not None else fist_frame(pose, "right", arm) @ wrist(pose) @ grip(slide)
+    model_pts = sword_points(slide)
+    out = []
+    # 2.3.2: the handle (and its guard) and the blade apart: a handle's end resting against the wrist or the belly is how a sword is
+    # held at rest; a blade is never through anything
+    for label, keep in (("", model_pts[:, 1] >= 0.5), (" (handle)", model_pts[:, 1] < 0.5)):
+        if keep.any():
+            out += [(what + label, d) for what, d in _hits(pose, model_pts[keep] @ m.T, arm)]
+    return out
+
+
+def _hits(pose, pts, arm):
+    w = 3 if arm == "slim" else 4
+    out = []
+    for part, lo, hi in (("rightArm", (-w + 1, -2, -2), (1, 4, 2)), ("leftArm", (-1, -2, -2), (w - 1, 4, 2))):
+        pm = part_matrix(pose, part, ARM_PIVOT[part])
+        fore = pm @ forearm_bend(pose, part)
+        for frame, lo2, hi2, name in ((pm, lo, hi, "upper arm"), (fore, (lo[0], 4, lo[2]), (hi[0], HAND, hi[2]), "forearm")):
+            d = _box_depth(pts, np.linalg.inv(frame), lo2, hi2, 0.3)
+            if d > 0:
+                out.append((("right " if part == "rightArm" else "left ") + name, d))
+    d = _box_depth(pts, np.linalg.inv(part_matrix(pose, "torso", (0, 0, 0))), (-4, 0, -2), (4, 12, 2), 0.3)
+    if d > 0:
+        out.append(("body", d))
+    d = _box_depth(pts, np.linalg.inv(part_matrix(pose, "head", (0, 0, 0))), (-4, -8, -4), (4, 0, 4), 0.3)
+    if d > 0:
+        out.append(("head", d))
+    return out
+
+
+class _Arm:
+    """2.3.2: one arm of one pose, fast (the solvers evaluate thousands of candidate angles a beat): its pivot, the forearm's bend
+    axis, the torso's frame; the frames and the strain for any angles, with the matrices built directly (no pose copied)."""
+
+    def __init__(self, pose, side, arm="wide"):
+        self.side, self.arm = side, arm
+        part = side + "Arm"
+        p = pose.get(part, {})
+        piv = ARM_PIVOT[part]
+        self.base = tr(piv[0] + p.get("x", 0.0), piv[1] + p.get("y", 0.0), piv[2] + p.get("z", 0.0))
+        a = -rad(p.get("axis", 0.0))
+        self.axis = (math.cos(a), 0.0, math.sin(a))
+        self.fist = (FIST if side == "right" else LEFT_FIST)[arm]
+        self.torso_inv = np.linalg.inv(part_matrix(pose, "torso", (0.0, 0.0, 0.0)))
+        self.head_inv = np.linalg.inv(part_matrix(pose, "head", (0.0, 0.0, 0.0)))
+        self.w = 3 if arm == "slim" else 4
+        self._pts = {}
+
+    def pts(self, slide):
+        if slide not in self._pts:
+            self._pts[slide] = sword_points(slide, 48)
+        return self._pts[slide]
+
+    def sword_cost(self, m, fore, blade, slide):
+        """2.3.2: the sword (blade: model px -> layer) kept out of this (right) arm, the body and the head."""
+        pts = self.pts(slide) @ blade.T
+        w = self.w
+        d = _box_depth(pts, rigid_inv(m), (-w + 1, -2, -2), (1, 4, 2), 0.5)
+        d = max(d, _box_depth(pts, rigid_inv(fore), (-w + 1, 4, -2), (1, HAND, 2), 0.5))
+        d2 = _box_depth(pts, self.torso_inv, (-4, 0, -2), (4, 12, 2), 0.3)
+        d3 = _box_depth(pts, self.head_inv, (-4, -8, -4), (4, 0, 4), 0.3)
+        return COLLIDE_WEIGHT * (d * d + d2 * d2 + d3 * d3)
+
+    def frames(self, v):
+        """(upper arm matrix, forearm matrix, fist matrix) for arm angles v (pitch, yaw, roll, bend degrees)."""
+        m = self.base @ zyx(rad(v[0]), rad(v[1]), rad(v[2]))
+        fore = m @ tr(0, 4, 0) @ raxis(rad(v[3]), self.axis) @ tr(0, -4, 0)
+        return m, fore, fore @ tr(*self.fist)
+
+    def strain(self, v, m, fore, wr=None):
+        """arm_strain's price for these frames (and the wrist wr, 3x3, for the right hand)."""
+        c = 0.0
+        fo, fb = fold_strain(m[:3, :3], v[3], self.side)
+        c += fo * fo + fb * fb
+        c += _over(-v[3], -2.0, ELBOW_MAX) ** 2
+        if wr is not None:
+            dev, pro, spin = wrist_angles(wr)
+            c += _over(dev, -RADIAL, ULNAR) ** 2 + _over(pro, -PRONATION, PRONATION) ** 2 + _over(spin, -WRIST_BEND, WRIST_BEND) ** 2
+        c *= STRAIN_WEIGHT
+        cx = self.fist[0]
+        worst = 0.0
+        g = ARM_MARGIN
+        for mm, y in ((m, 2.0), (m, 4.0), (fore, 6.0)):
+            q = self.torso_inv @ (mm @ np.array((cx, y, 0.0, 1.0)))
+            d = min(q[0] + 4 + g, 4 + g - q[0], q[1] - 0.5, 12 - q[1], q[2] + 2 + g, 2 + g - q[2])
+            worst = max(worst, d)
+        return c + COLLIDE_WEIGHT * worst * worst
+
+
+def solve_blade(pose, target, blade_dir, edge_dir, seed=None, arm="wide", elbow=None, wrist_limit=55.0, slide=0.0, dir_weight=900.0,
+                edge_weight=250.0, upper=None, upper_weight=120.0):
     """The right arm and wrist that put the fist's centre at target (layer frame px) with the blade along blade_dir and the edge along
-    edge_dir (layer frame). Returns (rightArm dict, rightItem dict, error px, error degrees)."""
+    edge_dir (layer frame), the arm kept natural (2.3.2: arm_strain). upper: the way the upper arm should point (layer frame), where
+    the hand could reach the same place two ways (2.3.2, the owner of Yoru's hilt over the shoulder: "the shoulder is grabbing the
+    sword in the opposite way it's meant to": the elbow up beside the head, the hand down onto the hilt from above, not from below).
+    Returns (rightArm dict, rightItem dict, error px, error degrees)."""
     target = np.array(target, float)
     bdir = np.array(blade_dir, float)
     bdir /= np.linalg.norm(bdir)
@@ -236,45 +571,59 @@ def solve_blade(pose, target, blade_dir, edge_dir, seed=None, arm="wide", elbow=
     edir /= np.linalg.norm(edir)
     anchor = None if seed is None else np.array(seed, float)
     seed = seed or [-40.0, 0.0, 0.0, -40.0, 0.0, 0.0, 0.0]
+    model = _Arm(pose, "right", arm)
+    up_dir = None if upper is None else np.array(upper, float) / np.linalg.norm(upper)
+    # 2.3.2: the beat before's upper arm and hand, as turns (a flip of the hand written with nearby numbers is still a flip)
+    prev_arm = None if anchor is None else zyx(rad(anchor[0]), rad(anchor[1]), rad(anchor[2]))[:3, :3]
+    prev_wr = None if anchor is None else (rz(rad(anchor[6])) @ ry(rad(anchor[5])) @ rx(rad(anchor[4])))[:3, :3]
 
     def frames(v):
-        q = with_arm(pose, "rightArm", v[:4])
-        q["rightItem"] = {"pitch": v[4], "yaw": v[5], "roll": v[6], "y": slide}
-        f = fist_frame(q, "right", arm)
-        w = f @ wrist(q) @ GRIP_ROT
-        return f, w
+        m, fore, f = model.frames(v)
+        wr = rz(rad(v[6])) @ ry(rad(v[5])) @ rx(rad(v[4]))
+        w = f @ wr @ GRIP_ROT
+        return m, fore, f, wr, w
 
     def cost(v):
-        f, w = frames(v)
+        m, fore, f, wr, w = frames(v)
         pos = f[:3, 3]
         b = w[:3, 1]
         e = -w[:3, 0]
         c = np.sum((pos - target) ** 2) * 40.0
-        c += (1 - b @ bdir) * dir_weight + (1 - e @ edir) * 250.0
-        c += 0.002 * (v[4] ** 2 + v[5] ** 2 + v[6] ** 2)
-        c += 0.0025 * v[2] ** 2 + 0.0008 * v[1] ** 2  # a natural arm: pitch and the elbow do the work, little twist
-        if v[3] > 0:
-            c += v[3] ** 2  # an elbow never bends backwards
-        if v[3] < -140:
-            c += (v[3] + 140) ** 2
+        c += (1 - b @ bdir) * dir_weight + (1 - e @ edir) * edge_weight
+        c += 0.0008 * (v[4] ** 2 + v[5] ** 2 + v[6] ** 2)
+        c += 0.0006 * v[2] ** 2 + 0.0003 * v[1] ** 2
+        # 2.3.2: a natural arm (arm_strain): the shoulder's turn, the elbow, the hand's hold, never through the body; and the sword
+        # (its handle too) out of the arm that holds it, the body and the head
+        c += model.strain(v, m, fore, wr[:3, :3])
+        c += model.sword_cost(m, fore, w @ tr(0, -(GRIP - slide), 0), slide)
         for k in (4, 5, 6):
-            over = abs(v[k]) - wrist_limit
+            over = abs(v[k]) - 120.0
             if over > 0:
-                c += over * over * 2.0
+                c += over * over
         if elbow is not None:
             c += 0.02 * (v[3] - elbow) ** 2
+        if up_dir is not None:
+            c += upper_weight * (1.0 - float(m[:3, 1] @ up_dir))
         if anchor is not None:
-            # stay near the beat before: the game interpolates the angles, and a far-away solution swings the arm through the face
-            c += 0.0012 * float(np.sum((v[:4] - anchor[:4]) ** 2)) + 0.0006 * float(np.sum((v[4:] - anchor[4:]) ** 2))
+            # stay near the beat before: the game interpolates the angles, and a far-away solution swings the arm through the face. By
+            # how far the upper arm and the hand really turn (2.3.2: the hand once flipped over in a tick, the arm turning against it)
+            c += 0.0004 * float(np.sum((v[:4] - anchor[:4]) ** 2)) + 0.0002 * float(np.sum((v[4:] - anchor[4:]) ** 2))
+            c += TURN_WEIGHT * (_turn(prev_arm, m[:3, :3]) ** 2 + _turn(prev_wr, wr[:3, :3]) ** 2)
+            c += 0.004 * (v[3] - anchor[3]) ** 2
         return c
 
     best = None
-    for start in [seed] + [[p0, 0.0, r0, -40.0, 0.0, 0.0, 0.0] for p0 in (-20.0, -70.0, -120.0, -165.0) for r0 in (-25.0, 25.0)]:
+    starts = [seed] + [[p0, 0.0, r0, -40.0, 0.0, 0.0, 0.0] for p0 in (-20.0, -70.0, -120.0, -165.0) for r0 in (-25.0, 25.0)]
+    if up_dir is not None:
+        starts.insert(1, [-165.0, 0.0, 20.0, -100.0, 0.0, 0.0, 0.0])
+    for i, start in enumerate(starts):
         v, c = _solve(cost, start, 16.0, 5000)
         if best is None or c < best[1] - 1e-6:
             best = (v, c)
+        if i == 0 and anchor is not None and c < 12.0:
+            break  # the beat before's arm, moved a little, already does it well: no need to look further
     v = best[0]
-    f, w = frames(v)
+    _, _, f, _, w = frames(v)
     err_p = float(np.linalg.norm(f[:3, 3] - target))
     err_d = math.degrees(math.acos(max(-1.0, min(1.0, w[:3, 1] @ bdir))))
     return ({"pitch": round(float(v[0]), 2), "yaw": round(float(v[1]), 2), "roll": round(float(v[2]), 2), "bend": round(float(v[3]), 2)},
@@ -293,16 +642,16 @@ def solve_left_on_handle(pose, along=-7.4, arm="wide", seed=None):
     target, axis = handle_point(pose, along, arm)
     seed = seed or [-50.0, 0.0, 0.0, -50.0]
 
+    model = _Arm(pose, "left", arm)
+
     def cost(v):
-        q = with_arm(pose, "leftArm", v)
-        f = fist_frame(q, "left", arm)
+        m, fore, f = model.frames(v)
         pos = f[:3, 3]
         gz = -f[:3, 2]
         c = np.sum((pos - target) ** 2) * 40.0
         c += (1 - abs(gz @ axis)) * 120.0
-        c += 0.0025 * v[2] ** 2 + 0.0008 * v[1] ** 2
-        if v[3] > 0:
-            c += v[3] ** 2
+        c += 0.0006 * v[2] ** 2 + 0.0003 * v[1] ** 2
+        c += model.strain(v, m, fore)
         return c
 
     best = None
@@ -316,17 +665,45 @@ def solve_left_on_handle(pose, along=-7.4, arm="wide", seed=None):
     return {"pitch": round(float(v[0]), 2), "yaw": round(float(v[1]), 2), "roll": round(float(v[2]), 2), "bend": round(float(v[3]), 2)}, err
 
 
+def clear_left(pose, base, arm="wide"):
+    """2.3.2: a left arm set by hand (out for balance, swung back, tucked), moved as little as it must to keep out of the sword in the
+    right hand and the body, and natural (the hand-set arms were never checked against the blade, and a cut across the body went
+    through them)."""
+    blade = fist_frame(pose, "right", arm) @ wrist(pose) @ grip(slide_of(pose))
+    pts = sword_points(slide_of(pose), 48) @ blade.T
+    w = 3 if arm == "slim" else 4
+    model = _Arm(pose, "left", arm)
+    b0 = np.array([base.get(k, 0.0) for k in ("pitch", "yaw", "roll", "bend")], float)
+
+    def hit(v):
+        m, fore, _ = model.frames(v)
+        d = _box_depth(pts, rigid_inv(m), (-1, -2, -2), (w - 1, 4, 2), 0.5)
+        return max(d, _box_depth(pts, rigid_inv(fore), (-1, 4, -2), (w - 1, 10, 2), 0.5)), m, fore
+
+    d0, m0, f0 = hit(b0)
+    if d0 <= 0.0 and model.strain(b0, m0, f0) <= 0.0:
+        return dict(base)
+
+    def cost(v):
+        d, m, fore = hit(v)
+        return 0.01 * float(np.sum((v - b0) ** 2)) + COLLIDE_WEIGHT * d * d + model.strain(v, m, fore)
+
+    v, _ = _solve(cost, b0, 12.0, 3000)
+    return {"pitch": round(float(v[0]), 2), "yaw": round(float(v[1]), 2), "roll": round(float(v[2]), 2), "bend": round(float(v[3]), 2)}
+
+
 def solve_left_at(pose, target, seed=None, arm="wide"):
     """The left arm whose fist centre is at target (layer frame px): a hand on the saya at the hip, or out for balance."""
     target = np.array(target, float)
     seed = seed or [0.0, 0.0, 0.0, -30.0]
 
+    model = _Arm(pose, "left", arm)
+
     def cost(v):
-        q = with_arm(pose, "leftArm", v)
-        c = np.sum((fist_frame(q, "left", arm)[:3, 3] - target) ** 2) * 40.0
+        m, fore, f = model.frames(v)
+        c = np.sum((f[:3, 3] - target) ** 2) * 40.0
         c += 0.0005 * (v[1] ** 2 + v[2] ** 2)
-        if v[3] > 0:
-            c += v[3] ** 2
+        c += model.strain(v, m, fore)
         return c
 
     v, _ = _solve(cost, seed, 16.0, 3000)
@@ -346,22 +723,24 @@ def layer_dir_from_entity(pose, d):
     return direction(m, d)
 
 
-# the blades' sori: each is a gentle arc bending towards its back (+x), radius about 170 to 290 model px (measured on the owner's
-# meshes; the saya follows the same curve). Drawn out of the saya, a blade travels along that arc, not in a straight line, or its point
-# would leave the saya through its side.
-SORI = 180.0
+# the blades' sori: each curves towards its back (+x), more towards its point, and the saya follows the same line. Drawn out of the saya
+# a blade goes along that line, not straight, or its point would leave the saya through its side. 2.3.2: each blade by its own curve
+# (tools/saya_slide.py: the rigid turn that keeps the part still inside on the saya's line, fitted from the blade's mesh; before, one
+# circle of radius 180 px for all, and Gryphon's saber, curved three times as hard, came out through its scabbard's side).
 
 
-def arc(out):
-    """The katana drawn out px along its own curve (model px -> model px): a turn about the curve's centre (SORI, 0, 0)."""
-    return tr(SORI, 0, 0) @ rz(out / SORI) @ tr(-SORI, 0, 0)
+def arc(out, key="crimson_dawn"):
+    """The blade {key} drawn out px along its own curve (model px -> model px)."""
+    import saya_slide
+    ang, x, y = saya_slide.at(key, out)
+    return tr(x, y, 0) @ rz(math.radians(ang))
 
 
-def sheathed_grip(pose, slide=0.0, out=0.0):
+def sheathed_grip(pose, slide=0.0, out=0.0, key="crimson_dawn"):
     """Where the right fist must be (layer frame px) and how the katana points, to hold the handle of the sheathed katana (slide px
     down the handle; the blade drawn out px along the saya): the blade's frame as the saya holds it. Returns (target, blade_dir,
     edge_dir) in the layer frame."""
-    m = saya_matrix(pose) @ arc(out)
+    m = saya_matrix(pose) @ arc(out, key)
     g = point(m, (0, GRIP - slide, 0))
     b = direction(m, (0, 1, 0))
     e = direction(m, (-1, 0, 0))
@@ -374,7 +753,7 @@ def sheathed_grip(pose, slide=0.0, out=0.0):
 # arm's reach: it is slung across the back (the placement searched for: the pommel over the head, the tip clear of the ground and the
 # body, the grip in reach), hilt up over the right shoulder, the cross guard behind it, the blade down across the back past the left
 # leg, standing off the back behind the head (sword/BackCarry.java has the same numbers, SwordTests checks they agree).
-BACK_GUARD = (-4.0, -1.0, 5.6)
+BACK_GUARD = (-4.0, -1.0, 6.4)
 BACK_TILT = 33.0                  # degrees off the vertical, the point toward the left
 BACK_LEAN = 8.0                   # degrees: the point in toward the legs, the hilt out behind the head
 BACK_AXIS = (math.sin(math.radians(BACK_TILT)) * math.cos(math.radians(BACK_LEAN)),

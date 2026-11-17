@@ -3,4 +3,5 @@ package net.minecraft.client.renderer.texture;
 
 public abstract class AbstractTexture {
     /** getId */ public int m_117963_() { throw new UnsupportedOperationException(); }
+    /** load (2.3.2) */ public abstract void m_6704_(net.minecraft.server.packs.resources.ResourceManager manager) throws java.io.IOException;
 }

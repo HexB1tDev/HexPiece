@@ -19,7 +19,7 @@ import java.util.List;
  */
 public final class BackCarry {
     /** Where the blade's origin (just under its cross guard) sits on the back, and its tilt (degrees; the point toward the left). */
-    public static final double[] GUARD = {-4.0, -1.0, 5.6};
+    public static final double[] GUARD = {-4.0, -1.0, 6.4};
     public static final double TILT = 33.0;
     /** Degrees the point leans in toward the legs (the hilt out behind the head). */
     public static final double LEAN = 8.0;

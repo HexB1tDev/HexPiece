@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.3.1"
+VERSION = "2.3.2"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -471,6 +471,40 @@ def check_animations():
         raise RuntimeError(f"Animations that come apart ({len(broken)}): {broken}")
 
 
+# 2.3.2: sword animations allowed a named problem the clearance check finds (none: every one must pass)
+SWORD_POSE_EXCEPTIONS = {}
+
+
+def _clear(name):
+    import sword_anims
+    return name, sword_anims.clearance(sword_anims.MOVES[name])
+
+
+def check_sword_poses():
+    """2.3.2 (the owner: "the arm is twisted in a bunch of these, how does this pass", "the sword handle clipping through the
+    shoulder?"): every sword animation, every half tick, through tools/sword_anims.py's clearance check: no arm turned, folded or
+    bent past what a body does (sword_rig.arm_strain), no arm through the body, the sword (its blade, guard and handle) out of the
+    arms, the body and the head, no fist in the face, and on the ground no point in the floor. A failure names the animation, the
+    moment and what is wrong."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import multiprocessing
+    import sword_anims
+    sword_anims.SOLVE = False
+    sword_anims.build()
+    names = sorted(sword_anims.MOVES)
+    with multiprocessing.get_context("fork").Pool(max(1, os.cpu_count() or 1)) as pool:
+        results = pool.map(_clear, names, chunksize=1)
+    broken = []
+    for name, problems in results:
+        allowed = SWORD_POSE_EXCEPTIONS.get(name, ())
+        problems = [p for p in problems if not any(a in p[1] for a in allowed)]
+        if problems:
+            broken.append(f"{name}: {problems[0][1]} at tick {problems[0][0]} (+{len(problems) - 1} more)")
+    if broken:
+        raise RuntimeError(f"Sword animations with poses no body makes ({len(broken)}): {broken}")
+    print(f"Sword poses: {len(names)} animations, every half tick natural and clear")
+
+
 def main():
     check_version(VERSION)
     actual = hashlib.sha256(INPUT.read_bytes()).hexdigest()
@@ -496,6 +530,7 @@ def main():
     added, animations = check_archive_scope()
     check_imu()
     check_animations()
+    check_sword_poses()
 
     test_sources = sources("src/test/java")
     suites = []

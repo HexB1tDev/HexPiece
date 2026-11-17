@@ -264,7 +264,7 @@ public final class SwordServer {
             return state.drawStart;
         }
         if (state.sheathingUntil >= 0) {
-            return state.sheathingUntil - SwordRules.SHEATHE_TICKS;
+            return state.sheathingUntil - SwordRules.sheatheTicks(state.katana);
         }
         return state.idleSince;
     }
@@ -328,7 +328,7 @@ public final class SwordServer {
         if (state.sheathingUntil < 0) {
             return false;
         }
-        return !SwordAnims.drawn(SwordAnims.SHEATHE, now - (state.sheathingUntil - SwordRules.SHEATHE_TICKS), state.katana);
+        return !SwordAnims.drawn(SwordAnims.SHEATHE, now - (state.sheathingUntil - SwordRules.sheatheTicks(state.katana)), state.katana);
     }
 
     /**
@@ -459,6 +459,9 @@ public final class SwordServer {
         if (state.chargeStart >= 0 || state.releaseStart >= 0 || state.quickStart >= 0 || state.move != null) {
             return;
         }
+        if (state.katana != null && state.katana.legend() && (sheathed(state, now) || state.drawStart >= 0)) {
+            return; // 2.3.2: a legendary blade is never drawn mid-fight: the quick draw waits for its own draw to finish
+        }
         if (now < state.quickReady) {
             player.m_5661_(Component.m_237113_("Quick draw: " + String.format(java.util.Locale.ROOT, "%.1f", (state.quickReady - now) / 20.0)
                 + "s"), true);
@@ -518,7 +521,7 @@ public final class SwordServer {
             state.releaseStart = -1;
             state.quickStart = -1;
             state.stowing = true;
-            state.sheathingUntil = now + SwordRules.SHEATHE_TICKS;
+            state.sheathingUntil = now + SwordRules.sheatheTicks(state.katana);
         }
     }
 
@@ -593,7 +596,7 @@ public final class SwordServer {
         if (state.quickStart >= 0) {
             tickQuick(player, state, now);
         }
-        if (state.drawStart >= 0 && now - state.drawStart >= SwordRules.DRAW_TICKS) {
+        if (state.drawStart >= 0 && now - state.drawStart >= SwordRules.drawTicks(state.katana)) {
             // fully drawn: now (and only now) the blade can be used
             state.drawStart = -1;
             state.idleSince = now;
@@ -609,7 +612,7 @@ public final class SwordServer {
             || state.quickStart >= 0;
         if (state.drawn && !acting && state.sheathingUntil < 0 && !state.katana.legend()
             && now - state.idleSince >= Math.round(PieceConfig.get(PieceConfig.SHEATHE_DELAY, SwordRules.SHEATHE_DELAY))) {
-            state.sheathingUntil = now + SwordRules.SHEATHE_TICKS;
+            state.sheathingUntil = now + SwordRules.sheatheTicks(state.katana);
         }
         if (state.sheathingUntil >= 0 && now >= state.sheathingUntil) {
             state.sheathingUntil = -1;
@@ -637,7 +640,7 @@ public final class SwordServer {
             SwordMove.Cut cut = cuts[i];
             if (tick >= cut.from() && tick <= cut.to()) {
                 float damage = cut.damage() * edge(state) * PieceRules.masteryDamage(mastery(player));
-                int landed = sweep(player, move.animation(), tick, SwordRules.EXTEND + reach(state), state.struck.get(i), damage, cut.weight(), cut.back(),
+                int landed = sweep(player, SwordAnims.name(SwordAnims.of(move), state.katana), tick, SwordRules.EXTEND + reach(state), state.struck.get(i), damage, cut.weight(), cut.back(),
                     cut.up(), cut.stun(), other -> FruitUtil.foe(player, other), StyleCombat.of(player));
                 if (landed > 0) {
                     gain(player, cut.weight(), landed);
@@ -687,7 +690,7 @@ public final class SwordServer {
             float damage = (float) SwordRules.lerp(PieceConfig.get(PieceConfig.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MIN),
                 PieceConfig.get(PieceConfig.CUT_DAMAGE_MAX, SwordRules.CUT_DAMAGE_MAX), charge) * edge(state)
                 * PieceRules.masteryDamage(mastery(player));
-            int landed = sweep(player, "sword_release", tick, extend, state.releaseStruck, damage, Hit.Weight.FINISHER, 1.1, 0.25, 16,
+            int landed = sweep(player, SwordAnims.name(SwordAnims.RELEASE, state.katana), tick, extend, state.releaseStruck, damage, Hit.Weight.FINISHER, 1.1, 0.25, 16,
                 other -> FruitUtil.foe(player, other), StyleCombat.of(player));
             if (landed > 0) {
                 gain(player, Hit.Weight.FINISHER, landed);

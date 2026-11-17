@@ -49,6 +49,25 @@ def leg(pitch=0.0, roll=0.0, bend=0.0, yaw=0.0):
 STANCE = {"rightLeg": leg(-4, 3, 10), "leftLeg": leg(6, -3, 12)}
 
 
+class Blade:
+    """2.3.2: a blade the moves are written for: its mesh (key), the suffix of its animations' names, its point (model px: up the blade
+    and out to its back, the curve), how far down the handle the hand slides to draw it, and its home pose (where every cut starts and
+    ends: the fist, the blade, the edge; set below). The owner: "yoru clips through the floor": every pose of a blade on the ground
+    keeps its point off the floor ({@link lift_clear})."""
+
+    def __init__(self, name, key, suffix, tip, tip_x, draw_slide):
+        self.name, self.key, self.suffix, self.tip, self.tip_x, self.draw_slide = name, key, suffix, tip, tip_x, draw_slide
+        self.home = None
+
+
+KATANA = Blade("katana", "crimson_dawn", "", 20.9, 1.23, 3.6)
+GRYPHON = Blade("gryphon", "gryphon", "_gryphon", 22.44, 3.2, 3.0)
+YORU = Blade("yoru", "yoru", "_yoru", 32.2, 3.07, 0.0)
+PROFILE = KATANA
+# the point is kept this far (blocks) over the floor the feet stand on
+FLOOR = 0.12
+
+
 class Beat:
     """One keyframe: the body, legs and head as given; the right arm by the blade (or given); the left arm by its job."""
 
@@ -77,8 +96,9 @@ RELAXED_R = {"pitch": 2.0, "yaw": 0.0, "roll": 4.0, "bend": -6.0}
 RELAXED_L = {"pitch": 2.0, "yaw": 0.0, "roll": -4.0, "bend": -6.0}
 
 
-def solve(beats):
-    """Arms and wrists for every beat, each seeded from the beat before (so the solution moves smoothly)."""
+def solve(beats, ground=False):
+    """Arms and wrists for every beat, each seeded from the beat before (so the solution moves smoothly). ground: a blade's point is
+    kept off the floor as solved (2.3.2: a natural arm cannot always turn the blade as far as asked; then it is turned up more)."""
     seed_r = None
     seed_l = None
     for beat in beats:
@@ -90,19 +110,17 @@ def solve(beats):
         elif getattr(beat, "noto", None) is not None:
             # the noto line: the saya turned about its mouth (never moved) to lie on the line from the koiguchi up across the front of
             # the body to just in front of the right shoulder; the blade slides along it, out of or into the saya's mouth
-            m_body = rig.body_to_entity(q) @ rig.part_matrix(q, "torso", (0, 0, 0))
-            pull = np.array(NOTO_PULL) * min(1.0, 0.35 + beat.noto / NOTO_OUT)
-            mouth = rig.layer_from_entity(q, rig.point(m_body, np.array(rig.HIP_MOUTH) + pull))
-            u_layer = unit(np.array(NOTO_P) - mouth)
-            to_body = np.linalg.inv(m_body) @ rig.layer_to_entity(q)
-            u_body = rig.direction(to_body, u_layer)
-            q["leftItem"] = dict(rig.saya_turn(u_body, (0.0, -1.0, 0.0)), x=float(pull[0]), y=float(pull[1]), z=float(pull[2]))
-            out = beat.noto
-            slide = DRAW_SLIDE * max(0.0, min(1.0, 1.0 - out / NOTO_OUT))
-            target, bdir, edir = rig.sheathed_grip(q, slide, out)
+            (target, bdir, edir), saya, slide = noto_frame(beat)
+            q["leftItem"] = saya
             # on the saya's line the blade must be exactly coaxial: its direction counts far more than the wrist's comfort
             arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, slide=slide, dir_weight=20000.0,
                                                     wrist_limit=80.0)
+            q["rightArm"], q["rightItem"] = arm, wr
+            seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
+        elif getattr(beat, "fist", None) is not None:
+            # 2.3.2: the empty right hand on its way somewhere (to the hilt, or away from it): the fist alone, the wrist easy
+            arm, wr, err_p, _ = rig.solve_blade(q, beat.fist, (0.0, 1.0, 0.0), (1.0, 0.0, 0.0), seed=seed_r, dir_weight=0.0,
+                                                edge_weight=0.0)
             q["rightArm"], q["rightItem"] = arm, wr
             seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
         elif getattr(beat, "back_lift", None) is not None:
@@ -110,7 +128,9 @@ def solve(beats):
             # for it (reach_off: the fist that many px away from the handle, the sword not yet in it)
             target, bdir, edir = rig.back_grip(q, beat.back_lift)
             target = tuple(np.array(target) + np.array(getattr(beat, "reach_off", (0.0, 0.0, 0.0))))
-            arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, dir_weight=4000.0, wrist_limit=80.0)
+            # 2.3.2: reached from above: the elbow up beside the head, the forearm folded back behind it, the hand down onto the hilt
+            arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, dir_weight=4000.0, edge_weight=1500.0,
+                                                    wrist_limit=80.0, upper=OVERHEAD)
             q["rightArm"], q["rightItem"] = arm, wr
             seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
         elif getattr(beat, "hilt", None) is not None:
@@ -120,8 +140,8 @@ def solve(beats):
                 hd = slerp(rig.rest_hilt(), rig.toward_right_hand(q), k)
                 edge = np.array(getattr(beat, "edge_out", (0.0, -1.0, 0.18)), float)
                 q["leftItem"] = rig.saya_turn(hd, edge)
-                target, bdir, edir = rig.sheathed_grip(q, DRAW_SLIDE, beat.saya_out)
-                arm, wr, ep, ed = rig.solve_blade(q, target, bdir, edir, seed=seed_r, slide=DRAW_SLIDE)
+                target, bdir, edir = rig.sheathed_grip(q, PROFILE.draw_slide, beat.saya_out, PROFILE.key)
+                arm, wr, ep, ed = rig.solve_blade(q, target, bdir, edir, seed=seed_r, slide=PROFILE.draw_slide)
                 score = ep + ed / 20.0
                 if best is None or score < best[0] - 1e-6:
                     best = (score, dict(q["leftItem"]), arm, wr, ep, ed)
@@ -133,11 +153,21 @@ def solve(beats):
         else:
             if beat.sheathed:
                 q["rightArm"] = dict(RELAXED_R)
-                target, bdir, edir = rig.sheathed_grip(q)
+                target, bdir, edir = rig.sheathed_grip(q, 0.0, 0.0, PROFILE.key)
             else:
                 target, bdir, edir = beat.blade
             arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, elbow=beat.elbow,
-                                                    slide=getattr(beat, "slide", 0.0))
+                                                    slide=getattr(beat, "slide", 0.0), upper=getattr(beat, "upper", None))
+            for _ in range(4):
+                if not ground or beat.sheathed:
+                    break
+                h = rig.point(rig.blade_matrix(dict(q, rightArm=arm, rightItem=wr)), tip_point(PROFILE))[1]
+                if h >= FLOOR * 0.6:
+                    break
+                lift_clear(beat, PROFILE, FLOOR + (FLOOR - h) + 0.04)
+                target, bdir, edir = beat.blade
+                arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, elbow=beat.elbow,
+                                                        slide=getattr(beat, "slide", 0.0), upper=getattr(beat, "upper", None))
             q["rightArm"], q["rightItem"] = arm, wr
             seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
         left = beat.left
@@ -149,6 +179,8 @@ def solve(beats):
             seed_l = [q["leftArm"][k] for k in ("pitch", "yaw", "roll", "bend")]
         elif isinstance(left, dict):
             q["leftArm"] = dict(left)
+            if beat.blade is not None or getattr(beat, "noto", None) is not None:
+                q["leftArm"] = rig.clear_left(q, dict(left))
         elif isinstance(left, tuple):
             q["leftArm"], err_l = rig.solve_left_at(q, left, seed=seed_l)
             seed_l = [q["leftArm"][k] for k in ("pitch", "yaw", "roll", "bend")]
@@ -157,6 +189,22 @@ def solve(beats):
         beat.solved = q
         beat.errors = (err_p, err_d, err_l)
     return beats
+
+
+def noto_frame(beat):
+    """A noto beat's blade (the right fist's target, the blade, the edge: layer frame), its saya's leftItem and the hand's slide down
+    the handle: the saya turned about its mouth onto the noto line, the blade {beat.noto} px out along its own curve."""
+    q = base_pose(beat)
+    m_body = rig.body_to_entity(q) @ rig.part_matrix(q, "torso", (0, 0, 0))
+    pull = np.array(PROFILE.noto_pull) * min(1.0, 0.35 + beat.noto / PROFILE.noto_out)
+    mouth = rig.layer_from_entity(q, rig.point(m_body, np.array(rig.HIP_MOUTH) + pull))
+    u_layer = unit(np.array(PROFILE.noto_p) - mouth)
+    to_body = np.linalg.inv(m_body) @ rig.layer_to_entity(q)
+    u_body = rig.direction(to_body, u_layer)
+    saya = dict(rig.saya_turn(u_body, (0.0, -1.0, 0.0)), x=float(pull[0]), y=float(pull[1]), z=float(pull[2]))
+    q["leftItem"] = saya
+    slide = PROFILE.draw_slide * max(0.0, min(1.0, 1.0 - beat.noto / PROFILE.noto_out))
+    return rig.sheathed_grip(q, slide, beat.noto, PROFILE.key), saya, slide
 
 
 def report(name, beats):
@@ -250,11 +298,18 @@ MOVES = {}
 
 
 class Move:
-    """A written sword animation: its beats, the tick its blade leaves the saya (draw) or goes back in (sheath), its cut windows."""
+    """A written sword animation: its beats, the tick its blade leaves the saya (draw) or goes back in (sheath), its cut windows.
+    2.3.2: the blade it is written for (its name gets the blade's suffix), the parts it keys (None: all of them; the guard keys the
+    right arm alone and the idles leave the head free, so the player still looks round and walks: the owner, "using sword makes the
+    player's body too stiff, the head doesnt move"), and whether its point is kept off the floor (not in the air)."""
 
-    def __init__(self, name, duration, beats, description, draw=-1, sheath=-1, cuts=(), free_legs=False, loop=None, stop_extra=4):
+    def __init__(self, name, duration, beats, description, draw=-1, sheath=-1, cuts=(), free_legs=False, loop=None, stop_extra=4,
+                 parts=None, ground=True, back=False):
         self.name, self.duration, self.beats, self.description = name, duration, beats, description
         self.draw, self.sheath, self.cuts, self.free_legs, self.loop, self.stop_extra = draw, sheath, cuts, free_legs, loop, stop_extra
+        self.parts, self.ground, self.back = parts, ground, back
+        self.profile = PROFILE
+        self.noto = []
 
     def drawn_at(self, tick):
         """Is the blade in the hand at tick (else in its saya)?"""
@@ -274,6 +329,23 @@ def _mix(a, b, u):
     return {k: a.get(k, 0.0) + (b.get(k, 0.0) - a.get(k, 0.0)) * u for k in keys}
 
 
+def route(a, b):
+    """2.3.2: where a swing of the blade from a to b (directions) passes halfway, if not along the shortest arc: a swing of over 110
+    degrees, or over 60 whose shortest arc does not pass well in front, is taken out in front of the body (the shortest arc of a
+    recovery from a cut across the body, or of a wind-up from the low guard to the left side, ran the blade through the body and the
+    free arm). None: the shortest arc."""
+    a, b = unit(a), unit(b)
+    turn = math.degrees(math.acos(max(-1.0, min(1.0, float(a @ b)))))
+    forward = unit(D(0.0, 0.15, 1.0))
+    mid = a + b
+    mid = unit(mid) if np.linalg.norm(mid) > 0.25 else forward
+    if turn <= 60.0 or (turn <= 110.0 and float(mid @ forward) >= 0.35):
+        return None
+    if float(mid @ forward) < 0.5:
+        mid = unit(0.35 * mid + forward)
+    return mid
+
+
 def densify(beats):
     """Every tick between two blade beats keyed on the designed arc (the fist along its line, the blade and the edge turned along a
     great circle, the body, legs, head and left arm in step, the later beat's easing baked in), so the game only ever interpolates
@@ -282,14 +354,25 @@ def densify(beats):
     out = [beats[0]]
     for a, b in zip(beats, beats[1:]):
         gap = b.tick - a.tick
-        dense = (gap > 1 and a.blade is not None and b.blade is not None and b.easing != "constant"
-                 and a.rarm is None and b.rarm is None and getattr(a, "hilt", None) is None and getattr(b, "hilt", None) is None)
+        # 2.3.2: a beat on the noto line counts by its blade there, so the swing from the saya's line to a cut (or back) is designed
+        # and solved every tick too (before, the game turned the arm's angles across it, and the blade swept through the head)
+        noto_a = getattr(a, "noto", None) is not None and b.blade is not None and getattr(b, "noto", None) is None
+        noto_b = getattr(b, "noto", None) is not None and a.blade is not None and getattr(a, "noto", None) is None
+        blade_a, saya_a = (noto_frame(a)[:2]) if noto_a else (a.blade, a.saya)
+        blade_b, saya_b = (noto_frame(b)[:2]) if noto_b else (b.blade, b.saya)
+        dense = (gap > 1 and blade_a is not None and blade_b is not None and b.easing != "constant"
+                 and a.rarm is None and b.rarm is None and getattr(a, "hilt", None) is None and getattr(b, "hilt", None) is None
+                 and (getattr(a, "noto", None) is None or noto_a) and (getattr(b, "noto", None) is None or noto_b))
         if dense:
+            via = route(blade_a[1], blade_b[1])
             for k in range(a.tick + 1, b.tick):
                 u = anim.ease(b.easing, (k - a.tick) / gap)
-                fist = tuple(np.array(a.blade[0]) * (1 - u) + np.array(b.blade[0]) * u)
-                bd = slerp(a.blade[1], b.blade[1], u)
-                ed = slerp(a.blade[2], b.blade[2], u)
+                fist = tuple(np.array(blade_a[0]) * (1 - u) + np.array(blade_b[0]) * u)
+                if via is None:
+                    bd = slerp(blade_a[1], blade_b[1], u)
+                else:
+                    bd = slerp(blade_a[1], via, 2 * u) if u < 0.5 else slerp(via, blade_b[1], 2 * u - 1)
+                ed = slerp(blade_a[2], blade_b[2], u)
                 ed = ed - bd * (ed @ bd)
                 left = a.left
                 if isinstance(a.left, dict) and isinstance(b.left, dict):
@@ -298,7 +381,9 @@ def densify(beats):
                     left = b.left
                 legs = {part: _mix(a.legs.get(part, {}), b.legs.get(part, {}), u) for part in set(a.legs) | set(b.legs)}
                 mid = Beat(k, "linear", blade=(fist, tuple(bd), tuple(unit(ed))), left=left, body=_mix(a.body, b.body, u),
-                           legs=legs, head=_mix(a.head, b.head, u), torso=_mix(a.torso, b.torso, u), saya=_mix(a.saya, b.saya, u))
+                           legs=legs, head=_mix(a.head, b.head, u), torso=_mix(a.torso, b.torso, u), saya=_mix(saya_a, saya_b, u))
+                if getattr(a, "upper", None) is not None and getattr(b, "upper", None) is not None:
+                    mid.upper = a.upper
                 out.append(mid)
             b.easing = "linear"
         out.append(b)
@@ -324,31 +409,54 @@ def sliding(move, t):
 
 def game_blade(move, q, t):
     """The katana's matrix (model px -> E) as the game draws it at tick t: in the hand, except while it slides along the saya's line
-    (between its noto beats: drawn out or slid home), where it is laid exactly along the saya's curve, out the interpolated amount, so
-    no frame between two ticks can put it through the saya's side (client/sword/SwordLayer does the same from BladePaths.notoOut)."""
+    (between its noto beats: drawn out or slid home), where it is laid exactly along the saya's curve (its own, 2.3.2), out the
+    interpolated amount, so no frame between two ticks can put it through the saya's side (client/sword/SwordLayer does the same from
+    BladePaths.notoOut and SayaSlide)."""
     pairs = move.noto
     if sliding(move, t):
         for (t0, o0), (t1, o1) in zip(pairs, pairs[1:]):
             if t0 <= t <= t1:
                 out = o0 + (o1 - o0) * ((t - t0) / max(1e-9, t1 - t0))
-                return rig.saya_matrix(q) @ rig.arc(out)
+                return rig.saya_matrix(q) @ rig.arc(out, move.profile.key)
     return rig.blade_matrix(q)
 
 
+PENDING = []
+
+
 def write(move):
-    MOVES[move.name] = move
+    """Registers a move for the blade being written (PROFILE): its name gets the blade's suffix; it is solved and written by
+    run_pending (in parallel: the arms are searched numerically, beat by beat)."""
+    move.profile = PROFILE
+    move.name = move.name + PROFILE.suffix
     move.noto = sorted((beat.tick, beat.noto) for beat in move.beats if getattr(beat, "noto", None) is not None)
-    if not SOLVE or (ONLY is not None and move.name not in ONLY):
-        return move
-    move.beats = densify(move.beats)
-    solve(move.beats)
-    report(move.name, move.beats)
+    MOVES[move.name] = move
+    if SOLVE and (ONLY is None or move.name in ONLY):
+        PENDING.append(move)
+    return move
+
+
+def solve_and_write(move):
+    """In a worker: the beats densified, kept off the floor, solved; the animation written; what its clearance check finds."""
+    global PROFILE
+    PROFILE = move.profile
+    rig.set_sword(PROFILE.key)
+    import io
+    import contextlib
+    text = io.StringIO()
+    with contextlib.redirect_stdout(text):
+        move.beats = densify(move.beats)
+        if move.ground:
+            for beat in move.beats:
+                lift_clear(beat, move.profile)
+        solve(move.beats, move.ground)
+        report(move.name, move.beats)
+    parts = move.parts or {k: v for k, v in WRITE_PARTS.items() if not (move.free_legs and k in ("rightLeg", "leftLeg"))}
+    unwrap(move.beats)
     moves = []
     for beat in move.beats:
         q = beat.solved
-        for part, channels in WRITE_PARTS.items():
-            if move.free_legs and part in ("rightLeg", "leftLeg"):
-                continue
+        for part, channels in parts.items():
             values = q.get(part, {})
             for channel in channels:
                 moves.append({"tick": beat.tick, "easing": beat.easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
@@ -357,33 +465,101 @@ def write(move):
              "returnTick": move.loop or 0, "degrees": True, "easeBeforeKeyframe": True, "moves": moves}
     if move.loop is not None:
         emote["stopTick"] = move.duration
-    data = {"version": 3, "name": move.name, "author": "HexPiece 2.1.4", "description": move.description, "emote": emote}
+    data = {"version": 3, "name": move.name, "author": "HexPiece 2.3.2", "description": move.description, "emote": emote}
     with open(os.path.join(OUT, move.name + ".json"), "w", encoding="utf-8") as handle:
         json.dump(data, handle, indent=1)
         handle.write("\n")
-    MOVES[move.name] = move
-    return move
+    return move.name, text.getvalue(), clearance(move)
+
+
+def _nearest_euler(v, prev):
+    """(pitch, yaw, roll) as written nearest prev: the same turn has two ways to be written in this order (pitch + 180, 180 - yaw,
+    roll + 180), each with whole turns added; the game interpolates the numbers, so the nearest one turns the least between beats."""
+    p, y, r = v
+    best = None
+    for cand in ((p, y, r), (p + 180.0, 180.0 - y, r + 180.0)):
+        c = list(cand)
+        for k in range(3):
+            while c[k] - prev[k] > 180.0:
+                c[k] -= 360.0
+            while c[k] - prev[k] < -180.0:
+                c[k] += 360.0
+        d = sum((c[k] - prev[k]) ** 2 for k in range(3))
+        if best is None or d < best[0]:
+            best = (d, c)
+    return best[1]
+
+
+def unwrap(beats):
+    """2.3.2: every solved arm and wrist written nearest the beat before (the game interpolates the numbers: two ways of writing the
+    same turn, or -197 then 143 degrees, would spin the arm or the hand the long way round between two beats)."""
+    prev = {}
+    for beat in beats:
+        q = beat.solved
+        for part in ("rightArm", "leftArm", "rightItem"):
+            if part not in q:
+                continue
+            v = (q[part].get("pitch", 0.0), q[part].get("yaw", 0.0), q[part].get("roll", 0.0))
+            if part in prev:
+                v = _nearest_euler(v, prev[part])
+                q[part]["pitch"], q[part]["yaw"], q[part]["roll"] = v
+            prev[part] = v
+
+
+def smooth_json(name):
+    """unwrap() on a written animation (its keyframes, tick by tick), in place."""
+    path = os.path.join(OUT, name + ".json")
+    with open(path, encoding="utf-8") as handle:
+        data = json.load(handle)
+    moves = data["emote"]["moves"]
+    for part in ("rightArm", "leftArm", "rightItem"):
+        frames = {}
+        for m in moves:
+            if part in m:
+                for ch, val in m[part].items():
+                    if ch in ("pitch", "yaw", "roll"):
+                        frames.setdefault(m["tick"], {})[ch] = (m, val)
+        prev = None
+        for tick in sorted(frames):
+            f = frames[tick]
+            if len(f) < 3:
+                continue
+            v = (f["pitch"][1], f["yaw"][1], f["roll"][1])
+            if prev is not None:
+                v = _nearest_euler(v, prev)
+                for k, ch in enumerate(("pitch", "yaw", "roll")):
+                    f[ch][0][part][ch] = round(float(v[k]), 3)
+            prev = v
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=1)
+        handle.write("\n")
+
+
+def run_pending():
+    import multiprocessing
+    jobs = list(PENDING)
+    PENDING.clear()
+    jobs.sort(key=lambda m: -len(m.beats) * m.duration)
+    with multiprocessing.get_context("fork").Pool(max(1, (os.cpu_count() or 2))) as pool:
+        results = pool.map(solve_and_write, jobs, chunksize=1)
+    bad = 0
+    for name, text, problems in sorted(results):
+        print(text, end="")
+        if problems:
+            bad += 1
+            print(f"  {name}: {len(problems)} problems, first {problems[:3]}")
+    print(f"{len(results)} sword animations written, {bad} with problems")
+    return results
+
+
+ARMS = {"rightArm": ARM_CH, "leftArm": ARM_CH}
+RIGHT = {"rightArm": ARM_CH, "rightItem": ("pitch", "yaw", "roll", "y")}
+NO_HEAD = {k: v for k, v in WRITE_PARTS.items() if k != "head"}
 
 
 def stance_write(name, beats, description):
     """An arms-only loop (the combat stance; client/StanceLayer plays it under every move): only the arms are in the file."""
-    if not SOLVE:
-        return
-    solve(beats)
-    report(name, beats)
-    moves = []
-    for beat in beats:
-        for part in ("rightArm", "leftArm"):
-            for channel in ARM_CH:
-                moves.append({"tick": beat.tick, "easing": beat.easing, part: {channel: round(float(beat.solved[part].get(channel, 0.0)), 3)}})
-    moves.sort(key=lambda m: m["tick"])
-    duration = beats[-1].tick
-    data = {"version": 3, "name": name, "author": "HexPiece 2.1.4", "description": description,
-            "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration, "isLoop": True, "returnTick": 0, "degrees": True,
-                      "easeBeforeKeyframe": True, "moves": moves}}
-    with open(os.path.join(OUT, name + ".json"), "w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=1)
-        handle.write("\n")
+    write(Move(name, beats[-1].tick, beats, description, parts=ARMS, loop=0, ground=False))
 
 
 # --- reach and clearance ---------------------------------------------------------------------------------------------------------
@@ -453,12 +629,63 @@ def inside(m, p, lo, hi, margin):
     return all(lo[i] + margin < q[i] < hi[i] - margin for i in range(3))
 
 
+def tip_point(prof):
+    """The blade's point (model px: out to its back by its curve, up the blade)."""
+    return (prof.tip_x, prof.tip, 0.0)
+
+
+def lift_clear(beat, prof, floor=None):
+    """2.3.2 (the owner: "yoru clips through the floor"): a beat whose point would be under FLOOR blocks over the feet's floor has its
+    blade turned up (about the axis across it and the vertical, the fist where it is, the edge turned with it) just enough to clear
+    it: a great sword cannot point at the ground from the hip as a katana does."""
+    if beat.blade is None or beat.rarm is not None or any(getattr(beat, k, None) is not None for k in ("noto", "hilt", "back_lift")):
+        return False
+    q = base_pose(beat)
+    m = rig.layer_to_entity(q)
+    up = rig.layer_dir_from_entity(q, (0.0, 1.0, 0.0))
+    target, bdir, edir = beat.blade
+    target = np.array(target, float)
+    bd = unit(bdir)
+    ed = np.array(edir, float)
+    ed = unit(ed - bd * (ed @ bd))
+
+    def height(b_, e_):
+        p = target + b_ * (prof.tip - rig.GRIP) - e_ * prof.tip_x
+        return rig.point(m, p)[1]
+
+    floor = FLOOR if floor is None else floor
+    if height(bd, ed) >= floor:
+        return False
+    axis = np.cross(bd, up)
+    if np.linalg.norm(axis) < 1e-6:
+        axis = np.cross(ed, up)
+    axis = unit(axis)
+
+    def turned(v, ang):
+        c, sn = math.cos(ang), math.sin(ang)
+        return v * c + np.cross(axis, v) * sn + axis * (axis @ v) * (1 - c)
+
+    lo, hi = 0.0, math.radians(150.0)
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if height(turned(bd, mid), turned(ed, mid)) >= floor:
+            hi = mid
+        else:
+            lo = mid
+    beat.blade = (tuple(target), tuple(turned(bd, hi)), tuple(turned(ed, hi)))
+    return True
+
+
 def clearance(move):
-    """Every half tick of the written animation: no fist and no part of the blade inside the head, no blade through the torso."""
+    """Every half tick of the written animation: no fist and no part of the blade inside the head, no blade through the torso, and
+    (2.3.2) on the ground no point in the floor."""
     import anim
     with open(os.path.join(OUT, move.name + ".json"), encoding="utf-8") as handle:
         a = anim.Anim(json.load(handle))
+    prof = move.profile
     problems = []
+    # Yoru held where it hangs on the back (taken from its ropes, or put back): it hangs to the floor there by design (sword/BackCarry)
+    on_back = [beat.tick for beat in move.beats if getattr(beat, "back_lift", None) is not None]
     t = 0.0
     while t <= move.duration + 1e-9:
         q = a.pose(t)
@@ -469,16 +696,32 @@ def clearance(move):
             problems.append((t, "right fist in the head"))
         if inside(hb, fist, (-4.5, -8.5, -9.5), (4.5, 1.0, -4.0), 0.0):
             problems.append((t, "right fist in front of the face"))
-        if move.drawn_at(t):
+        for side in ("right", "left"):
+            if move.parts is RIGHT and side == "left":
+                continue
+            for what, by in rig.arm_strain(q, side):
+                if by > (0.4 if what == "arm through the body" else 8.0):
+                    problems.append((t, f"{side} {what} ({by:.1f})"))
+        if move.drawn_at(t) and not sliding(move, t):
+            at_hilt = on_back and min(on_back) <= t <= max(on_back) + 1.0
+            for what, by in rig.sword_hits(q):
+                # Yoru's cross guard sits just behind the head on the back: the hand on its hilt there may graze it (half a pixel)
+                limit = 0.6 if at_hilt and what.startswith("head") else 0.8 if what.endswith("(handle)") else 0.35
+                if by > limit:
+                    problems.append((t, f"sword through the {what} ({by:.1f})"))
+        if move.drawn_at(t) or sliding(move, t):
             m = game_blade(move, q, t)
             for k in range(13):
-                p = rig.point(m, (0, rig.BLADE_BASE + (rig.BLADE_TIP - rig.BLADE_BASE) * k / 12, 0))
+                p = rig.point(m, (0, rig.BLADE_BASE + (prof.tip - rig.BLADE_BASE) * k / 12, 0))
                 if inside(hb, p, (-4, -8, -4), (4, 0, 4), 0.2):
                     problems.append((t, "blade through the head"))
                     break
                 if k >= 2 and inside(torso, p, (-4, 0, -2), (4, 12, 2), 0.4):
                     problems.append((t, "blade through the body"))
                     break
+            at_back = on_back and min(on_back) <= t <= max(on_back) + 1.0
+            if move.ground and not at_back and rig.point(m, tip_point(prof))[1] < 0.0:
+                problems.append((t, f"point in the floor ({rig.point(m, tip_point(prof))[1]:.2f})"))
         t += 0.5
     for problem in anim.lint(a):
         problems.append(problem)
@@ -502,7 +745,8 @@ L_REST = {"pitch": 6.0, "yaw": 0.0, "roll": -8.0, "bend": -10.0}
 L_BACK = {"pitch": 42.0, "yaw": 0.0, "roll": -16.0, "bend": -18.0}
 L_AIM = {"pitch": -70.0, "yaw": 8.0, "roll": -6.0, "bend": -22.0}
 L_OUT = {"pitch": -30.0, "yaw": 0.0, "roll": -58.0, "bend": -18.0}
-L_TUCK = {"pitch": -20.0, "yaw": 20.0, "roll": 10.0, "bend": -90.0}
+# 2.3.2: solved for a fist in front of the left chest, the elbow out (it was set by hand and folded through the chest)
+L_TUCK = {"pitch": -42.88, "yaw": 41.72, "roll": -26.88, "bend": -80.75}
 
 
 def b(tick, easing, blade, left=None, body=None, legs=None, head=None, **kw):
@@ -512,7 +756,8 @@ def b(tick, easing, blade, left=None, body=None, legs=None, head=None, **kw):
 
 
 def stance_beat(tick, easing="inoutsine", body=None, legs=None, head=None):
-    return b(tick, easing, held(*LOW_STANCE), L_REST, body or {"yaw": -6, "bend": 2}, legs if legs is not None else LEGS_EASY,
+    """The blade's home pose (2.3.2: each blade its own: PROFILE.home), where every cut starts and ends."""
+    return b(tick, easing, held(*(PROFILE.home or LOW_STANCE)), L_REST, body or {"yaw": -6, "bend": 2}, legs if legs is not None else LEGS_EASY,
              head or {"yaw": 4})
 
 
@@ -528,13 +773,18 @@ def draw_grip(tick, easing, out=0.0, body=None, legs=None, head=None, left="saya
     return beat
 
 
+# 2.3.2: per blade (Blade.noto_p, noto_out, noto_pull, set below): the left hand lifts the saya higher (its tail swung down onto the
+# line used to graze the floor) and Gryphon's line runs closer to the shoulder (its hard curve turns the handle off the line).
 # the noto line passes this point (layer frame px: in front of the right shoulder, at the upper chest) and the koiguchi; NOTO_OUT is how
 # far out of the saya the blade is when the right arm is stretched along it (the tip then just inside the mouth)
 NOTO_P = (-5.0, 4.0, -4.5)
-NOTO_OUT = 15.5
+NOTO_OUT = 14.5
 # the owner: "why not just make the player pull the sheath forward a bit and make it fit": the left hand draws the saya a little
 # forward and in along the obi as the blade comes out of it or goes back in (body-part px: in, up, forward)
-NOTO_PULL = (-1.2, -0.5, -2.2)
+NOTO_PULL = (-1.2, -1.8, -2.2)
+KATANA.noto_p, KATANA.noto_out, KATANA.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
+GRYPHON.noto_p, GRYPHON.noto_out, GRYPHON.noto_pull = NOTO_P, 12.0, NOTO_PULL
+YORU.noto_p, YORU.noto_out, YORU.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
 
 
 def noto(tick, easing, out, body=None, legs=None, head=None, left="saya"):
@@ -575,7 +825,10 @@ def strike(name, duration, wind, mid, end, cut_ticks, description, wind_body, en
     return write(Move(name, duration, beats, description, cuts=cuts or ((lo, hi),)))
 
 
-def moves():
+def moves(with_draws=True):
+    """The Swordsman's moves for the blade being written (PROFILE). with_draws: the draws from the saya at the hip too (the katanas';
+    2.3.2: a legendary blade is drawn the moment combat begins and never drawn again mid-fight, so it has none)."""
+    write_draw = write if with_draws else (lambda m: m)
     # ------------------------------------------------------------------------------------------------ the draws (from the saya)
     # Every draw: the hand on the hilt, the saya turned about its mouth onto the noto line (up across the front of the body to the
     # right shoulder), the blade drawn out of the koiguchi along it as the right arm stretches up and out (the left hand at the mouth,
@@ -584,7 +837,7 @@ def moves():
     draw_rise = [out_dir, D(-0.3, -0.4, 1), D(0.4, 0.12, 0.92), D(0.95, 0.3, 0.1)]
     draw_rise_f = [H(10.0, 0.8, 5.2), H(6.6, 4.4, 7.6), H(4.8, 4.0, 7.8), H(8.6, 3.4, 3.0)]
     still = {"bend": 8, "yaw": 14, "y": -0.11}
-    write(Move("sword_draw_cut", 13, [
+    write_draw(Move("sword_draw_cut", 13, [
         noto(0, "linear", 0.0, body={"bend": 8, "yaw": 8, "y": -0.05}, legs=LEGS_EASY, head={"pitch": -6}),
         noto(1, "outsine", 0.0, body=still, legs=DRAW_LEGS, head={"pitch": -10}),
         noto(2, "insine", 7.0, body=still, legs=DRAW_LEGS, head={"pitch": -10}),
@@ -605,7 +858,7 @@ def moves():
     rise = [out_dir, D(-0.05, -0.1, 1), D(0.6, 0.5, 0.65), D(0.9, 0.55, -0.05)]
     rise_f = [H(10.0, 0.8, 5.2), H(4.6, 5.2, 7.8), H(5.0, 2.8, 6.8), H(6.8, 0.2, 3.6)]
     dash = {"bend": 14, "yaw": 16, "y": -0.16, "z": -0.1}
-    write(Move("sword_advancing_draw", 14, [
+    write_draw(Move("sword_advancing_draw", 14, [
         noto(0, "linear", 0.0, body={"bend": 14, "yaw": 10, "y": -0.08}, legs=LEGS_LUNGE, head={"pitch": -14}),
         noto(1, "outsine", 0.0, body=dash, legs=LEGS_DEEP, head={"pitch": -18}),
         noto(2, "insine", 7.0, body=dict(dash, z=-0.22), legs=LEGS_DEEP, head={"pitch": -18}),
@@ -620,7 +873,7 @@ def moves():
         stance_beat(14, body={"yaw": -6, "bend": 2, "z": -0.3}),
     ], "Swordsman: the dashing draw. Low and far forward, the blade drawn on the run into a rising cut.", draw=2, cuts=((4, 6),)))
 
-    write(Move("sword_aerial_draw", 12, [
+    write_draw(Move("sword_aerial_draw", 12, [
         noto(0, "linear", 0.0, body={"bend": 8, "yaw": 8}, legs=LEGS_TUCK, head={"pitch": -10}),
         noto(1, "insine", 7.0, body={"bend": 8, "yaw": 16}, legs=LEGS_TUCK, head={"pitch": -12}),
         noto(2, "linear", NOTO_OUT, body={"bend": 8, "yaw": 18}, legs=LEGS_TUCK, head={"pitch": -12}),
@@ -629,7 +882,7 @@ def moves():
         b(6, "outback", cut(rise, rise_f, 1.0), L_OUT, {"bend": -8, "yaw": -44, "pitch": -10}, LEGS_REACH, {"yaw": 22}),
         b(8, "linear", cut(rise, rise_f, 1.0), L_OUT, {"bend": -8, "yaw": -44, "pitch": -8}, LEGS_REACH, {"yaw": 22}),
         stance_beat(12, legs=LEGS_TUCK),
-    ], "Swordsman: the falling draw, in the air: drawn up and across as the body turns.", draw=1, cuts=((3, 5),)))
+    ], "Swordsman: the falling draw, in the air: drawn up and across as the body turns.", draw=1, cuts=((3, 5),), ground=False))
 
     # ------------------------------------------------------------------------------------------------ the quick draw (Ctrl + M1)
     # The owner: "Control + left click does a quick draw katana slash forward (5 blocks)": crouched, the hand on the hilt, then the
@@ -649,7 +902,7 @@ def moves():
         b(11, "linear", after, L_OUT, after_body, LEGS_DEEP, {"pitch": -10, "yaw": 18}),
         stance_beat(16, body={"yaw": -6, "bend": 2}),
     ]
-    write(Move("sword_quick_draw", 16, [
+    write_draw(Move("sword_quick_draw", 16, [
         noto(0, "linear", 0.0, body={"bend": 14, "yaw": 10, "y": -0.12}, legs=LEGS_DEEP, head={"pitch": -14}),
         noto(1, "outsine", 0.0, body={"bend": 18, "yaw": 12, "y": -0.16}, legs=LEGS_DEEP, head={"pitch": -16}),
         noto(2, "insine", 7.0, body={"bend": 18, "yaw": 12, "y": -0.18}, legs=LEGS_DEEP, head={"pitch": -16}),
@@ -773,7 +1026,7 @@ def moves():
         b(10, "outback", held(H(7.6, 8.6, 3.0), D(0.72, -0.64, 0.25), D(0.6, 0.65, -0.45)), L_OUT, {"yaw": -38, "bend": 20},
           LEGS_REACH, {"yaw": 14}),
         stance_beat(14, legs=LEGS_TUCK),
-    ], "Swordsman: the aerial cross, two diagonals crossing in the air, each its own cut.", cuts=((3, 4), (8, 9))))
+    ], "Swordsman: the aerial cross, two diagonals crossing in the air, each its own cut.", cuts=((3, 4), (8, 9)), ground=False))
 
     wheel = held(H(5.6, -1.0, 6.4), D(0.14, 0.66, 0.74), D(0, 0.74, -0.66))
     write(Move("sword_aerial_wheel", 15, [
@@ -789,7 +1042,7 @@ def moves():
           LEGS_REACH),
         b(11, "linear", held(H(3.0, 7.6, 6.6), D(0.04, -0.7, 0.7), D(0, -0.7, -0.7)), L_BACK, {"bend": 22}, LEGS_REACH),
         stance_beat(15, legs=LEGS_TUCK),
-    ], "Swordsman: the wheel, a forward somersault with the blade carried round a full vertical circle.", cuts=((4, 9),)))
+    ], "Swordsman: the wheel, a forward somersault with the blade carried round a full vertical circle.", cuts=((4, 9),), ground=False))
 
     write(Move("sword_plunge", 17, [
         stance_beat(0, "linear", legs=LEGS_TUCK),
@@ -806,16 +1059,9 @@ def moves():
           {"pitch": 16}),
         stance_beat(17),
     ], "Swordsman: the plunge, the aerial finisher: raised high, then driven point-down as the body drops onto it.",
-        cuts=((6, 9),)))
+        cuts=((6, 9),), ground=False))
 
     # ------------------------------------------------------------------------------------------------ stance, charge, release, sheathe
-    write(Move("sword_guard", 24, [
-        stance_beat(0, "linear"),
-        b(12, "inoutsine", held(H(6.8, 9.6, 2.6), D(0.32, -0.6, 0.73), STANCE_E), L_REST, {"yaw": -6, "bend": 1}, LEGS_EASY,
-          {"yaw": 4}),
-        stance_beat(24),
-    ], "Swordsman: the main stance, the blade held low in the right hand, the point down at the ground ahead (walking keeps its "
-       "legs).", free_legs=True, loop=0))
 
     charge_pose = held(H(7.6, -5.8, 0.6), D(0.3, -0.28, -0.91), D(0.1, 0.95, -0.28))
     charge_body = {"yaw": -26, "bend": -16, "y": -0.04}
@@ -832,7 +1078,7 @@ def moves():
     ], "Swordsman: charging the slash, the blade raised high behind the right shoulder, the body drawn back like a bow (held until "
        "release).", loop=6))
 
-    write(Move("sword_charge_draw", 26, [
+    write_draw(Move("sword_charge_draw", 26, [
         noto(0, "linear", 0.0, body={"bend": 8, "yaw": 8, "y": -0.05}, head={"pitch": -8}),
         noto(1, "insine", 7.0, body={"bend": 8, "yaw": 12, "y": -0.06}, legs=DRAW_LEGS, head={"pitch": -8}),
         noto(2, "linear", NOTO_OUT, body={"bend": 8, "yaw": 12, "y": -0.06}, legs=DRAW_LEGS, head={"pitch": -6}),
@@ -862,34 +1108,80 @@ def moves():
     # deliberate: the right hand settles on the hilt, the left thumb pushes the guard out (koiguchi wo kiru), the blade slides out of
     # the saya along the noto line a little at a time, and only when its point is at the mouth does it swing free, out to the right and
     # down into the low guard. Nothing is cut and nothing can be done with it until it is there.
-    calm = {"bend": 5, "yaw": 8, "y": -0.04}
-    write(Move("sword_draw", 22, [
-        stance_beat(0, "linear"),
-        noto(3, "inoutsine", 0.0, body=calm, legs=LEGS_EASY, head={"pitch": -6}),
-        noto(6, "outsine", 1.2, body=calm, legs=LEGS_EASY, head={"pitch": -8}),
-        noto(8, "linear", 1.2, body=calm, legs=LEGS_EASY, head={"pitch": -8}),
-        noto(13, "inoutsine", 8.0, body=dict(calm, yaw=10), legs=DRAW_LEGS, head={"pitch": -8}),
-        noto(16, "outsine", NOTO_OUT, body=dict(calm, yaw=8), legs=DRAW_LEGS, head={"pitch": -6}),
-        b(18, "outsine", held(H(8.6, 3.0, 2.2), D(1, 0.32, -0.05), D(0.1, 0.1, -1)), L_REST, {"yaw": -10, "bend": 4}, LEGS_EASY,
-          {"pitch": -4, "yaw": 8}),
-        stance_beat(22, "inoutsine"),
-    ], "Swordsman: the draw, slow and deliberate: the thumb pushes the guard out, the blade slides out of the saya, swings free and "
-       "settles into the low guard.", draw=16))
+
+
+def reach_beat(tick, easing, fist, left="saya", body=None, legs=None, head=None):
+    """2.3.2: the empty right hand at fist (H) on its way to the hilt or back from it (the arm solved for the fist alone)."""
+    beat = Beat(tick, easing, blade=None, left=left, body=body or {}, legs=legs if legs is not None else LEGS_EASY, head=head or {})
+    beat.fist = H(*fist)
+    return beat
+
+
+def hip_draws():
+    """The draw from the saya at the hip and the sheathing (noto), for the blade being written (a katana, or Gryphon's saber along its
+    own hard curve). 2.2.1 (the owner: "the sheath and unsheath is too fast. Slow those animations down"); 2.3.2 (the owner: "The pull
+    out animation is way too fast on some swords, yoru should be slower than all"): a katana's draw 28 ticks, its sheathing 24;
+    Gryphon's 32 and 28. Slow and deliberate: the right hand settles on the hilt, the left thumb pushes the guard out (koiguchi wo
+    kiru), the blade slides out of the saya along the noto line a little at a time, and only when its point is at the mouth does it
+    swing free: a katana out to the right and down into the low guard; Gryphon's saber whirled up and out to the right, its bell guard
+    flashing, and let fall loose to the side. Nothing is cut and nothing can be done with it until it is there."""
+    # the right shoulder turned in to the hilt and the body bowed a little over it (Gryphon's grip sits further from the right hand)
+    calm = {"bend": 8, "yaw": 16, "y": -0.04} if PROFILE is GRYPHON else {"bend": 5, "yaw": 8, "y": -0.04}
+    rest = Beat(0, "linear", rarm=dict(RELAXED_R), wrist={}, left="saya", body={"bend": 2}, legs=LEGS_EASY)
+    # the blade, free of the saya, whips out forward first (the draw's own cut, nukitsuke), then swings out to the side
+    whip = held(H(5.6, 4.6, 7.4), D(0.42, -0.12, 0.9), D(0.05, -0.99, 0.0))
+    if PROFILE is GRYPHON:
+        t = {"grip": 6, "push": 10, "hold": 13, "half": 20, "out": 24, "free": 27, "settle": 29, "end": 32}
+        free = held(H(9.0, -1.2, 3.4), D(0.78, 0.6, 0.2), D(0.3, -0.1, -0.95))
+        settle = held(H(8.4, 6.6, 2.6), D(0.6, -0.25, 0.76), D(0.4, -0.85, -0.3))
+        free_body, free_head = {"yaw": -14, "bend": 2}, {"pitch": -6, "yaw": 12}
+    else:
+        t = {"grip": 5, "push": 9, "hold": 11, "half": 17, "out": 20, "free": 23, "settle": None, "end": 28}
+        free = held(H(8.6, 3.0, 2.2), D(1, 0.32, -0.05), D(0.1, 0.1, -1))
+        settle = None
+        free_body, free_head = {"yaw": -10, "bend": 4}, {"pitch": -4, "yaw": 8}
+    beats = [
+        rest,
+        reach_beat(t["grip"] - 3, "insine", (3.0, 8.4, 4.4), body={"bend": 3, "yaw": 4}, head={"pitch": -4}),
+        noto(t["grip"], "outsine", 0.0, body=calm, legs=LEGS_EASY, head={"pitch": -6}),
+        noto(t["push"], "outsine", 1.2, body=calm, legs=LEGS_EASY, head={"pitch": -8}),
+        noto(t["hold"], "linear", 1.2, body=calm, legs=LEGS_EASY, head={"pitch": -8}),
+        noto(t["half"], "inoutsine", 8.0, body=dict(calm, yaw=10), legs=DRAW_LEGS, head={"pitch": -8}),
+        noto(t["out"], "outsine", PROFILE.noto_out, body=dict(calm, yaw=8), legs=DRAW_LEGS, head={"pitch": -6}),
+        b(t["out"] + 1, "outsine", whip, L_REST, dict(calm, yaw=2), DRAW_LEGS, {"pitch": -6}),
+        b(t["free"], "inoutsine", free, L_REST, free_body, LEGS_EASY, free_head),
+    ]
+    if settle is not None:
+        beats.append(b(t["settle"], "outback", settle, L_REST, {"yaw": -8, "bend": 3}, LEGS_EASY, {"pitch": -4, "yaw": 6}))
+    beats.append(stance_beat(t["end"], "inoutsine"))
+    what = "Gryphon's saber" if PROFILE is GRYPHON else "the blade"
+    write(Move("sword_draw", t["end"], beats, f"Swordsman: the draw, slow and deliberate: the thumb pushes the guard out, {what} slides "
+               "out of the saya along its own curve, swings free and settles into the low guard.", draw=t["out"]))
 
     # sheathing (noto), as slow: the blade flicked clean (chiburi), held a beat, its back laid to the koiguchi, slid home along the saya
     # a little at a time, the guard clicking home at the end
-    write(Move("sword_sheathe", 20, [
+    if PROFILE is GRYPHON:
+        t = {"flick": 4, "hold": 6, "lay": 11, "rest": 13, "deep": 21, "home": 24, "end": 28}
+        flick = held(H(8.8, 7.0, 3.6), D(0.86, -0.3, 0.4), D(0.35, -0.6, -0.72))
+    else:
+        t = {"flick": 4, "hold": 6, "lay": 10, "rest": 12, "deep": 18, "home": 21, "end": 24}
+        flick = held(H(5.6, 8.8, 5.4), D(0.12, -0.78, 0.6), D(0.05, -0.6, -0.8))
+    write(Move("sword_sheathe", t["end"], [
         stance_beat(0, "linear"),
-        b(3, "outexpo", held(H(5.6, 8.8, 5.4), D(0.12, -0.78, 0.6), D(0.05, -0.6, -0.8)), L_REST, {"yaw": -4, "bend": 6},
-          LEGS_EASY),
-        b(5, "linear", held(H(5.6, 8.8, 5.4), D(0.12, -0.78, 0.6), D(0.05, -0.6, -0.8)), L_REST, {"yaw": -4, "bend": 6},
-          LEGS_EASY),
-        noto(8, "inoutsine", NOTO_OUT, body={"bend": 6, "yaw": 6}),
-        noto(10, "linear", NOTO_OUT, body={"bend": 6, "yaw": 6}),
-        noto(15, "inoutsine", 3.0, body={"bend": 6, "yaw": 6}),
-        noto(17, "outsine", 0.0, body={"bend": 5, "yaw": 6}),
-        Beat(20, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left="saya", body={"bend": 3}, legs=LEGS_EASY),
-    ], "Swordsman: the blade flicked clean, laid to the mouth of the saya and slid home, slowly.", sheath=17, stop_extra=6))
+        b(t["flick"], "outexpo", flick, L_REST, {"yaw": -4, "bend": 6}, LEGS_EASY),
+        b(t["hold"], "linear", flick, L_REST, {"yaw": -4, "bend": 6}, LEGS_EASY),
+        b(t["lay"] - 2, "inoutsine", whip, L_REST, {"bend": 6, "yaw": 2}, LEGS_EASY),
+        noto(t["lay"], "outsine", PROFILE.noto_out, body={"bend": 6, "yaw": 6}),
+        noto(t["rest"], "linear", PROFILE.noto_out, body={"bend": 6, "yaw": 6}),
+        noto(t["deep"], "inoutsine", 3.0, body={"bend": 6, "yaw": 6}),
+        noto(t["home"], "outsine", 0.0, body={"bend": 5, "yaw": 6}),
+        reach_beat(t["home"] + 2, "inoutsine", (3.0, 8.4, 4.4), body={"bend": 4, "yaw": 4}),
+        Beat(t["end"], "inoutsine", rarm=dict(RELAXED_R), wrist={}, left="saya", body={"bend": 3}, legs=LEGS_EASY),
+    ], "Swordsman: the blade flicked clean, laid to the mouth of the saya and slid home, slowly.", sheath=t["home"], stop_extra=6))
+
+
+# the upper arm raised, a little out to the right and forward (layer frame): reaching up behind the head
+OVERHEAD = (-0.3, -0.94, -0.12)
 
 
 def back_beat(tick, easing, lift=0.0, reach_off=None, body=None, legs=None, head=None, left=None):
@@ -902,58 +1194,190 @@ def back_beat(tick, easing, lift=0.0, reach_off=None, body=None, legs=None, head
     return beat
 
 
+# 2.3.2: each blade's home pose (where its cuts start and end): a katana low in the right hand, its point at the ground ahead; Gryphon's
+# saber hanging looser and further out to the side; Yoru, a great sword, held low and forward, its point well off the floor
+KATANA.home = LOW_STANCE
+GRYPHON.home = (H(7.2, 10.2, 2.0), D(0.45, -0.5, 0.74), D(0.2, -0.78, -0.55))
+YORU.home = (H(6.8, 9.0, 3.6), D(0.3, -0.38, 0.88), D(0.1, -0.9, -0.36))
+# carried on the right shoulder: the back of the blade over it, the edge up (the owner: "the blade edge should be facing up"), the
+# point high behind; the hand up in front of the shoulder, the elbow down, so the blade passes over the top of the arm, not along it
+# (the owner: "the sword handle clipping through the shoulder?")
+SHOULDER = {"gryphon": (H(6.2, 0.6, 4.6), D(0.0, 0.5, -0.87), D(0.0, 0.87, 0.5)),
+            "yoru": (H(6.2, 0.2, 4.8), D(0.0, 0.56, -0.83), D(0.0, 0.83, 0.56))}
+# Yoru presented: low at the right hip, its long blade angled up across the front (the owner's unsheath reference ends so)
+PRESENT = (H(3.4, 8.6, 3.6), D(-0.48, 0.52, 0.72), D(0.0, 0.84, -0.55))
+
+
+def shifted(pose, dfist=(0.0, 0.0, 0.0)):
+    """A held pose with its fist moved (H px: right, down, forward)."""
+    f, bd, ed = pose
+    return (tuple(np.array(f) + np.array(H(*dfist))), bd, ed)
+
+
+def carry():
+    """2.3.2 (the owner: "using sword makes the player's body too stiff, the head doesnt move ... adapt it so the body is more free,
+    more real, more ambient animation with all swords ... Yoru and Gryphon have custom ambient animations", "Also the left arm is not
+    even moving... why is it frozen"): with the blade out between cuts,
+    - on the move, sword_guard keys the right arm and the wrist alone: the head looks round, the body and the left arm swing with the
+      walk as the game moves them. A katana held low; Gryphon and Yoru carried on the right shoulder.
+    - standing still, sword_idle: the whole body breathes and shifts its weight, the free hand hangs easy and moves with it, the blade
+      lives in the hand (a katana turned to the light and flicked; Gryphon's saber turned over lazily and rested on the shoulder; Yoru
+      raised and presented across the front, then shouldered), the head always left to look where the player looks."""
+    home = PROFILE.home
+    if PROFILE is KATANA:
+        walk = [b(0, "linear", held(*home), L_REST, {}, {}),
+                b(20, "inoutsine", held(*shifted(home, (0.1, -0.4, 0.3))), L_REST, {}, {}),
+                b(40, "inoutsine", held(*home), L_REST, {}, {})]
+    else:
+        sh = SHOULDER[PROFILE.name]
+        walk = [b(0, "linear", held(*sh), L_REST, {}, {}),
+                b(20, "inoutsine", held(*shifted(sh, (0.0, -0.4, 0.2))), L_REST, {}, {}),
+                b(40, "inoutsine", held(*sh), L_REST, {}, {})]
+    write(Move("sword_guard", 40, walk, "Swordsman: the blade between cuts on the move (the right arm alone: walking, looking round "
+               "and the free arm stay the game's).", parts=RIGHT, loop=0))
+
+    easy = {"yaw": -6, "bend": 2}
+    breath = {"yaw": -7, "bend": 3.4}
+    shift_legs = {"rightLeg": leg(-3, 3, 4), "leftLeg": leg(7, -3, 15)}
+    l_breath = {"pitch": 3.0, "yaw": 0.0, "roll": -10.0, "bend": -13.0}
+    l_sway = {"pitch": 9.0, "yaw": 0.0, "roll": -6.0, "bend": -8.0}
+    if PROFILE is KATANA:
+        turned = (H(7.0, 9.4, 3.0), D(0.4, -0.45, 0.8), D(0.9, 0.1, -0.4))
+        flick = (H(7.4, 9.0, 3.4), D(0.55, -0.22, 0.8), D(0.75, 0.2, -0.6))
+        beats = [
+            b(0, "linear", held(*home), L_REST, easy, LEGS_EASY),
+            b(22, "inoutsine", held(*shifted(home, (0.0, -0.4, 0.1))), l_breath, breath, LEGS_EASY),
+            b(44, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+            b(56, "inoutsine", held(*turned), l_sway, {"yaw": -10, "bend": 2.5}, LEGS_EASY),
+            b(66, "linear", held(*shifted(turned, (0.0, -0.2, 0.0))), l_sway, {"yaw": -10, "bend": 3}, LEGS_EASY),
+            b(78, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+            b(92, "inoutsine", held(*shifted(home, (0.3, 0.1, 0.0))), l_breath, {"yaw": -4, "bend": 3, "roll": 1.5}, shift_legs),
+            b(100, "outexpo", held(*flick), l_breath, {"yaw": -5, "bend": 2.5, "roll": 1.5}, shift_legs),
+            b(103, "outback", held(*shifted(home, (0.3, 0.0, 0.0))), L_REST, {"yaw": -5, "bend": 2.5, "roll": 1.0}, shift_legs),
+            b(120, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+        ]
+        duration = 120
+    elif PROFILE is GRYPHON:
+        sh = SHOULDER["gryphon"]
+        out = (H(7.8, 9.2, 2.4), D(0.75, -0.3, 0.6), D(0.45, -0.3, -0.84))
+        over = (H(7.6, 9.0, 2.8), D(0.5, -0.32, 0.8), D(0.1, 0.92, 0.3))
+        up = (H(8.0, 4.0, 3.0), D(0.7, 0.55, 0.45), D(0.4, -0.8, -0.3))
+        beats = [
+            b(0, "linear", held(*home), L_REST, easy, LEGS_EASY),
+            b(24, "inoutsine", held(*shifted(home, (0.0, -0.4, 0.1))), l_breath, breath, LEGS_EASY),
+            b(46, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+            b(56, "inoutsine", held(*out), l_sway, {"yaw": -9, "bend": 2}, LEGS_EASY),
+            b(62, "inoutsine", held(*over), l_sway, {"yaw": -8, "bend": 2}, LEGS_EASY),
+            b(72, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+            b(82, "inoutsine", held(*up), L_REST, {"yaw": -8, "bend": 0}, LEGS_EASY),
+            b(88, "inoutsine", held(*sh), l_sway, {"yaw": -4, "bend": -1}, shift_legs),
+            b(92, "outback", held(*shifted(sh, (0.0, 0.3, 0.0))), l_sway, {"yaw": -4, "bend": -1}, shift_legs),
+            b(112, "inoutsine", held(*shifted(sh, (0.0, -0.4, 0.0))), l_breath, {"yaw": -3, "bend": 0.5, "roll": 1.5}, shift_legs),
+            b(134, "inoutsine", held(*sh), l_sway, {"yaw": -4, "bend": -1}, shift_legs),
+            b(142, "inoutsine", held(*up), L_REST, {"yaw": -8, "bend": 0}, LEGS_EASY),
+            b(150, "outsine", held(*home), L_REST, easy, LEGS_EASY),
+            b(160, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+        ]
+        duration = 160
+    else:
+        sh = SHOULDER["yoru"]
+        upright = (H(7.8, 3.6, 5.4), D(0.28, 1.0, 0.05), D(0.95, -0.25, -0.2))
+        out_front = (H(6.4, 5.4, 6.6), D(0.35, 0.45, 0.85), D(0.9, -0.05, -0.35))
+        beats = [
+            b(0, "linear", held(*home), L_REST, easy, LEGS_EASY),
+            b(18, "inoutsine", held(*PRESENT), L_REST, {"yaw": 6, "bend": 1}, LEGS_EASY),
+            b(24, "outsine", held(*shifted(PRESENT, (0.0, 0.2, 0.0))), L_REST, {"yaw": 7, "bend": 1.5}, LEGS_EASY),
+            b(44, "inoutsine", held(*shifted(PRESENT, (0.0, -0.3, 0.0))), l_breath, {"yaw": 6, "bend": 2.5}, LEGS_EASY),
+            b(64, "inoutsine", held(*PRESENT), L_REST, {"yaw": 6, "bend": 1}, LEGS_EASY),
+            b(68, "inoutsine", held(*out_front), L_REST, {"yaw": 2, "bend": 0.5}, LEGS_EASY),
+            b(72, "inoutsine", held(*upright), L_REST, {"yaw": -2, "bend": 0}, LEGS_EASY),
+            b(78, "inoutsine", held(*sh), l_sway, {"yaw": -4, "bend": -1}, shift_legs),
+            b(84, "outback", held(*shifted(sh, (0.0, 0.3, 0.0))), l_sway, {"yaw": -4, "bend": -1}, shift_legs),
+            b(104, "inoutsine", held(*shifted(sh, (0.0, -0.4, 0.0))), l_breath, {"yaw": -3, "bend": 0.5, "roll": 1.5}, shift_legs),
+            b(124, "inoutsine", held(*sh), l_sway, {"yaw": -4, "bend": -1}, shift_legs),
+            b(132, "inoutsine", held(*upright), L_REST, {"yaw": -2, "bend": 0}, LEGS_EASY),
+            b(144, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+            b(160, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
+        ]
+        duration = 160
+    write(Move("sword_idle", duration, beats, "Swordsman: standing with the blade out: breathing, the weight shifting, the blade alive in "
+               "the hand (the head left free to look).", parts=NO_HEAD, loop=0))
+
+
 def yoru():
     """2.2.7: Yoru, worn on the back (the owner: "it also needs a pull out animation"; his unsheath reference: the right arm reaches up
-    behind the head to the hilt over the right shoulder, one sweep, and the great sword held low at the right hip, its blade angled up
-    across the front). Drawn, it is held and swung with the Swordsman's own moves."""
+    behind the head to the hilt over the right shoulder, one sweep, and the great sword held out in front). 2.3.2 (the owner: "Gyphon
+    and Yoru's pull outs are broken", "yoru should be slower than all"): rebuilt, 44 ticks, slow and heavy: the hand finds the hilt
+    behind the head, the great sword is pulled up out of its ropes, the point swings out behind, up over the head in one great arc
+    (all of it on the right side, behind, above and in front: never across the body) and down in front into Yoru's guard, its point
+    off the floor. Its sheathing the same arc backwards, 36 ticks. Drawn, it is held and swung with the Swordsman's own moves, each
+    turned so its point never cuts into the floor."""
     reach = (-2.0, 3.4, -1.2)       # the fist below the handle and out to the right, on its way up to it
-    forward = held(H(6.4, -2.4, 6.0), D(0.12, 0.42, 1.0), D(0.0, -1.0, 0.4))       # swung over: pointing ahead, out to the right
-    raise_ = held(H(7.2, -1.6, 3.2), D(0.1, 0.62, 1.0), D(0.0, -1.0, 0.6))         # on its way up, out to the right of the head
-    overhead = held(H(5.6, -10.4, 2.2), D(0.08, 1.0, 0.25), D(0.0, -0.1, 1.0))       # the blade straight up over the right shoulder
-    behind = held(H(6.0, -8.8, -0.2), D(-0.12, 0.34, -1.0), D(0.2, 1.0, 0.1))        # laid back over the right shoulder
-    present = held(H(3.4, 9.2, 3.4), D(-0.48, 0.52, 0.72), D(0.0, 0.84, -0.55))      # low at the right hip, angled up across the front
-    lean = {"bend": 6, "yaw": -12, "y": -0.03}
-    write(Move("sword_draw_back", 22, [
-        stance_beat(0, "linear"),
-        back_beat(4, "outsine", 0.0, reach, body={"bend": 4, "yaw": -6}, head={"pitch": 6, "yaw": 10}),
-        back_beat(7, "inoutsine", 0.0, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
-        back_beat(8, "linear", 0.6, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
-        back_beat(11, "insine", 2.4, body={"bend": 2, "yaw": -10}, head={"pitch": 2, "yaw": 10}),
-        b(13, "linear", behind, L_REST, {"bend": -4, "yaw": -14}, LEGS_EASY, {"pitch": -4, "yaw": 6}),
-        b(14, "linear", overhead, L_REST, {"bend": -2, "yaw": -8}, LEGS_EASY, {"pitch": -6}),
-        b(15, "linear", forward, L_REST, {"bend": 2, "yaw": -10}, LEGS_EASY, {"pitch": -4}),
-        b(16, "outexpo", present, L_BACK, lean, DRAW_LEGS, {"pitch": -2, "yaw": -4}),
-        b(19, "linear", present, L_BACK, lean, DRAW_LEGS, {"pitch": -2, "yaw": -4}),
-        stance_beat(22, "inoutsine"),
-    ], "Swordsman (Yoru): the right hand up behind the head to the hilt over the shoulder, the great sword lifted out of its ropes, swept "
-       "over the shoulder and down, held low at the hip, angled up across the front.", draw=8))
+    on_back = rig.back_grip({}, 0.0)
+    back_dir = tuple(-v for v in on_back[1])
+    dirs = [D(*back_dir), D(-0.25, -0.45, -0.86), D(0.05, 0.05, -1), D(0.08, 0.75, -0.66), D(0.08, 1.0, 0.1), D(0.1, 0.55, 0.83),
+            D(*[v for v in (0.3, -0.38, 0.88)])]
+    fists = [H(6.6, -4.4, -6.0), H(6.4, -6.6, -3.4), H(6.6, -8.0, -1.4), H(6.4, -9.4, 0.6), H(6.0, -10.0, 2.2), H(6.4, -5.0, 5.4),
+             YORU.home[0]]
+    n = len(dirs) - 1
+    rev_dirs, rev_fists = dirs[::-1], fists[::-1]
+    look = {"pitch": -8, "yaw": -6}
+    beats = [
+        Beat(0, "linear", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
+        back_beat(7, "insine", 0.0, reach, body={"bend": 3, "yaw": -6}, head={"pitch": -4, "yaw": -4}),
+        back_beat(11, "outsine", 0.0, body={"bend": 5, "yaw": -8}, head=look),
+        back_beat(14, "linear", 0.2, body={"bend": 5, "yaw": -8}, head=look),
+        back_beat(17, "insine", 0.8, body={"bend": 4, "yaw": -9}, head=look),
+        back_beat(21, "inoutsine", 1.6, body={"bend": 2, "yaw": -11}, head={"pitch": -8, "yaw": -4}),
+    ]
+    sweep_ticks = [23, 26, 29, 31, 33, 36]
+    bodies = [{"bend": 0, "yaw": -12}, {"bend": -3, "yaw": -12}, {"bend": -5, "yaw": -10}, {"bend": -4, "yaw": -6},
+              {"bend": 2, "yaw": -4}, {"bend": 5, "yaw": -6, "y": -0.03}]
+    heads = [{"pitch": -8, "yaw": -2}, {"pitch": -8, "yaw": 2}, {"pitch": -10, "yaw": 4}, {"pitch": -8}, {"pitch": -4}, {"pitch": -2}]
+    for i, tick in enumerate(sweep_ticks):
+        u = (i + 1) / len(sweep_ticks)
+        ease = "outback" if i == len(sweep_ticks) - 1 else ("insine" if i == 0 else "linear")
+        beat = b(tick, ease, cut(dirs, fists, u), L_REST if i < 4 else L_BACK, bodies[i], DRAW_LEGS if i >= 4 else LEGS_EASY, heads[i])
+        if i < 2:
+            beat.upper = OVERHEAD   # still reaching up behind the head, the elbow up
+        beats.append(beat)
+    beats.append(stance_beat(44, "inoutsine"))
+    write(Move("sword_draw", 44, beats, "Swordsman (Yoru): the right hand up behind the head to the hilt over the shoulder, the great "
+               "sword pulled up out of its ropes, swung out behind, up over the head and down in front into its guard.", draw=17,
+               back=True))
 
-    write(Move("sword_sheathe_back", 20, [
-        stance_beat(0, "linear"),
-        b(2, "inoutsine", raise_, L_REST, {"bend": 0, "yaw": -6}, LEGS_EASY, {"pitch": -4}),
-        b(3, "inoutsine", overhead, L_REST, {"bend": -2, "yaw": -6}, LEGS_EASY, {"pitch": -6}),
-        b(6, "inoutsine", behind, L_REST, {"bend": -2, "yaw": -12}, LEGS_EASY, {"pitch": -2, "yaw": 6}),
-        back_beat(9, "inoutsine", 2.4, body={"bend": 4, "yaw": -10}, head={"pitch": 4, "yaw": 10}),
-        back_beat(12, "inoutsine", 1.5, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
-        back_beat(14, "outsine", 0.0, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
-        back_beat(16, "inoutsine", 0.0, reach, body={"bend": 4, "yaw": -4}, head={"pitch": 4, "yaw": 6}),
-        Beat(20, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
-    ], "Swordsman (Yoru): swung up over the head and back over the shoulder, lowered into its ropes on the back.", sheath=14,
-        stop_extra=6))
+    beats = [stance_beat(0, "linear")]
+    sweep_ticks = [5, 9, 12, 15, 18, 23]
+    for i, tick in enumerate(sweep_ticks):
+        u = (i + 1) / len(sweep_ticks)
+        beat = b(tick, "inoutsine" if i == 0 else "linear", cut(rev_dirs, rev_fists, u, lead=-1), L_REST,
+                 bodies[len(bodies) - 1 - i], LEGS_EASY, heads[len(heads) - 1 - i])
+        if i >= len(sweep_ticks) - 2:
+            beat.upper = OVERHEAD
+        beats.append(beat)
+    beats += [
+        back_beat(24, "inoutsine", 1.6, body={"bend": 2, "yaw": -11}, head={"pitch": -8, "yaw": -4}),
+        back_beat(26, "inoutsine", 0.8, body={"bend": 4, "yaw": -9}, head=look),
+        back_beat(28, "outsine", 0.0, body={"bend": 5, "yaw": -8}, head=look),
+        back_beat(31, "inoutsine", 0.0, reach, body={"bend": 3, "yaw": -4}, head={"pitch": -4, "yaw": -4}),
+        Beat(36, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
+    ]
+    write(Move("sword_sheathe", 36, beats, "Swordsman (Yoru): swung up in front, over the head and back over the shoulder, lowered "
+               "into its ropes on the back.", sheath=28, stop_extra=6, back=True))
 
     charge_pose = held(H(7.6, -5.8, 0.6), D(0.3, -0.28, -0.91), D(0.1, 0.95, -0.28))
     charge_body = {"yaw": -26, "bend": -16, "y": -0.04}
     charge_legs = {"rightLeg": leg(8, 6, 26), "leftLeg": leg(-24, -5, 34)}
     shake = held(H(7.7, -6.0, 0.4), D(0.32, -0.26, -0.91), D(0.1, 0.95, -0.28))
-    write(Move("sword_charge_draw_back", 26, [
-        stance_beat(0, "linear"),
+    write(Move("sword_charge_draw", 26, [
+        Beat(0, "linear", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
         back_beat(2, "outsine", 0.0, body={"bend": 4, "yaw": -10}, head={"pitch": 6, "yaw": 12}),
         back_beat(3, "linear", 1.0, body={"bend": 2, "yaw": -14}, head={"pitch": 2, "yaw": 10}),
         b(5, "outsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
         b(6, "linear", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
         b(16, "inoutsine", shake, L_AIM, dict(charge_body, bend=-18, y=-0.06), charge_legs, {"pitch": -10, "yaw": 10}),
         b(26, "inoutsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
-    ], "Swordsman (Yoru): ripped off the back over the shoulder straight into the charge.", draw=3, loop=6))
+    ], "Swordsman (Yoru): ripped off the back over the shoulder straight into the charge.", draw=3, loop=6, back=True))
 
 
 def yoru_stance():
@@ -1028,6 +1452,40 @@ def java_paths():
     print(f"{JAVA}: {len(names)} blade paths")
 
 
+def java_slides():
+    """src/main/java/com/hexhaki/piece/sword/SayaSlide.java (2.3.2): every hip blade's slide out of its own saya (tools/saya_slide.py),
+    for client/sword/SwordLayer."""
+    import re
+    import saya_slide
+    src = open(os.path.join(ROOT, "src/main/java/com/hexhaki/piece/sword/Katana.java"), encoding="utf-8").read()
+    keys = [k for k in re.findall(r'^\s+[A-Z_]+\("([a-z_]+)"', src, re.M) if k != "yoru"]
+    cases, bodies = [], []
+    for i, key in enumerate(keys):
+        rows = saya_slide.table(key)
+        cases.append(f'            case "{key}" -> t{i}();')
+        body = ", ".join(f"{v:.3f}F" for row in rows for v in row)
+        bodies.append(f"    /** {key}: {len(rows)} px, worst miss {saya_slide.residual(key):.2f} px */\n    private static float[] t{i}() {{\n"
+                      f"        return new float[] {{{body}}};\n    }}\n")
+    out = ("package com.hexhaki.piece.sword;\n\n/**\n * Generated by tools/sword_anims.py from tools/saya_slide.py (do not edit). 2.3.2: how each blade slides out of its own saya:\n"
+           " * for every model px it is drawn out, the turn (degrees about the saya's z) and the shift (model px) that keep the part of the\n"
+           " * blade still inside on the saya's line, fitted from the blade's own mesh (a katana's sori gathers towards its point, Gryphon's\n"
+           " * saber curves three times as hard: before 2.3.2 one circle for all, and Gryphon's blade came out through its scabbard's side).\n"
+           " * Past the table the blade goes on straight along its last step.\n */\n"
+           "public final class SayaSlide {\n    private SayaSlide() {\n    }\n\n"
+           "    /** (degrees, x px, y px) for the blade {@code katana} drawn {@code out} model px out of its saya. */\n"
+           "    public static float[] at(Katana katana, float out) {\n"
+           "        float[] rows = katana == null ? null : of(katana.key());\n"
+           "        if (rows == null || rows.length < 6) {\n            return new float[] {0.0F, 0.0F, -out};\n        }\n"
+           "        int n = rows.length / 3;\n        float x = Math.max(0.0F, out);\n        int i = (int) Math.floor(x);\n"
+           "        if (i + 1 >= n) {\n            i = n - 2;\n        }\n        float u = x - i;\n        float[] r = new float[3];\n"
+           "        for (int k = 0; k < 3; k++) {\n            r[k] = rows[i * 3 + k] + (rows[(i + 1) * 3 + k] - rows[i * 3 + k]) * u;\n        }\n"
+           "        return r;\n    }\n\n"
+           "    static float[] of(String key) {\n        return switch (key) {\n" + "\n".join(cases)
+           + "\n            default -> null;\n        };\n    }\n\n" + "\n".join(bodies) + "}\n")
+    with open(os.path.join(ROOT, "src/main/java/com/hexhaki/piece/sword/SayaSlide.java"), "w", encoding="utf-8") as handle:
+        handle.write(out)
+
+
 NPC_PARTS = ("body", "head", "rightArm", "leftArm", "rightLeg", "leftLeg", "rightItem", "leftItem")
 NPC_CHANNELS = ("x", "y", "z", "pitch", "yaw", "roll", "bend")
 NPC_EASINGS = ("linear", "constant", "insine", "outsine", "inoutsine", "inquad", "outquad", "inoutquad", "incubic", "outcubic", "inoutcubic",
@@ -1042,7 +1500,9 @@ def java_npc_poses():
            " * styles' (part, channel, keyframe count, then tick, value, easing each); parts " + ", ".join(NPC_PARTS) + ".",
            " */", "final class SwordPoses {", "    private SwordPoses() {", "    }", "", "    static float[] of(String name) {",
            "        return switch (name) {"]
-    names = sorted(MOVES) + ["style_swordsman_stance"]
+    # NPCs carry katanas only (never a legendary blade): the katanas' animations
+    names = sorted(n for n in MOVES if not n.endswith(GRYPHON.suffix) and not n.endswith(YORU.suffix)
+                   and n != "style_swordsman_back_stance")
     for i, name in enumerate(names):
         out.append(f'            case "{name}" -> s{i}();')
     out += ["            default -> null;", "        };", "    }", ""]
@@ -1073,36 +1533,49 @@ def java_npc_poses():
         handle.write("\n".join(out) + "\n")
 
 
+def build():
+    """Every blade's moves: the katanas' (with their draws from the hip), Gryphon's and Yoru's (2.3.2: their own draws, sheathings,
+    guards and idles; every cut written again for each, kept off the floor)."""
+    global PROFILE
+    PROFILE = KATANA
+    moves(True)
+    hip_draws()
+    carry()
+    stance()
+    yoru_stance()
+    PROFILE = GRYPHON
+    moves(False)
+    hip_draws()
+    carry()
+    PROFILE = YORU
+    moves(False)
+    yoru()
+    carry()
+    PROFILE = KATANA
+
+
 def main():
     global ONLY
     if "--only" in sys.argv:
         ONLY = set(sys.argv[sys.argv.index("--only") + 1].split(","))
-    moves()
-    yoru()
-    stance()
-    yoru_stance()
-    java_paths()
-    java_npc_poses()
+    global SOLVE
+    if "--no-solve" in sys.argv:
+        SOLVE = False
+    build()
+    if SOLVE:
+        run_pending()
+    if ONLY is None and SOLVE:
+        java_paths()
+        java_slides()
+        java_npc_poses()
     if "--preview" in sys.argv:
-        out = sys.argv[sys.argv.index("--preview") + 1]
-        os.makedirs(out, exist_ok=True)
-        names = sorted(MOVES)
-        for i in range(0, len(names), 3):
-            preview(names[i:i + 3], os.path.join(out, f"sword-{i // 3 + 1}.png"))
-    bad = 0
-    for move in MOVES.values():
-        if ONLY is not None and move.name not in ONLY:
-            continue
-        problems = clearance(move)
-        if problems:
-            bad += 1
-            print(f"  {move.name}: {len(problems)} problems, first {problems[:3]}")
-    print(f"{len(MOVES)} sword animations, {bad} with problems")
+        sheets(sys.argv[sys.argv.index("--preview") + 1])
 
 
-def preview(names, out, frames=9, views=("front", "three", "side"), key="crimson_dawn", tile=(170, 190), scale=58.0):
+def preview(names, out, frames=None, views=("front", "three", "side"), tile=(150, 176), scale=50.0, every=None):
     """A contact sheet: each move a band of rows (one per view), each column a moment; the blade drawn in the hand or the saya as
-    the game shows it at that moment."""
+    the game shows it at that moment, with its own mesh (2.3.2: Gryphon's saber in its blue scabbard, Yoru on the back in its ropes
+    until the hand takes it). every: a column every that many ticks (else frames columns, 9 by default)."""
     import anim
     import sword_view as sv
     from PIL import Image, ImageDraw
@@ -1113,30 +1586,38 @@ def preview(names, out, frames=9, views=("front", "three", "side"), key="crimson
         with open(os.path.join(OUT, name + ".json"), encoding="utf-8") as handle:
             a = anim.Anim(json.load(handle))
         move = MOVES.get(name)
-        length = a.end if (move is None or move.loop is None) else a.end
-        ticks = [round(length * i / (frames - 1) * 2) / 2 for i in range(frames)]
-        band = Image.new("RGB", (tw * frames, th * len(views) + 16), (236, 234, 228))
+        prof = move.profile if move else KATANA
+        length = a.end
+        if every:
+            ticks = [round(k * every, 2) for k in range(int(length / every) + 1)]
+            if ticks[-1] < length:
+                ticks.append(length)
+        else:
+            n = frames or 9
+            ticks = [round(length * i / (n - 1) * 2) / 2 for i in range(n)]
+        band = Image.new("RGB", (tw * len(ticks), th * len(views) + 16), (236, 234, 228))
         d = ImageDraw.Draw(band)
-        d.text((4, 2), f"{name}  ({length} ticks)" + (f"  cuts {move.cuts}" if move and move.cuts else ""), fill=(20, 20, 20))
+        d.text((4, 2), f"{name}  ({length} ticks)" + (f"  cuts {move.cuts}" if move and move.cuts else "")
+               + (f"  draw t{move.draw}" if move and move.draw >= 0 else "") + (f"  sheath t{move.sheath}" if move and move.sheath >= 0 else ""),
+               fill=(20, 20, 20))
         for c, t in enumerate(ticks):
             q = a.pose(t)
             for r, view in enumerate(views):
                 cam = sv.Camera(yaw_of[view], 10.0, scale, tw / 2, th * 0.9)
                 cv = sv.Canvas(tw, th)
                 sv.draw_figure(cv, cam, q)
-                drawn = (move.drawn_at(t) or sliding(move, t)) if move else False
-                if name.endswith("_back"):
-                    # 2.2.7: Yoru, on the back in its ropes or in the hand
+                drawn = (move.drawn_at(t) or sliding(move, t)) if move else True
+                if prof is YORU:
                     sv.draw_ropes(cv, cam, q)
                     sv.draw_katana(cv, cam, "yoru", game_blade(move, q, t) if drawn else rig.back_matrix(q), shine=0.3)
                 elif drawn:
-                    sv.draw_katana(cv, cam, key, game_blade(move, q, t))
-                    sv.draw_katana(cv, cam, key, rig.saya_matrix(q), saya=True, blade=False)
+                    sv.draw_katana(cv, cam, prof.key, game_blade(move, q, t))
+                    sv.draw_katana(cv, cam, prof.key, rig.saya_matrix(q), saya=True, blade=False)
                 else:
-                    sv.draw_katana(cv, cam, key, rig.saya_matrix(q), saya=True, blade=True, shine=0.3)
+                    sv.draw_katana(cv, cam, prof.key, rig.saya_matrix(q), saya=True, blade=True, shine=0.3)
                 img = cv.image()
                 dd = ImageDraw.Draw(img)
-                dd.line([(0, th * 0.9), (tw, th * 0.9)], fill=(190, 190, 190))
+                dd.line([(0, th * 0.9), (tw, th * 0.9)], fill=(150, 120, 90))
                 in_cut = move and any(lo <= t <= hi for lo, hi in move.cuts)
                 dd.text((3, 2), f"t{t:g}" + (" CUT" if in_cut else ""), fill=(200, 40, 40) if in_cut else (80, 80, 80))
                 band.paste(img, (c * tw, 16 + r * th))
@@ -1148,6 +1629,13 @@ def preview(names, out, frames=9, views=("front", "three", "side"), key="crimson
         y += band.height
     sheet.save(out)
 
+
+def sheets(out, every=2.0):
+    """Every move's full sheet, a column every {every} ticks, one file a move (the owner: "THE FULL SHEET, thats not all")."""
+    os.makedirs(out, exist_ok=True)
+    for name in sorted(n for n in MOVES if ONLY is None or n in ONLY):
+        if os.path.exists(os.path.join(OUT, name + ".json")):
+            preview([name], os.path.join(out, name + ".png"), every=every if MOVES[name].duration <= 48 else 8.0)
 
 
 if __name__ == "__main__":

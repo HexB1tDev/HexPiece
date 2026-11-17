@@ -43,8 +43,12 @@ public final class SwordClient {
     static final int PRIORITY = 920;
     private static final Map<Integer, S2CSword> SEEN = new HashMap<>();
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
+    /** 2.3.2: entity id -> the game tick it last moved (walked, jumped, crouched): the guard plays while moving, the idle when still. */
+    private static final Map<Integer, Long> MOVED = new HashMap<>();
+    /** Ticks a player stands still before the idle takes over from the guard (no flicker between steps). */
+    static final int STILL_AFTER = 6;
 
-    private record Playing(ModifierLayer<IAnimation> layer, int anim, int start) {
+    private record Playing(ModifierLayer<IAnimation> layer, int anim, int start, String name) {
     }
 
     private SwordClient() {
@@ -121,13 +125,17 @@ public final class SwordClient {
         int start = seen == null ? 0 : seen.start();
         Playing playing = PLAYING.get(id);
         ModifierLayer<IAnimation> layer = layer(player);
-        if (playing != null && playing.layer() == layer && playing.anim() == anim && (anim == SwordAnims.NONE || playing.start() == start)) {
+        String name = SwordAnims.name(anim, katana(id));
+        if (anim == SwordAnims.GUARD && still(level, player)) {
+            name = SwordAnims.idle(katana(id));
+        }
+        if (playing != null && playing.layer() == layer && playing.anim() == anim && (anim == SwordAnims.NONE || playing.start() == start)
+            && java.util.Objects.equals(playing.name(), name)) {
             return;
         }
         if (playing == null && anim == SwordAnims.NONE) {
             return;
         }
-        String name = SwordAnims.name(anim, katana(id));
         KeyframeAnimation data = name == null ? null : PlayerAnimationRegistry.getAnimation(HexHaki.id(name));
         KeyframeAnimationPlayer player2 = null;
         if (data != null) {
@@ -135,12 +143,13 @@ public final class SwordClient {
                 .setFirstPersonConfiguration(new FirstPersonConfiguration().setShowRightArm(true).setShowLeftArm(true)
                     .setShowRightItem(true).setShowLeftItem(false));
         }
-        int fade = anim == SwordAnims.NONE ? 4 : anim == SwordAnims.GUARD ? 3 : 2;
+        boolean swap = playing != null && playing.anim() == SwordAnims.GUARD && anim == SwordAnims.GUARD;
+        int fade = anim == SwordAnims.NONE ? 4 : swap ? 6 : anim == SwordAnims.GUARD ? 3 : 2;
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTQUAD), player2);
         if (anim == SwordAnims.NONE) {
             PLAYING.remove(id);
         } else {
-            PLAYING.put(id, new Playing(layer, anim, start));
+            PLAYING.put(id, new Playing(layer, anim, start, name));
         }
     }
 
@@ -162,6 +171,22 @@ public final class SwordClient {
         }
     }
 
+    /**
+     * 2.3.2: has {@code player} stood still (on the ground, upright, not walking) for {@link #STILL_AFTER} ticks? The guard between cuts
+     * is the right arm alone so walking and looking round stay the game's; standing still the whole body may breathe (the idle).
+     */
+    static boolean still(ClientLevel level, AbstractClientPlayer player) {
+        long now = level.m_46467_();
+        double dx = player.m_20185_() - player.f_19854_;
+        double dz = player.m_20189_() - player.f_19856_;
+        if (dx * dx + dz * dz > 0.0016 || !player.m_20096_() || player.m_20089_() != net.minecraft.world.entity.Pose.STANDING) {
+            MOVED.put(player.m_19879_(), now);
+            return false;
+        }
+        Long moved = MOVED.get(player.m_19879_());
+        return moved == null || now - moved >= STILL_AFTER;
+    }
+
     /** While a cut plays, the body turns to the look (a player's body otherwise lags it), so the cut is where the server sweeps it. */
     static void face(ClientLevel level, int id) {
         int anim = anim(id);
@@ -178,5 +203,6 @@ public final class SwordClient {
     public static void loggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
         SEEN.clear();
         PLAYING.clear();
+        MOVED.clear();
     }
 }

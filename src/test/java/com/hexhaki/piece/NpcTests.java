@@ -10,6 +10,7 @@ import java.nio.file.Path;
 /** 2.1.1: the pirates' and marines' looks, ranks, patrols and styles. */
 public final class NpcTests {
     public static void main(String[] args) {
+        gestures();
         for (String side : new String[] {"pirate", "marine"}) {
             for (int look = 0; look < SeaRules.LOOKS.length; look++) {
                 Check.that(Files.exists(Path.of("src/main/resources/assets/hexhaki/textures/piece/npc/" + side + "_" + look + ".png")),
@@ -63,5 +64,48 @@ public final class NpcTests {
             }
         }
         Check.done("NpcTests");
+    }
+
+    /** 2.3.3: the NPCs' idle gestures (HexGhoul's ambient animations, the owner's request). */
+    static void gestures() {
+        java.util.Set<com.hexhaki.piece.npc.Gesture> seen = new java.util.HashSet<>();
+        for (com.hexhaki.piece.Faction side : new com.hexhaki.piece.Faction[] {com.hexhaki.piece.Faction.PIRATE, com.hexhaki.piece.Faction.MARINE}) {
+            for (double roll = 0.0; roll < 1.0; roll += 0.002) {
+                com.hexhaki.piece.npc.Gesture g = com.hexhaki.piece.npc.Gesture.pick(side, roll);
+                Check.that(g != com.hexhaki.piece.npc.Gesture.NONE, "an idle fighter always picks a real gesture");
+                Check.that(side == com.hexhaki.piece.Faction.MARINE || g != com.hexhaki.piece.npc.Gesture.SALUTE
+                    && g != com.hexhaki.piece.npc.Gesture.EASE, "pirates neither salute nor stand at ease");
+                seen.add(g);
+            }
+            Check.that(com.hexhaki.piece.npc.Gesture.pause(0.0) >= 100 && com.hexhaki.piece.npc.Gesture.pause(1.0) <= 400,
+                "a pause of seconds between gestures");
+        }
+        Check.that(seen.size() == com.hexhaki.piece.npc.Gesture.values().length - 1, "every gesture comes up");
+        for (com.hexhaki.piece.npc.Gesture g : com.hexhaki.piece.npc.Gesture.values()) {
+            if (g == com.hexhaki.piece.npc.Gesture.NONE) {
+                continue;
+            }
+            Check.that(g.ticks >= 30, g + ": long enough to be seen");
+            float[][] start = com.hexhaki.piece.npc.GesturePose.pose(g, 0.0F);
+            float[][] end = com.hexhaki.piece.npc.GesturePose.pose(g, g.ticks);
+            float[][] after = com.hexhaki.piece.npc.GesturePose.pose(g, g.ticks + 1.0F);
+            for (int part = 0; part < com.hexhaki.piece.npc.GesturePose.PARTS; part++) {
+                Check.that(start[part][com.hexhaki.piece.npc.GesturePose.WEIGHT] < 1.0E-4F
+                    && end[part][com.hexhaki.piece.npc.GesturePose.WEIGHT] < 1.0E-4F
+                    && after[part][com.hexhaki.piece.npc.GesturePose.WEIGHT] == 0.0F, g + ": eases in from and out to the fighter's own pose");
+            }
+            for (float t = 0.0F; t <= g.ticks; t += 0.5F) {
+                float[][] p = com.hexhaki.piece.npc.GesturePose.pose(g, t);
+                for (float[] part : p) {
+                    for (float v : part) {
+                        Check.that(Float.isFinite(v), g + ": every value a number");
+                    }
+                }
+                Check.that(Math.abs(p[2][3]) <= 175.0F && Math.abs(p[3][3]) <= 175.0F, g + ": no arm swung over the top");
+                Check.that(Math.abs(p[1][3]) <= 30.0F && Math.abs(p[1][4]) <= 45.0F && Math.abs(p[1][5]) <= 20.0F, g + ": a head a neck can turn");
+            }
+            float[][] mid = com.hexhaki.piece.npc.GesturePose.pose(g, g.ticks * 0.5F);
+            Check.that(mid[2][com.hexhaki.piece.npc.GesturePose.WEIGHT] > 0.99F, g + ": fully shown in its middle");
+        }
     }
 }

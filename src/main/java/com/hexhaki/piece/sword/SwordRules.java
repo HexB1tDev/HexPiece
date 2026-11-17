@@ -60,13 +60,37 @@ public final class SwordRules {
      * for the whole draw; the quick draw does not.
      */
     public static final int SHEATHE_DELAY = 8;
-    public static final int SHEATHE_TICKS = 20;
-    public static final int DRAW_TICKS = 22;
+    public static final int SHEATHE_TICKS = 24;
+    public static final int DRAW_TICKS = 28;
+    /**
+     * 2.3.2 (the owner: "The pull out animation is way too fast on some swords, yoru should be slower than all"): a katana's draw 28
+     * ticks (it was 22) and its sheathing 24 (20); Gryphon's saber 32 and 28; Yoru, the great sword pulled off the back, 44 and 36.
+     */
+    public static final int GRYPHON_DRAW_TICKS = 32;
+    public static final int GRYPHON_SHEATHE_TICKS = 28;
+    public static final int YORU_DRAW_TICKS = 44;
+    public static final int YORU_SHEATHE_TICKS = 36;
     /** Past the blade's tip, the cut's swept volume reaches this far (blocks): the air the cut moves. And the volume's radius. */
     public static final double EXTEND = 0.8;
     public static final double RADIUS = 0.35;
 
     private SwordRules() {
+    }
+
+    /** 2.3.2: how long {@code katana}'s draw takes (null: a katana's). */
+    public static int drawTicks(Katana katana) {
+        if (katana == Katana.YORU) {
+            return YORU_DRAW_TICKS;
+        }
+        return katana == Katana.GRYPHON ? GRYPHON_DRAW_TICKS : DRAW_TICKS;
+    }
+
+    /** 2.3.2: how long {@code katana}'s sheathing takes (null: a katana's). */
+    public static int sheatheTicks(Katana katana) {
+        if (katana == Katana.YORU) {
+            return YORU_SHEATHE_TICKS;
+        }
+        return katana == Katana.GRYPHON ? GRYPHON_SHEATHE_TICKS : SHEATHE_TICKS;
     }
 
     /**
