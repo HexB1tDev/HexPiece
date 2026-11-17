@@ -10,7 +10,32 @@ public final class RyouTests {
     public static void main(String[] args) {
         palette();
         bend();
+        tint();
         Check.done("RyouTests");
+    }
+
+    /** 2.3.3: the Conqueror's red particles take the player's Ryou hue, keeping their brightness and alpha. */
+    static void tint() {
+        int blue = 0xFF3355FF;
+        int red = 0xCCFF2020;
+        int out = com.hexhaki.piece.haki.HueTint.tint(red, blue);
+        Check.that((out >>> 24) == 0xCC, "the alpha is kept");
+        int r = (out >> 16) & 255;
+        int g = (out >> 8) & 255;
+        int b = out & 255;
+        Check.that(b == 255 && r < 80 && g < 120, "a bright red turns a bright blue: " + Integer.toHexString(out));
+        int dark = com.hexhaki.piece.haki.HueTint.tint(0xFF600000, blue);
+        Check.that((dark & 255) == 0x60 && ((dark >> 16) & 255) < 0x30, "a dark red ember turns a dark blue one: " + Integer.toHexString(dark));
+        Check.that(com.hexhaki.piece.haki.HueTint.tint(0xFFFFFFFF, blue) == 0xFFFFFFFF, "white stays white");
+        Check.that(com.hexhaki.piece.haki.HueTint.tint(0xFF000000, blue) == 0xFF000000, "black stays black");
+        int same = com.hexhaki.piece.haki.HueTint.tint(red, 0xFFFF2020);
+        boolean close = true;
+        for (int shift = 0; shift < 32; shift += 8) {
+            close &= Math.abs(((same >> shift) & 255) - ((red >> shift) & 255)) <= 2;
+        }
+        Check.that(close, "a red Ryou keeps the red: " + Integer.toHexString(same));
+        int pale = com.hexhaki.piece.haki.HueTint.tint(red, 0xFFE0E0FF);
+        Check.that(((pale >> 16) & 255) > 0x80 && (pale & 255) == 255, "a pale Ryou pales the particles: " + Integer.toHexString(pale));
     }
 
     static void palette() {

@@ -117,11 +117,16 @@ public final class SwordRules {
     }
 
     /**
-     * The chance a plain block the slash cuts drops itself (one with a block entity, a chest's, always drops what it holds): vanilla's
-     * own rule for explosions, one over the size, so a giant cut does not bury the world in items.
+     * 2.3.3 (the owner: "your right click is destroying a ridiculous amount of terrain. It should be like maximum like 2 blocks wide.
+     * It's destroying buildings and they're not repairing themselves. Like, it should repair itself afterwards and should not drop
+     * blocks"): the trench the slash cuts is at most this wide (blocks), however wide the wave's body is drawn; what it cuts drops
+     * nothing and grows back (server/Scars).
      */
-    public static double dropChance(double height) {
-        return Math.min(1.0, 4.0 / Math.max(1.0, height));
+    public static final double TRENCH_MAX = 2.0;
+
+    /** How wide the trench is {@code v} of the way up the slash: the body's width there, never over {@link #TRENCH_MAX}. */
+    public static double trenchAt(double height, double v) {
+        return Math.min(TRENCH_MAX, slashThicknessAt(height, v));
     }
 
     /** How charged (0 at the least, 1 at the full charge) a release after {@code ticks} of charging is. */

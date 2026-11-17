@@ -25,15 +25,12 @@ import org.joml.Matrix4f;
  * <p>
  * Called where the original's hand layer drew Advanced Haki ({@code HakiHandLayer.render} and {@code renderFirstPerson}, through
  * {@code patch/PiecePatch.java}): the coating is drawn plain black ({@link #coating}), the arm aura is left off while Ryou is up
- * ({@link #armAura}), the fist flames are gone ({@link #flames}) and the fist glow is the rim ({@link #glow}).
+ * ({@link #armAura}), the fist flames are gone ({@link #flames}) and the fist glow is the outline ({@link #glow}).
  * <p>
- * The rim is an inverted hull: a box a little larger than the hand (the lowest four pixels of the arm, fist and wrist) whose faces are
- * wound inward, so with back faces culled only its far side is drawn, and the hand itself (drawn first, writing depth) hides all of it
- * but a clean band around the silhouette: first a dark band ({@code entityTranslucentCull}, black at 85%, so the colour reads on a
- * bright sky too), then the rim's light added over it and a faint halo falling off round it ({@code eyes}: full bright, additive, no depth written);
- * all depth tested, so walls hide it like anything else; the side faces fade to nothing up the wrist; a slow pulse; a flare
- * when Ryou comes on ({@link RyouFx#flare}). It is posed by the arm's own transform and bent at the elbow exactly as bendy-lib bends
- * the arm itself (playerAnimator's bend for that arm, {@link #bent}), so it follows every animation and never comes off the hand.
+ * 2.3.3: the outline lies on the black coat: a band in the player's colour along every edge of every face of the hand, fading up the
+ * wrist (see {@link #glow}; the inverted hull it replaced drew solid boxes on the owner's setup); a slow pulse; a flare when Ryou
+ * comes on ({@link RyouFx#flare}). Coat and outline are posed by the arm's own transform and bent at the elbow exactly as bendy-lib
+ * bends the arm itself (playerAnimator's bend for that arm, {@link #bent}), so they follow every animation and never come off the hand.
  */
 public final class RyouHands {
     static final ResourceLocation WHITE = ResourceLocation.m_214293_("hexhaki", "textures/piece/white.png");
@@ -41,20 +38,13 @@ public final class RyouHands {
     static final float PX = 1.0F / 16.0F;
     /** The hand: from the wrist to the end of the fist (arm space, blocks). */
     static final float WRIST = 6.5F * PX;
-    static final float LIT = 7.7F * PX;
     static final float FIST = 10.0F * PX;
-    static final float RIM = 0.55F * PX;
     /** The coat: just outside the hand and the sleeve's outer layer (a quarter pixel out), and where its fade up the wrist begins. */
     static final float COAT = 0.35F * PX;
     static final float COAT_TOP = 5.4F * PX;
-    /**
-     * The halo: three hulls ever wider and fainter; their light adds up (no depth is written), so it falls off in steps from the rim
-     * outward instead of standing round the hand as one flat band.
-     */
-    static final float[] HALOS = {1.0F * PX, 1.45F * PX, 1.9F * PX};
-    static final float[] HALO_STRENGTHS = {0.13F, 0.08F, 0.05F};
-    /** How dark the band under the rim's light is (alpha). */
-    static final float DARK = 0.85F;
+    /** 2.3.3: the outline: how wide its band is along each edge, and how far it lies off the coat (no flicker against it). */
+    static final float EDGE = 0.55F * PX;
+    static final float LIFT = 0.06F * PX;
     static final int FULL_BRIGHT = 0xF000F0;
 
     private RyouHands() {
@@ -134,14 +124,22 @@ public final class RyouHands {
                               float age, boolean slim, boolean right) {
     }
 
-    /** The rim round one hand, in the player's own Ryou colour. */
+    /**
+     * The outline round one hand, in the player's own Ryou colour. 2.3.3 (the owner: "I said the outline, bro. I said the fucking
+     * outline with the color and the rest black. And the outline isn't even covering the inner part of the arm"; in game each hand
+     * was a solid box, black or coloured): the rim was an inverted hull drawn larger than the hand, which only shows as a rim where
+     * back faces are culled and the light is not drawn opaque; on the owner's setup it was a box. Now the outline lies on the black
+     * coat itself: a bright band along every edge of every face of the hand (the inner side's too), fading up the wrist, alpha
+     * blended at full brightness, so the hand reads black inside a coloured outline from every side, with or without culling (a face
+     * turned away is behind the hand).
+     */
     public static void glow(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, ModelPart arm, float age, boolean slim,
                             boolean right) {
         if (!arm.f_104207_) {
             return;
         }
         int color = RyouColors.orNeutral(player.m_19879_());
-        float pulse = pulse(age, player.m_19879_()) + RyouFx.flare(player.m_19879_());
+        float strength = Math.min(1.0F, pulse(age, player.m_19879_()) + RyouFx.flare(player.m_19879_()));
         float[] bend = bend(player, right);
         pose.m_85836_();
         arm.m_104299_(pose);
@@ -149,16 +147,69 @@ public final class RyouHands {
         float half = slim ? 1.5F * PX : 2.0F * PX;
         float centre = (slim ? 0.5F : 1.0F) * PX * (right ? -1.0F : 1.0F);
         float[] box = {centre / PX - half / PX, centre / PX + half / PX};
-        // first the rim's dark band (alpha blended: black stays black under any light), then its light added over it, then the halo:
-        // the band keeps the colour itself on a bright sky, where light added alone would wash out to white
-        shell(last, buffers.m_6299_(RenderType.m_110470_(WHITE)), bend, box, centre, half, RIM, 0, DARK * pulse);
-        // 2.1.9: the light alpha blended, not additive (some setups draw additive geometry opaque: dark boxes round the hands)
-        VertexConsumer light = buffers.m_6299_(RenderType.m_269166_());
-        shell(last, light, bend, box, centre, half, RIM, color, pulse);
-        for (int i = 0; i < HALOS.length; i++) {
-            shell(last, light, bend, box, centre, half, HALOS[i], color, pulse * HALO_STRENGTHS[i]);
+        VertexConsumer buffer = buffers.m_6299_(RenderType.m_110470_(WHITE));
+        float r = ((color >> 16) & 255) / 255.0F;
+        float g = ((color >> 8) & 255) / 255.0F;
+        float b = (color & 255) / 255.0F;
+        float grow = COAT + LIFT;
+        float x0 = centre - half - grow;
+        float x1 = centre + half + grow;
+        float z0 = -2.0F * PX - grow;
+        float z1 = 2.0F * PX + grow;
+        float y1 = FIST + grow;
+        float w = EDGE;
+        // the four sides: a band up each upright edge (lit on the hand, fading up the wrist) and one along the fist's end
+        float[][] corners = {{x0, z0}, {x1, z0}, {x1, z1}, {x0, z1}};
+        float[][] normals = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+        for (int side = 0; side < 4; side++) {
+            float[] a = corners[side];
+            float[] c = corners[(side + 1) % 4];
+            float nx = normals[side][0];
+            float nz = normals[side][1];
+            float len = (float) Math.sqrt((c[0] - a[0]) * (c[0] - a[0]) + (c[1] - a[1]) * (c[1] - a[1]));
+            float ux = (c[0] - a[0]) / len * w;
+            float uz = (c[1] - a[1]) / len * w;
+            float[][] ends = {{a[0], a[1], a[0] + ux, a[1] + uz}, {c[0] - ux, c[1] - uz, c[0], c[1]}};
+            for (float[] e : ends) {
+                band(last, buffer, bend, box, new float[][] {{e[0], COAT_TOP, e[1]}, {e[2], COAT_TOP, e[3]}, {e[2], WRIST, e[3]},
+                    {e[0], WRIST, e[1]}}, new float[] {0, 0, 1, 1}, nx, 0, nz, r, g, b, strength);
+                band(last, buffer, bend, box, new float[][] {{e[0], WRIST, e[1]}, {e[2], WRIST, e[3]}, {e[2], y1, e[3]}, {e[0], y1, e[1]}},
+                    new float[] {1, 1, 1, 1}, nx, 0, nz, r, g, b, strength);
+            }
+            band(last, buffer, bend, box, new float[][] {{a[0], y1 - w, a[1]}, {c[0], y1 - w, c[1]}, {c[0], y1, c[1]}, {a[0], y1, a[1]}},
+                new float[] {1, 1, 1, 1}, nx, 0, nz, r, g, b, strength);
+        }
+        // the fist's end: a band round its four edges
+        float[][][] rims = {{{x0, y1, z0}, {x1, y1, z0}, {x1, y1, z0 + w}, {x0, y1, z0 + w}},
+            {{x0, y1, z1 - w}, {x1, y1, z1 - w}, {x1, y1, z1}, {x0, y1, z1}},
+            {{x0, y1, z0 + w}, {x0 + w, y1, z0 + w}, {x0 + w, y1, z1 - w}, {x0, y1, z1 - w}},
+            {{x1 - w, y1, z0 + w}, {x1, y1, z0 + w}, {x1, y1, z1 - w}, {x1 - w, y1, z1 - w}}};
+        for (float[][] rim : rims) {
+            band(last, buffer, bend, box, rim, new float[] {1, 1, 1, 1}, 0, 1, 0, r, g, b, strength);
         }
         pose.m_85849_();
+    }
+
+    /**
+     * One band of the outline, wound to face OUT (seen from outside the hand) whatever order its corners came in, in the colour, at
+     * full brightness, as opaque as {@code strength} times {@code lit} at each corner.
+     */
+    static void band(PoseStack.Pose pose, VertexConsumer buffer, float[] bend, float[] box, float[][] points, float[] lit, float nx, float ny,
+                     float nz, float r, float g, float b, float strength) {
+        float[] e1 = {points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2]};
+        float[] e2 = {points[2][0] - points[0][0], points[2][1] - points[0][1], points[2][2] - points[0][2]};
+        float cx = e1[1] * e2[2] - e1[2] * e2[1];
+        float cy = e1[2] * e2[0] - e1[0] * e2[2];
+        float cz = e1[0] * e2[1] - e1[1] * e2[0];
+        boolean outward = cx * nx + cy * ny + cz * nz > 0;
+        Matrix4f matrix = pose.m_252922_();
+        Matrix3f normal = pose.m_252943_();
+        for (int i = 0; i < 4; i++) {
+            int k = outward ? i : 3 - i;
+            float[] p = bent(bend, box[0], box[1], points[k][0], points[k][1], points[k][2]);
+            buffer.m_252986_(matrix, p[0], p[1], p[2]).m_85950_(r, g, b, Math.min(1.0F, strength * lit[k])).m_7421_(0.5F, 0.5F)
+                .m_86008_(OverlayTexture.f_118083_).m_85969_(FULL_BRIGHT).m_252939_(normal, nx, ny, nz).m_5752_();
+        }
     }
 
     /** 0.82 to 1: a slow breath of light, each player out of step with the others. */
@@ -183,66 +234,5 @@ public final class RyouHands {
     /** A point of the arm (arm space, blocks) where the bent arm has it ({@link ArmBend}). */
     static float[] bent(float[] bend, float minX, float maxX, float x, float y, float z) {
         return ArmBend.bent(bend[0], bend[1], minX, maxX, x, y, z);
-    }
-
-    /** The hull round the hand, {@code grow} wider than it on every side, its sides fading out up the wrist. */
-    static void shell(PoseStack.Pose pose, VertexConsumer buffer, float[] bend, float[] box, float centre, float half, float grow, int color, float strength) {
-        float x0 = centre - half - grow;
-        float x1 = centre + half + grow;
-        float z0 = -2.0F * PX - grow;
-        float z1 = 2.0F * PX + grow;
-        float y1 = FIST + grow;
-        // the four sides in two bands each: the wrist band fades in, the hand band is lit; then the end of the fist
-        float[][] corners = {{x0, z0}, {x1, z0}, {x1, z1}, {x0, z1}};
-        float[][] normals = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
-        for (int side = 0; side < 4; side++) {
-            float[] a = corners[side];
-            float[] b = corners[(side + 1) % 4];
-            float nx = normals[side][0];
-            float nz = normals[side][1];
-            band(pose, buffer, bend, box, a, b, WRIST, LIT, 0.0F, 1.0F, nx, nz, color, strength);
-            band(pose, buffer, bend, box, a, b, LIT, y1, 1.0F, 1.0F, nx, nz, color, strength);
-        }
-        float[][] end = {{x0, y1, z0}, {x1, y1, z0}, {x1, y1, z1}, {x0, y1, z1}};
-        quad(pose, buffer, bend, box, end, new float[] {1, 1, 1, 1}, 0, 1, 0, color, strength);
-    }
-
-    /** One band of a side, from {@code top} to {@code bottom} (lit {@code litTop} to {@code litBottom}). */
-    static void band(PoseStack.Pose pose, VertexConsumer buffer, float[] bend, float[] box, float[] a, float[] b, float top, float bottom, float litTop,
-                     float litBottom, float nx, float nz, int color, float strength) {
-        float[][] points = {{a[0], top, a[1]}, {b[0], top, b[1]}, {b[0], bottom, b[1]}, {a[0], bottom, a[1]}};
-        quad(pose, buffer, bend, box, points, new float[] {litTop, litTop, litBottom, litBottom}, nx, 0, nz, color, strength);
-    }
-
-    /**
-     * A face of the hull, wound so it faces INTO the hull (an inverted hull: culled from outside, drawn from inside), whatever order its
-     * corners came in: the corners are reversed when their winding faces along the outward normal.
-     */
-    static void quad(PoseStack.Pose pose, VertexConsumer buffer, float[] bend, float[] box, float[][] points, float[] lit, float nx, float ny, float nz,
-                     int color, float strength) {
-        float[] e1 = {points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2]};
-        float[] e2 = {points[2][0] - points[0][0], points[2][1] - points[0][1], points[2][2] - points[0][2]};
-        float cx = e1[1] * e2[2] - e1[2] * e2[1];
-        float cy = e1[2] * e2[0] - e1[0] * e2[2];
-        float cz = e1[0] * e2[1] - e1[1] * e2[0];
-        boolean outward = cx * nx + cy * ny + cz * nz > 0;
-        Matrix4f matrix = pose.m_252922_();
-        Matrix3f normal = pose.m_252943_();
-        float r = ((color >> 16) & 255) / 255.0F;
-        float g = ((color >> 8) & 255) / 255.0F;
-        float bl = (color & 255) / 255.0F;
-        for (int i = 0; i < 4; i++) {
-            int k = outward ? 3 - i : i;
-            float[] p = bent(bend, box[0], box[1], points[k][0], points[k][1], points[k][2]);
-            float light = Math.min(1.0F, strength * lit[k]);
-            if (color != 0) {
-                // the light: its colour at full brightness, as opaque as it is strong (position and colour only: debugQuads)
-                buffer.m_252986_(matrix, p[0], p[1], p[2]).m_85950_(r, g, bl, Math.min(0.95F, light)).m_5752_();
-                continue;
-            }
-            // the dark band: black, its strength the alpha
-            buffer.m_252986_(matrix, p[0], p[1], p[2]).m_85950_(0.0F, 0.0F, 0.0F, light).m_7421_(k == 1 || k == 2 ? 1 : 0,
-                k >= 2 ? 1 : 0).m_86008_(OverlayTexture.f_118083_).m_85969_(FULL_BRIGHT).m_252939_(normal, -nx, -ny, -nz).m_5752_();
-        }
     }
 }

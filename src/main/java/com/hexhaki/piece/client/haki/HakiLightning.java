@@ -77,6 +77,25 @@ public final class HakiLightning {
         draw(fx, ax, ay, az, bx, by, bz, 0.04F, 0xFFE31F36, duration, delay, true, false, true);
     }
 
+    /**
+     * 2.3.3 (the owner: "Tap G to release ... the Lightning does not match the one in the Conqueror's release. Like, it's still the old
+     * Lightning"): {@code HakiFx.bolt(fx, a, b, scale, glow, core, white, duration, delay)}, the bolt path the Conqueror's tap release,
+     * King's Grip, Thragg's moves and the armament ground storm draw with ({@code HakiFx.boltPath}, through {@code advancedBolt} and
+     * {@code armamentBolt}): its three beams (the glow 0.15 wide, the core 0.052, the white-hot heart 0.017, times the scale) as the
+     * same 3D lightning as every other Haki bolt.
+     */
+    public static void fxBolt(FX fx, Vec3 a, Vec3 b, float scale, int glow, int core, int white, int duration, int delay) {
+        float ax = (float) a.f_82479_;
+        float ay = (float) a.f_82480_;
+        float az = (float) a.f_82481_;
+        float bx = (float) b.f_82479_;
+        float by = (float) b.f_82480_;
+        float bz = (float) b.f_82481_;
+        draw(fx, ax, ay, az, bx, by, bz, 0.15F * scale, glow, duration + 2, delay, false, false, false);
+        draw(fx, ax, ay, az, bx, by, bz, 0.052F * scale, core, duration + 1, delay, false, false, true);
+        draw(fx, ax, ay, az, bx, by, bz, 0.017F * scale, white, duration, delay, true, false, true);
+    }
+
     static boolean spend(int beams) {
         long now = System.nanoTime();
         if (now - windowStart > WINDOW_NANOS) {

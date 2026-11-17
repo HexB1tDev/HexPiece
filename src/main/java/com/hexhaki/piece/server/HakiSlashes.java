@@ -20,10 +20,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -51,9 +50,9 @@ import net.minecraftforge.fml.common.Mod;
  *       once (deduplicated), in the order the plane reaches it; air and fluids are passed; any block the game can break at all is cut,
  *       whatever its hardness or tool (obsidian too); an unbreakable one (bedrock, a hardness below 0) stops its row there, as does a
  *       break a protection mod cancels ({@link BlockEvent.BreakEvent}, posted as the player who cut it), so nothing behind them in that
- *       row is cut; unloaded chunks and the world's height limits stop it too. A cut block is broken by the game itself
- *       ({@code destroyBlock}, with drops: a chest spills what it held once). Pirates cut terrain only while the mobGriefing rule
- *       allows it.</li>
+ *       row is cut; unloaded chunks and the world's height limits stop it too. 2.3.3 (the owner): the trench is at most
+ *       {@link SwordRules#TRENCH_MAX} wide, and a cut block is torn out through {@link Scars}: nothing dropped, block entities left
+ *       alone, everything grown back 15 to 25 seconds later. Pirates cut terrain only while the mobGriefing rule allows it.</li>
  *   <li>At most {@link SwordRules#CUT_CHECKS_PER_TICK} cells looked at and {@link PieceConfig#CUT_BREAKS} blocks broken per slash per
  *       tick (the rest wait for the next tick), and four times that for all slashes together; a slash is gone {@link #LINGER} ticks
  *       after its flight at the latest.</li>
@@ -75,11 +74,10 @@ public final class HakiSlashes {
         double height;
         double range;
         double travelled;
-        /** 2.2.0: blocks a tick, the plane's thickness, its centre above the start, the chance a plain cut block drops. */
+        /** 2.2.0: blocks a tick, the plane's thickness, its centre above the start. */
         double speed;
         double thick;
         double centre;
-        double drops;
         float damage;
         int color;
         boolean finisher;
@@ -114,7 +112,6 @@ public final class HakiSlashes {
         slash.speed = Math.max(0.5, speed);
         slash.thick = SwordRules.slashThickness(height);
         slash.centre = SwordRules.slashCentre(height);
-        slash.drops = SwordRules.dropChance(height);
         slash.damage = damage;
         slash.color = color;
         slash.finisher = finisher;
@@ -237,7 +234,7 @@ public final class HakiSlashes {
         double[] widths = new double[rows];
         int[] acrosses = new int[rows];
         for (int row = 0; row < rows; row++) {
-            widths[row] = SwordRules.slashThicknessAt(slash.height, (row + 0.5) / rows);
+            widths[row] = SwordRules.trenchAt(slash.height, (row + 0.5) / rows);
             acrosses[row] = Math.max(1, (int) Math.ceil(widths[row] / 0.5));
         }
         for (int k = 1; k <= samples; k++) {
@@ -257,14 +254,18 @@ public final class HakiSlashes {
         }
     }
 
-    /** Cuts the waiting cells, within the per-slash and the shared budgets. */
+    /**
+     * Cuts the waiting cells, within the per-slash and the shared budgets. 2.3.3 (the owner: "it should repair itself afterwards and
+     * should not drop blocks"): through {@link Scars}: nothing dropped, nothing with a block entity touched, paintings' and frames'
+     * walls left, every block grown back 15 to 25 seconds later; a block nothing may cut (bedrock, a protected one) still stops its row.
+     */
     static void cut(Slash slash, int[] budget) {
         int checks = SwordRules.CUT_CHECKS_PER_TICK;
         int breaks = (int) Math.round(PieceConfig.get(PieceConfig.CUT_BREAKS, SwordRules.CUT_BREAKS_PER_TICK));
         ServerLevel level = slash.level;
-        int bottom = level.m_141937_();
-        int top = level.m_151558_();
-        while (!slash.pending.isEmpty() && checks > 0 && breaks > 0 && budget[0] > 0 && budget[1] > 0) {
+        Scars scars = Scars.of(level);
+        List<double[]> supports = supports(slash, checks);
+        while (!slash.pending.isEmpty() && checks > 0 && breaks > 0 && budget[0] > 0 && budget[1] > 0 && scars.room()) {
             long[] next = slash.pending.poll();
             int row = (int) next[1];
             checks--;
@@ -272,34 +273,48 @@ public final class HakiSlashes {
             if (slash.blocked[row]) {
                 continue;
             }
-            BlockPos pos = BlockPos.m_122022_(next[0]);
-            if (pos.m_123342_() < bottom || pos.m_123342_() >= top || !level.m_46805_(pos)) {
-                slash.blocked[row] = true; // the world's edge: nothing beyond it in this row
-                continue;
-            }
-            BlockState state = level.m_8055_(pos);
-            if (state.m_60795_() || !state.m_60819_().m_76178_()) {
-                continue; // air, water and lava are passed through
-            }
-            if (state.m_60800_(level, pos) < 0.0F) {
-                slash.blocked[row] = true; // bedrock (and the like) stops the cut here: nothing behind it in this row is cut
-                continue;
-            }
-            if (slash.owner instanceof ServerPlayer player) {
-                BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(level, pos, state, player);
-                MinecraftForge.EVENT_BUS.post(event);
-                if (event.isCanceled()) {
-                    slash.blocked[row] = true; // protected: nothing behind it in this row either
-                    continue;
-                }
-            }
-            // a block with a block entity (a chest) always drops (what it holds is never lost); a plain one by the explosion rule
-            boolean drop = state.m_155947_() || java.util.concurrent.ThreadLocalRandom.current().nextDouble() < slash.drops;
-            if (level.m_46953_(pos, drop, slash.owner)) {
+            int done = scars.tear(slash.owner, BlockPos.m_122022_(next[0]), supports);
+            if (done == Scars.REFUSED) {
+                slash.blocked[row] = true; // bedrock, the world's edge, a protected block: nothing behind it in this row is cut
+            } else if (done == Scars.TORN) {
                 breaks--;
                 budget[1]--;
             }
         }
+    }
+
+    /** The paintings and item frames near the next {@code look} waiting cells (their walls are never cut: they would drop). */
+    static List<double[]> supports(Slash slash, int look) {
+        List<double[]> out = new ArrayList<>();
+        if (slash.pending.isEmpty()) {
+            return out;
+        }
+        int x0 = Integer.MAX_VALUE;
+        int y0 = Integer.MAX_VALUE;
+        int z0 = Integer.MAX_VALUE;
+        int x1 = Integer.MIN_VALUE;
+        int y1 = Integer.MIN_VALUE;
+        int z1 = Integer.MIN_VALUE;
+        int seen = 0;
+        for (long[] cell : slash.pending) {
+            if (seen++ >= look) {
+                break;
+            }
+            BlockPos pos = BlockPos.m_122022_(cell[0]);
+            x0 = Math.min(x0, pos.m_123341_());
+            y0 = Math.min(y0, pos.m_123342_());
+            z0 = Math.min(z0, pos.m_123343_());
+            x1 = Math.max(x1, pos.m_123341_());
+            y1 = Math.max(y1, pos.m_123342_());
+            z1 = Math.max(z1, pos.m_123343_());
+        }
+        double r = Scars.HANGING_CLEARANCE;
+        for (HangingEntity hanging : slash.level.m_6443_(HangingEntity.class, new AABB(x0 - r, y0 - r, z0 - r, x1 + 1 + r, y1 + 1 + r,
+            z1 + 1 + r), entity -> true)) {
+            Vec3 p = hanging.m_20182_();
+            out.add(new double[] {p.f_82479_, p.f_82480_, p.f_82481_});
+        }
+        return out;
     }
 
     @SubscribeEvent

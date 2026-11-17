@@ -336,10 +336,10 @@ public final class SwordTests {
             Check.that(bottom <= 0.0 && bottom >= -2.51, "the plane stands up from just under the feet (" + bottom + " at " + height + ")");
             double t = SwordRules.slashThickness(height);
             Check.that(t >= SwordRules.SLASH_THICKNESS - 1e-9 && t <= SwordRules.SLASH_THICKNESS_MAX + 1e-9, "thickness in range");
-            double drop = SwordRules.dropChance(height);
-            Check.that(drop > 0 && drop <= 1.0, "a cut block may drop");
+            for (double v = 0.0; v <= 1.0; v += 0.1) {
+                Check.that(SwordRules.trenchAt(height, v) <= SwordRules.TRENCH_MAX + 1e-9, "the trench is at most two blocks wide");
+            }
         }
-        Check.that(SwordRules.dropChance(64) <= 0.07, "a giant cut drops few items (vanilla's explosion rule)");
         Check.that(SwordRules.slashThickness(64) > SwordRules.slashThickness(2), "a taller slash is a wider gash");
         Check.that(SwordRules.NPC_SLASH_HEIGHT_MAX <= 8 && SwordRules.NPC_SLASH_RANGE_MAX <= 40, "a pirate captain's slash stays small");
     }

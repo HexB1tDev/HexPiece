@@ -108,12 +108,28 @@ public final class Scars {
         return this.destroyed < DESTROY_BUDGET && this.checked < CHECK_BUDGET && !this.ledger.full();
     }
 
-    /** Tears {@code pos} out if it may be (see the class); {@code supports}: the positions of paintings and frames near it. */
-    boolean carve(ServerPlayer owner, BlockPos pos, List<double[]> supports) {
+    /**
+     * Tears {@code pos} out if it may be (see the class); {@code supports}: the positions of paintings and frames near it. 2.3.3: an
+     * owner that is no player (a sea fighter's Haki slash, allowed by the mobGriefing rule) has no claims or spawn protection asked.
+     */
+    boolean carve(LivingEntity owner, BlockPos pos, List<double[]> supports) {
+        return this.tear(owner, pos, supports) == TORN;
+    }
+
+    /** What {@link #tear} did: tore the block out; left it (air, a fluid, a block entity, a painting's wall ...); was refused it. */
+    static final int TORN = 1;
+    static final int LEFT = 0;
+    static final int REFUSED = -1;
+
+    /**
+     * 2.3.3: {@link #carve}, saying why not: {@link #REFUSED} for a block nothing may tear out (unbreakable, protected, beyond the
+     * world), which stops a slash's row there (nothing behind it is cut), {@link #LEFT} for one it passes.
+     */
+    int tear(LivingEntity owner, BlockPos pos, List<double[]> supports) {
         this.refreshBudget();
         long key = pos.m_121878_();
         if (this.ledger.contains(key)) {
-            return false;
+            return LEFT;
         }
         this.checked++;
         for (double[] support : supports) {
@@ -121,26 +137,35 @@ public final class Scars {
             double dy = pos.m_123342_() + 0.5 - support[1];
             double dz = pos.m_123343_() + 0.5 - support[2];
             if (dx * dx + dy * dy + dz * dz < HANGING_CLEARANCE * HANGING_CLEARANCE) {
-                return false;
+                return LEFT;
             }
         }
+        ServerPlayer player = owner instanceof ServerPlayer p ? p : null;
         if (pos.m_123342_() <= this.level.m_141937_() || pos.m_123342_() >= this.level.m_151558_() - 1 || !this.level.m_46805_(pos)
-            || !this.level.m_7966_(owner, pos)) {
-            return false;
+            || player != null && !this.level.m_7966_(player, pos)) {
+            return REFUSED;
         }
         BlockState state = this.level.m_8055_(pos);
-        if (!this.carvable(state, pos)) {
-            return false;
+        if (state.m_60795_() || !state.m_60819_().m_76178_()) {
+            return LEFT;
         }
-        BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(this.level, pos, state, owner);
-        MinecraftForge.EVENT_BUS.post(event);
-        if (event.isCanceled()) {
-            return false; // claimed, protected, or otherwise not theirs to break
+        if (state.m_60800_(this.level, pos) < 0.0F) {
+            return REFUSED;
+        }
+        if (!this.carvable(state, pos)) {
+            return LEFT;
+        }
+        if (player != null) {
+            BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(this.level, pos, state, player);
+            MinecraftForge.EVENT_BUS.post(event);
+            if (event.isCanceled()) {
+                return REFUSED; // claimed, protected, or otherwise not theirs to break
+            }
         }
         long now = this.level.m_46467_();
         long restoreAt = now + RESTORE_MIN + Math.floorMod(key * 0x9E3779B97F4A7C15L, RESTORE_JITTER);
         if (!this.ledger.record(key, state, restoreAt)) {
-            return false;
+            return LEFT;
         }
         if (this.effects < 24 && Math.floorMod(key, 7L) == 0L) {
             this.effects++;
@@ -148,7 +173,7 @@ public final class Scars {
         }
         this.level.m_7731_(pos, Blocks.f_50016_.m_49966_(), SILENT);
         this.destroyed++;
-        return true;
+        return TORN;
     }
 
     private boolean carvable(BlockState state, BlockPos pos) {

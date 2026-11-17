@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""2.1.3: renders Ryou's hand rim off-game, to judge it (the house rule: judge every render yourself).
+"""2.1.3: renders Ryou's hands off-game, to judge them (the house rule: judge every render yourself). 2.3.3: the black coat with
+its coloured outline along every edge of the hand (RyouHands.glow), drawn without back-face culling (the owner's setup).
 
 The same geometry as client/haki/RyouHands.java: the arm box bent as bendy-lib bends it (BodyFrame.bend, HexGhoul's verified port), a
 hull grown RIM pixels (and three halo hulls) round the hand (the lowest 3.5 pixels of the arm and the fist end), wound inward and drawn with back faces
@@ -17,9 +18,7 @@ from PIL import Image, ImageDraw
 PX = 1.0 / 16.0
 WRIST, LIT, FIST = 6.5, 7.7, 10.0          # pixels below the shoulder pivot
 COAT_TOP = 5.4                             # 2.1.9: where the hand's black coat begins to fade in up the wrist
-RIM = 0.55                                 # pixels
-HALOS = ((1.0, 0.13), (1.45, 0.08), (1.9, 0.05))  # pixels, strength (they add up)
-DARK = 0.85
+COAT, LIFT, EDGE = 0.35, 0.06, 0.55         # 2.3.3: the coat off the hand, the outline off the coat, its band's width (pixels)
 
 
 def bent(bend_axis, amount, min_x, max_x, q):
@@ -158,22 +157,38 @@ def draw_arm(canvas, view, place, bend_axis, bend, slim, right, color, pulse=1.0
             rgb = tuple(c * shade for c in base)
             canvas.tri([sp[0], sp[1], sp[2]], rgb)
             canvas.tri([sp[0], sp[2], sp[3]], rgb)
-    # the rim's dark band: inward-wound (the corners reversed), back faces culled, alpha blended black, depth tested and written
-    for pts, n, lit in shell(min_x, max_x, RIM):
-        order = [3, 2, 1, 0]
-        sp = [project(pts[i]) for i in order]
-        k = [min(1.0, DARK * pulse * lit[i]) for i in order]
-        canvas.tri([sp[0], sp[1], sp[2]], (0, 0, 0), blend=[k[0], k[1], k[2]])
-        canvas.tri([sp[0], sp[2], sp[3]], (0, 0, 0), blend=[k[0], k[2], k[3]])
-    # the rim's light and the halo: the same hulls, additive, depth tested, no depth written
+    # 2.3.3: the outline on the coat (RyouHands.glow): a band along every edge of every face, fading up the wrist, alpha blended at full
+    # brightness; drawn here with back faces NOT culled (the owner's setup: a face turned away must hide behind the hand by depth)
     rgb = [((color >> 16) & 255) / 255.0, ((color >> 8) & 255) / 255.0, (color & 255) / 255.0]
-    for grow, strength in ((RIM, pulse),) + tuple((g, pulse * k) for g, k in HALOS):
-        for pts, n, lit in shell(min_x, max_x, grow):
-            order = [3, 2, 1, 0]
-            sp = [project(pts[i]) for i in order]
-            k = [min(1.0, strength * lit[i]) for i in order]
-            canvas.tri([sp[0], sp[1], sp[2]], rgb, additive=True, intensity=[k[0], k[1], k[2]])
-            canvas.tri([sp[0], sp[2], sp[3]], rgb, additive=True, intensity=[k[0], k[2], k[3]])
+    for pts, n, lit in outline(min_x, max_x):
+        sp = [project(q) for q in pts]
+        k = [min(1.0, pulse * lit[i]) for i in range(4)]
+        canvas.tri([sp[0], sp[1], sp[2]], rgb, cull_back=False, blend=[k[0], k[1], k[2]])
+        canvas.tri([sp[0], sp[2], sp[3]], rgb, cull_back=False, blend=[k[0], k[2], k[3]])
+
+
+def outline(min_x, max_x):
+    """RyouHands.glow's bands (pixels): [(4 corners, normal, lit at each corner)]."""
+    g = COAT + LIFT
+    x0, x1, z0, z1, y1 = min_x - g, max_x + g, -2 - g, 2 + g, FIST + g
+    w = EDGE
+    out = []
+    corners = [(x0, z0), (x1, z0), (x1, z1), (x0, z1)]
+    normals = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+    for side in range(4):
+        a, c = corners[side], corners[(side + 1) % 4]
+        nx, nz = normals[side]
+        ln = math.hypot(c[0] - a[0], c[1] - a[1])
+        ux, uz = (c[0] - a[0]) / ln * w, (c[1] - a[1]) / ln * w
+        for e in ((a[0], a[1], a[0] + ux, a[1] + uz), (c[0] - ux, c[1] - uz, c[0], c[1])):
+            out.append(([(e[0], COAT_TOP, e[1]), (e[2], COAT_TOP, e[3]), (e[2], WRIST, e[3]), (e[0], WRIST, e[1])], (nx, 0, nz), [0, 0, 1, 1]))
+            out.append(([(e[0], WRIST, e[1]), (e[2], WRIST, e[3]), (e[2], y1, e[3]), (e[0], y1, e[1])], (nx, 0, nz), [1, 1, 1, 1]))
+        out.append(([(a[0], y1 - w, a[1]), (c[0], y1 - w, c[1]), (c[0], y1, c[1]), (a[0], y1, a[1])], (nx, 0, nz), [1, 1, 1, 1]))
+    for rim in (((x0, y1, z0), (x1, y1, z0), (x1, y1, z0 + w), (x0, y1, z0 + w)), ((x0, y1, z1 - w), (x1, y1, z1 - w), (x1, y1, z1), (x0, y1, z1)),
+                ((x0, y1, z0 + w), (x0 + w, y1, z0 + w), (x0 + w, y1, z1 - w), (x0, y1, z1 - w)),
+                ((x1 - w, y1, z0 + w), (x1, y1, z0 + w), (x1, y1, z1 - w), (x1 - w, y1, z1 - w))):
+        out.append((list(rim), (0, 1, 0), [1, 1, 1, 1]))
+    return out
 
 
 def main():

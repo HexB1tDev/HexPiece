@@ -45,17 +45,28 @@ public final class StyleInput {
         return PieceClient.self().style().sword();
     }
 
+    /**
+     * 2.3.3 (the owner: "just because you're a swordsman, it doesn't mean you're required a fucking sword. You can use normal
+     * Minecraft hits when you don't have a sword on"): a Swordsman with no katana anywhere in the inventory (as the server last said:
+     * {@link com.hexhaki.piece.client.sword.SwordClient#katana}) fights with the game's own punch; only the other styles' M1s are
+     * always their own.
+     */
+    static boolean swordless(Minecraft minecraft) {
+        return swordsman() && com.hexhaki.piece.client.sword.SwordClient.katana(minecraft.f_91074_.m_19879_()) == null;
+    }
+
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void interact(InputEvent.InteractionKeyMappingTriggered event) {
         Minecraft minecraft = Minecraft.m_91087_();
-        if (!ready(minecraft)) {
-            return;
+        if (!ready(minecraft) || swordless(minecraft)) {
+            return; // the game's own punch and use
         }
         HitResult aimed = minecraft.f_91077_;
         boolean atBlock = aimed != null && aimed.m_6662_() == HitResult.Type.BLOCK;
         if (event.isAttack()) {
             event.setCanceled(true);
-            event.setSwingHand(false);
+            // 2.3.3: a Swordsman's hand swings with each cut asked for (first person is the game's own hand now)
+            event.setSwingHand(swordsman());
             if (swordsman()) {
                 // 2.1.4: one press, one cut asked for; Ctrl + M1 the quick draw
                 PieceNetwork.toServer(new C2SSword(Screen.m_96637_() ? C2SSword.QUICK_DRAW : C2SSword.PRESS));

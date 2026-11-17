@@ -1,6 +1,35 @@
 # HexPiece: handoff after 2.3.2 (the owner's sword bugs, one animation set for every blade, natural arms, the victim's split view, NPC gestures)
 
-## Session 3: 2.3.2 RELEASED (read this first)
+## Session 3, part 2: 2.3.3 (the owner's in-game bug reports, read this first)
+The owner tested 2.3.2 in game and reported, in their words: "the hockey armament in Rio [Ryou] is completely coding the hands ... I
+said the outline with the color and the rest black. And the outline isn't even covering the inner part of the arm"; "The player's
+skin is completely fucked ... my skin is gone every time I try this mod. My arm in first person is gone, sort of, partially"; "the
+swordsman gets normal attacks whenever he doesn't have a sword on"; "The unleashing of the conqueror still has red particles, even
+if my Rio is ... blue-ish"; "the left arm is showing ... I don't need the left arm on the screen ... the right arm ... It's not
+attached to the body"; "your right click is destroying a ridiculous amount of terrain. It should be like maximum like 2 blocks
+wide ... it should repair itself afterwards and should not drop blocks"; "Sharkman [Fishman] Karate makes a player's whole screen
+completely white"; "Tap G to release ... the Lightning does not match the one in the Conqueror's release. Like, it's still the old
+Lightning".
+Done in 2.3.3:
+- Ryou hands (`client/haki/RyouHands.glow`): the inverted hulls (rim, dark band, halos) are gone: on the owner's setup they drew as
+  solid boxes (the light was `debugQuads`, which never culls; and 2.1.9 already noted additive geometry drawn opaque there). Now a
+  band in the Ryou colour along every edge of every face of the hand on the black coat, `entityTranslucentCull` + full bright,
+  correct with or without culling. `tools/ryou_preview.py` renders it (outline drawn without culling); judged fine.
+- Conqueror particles: the patch (`conquerorTint`) makes `HakiVfx.accept0` call `HakiTint.owner(entityId)`, tints
+  `conquerorParticle`'s colour (`HakiTint.conqueror`, pure `haki/HueTint`: the Ryou hue, value and alpha kept), and sends the
+  Conqueror's and last stand's own `particleTex` calls to `HakiTint.particleTex` (particleTex widened).
+- Old lightning: `HakiFx.bolt` (used by `boltPath` via advancedBolt/armamentBolt: the tap cone, King's Grip, Thragg, armament ground
+  storm) trampolined to `HakiLightning.fxBolt` (3D). build.py PATCHED now lists HakiFx.class.
+- Swordsman with no katana: `StyleInput.swordless` leaves M1/use to vanilla. First person: `SwordClient` uses
+  `FirstPersonMode.NONE` (vanilla hand); the hand swings on sword M1s.
+- Haki slash: trench width `SwordRules.trenchAt` (<= TRENCH_MAX 2), blocks torn out through `Scars` (`tear`: TORN/LEFT/REFUSED;
+  any owner), nothing drops, regrows 15-25 s; dropChance removed.
+- NOT fixed, need the owner: the skin (nothing in HexPiece or the original changes it outside Gear; the screenshot shows what looks
+  like a default skin: ask whether their own skin shows without HexPiece in the same pack, and which launcher account); the
+  Fishman white screen (ask: right after choosing, or after a move? does it stay? a screenshot of the full screen; nothing
+  Fishman-specific draws on screen; suspects: Photon bloom on their GPU, the original's ImpactClient flash).
+
+## Session 3: 2.3.2 RELEASED
 - **The owner, mid-session: "Can you please skip the fucking checks on every single katana? ... Just apply the same fix to every
   single one. Just copy. They're all the same."** So every blade (the 25 katanas, Gryphon, Yoru) plays the katanas' ONE animation
   set (cuts, guard, idle, release, quick cut...). The only per-blade animations left are Yoru's three off/onto its back:

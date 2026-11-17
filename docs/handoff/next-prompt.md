@@ -1,6 +1,7 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.3.2.md
-(its first section, "Session 3: 2.3.2 RELEASED", is the newest), then next-ai-2.3.0.md (the clash rules in the owner's words). 2.3.2
-is released; the next version is 2.3.3 (`python3 tools/next_version.py --write`). Check the last push's "Build HexPiece" and
+(its first section, "Session 3, part 2: 2.3.3", is the newest), then next-ai-2.3.0.md (the clash rules in the owner's words). 2.3.3
+is released (the owner's in-game bug fixes); the next version is 2.3.4 (`python3 tools/next_version.py --write`). Still open from the
+owner's test: their skin and the Fishman Karate white screen (see the handoff for what to ask). Check the last push's "Build HexPiece" and
 "Release HexPiece" runs are green first.
 
 The owner's sword rule (this session, in their words): "skip the checks on every single katana ... Just apply the same fix to every

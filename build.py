@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.3.2"
+VERSION = "2.3.3"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -71,6 +71,7 @@ ANIMATIONS = "assets/hexhaki/player_animation/"
 PATCHED = {
     "com/hexhaki/HexHaki.class",
     "com/hexhaki/client/vfx/HakiVfx.class",
+    "com/hexhaki/client/vfx/HakiFx.class",  # 2.3.3: its bolt painter handed to HakiLightning.fxBolt (the 3D lightning)
     "com/hexhaki/gameplay/ConquerorLightningPath.class",
     "com/hexhaki/command/HakiCommands.class",
     "com/hexhaki/fruit/client/FruitKeys.class",

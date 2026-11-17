@@ -80,7 +80,17 @@ public final class PiecePatch implements Opcodes {
     static final String SEGMENT = "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;II)V";
     static final String GENERATE = "(FIJZ)Ljava/util/List;";
     /** HakiVfx helpers the new painters reuse (access widened only, bodies untouched). */
-    static final String[] VFX_WIDENED = {"rageBeam", "beam", "add", "fx", "play", "playAtWorld", "playAtFixed"};
+    static final String[] VFX_WIDENED = {"rageBeam", "beam", "add", "fx", "play", "playAtWorld", "playAtFixed", "particleTex"};
+    /** 2.3.3: the original's other bolt painter, handed to HakiLightning.fxBolt. */
+    static final String HAKI_FX = "com/hexhaki/client/vfx/HakiFx";
+    static final String FX_BOLT = "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;FIIIII)V";
+    /** 2.3.3: the Conqueror's particles in the player's Ryou colour (client/haki/HakiTint). */
+    static final String TINT = "com/hexhaki/piece/client/haki/HakiTint";
+    static final String PARTICLE_TEX = "(IIFFIZLnet/minecraft/resources/ResourceLocation;)"
+        + "Lcom/lowdragmc/photon/client/gameobject/emitter/particle/ParticleEmitter;";
+    /** HakiVfx's Conqueror and last-stand painters whose own particleTex calls are tinted, and how many each has. */
+    static final Map<String, Integer> TINTED_TEX = Map.of("addConquerorRangeLightning", 1, "addLastStandBodyBolts", 1,
+        "addLastStandStormParticles", 2, "lastStandAura", 1, "lastStandPulse", 1);
     /** HakiVfx painters handed to {@link #LIGHTNING}: name -> method there. */
     static final String[][] VFX_TRAMPOLINES = {{"addHakiLightningSegment", "segment"}, {"addConquerorStormSegment", "storm"}};
     /**
@@ -229,6 +239,9 @@ public final class PiecePatch implements Opcodes {
         }
         entries.put(MOD + ".class", transform(entries.get(MOD + ".class"), PiecePatch::bootstrap));
         entries.put(VFX + ".class", transform(entries.get(VFX + ".class"), PiecePatch::lightningPainters));
+        // 2.3.3: HakiFx's bolt (the tap release's, King's Grip's, Thragg's lightning) is the 3D lightning too
+        entries.put(HAKI_FX + ".class", transform(entries.get(HAKI_FX + ".class"),
+            node -> trampoline(method(node, "bolt", FX_BOLT), LIGHTNING, "fxBolt")));
         entries.put(PATH + ".class", transform(entries.get(PATH + ".class"), PiecePatch::lightningPaths));
         for (String[] local : IMU_LOCALS) {
             entries.put(local[0] + ".class", transform(entries.get(local[0] + ".class"), node -> renameLocal(node, local[1], IMU, local[2])));
@@ -354,6 +367,40 @@ public final class PiecePatch implements Opcodes {
             playHook(method(node, hook[0], hook[1]), hook[2], hook[3]);
         }
         stormHook(method(node, "conquerorRelease", "(FIJ)Lcom/lowdragmc/photon/client/fx/FX;"));
+        conquerorTint(node);
+    }
+
+    /**
+     * 2.3.3: {@code accept0(message)} first tells {@code HakiTint.owner(message.entityId())} whose visual it builds;
+     * {@code conquerorParticle} turns its colour (its fifth argument) through {@code HakiTint.conqueror} before using it; the
+     * Conqueror's and the last stand's own {@code particleTex} calls go to {@code HakiTint.particleTex} (the same, the colour tinted).
+     */
+    static void conquerorTint(ClassNode node) {
+        MethodNode accept = method(node, "accept0", "(Lcom/hexhaki/network/msg/S2CHakiVisual;)V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, 0));
+        head.add(new MethodInsnNode(INVOKEVIRTUAL, "com/hexhaki/network/msg/S2CHakiVisual", "entityId", "()I", false));
+        head.add(new MethodInsnNode(INVOKESTATIC, TINT, "owner", "(I)V", false));
+        accept.instructions.insert(head);
+        MethodNode particle = method(node, "conquerorParticle", "(IIFFIZ)Lcom/lowdragmc/photon/client/gameobject/emitter/particle/ParticleEmitter;");
+        InsnList tint = new InsnList();
+        tint.add(new VarInsnNode(ILOAD, 4));
+        tint.add(new MethodInsnNode(INVOKESTATIC, TINT, "conqueror", "(I)I", false));
+        tint.add(new VarInsnNode(ISTORE, 4));
+        particle.instructions.insert(tint);
+        for (Map.Entry<String, Integer> entry : TINTED_TEX.entrySet()) {
+            int found = 0;
+            for (AbstractInsnNode insn : method(node, entry.getKey(), null).instructions) {
+                if (insn instanceof MethodInsnNode call && call.getOpcode() == INVOKESTATIC && call.owner.equals(VFX)
+                    && call.name.equals("particleTex") && call.desc.equals(PARTICLE_TEX)) {
+                    call.owner = TINT;
+                    found++;
+                }
+            }
+            if (found != entry.getValue()) {
+                throw new AssertionError("expected " + entry.getValue() + " particleTex calls in HakiVfx." + entry.getKey() + ", found " + found);
+            }
+        }
     }
 
     /**
