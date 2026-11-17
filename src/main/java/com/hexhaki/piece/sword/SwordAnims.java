@@ -3,7 +3,7 @@ package com.hexhaki.piece.sword;
 /**
  * 2.1.4: what a player's sword is doing, as the server tells every client ({@code S2CSword}) (pure): sheathed (nothing playing), the
  * guard between cuts, the sheathing, the charge (from a drawn or a sheathed sword), the release, the quick draw (from the saya, or with
- * the blade already out), or one of the {@link SwordMove}s ({@link #MOVES} + its ordinal). Each has its animation
+ * the blade already out), the recoil from a clash (2.3.6), or one of the {@link SwordMove}s ({@link #MOVES} + its ordinal). Each has its animation
  * ({@code assets/hexhaki/player_animation/<name>.json}) and, in {@link BladePaths}, the ticks the blade leaves and enters the saya.
  */
 public final class SwordAnims {
@@ -17,9 +17,13 @@ public final class SwordAnims {
     public static final int QUICK_CUT = 7;
     /** 2.2.1: the slow draw from the saya into the guard (nothing can be done with the blade until it is out). */
     public static final int DRAW = 8;
+    /** 2.3.6: the blade knocked back in a clash, and the guard found again ({@code server/Clashes}). */
+    public static final int CLASH = 9;
     public static final int MOVES = 10;
+    /** 2.3.6: how long the clash's recoil lasts (ticks): the stagger. */
+    public static final int CLASH_TICKS = 12;
     private static final String[] NAMES = {null, "sword_guard", "sword_sheathe", "sword_charge", "sword_charge_draw", "sword_release",
-        "sword_quick_draw", "sword_quick_cut", "sword_draw"};
+        "sword_quick_draw", "sword_quick_cut", "sword_draw", "sword_clash"};
 
     private SwordAnims() {
     }
@@ -113,6 +117,7 @@ public final class SwordAnims {
             case CHARGE, CHARGE_DRAW -> 26;
             case RELEASE -> 15;
             case QUICK_DRAW, QUICK_CUT -> 16;
+            case CLASH -> CLASH_TICKS;
             default -> 0;
         };
     }

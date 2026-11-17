@@ -118,3 +118,11 @@ M net/minecraft/client/renderer/texture/AbstractTexture m_6704_ (Lnet/minecraft/
 M net/minecraft/client/renderer/texture/AbstractTexture <init> ()V                # [srg] joined.tsrg fug <init> ()V (a subclass's constructor calls it)
 M com/mojang/blaze3d/platform/GlStateManager _glBindFramebuffer (II)V           # [srg] unobfuscated: listed by name in joined.tsrg (_glBindFramebuffer (II)V, id 84486)
 M com/mojang/blaze3d/platform/GlStateManager _glBlitFrameBuffer (IIIIIIIIII)V  # [srg] unobfuscated: listed by name in joined.tsrg (_glBlitFrameBuffer, id 84188)
+
+# --- 2.3.6: the clash's impact frame (client/fx/ClashFx): the view turned over and its contrast pushed by blending (the original's
+# ImpactClient blends with RenderSystem.blendFuncSeparate and the SourceFactor ONE/SRC_ALPHA, DestFactor ONE/ZERO constants; the enum
+# constants of blaze3d's GlStateManager factors are unobfuscated, as those prove).
+F com/mojang/blaze3d/platform/GlStateManager$SourceFactor ONE_MINUS_DST_COLOR Lcom/mojang/blaze3d/platform/GlStateManager$SourceFactor;   # [srg] unobfuscated: joined.tsrg GlStateManager$SourceFactor ONE_MINUS_DST_COLOR ONE_MINUS_DST_COLOR 84744, beside ONE 84740 and SRC_ALPHA 84747 the original uses
+F com/mojang/blaze3d/platform/GlStateManager$SourceFactor DST_COLOR Lcom/mojang/blaze3d/platform/GlStateManager$SourceFactor;   # [srg] unobfuscated: joined.tsrg GlStateManager$SourceFactor DST_COLOR DST_COLOR 84739
+F com/mojang/blaze3d/platform/GlStateManager$DestFactor SRC_COLOR Lcom/mojang/blaze3d/platform/GlStateManager$DestFactor;   # [srg] unobfuscated: joined.tsrg GlStateManager$DestFactor SRC_COLOR SRC_COLOR 84644, beside ONE 84636 and ZERO 84645 the original uses
+M net/minecraftforge/client/event/ViewportEvent$ComputeFov usedConfiguredFov ()Z   # [forge] 1.20.1 client/event/ViewportEvent.java ComputeFov.usedConfiguredFov() (line 395, raw GitHub MinecraftForge 1.20.1): true for the world's view, false for the hand's; beside getFOV the original uses

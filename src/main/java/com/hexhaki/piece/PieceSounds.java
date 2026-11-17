@@ -24,6 +24,9 @@ public final class PieceSounds {
         for (String name : SwordSounds.ALL) {
             BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
         }
+        // 2.3.6: two blows meeting (the owner's own clash sounds, from HexGhoul)
+        String clash = com.hexhaki.piece.clash.ClashRules.SOUND;
+        BY_NAME.put(clash, SOUNDS.register(clash, () -> SoundEvent.m_262824_(HexHaki.id(clash))));
     }
 
     private PieceSounds() {
@@ -36,6 +39,16 @@ public final class PieceSounds {
     /** One beat of a sword ({@link SwordSounds.Beat}) heard where {@code user} is. */
     public static void play(LivingEntity user, SwordSounds.Beat beat) {
         play(user, beat.sound(), beat.volume(), beat.pitch());
+    }
+
+    /** 2.3.6: {@code name} heard at a point ({@code near}'s world), by everyone near, at {@code volume} and about {@code pitch}. */
+    public static void playAt(LivingEntity near, double x, double y, double z, String name, float volume, float pitch) {
+        RegistryObject<SoundEvent> sound = BY_NAME.get(name);
+        if (sound == null || near == null) {
+            return;
+        }
+        float vary = 0.95F + near.m_217043_().m_188501_() * 0.1F;
+        near.m_9236_().m_6263_(null, x, y, z, sound.get(), SoundSource.PLAYERS, volume, pitch * vary);
     }
 
     /** {@code name} heard where {@code user} is, by everyone near, at {@code volume} and about {@code pitch} (a little varied). */

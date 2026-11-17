@@ -525,7 +525,8 @@ public final class SwordTests {
         }
         Matcher event = Pattern.compile("\"(piece\\.[a-z_.]+)\": \\{").matcher(json);
         while (event.find()) {
-            Check.that(all.contains(event.group(1)), event.group(1) + ": registered");
+            Check.that(all.contains(event.group(1)) || event.group(1).equals(com.hexhaki.piece.clash.ClashRules.SOUND),
+                event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
         Matcher clip = Pattern.compile("\"hexhaki:piece/sword/([a-z0-9_]+)\"").matcher(json);

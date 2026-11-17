@@ -14,6 +14,12 @@ public abstract class ViewportEvent extends net.minecraftforge.eventbus.api.Even
         public void setRoll(float roll) { throw new UnsupportedOperationException(); }
     }
 
+    /** 2.3.6: the field of view this frame (the original's ImpactClient reads and sets it). */
+    public static class ComputeFov extends ViewportEvent {
+        public double getFOV() { throw new UnsupportedOperationException(); }
+        /** 2.3.6: the world's view (true) or the hand's (false) */ public boolean usedConfiguredFov() { throw new UnsupportedOperationException(); }
+    }
+
     /** 1.3.40: Clear Sight pushes the fog back (cancelled for the change to take). */
     public static class RenderFog extends ViewportEvent {
         public net.minecraft.world.level.material.FogType getType() { throw new UnsupportedOperationException(); }

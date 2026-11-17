@@ -5,6 +5,9 @@ public final class RenderSystem {
     public static void enableBlend() { throw new UnsupportedOperationException(); }
     public static void disableBlend() { throw new UnsupportedOperationException(); }
     public static void defaultBlendFunc() { throw new UnsupportedOperationException(); }
+    public static void blendFuncSeparate(com.mojang.blaze3d.platform.GlStateManager.SourceFactor srcColor,
+        com.mojang.blaze3d.platform.GlStateManager.DestFactor dstColor, com.mojang.blaze3d.platform.GlStateManager.SourceFactor srcAlpha,
+        com.mojang.blaze3d.platform.GlStateManager.DestFactor dstAlpha) { throw new UnsupportedOperationException(); }
     public static void setShaderColor(float red, float green, float blue, float alpha) { throw new UnsupportedOperationException(); }
     public static void depthMask(boolean mask) { throw new UnsupportedOperationException(); }
     public static void disableDepthTest() { throw new UnsupportedOperationException(); }

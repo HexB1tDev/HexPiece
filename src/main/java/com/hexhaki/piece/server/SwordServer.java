@@ -8,6 +8,8 @@ import com.hexhaki.piece.PieceConfig;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.PieceRules;
 import com.hexhaki.piece.PieceSounds;
+import com.hexhaki.piece.clash.ClashBlows;
+import com.hexhaki.piece.clash.ClashRules;
 import com.hexhaki.piece.network.C2SSword;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CSword;
@@ -126,6 +128,8 @@ public final class SwordServer {
         boolean stowing;
         /** 2.2.9: what has been heard of what the sword is doing (SwordSounds). */
         final SwordSounds.Cursor heard = new SwordSounds.Cursor();
+        /** 2.3.6: when its blow was met in a clash (the recoil plays from then; -1 none). */
+        long clashStart = -1;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -238,6 +242,9 @@ public final class SwordServer {
         if (state.chargeStart >= 0) {
             return state.chargeDrew ? SwordAnims.CHARGE_DRAW : SwordAnims.CHARGE;
         }
+        if (state.clashStart >= 0) {
+            return SwordAnims.CLASH;
+        }
         if (state.drawStart >= 0) {
             return SwordAnims.DRAW;
         }
@@ -259,6 +266,9 @@ public final class SwordServer {
         }
         if (state.chargeStart >= 0) {
             return state.chargeStart;
+        }
+        if (state.clashStart >= 0) {
+            return state.clashStart;
         }
         if (state.drawStart >= 0) {
             return state.drawStart;
@@ -302,6 +312,9 @@ public final class SwordServer {
                 sync(player, state);
             }
             return;
+        }
+        if (action != C2SSword.RELEASE && Clashes.staggered(player, now)) {
+            return; // 2.3.6: knocked back by a clash, nothing new until it has passed
         }
         if (!ready(player, state)) {
             if (state.katana == null && swordsman(player) && action != C2SSword.RELEASE) {
@@ -526,6 +539,7 @@ public final class SwordServer {
     }
 
     static void reset(State state) {
+        state.clashStart = -1;
         state.stowing = false;
         state.drawStart = -1;
         state.drawCut = false;
@@ -587,6 +601,10 @@ public final class SwordServer {
             reset(state);
             return;
         }
+        if (state.clashStart >= 0 && now - state.clashStart >= SwordAnims.duration(SwordAnims.CLASH)) {
+            state.clashStart = -1;
+            state.idleSince = now;
+        }
         if (state.move != null) {
             tickMove(player, state, now);
         }
@@ -636,6 +654,9 @@ public final class SwordServer {
         }
         StyleCombat.carry(player, move.motion(), tick);
         SwordMove.Cut[] cuts = move.cuts();
+        if (move.cutAt(tick) >= 0 && Clashes.landing(player, now, other -> FruitUtil.foe(player, other))) {
+            return; // 2.3.6: the cut met a blow coming back at it
+        }
         for (int i = 0; i < cuts.length; i++) {
             SwordMove.Cut cut = cuts[i];
             if (tick >= cut.from() && tick <= cut.to()) {
@@ -680,6 +701,9 @@ public final class SwordServer {
             return;
         }
         if (tick >= 1 && tick <= 3) {
+            if (Clashes.landing(player, now, other -> FruitUtil.foe(player, other))) {
+                return; // 2.3.6: the charged cut met a blow coming back at it
+            }
             if (tick == 1) {
                 Vec3 look = StyleCombat.facing(player);
                 PieceNetwork.around(player, new S2CSwordFx(S2CSwordFx.RELEASE, player.m_20185_(), player.m_20186_(), player.m_20189_(),
@@ -717,6 +741,9 @@ public final class SwordServer {
         } else if (tick == 7) {
             StyleCombat.push(player, new Vec3(look.f_82479_ * 0.1, player.m_20184_().f_82480_, look.f_82481_ * 0.1));
         }
+        if (tick >= 3 && tick <= 8 && Clashes.landing(player, now, other -> FruitUtil.foe(player, other))) {
+            return; // 2.3.6: the quick draw met a blow coming back at it
+        }
         if (tick >= 3 && tick <= 8) {
             // everything along the line run since last tick, within the flung blade's reach of it, is cut once
             Vec3 from = state.quickLast == null ? player.m_20182_() : state.quickLast;
@@ -728,6 +755,70 @@ public final class SwordServer {
             }
         }
         state.quickLast = player.m_20182_();
+    }
+
+    /**
+     * 2.3.6: the cut {@code player}'s sword has on its way {@code now} ({@code ClashBlows}: a move's cut, the charged cut, the quick
+     * draw's run), as a clash sees it; or null. The Haki slash flies off on its own and is not a blow here.
+     */
+    static ClashRules.Blow blow(ServerPlayer player, long now) {
+        State state = STATES.get(player.m_20148_());
+        if (state == null || state.katana == null) {
+            return null;
+        }
+        float scale = edge(state) * PieceRules.masteryDamage(mastery(player));
+        boolean armed = StyleServer.armed(player);
+        int ryou = StyleServer.ryou(player);
+        double extend = SwordRules.EXTEND + reach(state);
+        if (state.move != null) {
+            SwordMove move = state.move;
+            int tick = (int) (now - state.moveStart);
+            SwordMove.Cut[] cuts = move.cuts();
+            double reach = ClashBlows.bladeReach(SwordAnims.name(SwordAnims.of(move), state.katana), cuts[0].from() - 1,
+                cuts[cuts.length - 1].to(), extend, 2.6) + BODY_EDGE;
+            ClashBlows.Window window = ClashBlows.sword(move, tick, reach);
+            return window == null ? null : window.at(state.moveStart, window.hit() * scale, armed, ryou);
+        }
+        if (state.releaseStart >= 0 && !state.releaseHaki) {
+            double cut = SwordRules.lerp(PieceConfig.get(PieceConfig.CUT_REACH_MIN, SwordRules.CUT_REACH_MIN),
+                PieceConfig.get(PieceConfig.CUT_REACH_MAX, SwordRules.CUT_REACH_MAX), state.releaseCharge);
+            double reach = ClashBlows.bladeReach(SwordAnims.name(SwordAnims.RELEASE, state.katana), 0, ClashBlows.RELEASE_LANDS, cut, 2.6)
+                + BODY_EDGE;
+            double damage = SwordRules.lerp(PieceConfig.get(PieceConfig.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MIN),
+                PieceConfig.get(PieceConfig.CUT_DAMAGE_MAX, SwordRules.CUT_DAMAGE_MAX), state.releaseCharge) * scale;
+            ClashBlows.Window window = ClashBlows.release((int) (now - state.releaseStart), reach, damage);
+            return window == null ? null : window.at(state.releaseStart, damage, armed, ryou);
+        }
+        if (state.quickStart >= 0) {
+            ClashBlows.Window window = ClashBlows.quick((int) (now - state.quickStart), reach(state), QUICK_DAMAGE * scale);
+            return window == null ? null : window.at(state.quickStart, QUICK_DAMAGE * scale, armed, ryou);
+        }
+        return null;
+    }
+
+    /** 2.3.6: a body's half width and the sweep's radius: how far past the blade's own reach a body is still cut. */
+    static final double BODY_EDGE = SwordRules.RADIUS + 0.3;
+
+    /**
+     * 2.3.6: {@code player}'s cut stopped by a clash ({@code Clashes}): the move, the charged cut or the quick draw dropped where it is;
+     * {@code recoil}: knocked back (the recoil plays), else simply dropped.
+     */
+    static void clashed(ServerPlayer player, long now, boolean recoil) {
+        State state = STATES.get(player.m_20148_());
+        if (state == null || state.move == null && state.releaseStart < 0 && state.quickStart < 0) {
+            return;
+        }
+        if (state.move != null) {
+            state.last = state.move;
+            state.lastEnd = now;
+        }
+        state.move = null;
+        state.bufferedAt = -1;
+        state.releaseStart = -1;
+        state.quickStart = -1;
+        state.idleSince = now;
+        state.clashStart = recoil ? now : -1;
+        sync(player, state);
     }
 
     static float edge(State state) {

@@ -493,6 +493,50 @@ def iron_fist():
     write(s + "charge", 18, beats, "Iron Fist: head down, shoulder first, through the crowd.")
 
 
+# ------------------------------------------------------------------------------------------------------------- clash recoils
+# 2.3.6 (the owner: "every move is clashable ... I want a impact frame whenever a clash happens"): a blow met by another's (server/
+# Clashes) stops dead and the fighter is knocked back from it: the arms (or Black Leg's kicking leg) flung up and back by the shock,
+# the head snapped back, the body leaning away and the feet stepping back to catch it, then the stance found again. ClashRules.RECOIL
+# ticks (the stagger); the first beat is the instant after the blows met, the peak two ticks on.
+RECOIL = 12
+
+
+def clash_recoils():
+    def bare(base, name, description, left_behind=False):
+        def flung(a, b):
+            """The right arm (the lead) and the left flung by the shock (each pitch, yaw, roll out, bend; the left mirrored); Six
+            Powers' left hand stays behind the back."""
+            return {"rightArm": arm(*a), "leftArm": base["leftArm"] if left_behind else mirror(arm(*b))}
+        # the striking fist bounced back to the shoulder, its elbow thrown out wide; the other arm out for balance
+        write(name, RECOIL, [
+            (0, "linear", p(base, flung((-74, 0, 46, -92), (-46, 0, 40, -30)), body={"z": 0.08, "bend": -8, "yaw": 5},
+                            head={"pitch": -12}, rightLeg=leg(10, 4, 12), leftLeg=leg(-12, -3, 12))),
+            (2, "outexpo", p(base, flung((-92, 4, 64, -108), (-52, 0, 58, -22)), body={"z": 0.22, "y": -0.03, "bend": -16, "yaw": 12},
+                             head={"pitch": -20}, rightLeg=leg(28, 5, 24), leftLeg=leg(-22, -3, 20))),
+            (5, "inoutsine", p(base, flung((-58, 0, 30, -78), (-40, 0, 30, -48)), body={"z": 0.16, "y": -0.13, "bend": 8, "yaw": 4},
+                               head={"pitch": 6}, rightLeg=leg(24, 4, 48), leftLeg=leg(-26, -3, 44))),
+            (8, "inoutsine", p(base, body={"z": 0.06, "y": -0.07, "bend": 4}, head={"pitch": 2}, rightLeg=leg(12, 3, 26),
+                               leftLeg=leg(-12, -3, 24))),
+            (RECOIL, "inoutsine", base),
+        ], description)
+
+    bare(SP, "style_six_powers_clash", "Six Powers: the blow met and stopped dead, knocked back, the left hand still behind the back.",
+         left_behind=True)
+    bare(FK, "style_fishman_karate_clash", "Fishman Karate: the blow met and stopped dead, knocked back, the stance found again.")
+    bare(IF, "style_brawler_clash", "Iron Fist: the punch met and stopped dead, knocked back, the guard found again.")
+    # Black Leg: the hands stay behind the back; the kicking leg is thrown back down and the body hops back off it
+    write("style_black_leg_clash", RECOIL, [
+        (0, "linear", p(BL, rightLeg=leg(-42, 6, 18), leftLeg=leg(-6, -2, 16), body={"z": 0.08, "bend": -10, "yaw": -4},
+                        head={"pitch": -14})),
+        (2, "outexpo", p(BL, rightLeg=leg(14, 8, 36), leftLeg=leg(-18, -2, 30), body={"z": 0.24, "y": 0.04, "bend": -18, "yaw": -12,
+                                                                                       "roll": 5}, head={"pitch": -22})),
+        (5, "inoutsine", p(BL, rightLeg=leg(30, 4, 56), leftLeg=leg(-26, -3, 50), body={"z": 0.18, "y": -0.16, "bend": 10, "yaw": -6},
+                           head={"pitch": 8})),
+        (8, "inoutsine", p(BL, rightLeg=leg(12, 3, 28), leftLeg=leg(-14, -3, 26), body={"z": 0.06, "y": -0.08, "bend": 4, "yaw": -8})),
+        (RECOIL, "inoutsine", BL),
+    ], "Black Leg: the kick met and stopped dead, the leg thrown back down, a hop back, the hands still behind the back.")
+
+
 EASINGS = ["linear", "constant", "insine", "outsine", "inoutsine", "inquad", "outquad", "inoutquad", "incubic", "outcubic", "inoutcubic",
            "inexpo", "outexpo", "inoutexpo", "inback", "outback", "inoutback"]
 POSE_PARTS = ["body", "head", "rightArm", "leftArm", "rightLeg", "leftLeg"]
@@ -549,6 +593,7 @@ def main():
     six_powers()
     fishman_karate()
     iron_fist()
+    clash_recoils()
     stances()
     java_poses()
     print(f"wrote {len(WRITTEN)} style animations and their NPC poses")

@@ -82,7 +82,7 @@ public final class HakiBolts {
 
     /** Bolts set going: at a fixed point, or following {@code entity} (feet, turned with it); where their free ends strike the ground. */
     record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end, List<Landing> landings, double wave,
-                int color, boolean burst) {
+                int color, double flash) {
     }
 
     /** Where a bolt's free end strikes the ground (world, on its surface), when (ticks from the start), how big, and whether it was heard. */
@@ -188,7 +188,8 @@ public final class HakiBolts {
             if (pending.burst) {
                 end = Math.max(end, (float) BoltMesh.BURST);
             }
-            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave, color | 0xFF000000, pending.burst));
+            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave, color | 0xFF000000,
+                pending.burst ? 10.0 + pending.wave * 0.1 : 0.0));
             alive += pending.bolts.size();
             if (!landings.isEmpty() || pending.bolts.size() >= 12) {
                 // the composition's own crackle, at its anchor (the original plays the heavy charge and release sounds itself)
@@ -439,14 +440,16 @@ public final class HakiBolts {
             for (Bolt bolt : live.bolts) {
                 BoltMesh.build(bolt, frame, ticks - bolt.delay, PIXEL, shine, sink);
             }
-            if (live.wave > 0) {
+            if (live.wave > 0 || live.flash > 0) {
                 double cx = (live.entity != null ? live.entity.m_20318_(partial).f_82479_ : live.x) - cam.f_82479_;
                 double cy = (live.entity != null ? live.entity.m_20318_(partial).f_82480_ : live.y) - cam.f_82480_;
                 double cz = (live.entity != null ? live.entity.m_20318_(partial).f_82481_ : live.z) - cam.f_82481_;
-                BoltMesh.ring(cx, cy, cz, ticks, live.wave, live.color, shine, sink);
-                if (live.burst) {
-                    // 2.2.5: the flash the storm tears out of, at the chest
-                    BoltMesh.burst(cx, cy + com.hexhaki.piece.haki.ConquerorStorm.CHEST, cz, ticks, 10.0 + live.wave * 0.1, live.color, shine, sink);
+                if (live.wave > 0) {
+                    BoltMesh.ring(cx, cy, cz, ticks, live.wave, live.color, shine, sink);
+                }
+                if (live.flash > 0) {
+                    // 2.2.5: the flash the storm tears out of, at the chest (2.3.6: a clash's, smaller, where the blows met)
+                    BoltMesh.burst(cx, cy + com.hexhaki.piece.haki.ConquerorStorm.CHEST, cz, ticks, live.flash, live.color, shine, sink);
                 }
             }
             for (Landing landing : live.landings) {
@@ -460,6 +463,59 @@ public final class HakiBolts {
             }
         }
         write(Minecraft.m_91087_().m_91269_().m_110104_(), pose.m_85850_().m_252922_(), pose.m_85850_().m_252943_(), 0, 0, 0, true);
+    }
+
+    /**
+     * 2.3.6: two Ryou users' blows met at ({@code x}, {@code y}, {@code z}): both colours tear out of it in a sphere
+     * ({@link com.hexhaki.piece.haki.ClashBurst}), each colour with its own flash on the point; those that come down run along the ground
+     * {@code floor} blocks under it.
+     */
+    public static void clash(ClientLevel level, double x, double y, double z, double floor, float power, int colorA, int colorB, long seed) {
+        if (level == null) {
+            return;
+        }
+        try {
+            List<Bolt> all = com.hexhaki.piece.haki.ClashBurst.bolts(power, colorA, colorB, floor, seed);
+            if (alive + all.size() > MOST) {
+                return;
+            }
+            // two strokes a strand: the strands of the first colour are the even ones
+            List<Bolt> first = new ArrayList<>();
+            List<Bolt> second = new ArrayList<>();
+            for (int i = 0; i < all.size(); i++) {
+                ((i / 2) % 2 == 0 ? first : second).add(all.get(i));
+            }
+            double chest = com.hexhaki.piece.haki.ConquerorStorm.CHEST;
+            double flash = 1.6 + 0.7 * power;
+            long now = level.m_46467_();
+            float end = (float) BoltMesh.BURST;
+            for (Bolt bolt : all) {
+                end = Math.max(end, bolt.end());
+            }
+            // the anchor a chest below the point: the flash is drawn a chest above its anchor; the bolts are lifted to the point
+            List<Bolt> liftedA = lift(first, chest);
+            List<Bolt> liftedB = lift(second, chest);
+            // no shock ring (the storm's, this small, lies on the ground as a plate): the dust is ClashFx's
+            LIVE.add(new Live(liftedA, null, x, y - chest, z, now, end, new ArrayList<>(), 0.0, colorA | 0xFF000000, flash));
+            LIVE.add(new Live(liftedB, null, x, y - chest, z, now, end, new ArrayList<>(), 0.0, colorB | 0xFF000000, flash * 0.7));
+            alive += all.size();
+            zap(level, x, y, z, 0.5F);
+        } catch (RuntimeException failure) {
+            // lightning never stops the game
+        }
+    }
+
+    /** The bolts moved {@code up} blocks (their points are from the clash point; the anchor sits a chest under it). */
+    static List<Bolt> lift(List<Bolt> bolts, double up) {
+        List<Bolt> out = new ArrayList<>(bolts.size());
+        for (Bolt bolt : bolts) {
+            double[] p = bolt.points.clone();
+            for (int i = 1; i < p.length; i += 3) {
+                p[i] += up;
+            }
+            out.add(new Bolt(p, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+        }
+        return out;
     }
 
     /**

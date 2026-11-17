@@ -4,6 +4,7 @@ import com.hexhaki.piece.PieceEntities;
 import com.hexhaki.piece.client.render.FemaleFigure;
 import com.hexhaki.piece.npc.SeaFighter;
 import com.hexhaki.piece.client.sword.KatanaRenderer;
+import com.hexhaki.piece.clash.ClashRules;
 import com.hexhaki.piece.style.StyleMove;
 import com.hexhaki.piece.sword.Katana;
 import com.hexhaki.piece.npc.Gesture;
@@ -82,6 +83,11 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
             }
         }
         StyleMove move = fighter.shownMove();
+        if (move == null && fighter.shownClash()) {
+            // 2.3.6: knocked back by a clash, its recoil (a player's own keyframes)
+            float tick = (float) ((now - fighter.shownStart()) & 0x3FFFFFFF) + partial;
+            return tick > ClashRules.RECOIL + RETURN ? null : new Shown(ClashRules.recoil(fighter.style()), ClashRules.RECOIL, tick, -1);
+        }
         if (move == null) {
             // 2.3.3: standing idle, a gesture (npc/GesturePose eases it in and out itself)
             Gesture gesture = fighter.gesture();

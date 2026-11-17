@@ -8,6 +8,9 @@ public class GlStateManager {
     /** glGetTexLevelParameteri on the bound texture */ public static int _getTexLevelParameter(int target, int level, int parameter) { throw new UnsupportedOperationException(); }
     /** glBindTexture (2.3.4: as the original's GearJacketSkin) */ public static void _bindTexture(int texture) { throw new UnsupportedOperationException(); }
     public enum DestFactor {
-        ONE, ONE_MINUS_SRC_ALPHA
+        ONE, ONE_MINUS_SRC_ALPHA, ZERO, /** 2.3.6 */ SRC_COLOR
+    }
+    public enum SourceFactor {
+        ONE, SRC_ALPHA, /** 2.3.6 */ ONE_MINUS_DST_COLOR, /** 2.3.6 */ DST_COLOR
     }
 }

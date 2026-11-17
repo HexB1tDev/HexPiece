@@ -1,11 +1,12 @@
 package com.hexhaki.piece.clash;
 
 /**
- * 2.3.3: two blows meeting (pure, tested in {@code ClashTests}; the world's side is {@code server/Clashes}). The owner: "every move is
- * clashable (combat style wise, and yes you can take the impacts from HexGhoul's latest version, however I want a impact frame whenever
- * a clash happens.)", and "to clash with swords man, any form of armament haki HAS TO BE ON, otherwise the sword cant be clashed and
- * since it has more range, will come up on top, if haki is on, clash is possible. When 2 ryou hakis clash, both lightning colors explode
- * outwards from the clash area in a sphere (similar to conquerors but smaller)."
+ * 2.3.3 (in the game from 2.3.6): two blows meeting (pure, tested in {@code ClashTests}; the world's side is
+ * {@code server/Clashes}). The owner: "every move is clashable (combat style wise, and yes you can take the impacts from HexGhoul's
+ * latest version, however I want a impact frame whenever a clash happens.)", and "to clash with swords man, any form of armament haki
+ * HAS TO BE ON, otherwise the sword cant be clashed and since it has more range, will come up on top, if haki is on, clash is
+ * possible. When 2 ryou hakis clash, both lightning colors explode outwards from the clash area in a sphere (similar to conquerors but
+ * smaller)."
  *
  * <p>Every fighting-style blow and every sword cut, a player's or a sea fighter's, is a {@link Blow} on its way from the tick it sets out
  * (its wind-up) to the tick it lands. One on its way that finds a foe within reach, both facing each other, whose own blow is on its
@@ -29,12 +30,30 @@ public final class ClashRules {
         }
     }
 
+    /** 2.3.6: how long the recoil from a clash lasts (ticks: the stagger). */
+    public static final int RECOIL = 12;
+    /** 2.3.6: the sound of two blows meeting (the owner's own Clashes.zip, as HexGhoul plays it). */
+    public static final String SOUND = "piece.clash";
+    /**
+     * 2.3.6: the recoil a bare-handed fighter of {@code style} plays when its blow is met ({@code style_<style>_clash}, tools/
+     * style_anims.py: knocked back, its own stance found again; a blade's is {@code sword_clash}).
+     */
+    public static String recoil(com.hexhaki.piece.style.FightingStyle style) {
+        return "style_" + style.id() + "_clash";
+    }
+
     /** How square two must face each other: the cosine of the most either may look off the other (60 degrees). */
     public static final double FACING = 0.5;
     /** Blocks past the longer blow's reach that the two still meet (both are swung out toward each other). */
     public static final double SLACK = 1.0;
     /** A blow still meets for this many ticks after its landing tick (the two may land a tick apart). */
     public static final int LATE = 1;
+    /**
+     * 2.3.6: a blow meets another only in its last ticks before it lands (its strike, not its wind-up): a fist still drawn back for a
+     * haymaker is not yet coming, and a jab landing then simply lands. Two blows meet when both strike within these few ticks of each
+     * other; one landing while the other is still winding up is a hit, so a fight is not all clashes.
+     */
+    public static final int WINDUP = 3;
     /** Ticks both are stunned after a clash (no blow, no step). */
     public static final int STAGGER = 12;
     /** Clash power: two ordinary blows' (about 5 damage each), the least and the most, and the power from which the ground shakes. */
@@ -54,9 +73,12 @@ public final class ClashRules {
     private ClashRules() {
     }
 
-    /** A blow on its way {@code now}: set out, not landed more than {@link #LATE} ticks ago. */
+    /**
+     * A blow on its way {@code now}: set out, coming (no more than {@link #WINDUP} ticks before it lands), not landed more than
+     * {@link #LATE} ticks ago.
+     */
     public static boolean onItsWay(Blow blow, long now) {
-        return now >= blow.began() && now <= blow.lands() + LATE;
+        return now >= Math.max(blow.began(), blow.lands() - WINDUP) && now <= blow.lands() + LATE;
     }
 
     /**
@@ -99,6 +121,20 @@ public final class ClashRules {
      */
     public static boolean meets(Blow a, Blow b, long now, double distance, boolean aFacesB, boolean bFacesA) {
         return onItsWay(a, now) && onItsWay(b, now) && clashable(a, b) && reaches(a, b, distance) && aFacesB && bFacesA;
+    }
+
+    /**
+     * 2.3.6: where the two meet, as blocks from {@code a} toward {@code b} ({@code distance} apart): as near the middle as both reaches
+     * allow (a fist meeting a longer blade meets it where the fist reaches; a shot meets a fist at the fist).
+     */
+    public static double meeting(Blow a, Blow b, double distance) {
+        double d = Math.max(0.0, distance);
+        double lo = Math.max(0.0, d - b.reach());
+        double hi = Math.min(d, a.reach());
+        if (lo > hi) {
+            return (lo + hi) * 0.5;
+        }
+        return Math.max(lo, Math.min(hi, d * 0.5));
     }
 
     /** How big a clash is from both blows' damage: {@link #ORDINARY} for two ordinary blows, growing with the root of the sum. */

@@ -35,6 +35,10 @@ public final class BoltPreview {
             gifs(new File(args[1]));
             return;
         }
+        if (args.length == 2 && args[0].equals("clash")) {
+            clash(new File(args[1]));
+            return;
+        }
         if (args.length == 2 && args[0].equals("slashgif")) {
             slashGif(new File(args[1]));
             return;
@@ -349,6 +353,66 @@ public final class BoltPreview {
     }
 
     /** 2.2.5: one large frame of the full-power release, to judge its ribbons, rims and flash up close. */
+    /**
+     * 2.3.6: two Ryou users' blows meeting (HakiBolts.clash, ClashBurst): both colours tearing out of the point in a sphere, each its
+     * own flash and shock ring, as the game lays them (the anchor a chest under the point, the bolts lifted to it). Two fighters, the
+     * point between them; a sheet of moments by day and by night (java -cp build/preview:build/classes BoltPreview clash DIR).
+     */
+    static void clash(File dir) throws Exception {
+        dir.mkdirs();
+        float power = 2.2F;
+        int colorA = 0xFF2244;
+        int colorB = 0x22AAFF;
+        List<Bolt> all = com.hexhaki.piece.haki.ClashBurst.bolts(power, colorA, colorB, 1.2, 77L);
+        List<Bolt> first = new ArrayList<>();
+        List<Bolt> second = new ArrayList<>();
+        double chest = com.hexhaki.piece.haki.ConquerorStorm.CHEST;
+        for (int i = 0; i < all.size(); i++) {
+            Bolt bolt = all.get(i);
+            double[] p = bolt.points.clone();
+            for (int k = 1; k < p.length; k += 3) {
+                p[k] += chest;
+            }
+            Bolt lifted = new Bolt(p, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance);
+            ((i / 2) % 2 == 0 ? first : second).add(lifted);
+        }
+        double flash = 1.6 + 0.7 * power;
+        double[] ages = {0.5, 1.5, 3.0, 6.0, 10.0};
+        for (boolean night : new boolean[] {false, true}) {
+            List<BufferedImage> frames = new ArrayList<>();
+            for (double age : ages) {
+                Raster raster = new Raster(new Shot("clash", new double[] {-7.5, 2.6, -6.0}, new double[] {0, 1.2, 0}, night));
+                raster.scene();
+                // the other fighter, facing the first across the point
+                float[] skin = {0.78F, 0.6F, 0.48F};
+                float[] shirt = {0.62F, 0.2F, 0.16F};
+                raster.box(-0.25, 0, 1.475, 0.25, 1.5, 1.725, shirt);
+                raster.box(-0.25, 1.5, 1.35, 0.25, 2.0, 1.85, skin);
+                double[] at = {0, 0, 0.8};
+                raster.wave = 0;
+                raster.burst = true;
+                raster.flash = flash;
+                raster.stormColor = 0xFF000000 | colorA;
+                raster.boltsAt(first, age, at);
+                raster.flash = flash * 0.7;
+                raster.stormColor = 0xFF000000 | colorB;
+                raster.boltsAt(second, age, at);
+                frames.add(raster.image());
+            }
+            int w = frames.get(0).getWidth();
+            int h = frames.get(0).getHeight();
+            BufferedImage sheet = new BufferedImage(w * frames.size(), h, BufferedImage.TYPE_INT_RGB);
+            java.awt.Graphics2D g = sheet.createGraphics();
+            for (int i = 0; i < frames.size(); i++) {
+                g.drawImage(frames.get(i), i * w, 0, null);
+                g.setColor(java.awt.Color.WHITE);
+                g.drawString("t" + ages[i], i * w + 6, 14);
+            }
+            g.dispose();
+            ImageIO.write(sheet, "png", new File(dir, night ? "clash-night.png" : "clash-day.png"));
+        }
+    }
+
     static void stormHero(File out) throws Exception {
         List<Bolt> base = new ArrayList<>();
         for (com.hexhaki.piece.haki.ConquerorStorm.Strand strand : com.hexhaki.piece.haki.ConquerorStorm.release(1000, 8L, true)) {
@@ -668,6 +732,8 @@ public final class BoltPreview {
         double wave;
         /** 2.2.5: the centre's flash, and the colour the storm was tinted to (the shockwave, flash and strikes take it). */
         boolean burst;
+        /** 2.3.6: the flash's radius when not the storm's (a clash's). */
+        double flash;
         int stormColor = 0xFFFF1433;
 
         Raster(Shot shot) {
@@ -771,7 +837,8 @@ public final class BoltPreview {
                 });
             }
             if (this.burst) {
-                BoltMesh.burst(-this.eye[0], com.hexhaki.piece.haki.ConquerorStorm.CHEST - this.eye[1], -this.eye[2], age, 10.0 + this.wave * 0.1,
+                BoltMesh.burst(origin[0] - this.eye[0], origin[1] + com.hexhaki.piece.haki.ConquerorStorm.CHEST - this.eye[1], origin[2] - this.eye[2], age,
+                    this.flash > 0 ? this.flash : 10.0 + this.wave * 0.1,
                     this.stormColor, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                         quads[0]++;
                         glowV.add(xyz);
@@ -779,7 +846,8 @@ public final class BoltPreview {
                     });
             }
             if (this.wave > 0) {
-                BoltMesh.ring(-this.eye[0], -this.eye[1], -this.eye[2], age, this.wave, this.stormColor, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
+                BoltMesh.ring(origin[0] - this.eye[0], origin[1] - this.eye[1], origin[2] - this.eye[2], age, this.wave, this.stormColor,
+                    this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                     quads[0]++;
                     if (glow) {
                         glowV.add(xyz);

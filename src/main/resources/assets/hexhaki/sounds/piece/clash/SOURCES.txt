@@ -1,0 +1,8 @@
+2.3.6: the sound of two blows meeting (sound event piece.clash).
+The owner's own clash sounds: Clashes.zip (Clash1..4.ogg, mono 48 kHz), sent by the owner for HexGhoul and copied unchanged from
+HexGhoul (HexB1tDev/HexGhoul, assets/hexkagune/sounds/sfx/clashes/clash_1..4.ogg). The owner: "yes you can take the impacts from
+HexGhoul's latest version".
+impact1.ogg: Clash1.ogg from Clashes.zip, by the owner
+impact2.ogg: Clash2.ogg from Clashes.zip, by the owner
+impact3.ogg: Clash3.ogg from Clashes.zip, by the owner
+impact4.ogg: Clash4.ogg from Clashes.zip, by the owner

@@ -159,9 +159,13 @@ public final class SwordClient {
         }
     }
 
-    /** 2.3.5: a swing of the sword (a cut, the release, the quick draw or cut), seen in first person with the arm and the blade. */
+    /**
+     * 2.3.5: a swing of the sword (a cut, the release, the quick draw or cut), seen in first person with the arm and the blade; 2.3.6:
+     * the blade knocked back in a clash too.
+     */
     static boolean swing(int anim) {
-        return anim >= SwordAnims.MOVES || anim == SwordAnims.RELEASE || anim == SwordAnims.QUICK_DRAW || anim == SwordAnims.QUICK_CUT;
+        return anim >= SwordAnims.MOVES || anim == SwordAnims.RELEASE || anim == SwordAnims.QUICK_DRAW || anim == SwordAnims.QUICK_CUT
+            || anim == SwordAnims.CLASH;
     }
 
     @SubscribeEvent

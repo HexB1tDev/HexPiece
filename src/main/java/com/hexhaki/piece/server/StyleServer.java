@@ -5,6 +5,8 @@ import com.hexhaki.fx.Impact;
 import com.hexhaki.piece.Faction;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.PieceRules;
+import com.hexhaki.piece.clash.ClashBlows;
+import com.hexhaki.piece.clash.ClashRules;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CStance;
 import com.hexhaki.piece.network.S2CStyleFx;
@@ -128,6 +130,9 @@ public final class StyleServer {
             return;
         }
         long now = now(player);
+        if (Clashes.staggered(player, now)) {
+            return; // 2.3.6: knocked back by a clash, nothing thrown until it has passed
+        }
         if (slot.string()) {
             if (state.move != null && !state.move.slot().string()) {
                 return;
@@ -200,7 +205,7 @@ public final class StyleServer {
         if (state.queuedAt >= 0 && now >= state.queuedAt) {
             state.queuedAt = -1;
             PieceProfile profile = ProfileServer.of(player);
-            if (profile.style().choice() && !interrupted(player)) {
+            if (profile.style().choice() && !interrupted(player) && !Clashes.staggered(player, now)) {
                 begin(player, state, StyleMove.of(profile.style(), StyleCombo.next(state.lastString, state.lastStringStart, now)), now);
             }
         }
@@ -221,6 +226,9 @@ public final class StyleServer {
         PieceProfile profile = null;
         for (Hit hit : move.hits()) {
             if (hit.tick() == tick) {
+                if (Clashes.landing(player, now, other -> FruitUtil.foe(player, other))) {
+                    return; // 2.3.6: it met a blow coming back at it (or a blade came through it): nothing lands
+                }
                 if (profile == null) {
                     profile = ProfileServer.of(player);
                 }
@@ -232,6 +240,45 @@ public final class StyleServer {
                 }
             }
         }
+    }
+
+    /** 2.3.6: the style blow {@code player} has on its way {@code now} ({@code ClashBlows.style}), as a clash sees it; or null. */
+    static ClashRules.Blow blow(ServerPlayer player, long now) {
+        State state = STATES.get(player.m_20148_());
+        if (state == null || state.move == null) {
+            return null;
+        }
+        ClashBlows.Window window = ClashBlows.style(state.move, (int) (now - state.start));
+        if (window == null) {
+            return null;
+        }
+        int mastery = ProfileServer.of(player).mastery(state.move.style());
+        return window.at(state.start, window.hit() * PieceRules.masteryDamage(mastery), armed(player), ryou(player));
+    }
+
+    /** 2.3.6: some form of Armament on (Armament, or Ryou over it): a bare blow that can meet a blade. */
+    static boolean armed(ServerPlayer player) {
+        return com.hexhaki.data.HakiData.flag(player, "armamentOn");
+    }
+
+    /** 2.3.6: the player's Ryou colour while Ryou is up (opaque), else 0. */
+    static int ryou(ServerPlayer player) {
+        return armed(player) && com.hexhaki.data.HakiData.flag(player, "acocOn") ? RyouServer.color(player) | 0xFF000000 : 0;
+    }
+
+    /**
+     * 2.3.6: {@code player}'s style move cut off by a clash ({@code Clashes}): no more of its blows; {@code recoil}: knocked back (the
+     * recoil plays: thrown back from the meeting, the stance found again), else (a blade came through a bare blow) simply dropped.
+     */
+    static void clashed(ServerPlayer player, boolean recoil) {
+        State state = STATES.get(player.m_20148_());
+        if (state == null || state.move == null) {
+            return;
+        }
+        FightingStyle style = state.move.style();
+        state.move = null;
+        state.queuedAt = -1;
+        FruitUtil.animate(player, recoil ? ClashRules.recoil(style) : "__clear__", recoil ? 2 : 3);
     }
 
     /**

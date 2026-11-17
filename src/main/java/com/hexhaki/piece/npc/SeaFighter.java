@@ -102,6 +102,8 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     /** 2.2.9: what has been heard of what its sword is doing (the same beats as a player's: SwordSounds). */
     private final SwordSounds.Cursor swordHeard = new SwordSounds.Cursor();
     private final Set<Integer> releaseStruck = new HashSet<>();
+    /** 2.3.6: when its sword's cut was met in a clash (the recoil plays from then; -1 none). */
+    private long clashAt = -1;
 
     public SeaFighter(EntityType<? extends SeaFighter> type, Level level) {
         super(type, level);
@@ -156,6 +158,14 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
 
     public FightingStyle style() {
         return FightingStyle.byOrdinal(this.f_19804_.m_135370_(STYLE));
+    }
+
+    /** 2.3.6: MOVE while it recoils from a clash (no move: its recoil, from MOVE_START). */
+    public static final int CLASH_MOVE = -1;
+
+    /** 2.3.6: recoiling from a clash, as every client sees it (since {@link #shownStart}). */
+    public boolean shownClash() {
+        return this.f_19804_.m_135370_(MOVE) == CLASH_MOVE;
     }
 
     /** The move under way as every client sees it (null: none), and since when (game ticks mod 2^30). */
@@ -391,7 +401,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         }
         this.m_21573_().m_26573_();
         this.face(this.foe);
-        if (now >= this.nextAttack) {
+        if (now >= this.nextAttack && !com.hexhaki.piece.server.Clashes.staggered(this, now)) {
             this.begin(this.choose(now), now);
         }
     }
@@ -459,6 +469,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         DamageSource source = this.m_269291_().m_269333_(this);
         for (Hit hit : this.move.hits()) {
             if (hit.tick() == tick) {
+                if (com.hexhaki.piece.server.Clashes.landing(this, now, this::foe)) {
+                    return; // 2.3.6: it met a blow coming back at it (or a blade came through it)
+                }
                 StyleCombat.land(this, this.move, hit, mastery, this::foe, this.struck, source);
             }
         }
@@ -476,6 +489,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         if (this.chargeStart >= 0) {
             return this.chargeDrew ? SwordAnims.CHARGE_DRAW : SwordAnims.CHARGE;
         }
+        if (this.clashAt >= 0) {
+            return SwordAnims.CLASH;
+        }
         if (this.sheathingUntil >= 0) {
             return SwordAnims.SHEATHE;
         }
@@ -491,6 +507,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         }
         if (this.chargeStart >= 0) {
             return this.chargeStart;
+        }
+        if (this.clashAt >= 0) {
+            return this.clashAt;
         }
         if (this.sheathingUntil >= 0) {
             return this.sheathingUntil - SwordRules.SHEATHE_TICKS;
@@ -531,6 +550,10 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         float edge = katana == null ? 1.0F : katana.edge();
         int mastery = SeaRules.MASTERY[this.rank()];
         DamageSource source = this.m_269291_().m_269333_(this);
+        if (this.clashAt >= 0 && now - this.clashAt >= SwordAnims.CLASH_TICKS) {
+            this.clashAt = -1;
+            this.idleSince = now;
+        }
         if (this.swordMove != null) {
             int tick = (int) (now - this.swordStart);
             if (tick >= this.swordMove.duration() || !this.m_6084_()) {
@@ -543,6 +566,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
                     this.face(this.foe);
                 }
                 StyleCombat.carry(this, this.swordMove.motion(), tick);
+                if (this.swordMove.cutAt(tick) >= 0 && com.hexhaki.piece.server.Clashes.landing(this, now, this::foe)) {
+                    return; // 2.3.6: the cut met a blow coming back at it
+                }
                 SwordMove.Cut[] cuts = this.swordMove.cuts();
                 for (int i = 0; i < cuts.length; i++) {
                     SwordMove.Cut cut = cuts[i];
@@ -572,6 +598,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
                         PieceConfig.get(PieceConfig.TERRAIN, true), source, this::foe);
                     PieceSounds.play(this, SwordSounds.SLASH, (float) (0.8 + 0.5 * c), SwordSounds.pitch(katana));
                 } else if (this.rank() < 2 && tick >= 1 && tick <= 3) {
+                    if (com.hexhaki.piece.server.Clashes.landing(this, now, this::foe)) {
+                        return; // 2.3.6: the charged cut met a blow coming back at it
+                    }
                     float damage = (float) SwordRules.lerp(SwordRules.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MAX, this.releaseCharge) * edge * 0.8F;
                     SwordServer.sweep(this, "sword_release", tick, SwordRules.lerp(SwordRules.CUT_REACH_MIN, SwordRules.CUT_REACH_MAX,
                         this.releaseCharge), this.releaseStruck, damage, Hit.Weight.FINISHER, 1.1, 0.25, 16, this::foe, source);
@@ -614,7 +643,8 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         }
         this.m_21563_().m_24960_(this.foe, 30.0F, 30.0F);
         double distance = Math.sqrt(this.foe.m_20280_(this));
-        boolean charge = this.rank() >= 1 && now >= this.slashReady && distance < 9.0 && this.m_217043_().m_188501_() < 0.04F;
+        boolean staggered = com.hexhaki.piece.server.Clashes.staggered(this, now) || this.clashAt >= 0;
+        boolean charge = !staggered && this.rank() >= 1 && now >= this.slashReady && distance < 9.0 && this.m_217043_().m_188501_() < 0.04F;
         if (charge) {
             this.chargeDrew = !this.drawn || this.sheathingUntil >= 0;
             this.drawn = true;
@@ -632,7 +662,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         }
         this.m_21573_().m_26573_();
         this.face(this.foe);
-        if (now >= this.nextAttack) {
+        if (now >= this.nextAttack && !staggered) {
             boolean sheathed = !this.drawn || this.sheathingUntil >= 0;
             Vec3 v = this.m_20184_();
             SwordMove.Branch branch = SwordCombo.branch(this.m_20096_(), Math.sqrt(v.f_82479_ * v.f_82479_ + v.f_82481_ * v.f_82481_));
@@ -649,6 +679,62 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
             this.nextAttack = now + (move.finisher() ? move.duration() + 8 + this.m_217043_().m_188503_(10)
                 : move.cancel() + this.m_217043_().m_188503_(pause + 1));
         }
+    }
+
+    /**
+     * 2.3.6: the blow it has on its way {@code now} (a style move's, or its sword's cut or charged cut), as a clash sees it; or null.
+     * Sea fighters have no Haki: their bare blows cannot meet a blade.
+     */
+    public com.hexhaki.piece.clash.ClashRules.Blow blow(long now) {
+        int mastery = SeaRules.MASTERY[this.rank()];
+        if (this.move != null) {
+            com.hexhaki.piece.clash.ClashBlows.Window window = com.hexhaki.piece.clash.ClashBlows.style(this.move, (int) (now - this.moveStart));
+            return window == null ? null : window.at(this.moveStart, window.hit() * PieceRules.masteryDamage(mastery), false, 0);
+        }
+        Katana katana = this.katana();
+        float edge = katana == null ? 1.0F : katana.edge();
+        if (this.swordMove != null) {
+            SwordMove.Cut[] cuts = this.swordMove.cuts();
+            double reach = com.hexhaki.piece.clash.ClashBlows.bladeReach(this.swordMove.animation(), cuts[0].from() - 1,
+                cuts[cuts.length - 1].to(), SwordRules.EXTEND, 2.6) + SwordRules.RADIUS + 0.3;
+            com.hexhaki.piece.clash.ClashBlows.Window window = com.hexhaki.piece.clash.ClashBlows.sword(this.swordMove,
+                (int) (now - this.swordStart), reach);
+            return window == null ? null : window.at(this.swordStart, window.hit() * edge * PieceRules.masteryDamage(mastery), false, 0);
+        }
+        if (this.releaseStart >= 0 && this.rank() < 2) {
+            double cut = SwordRules.lerp(SwordRules.CUT_REACH_MIN, SwordRules.CUT_REACH_MAX, this.releaseCharge);
+            double reach = com.hexhaki.piece.clash.ClashBlows.bladeReach("sword_release", 0, com.hexhaki.piece.clash.ClashBlows.RELEASE_LANDS,
+                cut, 2.6) + SwordRules.RADIUS + 0.3;
+            double damage = SwordRules.lerp(SwordRules.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MAX, this.releaseCharge) * edge * 0.8;
+            com.hexhaki.piece.clash.ClashBlows.Window window = com.hexhaki.piece.clash.ClashBlows.release((int) (now - this.releaseStart),
+                reach, damage);
+            return window == null ? null : window.at(this.releaseStart, damage, false, 0);
+        }
+        return null;
+    }
+
+    /**
+     * 2.3.6: its blow cut off by a clash ({@code server/Clashes}); {@code recoil}: knocked back (its recoil plays, as a player's does),
+     * else simply dropped (a blade came through its bare blow).
+     */
+    public void clashed(long now, boolean recoil) {
+        if (this.move != null) {
+            this.move = null;
+            this.f_19804_.m_135381_(MOVE, recoil ? CLASH_MOVE : 0);
+            this.f_19804_.m_135381_(MOVE_START, (int) (now & 0x3FFFFFFF));
+        }
+        if (this.swordMove != null || this.releaseStart >= 0) {
+            if (this.swordMove != null) {
+                this.swordLast = this.swordMove;
+                this.swordLastEnd = now;
+            }
+            this.swordMove = null;
+            this.releaseStart = -1;
+            this.idleSince = now;
+            this.clashAt = recoil ? now : -1;
+            this.showSword();
+        }
+        this.nextAttack = Math.max(this.nextAttack, now + 4);
     }
 
     /** Iron Body takes a fifth of each blow; the Shark Skin Counter turns the first aside and pays it back; whoever strikes is hunted. */

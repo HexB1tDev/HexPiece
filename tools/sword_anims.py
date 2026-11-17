@@ -1714,6 +1714,20 @@ def moves(with_draws=True):
     ], "Swordsman: the charged slash released: straight down from high behind the shoulder, the step in behind it.",
         cuts=((1, 3),)))
 
+    # 2.3.6 (the owner: "every move is clashable ... I want a impact frame whenever a clash happens"): a cut met by another blow
+    # (server/Clashes) stops dead and the blade is knocked back: up and over the right shoulder by the shock, the body leaning away and
+    # a step back to catch it, the free hand out for balance; then the blade comes down to the home pose. SwordAnims.CLASH_TICKS long.
+    write(Move("sword_clash", 12, [
+        b(0, "linear", held(H(3.2, 3.6, 6.6), D(0.18, 0.78, 0.6), D(0.0, -0.6, 0.78)), L_OUT, {"yaw": 4, "bend": -4, "z": 0.08},
+          LEGS_EASY, {"pitch": -10}),
+        b(2, "outexpo", held(H(5.6, 0.2, 4.6), D(0.22, 0.95, -0.2), D(0.0, 0.2, 0.98)), L_OUT, {"yaw": 10, "bend": -12, "y": -0.03,
+          "z": 0.2}, LEGS_BACK, {"pitch": -18}),
+        b(5, "inoutsine", held(H(2.6, 4.8, 5.8), D(0.08, 0.72, 0.69), D(0.0, -0.69, 0.72)), L_REST, {"yaw": 4, "bend": 6, "y": -0.1,
+          "z": 0.14}, LEGS_BACK, {"pitch": 2}),
+        stance_beat(12, body={"yaw": -6, "bend": 2, "z": 0.04}),
+    ], "Swordsman: the cut met by another blow and stopped dead: the blade knocked up over the shoulder, a step back, the guard found "
+       "again."))
+
     # 2.2.1 (the owner: "the sheath and unsheath is too fast. Slow those animations down. Don't make the blade usable until it's fully
     # unsheathed ... It should be the only drawback from having the swordsman ... Unless it's a quick draw"): the draw, slow and
     # deliberate: the right hand settles on the hilt, the left thumb pushes the guard out (koiguchi wo kiru), the blade slides out of

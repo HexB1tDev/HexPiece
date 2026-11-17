@@ -92,6 +92,15 @@
       "hexhaki:piece/sword/shing5"
     ]
   },
+  "piece.clash": {
+    "subtitle": "subtitles.hexhaki.piece.clash",
+    "sounds": [
+      "hexhaki:piece/clash/impact1",
+      "hexhaki:piece/clash/impact2",
+      "hexhaki:piece/clash/impact3",
+      "hexhaki:piece/clash/impact4"
+    ]
+  },
   "piece.sword.clash": {
     "subtitle": "subtitles.hexhaki.piece.sword.clash",
     "sounds": [
