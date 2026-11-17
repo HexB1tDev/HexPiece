@@ -1,6 +1,19 @@
 # HexPiece: handoff, 2.3.2 work in progress (the owner's sword bugs, natural arms, the victim's split view, NPC gestures)
 
-## STATE WHEN THE OWNER SAID STOP (session 2; read this first)
+## Session 3 (running state, newest first; kept current)
+- Session moved onto the "HexPiece" environment. Java (incl. Yoru's glide in SwordLayer) compiles. Yoru's new back carry rendered from
+  7 sides and judged fine (hilt out over the right shoulder, guard ~3 px off the back, both ropes loop round the blade).
+- A full solve was started at 19:17 UTC; a WIP commit mid-solve holds a mix of old and new animation JSONs: if this is the newest
+  note, run the full solve again before anything else.
+- New `tools/sword_gif.py OUT [regex]`: real-time GIFs (a frame every half tick, three views) of written sword moves.
+- Clashes started for 2.3.3: `clash/ClashRules` (pure: Blow, meets, clashable (a bare blow meets a blade only with Armament on),
+  bladeWins, power, thrown/lifted (HexGhoul 3.4.3), stagger, burst (Ryou meets Ryou), frameTicks) + `ClashTests` (30 checks pass).
+  Not wired into the game yet. Plan: `server/Clashes` (level tick over fighters with a blow on its way: StyleServer state.move/start
+  and the next Hit's tick; SwordServer state.move/moveStart and the Cut windows; SeaFighter move/moveStart, swordMove/swordStart),
+  both stopped, thrown apart, Impact.hit for hitstop/shake, a new S2CClash packet; client impact frame (the frame inverted, via the
+  ScreenSplit framebuffer copy; the original's FLASH_MANGA is only a flat overlay with speed lines); Ryou burst from ConquerorBolts.
+
+## STATE WHEN THE OWNER SAID STOP (session 2)
 - Pushed as work in progress, CI NOT checked (the owner's 98% / stop rule). The last full solve was STOPPED mid-run on purpose, so
   the animation JSONs are a mix of this session's solver versions; BladePaths/SayaSlide/SwordPoses were regenerated from them with
   `SOLVE=False` so the Java compiles. `python3 tools/sword_check.py` on them: 39/65 moves fail, mostly files written before this
