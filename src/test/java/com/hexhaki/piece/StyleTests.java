@@ -20,6 +20,7 @@ public final class StyleTests {
         combo();
         rules();
         galaxy();
+        waterBullet();
         Check.done("StyleTests");
     }
 
@@ -139,5 +140,45 @@ public final class StyleTests {
         String patch = java.nio.file.Files.readString(java.nio.file.Path.of("patch/PiecePatch.java"));
         Check.that(patch.contains("\"beginConvergence\", \"(Lnet/minecraft/server/level/ServerPlayer;)V\", GALAXY, \"begin\", 1}")
             && patch.contains("{CONTROLLER, \"beginConvergence\", 520, 0, 2}"), "the original's start goes through HexPiece, its mastery gone");
+    }
+
+    /** 2.3.8: the Water Bullet: five drops gathered over the raised fist, fired one a tick, homing. */
+    static void waterBullet() {
+        StyleMove move = StyleMove.of(FightingStyle.FISHMAN_KARATE, Slot.HEAVY);
+        Check.that(move == StyleMove.FK_BULLET && move.effect() == StyleMove.Effect.BULLETS, "the signature is the Water Bullet");
+        Hit[] hits = move.hits();
+        Check.that(hits.length == com.hexhaki.piece.water.WaterBullet.COUNT, "five drops");
+        for (int i = 0; i < hits.length; i++) {
+            int fire = com.hexhaki.piece.water.WaterBullet.fireTick(i);
+            Check.that(hits[i].tick() == fire, "drop " + i + " fires on its tick");
+            Check.that(com.hexhaki.piece.water.WaterBullet.grown(i, fire) == 1.0, "drop " + i + " is whole before it is fired");
+            Check.that(com.hexhaki.piece.water.WaterBullet.grown(i, com.hexhaki.piece.water.WaterBullet.gathers(i)) == 0.0,
+                "drop " + i + " starts as mist");
+            Check.that(com.hexhaki.piece.water.WaterBullet.gathers(i) >= com.hexhaki.piece.water.WaterBullet.RAISED, "it gathers once the hand is up");
+        }
+        double[] a = com.hexhaki.piece.water.WaterBullet.formation(0);
+        double[] m = com.hexhaki.piece.water.WaterBullet.formation(2);
+        double[] e = com.hexhaki.piece.water.WaterBullet.formation(4);
+        Check.that(a[0] < m[0] && m[0] < e[0] && m[1] > a[1] && Math.abs(a[1] - e[1]) < 1e-9 && a[2] == m[2],
+            "a flat arch across the fist, its middle highest, level across");
+        Check.that(m[1] > com.hexhaki.piece.water.WaterBullet.FIST[1], "over the fist");
+        for (int targets = 0; targets <= 7; targets++) {
+            for (int i = 0; i < 5; i++) {
+                int t = com.hexhaki.piece.water.WaterBullet.target(i, targets);
+                Check.that(targets == 0 ? t == -1 : t >= 0 && t < targets, "each drop locks onto one of the foes, or none");
+            }
+        }
+        Check.that(com.hexhaki.piece.water.WaterBullet.target(0, 3) == 0 && com.hexhaki.piece.water.WaterBullet.target(3, 3) == 0,
+            "the nearest first, round again");
+        double[] v = com.hexhaki.piece.water.WaterBullet.steer(new double[] {0, 0, 1}, new double[] {1, 0, 0});
+        double turned = Math.toDegrees(Math.acos(v[2] / Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])));
+        Check.near(turned, Math.toDegrees(com.hexhaki.piece.water.WaterBullet.TURN), 1e-6, "it turns after its target a little a tick");
+        Check.near(Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]), com.hexhaki.piece.water.WaterBullet.SPEED, 1e-9, "at its speed");
+        double[] straight = com.hexhaki.piece.water.WaterBullet.steer(new double[] {0, 0, 1}, new double[] {0.1, 0, 1});
+        Check.that(straight[0] > 0 && Math.abs(straight[0] / straight[2] - 0.1) < 1e-9, "a small turn is made at once");
+        Check.that(com.hexhaki.piece.water.WaterBullet.ahead(0, 1, 0.2, 5) && !com.hexhaki.piece.water.WaterBullet.ahead(0, 1, 5, -1),
+            "it locks onto foes in front, not behind");
+        double[] w = com.hexhaki.piece.water.WaterBullet.world(new double[] {1, 0, 0}, 0, 0, 0, 0);
+        Check.that(w[0] < -0.99, "the user's right at yaw 0 is west (-x), as the game turns players");
     }
 }

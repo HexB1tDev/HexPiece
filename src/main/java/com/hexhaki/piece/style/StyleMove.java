@@ -58,9 +58,11 @@ public enum StyleMove {
         Motion.lunge(2, 0.2), Effect.NONE, Hit.medium(5, 2.8, 5.0F).wide(45).throwing(0.15, 0.45)),
     FK_BRICK(FightingStyle.FISHMAN_KARATE, Slot.M1_4, "Thousand-Brick Fist", "A fist whose shock passes through them like a wave.", 16, 14,
         0, 0, Motion.lunge(6, 0.35), Effect.NONE, Hit.finisher(9, 3.6, 10.0F).wide(40).throwing(1.6, 0.2)),
-    FK_BULLETS(FightingStyle.FISHMAN_KARATE, Slot.HEAVY, "Water Bullets", "Three drops flicked from the fingers, hard as shot.", 16, 16, 70, 0,
-        Motion.NONE, Effect.WATER, Hit.line(5, 18.0, 0.7, 3.5F, Weight.LIGHT), Hit.line(8, 18.0, 0.7, 3.5F, Weight.LIGHT),
-        Hit.line(11, 18.0, 0.7, 4.5F, Weight.MEDIUM)),
+    // 2.3.8 (the owner's rework): five drops gathered out of the air over the raised fist, fired one a tick, each homing on a foe in
+    // front (water/WaterBullet, server/WaterServer); its hits are the shots' ticks and each drop's damage, flown by WaterServer
+    FK_BULLET(FightingStyle.FISHMAN_KARATE, Slot.HEAVY, "Water Bullet", "The hand raised to the sky: five drops of water gather over it "
+        + "out of the air. Pushed forward, they fire, each locking onto a foe in front.", 28, 28, 90, 0, Motion.NONE, Effect.BULLETS,
+        bullets()),
     FK_COUNTER(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_A, "Shark Skin Counter", "A ready stance: the next blow is turned aside and paid "
         + "back with a palm.", 25, 25, 160, 60, Motion.NONE, Effect.COUNTER),
     FK_WAVE(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B, "Five-Thousand Brick Wave", "A fist into the ground: the shock runs out ahead "
@@ -102,7 +104,9 @@ public enum StyleMove {
         /** The first blow taken is turned aside and paid back. */
         COUNTER,
         /** Each body is hit once by the whole move, however many of its blows pass through it. */
-        ONCE
+        ONCE,
+        /** 2.3.8: its blows are drops of water gathered over the fist and fired as homing shots (server/WaterServer). */
+        BULLETS
     }
 
     private final FightingStyle style;
@@ -130,6 +134,16 @@ public enum StyleMove {
         this.motion = motion;
         this.effect = effect;
         this.hits = hits;
+    }
+
+    /** 2.3.8: the Water Bullet's five shots, one a tick from {@code WaterBullet.FIRE}: each drop flies as far as it reaches. */
+    private static Hit[] bullets() {
+        Hit[] hits = new Hit[com.hexhaki.piece.water.WaterBullet.COUNT];
+        for (int i = 0; i < hits.length; i++) {
+            hits[i] = Hit.line(com.hexhaki.piece.water.WaterBullet.fireTick(i), com.hexhaki.piece.water.WaterBullet.RANGE,
+                com.hexhaki.piece.water.WaterBullet.RADIUS, 3.5F, Weight.LIGHT);
+        }
+        return hits;
     }
 
     private static Hit[] gatling() {

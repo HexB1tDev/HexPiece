@@ -15,8 +15,8 @@ public final class PieceNetwork {
     /** 1 (2.1.1): profiles, the start menu, fighting styles. 2 (2.1.2): C2SCombat (message 5), combat mode; S2CStance
      * (message 6), who holds a stance; S2CStyleFx stage 3. 3 (2.1.3): S2CRyou (message 7), a player's Ryou colour. 4 (2.1.4): the
      * Swordsman: C2SSword (8), S2CSword (9), S2CSwordFx (10), S2CSlash (11), S2CFinisher (12). 5 (2.3.6): S2CClash (13), two
-     * blows meeting. */
-    private static final String PROTOCOL = "5";
+     * blows meeting. 6 (2.3.8): S2CWater (14), Fishman Karate's water. */
+    private static final String PROTOCOL = "6";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -43,6 +43,7 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(11, S2CSlash.class, S2CSlash::encode, S2CSlash::decode, S2CSlash::handle);
         CHANNEL.registerMessage(12, S2CFinisher.class, S2CFinisher::encode, S2CFinisher::decode, S2CFinisher::handle);
         CHANNEL.registerMessage(13, S2CClash.class, S2CClash::encode, S2CClash::decode, S2CClash::handle);
+        CHANNEL.registerMessage(14, S2CWater.class, S2CWater::encode, S2CWater::decode, S2CWater::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

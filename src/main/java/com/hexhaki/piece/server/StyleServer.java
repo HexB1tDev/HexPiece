@@ -77,6 +77,12 @@ public final class StyleServer {
         return state != null && state.combat;
     }
 
+    /** 2.3.8: the style move {@code player} is in (null: none). */
+    public static StyleMove moveOf(ServerPlayer player) {
+        State state = STATES.get(player.m_20148_());
+        return state == null ? null : state.move;
+    }
+
     /** True while {@code player} is in a style move (the client's M1 does nothing else then). */
     public static boolean busy(ServerPlayer player) {
         State state = STATES.get(player.m_20148_());
@@ -223,6 +229,12 @@ public final class StyleServer {
             return;
         }
         StyleCombat.carry(player, move, tick);
+        if (move.effect() == StyleMove.Effect.BULLETS) {
+            // 2.3.8: the Water Bullet's drops are gathered and flown by WaterServer (homing shots, not blows landing here)
+            WaterServer.bullets(player, move, tick, state.start, ProfileServer.of(player).mastery(move.style()),
+                other -> FruitUtil.foe(player, other), StyleCombat.of(player));
+            return;
+        }
         PieceProfile profile = null;
         for (Hit hit : move.hits()) {
             if (hit.tick() == tick) {

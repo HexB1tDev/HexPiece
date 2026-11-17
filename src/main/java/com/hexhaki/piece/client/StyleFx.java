@@ -42,7 +42,13 @@ public final class StyleFx {
             return;
         }
         switch (message.stage()) {
-            case 0 -> started(level, move, message);
+            case 0 -> {
+                if (move.effect() == StyleMove.Effect.BULLETS) {
+                    // 2.3.8: the Water Bullet's drops gather over the fist from the move's start
+                    com.hexhaki.piece.client.fx.WaterFx.gather(message.entity(), level.m_46467_());
+                }
+                started(level, move, message);
+            }
             case 1 -> landed(move, new Vec3(message.x(), message.y(), message.z()), flat(message.dx(), message.dz()));
             case 2 -> shot(move, new Vec3(message.dx(), message.dy(), message.dz()), new Vec3(message.x(), message.y(), message.z()));
             case 3 -> swing(move, new Vec3(message.x(), message.y(), message.z()), flat(message.dx(), message.dz()), (int) Math.round(message.dy()));

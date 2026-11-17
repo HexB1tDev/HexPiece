@@ -84,6 +84,12 @@ public final class ClashTests {
         Check.that(ClashRules.WINDUP <= 4, "two blows meet only when both strike at about the same moment");
         for (StyleMove move : StyleMove.values()) {
             Hit[] hits = move.hits();
+            if (move.effect() == StyleMove.Effect.BULLETS) {
+                for (int tick = 0; tick < move.duration(); tick++) {
+                    Check.that(ClashBlows.style(move, tick) == null, move + ": its drops fly on their own, no blow of the body's to clash");
+                }
+                continue;
+            }
             for (int tick = 0; tick < move.duration(); tick++) {
                 ClashBlows.Window w = ClashBlows.style(move, tick);
                 Hit next = null;

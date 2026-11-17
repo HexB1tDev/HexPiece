@@ -77,6 +77,23 @@ public final class PieceFx {
         return whole + (Math.random() < scaled - whole ? 1 : 0);
     }
 
+    /** Nothing within this many blocks of the first-person eye (and its own size more): a sprite there would fill the view. */
+    public static final double CLEARANCE = 0.9;
+
+    /**
+     * 2.3.8 (the owner: "Sharkman Karate makes a player's whole screen completely white"): true if a particle {@code size} blocks
+     * across at {@code at} would sit in the first-person eye (within {@link #CLEARANCE} and its size of it): a spray puff or a water drop
+     * spawned at a fighter's own face fills the whole view with its tint. Such particles are not spawned.
+     */
+    public static boolean inFace(Vec3 at, double size) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (minecraft.f_91063_ == null || minecraft.f_91066_ == null || !minecraft.f_91066_.m_92176_().m_90612_()) {
+            return false;
+        }
+        double range = CLEARANCE + size;
+        return minecraft.f_91063_.m_109153_().m_90583_().m_82557_(at) < range * range;
+    }
+
     /** True if {@code at} is within {@code range} blocks of the camera. */
     public static boolean near(Vec3 at, double range) {
         Minecraft minecraft = Minecraft.m_91087_();
@@ -208,6 +225,7 @@ public final class PieceFx {
         private float size0 = 0.2F;
         private float size1 = 0.1F;
         private float bloom = 2.0F;
+        private Vec3 at;
 
         Mote(ParticleEmitter emitter) {
             super(emitter, emitter.config, emitter.getRandomSource());
@@ -215,6 +233,7 @@ public final class PieceFx {
         }
 
         public Mote world(Vec3 world) {
+            this.at = world;
             Vec3 origin = ORIGINS.getOrDefault(this.owner, Vec3.f_82478_);
             Vec3 local = world.m_82546_(origin);
             this.setLocalPos(new Vector3f((float) local.f_82479_, (float) local.f_82480_, (float) local.f_82481_), true);
@@ -269,6 +288,9 @@ public final class PieceFx {
         }
 
         public void spawn() {
+            if (this.at != null && inFace(this.at, Math.max(this.size0, this.size1))) {
+                return; // 2.3.8: never a sprite in the eye
+            }
             this.owner.emitParticle(this);
         }
 

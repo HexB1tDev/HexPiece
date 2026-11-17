@@ -160,6 +160,11 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         return FightingStyle.byOrdinal(this.f_19804_.m_135370_(STYLE));
     }
 
+    /** 2.3.8: the style move under way (null: none), server side. */
+    public StyleMove currentMove() {
+        return this.move;
+    }
+
     /** 2.3.6: MOVE while it recoils from a clash (no move: its recoil, from MOVE_START). */
     public static final int CLASH_MOVE = -1;
 
@@ -467,6 +472,10 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         StyleCombat.carry(this, this.move, tick);
         int mastery = SeaRules.MASTERY[this.rank()];
         DamageSource source = this.m_269291_().m_269333_(this);
+        if (this.move.effect() == StyleMove.Effect.BULLETS) {
+            com.hexhaki.piece.server.WaterServer.bullets(this, this.move, tick, this.moveStart, mastery, this::foe, source);
+            return;
+        }
         for (Hit hit : this.move.hits()) {
             if (hit.tick() == tick) {
                 if (com.hexhaki.piece.server.Clashes.landing(this, now, this::foe)) {

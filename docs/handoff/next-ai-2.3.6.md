@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 and 2.3.7 (clashes; the Galaxy Fist made Iron Fist's)
+# HexPiece: handoff after 2.3.6 to 2.3.8 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's Water Bullet)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.3.8** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.3.9** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,37 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## Done in 2.3.8: the Fishman Karate rework, part 1 (next-ai-2.2.6.md item 3)
+- The rework's moves, decided (the owner listed three new moves; Fishman has three non-string slots): right click = Water Bullet
+  (2.3.8, replaced the old Water Bullets), Y = Brick Fist (next, replaces the Shark Skin Counter), U = Water Prison (then, replaces the
+  Five-Thousand Brick Wave). The M1 string stays. Effect.COUNTER's code (StyleServer.attacked, SeaFighter.m_6469_) and the
+  counter/wave animations stay until their moves are replaced.
+- **Water as a body** (pure `water/WaterMesh`): a sphere round its line of flight (poles on the line), wobbling (`wobble`: three slow
+  lobes), drawn out into a teardrop (`stretch`: the back pulled 1x, the front 0.35x), shaded per vertex from the eye (`shade`: deep
+  0x1A6FC4 to shallow 0x9ADCFF by fresnel^2.2, alpha 0.2 + 0.62 fresnel, the sky's specular ^48 from `SKY`, the gathered light on the
+  side away from the sky), opacity `DROP` 1.6 / `PRISON` 1.15; triangles sorted back to front from the eye (the far inner wall first);
+  `resolution` by size on screen. Drawn by `client/fx/WaterFx` into `RenderType.debugQuads` (alpha blended, no cull, as the glows
+  since 2.1.9), each triangle a quad with its last point twice, RGB times the sky's light (`m_104805_`, 0.32 at night).
+  Preview: `tools/preview/WaterPreview.java` (scenes drops, flight, bubble, close, bullet [age]); docs/images/water-bodies.png,
+  water-bullet.png.
+- **Water Bullet** (pure `water/WaterBullet`; `StyleMove.FK_BULLET`, `Effect.BULLETS`, its hits = the five shots' ticks and damage):
+  the hand up by tick 4, drop i gathers from tick 4 + i over 6 ticks (`grown`), on a flat arch (`formation`: half width 0.5, middle 0.2
+  higher, 0.32 over the fist at FIST (0.34 right, 2.18 up, 0.12 ahead)), fired at 16 + i (`fireTick`), 1.5 blocks a tick, turning at
+  most 24 deg a tick after its target (`steer`), life 28, locked onto the foes within 24 blocks and 45 deg of the facing, nearest first,
+  round again (`target`). Server `server/WaterServer` (`bullets` called each tick of the move from StyleServer.tick and
+  SeaFighter.tickMove instead of StyleCombat.land; drops fly in its level tick: the first foe along the tick's path (its box + 0.45) or
+  the first block (ClipContext) -> hurt + `Impact` light throw, BURST; out of life -> FADE; a move cut short -> SPILL). Sounds: the
+  game's own by name (`WaterServer.vanilla`: ForgeRegistries.SOUND_EVENTS.getValue, "entity.fishing_bobber.splash",
+  "entity.generic.splash", "block.bubble_column.upwards_inside" as the drops gather). `S2CWater` (protocol 6): FIRE, BURST, FADE, SPILL.
+  Client `WaterFx`: the gathering starts from S2CStyleFx stage 0 of a BULLETS move (`StyleFx.accept`); mist motes drawn in (PieceFx
+  DROP, fading in as they arrive) while each drop swells; flight simulated with the same `steer` after the target's client position;
+  bursts: spray, a ring, 7 droplets (`Bit`s: little bodies under gravity). `ClashBlows.style` gives BULLETS moves no blow (their drops
+  fly on their own). Animation `style_fishman_karate_bullet` (28 ticks; the old `_bullets` deleted). Tests: StyleTests.waterBullet,
+  ClashTests.
+- **The white screen** (the owner's report, still not reproduced): `PieceFx.inFace`: no PieceFx particle is spawned within
+  `CLEARANCE` 0.9 + its size of the first-person eye (a spray puff at a fighter's own face fills the view with its tint: a suspect).
+  Told the owner in the notes; ask again.
 
 ## Done in 2.3.7 (the owner, after 2.3.6: "Continue and dont stop")
 - **Galaxy Fist for Iron Fist** (next-ai-2.2.6.md item 2; the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the
@@ -80,7 +111,12 @@ Nothing was ever tested in game (only the owner can).
 2. The Fishman Karate white screen (not found; ask when it happens, a full screenshot; suspects: Photon bloom, ImpactClient's flash).
 3. Not clashable yet: the flying Haki slash (HakiSlashes, a projectile): could meet a slash or a blow later. Iron Body and the
    Shark Skin Counter throw no blow (their own rules hold).
-4. The Fishman Karate rework, then Six Powers (next-ai-2.2.6.md items 3 and 4). (Galaxy Fist: done in 2.3.7.)
+4. The Fishman Karate rework: the Brick Fist (Y: "The user punches where he's looking creating a water shockwave, causes knockback and
+   ragdoll (Ragdoll mechanic can be taken from HexGhoul)"), then the Water Prison (U: "pulls both hands up into the sky (Needs an
+   entity to target) the entity selected gets trapped and floats a bit off the ground in a water bubble a bit bigger than the
+   entity's or player's size for 5 seconds. (perfect stun, entity can only look around.)": breakable by enough damage or the
+   Conqueror's, with a cooldown, unless the owner says otherwise; WaterMesh's PRISON opacity is ready for its bubble). Then Six
+   Powers (next-ai-2.2.6.md item 4). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8.)
 
 ## Not verified (only the owner can)
 Everything in game: clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,

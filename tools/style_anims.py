@@ -68,7 +68,7 @@ def p(*pieces, **parts):
 # FREE_LEGS: the legs are left out of the file, so the game keeps walking, sprinting or standing them; the body is never raised or
 #   lowered (it would lift or sink the walking feet), its turn, lean and the arms carry the blow. Kicks, the knee, the ground punch
 #   and the shoulder charge keep their legs.
-PUNCHES = ("style_fishman_karate_palm", "style_fishman_karate_backfist", "style_fishman_karate_brick", "style_fishman_karate_bullets",
+PUNCHES = ("style_fishman_karate_palm", "style_fishman_karate_backfist", "style_fishman_karate_brick", "style_fishman_karate_bullet",
            "style_fishman_karate_counter", "style_fishman_karate_counter_strike", "style_brawler_jab", "style_brawler_cross",
            "style_brawler_hook", "style_brawler_upper", "style_brawler_haymaker", "style_brawler_gatling",
            "style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
@@ -384,14 +384,24 @@ def fishman_karate():
         (13, "inoutsine", p(FK, rightArm=arm(-50, 0, 8, -50), body={"y": -0.12, "yaw": 6, "z": -0.1})),
         (16, "inoutsine", FK),
     ], "Fishman Karate: the Thousand-Brick Fist, its shock passing through them like a wave.")
-    up = p(FK, rightArm=arm(-82, -10, 4, -62), body={"y": -0.1, "yaw": 6})
-    flick = p(FK, rightArm=arm(-96, -6, 4, -4), body={"y": -0.1, "yaw": 10})
-    write(s + "bullets", 16, [
-        (0, "linear", FK), (3, "inoutsine", up), (5, "outexpo", flick), (6, "inoutsine", up), (8, "outexpo", flick), (9, "inoutsine", up),
-        (11, "outexpo", p(flick, rightArm=arm(-100, -6, 4, 0), body={"y": -0.1, "yaw": 14, "z": -0.05})),
-        (12, "outback", p(flick, rightArm=arm(-102, -6, 4, 0), body={"y": -0.1, "yaw": 15, "z": -0.05})),
-        (16, "inoutsine", FK),
-    ], "Fishman Karate: three drops of water flicked from the fingers, hard as shot.")
+    # 2.3.8 (the owner: "Water Bullet: The user pulls the right hand up into the sky and 5 dropplets of water form on top of the first
+    # in a horizontal arch line over the fist, then the user pushes the hand forward (pointing forward) and the bullets auto fire"): the
+    # right hand straight up to the sky by tick 4 (water/WaterBullet.RAISED), held, trembling a little as the drops gather over it
+    # (4-12), the eyes on them; pushed forward, pointing, at 14-15; held pointing as the five fire one a tick (16-20), each kicking it
+    # back a hair; then down
+    sky = p(FK, rightArm=arm(-176, 0, 6, -4), leftArm=arm(-40, 22, -12, -84), body={"bend": -5, "yaw": 4}, head={"pitch": -16})
+    point = p(FK, rightArm=arm(-92, -6, 4, 0), leftArm=arm(-30, 18, -14, -70), body={"bend": 4, "yaw": 12, "z": -0.06}, head={"pitch": 0})
+    kick = p(point, rightArm=arm(-97, -6, 4, -6), body={"bend": 3, "yaw": 11, "z": -0.04})
+    beats = [(2, "insine", p(FK, rightArm=arm(-120, 0, 8, -60), leftArm=arm(-50, 18, -10, -70), body={"bend": -2}, head={"pitch": -8})),
+             (4, "outexpo", sky)]
+    beats += shake(sky, [7, 10, 12], 0.8, (("rightArm", "roll"),))
+    beats += [(14, "insine", p(FK, rightArm=arm(-140, -4, 6, -20), leftArm=arm(-36, 20, -12, -76), body={"bend": -2, "yaw": 6})),
+              (15, "outexpo", point)]
+    for t in range(16, 21):
+        beats.append((t, "outsine", kick if t % 2 == 0 else point))
+    beats += [(23, "inoutsine", p(point, rightArm=arm(-60, 0, 8, -40))), (28, "inoutsine", FK)]
+    write(s + "bullet", 28, beats, "Fishman Karate: the hand raised to the sky, five drops of water gathered over it out of the air, then "
+          "pushed forward and fired, each locked onto a foe in front.")
     ready = p(arms(right=arm(-58, -26, 10, -112), left=arm(-72, 12, -6, -30)), legs(34, 15), body={"y": -0.14, "yaw": -18}, head={"pitch": 3})
     write(s + "counter", 25, [(0, "linear", FK), (3, "outexpo", ready)] + shake(ready, [6, 10, 14, 18], 1.2, (("body", "yaw"),))
           + [(21, "inoutsine", ready), (25, "inoutsine", FK)],

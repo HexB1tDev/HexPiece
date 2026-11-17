@@ -1,0 +1,367 @@
+package com.hexhaki.piece.client.fx;
+
+import com.hexhaki.piece.network.S2CWater;
+import com.hexhaki.piece.water.WaterBullet;
+import com.hexhaki.piece.water.WaterMesh;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import org.joml.Matrix4f;
+
+/**
+ * 2.3.8: Fishman Karate's water seen (the owner: "make sure the water abilities are super realistic, like the water actually materializes
+ * from the air particles in the air, and forms realistic water moves"). Water is drawn as bodies ({@link WaterMesh}: clear in the
+ * middle, bright at the rim, glinting), alpha blended and laid back to front: never additive, right without culling.
+ *
+ * <p>The Water Bullet ({@link WaterBullet}): from the move's start, over the user's raised fist, the air's moisture is drawn in from all
+ * round each drop's place as a fine mist (each mote racing in and fading as it arrives) while the drop swells out of nothing, wobbling,
+ * one after another along the arch; fired ({@link S2CWater#FIRE}), each drop flies drawn out into a teardrop along its flight, turning
+ * after the body it is locked onto, shedding spray; where it bursts ({@link S2CWater#BURST}) a splash: spray, a ring, droplets flung out
+ * and falling; at the end of its flight it falls apart into spray; drops still over a fist whose move stopped fall and splash.
+ */
+@Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
+public final class WaterFx {
+    static final Random RANDOM = new Random();
+    static final int MIST = 0x70D8F2FF;
+    static final int MIST_FADE = 0x00E8F8FF;
+    /** Fighters gathering drops: entity id -> the game tick their move began, and which drops are gone from over the fist. */
+    private static final Map<Integer, Gathering> GATHERING = new HashMap<>();
+    /** Drops in flight, by their number. */
+    private static final Map<Integer, Flying> FLYING = new HashMap<>();
+    /** Droplets thrown off a burst (and fallen drops): small bodies under gravity. */
+    private static final List<Bit> BITS = new ArrayList<>();
+    private static final int MOST_BITS = 160;
+
+    static final class Gathering {
+        final long start;
+        final boolean[] gone = new boolean[WaterBullet.COUNT];
+
+        Gathering(long start) {
+            this.start = start;
+        }
+    }
+
+    static final class Flying {
+        final int target;
+        final long seed;
+        Vec3 at;
+        Vec3 last;
+        Vec3 velocity;
+        int age;
+
+        Flying(int target, Vec3 at, Vec3 velocity, long seed) {
+            this.target = target;
+            this.at = at;
+            this.last = at;
+            this.velocity = velocity;
+            this.seed = seed;
+        }
+    }
+
+    static final class Bit {
+        Vec3 at;
+        Vec3 last;
+        Vec3 velocity;
+        final double radius;
+        final int life;
+        final long seed;
+        int age;
+
+        Bit(Vec3 at, Vec3 velocity, double radius, int life, long seed) {
+            this.at = at;
+            this.last = at;
+            this.velocity = velocity;
+            this.radius = radius;
+            this.life = life;
+            this.seed = seed;
+        }
+    }
+
+    private WaterFx() {
+    }
+
+    /** A fighter began its Water Bullet at game tick {@code start}: the drops gather over its fist. */
+    public static void gather(int user, long start) {
+        GATHERING.put(user, new Gathering(start));
+    }
+
+    public static void accept(S2CWater message) {
+        ClientLevel level = Minecraft.m_91087_().f_91073_;
+        if (level == null) {
+            return;
+        }
+        Vec3 at = new Vec3(message.x(), message.y(), message.z());
+        Vec3 dir = new Vec3(message.dx(), message.dy(), message.dz());
+        switch (message.kind()) {
+            case S2CWater.FIRE -> {
+                Gathering gathering = GATHERING.get(message.user());
+                if (gathering != null && message.index() >= 0 && message.index() < WaterBullet.COUNT) {
+                    gathering.gone[message.index()] = true;
+                }
+                FLYING.put(message.id(), new Flying(message.target(), at, dir, message.id() * 0x9E3779B97F4A7C15L));
+                spray(at, dir.m_82490_(0.2), 4, 0.08);
+            }
+            case S2CWater.BURST -> {
+                FLYING.remove(message.id());
+                splash(at, dir.m_82541_(), message.target() >= 0 ? 1.0 : 0.8);
+            }
+            case S2CWater.FADE -> {
+                FLYING.remove(message.id());
+                spray(at, dir.m_82490_(0.3), 10, 0.18);
+            }
+            case S2CWater.SPILL -> spill(level, message.user());
+            default -> {
+            }
+        }
+    }
+
+    /** The drops still over a fist fall from it. */
+    static void spill(ClientLevel level, int user) {
+        Gathering gathering = GATHERING.remove(user);
+        Entity entity = level.m_6815_(user);
+        if (gathering == null || entity == null) {
+            return;
+        }
+        double age = level.m_46467_() - gathering.start;
+        for (int i = 0; i < WaterBullet.COUNT; i++) {
+            if (!gathering.gone[i] && WaterBullet.grown(i, age) > 0.3) {
+                Vec3 at = place(entity, i, 1.0F);
+                bit(at, new Vec3(r(0.03), 0.02, r(0.03)), WaterBullet.RADIUS * WaterBullet.grown(i, age) * 0.9, 18);
+            }
+        }
+    }
+
+    static double r(double spread) {
+        return (RANDOM.nextDouble() - 0.5) * 2.0 * spread;
+    }
+
+    /** Drop {@code i}'s place over {@code entity}'s raised fist, now. */
+    static Vec3 place(Entity entity, int i, float partial) {
+        Vec3 feet = entity.m_20318_(partial);
+        float yaw = entity.f_19859_ + wrap(entity.m_146908_() - entity.f_19859_) * partial;
+        double[] p = WaterBullet.world(WaterBullet.formation(i), feet.f_82479_, feet.f_82480_, feet.f_82481_, yaw);
+        return new Vec3(p[0], p[1], p[2]);
+    }
+
+    static float wrap(float degrees) {
+        float d = degrees % 360.0F;
+        if (d >= 180.0F) {
+            d -= 360.0F;
+        }
+        if (d < -180.0F) {
+            d += 360.0F;
+        }
+        return d;
+    }
+
+    /** Fine spray off {@code at}, drifting along {@code drift}. */
+    static void spray(Vec3 at, Vec3 drift, int wanted, double spread) {
+        int n = PieceFx.count(wanted);
+        for (int i = 0; i < n; i++) {
+            PieceFx.at(PieceFx.DROP, false, 8 + RANDOM.nextInt(6), at.m_82520_(r(spread), r(spread), r(spread)))
+                .velocity(drift.m_82520_(r(0.05), r(0.04) + 0.01, r(0.05))).colors(MIST, MIST_FADE).size(0.06, 0.03).fall(0.02).drag(0.9)
+                .bloom(0).spawn();
+        }
+    }
+
+    /** A drop strikes: spray, a ring along the way it flew, droplets flung out and back and falling. */
+    static void splash(Vec3 at, Vec3 dir, double strength) {
+        spray(at, dir.m_82490_(-0.12), (int) (16 * strength), 0.12);
+        PieceFx.at(PieceFx.RING, false, 7, at).colors(0xA0C8EEFF, 0x00C8EEFF).size(0.15, 1.3 * strength).bloom(0).spawn();
+        int n = PieceFx.count((float) (7 * strength));
+        for (int i = 0; i < n; i++) {
+            Vec3 out = new Vec3(r(1), r(0.6) + 0.5, r(1)).m_82541_();
+            // thrown back off what it struck and out round it
+            Vec3 velocity = out.m_82490_(0.12 + RANDOM.nextDouble() * 0.14).m_82549_(dir.m_82490_(-0.1));
+            bit(at, velocity, 0.028 + RANDOM.nextDouble() * 0.03, 12 + RANDOM.nextInt(8));
+        }
+    }
+
+    static void bit(Vec3 at, Vec3 velocity, double radius, int life) {
+        if (BITS.size() >= MOST_BITS) {
+            BITS.remove(0);
+        }
+        BITS.add(new Bit(at, velocity, radius, life, RANDOM.nextLong()));
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- each tick
+
+    @SubscribeEvent
+    public static void waterClientTick(TickEvent.ClientTickEvent event) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        ClientLevel level = minecraft.f_91073_;
+        if (event.phase != TickEvent.Phase.END || level == null || minecraft.m_91104_()) {
+            if (level == null) {
+                clear();
+            }
+            return;
+        }
+        long now = level.m_46467_();
+        for (Iterator<Map.Entry<Integer, Gathering>> it = GATHERING.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<Integer, Gathering> entry = it.next();
+            Gathering gathering = entry.getValue();
+            Entity user = level.m_6815_(entry.getKey());
+            double age = now - gathering.start;
+            if (user == null || age > WaterBullet.fireTick(WaterBullet.COUNT - 1) + 6) {
+                it.remove();
+                continue;
+            }
+            for (int i = 0; i < WaterBullet.COUNT; i++) {
+                double grown = WaterBullet.grown(i, age);
+                if (gathering.gone[i] || age < WaterBullet.gathers(i) || grown >= 1.0) {
+                    continue;
+                }
+                // the air's moisture drawn in from all round the drop's place, each mote arriving as it fades
+                Vec3 place = place(user, i, 1.0F);
+                int n = PieceFx.count(3);
+                for (int k = 0; k < n; k++) {
+                    Vec3 off = new Vec3(r(1), r(1), r(1)).m_82541_().m_82490_(0.45 + RANDOM.nextDouble() * 0.5);
+                    int life = 4 + RANDOM.nextInt(3);
+                    PieceFx.at(PieceFx.DROP, false, life, place.m_82549_(off)).velocity(off.m_82490_(-1.0 / life)).colors(0x00D8F2FF, 0xA0E0F6FF)
+                        .size(0.035, 0.05).drag(1.0).bloom(0).spawn();
+                }
+            }
+        }
+        for (Iterator<Flying> it = FLYING.values().iterator(); it.hasNext(); ) {
+            Flying drop = it.next();
+            drop.age++;
+            if (drop.age > WaterBullet.LIFE + 4) {
+                it.remove();
+                continue;
+            }
+            Entity target = drop.target >= 0 ? level.m_6815_(drop.target) : null;
+            if (target != null && target.m_6084_()) {
+                Vec3 to = target.m_20182_().m_82520_(0.0, target.m_20206_() * 0.5, 0.0).m_82546_(drop.at);
+                double[] v = WaterBullet.steer(new double[] {drop.velocity.f_82479_, drop.velocity.f_82480_, drop.velocity.f_82481_},
+                    new double[] {to.f_82479_, to.f_82480_, to.f_82481_});
+                drop.velocity = new Vec3(v[0], v[1], v[2]);
+            }
+            drop.last = drop.at;
+            drop.at = drop.at.m_82549_(drop.velocity);
+            // a thin trail of spray where it passed
+            if (RANDOM.nextFloat() < 0.8F * PieceFx.density()) {
+                PieceFx.at(PieceFx.DROP, false, 7, drop.last.m_82549_(drop.velocity.m_82490_(RANDOM.nextDouble()))).velocity(new Vec3(r(0.02),
+                    0.0, r(0.02))).colors(0x80D8F2FF, 0x00E8F8FF).size(0.045, 0.02).fall(0.015).drag(0.92).bloom(0).spawn();
+            }
+        }
+        for (Iterator<Bit> it = BITS.iterator(); it.hasNext(); ) {
+            Bit bit = it.next();
+            bit.age++;
+            if (bit.age > bit.life) {
+                it.remove();
+                if (RANDOM.nextFloat() < 0.5F) {
+                    spray(bit.at, Vec3.f_82478_, 2, 0.03);
+                }
+                continue;
+            }
+            bit.last = bit.at;
+            bit.velocity = new Vec3(bit.velocity.f_82479_ * 0.96, bit.velocity.f_82480_ * 0.96 - 0.035, bit.velocity.f_82481_ * 0.96);
+            bit.at = bit.at.m_82549_(bit.velocity);
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------------- drawn
+
+    @SubscribeEvent
+    public static void waterStage(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || GATHERING.isEmpty() && FLYING.isEmpty() && BITS.isEmpty()) {
+            return;
+        }
+        ClientLevel level = Minecraft.m_91087_().f_91073_;
+        if (level == null) {
+            return;
+        }
+        try {
+            draw(event.getPoseStack(), event.getCamera().m_90583_(), level, event.getPartialTick());
+        } catch (RuntimeException failure) {
+            clear(); // water never stops the game
+        }
+    }
+
+    static void draw(PoseStack pose, Vec3 cam, ClientLevel level, float partial) {
+        List<WaterMesh.Body> bodies = new ArrayList<>();
+        long now = level.m_46467_();
+        for (Map.Entry<Integer, Gathering> entry : GATHERING.entrySet()) {
+            Entity user = level.m_6815_(entry.getKey());
+            if (user == null) {
+                continue;
+            }
+            double age = now - entry.getValue().start + partial;
+            for (int i = 0; i < WaterBullet.COUNT; i++) {
+                double grown = WaterBullet.grown(i, age);
+                if (entry.getValue().gone[i] || grown <= 0.02) {
+                    continue;
+                }
+                Vec3 at = place(user, i, partial).m_82546_(cam);
+                bodies.add(new WaterMesh.Body(at.f_82479_, at.f_82480_, at.f_82481_, WaterBullet.RADIUS * grown, null, 1.0,
+                    0.12 * (1.2 - grown), age, entry.getKey() * 31L + i, WaterMesh.DROP));
+            }
+        }
+        for (Map.Entry<Integer, Flying> entry : FLYING.entrySet()) {
+            Flying drop = entry.getValue();
+            Vec3 at = drop.last.m_82549_(drop.at.m_82546_(drop.last).m_82490_(partial)).m_82546_(cam);
+            bodies.add(new WaterMesh.Body(at.f_82479_, at.f_82480_, at.f_82481_, WaterBullet.RADIUS,
+                new double[] {drop.velocity.f_82479_, drop.velocity.f_82480_, drop.velocity.f_82481_}, 2.3, 0.05, drop.age + partial, drop.seed,
+                WaterMesh.DROP));
+        }
+        for (Bit bit : BITS) {
+            Vec3 at = bit.last.m_82549_(bit.at.m_82546_(bit.last).m_82490_(partial)).m_82546_(cam);
+            double speed = bit.velocity.m_82553_();
+            bodies.add(new WaterMesh.Body(at.f_82479_, at.f_82480_, at.f_82481_, bit.radius * (1.0 - 0.4 * bit.age / (double) bit.life),
+                new double[] {bit.velocity.f_82479_, bit.velocity.f_82480_, bit.velocity.f_82481_}, 1.0 + Math.min(1.5, speed * 4.0), 0.06,
+                bit.age + partial, bit.seed, WaterMesh.DROP));
+        }
+        if (bodies.isEmpty()) {
+            return;
+        }
+        bodies.sort((p, q) -> Double.compare(q.x() * q.x() + q.y() * q.y() + q.z() * q.z(), p.x() * p.x() + p.y() * p.y() + p.z() * p.z()));
+        // the water lit as the sky is: dim at night, full by day
+        double day = Math.max(0.0, Math.min(1.0, level.m_104805_(partial)));
+        float light = (float) (0.32 + 0.68 * day);
+        Matrix4f matrix = pose.m_85850_().m_252922_();
+        MultiBufferSource.BufferSource buffers = Minecraft.m_91087_().m_91269_().m_110104_();
+        RenderType type = RenderType.m_269166_();
+        VertexConsumer buffer = buffers.m_6299_(type);
+        for (WaterMesh.Body body : bodies) {
+            WaterMesh.body(body, (xyz, argb) -> {
+                for (int k = 0; k < 4; k++) {
+                    int v = Math.min(k, 2);
+                    int c = argb[v];
+                    buffer.m_252986_(matrix, (float) xyz[v * 3], (float) xyz[v * 3 + 1], (float) xyz[v * 3 + 2])
+                        .m_85950_(((c >>> 16) & 255) / 255.0F * light, ((c >>> 8) & 255) / 255.0F * light, (c & 255) / 255.0F * light,
+                            ((c >>> 24) & 255) / 255.0F)
+                        .m_5752_();
+                }
+            });
+        }
+        buffers.m_109912_(type);
+    }
+
+    static void clear() {
+        GATHERING.clear();
+        FLYING.clear();
+        BITS.clear();
+    }
+
+    @SubscribeEvent
+    public static void waterLoggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        clear();
+    }
+}
