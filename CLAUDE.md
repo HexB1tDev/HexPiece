@@ -32,3 +32,8 @@ lambda, or a client event subscriber is not registered for `Dist.CLIENT`.
 
 RULE: never alter the owner's files (the input jar, their textures and sounds) in place: changes go through the patch or the expansion.
 Original animations may be replaced by reworked ones under `src/main/resources/assets/hexhaki/player_animation/`.
+
+RULE: stopping (the owner: "It's when you reach 98% weekly that you stop ... you release the handoff in prompt first, and then you
+push the update to GitHub without checking"). The moment the weekly usage reaches 98%: write the handoff (`docs/handoff/next-ai-*.md`)
+and the next prompt (`docs/handoff/next-prompt.md`) FIRST, commit everything, push, and stop. No more checks, no CI wait. Keep the
+handoff current while working so this takes one commit.

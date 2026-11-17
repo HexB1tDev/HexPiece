@@ -1,5 +1,72 @@
 # HexPiece: handoff, 2.3.2 work in progress (the owner's sword bugs, natural arms, the victim's split view, NPC gestures)
 
+## STATE WHEN THE OWNER SAID STOP (session 2; read this first)
+- Pushed as work in progress, CI NOT checked (the owner's 98% / stop rule). The last full solve was STOPPED mid-run on purpose, so
+  the animation JSONs are a mix of this session's solver versions; BladePaths/SayaSlide/SwordPoses were regenerated from them with
+  `SOLVE=False` so the Java compiles. `python3 tools/sword_check.py` on them: 39/65 moves fail, mostly files written before this
+  session's fixes (wound ends, the old Yoru draw). Version 2.3.2 is still NOT released (notes: release-notes-2.3.2-draft.md).
+- FIRST: `python3 tools/sword_anims.py` (the full solve now takes 40-60 min on 4 cores: run it in the background with a 2-hour
+  limit; the 30-min default killed one), then `python3 tools/sword_check.py` (3 s: every problem kind with its worst depth and
+  ticks; `tools/sword_check.py 'sword_.*_yoru'` for a subset), fix, `--only a,b` to re-solve a few, then a final full solve, then
+  `python3 build.py`. The Java side of Yoru's glide (SwordLayer.back/backLift/backGlide/slerpZyx) has NOT been compiled yet.
+- Expected after the full solve (from the targeted tests): the katana and Gryphon moves pass or nearly; left to judge and fix:
+  Yoru's draw/sheathe/charge draw with the NEW carry (untested with it: render it, check the ropes), aerial_wheel's fist at t2.5,
+  gyaku_kesa_yoru's head 0.7 at t2, kiriage_yoru body 0.5, any "written wound" end left (unwrap's end switch), and the near-limit
+  0.4-0.6 px residuals. Then render the FULL sheets of every Gryphon and Yoru move (`--no-solve --preview DIR`, a column every 2
+  ticks) and GIFs, judge them, and only then move .github/release-notes-2.3.2.md into place (it publishes v2.3.2).
+- The owner asked: "apply the same animation to all the diff katanas that are not Gryphon and Yoru": they already share one set
+  (names without a suffix); only Gryphon (`_gryphon`) and Yoru (`_yoru`) have their own. Keep it that way.
+- Tools added: `tools/sword_check.py` (the summary), `tools/sword_zoom.py MOVE t1,t2 OUT.png [views] [pitch]` (big frames, the
+  game's own blade incl. Yoru's lift/glide).
+
+## Session 2 (running state, kept current: if this section is the newest thing, read it first)
+- The owner's new stop rule (also in CLAUDE.md): at 98% WEEKLY usage, write this handoff and next-prompt.md first, commit, push,
+  stop. No CI check.
+- Found: build.py's pose check never switched the sword mesh (every Gryphon/Yoru move was checked against the katana's):
+  `clearance()` now calls `rig.set_sword(move.profile.key)` itself.
+- First full solve this session: 48/65 moves failed. All twisted-arm failures (hand turned, wrist tipped, elbow folding out)
+  were on HALF ticks only: each solved tick was natural, the game's interpolation between two ticks was not (the hand flipping
+  +80 to -80 pronation in one tick in sword_plunge t14-15; makko's Euler angles jumping 50-60 deg at t2-3).
+- Solver changes (tools/sword_rig.py, tools/sword_anims.py): `refine()` after each solve: the game's in-between frames
+  (`gap_problems`, every half tick, interpolated exactly as anim.pose does) are checked, and a beat whose gap is bad is solved again
+  with those frames priced in (`solve_blade(between=...)`, `rig.blend`, `rig.nearest_euler`). `solve_right`/`solve_left` split out
+  of `solve`. The arm's centre line is kept out of the head (`_Arm.head_depth`, HEAD_MARGIN 0.6: the CI lint failures on makko and
+  aerial_wheel). The solvers keep SOLVER_SPARE 0.45 px inside the check's margins; COLLIDE_WEIGHT 400; Yoru's mesh sampled with
+  ~108 points (was 53 of 271). Test on quick_cut, makko, plunge, kesa_gryphon: all four pass.
+- The backhand coils (gyaku_yoko, pivot_cut) asked for the blade pointing straight left from the belly: a 90-degree wrist, so the
+  natural arm stood the blade upright (a salute, not a coil) through the left shoulder. Now `BACKHAND_COIL`/`PIVOT_COIL`: the fist
+  at the left hip, the blade pointing back, edge up (the iai grip), the free hand forward (L_AIM). `clear_left` now starts from
+  several poses (LEFT_STARTS), stays near the tick before (`prev`) and keeps the left arm clear of the sword in the in-between frame
+  too (`mid`, at the beat's eased fraction). Both pass.
+- Second full solve (killed at the 30-min background limit; run it with a 2-hour timeout): 28/65 failing, most just over the limits.
+  Found and fixed in code (not yet fully re-solved):
+  - The shoulder had no range limit: makko/aerial_wheel raised the sword overhead by swinging the arm BACKWARDS over the shoulder
+    (pitch -21 -> 65 -> 198) and wound the track 360. `rig.shoulder_back` (SHOULDER_BACK 60 behind, SHOULDER_OVER 190), in the
+    solver's strain and the check ("shoulder bent back").
+  - Tracks ending wound (aerial_wheel's pitch 341, quick_cut's wrist (-101, 138, -131) = (79, 42, 49) on the other Euler branch):
+    PlayerAnimator's fades (AbstractFadeModifier) and the stop blend the written numbers, so these spin the arm or the hand a full
+    or half turn in game. `unwrap()` rewritten: every spelling of each keyframe tried (`_spellings`), the one whose in-between
+    frames are natural (`_between_strain`) and near; each track starts on the plain spelling (`_canonical`); if it would end on the
+    other branch it changes over where the yaw is near 90 (`_detour` smallest: there both spellings are the same turn); loops end
+    exactly on their return beat. New check `wound()` in clearance (wound ends, spins between ticks with a detour > 40, loops).
+  - refine also re-solves beats whose own tick is a little through something (2.5x weights).
+- Yoru's back draw: no natural arm reaches its hilt behind the head exactly (misses ~3 px / 19 deg; the hilt sits at the arm's
+  reach limit, 8.4 of 8.5 px; a more upright carry would stand the point half a block in the floor). So while the hand lifts it out
+  of its ropes the game draws it on its own line, lifted (`BladePaths.backLift`), then glides it into the hand over two ticks
+  (`BladePaths.backGlide`: samples every quarter tick of the sword's frame seen from the hand's, the turn eased straight from the
+  carry's to the hand's at the arc's first beat; quaternion slerp in Python `slerp_zyx` and Java `SwordLayer.slerpZyx`, no new
+  JOML references). Sheathe and charge draw the same. Python mirror: `back_phase`, `back_glide`, `yoru_layer`, `game_blade`.
+  The draw re-timed: lift 10-18, the arc's first leg (67 deg off the back) eased over 20/22/24. densify now designs the swing
+  between the ropes and the arc every tick (`_gripping`).
+- Yoru's carry moved (rig BACK_GUARD/TILT/LEAN and Java BackCarry, SwordTests checks they agree): guard (-7.5, 0, 5.4), tilt 45,
+  lean 4 (was (-4, -1, 6.4), 33, 8). The hilt sits out over the right shoulder beside the head, not behind it: the old cross guard
+  turned into the head whenever the sword came off the back (2-3 px), the hand missed the hilt by 3 px / 17 deg (now 1.6 / 8), and
+  the point touched the floor (now 0.2 blocks off). Its first arc leg takes the hilt up and out to the right before it comes forward.
+  The ropes follow the constants (BackCarry.fromBlade); render Yoru on the back again to judge the look.
+- Solver speed: the 8 general starts get 1200 evaluations each (the seed and refine's starts 5000); about 1.6x faster.
+- WARNING for edits: a slice edit once duplicated ~300 lines (the end marker matched earlier in the file) and Python ran the old
+  `yoru()`. After any slice edit check `grep "^def " tools/sword_anims.py | sort | uniq -d` is empty.
+
 **State when the owner said stop**: everything below is committed as WORK IN PROGRESS. A full re-solve of the sword animations was
 killed mid-run, so the animation JSONs are a mix of the last two solver versions and BladePaths/SwordPoses are from the run before:
 **first run the full solve** (`python3 tools/sword_anims.py`, ~16 min on 4 cores), then `python3 build.py`. The build's new pose check

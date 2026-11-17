@@ -18,11 +18,15 @@ import java.util.List;
  * cross it. Each rope is a three-strand hemp tube.
  */
 public final class BackCarry {
-    /** Where the blade's origin (just under its cross guard) sits on the back, and its tilt (degrees; the point toward the left). */
-    public static final double[] GUARD = {-4.0, -1.0, 6.4};
-    public static final double TILT = 33.0;
+    /**
+     * Where the blade's origin (just under its cross guard) sits on the back, and its tilt (degrees; the point toward the left). 2.3.2:
+     * the hilt out over the right shoulder, beside the head, not behind it (there no natural arm reached it, and its cross guard turned
+     * into the head as it came off), the blade more across the back (its point 0.2 blocks off the floor; it touched it).
+     */
+    public static final double[] GUARD = {-7.5, 0.0, 5.4};
+    public static final double TILT = 45.0;
     /** Degrees the point leans in toward the legs (the hilt out behind the head). */
-    public static final double LEAN = 8.0;
+    public static final double LEAN = 4.0;
     /** The rope's radius and its colours (weathered hemp, the shadowed strand). */
     public static final double ROPE = 0.42;
     static final int HEMP = 0xC9A774;

@@ -144,22 +144,39 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
     void back(PoseStack pose, MultiBufferSource buffers, MultiBufferSource bladeBuffers, int light, AbstractClientPlayer player, Katana katana,
               PlayerModel<AbstractClientPlayer> model, ModifierLayer<IAnimation> layer, int anim, float ticks, boolean drawn,
               boolean firstPerson, float partial) {
+        // 2.3.2: no natural arm reaches the hilt behind the head exactly (it misses by about 3 px), so while the hand lifts Yoru out of
+        // its ropes (or lets it down into them) it is drawn on its own line on the back, lifted by the pull; over the two ticks it swings
+        // free it glides from there into the hand (or back), as tools/sword_anims.py solves and checks it (BladePaths.backLift/backGlide)
+        String name = SwordAnims.name(anim, katana);
+        float lift = backLift(name, ticks);
+        boolean lifting = !Float.isNaN(lift);
+        float[] glide = lifting ? null : backGlide(name, ticks);
         if (!firstPerson) {
             pose.m_85836_();
             // the upper body's own bend and turn carry it (unlike the saya at the hips)
             model.f_102810_.m_104299_(pose);
             KatanaRenderer.ropes(pose, buffers, light);
-            if (!drawn) {
+            if (lifting || !drawn && glide == null) {
                 pose.m_252880_((float) BackCarry.GUARD[0] * PX, (float) BackCarry.GUARD[1] * PX, (float) BackCarry.GUARD[2] * PX);
                 pose.m_252781_(Axis.f_252403_.m_252977_((float) -BackCarry.TILT));
                 pose.m_252781_(Axis.f_252529_.m_252977_((float) -BackCarry.LEAN));
+                if (lifting) {
+                    pose.m_252880_(0.0F, -lift * KatanaRenderer.SCALE, 0.0F);
+                }
                 KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 0.0F);
             }
             pose.m_85849_();
         }
-        if (drawn) {
+        if (drawn && !lifting || glide != null) {
             pose.m_85836_();
             hand(pose, player, model, layer, partial);
+            if (glide != null) {
+                // the glide's frame from the hand's: shifted (model px) and turned (z, y, x degrees)
+                pose.m_252880_(glide[0] * KatanaRenderer.SCALE, glide[1] * KatanaRenderer.SCALE, glide[2] * KatanaRenderer.SCALE);
+                pose.m_252781_(Axis.f_252403_.m_252977_(glide[3]));
+                pose.m_252781_(Axis.f_252436_.m_252977_(glide[4]));
+                pose.m_252781_(Axis.f_252529_.m_252977_(glide[5]));
+            }
             // its black steel only glints (the owner's unsheath reference: white glints running along a black blade)
             KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F);
             SwordFx.record(player, pose, ticks);
@@ -182,6 +199,104 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
     static boolean blackened(AbstractClientPlayer player) {
         RemoteHakiStates.State state = RemoteHakiStates.get(player.m_19879_());
         return state != null && state.armament();
+    }
+
+    /** 2.3.2: while Yoru is lifted out of (or let down into) its ropes, how far up its line it is (model px); NaN otherwise. */
+    static float backLift(String animation, float ticks) {
+        float[] pairs = animation == null ? null : BladePaths.backLift(animation);
+        if (pairs == null || ticks < pairs[0] || ticks > pairs[pairs.length - 2]) {
+            return Float.NaN;
+        }
+        for (int i = 0; i + 3 < pairs.length; i += 2) {
+            if (ticks >= pairs[i] && ticks <= pairs[i + 2]) {
+                float u = pairs[i + 2] > pairs[i] ? (ticks - pairs[i]) / (pairs[i + 2] - pairs[i]) : 1.0F;
+                return pairs[i + 1] + (pairs[i + 3] - pairs[i + 1]) * u;
+            }
+        }
+        return pairs[1];
+    }
+
+    /**
+     * 2.3.2: during Yoru's glide between its line on the back and the hand, the sword's frame from the hand's (shift x, y, z model px;
+     * turn z, y, x degrees): BladePaths.backGlide's samples, the shifts mixed and the turns slerped between the two about this frame;
+     * null outside the glide.
+     */
+    static float[] backGlide(String animation, float ticks) {
+        float[] g = animation == null ? null : BladePaths.backGlide(animation);
+        if (g == null) {
+            return null;
+        }
+        float tb = g[0];
+        float th = g[1];
+        if (ticks <= Math.min(tb, th) || ticks >= Math.max(tb, th)) {
+            return null;
+        }
+        int n = (g.length - 2) / 6;
+        float x = (ticks - tb) / (th - tb) * (n - 1);
+        int i = Math.max(0, Math.min(n - 2, (int) Math.floor(x)));
+        float f = x - i;
+        int a = 2 + i * 6;
+        int b = a + 6;
+        float[] out = new float[6];
+        for (int k = 0; k < 3; k++) {
+            out[k] = g[a + k] + (g[b + k] - g[a + k]) * f;
+        }
+        float[] e = slerpZyx(g[a + 3], g[a + 4], g[a + 5], g[b + 3], g[b + 4], g[b + 5], f);
+        System.arraycopy(e, 0, out, 3, 3);
+        return out;
+    }
+
+    /** The turn f of the way along the shortest turn from Rz Ry Rx(z0, y0, x0) to Rz Ry Rx(z1, y1, x1), as (z, y, x) degrees. */
+    static float[] slerpZyx(float z0, float y0, float x0, float z1, float y1, float x1, float f) {
+        double[] qa = quatZyx(z0, y0, x0);
+        double[] qb = quatZyx(z1, y1, x1);
+        double d = qa[0] * qb[0] + qa[1] * qb[1] + qa[2] * qb[2] + qa[3] * qb[3];
+        if (d < 0) {
+            for (int k = 0; k < 4; k++) {
+                qb[k] = -qb[k];
+            }
+            d = -d;
+        }
+        double[] q = new double[4];
+        if (d > 0.9995) {
+            for (int k = 0; k < 4; k++) {
+                q[k] = qa[k] + (qb[k] - qa[k]) * f;
+            }
+        } else {
+            double th = Math.acos(d);
+            double sa = Math.sin((1 - f) * th) / Math.sin(th);
+            double sb = Math.sin(f * th) / Math.sin(th);
+            for (int k = 0; k < 4; k++) {
+                q[k] = qa[k] * sa + qb[k] * sb;
+            }
+        }
+        double len = Math.sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+        double w = q[0] / len;
+        double qx = q[1] / len;
+        double qy = q[2] / len;
+        double qz = q[3] / len;
+        double r00 = 1 - 2 * (qy * qy + qz * qz);
+        double r10 = 2 * (qx * qy + qz * w);
+        double r20 = 2 * (qx * qz - qy * w);
+        double r21 = 2 * (qy * qz + qx * w);
+        double r22 = 1 - 2 * (qx * qx + qy * qy);
+        return new float[] {(float) Math.toDegrees(Math.atan2(r10, r00)), (float) Math.toDegrees(Math.asin(Math.max(-1.0, Math.min(1.0, -r20)))),
+            (float) Math.toDegrees(Math.atan2(r21, r22))};
+    }
+
+    /** The quaternion (w, x, y, z) of Rz(z) Ry(y) Rx(x), degrees. */
+    static double[] quatZyx(float z, float y, float x) {
+        double[] q = {1.0, 0.0, 0.0, 0.0};
+        float[] angles = {z, y, x};
+        int[] axes = {3, 2, 1};
+        for (int k = 0; k < 3; k++) {
+            double h = Math.toRadians(angles[k]) / 2.0;
+            double[] r = {Math.cos(h), 0.0, 0.0, 0.0};
+            r[axes[k]] = Math.sin(h);
+            q = new double[] {q[0] * r[0] - q[1] * r[1] - q[2] * r[2] - q[3] * r[3], q[0] * r[1] + q[1] * r[0] + q[2] * r[3] - q[3] * r[2],
+                q[0] * r[2] - q[1] * r[3] + q[2] * r[0] + q[3] * r[1], q[0] * r[3] + q[1] * r[2] - q[2] * r[1] + q[3] * r[0]};
+        }
+        return q;
     }
 
     /** Between an animation's noto beats, how far out of the saya the blade is this frame ({out}); null outside them. */

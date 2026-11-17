@@ -96,99 +96,216 @@ RELAXED_R = {"pitch": 2.0, "yaw": 0.0, "roll": 4.0, "bend": -6.0}
 RELAXED_L = {"pitch": 2.0, "yaw": 0.0, "roll": -4.0, "bend": -6.0}
 
 
-def solve(beats, ground=False):
+def _seed(arm, wr):
+    return [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
+
+
+def solve_right(beat, q, seed_r, ground, between=None, starts=None):
+    """The right arm and wrist for one beat (q: its base pose; the saya's leftItem set in it where the beat turns the saya), seeded
+    from the beat before; between and starts as rig.solve_blade's. Returns (rightArm, rightItem, error px, error degrees)."""
+    kw = {"between": between, "starts": starts}
+    if beat.rarm is not None:
+        return dict(beat.rarm), dict(beat.wrist or {}), 0.0, 0.0
+    if getattr(beat, "noto", None) is not None:
+        # the noto line: the saya turned about its mouth (never moved) to lie on the line from the koiguchi up across the front of
+        # the body to just in front of the right shoulder; the blade slides along it, out of or into the saya's mouth
+        (target, bdir, edir), saya, slide = noto_frame(beat)
+        q["leftItem"] = saya
+        # on the saya's line the blade must be exactly coaxial: its direction counts far more than the wrist's comfort
+        return rig.solve_blade(q, target, bdir, edir, seed=seed_r, slide=slide, dir_weight=20000.0, wrist_limit=80.0, **kw)
+    if getattr(beat, "fist", None) is not None:
+        # 2.3.2: the empty right hand on its way somewhere (to the hilt, or away from it): the fist alone, the wrist easy
+        arm, wr, err_p, _ = rig.solve_blade(q, beat.fist, (0.0, 1.0, 0.0), (1.0, 0.0, 0.0), seed=seed_r, dir_weight=0.0,
+                                            edge_weight=0.0, **kw)
+        return arm, wr, err_p, 0.0
+    if getattr(beat, "back_lift", None) is not None:
+        # 2.2.7: the right fist on Yoru's handle on the back (lifted back_lift px up along itself out of its ropes), or reaching
+        # for it (reach_off: the fist that many px away from the handle, the sword not yet in it)
+        target, bdir, edir = rig.back_grip(q, beat.back_lift)
+        target = tuple(np.array(target) + np.array(getattr(beat, "reach_off", (0.0, 0.0, 0.0))))
+        # 2.3.2: reached from above: the elbow up beside the head, the forearm folded back behind it, the hand down onto the hilt
+        return rig.solve_blade(q, target, bdir, edir, seed=seed_r, dir_weight=4000.0, edge_weight=1500.0, wrist_limit=80.0,
+                               upper=OVERHEAD, **kw)
+    if getattr(beat, "hilt", None) is not None:
+        # the saya turned about its mouth (never moved) until the handle is where the right hand reaches it
+        best = None
+        for k in beat.hilt:
+            hd = slerp(rig.rest_hilt(), rig.toward_right_hand(q), k)
+            edge = np.array(getattr(beat, "edge_out", (0.0, -1.0, 0.18)), float)
+            q["leftItem"] = rig.saya_turn(hd, edge)
+            target, bdir, edir = rig.sheathed_grip(q, PROFILE.draw_slide, beat.saya_out, PROFILE.key)
+            arm, wr, ep, ed = rig.solve_blade(q, target, bdir, edir, seed=seed_r, slide=PROFILE.draw_slide, **kw)
+            score = ep + ed / 20.0
+            if best is None or score < best[0] - 1e-6:
+                best = (score, dict(q["leftItem"]), arm, wr, ep, ed)
+            if ep < 0.35 and ed < 6:
+                break
+        _, q["leftItem"], arm, wr, err_p, err_d = best
+        return arm, wr, err_p, err_d
+    if beat.sheathed:
+        q["rightArm"] = dict(RELAXED_R)
+        target, bdir, edir = rig.sheathed_grip(q, 0.0, 0.0, PROFILE.key)
+    else:
+        target, bdir, edir = beat.blade
+    sl, up = getattr(beat, "slide", 0.0), getattr(beat, "upper", None)
+    arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, elbow=beat.elbow, slide=sl, upper=up, **kw)
+    for _ in range(4):
+        if not ground or beat.sheathed:
+            break
+        h = rig.point(rig.blade_matrix(dict(q, rightArm=arm, rightItem=wr)), tip_point(PROFILE))[1]
+        if h >= FLOOR * 0.6:
+            break
+        lift_clear(beat, PROFILE, FLOOR + (FLOOR - h) + 0.04)
+        target, bdir, edir = beat.blade
+        arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, elbow=beat.elbow, slide=sl, upper=up, **kw)
+    return arm, wr, err_p, err_d
+
+
+def solve_left(beat, q, seed_l, prev=None, mid=None):
+    """mid: (the pose half a tick after the beat before, how far (eased) the game is from it to this beat there)"""
+    """The left arm for one beat (q: its pose with the right arm solved) by its job; prev: the left arm the beat before. Returns
+    (leftArm, error px)."""
+    left = beat.left
+    if left == "two":
+        return rig.solve_left_on_handle(q, seed=seed_l)
+    if left == "saya":
+        return rig.solve_left_at(q, rig.saya_point(q, 2.5), seed=seed_l)
+    if isinstance(left, dict):
+        if beat.blade is not None or getattr(beat, "noto", None) is not None:
+            return rig.clear_left(q, dict(left), prev=prev, mid=mid[0] if mid else None, mid_u=mid[1] if mid else 0.5), 0.0
+        return dict(left), 0.0
+    if isinstance(left, tuple):
+        return rig.solve_left_at(q, left, seed=seed_l)
+    return dict(RELAXED_L), 0.0
+
+
+def solve(beats, ground=False, check=None):
     """Arms and wrists for every beat, each seeded from the beat before (so the solution moves smoothly). ground: a blade's point is
-    kept off the floor as solved (2.3.2: a natural arm cannot always turn the blade as far as asked; then it is turned up more)."""
+    kept off the floor as solved (2.3.2: a natural arm cannot always turn the blade as far as asked; then it is turned up more).
+    check: (tick -> is the sword in the hand there, to be kept out of the body), for refine."""
     seed_r = None
     seed_l = None
+    prev_left = None
+    prev_beat = None
     for beat in beats:
         q = base_pose(beat)
-        err_p = err_d = err_l = 0.0
-        if beat.rarm is not None:
-            q["rightArm"] = dict(beat.rarm)
-            q["rightItem"] = dict(beat.wrist or {})
-        elif getattr(beat, "noto", None) is not None:
-            # the noto line: the saya turned about its mouth (never moved) to lie on the line from the koiguchi up across the front of
-            # the body to just in front of the right shoulder; the blade slides along it, out of or into the saya's mouth
-            (target, bdir, edir), saya, slide = noto_frame(beat)
-            q["leftItem"] = saya
-            # on the saya's line the blade must be exactly coaxial: its direction counts far more than the wrist's comfort
-            arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, slide=slide, dir_weight=20000.0,
-                                                    wrist_limit=80.0)
-            q["rightArm"], q["rightItem"] = arm, wr
-            seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
-        elif getattr(beat, "fist", None) is not None:
-            # 2.3.2: the empty right hand on its way somewhere (to the hilt, or away from it): the fist alone, the wrist easy
-            arm, wr, err_p, _ = rig.solve_blade(q, beat.fist, (0.0, 1.0, 0.0), (1.0, 0.0, 0.0), seed=seed_r, dir_weight=0.0,
-                                                edge_weight=0.0)
-            q["rightArm"], q["rightItem"] = arm, wr
-            seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
-        elif getattr(beat, "back_lift", None) is not None:
-            # 2.2.7: the right fist on Yoru's handle on the back (lifted back_lift px up along itself out of its ropes), or reaching
-            # for it (reach_off: the fist that many px away from the handle, the sword not yet in it)
-            target, bdir, edir = rig.back_grip(q, beat.back_lift)
-            target = tuple(np.array(target) + np.array(getattr(beat, "reach_off", (0.0, 0.0, 0.0))))
-            # 2.3.2: reached from above: the elbow up beside the head, the forearm folded back behind it, the hand down onto the hilt
-            arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, dir_weight=4000.0, edge_weight=1500.0,
-                                                    wrist_limit=80.0, upper=OVERHEAD)
-            q["rightArm"], q["rightItem"] = arm, wr
-            seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
-        elif getattr(beat, "hilt", None) is not None:
-            # the saya turned about its mouth (never moved) until the handle is where the right hand reaches it
-            best = None
-            for k in beat.hilt:
-                hd = slerp(rig.rest_hilt(), rig.toward_right_hand(q), k)
-                edge = np.array(getattr(beat, "edge_out", (0.0, -1.0, 0.18)), float)
-                q["leftItem"] = rig.saya_turn(hd, edge)
-                target, bdir, edir = rig.sheathed_grip(q, PROFILE.draw_slide, beat.saya_out, PROFILE.key)
-                arm, wr, ep, ed = rig.solve_blade(q, target, bdir, edir, seed=seed_r, slide=PROFILE.draw_slide)
-                score = ep + ed / 20.0
-                if best is None or score < best[0] - 1e-6:
-                    best = (score, dict(q["leftItem"]), arm, wr, ep, ed)
-                if ep < 0.35 and ed < 6:
-                    break
-            _, q["leftItem"], arm, wr, err_p, err_d = best
-            q["rightArm"], q["rightItem"] = arm, wr
-            seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
-        else:
-            if beat.sheathed:
-                q["rightArm"] = dict(RELAXED_R)
-                target, bdir, edir = rig.sheathed_grip(q, 0.0, 0.0, PROFILE.key)
-            else:
-                target, bdir, edir = beat.blade
-            arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, elbow=beat.elbow,
-                                                    slide=getattr(beat, "slide", 0.0), upper=getattr(beat, "upper", None))
-            for _ in range(4):
-                if not ground or beat.sheathed:
-                    break
-                h = rig.point(rig.blade_matrix(dict(q, rightArm=arm, rightItem=wr)), tip_point(PROFILE))[1]
-                if h >= FLOOR * 0.6:
-                    break
-                lift_clear(beat, PROFILE, FLOOR + (FLOOR - h) + 0.04)
-                target, bdir, edir = beat.blade
-                arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, elbow=beat.elbow,
-                                                        slide=getattr(beat, "slide", 0.0), upper=getattr(beat, "upper", None))
-            q["rightArm"], q["rightItem"] = arm, wr
-            seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
-        left = beat.left
-        if left == "two":
-            q["leftArm"], err_l = rig.solve_left_on_handle(q, seed=seed_l)
+        arm, wr, err_p, err_d = solve_right(beat, q, seed_r, ground)
+        q["rightArm"], q["rightItem"] = arm, wr
+        if beat.rarm is None:
+            seed_r = _seed(arm, wr)
+        mid = None
+        if prev_beat is not None and prev_left is not None:
+            import anim
+            u = anim.ease(beat.easing, 0.5 / max(0.5, beat.tick - prev_beat.tick))
+            mid = (_blend_pose(prev_beat.solved, q, u), u)
+        q["leftArm"], err_l = solve_left(beat, q, seed_l, prev_left, mid)
+        prev_left = q["leftArm"]
+        prev_beat = beat
+        if beat.left in ("two", "saya") or isinstance(beat.left, tuple):
             seed_l = [q["leftArm"][k] for k in ("pitch", "yaw", "roll", "bend")]
-        elif left == "saya":
-            q["leftArm"], err_l = rig.solve_left_at(q, rig.saya_point(q, 2.5), seed=seed_l)
-            seed_l = [q["leftArm"][k] for k in ("pitch", "yaw", "roll", "bend")]
-        elif isinstance(left, dict):
-            q["leftArm"] = dict(left)
-            if beat.blade is not None or getattr(beat, "noto", None) is not None:
-                q["leftArm"] = rig.clear_left(q, dict(left))
-        elif isinstance(left, tuple):
-            q["leftArm"], err_l = rig.solve_left_at(q, left, seed=seed_l)
-            seed_l = [q["leftArm"][k] for k in ("pitch", "yaw", "roll", "bend")]
-        else:
-            q["leftArm"] = dict(RELAXED_L)
         beat.solved = q
         beat.errors = (err_p, err_d, err_l)
+    refine(beats, ground, check)
     return beats
+
+
+def _blend_pose(qa, qb, u):
+    """The pose the game shows a fraction u (eased) of the way from solved pose qa to qb (qb's angles written nearest qa's)."""
+    out = {}
+    for part in set(qa) | set(qb):
+        a, b_ = qa.get(part, {}), qb.get(part, {})
+        out[part] = {k: a.get(k, 0.0) + (b_.get(k, 0.0) - a.get(k, 0.0)) * u for k in set(a) | set(b_)}
+    return out
+
+
+# what refine looks for in the frames between two solved beats (tighter than clearance's limits: headroom)
+REFINE_STRAIN, REFINE_BODY, REFINE_SWORD, REFINE_HANDLE = 5.0, 0.25, 0.2, 0.55
+
+
+def gap_problems(a, b, check=None):
+    """[(tick, what, by)] in the game's frames between solved beats a and b (every half tick, as clearance samples them)."""
+    import anim
+    out = []
+    gap = b.tick - a.tick
+    # every half tick between, and the beat b itself (a beat left a little through something is solved again, harder)
+    for k in range(1, int(round(2 * gap)) + 1):
+        t = a.tick + 0.5 * k
+        q = _blend_pose(a.solved, b.solved, anim.ease(b.easing, (t - a.tick) / gap))
+        for what, by in rig.arm_strain(q, "right"):
+            if by > (REFINE_BODY if what == "arm through the body" else REFINE_STRAIN):
+                out.append((t, what, by))
+        if check is not None and check(t):
+            for what, by in rig.sword_hits(q):
+                if by > (REFINE_HANDLE if what.endswith("(handle)") else REFINE_SWORD):
+                    out.append((t, "sword through the " + what, by))
+        model = rig._Arm(q, "right")
+        v = [q["rightArm"].get(c, 0.0) for c in ("pitch", "yaw", "roll", "bend")]
+        m, fore, _ = model.frames(v)
+        h = model.head_depth(m, fore)
+        if h > 0.3:
+            out.append((t, "arm through the head", h))
+        hb = head_box(q)
+        fist = rig.point(rig.layer_to_entity(q) @ rig.fist_frame(q, "right"), (0, 0, 0))
+        if inside(hb, fist, (-4.5, -8.5, -9.5), (4.5, 1.0, -4.0), -0.3):
+            out.append((t, "fist in front of the face", 0.0))
+    return out
+
+
+def _samples(a, b, after):
+    """refine's between-terms for the frames from beat a to beat b: (the neighbour's angles, w, after) for every half tick between;
+    after: the beat being solved is a (b its neighbour after it), else b."""
+    import anim
+    out = []
+    gap = b.tick - a.tick
+    other = b if after else a
+    o = _seed(other.solved["rightArm"], other.solved["rightItem"])
+    for k in range(1, min(int(round(2 * gap)), 5)):
+        u = anim.ease(b.easing, 0.5 * k / gap)
+        out.append((o, u if after else 1.0 - u, after))
+    return out
+
+
+def refine(beats, ground, check=None, passes=4):
+    """2.3.2: the frames between the solved beats as the game shows them (it interpolates the written angles): where one is twisted,
+    or the arm or the sword goes through the body or the head, the beat at its end is solved again with those frames in its price
+    (rig.solve_blade's between), its neighbours as they are. A beat whose arm is set (rarm) is left alone: the one beside it moves."""
+    for _ in range(passes):
+        unwrap(beats, ends=False)
+        bad = set()
+        for i in range(1, len(beats)):
+            if gap_problems(beats[i - 1], beats[i], check):
+                j = i if beats[i].rarm is None else i - 1
+                if beats[j].rarm is None and j > 0:
+                    bad.add(j)
+        if not bad:
+            return
+        for j in sorted(bad):
+            beat, prev = beats[j], beats[j - 1]
+            between = _samples(prev, beat, False)
+            if j + 1 < len(beats):
+                between += _samples(beat, beats[j + 1], True)
+            q = base_pose(beat)
+            for part in ("leftItem",):
+                q[part] = dict(beat.solved.get(part, {}))
+            own = _seed(beat.solved["rightArm"], beat.solved["rightItem"])
+            seed = None if prev.rarm is not None else _seed(prev.solved["rightArm"], prev.solved["rightItem"])
+            mean = list((np.array(own) + np.array(seed if seed else own)) / 2)
+            # solved again harder: the body and the limits weigh more against following the blade to the degree
+            weights = rig.COLLIDE_WEIGHT, rig.STRAIN_WEIGHT
+            rig.COLLIDE_WEIGHT, rig.STRAIN_WEIGHT = weights[0] * 2.5, weights[1] * 2.5
+            try:
+                arm, wr, err_p, err_d = solve_right(beat, q, seed, ground, between=between, starts=[own, mean])
+            finally:
+                rig.COLLIDE_WEIGHT, rig.STRAIN_WEIGHT = weights
+            q["rightArm"], q["rightItem"] = arm, wr
+            import anim
+            u = anim.ease(beat.easing, 0.5 / max(0.5, beat.tick - prev.tick))
+            mid = (_blend_pose(prev.solved, q, u), u)
+            q["leftArm"], err_l = solve_left(beat, q, None if not isinstance(beat.solved.get("leftArm"), dict) else
+                                             [beat.solved["leftArm"].get(k, 0.0) for k in ("pitch", "yaw", "roll", "bend")],
+                                             prev.solved.get("leftArm"), mid)
+            beat.solved = q
+            beat.errors = (err_p, err_d, err_l)
 
 
 def noto_frame(beat):
@@ -346,6 +463,11 @@ def route(a, b):
     return mid
 
 
+def _gripping(beat):
+    """A beat with the fist on Yoru's hilt on the back (not reaching for it)."""
+    return getattr(beat, "back_lift", None) is not None and not hasattr(beat, "reach_off")
+
+
 def densify(beats):
     """Every tick between two blade beats keyed on the designed arc (the fist along its line, the blade and the edge turned along a
     great circle, the body, legs, head and left arm in step, the later beat's easing baked in), so the game only ever interpolates
@@ -360,11 +482,21 @@ def densify(beats):
         noto_b = getattr(b, "noto", None) is not None and a.blade is not None and getattr(a, "noto", None) is None
         blade_a, saya_a = (noto_frame(a)[:2]) if noto_a else (a.blade, a.saya)
         blade_b, saya_b = (noto_frame(b)[:2]) if noto_b else (b.blade, b.saya)
+        # 2.3.2: Yoru's hilt on the back counts by where the hand holds it there, so the swing between the ropes and the arc is designed
+        # and solved every tick too (left to the game, the arm's angles sagged the point into the floor between them)
+        back_a = _gripping(a) and b.blade is not None
+        back_b = _gripping(b) and a.blade is not None
+        if back_a:
+            blade_a = rig.back_grip(base_pose(a), a.back_lift)
+        if back_b:
+            blade_b = rig.back_grip(base_pose(b), b.back_lift)
         dense = (gap > 1 and blade_a is not None and blade_b is not None and b.easing != "constant"
                  and a.rarm is None and b.rarm is None and getattr(a, "hilt", None) is None and getattr(b, "hilt", None) is None
-                 and (getattr(a, "noto", None) is None or noto_a) and (getattr(b, "noto", None) is None or noto_b))
+                 and (getattr(a, "noto", None) is None or noto_a) and (getattr(b, "noto", None) is None or noto_b)
+                 and (getattr(a, "back_lift", None) is None or back_a) and (getattr(b, "back_lift", None) is None or back_b))
         if dense:
-            via = route(blade_a[1], blade_b[1])
+            # a beat marked direct is reached along the shortest arc (2.3.2: a raise over the top, which route would take out in front)
+            via = None if getattr(b, "direct", False) else route(blade_a[1], blade_b[1])
             for k in range(a.tick + 1, b.tick):
                 u = anim.ease(b.easing, (k - a.tick) / gap)
                 fist = tuple(np.array(blade_a[0]) * (1 - u) + np.array(blade_b[0]) * u)
@@ -384,6 +516,8 @@ def densify(beats):
                            legs=legs, head=_mix(a.head, b.head, u), torso=_mix(a.torso, b.torso, u), saya=_mix(saya_a, saya_b, u))
                 if getattr(a, "upper", None) is not None and getattr(b, "upper", None) is not None:
                     mid.upper = a.upper
+                elif back_a or back_b:
+                    mid.upper = OVERHEAD
                 out.append(mid)
             b.easing = "linear"
         out.append(b)
@@ -407,12 +541,170 @@ def sliding(move, t):
     return out is not None and (move.drawn_at(t) or out > 0.0)
 
 
+def back_phase(move):
+    """2.3.2: for a move that takes Yoru out of its ropes or puts it back: (the lift beats [(tick, px lifted along itself)], the glide
+    (tick at the ropes, tick in the hand)); (None, None) otherwise. No natural arm reaches Yoru's hilt behind the head exactly (it misses
+    by about 3 px and 19 degrees, and a great sword hung upright enough for it would stand half a block into the floor): while the hand
+    lifts it, the game draws it on its own line out of the ropes (client/sword/SwordLayer.back, BladePaths.backLift), and over the two
+    ticks it swings free it glides from there into the hand (BladePaths.backGlide); the sheathing the same backwards."""
+    backs = sorted((beat.tick, beat.back_lift) for beat in move.beats
+                   if getattr(beat, "back_lift", None) is not None and not hasattr(beat, "reach_off"))
+    if not backs:
+        return None, None
+    ticks = move.design_ticks
+    if move.draw >= 0:
+        tb = backs[-1][0]
+        later = [t for t in ticks if t > tb]
+        return backs, ((tb, later[0]) if later else None)
+    tb = backs[0][0]
+    earlier = [t for t in ticks if t < tb]
+    return backs, ((tb, earlier[-1]) if earlier else None)
+
+
+def _lift_at(backs, t):
+    for (t0, l0), (t1, l1) in zip(backs, backs[1:]):
+        if t0 <= t <= t1:
+            return l0 + (l1 - l0) * ((t - t0) / max(1e-9, t1 - t0))
+    return backs[0][1] if len(backs) == 1 and abs(t - backs[0][0]) < 1e-9 else None
+
+
+def _euler_zyx(r):
+    """(z, y, x) degrees with r = Rz Ry Rx (the order SwordLayer turns the pose in)."""
+    y = math.asin(max(-1.0, min(1.0, -r[2, 0])))
+    z = math.atan2(r[1, 0], r[0, 0])
+    x = math.atan2(r[2, 1], r[2, 2])
+    return math.degrees(z), math.degrees(y), math.degrees(x)
+
+
+def _hand_layer(q):
+    return rig.fist_frame(q, "right") @ rig.wrist(q) @ rig.grip(rig.slide_of(q))
+
+
+GLIDES = {}
+
+
+def _frame(m):
+    """A layer-frame matrix (katana model px scaled to layer px) as (shift px, (z, y, x) degrees)."""
+    r = m[:3, :3] / np.linalg.norm(m[:3, 0])
+    return tuple(float(v) for v in m[:3, 3]), _euler_zyx(r)
+
+
+GLIDE_STEP = 0.25
+
+
+def back_glide(move):
+    """(tick at the ropes, tick in the hand, [(shift px, (z, y, x) degrees)] every GLIDE_STEP ticks from the first to the second): the
+    sword's frame during the glide seen from the hand's sword frame (hand^-1 sword), which client/sword/SwordLayer sets after the
+    hand's (BladePaths.backGlide), the samples' shifts mixed and their turns slerped between. The sword's turn eases straight from how
+    it hangs on its line to how the hand holds it at the second tick (the hand's own, just off the ropes, still points it at the floor:
+    no wrist turns a great sword up from there), its grip riding with the hand, the hand's 3 px miss of the hilt taken off as it goes."""
+    if move.name in GLIDES:
+        return GLIDES[move.name]
+    backs, glide = back_phase(move)
+    out = None
+    if glide is not None:
+        import anim
+        with open(os.path.join(OUT, move.name + ".json"), encoding="utf-8") as handle:
+            a = anim.Anim(json.load(handle))
+        tb, th = glide
+        qb, qh = a.pose(tb), a.pose(th)
+        mb = rig.back(qb) @ rig.tr(0, -_lift_at(backs, tb), 0)
+        mh = _hand_layer(qh)
+        _, eb = _frame(mb)
+        _, eh = _frame(mh)
+        miss = mb[:3, 3] - _hand_layer(qb)[:3, 3]
+        samples = []
+        n = int(round(abs(th - tb) / GLIDE_STEP))
+        for k in range(n + 1):
+            t = tb + (th - tb) * k / n
+            u = k / n
+            w = u * u * (3 - 2 * u)
+            ang = slerp_zyx(eb, eh, w)
+            hand = _hand_layer(a.pose(t))
+            want = (rig.tr(*(hand[:3, 3] + (1.0 - w) * miss)) @ rig.rz(math.radians(ang[0])) @ rig.ry(math.radians(ang[1]))
+                    @ rig.rx(math.radians(ang[2])) @ rig.sc(rig.SCALE / rig.PX))
+            samples.append(_frame(np.linalg.inv(hand) @ want))
+        out = (tb, th, samples)
+    GLIDES[move.name] = out
+    return out
+
+
+def glide_matrix(g, q, t):
+    """The glide's frame at tick t (layer px, katana model scale), as client/sword/SwordLayer sets it: the hand's, then the sample
+    correction (shifts mixed, turns slerped) between the two samples about t."""
+    tb, th, samples = g
+    x = (t - tb) / (th - tb) * (len(samples) - 1)
+    i = max(0, min(len(samples) - 2, int(math.floor(x))))
+    f = x - i
+    (s0, e0), (s1, e1) = samples[i], samples[i + 1]
+    shift = np.array(s0) + (np.array(s1) - np.array(s0)) * f
+    e = slerp_zyx(e0, e1, f)
+    return (_hand_layer(q) @ rig.tr(*shift) @ rig.rz(math.radians(e[0])) @ rig.ry(math.radians(e[1])) @ rig.rx(math.radians(e[2])))
+
+
+def yoru_layer(move, q, t):
+    """The layer-frame matrix (katana model px -> layer px) of Yoru as the game draws it at tick t, or None where it is simply on the
+    back (sheathed) or simply in the hand (drawn): on its line out of the ropes while lifted, gliding between there and the hand."""
+    backs, glide = back_phase(move)
+    if backs is None:
+        return None
+    if backs[0][0] <= t <= backs[-1][0]:
+        return rig.back(q) @ rig.tr(0, -_lift_at(backs, t), 0)
+    g = back_glide(move)
+    if g is not None and min(g[0], g[1]) < t < max(g[0], g[1]):
+        return glide_matrix(g, q, t)
+    return None
+
+
+def _q_zyx(e):
+    """The quaternion (w, x, y, z) of Rz(e0) Ry(e1) Rx(e2), degrees."""
+    out = np.array((1.0, 0.0, 0.0, 0.0))
+    for ang, axis in ((e[0], 2), (e[1], 1), (e[2], 0)):
+        h = math.radians(ang) / 2.0
+        q = np.zeros(4)
+        q[0] = math.cos(h)
+        q[1 + axis] = math.sin(h)
+        out = _qmul(out, q)
+    return out
+
+
+def _qmul(a, b):
+    return np.array((a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3], a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+                     a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1], a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]))
+
+
+def slerp_zyx(ea, eb, w):
+    """The turn w of the way along the shortest turn from Rz Ry Rx(ea) to Rz Ry Rx(eb), as (z, y, x) degrees (client/sword/SwordLayer
+    does the same sums: BladePaths.backGlide)."""
+    qa, qb = _q_zyx(ea), _q_zyx(eb)
+    d = float(qa @ qb)
+    if d < 0:
+        qb, d = -qb, -d
+    if d > 0.9995:
+        q = qa + (qb - qa) * w
+    else:
+        th = math.acos(d)
+        q = (math.sin((1 - w) * th) * qa + math.sin(w * th) * qb) / math.sin(th)
+    q /= np.linalg.norm(q)
+    qw, qx, qy, qz = q
+    r = np.array([[1 - 2 * (qy * qy + qz * qz), 2 * (qx * qy - qz * qw), 2 * (qx * qz + qy * qw)],
+                  [2 * (qx * qy + qz * qw), 1 - 2 * (qx * qx + qz * qz), 2 * (qy * qz - qx * qw)],
+                  [2 * (qx * qz - qy * qw), 2 * (qy * qz + qx * qw), 1 - 2 * (qx * qx + qy * qy)]])
+    return _euler_zyx(r)
+
+
 def game_blade(move, q, t):
     """The katana's matrix (model px -> E) as the game draws it at tick t: in the hand, except while it slides along the saya's line
     (between its noto beats: drawn out or slid home), where it is laid exactly along the saya's curve (its own, 2.3.2), out the
     interpolated amount, so no frame between two ticks can put it through the saya's side (client/sword/SwordLayer does the same from
     BladePaths.notoOut and SayaSlide)."""
     pairs = move.noto
+    if move.profile is YORU:
+        m = yoru_layer(move, q, t)
+        if m is not None:
+            return rig.layer_to_entity(q) @ m
+        if not move.drawn_at(t):
+            return rig.back_matrix(q)
     if sliding(move, t):
         for (t0, o0), (t1, o1) in zip(pairs, pairs[1:]):
             if t0 <= t <= t1:
@@ -430,6 +722,7 @@ def write(move):
     move.profile = PROFILE
     move.name = move.name + PROFILE.suffix
     move.noto = sorted((beat.tick, beat.noto) for beat in move.beats if getattr(beat, "noto", None) is not None)
+    move.design_ticks = sorted(beat.tick for beat in move.beats)
     MOVES[move.name] = move
     if SOLVE and (ONLY is None or move.name in ONLY):
         PENDING.append(move)
@@ -449,10 +742,16 @@ def solve_and_write(move):
         if move.ground:
             for beat in move.beats:
                 lift_clear(beat, move.profile)
-        solve(move.beats, move.ground)
+        solve(move.beats, move.ground, lambda t: move.drawn_at(t) and not sliding(move, t))
         report(move.name, move.beats)
     parts = move.parts or {k: v for k, v in WRITE_PARTS.items() if not (move.free_legs and k in ("rightLeg", "leftLeg"))}
-    unwrap(move.beats)
+    if move.loop is not None:
+        # a loop ends where it returns to: the same pose, solved once (two solves of one target can differ)
+        ret = [beat for beat in move.beats if beat.tick == move.loop]
+        if ret:
+            import copy
+            move.beats[-1].solved = copy.deepcopy(ret[0].solved)
+    unwrap(move.beats, move.loop)
     moves = []
     for beat in move.beats:
         q = beat.solved
@@ -490,20 +789,133 @@ def _nearest_euler(v, prev):
     return best[1]
 
 
-def unwrap(beats):
-    """2.3.2: every solved arm and wrist written nearest the beat before (the game interpolates the numbers: two ways of writing the
-    same turn, or -197 then 143 degrees, would spin the arm or the hand the long way round between two beats)."""
-    prev = {}
-    for beat in beats:
-        q = beat.solved
-        for part in ("rightArm", "leftArm", "rightItem"):
-            if part not in q:
+def _rot(v):
+    return rig.zyx(math.radians(v[0]), math.radians(v[1]), math.radians(v[2]))[:3, :3]
+
+
+def _canonical(v):
+    """The plain way to write a turn: the yaw within 90, pitch and roll within 180."""
+    p, y, r = (float(x) for x in v)
+    if abs(((y + 180.0) % 360.0) - 180.0) > 90.0:
+        p, y, r = p + 180.0, 180.0 - y, r + 180.0
+    return np.array([((x + 180.0) % 360.0) - 180.0 for x in (p, y, r)])
+
+
+def _spellings(v, prev):
+    """Every way to write turn v near prev: both branches, each channel the nearest whole-turn shift of prev and one turn either side."""
+    out = []
+    p, y, r = (float(x) for x in v)
+    for cand in ((p, y, r), (p + 180.0, 180.0 - y, r + 180.0)):
+        base = [c - 360.0 * round((c - prev[k]) / 360.0) for k, c in enumerate(cand)]
+        for dp in (-360.0, 0.0, 360.0):
+            for dy in (-360.0, 0.0, 360.0):
+                for dr in (-360.0, 0.0, 360.0):
+                    out.append(np.array((base[0] + dp, base[1] + dy, base[2] + dr)))
+    return out
+
+
+def _between_strain(part, a, b, bend_a=0.0, bend_b=0.0):
+    """What the game's frames between two written turns of part cost (the natural-arm limits, squared), at a quarter, half and three
+    quarters of the way."""
+    c = 0.0
+    for u in (0.25, 0.5, 0.75):
+        rot = _rot(a + (b - a) * u)
+        if part == "rightItem":
+            dev, pro, spin = rig.wrist_angles(rot)
+            c += (rig._over(dev, -rig.RADIAL, rig.ULNAR) ** 2 + rig._over(pro, -rig.PRONATION, rig.PRONATION) ** 2
+                  + rig._over(spin, -rig.WRIST_BEND, rig.WRIST_BEND) ** 2)
+        else:
+            fo, fb = rig.fold_strain(rot, bend_a + (bend_b - bend_a) * u, "right" if part == "rightArm" else "left")
+            c += fo * fo + fb * fb + rig.shoulder_back(rot) ** 2
+    return c
+
+
+def _quat(m):
+    t = m[0, 0] + m[1, 1] + m[2, 2]
+    w = math.sqrt(max(0.0, 1.0 + t)) / 2.0
+    x = math.copysign(math.sqrt(max(0.0, 1.0 + m[0, 0] - m[1, 1] - m[2, 2])) / 2.0, m[2, 1] - m[1, 2])
+    y = math.copysign(math.sqrt(max(0.0, 1.0 - m[0, 0] + m[1, 1] - m[2, 2])) / 2.0, m[0, 2] - m[2, 0])
+    z = math.copysign(math.sqrt(max(0.0, 1.0 - m[0, 0] - m[1, 1] + m[2, 2])) / 2.0, m[1, 0] - m[0, 1])
+    return np.array((w, x, y, z))
+
+
+def _turn_deg(a, b):
+    """The real turn (degrees) between two written turns."""
+    r = _rot(a).T @ _rot(b)
+    return math.degrees(math.acos(max(-1.0, min(1.0, (float(np.trace(r)) - 1.0) / 2.0))))
+
+
+def _detour(a, b):
+    """How far (degrees) the game's frames between written turns a and b stray from the shortest turn between them."""
+    qa, qb = _quat(_rot(a)), _quat(_rot(b))
+    if qa @ qb < 0:
+        qb = -qb
+    worst = 0.0
+    for u in (0.25, 0.5, 0.75):
+        q = qa * (1 - u) + qb * u
+        q /= np.linalg.norm(q)
+        qn = _quat(_rot(a + (b - a) * u))
+        worst = max(worst, math.degrees(2.0 * math.acos(min(1.0, abs(float(q @ qn))))))
+    return worst
+
+
+def _chain(part, values, bends, start):
+    """The track written from start: each turn spelled where the frames to it from the one before are natural, and near."""
+    out = [np.array(start, float)]
+    for k in range(1, len(values)):
+        prev = out[-1]
+        best = None
+        for cand in _spellings(values[k], prev):
+            d = float(np.sum((cand - prev) ** 2))
+            if d > 400.0 ** 2:
                 continue
-            v = (q[part].get("pitch", 0.0), q[part].get("yaw", 0.0), q[part].get("roll", 0.0))
-            if part in prev:
-                v = _nearest_euler(v, prev[part])
-                q[part]["pitch"], q[part]["yaw"], q[part]["roll"] = v
-            prev[part] = v
+            cost = 0.002 * d + 5.0 * _between_strain(part, prev, cand, bends[k - 1], bends[k])
+            if best is None or cost < best[0]:
+                best = (cost, cand)
+        out.append(best[1])
+    return out
+
+
+def unwrap(beats, loop=None, ends=True):
+    """2.3.2: every solved arm and wrist written so the game's frames between beats are natural (the game interpolates the numbers:
+    two ways of writing the same turn, or -197 then 143 degrees, spin the arm between two beats; and the nearest way is not always the
+    natural one: an arm let down from overhead to its side is written forward and down, never on round the back), each track starting
+    on the plain spelling and ending on it (the game fades between animations, and out of one, by blending the numbers: a track left
+    at 341 instead of -19 spins the arm a full turn in the fade): where it would end on the other branch, it changes over where the
+    turn passes nearest the yaw's quarter turn (there the two spellings are the same turn, and the change does not show). loop: the
+    tick a loop returns to: the last beat is written as that one, exactly. ends: False skips the ends (refine's passes)."""
+    for part in ("rightArm", "leftArm", "rightItem"):
+        idx = [i for i, beat in enumerate(beats) if part in beat.solved]
+        if not idx:
+            continue
+        values = [np.array([beats[i].solved[part].get(c, 0.0) for c in ("pitch", "yaw", "roll")]) for i in idx]
+        bends = [beats[i].solved[part].get("bend", 0.0) for i in idx]
+        track = _chain(part, values, bends, _canonical(values[0]))
+        end = _canonical(track[-1])
+        if ends and float(np.max(np.abs(track[-1] - end))) > 0.5:
+            best = None
+            near_gimbal = any(abs(_canonical(v)[1]) >= 55.0 for v in track[1:])
+            for j in range(1, len(track)):
+                alt = _canonical(track[j])
+                # only where the yaw is near its quarter turn (elsewhere the change shows), unless the track never passes one: then
+                # wherever it shows least
+                if float(np.max(np.abs(alt - track[j]))) < 0.5 or (near_gimbal and abs(alt[1]) < 55.0):
+                    continue
+                tail = _chain(part, values[j:], bends[j:], alt)
+                if float(np.max(np.abs(tail[-1] - _canonical(tail[-1])))) > 0.5:
+                    continue
+                cost = _detour(track[j - 1], tail[0]) + 0.2 * math.sqrt(_between_strain(part, track[j - 1], tail[0], bends[j - 1], bends[j]))
+                if best is None or cost < best[0]:
+                    best = (cost, j, tail)
+            if best is not None:
+                track = track[:best[1]] + best[2]
+        if ends and loop is not None:
+            ret = [k for k, i in enumerate(idx) if beats[i].tick == loop]
+            if ret and float(np.max(np.abs(_canonical(track[-1]) - _canonical(track[ret[0]])))) < 3.0:
+                track[-1] = track[ret[0]].copy()
+        for k, i in enumerate(idx):
+            for c, ch in enumerate(("pitch", "yaw", "roll")):
+                beats[i].solved[part][ch] = round(float(track[k][c]), 3)
 
 
 def smooth_json(name):
@@ -683,6 +1095,8 @@ def clearance(move):
     with open(os.path.join(OUT, move.name + ".json"), encoding="utf-8") as handle:
         a = anim.Anim(json.load(handle))
     prof = move.profile
+    # each move against its own blade's mesh (a check run in another process starts with the katana's)
+    rig.set_sword(prof.key)
     problems = []
     # Yoru held where it hangs on the back (taken from its ropes, or put back): it hangs to the floor there by design (sword/BackCarry)
     on_back = [beat.tick for beat in move.beats if getattr(beat, "back_lift", None) is not None]
@@ -702,14 +1116,15 @@ def clearance(move):
             for what, by in rig.arm_strain(q, side):
                 if by > (0.4 if what == "arm through the body" else 8.0):
                     problems.append((t, f"{side} {what} ({by:.1f})"))
-        if move.drawn_at(t) and not sliding(move, t):
+        yl = yoru_layer(move, q, t) if prof is YORU else None
+        if (move.drawn_at(t) and not sliding(move, t)) or yl is not None:
             at_hilt = on_back and min(on_back) <= t <= max(on_back) + 1.0
-            for what, by in rig.sword_hits(q):
+            for what, by in rig.sword_hits(q, blade=yl):
                 # Yoru's cross guard sits just behind the head on the back: the hand on its hilt there may graze it (half a pixel)
                 limit = 0.6 if at_hilt and what.startswith("head") else 0.8 if what.endswith("(handle)") else 0.35
                 if by > limit:
                     problems.append((t, f"sword through the {what} ({by:.1f})"))
-        if move.drawn_at(t) or sliding(move, t):
+        if move.drawn_at(t) or sliding(move, t) or yl is not None:
             m = game_blade(move, q, t)
             for k in range(13):
                 p = rig.point(m, (0, rig.BLADE_BASE + (prof.tip - rig.BLADE_BASE) * k / 12, 0))
@@ -719,13 +1134,51 @@ def clearance(move):
                 if k >= 2 and inside(torso, p, (-4, 0, -2), (4, 12, 2), 0.4):
                     problems.append((t, "blade through the body"))
                     break
-            at_back = on_back and min(on_back) <= t <= max(on_back) + 1.0
-            if move.ground and not at_back and rig.point(m, tip_point(prof))[1] < 0.0:
+            # on (or lifted along) its line on the back its point may sit where it hangs at rest, on the floor, never lower
+            floor = -0.02 if yl is not None else 0.0
+            if move.ground and rig.point(m, tip_point(prof))[1] < floor:
                 problems.append((t, f"point in the floor ({rig.point(m, tip_point(prof))[1]:.2f})"))
         t += 0.5
     for problem in anim.lint(a):
         problems.append(problem)
+    problems += wound(move.name)
     return problems
+
+
+def wound(name):
+    """2.3.2: [(tick, what)] for a rotation (an arm's or the wrist's) that starts or ends written past a half turn, or the other way
+    round (pitch and roll past 90 with the yaw past 90): the game fades between animations, and out of one, by blending the written
+    numbers, so a track ending at 341 instead of -19 spins the arm a full turn in the fade. A loop must end where it starts."""
+    with open(os.path.join(OUT, name + ".json"), encoding="utf-8") as handle:
+        emote = json.load(handle)["emote"]
+    frames = {}
+    for m in emote["moves"]:
+        for part in ("rightArm", "leftArm", "rightItem"):
+            if part in m:
+                for ch, v in m[part].items():
+                    if ch in ("pitch", "yaw", "roll"):
+                        frames.setdefault(part, {}).setdefault(m["tick"], {})[ch] = v
+    out = []
+    for part, by_tick in frames.items():
+        ticks = sorted(by_tick)
+        for tick in (ticks[0], ticks[-1]):
+            v = by_tick[tick]
+            p, y, r = v.get("pitch", 0.0), v.get("yaw", 0.0), v.get("roll", 0.0)
+            if abs(p) > 180.5 or abs(r) > 180.5 or abs(y) > 100.0:
+                out.append((tick, f"{part} written wound ({p:.0f}, {y:.0f}, {r:.0f})"))
+        for t0, t1 in zip(ticks, ticks[1:]):
+            a0, a1 = by_tick[t0], by_tick[t1]
+            v0 = np.array([a0.get(c, 0.0) for c in ("pitch", "yaw", "roll")])
+            v1 = np.array([a1.get(c, 0.0) for c in ("pitch", "yaw", "roll")])
+            jump = float(np.max(np.abs(v1 - v0)))
+            turn = _turn_deg(v0, v1)
+            if jump > 60.0 and turn < 0.5 * jump and _detour(v0, v1) > 25.0:
+                out.append((t0, f"{part} spun between ticks {t0} and {t1} (numbers {jump:.0f}, turn {turn:.0f})"))
+        if emote.get("isLoop"):
+            a, b_ = by_tick.get(emote.get("returnTick", 0), by_tick[ticks[0]]), by_tick[ticks[-1]]
+            if any(abs(a.get(c, 0.0) - b_.get(c, 0.0)) > 2.0 for c in ("pitch", "yaw", "roll")):
+                out.append((ticks[-1], f"{part} loop ends elsewhere than it starts"))
+    return out
 
 
 # --- the poses the moves flow through (2.1.4, the owner: "the entire moveset is now right handed only, main stance looking like my
@@ -753,6 +1206,12 @@ def b(tick, easing, blade, left=None, body=None, legs=None, head=None, **kw):
     left = left or L_REST
     return Beat(tick, easing, blade=blade, left=dict(left) if isinstance(left, dict) else left, body=body or {}, legs=legs if legs is not None else LEGS_EASY,
                 head=head or {}, **kw)
+
+
+def direct(beat):
+    """The beat reached along the shortest arc of the blade (densify), not routed out in front."""
+    beat.direct = True
+    return beat
 
 
 def stance_beat(tick, easing="inoutsine", body=None, legs=None, head=None):
@@ -799,16 +1258,34 @@ DRAW_LEGS = {"rightLeg": leg(-32, 4, 46), "leftLeg": leg(18, -4, 36)}
 EXIT = 7.0   # model px the blade slides out along the saya before it swings free (the arm's reach allows no more)
 
 
+# 2.3.2: a one-handed backhand's coil: the fist at the left hip, the blade pointing back past it, the edge out to the left (the way it
+# will cut, the edge up as on the iai grip: it turns out as it swings). It used to point the blade straight out to the left from the belly, which takes a wrist bent 90 degrees: the natural
+# arm stood the blade upright instead, a salute, not a coil. The free hand goes out in front (L_AIM), above the blade's way round.
+# 2.3.2: the blade raised upright in front, the fist beside the right of the face (never before it), the edge to the front: the way up
+# to an overhead coil (furikaburi)
+RAISED = (H(6.2, -1.2, 4.0), D(0.12, 1.0, 0.12), D(0.0, 0.1, 1.0))
+BACKHAND_COIL = (H(-1.8, 7.2, 5.0), D(-0.42, 0.04, -0.9), D(0.0, 1.0, 0.0))
+# the pivot cut's, the body bowed deeper over its bent legs: the fist lower and further out, the blade clear of the left shoulder
+PIVOT_COIL = (H(-1.4, 8.2, 5.8), D(-0.4, -0.06, -0.91), D(0.0, 1.0, 0.0))
+
+
 def strike(name, duration, wind, mid, end, cut_ticks, description, wind_body, end_body, wind_left=L_AIM, end_left=L_BACK,
            wind_legs=LEGS_BACK, end_legs=LEGS_DEEP, wind_tick=3, hold=2, head_wind=None, head_end=None, overshoot=None,
-           cuts=None, start=None):
+           cuts=None, start=None, raise_=None):
     """A heavy one-handed cut: from the low stance, a big wind-up (the hips coiled the other way), a held coil, then the strike in two
     ticks (fast out of the coil, the edge leading), an overshoot, a hold at the end of the cut (the weight of it), and an easy
     recovery into the stance. wind/mid/end: (fist, blade, edge) of the coil, the middle of the cut and its end."""
     lo, hi = cut_ticks
     beats = [start or stance_beat(0, "linear")]
     coil = dict(wind_body)
+    if raise_ is not None:
+        # 2.3.2: an overhead coil is reached over the top: the blade raised upright in front first, then laid back over the shoulder
+        rt, pose = raise_
+        half = {k: v * 0.5 for k, v in coil.items()}
+        beats.append(b(rt, "insine", held(*pose), wind_left, half, wind_legs, head_wind or {}))
     beats.append(b(wind_tick, "inoutsine", held(*wind), wind_left, coil, wind_legs, head_wind or {}))
+    if raise_ is not None:
+        beats[-1].direct = True
     deeper = dict(coil)
     deeper["yaw"] = coil.get("yaw", 0.0) * 1.12
     deeper["bend"] = coil.get("bend", 0.0) - 2.0
@@ -944,12 +1421,12 @@ def moves(with_draws=True):
            head_wind={"yaw": 24}, head_end={"yaw": -20},
            description="Swordsman: the horizontal cut, right to left at the waist, the hips wound back and unwound through it.")
     strike("sword_gyaku_yoko", 13,
-           wind=(H(0.6, 5.2, 4.2), D(-0.9, 0.1, -0.42), D(-0.42, 0, 0.9)),
+           wind=BACKHAND_COIL,
            mid=(H(3.4, 5.0, 8.0), D(-0.15, 0.02, 1), D(1, 0, 0.15)),
            end=(H(8.4, 5.6, 3.2), D(0.94, 0.06, 0.32), D(0.32, 0, -0.94)),
            overshoot=(H(8.4, 5.6, 2.2), D(0.98, 0.06, 0.12), D(0.12, 0, -0.99)),
            cut_ticks=(5, 6), wind_body={"yaw": 50, "bend": 4, "y": -0.05}, end_body={"yaw": -46, "bend": 10, "y": -0.08, "z": -0.18},
-           wind_left=L_TUCK, end_left=L_OUT, head_wind={"yaw": -22}, head_end={"yaw": 20},
+           wind_left=L_AIM, end_left=L_OUT, head_wind={"yaw": -22}, head_end={"yaw": 20},
            description="Swordsman: the return cut, a backhand from the left hip across to the right.")
     strike("sword_kiriage", 14,
            wind=(H(1.6, 9.0, 4.2), D(-0.55, -0.74, 0.38), D(0.45, -0.25, 0.86)),
@@ -974,7 +1451,7 @@ def moves(with_draws=True):
            mid=(H(5.4, -0.8, 6.6), D(0.12, 0.62, 0.78), D(0, -0.78, 0.62)),
            end=(H(3.0, 6.6, 7.2), D(0.04, -0.55, 0.84), D(0, -0.84, -0.55)),
            overshoot=(H(3.0, 7.8, 6.4), D(0.04, -0.78, 0.62), D(0, -0.62, -0.78)),
-           cut_ticks=(7, 8), wind_tick=4, hold=3, wind_body={"yaw": -20, "bend": -16, "y": 0.02},
+           cut_ticks=(7, 8), wind_tick=4, hold=3, raise_=(2, RAISED), wind_body={"yaw": -20, "bend": -16, "y": 0.02},
            end_body={"yaw": 6, "bend": 30, "y": -0.18, "z": -0.32}, wind_left=L_AIM, end_left=L_BACK,
            head_wind={"pitch": -10, "yaw": 8}, head_end={"pitch": 10},
            description="Swordsman: the heaven splitter, the finisher: raised high behind the shoulder, then straight down through the "
@@ -994,11 +1471,9 @@ def moves(with_draws=True):
     spin = held(H(9.0, 5.8, 1.6), D(0.98, 0.03, 0.18), D(0.18, 0, -0.98))
     write(Move("sword_pivot_cut", 15, [
         stance_beat(0, "linear"),
-        b(3, "inoutsine", held(H(0.8, 5.6, 4.0), D(-0.9, 0.08, -0.42), D(-0.42, 0, 0.9)), L_TUCK, {"yaw": 52, "bend": 8, "y": -0.1},
-          LEGS_DEEP, {"yaw": -20}),
-        b(4, "outsine", held(H(0.8, 5.6, 4.0), D(-0.9, 0.08, -0.42), D(-0.42, 0, 0.9)), L_TUCK, {"yaw": 58, "bend": 6, "y": -0.11},
-          LEGS_DEEP, {"yaw": -22}),
-        b(5, "insine", held(H(5.0, 5.6, 7.6), D(0.25, 0.04, 1), D(1, 0, -0.25)), L_OUT, {"yaw": 10, "bend": 8, "y": -0.1}, LEGS_DEEP,
+        b(3, "inoutsine", held(*PIVOT_COIL), L_AIM, {"yaw": 52, "bend": 6, "y": -0.1}, LEGS_DEEP, {"yaw": -20}),
+        b(4, "outsine", held(*PIVOT_COIL), L_AIM, {"yaw": 58, "bend": 4, "y": -0.11}, LEGS_DEEP, {"yaw": -22}),
+        b(5, "insine", held(H(5.0, 5.6, 7.6), D(0.25, 0.04, 1), D(1, 0, -0.25)), L_AIM, {"yaw": 10, "bend": 8, "y": -0.1}, LEGS_DEEP,
           {"yaw": -10}),
         b(7, "linear", spin, L_OUT, {"yaw": -110, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -8}),
         b(9, "linear", spin, L_OUT, {"yaw": -230, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -8}),
@@ -1028,11 +1503,12 @@ def moves(with_draws=True):
         stance_beat(14, legs=LEGS_TUCK),
     ], "Swordsman: the aerial cross, two diagonals crossing in the air, each its own cut.", cuts=((3, 4), (8, 9)), ground=False))
 
-    wheel = held(H(5.6, -1.0, 6.4), D(0.14, 0.66, 0.74), D(0, 0.74, -0.66))
+    wheel = held(H(6.6, -1.0, 6.0), D(0.14, 0.66, 0.74), D(0, 0.74, -0.66))
     write(Move("sword_aerial_wheel", 15, [
         stance_beat(0, "linear", legs=LEGS_TUCK),
-        b(2, "inoutsine", held(H(5.8, -6.0, 0.8), D(0.22, -0.32, -0.92), D(0.1, 0.94, -0.3)), L_AIM, {"pitch": 12, "bend": -12},
-          LEGS_TUCK, {"pitch": -8}),
+        b(1, "insine", held(*RAISED), L_AIM, {"pitch": 6, "bend": -6}, LEGS_TUCK, {"pitch": -4}),
+        direct(b(2, "outsine", held(H(5.8, -6.0, 0.8), D(0.22, -0.32, -0.92), D(0.1, 0.94, -0.3)), L_AIM, {"pitch": 12, "bend": -12},
+                 LEGS_TUCK, {"pitch": -8})),
         b(4, "linear", wheel, L_BACK, {"pitch": -70, "bend": 12}, LEGS_TUCK),
         b(6, "linear", wheel, L_BACK, {"pitch": -180, "bend": 14}, LEGS_TUCK),
         b(8, "linear", wheel, L_BACK, {"pitch": -290, "bend": 12}, LEGS_TUCK),
@@ -1072,7 +1548,6 @@ def moves(with_draws=True):
         b(2, "inoutsine", held(H(9.6, 3.0, 2.4), D(0.75, 0.3, -0.6), D(0.2, 0.9, 0.3)), L_AIM, dict(charge_body, bend=-6), charge_legs,
           {"pitch": -6, "yaw": 8}),
         b(5, "outsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
-        b(6, "linear", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
         b(16, "inoutsine", shake, L_AIM, dict(charge_body, bend=-18, y=-0.06), charge_legs, {"pitch": -10, "yaw": 10}),
         b(26, "inoutsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
     ], "Swordsman: charging the slash, the blade raised high behind the right shoulder, the body drawn back like a bow (held until "
@@ -1084,7 +1559,6 @@ def moves(with_draws=True):
         noto(2, "linear", NOTO_OUT, body={"bend": 8, "yaw": 12, "y": -0.06}, legs=DRAW_LEGS, head={"pitch": -6}),
         b(3, "outexpo", held(H(8.0, -1.0, 4.4), D(0.35, 0.92, 0.15), D(0, -0.15, 1)), L_BACK, {"yaw": 0, "bend": -4}, LEGS_EASY),
         b(5, "outsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
-        b(6, "linear", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
         b(16, "inoutsine", shake, L_AIM, dict(charge_body, bend=-18, y=-0.06), charge_legs, {"pitch": -10, "yaw": 10}),
         b(26, "inoutsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
     ], "Swordsman: drawing straight up into the charge.", draw=1, loop=6))
@@ -1208,6 +1682,11 @@ SHOULDER = {"gryphon": (H(6.2, 0.6, 4.6), D(0.0, 0.5, -0.87), D(0.0, 0.87, 0.5))
 PRESENT = (H(3.4, 8.6, 3.6), D(-0.48, 0.52, 0.72), D(0.0, 0.84, -0.55))
 
 
+def halfway(a, b_, u):
+    """A held pose u of the way from a to b_ (fist mixed, blade and edge slerped)."""
+    return (tuple(np.array(a[0]) * (1 - u) + np.array(b_[0]) * u), tuple(slerp(a[1], b_[1], u)), tuple(slerp(a[2], b_[2], u)))
+
+
 def shifted(pose, dfist=(0.0, 0.0, 0.0)):
     """A held pose with its fist moved (H px: right, down, forward)."""
     f, bd, ed = pose
@@ -1317,28 +1796,39 @@ def yoru():
     back_dir = tuple(-v for v in on_back[1])
     dirs = [D(*back_dir), D(-0.25, -0.45, -0.86), D(0.05, 0.05, -1), D(0.08, 0.75, -0.66), D(0.08, 1.0, 0.1), D(0.1, 0.55, 0.83),
             D(*[v for v in (0.3, -0.38, 0.88)])]
-    fists = [H(6.6, -4.4, -6.0), H(6.4, -6.6, -3.4), H(6.6, -8.0, -1.4), H(6.4, -9.4, 0.6), H(6.0, -10.0, 2.2), H(6.4, -5.0, 5.4),
-             YORU.home[0]]
+    # the arc starts where the hand ends its pull out of the ropes (1.6 px: as far up its line as an arm reaches)
+    # its first leg takes the hilt up and out to the right of the head before it comes forward: Yoru's cross guard, behind the head
+    # at the hilt, would otherwise turn into it
+    fists = [tuple(rig.back_grip({}, 1.6)[0]), H(8.0, -6.4, -3.2), H(7.4, -8.0, -1.2), H(6.6, -9.4, 0.6), H(6.0, -10.0, 2.2),
+             H(6.4, -5.0, 5.4), YORU.home[0]]
     n = len(dirs) - 1
     rev_dirs, rev_fists = dirs[::-1], fists[::-1]
     look = {"pitch": -8, "yaw": -6}
     beats = [
         Beat(0, "linear", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
-        back_beat(7, "insine", 0.0, reach, body={"bend": 3, "yaw": -6}, head={"pitch": -4, "yaw": -4}),
-        back_beat(11, "outsine", 0.0, body={"bend": 5, "yaw": -8}, head=look),
-        back_beat(14, "linear", 0.2, body={"bend": 5, "yaw": -8}, head=look),
-        back_beat(17, "insine", 0.8, body={"bend": 4, "yaw": -9}, head=look),
-        back_beat(21, "inoutsine", 1.6, body={"bend": 2, "yaw": -11}, head={"pitch": -8, "yaw": -4}),
+        back_beat(6, "insine", 0.0, reach, body={"bend": 3, "yaw": -6}, head={"pitch": -4, "yaw": -4}),
+        back_beat(10, "outsine", 0.0, body={"bend": 5, "yaw": -8}, head=look),
+        back_beat(13, "linear", 0.3, body={"bend": 5, "yaw": -8}, head=look),
+        back_beat(16, "insine", 0.9, body={"bend": 4, "yaw": -9}, head=look),
+        back_beat(18, "inoutsine", 1.6, body={"bend": 2, "yaw": -11}, head={"pitch": -8, "yaw": -4}),
     ]
-    sweep_ticks = [23, 26, 29, 31, 33, 36]
-    bodies = [{"bend": 0, "yaw": -12}, {"bend": -3, "yaw": -12}, {"bend": -5, "yaw": -10}, {"bend": -4, "yaw": -6},
-              {"bend": 2, "yaw": -4}, {"bend": 5, "yaw": -6, "y": -0.03}]
-    heads = [{"pitch": -8, "yaw": -2}, {"pitch": -8, "yaw": 2}, {"pitch": -10, "yaw": 4}, {"pitch": -8}, {"pitch": -4}, {"pitch": -2}]
-    for i, tick in enumerate(sweep_ticks):
-        u = (i + 1) / len(sweep_ticks)
-        ease = "outback" if i == len(sweep_ticks) - 1 else ("insine" if i == 0 else "linear")
-        beat = b(tick, ease, cut(dirs, fists, u), L_REST if i < 4 else L_BACK, bodies[i], DRAW_LEGS if i >= 4 else LEGS_EASY, heads[i])
-        if i < 2:
+    # 2.3.2: the first leg off the back (67 degrees) eased over three beats: the blade turns out from the back a little at a time
+    # (taken in one, Yoru's pommel swung through the head and its point through the floor)
+    arc = [(20, 0.25 / n), (22, 0.6 / n), (24, 1.0 / n), (26, 2.0 / n), (29, 3.0 / n), (31, 4.0 / n), (33, 5.0 / n), (36, 1.0)]
+    bodies = [{"bend": 1, "yaw": -12}, {"bend": 0, "yaw": -12}, {"bend": -3, "yaw": -12}, {"bend": -5, "yaw": -10},
+              {"bend": -4, "yaw": -6}, {"bend": 2, "yaw": -4}, {"bend": 5, "yaw": -6, "y": -0.03}]
+    heads = [{"pitch": -8, "yaw": -3}, {"pitch": -8, "yaw": -2}, {"pitch": -8, "yaw": 2}, {"pitch": -10, "yaw": 4}, {"pitch": -8},
+             {"pitch": -4}, {"pitch": -2}]
+
+    def leg_of(u):
+        return min(len(bodies) - 1, int(round(u * n)))
+
+    for i, (tick, u) in enumerate(arc):
+        ease = "outback" if i == len(arc) - 1 else ("insine" if i == 0 else "linear")
+        k = leg_of(u)
+        beat = b(tick, ease, cut(dirs, fists, u), L_REST if u < 0.7 else L_BACK, bodies[k], DRAW_LEGS if u >= 0.7 else LEGS_EASY,
+                 heads[k])
+        if u <= 1.0 / n + 1e-9:
             beat.upper = OVERHEAD   # still reaching up behind the head, the elbow up
         beats.append(beat)
     beats.append(stance_beat(44, "inoutsine"))
@@ -1346,18 +1836,19 @@ def yoru():
                "sword pulled up out of its ropes, swung out behind, up over the head and down in front into its guard.", draw=17,
                back=True))
 
+    # its sheathing, the draw's arc backwards and slower at its end, then let down into the ropes
     beats = [stance_beat(0, "linear")]
-    sweep_ticks = [5, 9, 12, 15, 18, 23]
-    for i, tick in enumerate(sweep_ticks):
-        u = (i + 1) / len(sweep_ticks)
-        beat = b(tick, "inoutsine" if i == 0 else "linear", cut(rev_dirs, rev_fists, u, lead=-1), L_REST,
-                 bodies[len(bodies) - 1 - i], LEGS_EASY, heads[len(heads) - 1 - i])
-        if i >= len(sweep_ticks) - 2:
+    rarc = [(5, 5.0 / n), (8, 4.0 / n), (11, 3.0 / n), (14, 2.0 / n), (16, 1.0 / n), (18, 0.6 / n), (20, 0.25 / n)]
+    for i, (tick, u) in enumerate(rarc):
+        k = leg_of(u)
+        beat = b(tick, "inoutsine" if i == 0 else "linear", cut(dirs, fists, u, lead=-1), L_REST, bodies[k], LEGS_EASY, heads[k])
+        if u <= 1.0 / n + 1e-9:
             beat.upper = OVERHEAD
         beats.append(beat)
     beats += [
-        back_beat(24, "inoutsine", 1.6, body={"bend": 2, "yaw": -11}, head={"pitch": -8, "yaw": -4}),
-        back_beat(26, "inoutsine", 0.8, body={"bend": 4, "yaw": -9}, head=look),
+        back_beat(22, "inoutsine", 1.6, body={"bend": 2, "yaw": -11}, head={"pitch": -8, "yaw": -4}),
+        back_beat(24, "inoutsine", 1.0, body={"bend": 3, "yaw": -10}, head=look),
+        back_beat(26, "inoutsine", 0.4, body={"bend": 4, "yaw": -9}, head=look),
         back_beat(28, "outsine", 0.0, body={"bend": 5, "yaw": -8}, head=look),
         back_beat(31, "inoutsine", 0.0, reach, body={"bend": 3, "yaw": -4}, head={"pitch": -4, "yaw": -4}),
         Beat(36, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
@@ -1373,8 +1864,10 @@ def yoru():
         Beat(0, "linear", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
         back_beat(2, "outsine", 0.0, body={"bend": 4, "yaw": -10}, head={"pitch": 6, "yaw": 12}),
         back_beat(3, "linear", 1.0, body={"bend": 2, "yaw": -14}, head={"pitch": 2, "yaw": 10}),
-        b(5, "outsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
-        b(6, "linear", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
+        # half way off the back (the turn into the charge eased over two beats: in one, the pommel crossed the head)
+        b(5, "insine", held(*halfway(rig.back_grip({}, 1.0), charge_pose, 0.45)), L_AIM, dict(charge_body, bend=-8), charge_legs,
+          {"pitch": -4, "yaw": 10}),
+        b(6, "outsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
         b(16, "inoutsine", shake, L_AIM, dict(charge_body, bend=-18, y=-0.06), charge_legs, {"pitch": -10, "yaw": 10}),
         b(26, "inoutsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
     ], "Swordsman (Yoru): ripped off the back over the shoulder straight into the charge.", draw=3, loop=6, back=True))
@@ -1414,7 +1907,7 @@ def java_paths():
     import anim
     names = sorted(MOVES)
     lines = []
-    cases, draws, sheaths, notos = [], [], [], []
+    cases, draws, sheaths, notos, lifts, glides = [], [], [], [], [], []
     for i, name in enumerate(names):
         move = MOVES[name]
         with open(os.path.join(OUT, name + ".json"), encoding="utf-8") as handle:
@@ -1431,6 +1924,15 @@ def java_paths():
         cases.append(f'            case "{name}" -> p{i}();')
         if move.noto:
             notos.append(f'            case "{name}" -> new float[] {{' + ", ".join(f"{t}F, {o:.2f}F" for t, o in move.noto) + "};")
+        backs, _ = back_phase(move)
+        if backs:
+            lifts.append(f'            case "{name}" -> new float[] {{' + ", ".join(f"{t}F, {l:.2f}F" for t, l in backs) + "};")
+            g = back_glide(move)
+            if g is not None:
+                vals = [g[0], g[1]]
+                for shift, ang in g[2]:
+                    vals += list(shift) + list(ang)
+                glides.append(f'            case "{name}" -> new float[] {{' + ", ".join(f"{v:.3f}F" for v in vals) + "};")
         draws.append(f'            case "{name}" -> {move.draw};')
         sheaths.append(f'            case "{name}" -> {move.sheath};')
         body = ", ".join(f"{v:.3f}F" for v in values)
@@ -1445,6 +1947,13 @@ def java_paths():
            "        return switch (animation) {\n" + "\n".join(sheaths) + "\n            default -> -1;\n        };\n    }\n\n"
            "    /** The noto beats (tick, model px out of the saya): between the first and the last, the blade is laid along the saya. */\n"
            "    public static float[] notoOut(String animation) {\n        return switch (animation) {\n" + "\n".join(notos)
+           + "\n            default -> null;\n        };\n    }\n\n"
+           "    /** 2.3.2: Yoru lifted out of (or let down into) its ropes (tick, model px up its line on the back): drawn there. */\n"
+           "    public static float[] backLift(String animation) {\n        return switch (animation) {\n" + "\n".join(lifts)
+           + "\n            default -> null;\n        };\n    }\n\n"
+           "    /** 2.3.2: Yoru's glide between its line on the back and the hand: {tick at the ropes, tick in the hand, then every quarter\n"
+           "     * tick the sword's frame from the hand's sword frame: shift x, y, z (model px), turn z, y, x (degrees)}. */\n"
+           "    public static float[] backGlide(String animation) {\n        return switch (animation) {\n" + "\n".join(glides)
            + "\n            default -> null;\n        };\n    }\n\n"
            + "\n".join(lines) + "}\n")
     with open(JAVA, "w", encoding="utf-8") as handle:
@@ -1609,7 +2118,7 @@ def preview(names, out, frames=None, views=("front", "three", "side"), tile=(150
                 drawn = (move.drawn_at(t) or sliding(move, t)) if move else True
                 if prof is YORU:
                     sv.draw_ropes(cv, cam, q)
-                    sv.draw_katana(cv, cam, "yoru", game_blade(move, q, t) if drawn else rig.back_matrix(q), shine=0.3)
+                    sv.draw_katana(cv, cam, "yoru", game_blade(move, q, t) if move else rig.back_matrix(q), shine=0.3)
                 elif drawn:
                     sv.draw_katana(cv, cam, prof.key, game_blade(move, q, t))
                     sv.draw_katana(cv, cam, prof.key, rig.saya_matrix(q), saya=True, blade=False)

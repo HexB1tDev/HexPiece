@@ -107,14 +107,14 @@
     "tick": 0,
     "easing": "linear",
     "rightArm": {
-     "pitch": -158.16
+     "pitch": -157.91
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "rightArm": {
-     "yaw": -24.03
+     "yaw": -23.75
     }
    },
    {
@@ -128,7 +128,7 @@
     "tick": 0,
     "easing": "linear",
     "rightArm": {
-     "bend": -38.66
+     "bend": -39.0
     }
    },
    {
@@ -219,21 +219,21 @@
     "tick": 0,
     "easing": "linear",
     "rightItem": {
-     "pitch": 5.44
+     "pitch": 5.47
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "rightItem": {
-     "yaw": -1.66
+     "yaw": -1.38
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "rightItem": {
-     "roll": -12.25
+     "roll": -12.16
     }
    },
    {
@@ -387,14 +387,14 @@
     "tick": 1,
     "easing": "insine",
     "rightArm": {
-     "yaw": -9.94
+     "yaw": -9.88
     }
    },
    {
     "tick": 1,
     "easing": "insine",
     "rightArm": {
-     "roll": -14.72
+     "roll": -14.53
     }
    },
    {
@@ -492,21 +492,21 @@
     "tick": 1,
     "easing": "insine",
     "rightItem": {
-     "pitch": 40.34
+     "pitch": 40.38
     }
    },
    {
     "tick": 1,
     "easing": "insine",
     "rightItem": {
-     "yaw": -5.94
+     "yaw": -5.75
     }
    },
    {
     "tick": 1,
     "easing": "insine",
     "rightItem": {
-     "roll": 13.56
+     "roll": 13.46
     }
    },
    {
@@ -772,14 +772,14 @@
     "tick": 2,
     "easing": "outexpo",
     "rightItem": {
-     "yaw": -11.06
+     "yaw": -11.03
     }
    },
    {
     "tick": 2,
     "easing": "outexpo",
     "rightItem": {
-     "roll": 25.25
+     "roll": 25.22
     }
    },
    {
@@ -1052,7 +1052,7 @@
     "tick": 3,
     "easing": "outback",
     "rightItem": {
-     "roll": 40.12
+     "roll": 40.13
     }
    },
    {
@@ -1325,7 +1325,7 @@
     "tick": 4,
     "easing": "linear",
     "rightItem": {
-     "roll": 41.71
+     "roll": 41.69
     }
    },
    {
@@ -3929,7 +3929,7 @@
     "tick": 14,
     "easing": "linear",
     "rightArm": {
-     "pitch": -23.84
+     "pitch": -23.85
     }
    },
    {
