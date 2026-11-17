@@ -34,7 +34,28 @@ version is **2.3.1**.
   attributes, the sound and entity registers): nothing else registers twice. Past this point the game has not started since 2.2.1,
   so a later failure (world join, first render) is possible: ask the owner for the next crash report if there is one.
 
+## Done after 2.3.0 (no version: a preview, no game code)
+- The owner: "first thing I want is a full showcase of the sword beam hitting a player and aftermath finisher." `tools/preview/SlashShowcase.java`
+  (javac -cp build/classes -d build/preview tools/preview/SlashShowcase.java && java -cp build/preview:build/classes SlashShowcase
+  out-dir art/user_skin.png fall 30 "" 1280): one continuous shot, from the game's own code (SlashMesh.wave and the DrawCrackle
+  crackle as SlashRenderer lays them, the trench cells as HakiSlashes.queueCells picks them, Carcass.wound/cut/launch, Ragdoll on the
+  cut blocks, FinisherFx's bleeding and pools); its own: procedural 16 px grass/dirt, vanilla face shading, fog, near-plane clipping,
+  break debris. A 0.6 charge (24.3 tall, 3.12 blocks a tick, range 89, 27 damage: lethal on 20 HP). Out: `docs/images/
+  slash-finisher-showcase.mp4` (7 s, 720p, sent to the owner) and `.png` (key frames). Seen in it, as the game does it today: the
+  ground under the victim is cut the tick the wave hits, so the held victim drops 2 blocks into the trench and is cut at its bottom
+  (`Finishers.hold` keeps gravity). Kept (it reads naturally); `hover` in the tool shows the other choice if the owner asks for it.
+
 ## Open: the owner's requests, in order
+0. **The One Piece armor** (the owner, with `input/OnePiece_Armor_1.20.1.zip`, committed unaltered: admiral coat, blackbeard coat,
+   marine outfit, straw hat; steve/alex Blockbench models, a Forge `OnePieceArmorModel` + `OnePieceArmorExtensions`, textures under
+   `assets/hexpiece/...` (the mod id is `hexhaki`: move them under `assets/hexhaki/` via the expansion), `INTEGRATION.md`,
+   `rig_manifest.json`, `validation.json`): "New armor for NPCS and for the player (create a custom tab in creative as well), NPCS for
+   now only spawn with the Marine Armor (not admiral or strawhat or black coat)." Read INTEGRATION.md first; render every piece on
+   the owner's skin (steve and alex) and judge it.
+0. **Better Pirate and Marine skins** (the owner: "the Marines and Pirate skins are shit and need to be recreated and bettered, you
+   CAN take skins from HexGhoul"): `tools/npc_skins.py`, `docs/images/npc-skins.png` today; HexGhoul's skins are in its
+   `src/main/resources/assets/hexkagune/textures/entity/` (folders human/, ccg/, ghoul/, and the named ones; also its art/, tools/). Do it with the armor (the Marines
+   wear the marine outfit).
 1. **Every move is clashable, with an impact frame on each clash** (the owner: "every move is clashable (combat style wise, and yes
    you can take the impacts from HexGhoul's latest version, however I want a impact frame whenever a clash happens.)"). Every
    fighting-style move (the Swordsman's cuts and slashes, Iron Fist, Fishman Karate, Six Powers; player against player and against
