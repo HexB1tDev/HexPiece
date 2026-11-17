@@ -63,12 +63,14 @@ public final class HudTests {
         Check.that(beam.name().equals("Light Beam") && !beam.locked() && Math.abs(beam.ready() - 0.5) < 1e-9, "a recharging move, half way");
         AbilityPanel.Row mirror = panel.rows().get(1);
         Check.that(mirror.locked() && mirror.needs().equals("400") && mirror.colour() == AbilityPanel.DIM, "a move not reached yet: dim, with what it needs");
-        Check.that(has(panel, "R", "Back to Black Leg"), "R back to the style");
+        Check.that(has(panel, "R", "Back to Black Leg and Haki"), "R back to the style and Haki");
+        Check.that(!has(panel, "Ctrl+R", "Armament"), "the fruit's panel is the fruit's alone: Haki is with the style");
     }
 
     static void off() {
         AbilityPanel.Panel panel = AbilityPanel.of(input("Six Powers", false, null, null, false, false));
-        Check.that(panel.title().equals("HAKI") && has(panel, "R", "Combat mode (Six Powers)"), "combat mode off: Haki and the key that turns it on");
+        Check.that(panel.title().equals("SIX POWERS") && has(panel, "R", "Combat mode"), "combat mode off: the style and Haki, and the key that turns it on");
+        Check.that(has(panel, "Ctrl+R", "Armament") && has(panel, "G", "King's Awakening (tap / hold)"), "Haki's keys listed with the style, in any form");
         Check.that(AbilityPanel.seconds(30).equals("1.5s") && AbilityPanel.seconds(400).equals("20s"), "recharges in seconds");
     }
 

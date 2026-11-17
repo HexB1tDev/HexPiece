@@ -7,8 +7,8 @@ import java.util.Map;
 /**
  * 2.2.2 (the owner: "all the abilities, everything has to be in the same menu, like HUD on the left. Like, I don't care about mastery
  * in the bottom. I want you to copy the one from Hex Ghoul and put it here, basically in our way"): what the one abilities panel on the
- * left shows (pure, tested), HexGhoul's {@code AbilityGuide} in our way: a title in the mode's colour (the fighting style in combat
- * mode, the fruit in its own mode, Haki otherwise), what the body is doing, the Haki energy as a thin gauge under the title, then one
+ * left shows (pure, tested), HexGhoul's {@code AbilityGuide} in our way: a title in the mode's colour (the fighting style, which
+ * shares its panel with Haki; the fruit in its own mode, alone), what the body is doing, the Haki energy as a thin gauge under the title, then one
  * line a move: the keys the player bound, the move's name in its colour, dim when it is locked (with the mastery it needs) or
  * recharging (with the seconds left). The style's moves, the fruit's moves, Gear 5's, every Haki power and its quick slots, the swap
  * key and the Captain's Log: everything in one place; the original's mastery bars at the bottom are gone.
@@ -67,39 +67,46 @@ public final class AbilityPanel {
     /** The panel for {@code in}. */
     public static Panel of(Input in) {
         List<Row> rows = new ArrayList<>();
-        String title;
-        String subtitle;
-        int accent;
-        if (in.combat()) {
-            title = in.style().toUpperCase(java.util.Locale.ROOT);
-            accent = in.styleColour();
-            if (in.sword() != null) {
-                subtitle = "katana " + in.sword();
-                sword(in, rows);
-            } else {
-                subtitle = in.style().equals("Bare Hands") ? "no style yet" : "combat";
-                style(in, rows);
-            }
-        } else if (in.fruitMode() && in.fruit() != null) {
-            title = in.fruit().toUpperCase(java.util.Locale.ROOT);
-            accent = in.fruitColour();
-            subtitle = "devil fruit";
+        // 2.2.2 (the owner: "every combat style should be together with the haki ... same menu, same category. The keys should be usable
+        // just like that in any form. Like, the only menu that is separate is the devil fruit powers"): the fruit's own panel alone;
+        // otherwise the style and Haki together, whether combat mode is on or not.
+        if (in.fruitMode() && in.fruit() != null) {
             for (Move move : in.fruitMoves()) {
                 rows.add(move(move, in.fruitColour()));
             }
-        } else {
-            title = "HAKI";
-            accent = HAKI;
+            rows.add(Row.of(key(in, "toggle"), "Back to " + in.style() + " and Haki", DIM));
+            rows.add(Row.of(key(in, "menu"), "Captain's Log", DIM));
+            return new Panel(in.fruit().toUpperCase(java.util.Locale.ROOT), "devil fruit", in.fruitColour(), -1.0, rows);
+        }
+        String subtitle;
+        if (!in.combat()) {
             subtitle = "combat mode off";
-            rows.add(Row.of(key(in, "toggle"), "Combat mode (" + in.style() + ")", TEXT));
+            rows.add(Row.of(key(in, "toggle"), "Combat mode", TEXT));
+        } else if (in.sword() != null) {
+            subtitle = "katana " + in.sword();
+        } else {
+            subtitle = in.style().equals("Bare Hands") ? "no style yet" : "combat";
+        }
+        int before = rows.size();
+        if (in.sword() != null) {
+            sword(in, rows);
+        } else {
+            style(in, rows);
+        }
+        if (!in.combat()) {
+            // the style's moves wait for combat mode: shown, dim
+            for (int i = before; i < rows.size(); i++) {
+                Row row = rows.get(i);
+                rows.set(i, new Row(row.keys(), row.name(), DIM, row.needs(), row.left(), row.of()));
+            }
         }
         haki(in, rows);
         if (in.fruit() != null) {
-            rows.add(Row.of(key(in, "toggle"), in.fruitMode() ? "Back to " + in.style() : in.combat() ? "Swap to " + in.fruit() : "Fruit mode", DIM));
+            rows.add(Row.of(key(in, "toggle"), in.combat() ? "Swap to " + in.fruit() : in.fruit(), DIM));
         }
         rows.add(Row.of(key(in, "menu"), "Captain's Log", DIM));
         double energy = in.maxEnergy() > 0 ? Math.max(0.0, Math.min(1.0, in.energy() / in.maxEnergy())) : -1.0;
-        return new Panel(title, subtitle, accent, in.haki() ? energy : -1.0, rows);
+        return new Panel(in.style().toUpperCase(java.util.Locale.ROOT), subtitle, in.styleColour(), in.haki() ? energy : -1.0, rows);
     }
 
     /** The Swordsman's lines: the draw (slow) while sheathed, the string once drawn, the charge, the quick draw. */
