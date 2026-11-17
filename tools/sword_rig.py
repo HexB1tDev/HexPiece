@@ -472,7 +472,17 @@ def sword_points(slide=0.0, n=None):
         if key not in _THIN:
             step = max(1, len(pts) // n)
             order = np.lexsort((pts[:, 0], pts[:, 2], pts[:, 1]))
-            _THIN[key] = pts[order[::step]]
+            chosen = set(int(i) for i in order[::step])
+            # 2.3.2: each 1.2 px band along the sword (the mesh grid's) keeps its outermost points (either way across and through
+            # it): a sword touches with its outline, and Yoru's cross guard's tips (7.4 px out, curling 3.7 px up the blade) fell
+            # between the stride's picks: 0.5 px through the arm and the head
+            band = np.floor(pts[:, 1] / 1.2)
+            for value in np.unique(band):
+                idx = np.where(band == value)[0]
+                for col in (0, 2):
+                    chosen.add(int(idx[np.argmax(pts[idx, col])]))
+                    chosen.add(int(idx[np.argmin(pts[idx, col])]))
+            _THIN[key] = pts[sorted(chosen)]
         pts = _THIN[key]
     keep = ~((np.abs(pts[:, 1] - (GRIP - slide)) < HELD) & (np.hypot(pts[:, 0], pts[:, 2]) < 1.8))
     pts = pts[keep]
@@ -523,6 +533,7 @@ def _hits(pose, pts, arm):
 
 
 _T4, _TM4 = tr(0, 4, 0), tr(0, -4, 0)
+_EYE4 = np.eye(4)
 
 
 class _Arm:
@@ -571,7 +582,11 @@ class _Arm:
         d = max(d, _box_depth(pts, rigid_inv(fore), (-w + 1, 4, -2), (1, HAND, 2), g))
         d2 = _box_depth(pts, self.torso_inv, (-4, 0, -2), (4, 12, 2), g)
         d3 = _box_depth(pts, self.head_inv, (-4, -8, -4), (4, 0, 4), g)
-        return COLLIDE_WEIGHT * (d * d + d2 * d2 + d3 * d3)
+        # 2.3.2: the top of the left upper arm (its shoulder, layer frame: there whichever way the arm is swung): the left arm is
+        # placed after the sword, and Gryphon's curved saber, coiled back past the left side, ran through the shoulder joint itself,
+        # where no left arm can get out of its way
+        d4 = _box_depth(pts, _EYE4, (4.0, 0.0, -2.0), (8.0, 3.0, 2.0), g)
+        return COLLIDE_WEIGHT * (d * d + d2 * d2 + d3 * d3 + d4 * d4)
 
     def frames(self, v):
         """(upper arm matrix, forearm matrix, fist matrix) for arm angles v (pitch, yaw, roll, bend degrees)."""

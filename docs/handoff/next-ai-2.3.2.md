@@ -1,17 +1,38 @@
-# HexPiece: handoff, 2.3.2 work in progress (the owner's sword bugs, natural arms, the victim's split view, NPC gestures)
+# HexPiece: handoff after 2.3.2 (the owner's sword bugs, one animation set for every blade, natural arms, the victim's split view, NPC gestures)
 
-## Session 3 (running state, newest first; kept current)
-- Session moved onto the "HexPiece" environment. Java (incl. Yoru's glide in SwordLayer) compiles. Yoru's new back carry rendered from
-  7 sides and judged fine (hilt out over the right shoulder, guard ~3 px off the back, both ropes loop round the blade).
-- A full solve was started at 19:17 UTC; a WIP commit mid-solve holds a mix of old and new animation JSONs: if this is the newest
-  note, run the full solve again before anything else.
-- New `tools/sword_gif.py OUT [regex]`: real-time GIFs (a frame every half tick, three views) of written sword moves.
-- Clashes started for 2.3.3: `clash/ClashRules` (pure: Blow, meets, clashable (a bare blow meets a blade only with Armament on),
-  bladeWins, power, thrown/lifted (HexGhoul 3.4.3), stagger, burst (Ryou meets Ryou), frameTicks) + `ClashTests` (30 checks pass).
-  Not wired into the game yet. Plan: `server/Clashes` (level tick over fighters with a blow on its way: StyleServer state.move/start
-  and the next Hit's tick; SwordServer state.move/moveStart and the Cut windows; SeaFighter move/moveStart, swordMove/swordStart),
-  both stopped, thrown apart, Impact.hit for hitstop/shake, a new S2CClash packet; client impact frame (the frame inverted, via the
-  ScreenSplit framebuffer copy; the original's FLASH_MANGA is only a flat overlay with speed lines); Ryou burst from ConquerorBolts.
+## Session 3: 2.3.2 RELEASED (read this first)
+- **The owner, mid-session: "Can you please skip the fucking checks on every single katana? ... Just apply the same fix to every
+  single one. Just copy. They're all the same."** So every blade (the 25 katanas, Gryphon, Yoru) plays the katanas' ONE animation
+  set (cuts, guard, idle, release, quick cut...). The only per-blade animations left are Yoru's three off/onto its back:
+  `sword_draw_yoru`, `sword_sheathe_yoru`, `sword_charge_draw_yoru` (a hip draw cannot take a sword off the back). Gryphon draws and
+  sheathes with the katanas' `sword_draw`/`sword_sheathe` (28/24 ticks, along its own saya curve, SayaSlide). Java: `SwordAnims.name`
+  (`suffix(anim, katana)`, `back(anim)`), `SwordAnims.idle` -> "sword_idle", `SwordRules.drawTicks/sheatheTicks` (Gryphon = katana).
+  Python `build()` writes only the shared set and `yoru()`. All `*_gryphon` and the other `*_yoru` JSONs were deleted. Do NOT bring
+  per-blade sets back, and do not re-check per blade: the owner was explicit.
+  Known consequence (the owner chose it): Yoru, much longer, can put its point into the floor in the shared low poses.
+- Pose check: 29 animations (26 shared + Yoru's 3), every half tick natural and clear; SWORD_POSE_EXCEPTIONS empty. build.py green.
+- Fixes this session (tools/sword_anims.py, tools/sword_rig.py):
+  - The solver's thinned sword points always keep each 1.2 px band's outermost points (`sword_points(n)`): Yoru's cross-guard tips
+    (7.4 px out, curling up the blade) were skipped and went 0.4-0.8 px through arms and the head.
+  - The right-arm solver prices the top of the left upper arm (`_Arm.sword_cost`, box x 4..8, y 0..3 in the layer frame).
+  - Yoru's sheathe held the sword edge-reversed (`cut(..., lead=-1)`): the glide onto the back spun it half a turn through the head.
+    `cut()`'s edge follows the path's direction; a move running a path backwards keeps lead 1. Yoru's arc eases its edge from the
+    carry's into the swing's over the first two legs (`arc_pose` in `yoru()`).
+  - `mirror_arm`: Yoru's sheathe copies the draw's solved arm/wrist at ticks 16-20 (draw ticks 24-20) so the hand lays Yoru back as
+    it took it off; `run_pending` solves a mirrored move after the one it copies.
+  - `unwrap`: before a branch changeover, the whole track held to the plain Euler branch is tried (`_chain(plain=True)`,
+    `_track_cost` with wound()'s own spin rule `_spun`): an arm raised forward over the top written past -180 ends plain.
+  - aerial_wheel's wind-up and wheel fists moved out to the right (the forearm crossed the brow); Yoru's arc: first leg less steep,
+    last beat's fist out of the face; the charge draw lifts 1.6 px before it turns.
+- New tools: `tools/sword_gif.py OUT [regex]` (real-time GIFs, three views). Judged: Yoru on the back (7 sides), the full sheets
+  of Yoru's draw, sheathe and charge draw, and aerial_wheel.
+- Clashes started for the next version: `clash/ClashRules` (pure) + `ClashTests` (30 checks, in the build). Not wired into the
+  game. Plan: `server/Clashes` (level tick over fighters with a blow on its way: StyleServer state.move/start and the next Hit's
+  tick; SwordServer state.move/moveStart and the Cut windows; SeaFighter move/moveStart, swordMove/swordStart), both stopped, thrown
+  apart (ClashRules.thrown/lifted), Impact.hit for hitstop/shake, a new S2CClash packet; client impact frame (the frame inverted
+  via the ScreenSplit framebuffer copy: the original's Impact FLASH_MANGA is only a flat overlay plus speed lines; inverting needs
+  GlStateManager$SourceFactor.ONE_MINUS_DST_COLOR proven in verify/api-allowlist.txt); Ryou burst from ConquerorBolts in both
+  colours. HexGhoul's MoveClash/KaguneClash/ClashRules/KickDust are the model (cloned read-only from GitHub, public).
 
 ## STATE WHEN THE OWNER SAID STOP (session 2)
 - Pushed as work in progress, CI NOT checked (the owner's 98% / stop rule). The last full solve was STOPPED mid-run on purpose, so

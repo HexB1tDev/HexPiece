@@ -191,7 +191,7 @@ def solve(beats, ground=False, check=None):
         q = base_pose(beat)
         arm, wr, err_p, err_d = solve_right(beat, q, seed_r, ground)
         q["rightArm"], q["rightItem"] = arm, wr
-        if beat.rarm is None:
+        if beat.rarm is None or getattr(beat, "mirrored", False):
             seed_r = _seed(arm, wr)
         mid = None
         if prev_beat is not None and prev_left is not None:
@@ -739,6 +739,7 @@ def solve_and_write(move):
     text = io.StringIO()
     with contextlib.redirect_stdout(text):
         move.beats = densify(move.beats)
+        mirror_arm(move)
         if move.ground:
             for beat in move.beats:
                 lift_clear(beat, move.profile)
@@ -771,6 +772,26 @@ def solve_and_write(move):
     return move.name, text.getvalue(), clearance(move)
 
 
+def mirror_arm(move):
+    """2.3.2: a move with mirror = (other move, sum, (first tick, last tick)) holds, at each of its beats from the first tick to the
+    last, the right arm and wrist the other move's written animation has at tick sum - tick: Yoru's sheathing lays the great sword
+    back on its back exactly as its draw takes it off (solved on its own, the hand came at it another way, and the cross guard
+    swung through the head as it glided onto the back)."""
+    spec = getattr(move, "mirror", None)
+    if not spec:
+        return
+    import anim
+    other, total, (lo, hi) = spec
+    with open(os.path.join(OUT, other + ".json"), encoding="utf-8") as handle:
+        a = anim.Anim(json.load(handle))
+    for beat in move.beats:
+        if lo <= beat.tick <= hi:
+            q = a.pose(total - beat.tick)
+            beat.rarm = {k: float(q["rightArm"].get(k, 0.0)) for k in ARM_CH}
+            beat.wrist = {k: float(q["rightItem"].get(k, 0.0)) for k in ("pitch", "yaw", "roll", "y")}
+            beat.mirrored = True
+
+
 def _nearest_euler(v, prev):
     """(pitch, yaw, roll) as written nearest prev: the same turn has two ways to be written in this order (pitch + 180, 180 - yaw,
     roll + 180), each with whole turns added; the game interpolates the numbers, so the nearest one turns the least between beats."""
@@ -801,11 +822,12 @@ def _canonical(v):
     return np.array([((x + 180.0) % 360.0) - 180.0 for x in (p, y, r)])
 
 
-def _spellings(v, prev):
-    """Every way to write turn v near prev: both branches, each channel the nearest whole-turn shift of prev and one turn either side."""
+def _spellings(v, prev, plain=False):
+    """Every way to write turn v near prev: both branches (plain: only the plain one, the yaw within a quarter turn of a whole one),
+    each channel the nearest whole-turn shift of prev and one turn either side."""
     out = []
-    p, y, r = (float(x) for x in v)
-    for cand in ((p, y, r), (p + 180.0, 180.0 - y, r + 180.0)):
+    p, y, r = (float(x) for x in _canonical(v))
+    for cand in ((p, y, r),) if plain else ((p, y, r), (p + 180.0, 180.0 - y, r + 180.0)):
         base = [c - 360.0 * round((c - prev[k]) / 360.0) for k, c in enumerate(cand)]
         for dp in (-360.0, 0.0, 360.0):
             for dy in (-360.0, 0.0, 360.0):
@@ -859,13 +881,14 @@ def _detour(a, b):
     return worst
 
 
-def _chain(part, values, bends, start):
-    """The track written from start: each turn spelled where the frames to it from the one before are natural, and near."""
+def _chain(part, values, bends, start, plain=False):
+    """The track written from start: each turn spelled where the frames to it from the one before are natural, and near (plain: on
+    the plain branch only)."""
     out = [np.array(start, float)]
     for k in range(1, len(values)):
         prev = out[-1]
         best = None
-        for cand in _spellings(values[k], prev):
+        for cand in _spellings(values[k], prev, plain):
             d = float(np.sum((cand - prev) ** 2))
             if d > 400.0 ** 2:
                 continue
@@ -874,6 +897,22 @@ def _chain(part, values, bends, start):
                 best = (cost, cand)
         out.append(best[1])
     return out
+
+
+def _spun(a, b):
+    """The game's frames between written turns a and b spin the part (wound()'s rule: the numbers jump far further than it turns, and
+    the frames stray off the turn); a raise over the top written the long way round (190 degrees of pitch for a 170-degree turn) is
+    not a spin: that is how an arm goes up."""
+    jump = float(np.max(np.abs(np.asarray(b) - np.asarray(a))))
+    return jump > 60.0 and _turn_deg(a, b) < 0.5 * jump and _detour(a, b) > 25.0
+
+
+def _track_cost(part, track, bends):
+    """How unnatural (the natural-arm limits, squared) the game's frames between a track's keyframes are, a spin counting heavily."""
+    c = 0.0
+    for k in range(1, len(track)):
+        c += _between_strain(part, track[k - 1], track[k], bends[k - 1], bends[k]) + (1.0e4 if _spun(track[k - 1], track[k]) else 0.0)
+    return c
 
 
 def unwrap(beats, loop=None, ends=True):
@@ -892,6 +931,14 @@ def unwrap(beats, loop=None, ends=True):
         bends = [beats[i].solved[part].get("bend", 0.0) for i in idx]
         track = _chain(part, values, bends, _canonical(values[0]))
         end = _canonical(track[-1])
+        if ends and float(np.max(np.abs(track[-1] - end))) > 0.5:
+            # 2.3.2: first the whole track held to the plain branch (an arm raised forward over the top written past -180, not
+            # changed over to the other branch and back): it ends plain with nothing to change back from, if it is as natural
+            plain = _chain(part, values, bends, _canonical(values[0]), plain=True)
+            if (float(np.max(np.abs(plain[-1] - _canonical(plain[-1])))) <= 0.5
+                    and _track_cost(part, plain, bends) <= _track_cost(part, track, bends) + 2.0):
+                track = plain
+                end = plain[-1]
         if ends and float(np.max(np.abs(track[-1] - end))) > 0.5:
             best = None
             near_gimbal = any(abs(_canonical(v)[1]) >= 55.0 for v in track[1:])
@@ -952,8 +999,14 @@ def run_pending():
     jobs = list(PENDING)
     PENDING.clear()
     jobs.sort(key=lambda m: -len(m.beats) * m.duration)
+    # 2.3.2: a move that copies part of another's solved arm (Yoru's sheathing, its draw's) is solved once that one is written
+    names = {m.name for m in jobs}
+    later = [m for m in jobs if getattr(m, "mirror", None) and m.mirror[0] in names]
+    first = [m for m in jobs if m not in later]
     with multiprocessing.get_context("fork").Pool(max(1, (os.cpu_count() or 2))) as pool:
-        results = pool.map(solve_and_write, jobs, chunksize=1)
+        results = pool.map(solve_and_write, first, chunksize=1)
+        if later:
+            results += pool.map(solve_and_write, later, chunksize=1)
     bad = 0
     for name, text, problems in sorted(results):
         print(text, end="")
@@ -1005,8 +1058,9 @@ def path(dirs, t):
 
 
 def cut(dirs, fists, t, roll=0.0, lead=1):
-    """A beat of a cut at t (0..1) along blade directions dirs and fist points fists (H(), polylines): the edge leads (lead -1: the
-    blade moves back edge-last, a wind-up)."""
+    """A beat of a cut at t (0..1) along blade directions dirs and fist points fists (H(), polylines): the edge faces the way the path
+    runs (t growing; lead -1: the other way). A move that runs a path backwards (a sheathing down a draw's arc) keeps lead 1 to hold
+    the sword as the forward move does."""
     b = path(dirs, t)
     eps = 0.02
     t0, t1 = max(0.0, t - eps), min(1.0, t + eps)
@@ -1503,11 +1557,12 @@ def moves(with_draws=True):
         stance_beat(14, legs=LEGS_TUCK),
     ], "Swordsman: the aerial cross, two diagonals crossing in the air, each its own cut.", cuts=((3, 4), (8, 9)), ground=False))
 
-    wheel = held(H(6.6, -1.0, 6.0), D(0.14, 0.66, 0.74), D(0, 0.74, -0.66))
+    # 2.3.2: the fist carried out to the right of the face on its way from the wind-up (at 6.6 the forearm crossed the brow)
+    wheel = held(H(7.4, -1.0, 6.0), D(0.14, 0.66, 0.74), D(0, 0.74, -0.66))
     write(Move("sword_aerial_wheel", 15, [
         stance_beat(0, "linear", legs=LEGS_TUCK),
         b(1, "insine", held(*RAISED), L_AIM, {"pitch": 6, "bend": -6}, LEGS_TUCK, {"pitch": -4}),
-        direct(b(2, "outsine", held(H(5.8, -6.0, 0.8), D(0.22, -0.32, -0.92), D(0.1, 0.94, -0.3)), L_AIM, {"pitch": 12, "bend": -12},
+        direct(b(2, "outsine", held(H(7.0, -6.0, 1.0), D(0.22, -0.32, -0.92), D(0.1, 0.94, -0.3)), L_AIM, {"pitch": 12, "bend": -12},
                  LEGS_TUCK, {"pitch": -8})),
         b(4, "linear", wheel, L_BACK, {"pitch": -70, "bend": 12}, LEGS_TUCK),
         b(6, "linear", wheel, L_BACK, {"pitch": -180, "bend": 14}, LEGS_TUCK),
@@ -1794,13 +1849,14 @@ def yoru():
     reach = (-2.0, 3.4, -1.2)       # the fist below the handle and out to the right, on its way up to it
     on_back = rig.back_grip({}, 0.0)
     back_dir = tuple(-v for v in on_back[1])
-    dirs = [D(*back_dir), D(-0.25, -0.45, -0.86), D(0.05, 0.05, -1), D(0.08, 0.75, -0.66), D(0.08, 1.0, 0.1), D(0.1, 0.55, 0.83),
+    # (2.3.2: the first leg off the back less steep: the point swung out behind cleared the floor by 0.01 blocks at best)
+    dirs = [D(*back_dir), D(-0.25, -0.32, -0.91), D(0.05, 0.05, -1), D(0.08, 0.75, -0.66), D(0.08, 1.0, 0.1), D(0.1, 0.55, 0.83),
             D(*[v for v in (0.3, -0.38, 0.88)])]
     # the arc starts where the hand ends its pull out of the ropes (1.6 px: as far up its line as an arm reaches)
     # its first leg takes the hilt up and out to the right of the head before it comes forward: Yoru's cross guard, behind the head
     # at the hilt, would otherwise turn into it
     fists = [tuple(rig.back_grip({}, 1.6)[0]), H(8.0, -6.4, -3.2), H(7.4, -8.0, -1.2), H(6.6, -9.4, 0.6), H(6.0, -10.0, 2.2),
-             H(6.4, -5.0, 5.4), YORU.home[0]]
+             H(7.4, -4.6, 6.4), YORU.home[0]]   # (2.3.2: out and forward of the face: Yoru's cross guard reaches 7.4 px)
     n = len(dirs) - 1
     rev_dirs, rev_fists = dirs[::-1], fists[::-1]
     look = {"pitch": -8, "yaw": -6}
@@ -1823,10 +1879,24 @@ def yoru():
     def leg_of(u):
         return min(len(bodies) - 1, int(round(u * n)))
 
+    # 2.3.2: the edge as the sword hangs on the back (down and out to the right), eased over the arc's first two legs into the edge
+    # of the swing (cut(): the way the path runs): the hand takes the sword as it hangs and turns it over as it comes off the back.
+    # Taken from the swing alone, the edge stood 81 degrees off the carry's at the first beat: the draw and the sheathing each
+    # settled the turn differently, and the sheathing's glide onto the back spun the sword through the head.
+    carry_edge = np.array(on_back[2], float)
+
+    def arc_pose(u):
+        f, bd, ed = cut(dirs, fists, u)
+        bd = np.array(bd, float)
+        ce = carry_edge - bd * float(carry_edge @ bd)
+        w = min(1.0, u * n / 2.0)
+        w = w * w * (3.0 - 2.0 * w)
+        return f, tuple(bd), tuple(unit(slerp(unit(ce), ed, w)))
+
     for i, (tick, u) in enumerate(arc):
         ease = "outback" if i == len(arc) - 1 else ("insine" if i == 0 else "linear")
         k = leg_of(u)
-        beat = b(tick, ease, cut(dirs, fists, u), L_REST if u < 0.7 else L_BACK, bodies[k], DRAW_LEGS if u >= 0.7 else LEGS_EASY,
+        beat = b(tick, ease, arc_pose(u), L_REST if u < 0.7 else L_BACK, bodies[k], DRAW_LEGS if u >= 0.7 else LEGS_EASY,
                  heads[k])
         if u <= 1.0 / n + 1e-9:
             beat.upper = OVERHEAD   # still reaching up behind the head, the elbow up
@@ -1841,7 +1911,10 @@ def yoru():
     rarc = [(5, 5.0 / n), (8, 4.0 / n), (11, 3.0 / n), (14, 2.0 / n), (16, 1.0 / n), (18, 0.6 / n), (20, 0.25 / n)]
     for i, (tick, u) in enumerate(rarc):
         k = leg_of(u)
-        beat = b(tick, "inoutsine" if i == 0 else "linear", cut(dirs, fists, u, lead=-1), L_REST, bodies[k], LEGS_EASY, heads[k])
+        # 2.3.2: the hand holds the sword as the draw left it (the edge the draw's at every point of the arc: lead 1, the edge along
+        # the draw's way round); with lead -1 the hand held it edge-reversed, and the glide onto the back spun it half a turn
+        # about itself through the head
+        beat = b(tick, "inoutsine" if i == 0 else "linear", arc_pose(u), L_REST, bodies[k], LEGS_EASY, heads[k])
         if u <= 1.0 / n + 1e-9:
             beat.upper = OVERHEAD
         beats.append(beat)
@@ -1853,8 +1926,10 @@ def yoru():
         back_beat(31, "inoutsine", 0.0, reach, body={"bend": 3, "yaw": -4}, head={"pitch": -4, "yaw": -4}),
         Beat(36, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
     ]
-    write(Move("sword_sheathe", 36, beats, "Swordsman (Yoru): swung up in front, over the head and back over the shoulder, lowered "
-               "into its ropes on the back.", sheath=28, stop_extra=6, back=True))
+    sheathe = write(Move("sword_sheathe", 36, beats, "Swordsman (Yoru): swung up in front, over the head and back over the shoulder, "
+                         "lowered into its ropes on the back.", sheath=28, stop_extra=6, back=True))
+    # the stretch nearest the back held exactly as the draw holds it there, backwards (its ticks 20 to 24, the sheathing's 20 to 16)
+    sheathe.mirror = ("sword_draw_yoru", 40, (16, 20))
 
     charge_pose = held(H(7.6, -5.8, 0.6), D(0.3, -0.28, -0.91), D(0.1, 0.95, -0.28))
     charge_body = {"yaw": -26, "bend": -16, "y": -0.04}
@@ -1863,9 +1938,10 @@ def yoru():
     write(Move("sword_charge_draw", 26, [
         Beat(0, "linear", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
         back_beat(2, "outsine", 0.0, body={"bend": 4, "yaw": -10}, head={"pitch": 6, "yaw": 12}),
-        back_beat(3, "linear", 1.0, body={"bend": 2, "yaw": -14}, head={"pitch": 2, "yaw": 10}),
-        # half way off the back (the turn into the charge eased over two beats: in one, the pommel crossed the head)
-        b(5, "insine", held(*halfway(rig.back_grip({}, 1.0), charge_pose, 0.45)), L_AIM, dict(charge_body, bend=-8), charge_legs,
+        back_beat(3, "linear", 1.6, body={"bend": 2, "yaw": -14}, head={"pitch": 2, "yaw": 10}),
+        # half way off the back (the turn into the charge eased over two beats: in one, the pommel crossed the head); 2.3.2: lifted
+        # as far up its line as the draw lifts it before it turns (at 1.0 the cross guard turned through the back of the head)
+        b(5, "insine", held(*halfway(rig.back_grip({}, 1.6), charge_pose, 0.45)), L_AIM, dict(charge_body, bend=-8), charge_legs,
           {"pitch": -4, "yaw": 10}),
         b(6, "outsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
         b(16, "inoutsine", shake, L_AIM, dict(charge_body, bend=-18, y=-0.06), charge_legs, {"pitch": -10, "yaw": 10}),
@@ -2043,8 +2119,9 @@ def java_npc_poses():
 
 
 def build():
-    """Every blade's moves: the katanas' (with their draws from the hip), Gryphon's and Yoru's (2.3.2: their own draws, sheathings,
-    guards and idles; every cut written again for each, kept off the floor)."""
+    """The moves: the katanas' one set, which every blade plays (2.3.2, the owner: "Just apply the same fix to every single one.
+    Just copy. They're all the same."), and Yoru's own draw, sheathing and draw into the charge (off its back and onto it: a draw
+    from the hip cannot do that)."""
     global PROFILE
     PROFILE = KATANA
     moves(True)
@@ -2052,14 +2129,8 @@ def build():
     carry()
     stance()
     yoru_stance()
-    PROFILE = GRYPHON
-    moves(False)
-    hip_draws()
-    carry()
     PROFILE = YORU
-    moves(False)
     yoru()
-    carry()
     PROFILE = KATANA
 
 

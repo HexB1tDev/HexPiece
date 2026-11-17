@@ -1,22 +1,17 @@
-Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.3.2.md: its
-first section ("STATE WHEN THE OWNER SAID STOP", session 2) says exactly where things are; then its "Session 2" notes, then
-next-ai-2.3.2-wip.md, next-ai-2.3.1.md, next-ai-2.3.0.md. The version in build.py is 2.3.2 and it is NOT released: the notes are
-drafted at docs/handoff/release-notes-2.3.2-draft.md; move them to .github/release-notes-2.3.2.md only once every sword animation
-passes the build's pose check (that publishes v2.3.2). The last push was work in progress and its CI was not checked.
+Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.3.2.md
+(its first section, "Session 3: 2.3.2 RELEASED", is the newest), then next-ai-2.3.0.md (the clash rules in the owner's words). 2.3.2
+is released; the next version is 2.3.3 (`python3 tools/next_version.py --write`). Check the last push's "Build HexPiece" and
+"Release HexPiece" runs are green first.
 
-First: the full solve (`python3 tools/sword_anims.py`, 40-60 min: run it in the background with a 2-hour limit), then
-`python3 tools/sword_check.py` (the per-move summary), fix what is left, then `python3 build.py` (Yoru's new glide in
-client/sword/SwordLayer has not been compiled yet), and get the branch's "Build HexPiece" run green.
+The owner's sword rule (this session, in their words): "skip the checks on every single katana ... Just apply the same fix to every
+single one. Just copy. They're all the same." Every blade plays the katanas' one animation set; only Yoru's draw, sheathe and charge
+draw off its back are its own. Never bring per-blade sets back; never re-check per blade.
 
-Top priority, finish the owner's sword work: every sword animation (katana, `_gryphon`, `_yoru`) must pass `build.py
-check_sword_poses`; SWORD_POSE_EXCEPTIONS must stay empty. The owner's words: "the arm is twisted in a bunch of these, how does this
-pass", "the sword handle clipping through the shoulder?", "the blade edge should be facing up", "the shoulder is grabbing the sword in
-the opposite way it's meant to". All regular katanas share one animation set (only Gryphon and Yoru have their own): keep it so.
-Yoru's carry on the back was moved this session (hilt out over the right shoulder): render it on the back and judge the ropes. Render
-and judge the FULL sheets of every Gryphon and Yoru move (`python3 tools/sword_anims.py --no-solve --preview DIR`,
-`tools/sword_zoom.py` for frames), GIFs too; the owner sees the renders, so judge them yourself first. Then: clashes with impact
-frames (the owner's Armament and Ryou rules, next-ai-2.3.0.md), Galaxy Fist, the Fishman Karate rework, Six Powers. Run on the
-"HexPiece" cloud environment. HexGhoul is at HexB1tDev/HexGhoul, branch claude/eager-ritchie-xni1ms. House rules: versions roll over
-at 9, keep only 5 releases, judge every render yourself (GIFs too), never claim in-game testing, every sound from the web and free to
-use. Stop rule (CLAUDE.md): when the owner says so, or the moment the WEEKLY usage reaches 98%, write the handoff and the next prompt
-FIRST, commit, push, and stop, without checking CI.
+Next, in the owner's order: clashes with impact frames (next-ai-2.3.0.md item 1: every move clashable, an impact frame on every
+clash, Armament needed to clash a blade, Ryou meeting Ryou bursts both colours in a sphere); the pure rules are done
+(`clash/ClashRules`, `ClashTests`), the plan for the world side and the impact frame is in the handoff. Then Galaxy Fist for Iron
+Fist, the Fishman Karate rework, Six Powers (next-ai-2.2.6.md). Run on the "HexPiece" cloud environment. HexGhoul is at
+HexB1tDev/HexGhoul, branch claude/eager-ritchie-xni1ms (public: clone read-only). House rules: versions roll over at 9, keep only 5
+releases, judge every render yourself (GIFs too), never claim in-game testing, every sound from the web and free to use. Stop rule
+(CLAUDE.md): when the owner says so, or the moment the WEEKLY usage reaches 98%, write the handoff and the next prompt FIRST, commit,
+push, and stop, without checking CI.
