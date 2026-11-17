@@ -268,6 +268,64 @@ def pack(zip_path):
     return out
 
 
+# 2.2.7: the owner's two legendary blades (input/Yoru_Gryphon_Models_Textures_1.20.1.zip: "Add these 2 blades to the game ... Gryphon sits
+# where katanas are but it's a saber, Yoru is big so it's on the back of the player, it's roughly the size of an entire player"). Their OBJs
+# are Forge item models in blocks (Gryphon 2.4 long, Yoru 3.05), not the atelier's pixels: each is taken into the katanas' frame (model
+# px, the guard at y 0, the blade up +y, the spine and the point's curve to +x, the edge to -x), scaled to its size in the game (Gryphon
+# 1.78 blocks as the owner's own item display holds it, about a katana; Yoru 2.75, half as tall again as a player: the owner, of a first
+# Yoru as tall as a player: "Yoru IS way bigger than that"). Gryphon curves the other way:
+# mirrored (its knucklebow then guards the edge side, as a saber's does). Its scabbard is a separate model: moved so its throat meets the
+# bell guard. Every blade part is renamed 01_Blade_... (the game's highlight and the LODs know a blade by that).
+LEGENDS_PREFIX = "assets/hexpiece/"
+LEGENDS = {
+    "gryphon": {"scale": 1.775 * 16 / 2.397, "centre": (0.4965, 0.775, 0.5), "mirror": True},
+    "gryphon_sheath": {"scale": 1.775 * 16 / 2.397, "centre": (0.4965, 0.775 - 1.232, 0.5), "mirror": True},
+    "yoru": {"scale": 2.75 * 16 / 3.053, "centre": (0.5, 0.822, 0.5), "mirror": False},
+}
+LEGEND_BLADES = {"Saber_blade": "01_Blade_saber", "Black_blade": "01_Blade_black"}
+
+
+def legend_models(zip_path):
+    """[(model name, obj text)] of the owner's legendary blades."""
+    with zipfile.ZipFile(zip_path) as z:
+        return [(name, z.read(f"{LEGENDS_PREFIX}models/item/{name}.obj").decode("utf-8")) for name in LEGENDS]
+
+
+def legend_textures(zip_path):
+    """{blade name: png bytes} of the legendary blades' atlases."""
+    with zipfile.ZipFile(zip_path) as z:
+        return {name: z.read(f"{LEGENDS_PREFIX}textures/item/{name}.png") for name in ("gryphon", "yoru")}
+
+
+def normalise(mesh, spec):
+    """A legendary blade's parsed mesh in the katanas' frame (see LEGENDS)."""
+    vertices, quads, groups = mesh
+    k = spec["scale"]
+    cx, cy, cz = spec["centre"]
+    flip = -1.0 if spec["mirror"] else 1.0
+    out = [((x - cx) * k * flip, (y - cy) * k, (z - cz) * k, u, v, nx * flip, ny, nz) for x, y, z, u, v, nx, ny, nz in vertices]
+    if spec["mirror"]:
+        # a mirror turns every face inside out: wind them back (the triangles' doubled corner stays last)
+        quads = [(q[2], q[1], q[0], q[0]) if q[2] == q[3] else (q[3], q[2], q[1], q[0]) for q in quads]
+    groups = [(LEGEND_BLADES.get(name, name), first, count) for name, first, count in groups]
+    return out, quads, groups
+
+
+def legend_meshes(zip_path):
+    """{name: (vertices, quads, groups)} of the legendary blades, in the katanas' frame."""
+    return {name: normalise(parse(text), LEGENDS[name]) for name, text in legend_models(zip_path)}
+
+
+def pack_legends(zip_path):
+    """{model name: packed mesh bytes} for the legendary blades and their levels of detail."""
+    out = {}
+    for name, mesh in legend_meshes(zip_path).items():
+        out[name] = encode(*mesh)
+        for lod, (cell, buckets) in LODS.items():
+            out[f"{name}_{lod}"] = encode(*simplify(*mesh, cell, buckets))
+    return out
+
+
 if __name__ == "__main__":
     out = sys.argv[2]
     os.makedirs(out, exist_ok=True)

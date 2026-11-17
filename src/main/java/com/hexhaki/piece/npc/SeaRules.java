@@ -71,6 +71,9 @@ public final class SeaRules {
     public static Katana katana(int rank, int pick) {
         java.util.List<Katana> fit = new java.util.ArrayList<>();
         for (Katana katana : Katana.values()) {
+            if (katana.legend()) {
+                continue; // 2.2.7: the legendary blades are no patrol's
+            }
             int grade = katana.grade().rarity();
             if (rank == 0 ? grade <= 1 : rank == 1 ? grade >= 1 && grade <= 2 : grade >= 2) {
                 fit.add(katana);

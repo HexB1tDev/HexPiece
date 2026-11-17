@@ -4,6 +4,7 @@ import com.hexhaki.client.RemoteHakiStates;
 import com.hexhaki.client.render.ArmamentItemBuffers;
 import com.hexhaki.piece.client.StanceLayer;
 import com.hexhaki.piece.sword.BladePaths;
+import com.hexhaki.piece.sword.BackCarry;
 import com.hexhaki.piece.sword.Katana;
 import com.hexhaki.piece.sword.Koiguchi;
 import com.hexhaki.piece.sword.SwordAnims;
@@ -80,11 +81,16 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         PlayerModel<AbstractClientPlayer> model = this.m_117386_();
         int anim = SwordClient.anim(player.m_19879_());
         float ticks = SwordClient.ticks(player, partial);
-        boolean drawn = SwordAnims.drawn(anim, ticks);
+        boolean drawn = SwordAnims.drawn(anim, ticks, katana);
         boolean firstPerson = FirstPersonMode.isFirstPersonPass();
         ModifierLayer<IAnimation> layer = SwordClient.existing(player);
-        float[] slideOut = drawn ? notoOut(SwordAnims.name(anim), ticks) : null;
-        MultiBufferSource bladeBuffers = blackened(player) ? ArmamentItemBuffers.black(buffers) : buffers;
+        // 2.2.7: Yoru never turns black (it is black already: only its Haki lightning shows)
+        MultiBufferSource bladeBuffers = blackened(player) && katana.blackens() ? ArmamentItemBuffers.black(buffers) : buffers;
+        if (katana.carry() == Katana.Carry.BACK) {
+            back(pose, buffers, bladeBuffers, light, player, katana, model, layer, anim, ticks, drawn, firstPerson, partial);
+            return;
+        }
+        float[] slideOut = drawn ? notoOut(SwordAnims.name(anim, katana), ticks) : null;
         if (!firstPerson || slideOut != null && drawn) {
             pose.m_85836_();
             saya(pose, player, model, layer, partial);
@@ -125,7 +131,40 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         if (drawn && slideOut == null) {
             pose.m_85836_();
             hand(pose, player, model, layer, partial);
-            KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 1.0F);
+            // its black steel only glints (the owner's unsheath reference: white glints running along a black blade)
+            KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F);
+            SwordFx.record(player, pose, ticks);
+            HakiDraw.held(pose, buffers, player, anim, ticks, partial);
+            pose.m_85849_();
+        }
+    }
+
+    /**
+     * 2.2.7: Yoru, worn on the back (sword/BackCarry: tied on by two ropes, its hilt over the right shoulder), or in the right hand when
+     * drawn (its own draw over the shoulder hands it over the very tick the fist closes on it there, as tools/sword_anims.py solves it).
+     * The ropes stay on the back either way; first person shows only the hand.
+     */
+    void back(PoseStack pose, MultiBufferSource buffers, MultiBufferSource bladeBuffers, int light, AbstractClientPlayer player, Katana katana,
+              PlayerModel<AbstractClientPlayer> model, ModifierLayer<IAnimation> layer, int anim, float ticks, boolean drawn,
+              boolean firstPerson, float partial) {
+        if (!firstPerson) {
+            pose.m_85836_();
+            // the upper body's own bend and turn carry it (unlike the saya at the hips)
+            model.f_102810_.m_104299_(pose);
+            KatanaRenderer.ropes(pose, buffers, light);
+            if (!drawn) {
+                pose.m_252880_((float) BackCarry.GUARD[0] * PX, (float) BackCarry.GUARD[1] * PX, (float) BackCarry.GUARD[2] * PX);
+                pose.m_252781_(Axis.f_252403_.m_252977_((float) -BackCarry.TILT));
+                pose.m_252781_(Axis.f_252529_.m_252977_((float) -BackCarry.LEAN));
+                KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 0.0F);
+            }
+            pose.m_85849_();
+        }
+        if (drawn) {
+            pose.m_85836_();
+            hand(pose, player, model, layer, partial);
+            // its black steel only glints (the owner's unsheath reference: white glints running along a black blade)
+            KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F);
             SwordFx.record(player, pose, ticks);
             HakiDraw.held(pose, buffers, player, anim, ticks, partial);
             pose.m_85849_();

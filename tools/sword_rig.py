@@ -368,6 +368,100 @@ def sheathed_grip(pose, slide=0.0, out=0.0):
     return layer_from_entity(pose, g), layer_dir_from_entity(pose, b), layer_dir_from_entity(pose, e)
 
 
+# --- 2.2.7: Yoru on the back (body-part space px: x the player's left, y down, z back) --------------------------------------------
+# The owner: "Yoru is big so it's on the back of the player ... (make it tied with a rope to the player's back", then "Yoru IS way
+# bigger than that": 2.75 blocks, half as tall again as the player. Upright it would stand in the ground or the head, its grip out of an
+# arm's reach: it is slung across the back (the placement searched for: the pommel over the head, the tip clear of the ground and the
+# body, the grip in reach), hilt up over the right shoulder, the cross guard behind it, the blade down across the back past the left
+# leg, standing off the back behind the head (sword/BackCarry.java has the same numbers, SwordTests checks they agree).
+BACK_GUARD = (-4.0, -1.0, 5.6)
+BACK_TILT = 33.0                  # degrees off the vertical, the point toward the left
+BACK_LEAN = 8.0                   # degrees: the point in toward the legs, the hilt out behind the head
+BACK_AXIS = (math.sin(math.radians(BACK_TILT)) * math.cos(math.radians(BACK_LEAN)),
+             math.cos(math.radians(BACK_TILT)) * math.cos(math.radians(BACK_LEAN)), -math.sin(math.radians(BACK_LEAN)))
+
+
+def back(pose=None):
+    """Katana model px -> the layer's frame (px): Yoru on the back (the upper body's own turn and bend carry it)."""
+    return (part_matrix(pose or {}, "torso", (0.0, 0.0, 0.0)) @ tr(*BACK_GUARD) @ rz(-math.radians(BACK_TILT))
+            @ rx(-math.radians(BACK_LEAN)) @ sc(SCALE / PX))
+
+
+def back_matrix(pose):
+    """Katana model px -> E (blocks): Yoru on the back."""
+    return layer_to_entity(pose) @ back(pose)
+
+
+def back_grip(pose, lift=0.0):
+    """Where the right fist must be (layer frame px) to hold Yoru's handle on the back, the sword lifted lift px up along itself out of
+    its ropes, and how it points: (target, blade_dir, edge_dir) in the layer frame."""
+    m = back(pose)
+    return point(m, (0, GRIP - lift, 0)), direction(m, (0, 1, 0)), direction(m, (-1, 0, 0))
+
+
+def _rope_loop(corners, step=0.45, times=2):
+    pts = []
+    for i, a in enumerate(corners):
+        b = corners[(i + 1) % len(corners)]
+        n = max(1, math.ceil(math.dist(a, b) / step))
+        pts += [tuple(a[k] + (b[k] - a[k]) * j / n for k in range(3)) for j in range(n)]
+    for _ in range(times):
+        nxt = []
+        for i, a in enumerate(pts):
+            b = pts[(i + 1) % len(pts)]
+            nxt.append(tuple(a[k] * 0.75 + b[k] * 0.25 for k in range(3)))
+            nxt.append(tuple(a[k] * 0.25 + b[k] * 0.75 for k in range(3)))
+        pts = nxt
+    out = []
+    for x, y, z in pts:
+        if z > 0:
+            d, depth = _blade_at(x, y)
+            t = max(0.0, min(1.0, (d - 1.5) / 3.5))
+            k = 1.0 - t * t * (3 - 2 * t)
+            over = depth + 0.4 + 0.42 + 0.05
+            z = max(z, z + (over - z) * k)
+        out.append((x, y, z))
+    return out
+
+
+def _blade_at(x, y):
+    """How far (x, y) on the back is from Yoru's line (px, seen from behind), and the blade's depth (z) there."""
+    ax = BACK_AXIS
+    flat = math.hypot(ax[0], ax[1])
+    ux, uy = ax[0] / flat, ax[1] / flat
+    dx, dy = x - BACK_GUARD[0], y - BACK_GUARD[1]
+    along = dx * ux + dy * uy
+    d = abs(dx * uy - dy * ux)
+    t = along / flat
+    return d, BACK_GUARD[2] + t * ax[2]
+
+
+def back_ropes():
+    """2.2.7: Yoru's ropes as (quad corners in body px, rgb) for the previews: sword/BackCarry's paths (the game's), as plain tubes."""
+    x, z = 4.25 + 0.5, 2.25 + 0.5
+    loops = [_rope_loop([(2.6, -0.5, -z), (-x, 10.6, -z), (-x, 10.8, 0.0), (-x, 10.6, z), (2.6, -0.5, z), (2.9, -0.75, 0.0)]),
+             _rope_loop([(x, 10.0, -z), (-x, 10.0, -z), (-x, 10.0, z), (x, 10.0, z)])]
+    out = []
+    for loop in loops:
+        n = len(loop)
+        for i in range(n):
+            a, b = np.array(loop[i]), np.array(loop[(i + 1) % n])
+            t = b - a
+            if np.linalg.norm(t) < 1e-6:
+                continue
+            t /= np.linalg.norm(t)
+            u = np.cross(t, (0, 1, 0) if abs(t[1]) < 0.9 else (1, 0, 0))
+            u /= np.linalg.norm(u)
+            v = np.cross(t, u)
+            for k in range(6):
+                c0, s0 = math.cos(2 * math.pi * k / 6), math.sin(2 * math.pi * k / 6)
+                c1, s1 = math.cos(2 * math.pi * (k + 1) / 6), math.sin(2 * math.pi * (k + 1) / 6)
+                r = 0.42
+                quad = [a + (u * c0 + v * s0) * r, b + (u * c0 + v * s0) * r, b + (u * c1 + v * s1) * r, a + (u * c1 + v * s1) * r]
+                out.append(([tuple(q) for q in quad], (201, 167, 116) if (i // 2 + k) % 3 else (126, 100, 63)))
+    return out
+
+
 def saya_point(pose, along):
     """A point on the saya's axis (model px from the koiguchi), in the layer frame (px)."""
     return layer_from_entity(pose, point(saya_matrix(pose), (0, along, 0)))

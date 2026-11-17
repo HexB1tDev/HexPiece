@@ -77,7 +77,8 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.m_85836_();
         pose.m_252880_(0.5F, 0.5F + lift, 0.5F);
         pose.m_252781_(Axis.f_252403_.m_252977_(-45.0F));
-        float scale = fill * 1.41F / (KatanaRenderer.LENGTH * KatanaRenderer.SCALE);
+        float length = katana.carry() == Katana.Carry.BACK ? KatanaRenderer.YORU_LENGTH : KatanaRenderer.LENGTH;
+        float scale = fill * 1.41F / (length * KatanaRenderer.SCALE);
         pose.m_85841_(scale, scale, scale);
         pose.m_252880_(0.0F, -KatanaRenderer.MIDDLE * KatanaRenderer.SCALE, 0.0F);
         KatanaRenderer.draw(pose, buffers, katana, true, true, light, 0.0F);
@@ -99,8 +100,10 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         // 2.2.6 (the owner: "the sheath of the blade is never to be black when haki is on, it's just the sword itself"): the original
         // blackens whatever an Armament user holds by handing this renderer black buffers (its ItemInHandRendererMixin); the sword takes
         // them, the saya is drawn into the game's own buffers (the ones the first-person hand is drawn with), in its own colours
-        KatanaRenderer.draw(pose, buffers, katana, true, false, light, 0.0F);
-        KatanaRenderer.draw(pose, Minecraft.m_91087_().m_91269_().m_110104_(), katana, false, true, light, 0.0F);
+        MultiBufferSource own = Minecraft.m_91087_().m_91269_().m_110104_();
+        // 2.2.7: Yoru is never blackened either
+        KatanaRenderer.draw(pose, katana.blackens() ? buffers : own, katana, true, false, light, 0.0F);
+        KatanaRenderer.draw(pose, own, katana, false, true, light, 0.0F);
         pose.m_85849_();
     }
 }

@@ -447,7 +447,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
 
     void swordStep(ServerLevel level, long now) {
         Katana katana = this.katana();
-        float edge = katana == null ? 1.0F : katana.grade().edge();
+        float edge = katana == null ? 1.0F : katana.edge();
         int mastery = SeaRules.MASTERY[this.rank()];
         DamageSource source = this.m_269291_().m_269333_(this);
         if (this.swordMove != null) {

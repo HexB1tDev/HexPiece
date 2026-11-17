@@ -24,9 +24,13 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.2.6"
+VERSION = "2.2.7"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
+# 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
+LEGENDS_ZIP = ROOT / "input" / "Yoru_Gryphon_Models_Textures_1.20.1.zip"
+EXPECTED_LEGENDS_SHA256 = "03669b1bb759458fe873a3ebe225e403a67db2c86aefdb8fab0bac4a0c7a9a2e"
+LEGEND_KEYS = ["gryphon", "yoru"]
 # 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
 KATANA_ZIP = ROOT / "input" / "Hex_Katana_Atelier_1.20.1.zip"
 EXPECTED_KATANA_SHA256 = "fece809eb8699a7f5a562b3975da753bb929089d1a93b75896d25b734e6d9d28"
@@ -151,9 +155,9 @@ def katana_keys():
     from katana_names import KATANAS
     java = (ROOT / "src/main/java/com/hexhaki/piece/sword/Katana.java").read_text(encoding="utf-8")
     keys = re.findall(r'^    [A-Z_]+\("([a-z_]+)", "', java, re.M)
-    if keys != [k for k, _, _ in KATANAS]:
-        raise RuntimeError(f"sword/Katana.java and tools/katana_names.py list different katanas: {keys}")
-    return keys
+    if keys != [k for k, _, _ in KATANAS] + LEGEND_KEYS:
+        raise RuntimeError(f"sword/Katana.java lists other blades than tools/katana_names.py and the legendary two: {keys}")
+    return keys[:len(KATANAS)]
 
 
 def katana_assets():
@@ -204,6 +208,47 @@ def katana_assets():
         }
         if not icon.startswith("hexhaki:item/"):
             raise RuntimeError(f"{key}'s icon is outside textures/item: the item atlas would never stitch it (missing texture)")
+        entries[f"{KATANA_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
+    entries.update(legend_assets())
+    return entries
+
+
+def legend_assets():
+    """2.2.7: {jar entry: bytes} for the owner's legendary blades: Gryphon (and its scabbard) and Yoru packed as the katanas are, in their
+    frame (tools/katana_mesh.py LEGENDS), their atlases, item models and icons. Cached under build/ by the zip's SHA-256."""
+    actual = hashlib.sha256(LEGENDS_ZIP.read_bytes()).hexdigest()
+    if actual != EXPECTED_LEGENDS_SHA256:
+        raise RuntimeError(f"The legendary blades' zip differs from the one inspected: {actual}")
+    sys.path.insert(0, str(ROOT / "tools"))
+    import katana_mesh
+    spec = hashlib.sha256(repr(sorted(katana_mesh.LEGENDS.items())).encode()).hexdigest()[:8]
+    cache = BUILD / "legend-cache" / (actual[:16] + "-" + spec)
+    if not (cache / "done").exists():
+        if cache.exists():
+            shutil.rmtree(cache)
+        cache.mkdir(parents=True)
+        for name, data in katana_mesh.pack_legends(LEGENDS_ZIP).items():
+            (cache / f"{name}.hkm").write_bytes(data)
+        for name, data in katana_mesh.legend_textures(LEGENDS_ZIP).items():
+            (cache / f"{name}.png").write_bytes(data)
+        (cache / "done").write_text(actual, encoding="utf-8")
+    entries = {}
+    meshes = {"gryphon": ("gryphon", "gryphon_sheath"), "yoru": ("yoru",)}
+    for key in LEGEND_KEYS:
+        for base in meshes[key]:
+            for lod in ("", "_mid", "_far"):
+                entries[f"{KATANA_MESHES}{base}{lod}.hkm"] = (cache / f"{base}{lod}.hkm").read_bytes()
+        entries[f"{KATANA_TEXTURES}{key}.png"] = (cache / f"{key}.png").read_bytes()
+        icon = f"hexhaki:item/katana/{key}_icon"
+        if not (ROOT / ICONS / f"{key}_icon.png").exists():
+            raise RuntimeError(f"No inventory icon for {key} (tools/katana_render.py legend-icons)")
+        model = {
+            "loader": "forge:separate_transforms",
+            "gui_light": "front",
+            "textures": {"particle": icon},
+            "base": {"parent": "minecraft:builtin/entity"},
+            "perspectives": {"gui": {"parent": "minecraft:item/generated", "textures": {"layer0": icon}}},
+        }
         entries[f"{KATANA_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
     return entries
 

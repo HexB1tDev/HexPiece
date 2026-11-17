@@ -25,10 +25,17 @@ _MESHES = {}
 _TEXTURES = {}
 
 
+LEGENDS_ZIP = os.path.join(ROOT, "input", "Yoru_Gryphon_Models_Textures_1.20.1.zip")
+
+
 def mesh(name):
     if name not in _MESHES:
-        with zipfile.ZipFile(ZIP) as z:
-            v, q, g = km.parse(z.read(km.PREFIX + "models/obj/" + name + ".obj").decode("utf-8"))
+        if name in km.LEGENDS:
+            # 2.2.7: Gryphon and Yoru, from their own zip, in the katanas' frame
+            v, q, g = km.legend_meshes(LEGENDS_ZIP)[name]
+        else:
+            with zipfile.ZipFile(ZIP) as z:
+                v, q, g = km.parse(z.read(km.PREFIX + "models/obj/" + name + ".obj").decode("utf-8"))
         tris = []
         blade = []
         for gname, first, count in g:
@@ -43,6 +50,8 @@ def mesh(name):
 
 
 def texture(key):
+    if key not in _TEXTURES and key in ("gryphon", "yoru"):
+        _TEXTURES[key] = np.asarray(Image.open(io.BytesIO(km.legend_textures(LEGENDS_ZIP)[key])).convert("RGBA"), float) / 255.0
     if key not in _TEXTURES:
         with zipfile.ZipFile(ZIP) as z:
             _TEXTURES[key] = np.asarray(Image.open(io.BytesIO(z.read(km.PREFIX + "textures/" + key + ".png"))).convert("RGBA"),
@@ -184,6 +193,20 @@ def draw_katana(canvas, cam, key, matrix, saya=False, blade=True, shine=0.7):
             canvas.z[ys[sel], xs[sel]] = dep[sel]
         for t in np.nonzero(~small)[0]:
             canvas.tri(tri_s[t], uv=uv[tris[t]], tex=tex, shade=light[t], extra=gleam[t])
+    return canvas
+
+
+def draw_ropes(canvas, cam, pose):
+    """2.2.7: Yoru's two ropes (sword/BackCarry's, rebuilt by sword_rig.back_ropes), on the upper body, in hemp."""
+    m = rig.layer_to_entity(pose) @ rig.part_matrix(pose, "torso", (0.0, 0.0, 0.0))
+    for quad, colour in rig.back_ropes():
+        p = np.c_[np.array(quad), np.ones(4)] @ m.T
+        s = cam.project(p[:, :3])
+        n = np.cross(p[1, :3] - p[0, :3], p[2, :3] - p[0, :3])
+        ln = np.linalg.norm(n)
+        shade = 0.6 + 0.4 * (abs(n @ LIGHT) / ln if ln > 1e-12 else 0.5)
+        canvas.tri(s[[0, 1, 2]], colour, shade=shade)
+        canvas.tri(s[[0, 2, 3]], colour, shade=shade)
     return canvas
 
 

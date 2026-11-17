@@ -39,6 +39,9 @@ the start menu and the Captain's Log:
   right-handed draw cuts and 12 more cuts in standing, moving and aerial strings, sheathing, a charged cut or Haki slash in the Ryou
   colour (2.2.4: a torn energy wave rising out of the ground, as the manga draws Mihawk's; 2.2.6: drawn as flowing light, not a solid) that cuts a trench as wide as its body,
   the Ryou finisher, and Ctrl + M1's quick draw.
+- Gryphon and Yoru (2.2.7, the owner's own models): the two strongest blades, Yoru the strongest. Gryphon a saber worn at the hip in
+  its blue scabbard; Yoru a cross-hilted great sword tied on the back with two ropes, its own draw over the shoulder, a longer reach,
+  never blackened by Haki. Both drawn whenever combat mode is on, put away when it goes off.
 - Pirate and Marine NPC patrols (pirates also with katanas) that fight each other and the players of the other flag with the same moves; bounty and merit ranks.
 - The Captain's Log (2.2.4: the one menu, the original's Ability Book, Haki Techniques and Gear mastery screens gone into it):
   overview, Style & Haki (moves, techniques, quick slots), Devil Fruit (moves, quick slots, the Nika fruit's upgrades).

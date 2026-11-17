@@ -4,7 +4,7 @@ package com.hexhaki.piece.sword;
  * 2.1.4: the owner's 25 katanas (pure), in the order of their poster ("Hex / Katana Atelier": "Twenty-five blades. Twenty-five saya."):
  * the model key (the blade {@code <key>} and its saya {@code <key>_sheath} in input/Hex_Katana_Atelier_1.20.1.zip, one atlas
  * {@code <key>.png}), the name, the hamon (the temper line the poster names under each blade), the grade and a description. Sent and
- * saved by key; new blades go at the end.
+ * saved by key; new blades go at the end (2.2.7: the owner's legendary Gryphon and Yoru, from their own zip).
  */
 public enum Katana {
     CRIMSON_DAWN("crimson_dawn", "Crimson Dawn", "Choji", Grade.RYO_WAZAMONO,
@@ -56,20 +56,79 @@ public enum Katana {
     IMPERIAL_PHOENIX("imperial_phoenix", "Imperial Phoenix", "Phoenix", Grade.SAIJO_O_WAZAMONO,
         "Its temper spreads like the wings of a rising phoenix. An emperor's blade, gold at every fitting, broken and reforged three times, each time stronger."),
     MIDNIGHT_LOTUS("midnight_lotus", "Midnight Lotus", "Moonwater", Grade.O_WAZAMONO,
-        "A temper like moonlight on still water, pale ripples over dark steel. Drawn only at night, its owners say, and sheathed before dawn.");
+        "A temper like moonlight on still water, pale ripples over dark steel. Drawn only at night, its owners say, and sheathed before dawn."),
+    // 2.2.7: the owner's two legendary blades (input/Yoru_Gryphon_Models_Textures_1.20.1.zip): "these are the 2 strongest blades in the
+    // game, YORU is the strongest". Held and swung as a katana is; drawn the moment combat mode comes on and put away only when it goes
+    // off (or the fruit is taken up); Yoru worn on the back and longer in reach, never blackened by Haki.
+    GRYPHON("gryphon", "Gryphon", "Saber", Grade.SAIJO_O_WAZAMONO,
+        "A western saber under a gold bell guard and knucklebow, its scabbard lacquered blue. Its master is said to have split the sky over a "
+            + "war with a single swing, and to have never needed a second.", Carry.HIP, 1.55F, 0.25),
+    YORU("yoru", "Yoru", "Kokuto", Grade.SAIJO_O_WAZAMONO,
+        "The black blade: a cross-hilted great sword as tall as a man, carried on the back. The finest sword in the world, gone black from a "
+            + "lifetime of Haki: there is no blacker left to give it, and the lightning only runs round it.", Carry.BACK, 1.75F, 1.1);
+
+    /** 2.2.7: where a blade is worn: in its saya at the left hip, or tied on the back with no saya (Yoru). */
+    public enum Carry {
+        HIP,
+        BACK
+    }
 
     private final String key;
     private final String display;
     private final String hamon;
     private final Grade grade;
     private final String description;
+    private final Carry carry;
+    private final float edge;
+    private final double reach;
 
     Katana(String key, String display, String hamon, Grade grade, String description) {
+        this(key, display, hamon, grade, description, Carry.HIP, grade.edge(), 0.0);
+    }
+
+    Katana(String key, String display, String hamon, Grade grade, String description, Carry carry, float edge, double reach) {
         this.key = key;
         this.display = display;
         this.hamon = hamon;
         this.grade = grade;
         this.description = description;
+        this.carry = carry;
+        this.edge = edge;
+        this.reach = reach;
+    }
+
+    /** 2.2.7: where it is worn. */
+    public Carry carry() {
+        return this.carry;
+    }
+
+    /** 2.2.7: one of the owner's legendary blades (above every graded katana, never carried by a sea patrol, always drawn in a fight). */
+    public boolean legend() {
+        return this == GRYPHON || this == YORU;
+    }
+
+    /** 2.2.7: what it multiplies a Swordsman cut by (its grade's, or a legendary blade's own). */
+    public float edge() {
+        return this.edge;
+    }
+
+    /** 2.2.7: blocks its cuts reach past a katana's (Yoru: a great sword). */
+    public double reach() {
+        return this.reach;
+    }
+
+    /** 2.2.7: whether Armament Haki blackens it (Yoru is black already: only its lightning shows). */
+    public boolean blackens() {
+        return this != YORU;
+    }
+
+    /** 2.2.7: the tooltip's second line ("Hamon: ..." for a katana). */
+    public String kindLine() {
+        return switch (this) {
+            case GRYPHON -> "Saber  ·  the second strongest blade";
+            case YORU -> "Kokuto (black blade)  ·  the strongest blade";
+            default -> "Hamon: " + this.hamon;
+        };
     }
 
     public String key() {

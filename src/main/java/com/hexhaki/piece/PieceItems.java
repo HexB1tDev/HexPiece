@@ -35,11 +35,14 @@ public final class PieceItems {
         .m_257501_((parameters, output) -> {
             for (int grade = 0; grade < 4; grade++) {
                 for (Katana katana : Katana.values()) {
-                    if (katana.grade().rarity() == grade) {
+                    if (katana.grade().rarity() == grade && !katana.legend()) {
                         output.m_246342_(stack(katana));
                     }
                 }
             }
+            // 2.2.7: the legendary blades last, Yoru at the very end
+            output.m_246342_(stack(Katana.GRYPHON));
+            output.m_246342_(stack(Katana.YORU));
         })
         .m_257652_());
 

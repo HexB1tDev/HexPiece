@@ -120,6 +120,8 @@ public final class SwordServer {
         int sentKatana = -2;
         int sentAnim = -1;
         long sentStart;
+        /** 2.2.7: a legendary blade being put away as combat mode went off (its sheathe plays to the end out of combat). */
+        boolean stowing;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -322,7 +324,7 @@ public final class SwordServer {
         if (state.sheathingUntil < 0) {
             return false;
         }
-        return !SwordAnims.drawn(SwordAnims.SHEATHE, now - (state.sheathingUntil - SwordRules.SHEATHE_TICKS));
+        return !SwordAnims.drawn(SwordAnims.SHEATHE, now - (state.sheathingUntil - SwordRules.SHEATHE_TICKS), state.katana);
     }
 
     /**
@@ -459,7 +461,7 @@ public final class SwordServer {
             return;
         }
         // the quick draw never waits: from the saya (or half drawn), straight down the line
-        state.quickDrew = sheathed(state, now) || state.drawStart >= 0 && !SwordAnims.drawn(SwordAnims.DRAW, now - state.drawStart);
+        state.quickDrew = sheathed(state, now) || state.drawStart >= 0 && !SwordAnims.drawn(SwordAnims.DRAW, now - state.drawStart, state.katana);
         state.drawStart = -1;
         state.drawCut = false;
         state.drawCharge = false;
@@ -480,7 +482,44 @@ public final class SwordServer {
         }
     }
 
+    /**
+     * 2.2.7 (the owner: "Yoru ... is pulled out whenever the user activates the combat style and is put back only when deactivating
+     * combat mode/switching to fruit, same for gryphon"): a legendary blade is drawn (its full draw) the moment its Swordsman is in
+     * combat mode with a free hand, is never sheathed for being idle, and goes back (its full sheathe) only when the fight is over.
+     */
+    static void legend(ServerPlayer player, State state, long now) {
+        if (ready(player, state)) {
+            if (state.stowing) {
+                state.stowing = false;
+                if (state.sheathingUntil >= 0 && !sheathed(state, now)) {
+                    state.sheathingUntil = -1; // back in the fight before it was put away: it stays in the hand
+                } else if (state.sheathingUntil >= 0) {
+                    state.sheathingUntil = -1;
+                    state.drawn = false;
+                }
+            }
+            if (!state.drawn && state.drawStart < 0) {
+                drawFirst(state, now);
+            }
+            return;
+        }
+        if (state.drawn && !state.stowing && player.m_6084_()) {
+            // out of the fight: everything dropped, the blade put back where it is worn, slowly
+            state.drawStart = -1;
+            state.drawCut = false;
+            state.drawCharge = false;
+            state.move = null;
+            state.bufferedAt = -1;
+            state.chargeStart = -1;
+            state.releaseStart = -1;
+            state.quickStart = -1;
+            state.stowing = true;
+            state.sheathingUntil = now + SwordRules.SHEATHE_TICKS;
+        }
+    }
+
     static void reset(State state) {
+        state.stowing = false;
         state.drawStart = -1;
         state.drawCut = false;
         state.drawCharge = false;
@@ -517,12 +556,18 @@ public final class SwordServer {
     }
 
     static void tick(ServerPlayer player, State state, long now) {
+        if (state.katana != null && state.katana.legend()) {
+            legend(player, state, now);
+        }
         boolean busy = state.drawn || state.drawStart >= 0 || state.move != null || state.chargeStart >= 0 || state.releaseStart >= 0
             || state.quickStart >= 0;
         if (!busy) {
             return;
         }
         if (!ready(player, state)) {
+            if (state.stowing && state.katana != null && player.m_6084_() && now < state.sheathingUntil) {
+                return; // 2.2.7: a legendary blade going back where it is worn, out of the fight
+            }
             reset(state);
             return;
         }
@@ -549,7 +594,7 @@ public final class SwordServer {
         }
         boolean acting = state.drawStart >= 0 || state.move != null || state.chargeStart >= 0 || state.releaseStart >= 0
             || state.quickStart >= 0;
-        if (state.drawn && !acting && state.sheathingUntil < 0
+        if (state.drawn && !acting && state.sheathingUntil < 0 && !state.katana.legend()
             && now - state.idleSince >= Math.round(PieceConfig.get(PieceConfig.SHEATHE_DELAY, SwordRules.SHEATHE_DELAY))) {
             state.sheathingUntil = now + SwordRules.SHEATHE_TICKS;
         }
@@ -582,7 +627,7 @@ public final class SwordServer {
             }
             if (tick >= cut.from() && tick <= cut.to()) {
                 float damage = cut.damage() * edge(state) * PieceRules.masteryDamage(mastery(player));
-                int landed = sweep(player, move.animation(), tick, SwordRules.EXTEND, state.struck.get(i), damage, cut.weight(), cut.back(),
+                int landed = sweep(player, move.animation(), tick, SwordRules.EXTEND + reach(state), state.struck.get(i), damage, cut.weight(), cut.back(),
                     cut.up(), cut.stun(), other -> FruitUtil.foe(player, other), StyleCombat.of(player));
                 if (landed > 0) {
                     gain(player, cut.weight(), landed);
@@ -665,7 +710,7 @@ public final class SwordServer {
             Vec3 from = state.quickLast == null ? player.m_20182_() : state.quickLast;
             Vec3 to = player.m_20182_();
             float damage = QUICK_DAMAGE * edge(state) * PieceRules.masteryDamage(mastery(player));
-            int landed = along(player, from, to, 1.7, state.quickStruck, damage, other -> FruitUtil.foe(player, other), StyleCombat.of(player));
+            int landed = along(player, from, to, 1.7 + reach(state), state.quickStruck, damage, other -> FruitUtil.foe(player, other), StyleCombat.of(player));
             if (landed > 0) {
                 gain(player, Hit.Weight.HEAVY, landed);
             }
@@ -674,7 +719,12 @@ public final class SwordServer {
     }
 
     static float edge(State state) {
-        return state.katana == null ? 1.0F : state.katana.grade().edge();
+        return state.katana == null ? 1.0F : state.katana.edge();
+    }
+
+    /** 2.2.7: blocks the held blade's cuts reach past a katana's (Yoru's great sword). */
+    static double reach(State state) {
+        return state.katana == null ? 0.0 : state.katana.reach();
     }
 
     static int mastery(ServerPlayer player) {

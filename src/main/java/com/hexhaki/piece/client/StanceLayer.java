@@ -83,7 +83,12 @@ public final class StanceLayer {
             }
         }
         Pose pose = player.m_20089_();
-        return pose == Pose.STANDING || pose == Pose.CROUCHING ? style.stance() : null;
+        if (pose != Pose.STANDING && pose != Pose.CROUCHING) {
+            return null;
+        }
+        com.hexhaki.piece.sword.Katana katana = style.sword() ? SwordClient.katana(player.m_19879_()) : null;
+        // 2.2.7: Yoru is on the back: no hilt at the hip to rest a hand on
+        return katana != null && katana.carry() == com.hexhaki.piece.sword.Katana.Carry.BACK ? "style_swordsman_back_stance" : style.stance();
     }
 
     /** {@code player}'s stance layer, made (once per player object) under the original's layers. */

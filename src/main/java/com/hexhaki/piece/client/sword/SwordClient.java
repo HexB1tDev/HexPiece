@@ -127,7 +127,7 @@ public final class SwordClient {
         if (playing == null && anim == SwordAnims.NONE) {
             return;
         }
-        String name = SwordAnims.name(anim);
+        String name = SwordAnims.name(anim, katana(id));
         KeyframeAnimation data = name == null ? null : PlayerAnimationRegistry.getAnimation(HexHaki.id(name));
         KeyframeAnimationPlayer player2 = null;
         if (data != null) {

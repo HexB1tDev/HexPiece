@@ -57,11 +57,17 @@ public final class KatanaItem extends Item {
     public void m_7373_(ItemStack stack, Level level, List<Component> lines, TooltipFlag flag) {
         Grade grade = this.katana.grade();
         lines.add(Component.m_237113_(grade.title() + "  ·  " + grade.english()).m_130938_(style -> style.m_178520_(grade.colour())));
-        lines.add(Component.m_237113_("Hamon: " + this.katana.hamon()).m_130940_(ChatFormatting.GRAY));
+        lines.add(this.katana.legend() ? Component.m_237113_(this.katana.kindLine()).m_130938_(style -> style.m_178520_(0xE0B860))
+            : Component.m_237113_(this.katana.kindLine()).m_130940_(ChatFormatting.GRAY));
         for (String line : wrap(this.katana.description(), WRAP)) {
             lines.add(Component.m_237113_(line).m_130944_(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
         }
-        lines.add(Component.m_237113_(String.format(java.util.Locale.ROOT, "Edge x%.2f", grade.edge())).m_130940_(ChatFormatting.GRAY));
+        lines.add(Component.m_237113_(String.format(java.util.Locale.ROOT, "Edge x%.2f", this.katana.edge())
+            + (this.katana.reach() > 0.5 ? "  ·  long reach" : "")).m_130940_(ChatFormatting.GRAY));
+        if (this.katana.legend()) {
+            lines.add(Component.m_237113_(this.katana.carry() == Katana.Carry.BACK ? "Worn on the back; drawn whenever you fight"
+                : "Drawn whenever you fight").m_130938_(style -> style.m_178520_(0xE0B860)));
+        }
         lines.add(Component.m_237113_("Swordsman: drawn in combat mode (R)").m_130938_(style -> style.m_178520_(0x8FB3D9)));
     }
 

@@ -37,6 +37,32 @@ public final class SwordAnims {
         return anim > 0 && anim < NAMES.length ? NAMES[anim] : null;
     }
 
+    /**
+     * 2.2.7: the animation a player with {@code katana} plays for {@code anim}: Yoru, worn on the back with no saya, has its own draw
+     * (over the shoulder), sheathe and draw into the charge; everything else (every cut, the guard, the charge, the release, the quick
+     * draw) is the katana's: the owner: "Yoru swings and is held the same way as the katana, same for the saber".
+     */
+    public static String name(int anim, Katana katana) {
+        if (katana != null && katana.carry() == Katana.Carry.BACK) {
+            switch (anim) {
+                case DRAW:
+                    return "sword_draw_back";
+                case SHEATHE:
+                    return "sword_sheathe_back";
+                case CHARGE_DRAW:
+                    return "sword_charge_draw_back";
+                default:
+                    break;
+            }
+        }
+        return name(anim);
+    }
+
+    /** 2.2.7: {@link #drawn(int, float)} for the animation a player with {@code katana} plays. */
+    public static boolean drawn(int anim, float ticks, Katana katana) {
+        return drawnIn(name(anim, katana), ticks);
+    }
+
     /** How long it lasts (ticks; a loop: its whole length, looping from {@link #loopFrom}). */
     public static int duration(int anim) {
         if (anim >= MOVES) {
@@ -79,7 +105,10 @@ public final class SwordAnims {
 
     /** Is the blade in the hand {@code ticks} into {@code anim} (else in its saya)? */
     public static boolean drawn(int anim, float ticks) {
-        String name = name(anim);
+        return drawnIn(name(anim), ticks);
+    }
+
+    static boolean drawnIn(String name, float ticks) {
         if (name == null) {
             return false;
         }

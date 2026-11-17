@@ -105,6 +105,14 @@ def solve(beats):
                                                     wrist_limit=80.0)
             q["rightArm"], q["rightItem"] = arm, wr
             seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
+        elif getattr(beat, "back_lift", None) is not None:
+            # 2.2.7: the right fist on Yoru's handle on the back (lifted back_lift px up along itself out of its ropes), or reaching
+            # for it (reach_off: the fist that many px away from the handle, the sword not yet in it)
+            target, bdir, edir = rig.back_grip(q, beat.back_lift)
+            target = tuple(np.array(target) + np.array(getattr(beat, "reach_off", (0.0, 0.0, 0.0))))
+            arm, wr, err_p, err_d = rig.solve_blade(q, target, bdir, edir, seed=seed_r, dir_weight=4000.0, wrist_limit=80.0)
+            q["rightArm"], q["rightItem"] = arm, wr
+            seed_r = [arm["pitch"], arm["yaw"], arm["roll"], arm["bend"], wr["pitch"], wr["yaw"], wr["roll"]]
         elif getattr(beat, "hilt", None) is not None:
             # the saya turned about its mouth (never moved) until the handle is where the right hand reaches it
             best = None
@@ -867,6 +875,81 @@ def moves():
     ], "Swordsman: the blade flicked clean, laid to the mouth of the saya and slid home, slowly.", sheath=17, stop_extra=6))
 
 
+def back_beat(tick, easing, lift=0.0, reach_off=None, body=None, legs=None, head=None, left=None):
+    """2.2.7: the right fist on Yoru's handle on the back (lift px drawn up along itself), or reaching for it (reach_off px away)."""
+    beat = Beat(tick, easing, blade=None, left=dict(left or L_REST), body=body or {}, legs=legs if legs is not None else LEGS_EASY,
+                head=head or {})
+    beat.back_lift = lift
+    if reach_off is not None:
+        beat.reach_off = reach_off
+    return beat
+
+
+def yoru():
+    """2.2.7: Yoru, worn on the back (the owner: "it also needs a pull out animation"; his unsheath reference: the right arm reaches up
+    behind the head to the hilt over the right shoulder, one sweep, and the great sword held low at the right hip, its blade angled up
+    across the front). Drawn, it is held and swung with the Swordsman's own moves."""
+    reach = (-2.0, 3.4, -1.2)       # the fist below the handle and out to the right, on its way up to it
+    forward = held(H(6.4, -2.4, 6.0), D(0.12, 0.42, 1.0), D(0.0, -1.0, 0.4))       # swung over: pointing ahead, out to the right
+    raise_ = held(H(7.2, -1.6, 3.2), D(0.1, 0.62, 1.0), D(0.0, -1.0, 0.6))         # on its way up, out to the right of the head
+    overhead = held(H(5.6, -10.4, 2.2), D(0.08, 1.0, 0.25), D(0.0, -0.1, 1.0))       # the blade straight up over the right shoulder
+    behind = held(H(6.0, -8.8, -0.2), D(-0.12, 0.34, -1.0), D(0.2, 1.0, 0.1))        # laid back over the right shoulder
+    present = held(H(3.4, 9.2, 3.4), D(-0.48, 0.52, 0.72), D(0.0, 0.84, -0.55))      # low at the right hip, angled up across the front
+    lean = {"bend": 6, "yaw": -12, "y": -0.03}
+    write(Move("sword_draw_back", 22, [
+        stance_beat(0, "linear"),
+        back_beat(4, "outsine", 0.0, reach, body={"bend": 4, "yaw": -6}, head={"pitch": 6, "yaw": 10}),
+        back_beat(7, "inoutsine", 0.0, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
+        back_beat(8, "linear", 0.6, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
+        back_beat(11, "insine", 2.4, body={"bend": 2, "yaw": -10}, head={"pitch": 2, "yaw": 10}),
+        b(13, "linear", behind, L_REST, {"bend": -4, "yaw": -14}, LEGS_EASY, {"pitch": -4, "yaw": 6}),
+        b(14, "linear", overhead, L_REST, {"bend": -2, "yaw": -8}, LEGS_EASY, {"pitch": -6}),
+        b(15, "linear", forward, L_REST, {"bend": 2, "yaw": -10}, LEGS_EASY, {"pitch": -4}),
+        b(16, "outexpo", present, L_BACK, lean, DRAW_LEGS, {"pitch": -2, "yaw": -4}),
+        b(19, "linear", present, L_BACK, lean, DRAW_LEGS, {"pitch": -2, "yaw": -4}),
+        stance_beat(22, "inoutsine"),
+    ], "Swordsman (Yoru): the right hand up behind the head to the hilt over the shoulder, the great sword lifted out of its ropes, swept "
+       "over the shoulder and down, held low at the hip, angled up across the front.", draw=8))
+
+    write(Move("sword_sheathe_back", 20, [
+        stance_beat(0, "linear"),
+        b(2, "inoutsine", raise_, L_REST, {"bend": 0, "yaw": -6}, LEGS_EASY, {"pitch": -4}),
+        b(3, "inoutsine", overhead, L_REST, {"bend": -2, "yaw": -6}, LEGS_EASY, {"pitch": -6}),
+        b(6, "inoutsine", behind, L_REST, {"bend": -2, "yaw": -12}, LEGS_EASY, {"pitch": -2, "yaw": 6}),
+        back_beat(9, "inoutsine", 2.4, body={"bend": 4, "yaw": -10}, head={"pitch": 4, "yaw": 10}),
+        back_beat(12, "inoutsine", 1.5, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
+        back_beat(14, "outsine", 0.0, body={"bend": 6, "yaw": -8}, head={"pitch": 8, "yaw": 14}),
+        back_beat(16, "inoutsine", 0.0, reach, body={"bend": 4, "yaw": -4}, head={"pitch": 4, "yaw": 6}),
+        Beat(20, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left=dict(L_REST), body={"bend": 2}, legs=LEGS_EASY),
+    ], "Swordsman (Yoru): swung up over the head and back over the shoulder, lowered into its ropes on the back.", sheath=14,
+        stop_extra=6))
+
+    charge_pose = held(H(7.6, -5.8, 0.6), D(0.3, -0.28, -0.91), D(0.1, 0.95, -0.28))
+    charge_body = {"yaw": -26, "bend": -16, "y": -0.04}
+    charge_legs = {"rightLeg": leg(8, 6, 26), "leftLeg": leg(-24, -5, 34)}
+    shake = held(H(7.7, -6.0, 0.4), D(0.32, -0.26, -0.91), D(0.1, 0.95, -0.28))
+    write(Move("sword_charge_draw_back", 26, [
+        stance_beat(0, "linear"),
+        back_beat(2, "outsine", 0.0, body={"bend": 4, "yaw": -10}, head={"pitch": 6, "yaw": 12}),
+        back_beat(3, "linear", 1.0, body={"bend": 2, "yaw": -14}, head={"pitch": 2, "yaw": 10}),
+        b(5, "outsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
+        b(6, "linear", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
+        b(16, "inoutsine", shake, L_AIM, dict(charge_body, bend=-18, y=-0.06), charge_legs, {"pitch": -10, "yaw": 10}),
+        b(26, "inoutsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
+    ], "Swordsman (Yoru): ripped off the back over the shoulder straight into the charge.", draw=3, loop=6))
+
+
+def yoru_stance():
+    """2.2.7: the combat stance with Yoru on the back: no hilt at the hip to rest on: both arms loose, a slow breath."""
+    beats = [
+        Beat(0, "linear", rarm=dict(RELAXED_R), wrist={}, left=dict(RELAXED_L), legs={}),
+        Beat(20, "inoutsine", rarm={"pitch": 0.5, "yaw": 0.0, "roll": 5.0, "bend": -8.0}, wrist={},
+             left={"pitch": 0.5, "yaw": 0.0, "roll": -5.0, "bend": -8.0}, legs={}),
+        Beat(40, "inoutsine", rarm=dict(RELAXED_R), wrist={}, left=dict(RELAXED_L), legs={}),
+    ]
+    stance_write("style_swordsman_back_stance", beats, "Swordsman combat stance with Yoru on the back: both arms loose.")
+
+
 def stance():
     """The owner: "whenever combat mode is activated the left hand should rest on the sword handle on a relaxed pose (when not
     moving)": the left hand on the sheathed katana's hilt at the hip, the right arm loose; a slow breath. Arms only (the stance layer)."""
@@ -978,7 +1061,9 @@ def main():
     if "--only" in sys.argv:
         ONLY = set(sys.argv[sys.argv.index("--only") + 1].split(","))
     moves()
+    yoru()
     stance()
+    yoru_stance()
     java_paths()
     java_npc_poses()
     if "--preview" in sys.argv:
@@ -1023,7 +1108,11 @@ def preview(names, out, frames=9, views=("front", "three", "side"), key="crimson
                 cv = sv.Canvas(tw, th)
                 sv.draw_figure(cv, cam, q)
                 drawn = move.drawn_at(t) if move else False
-                if drawn:
+                if name.endswith("_back"):
+                    # 2.2.7: Yoru, on the back in its ropes or in the hand
+                    sv.draw_ropes(cv, cam, q)
+                    sv.draw_katana(cv, cam, "yoru", game_blade(move, q, t) if drawn else rig.back_matrix(q), shine=0.3)
+                elif drawn:
                     sv.draw_katana(cv, cam, key, game_blade(move, q, t))
                     sv.draw_katana(cv, cam, key, rig.saya_matrix(q), saya=True, blade=False)
                 else:

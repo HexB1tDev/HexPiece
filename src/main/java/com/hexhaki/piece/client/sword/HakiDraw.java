@@ -79,7 +79,7 @@ public final class HakiDraw {
             return;
         }
         double strength = 0.0;
-        String name = SwordAnims.name(anim);
+        String name = SwordAnims.name(anim, SwordClient.katana(player.m_19879_()));
         float[] noto = name == null ? null : BladePaths.notoOut(name);
         if (noto != null && noto.length >= 2 && anim != SwordAnims.SHEATHE) {
             float free = noto[noto.length - 2];

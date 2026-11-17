@@ -36,11 +36,79 @@ public final class SwordTests {
     }
 
     static void katanas() {
-        Check.that(Katana.values().length == 25, "the owner's 25 katanas");
+        Check.that(Katana.values().length == 27, "the owner's 25 katanas and 2.2.7's two legendary blades");
+        // 2.2.7: Gryphon and Yoru, the two strongest blades, Yoru the strongest; Yoru on the back, never black, the longest reach
+        float best = 0.0F;
+        for (Katana katana : Katana.values()) {
+            if (!katana.legend()) {
+                best = Math.max(best, katana.edge());
+                Check.that(katana.edge() == katana.grade().edge() && katana.carry() == Katana.Carry.HIP && katana.blackens(),
+                    katana + ": a katana keeps its grade's edge, its saya at the hip, and Armament blackens it");
+            }
+        }
+        Check.that(Katana.GRYPHON.edge() > best && Katana.YORU.edge() > Katana.GRYPHON.edge(), "the two strongest, Yoru the strongest");
+        Check.that(Katana.YORU.carry() == Katana.Carry.BACK && Katana.GRYPHON.carry() == Katana.Carry.HIP, "Yoru on the back, Gryphon at the hip");
+        Check.that(!Katana.YORU.blackens() && Katana.GRYPHON.blackens(), "Yoru never turns black");
+        Check.that(Katana.YORU.reach() > Katana.GRYPHON.reach() && Katana.GRYPHON.reach() >= 0.0, "Yoru reaches furthest");
+        Check.that(Katana.YORU.ordinal() == 26 && Katana.GRYPHON.ordinal() == 25, "new blades at the end (saved by key, sent by ordinal)");
+        for (int rank = 0; rank < 3; rank++) {
+            for (int pick = 0; pick < 60; pick++) {
+                Check.that(!SeaRules.katana(rank, pick).legend(), "no patrol carries a legendary blade");
+            }
+        }
+        // the animation names: Yoru's own draw, sheathe and draw into the charge; everything else the katana's
+        Check.that("sword_draw_back".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.YORU))
+            && "sword_draw".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.GRYPHON))
+            && "sword_guard".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.GUARD, Katana.YORU)),
+            "Yoru's own draw, the katana's moves");
+        for (String name : new String[] {"sword_draw_back", "sword_sheathe_back", "sword_charge_draw_back"}) {
+            Check.that(com.hexhaki.piece.sword.BladePaths.of(name) != null, name + ": its blade path is written");
+        }
+        Check.that(com.hexhaki.piece.sword.BladePaths.drawTick("sword_draw_back") > 0
+            && com.hexhaki.piece.sword.BladePaths.sheathTick("sword_sheathe_back") > 0, "Yoru's draw and sheathe hand it over mid-way");
+        // the game's back frame and the animations' (tools/sword_rig.py) are the same, or a draw would not close on the handle
+        try {
+            String rig = Files.readString(Path.of("tools/sword_rig.py"));
+            Matcher guard = Pattern.compile("BACK_GUARD = \\(([-0-9.]+), ([-0-9.]+), ([-0-9.]+)\\)").matcher(rig);
+            Matcher tilt = Pattern.compile("BACK_TILT = ([-0-9.]+)").matcher(rig);
+            Matcher lean = Pattern.compile("BACK_LEAN = ([-0-9.]+)").matcher(rig);
+            Check.that(guard.find() && tilt.find() && lean.find(), "the rig's back frame is found");
+            Check.near(Double.parseDouble(lean.group(1)), com.hexhaki.piece.sword.BackCarry.LEAN, 1e-9, "the back lean agrees with the rig");
+            for (int i = 0; i < 3; i++) {
+                Check.near(Double.parseDouble(guard.group(i + 1)), com.hexhaki.piece.sword.BackCarry.GUARD[i], 1e-9, "the back frame agrees with the rig");
+            }
+            Check.near(Double.parseDouble(tilt.group(1)), com.hexhaki.piece.sword.BackCarry.TILT, 1e-9, "the back tilt agrees with the rig");
+        } catch (java.io.IOException failure) {
+            throw new AssertionError("tools/sword_rig.py unreadable", failure);
+        }
+        // the ropes: closed tubes round the torso, over the blade where they cross it, never inside the body
+        java.util.List<com.hexhaki.piece.sword.BackCarry.Quad> ropes = com.hexhaki.piece.sword.BackCarry.ropes();
+        Check.that(ropes.size() > 200, "two ropes (" + ropes.size() + " quads)");
+        for (com.hexhaki.piece.sword.BackCarry.Quad quad : ropes) {
+            for (int k = 0; k < 4; k++) {
+                float x = quad.xyz()[k * 3];
+                float y = quad.xyz()[k * 3 + 1];
+                float z = quad.xyz()[k * 3 + 2];
+                Check.that(Math.abs(x) > 4.2F || Math.abs(z) > 2.2F || y < -0.1F, "a rope never goes through the body (" + x + ", " + y + ", " + z + ")");
+            }
+        }
+        for (java.util.List<double[]> rope : java.util.List.of(com.hexhaki.piece.sword.BackCarry.baldric(), com.hexhaki.piece.sword.BackCarry.waist())) {
+            boolean crosses = false;
+            for (double[] p : rope) {
+                double[] blade = com.hexhaki.piece.sword.BackCarry.fromBlade(p[0], p[1]);
+                if (p[2] > 0 && blade[0] < 0.9) {
+                    crosses = true;
+                    Check.that(p[2] - com.hexhaki.piece.sword.BackCarry.ROPE > blade[1] + 0.3,
+                        "a rope lies over the blade where it crosses it, not through it (" + p[2] + " over " + blade[1] + ")");
+                }
+            }
+            Check.that(crosses, "each rope crosses the blade on the back (it holds it)");
+        }
         Set<String> keys = new HashSet<>();
         EnumSet<Grade> grades = EnumSet.noneOf(Grade.class);
         for (Katana katana : Katana.values()) {
             Check.that(keys.add(katana.key()), katana + ": its own model key");
+            Check.that(!katana.kindLine().isBlank(), katana + ": its tooltip's second line");
             Check.that(Katana.byKey(katana.key()) == katana, katana + ": found by its key");
             Check.that(!katana.hamon().isBlank() && katana.description().length() > 40, katana + ": a hamon and a description");
             grades.add(katana.grade());

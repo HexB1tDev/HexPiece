@@ -5,6 +5,7 @@ the blade's moving highlight (client/sword/KatanaRenderer: a band of light refle
 
   python3 tools/katana_render.py icons <out dir>          the 25 inventory icons (32x32, blade up to the right as Minecraft draws swords; 2.2.6: they belong in src/main/resources/assets/hexhaki/textures/item/katana, where the item atlas stitches them)
   python3 tools/katana_render.py sheet <out.png>          all 25 blades and their saya side by side, to judge them
+  python3 tools/katana_render.py legend-icons <out dir>   2.2.7: Gryphon's and Yoru's icons (from their own zip)
 Both read input/Hex_Katana_Atelier_1.20.1.zip.
 """
 import io
@@ -21,6 +22,8 @@ from katana_names import KATANAS  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ZIP = os.path.join(ROOT, "input", "Hex_Katana_Atelier_1.20.1.zip")
+# how strongly the steel reflects the sky (2.2.7: Yoru's black blade only glints: client/sword/SwordLayer draws it at 0.45 of the katanas')
+GLOSS = 0.75
 
 
 def rotation(pitch, yaw, roll):
@@ -99,7 +102,7 @@ def render(mesh, texture, rot, size, scale, center, blade_groups=("01_Blade",), 
             light = np.minimum(1.0, light)
             rgb = texel[..., :3] * light[..., None]
             if blade[qi]:
-                rgb = np.minimum(1.0, rgb + shine(n)[..., None] * 0.75)
+                rgb = np.minimum(1.0, rgb + shine(n)[..., None] * GLOSS)
             out = np.concatenate([rgb, np.ones(rgb.shape[:2] + (1,))], axis=-1)
             color[region] = np.where(visible[..., None], out, color[region])
             zbuf[region] = np.where(visible, d, zbuf[region])
@@ -112,14 +115,14 @@ def load(zip_path=ZIP):
     return meshes, textures
 
 
-def icon(mesh, texture, size=32):
+def icon(mesh, texture, size=32, widen=1.7, length=28.0, middle=7.1):
     """Blade up to the right, the handle down to the left, a little turned so the guard reads: the way Minecraft draws a sword. Item
     art rather than a photo: the blade fills the slot's diagonal, its width drawn 1.7x so it reads at 16 to 64 pixels, a dark outline."""
     vertices, quads, groups = mesh
-    widened = ([(x * 1.7, y, z * 1.7, u, v, nx, ny, nz) for x, y, z, u, v, nx, ny, nz in vertices], quads, groups)
+    widened = ([(x * widen, y, z * widen, u, v, nx, ny, nz) for x, y, z, u, v, nx, ny, nz in vertices], quads, groups)
     rot = rotation(0.0, 0.35, -math.pi / 4)
     big_size = size * 8
-    big = render(widened, texture, rot, big_size, big_size * 1.1 / 28.0, (0.0, 7.1, 0.0))
+    big = render(widened, texture, rot, big_size, big_size * 1.1 / length, (0.0, middle, 0.0))
     small = big.resize((size, size), Image.LANCZOS)
     a = np.asarray(small, float)
     alpha = a[..., 3] > 40
@@ -133,6 +136,19 @@ def icon(mesh, texture, size=32):
 
 def main():
     mode, out = sys.argv[1], sys.argv[2]
+    if mode == "legend-icons":
+        # 2.2.7: Gryphon and Yoru (input/Yoru_Gryphon_Models_Textures_1.20.1.zip, in the katanas' frame); Yoru's cross guard is wide,
+        # so it is widened less
+        zip_path = os.path.join(ROOT, "input", "Yoru_Gryphon_Models_Textures_1.20.1.zip")
+        meshes = km.legend_meshes(zip_path)
+        textures = {name: Image.open(io.BytesIO(data)) for name, data in km.legend_textures(zip_path).items()}
+        os.makedirs(out, exist_ok=True)
+        icon(meshes["gryphon"], textures["gryphon"], widen=1.5, length=28.4, middle=8.2).save(os.path.join(out, "gryphon_icon.png"))
+        global GLOSS
+        GLOSS = 0.75 * 0.45
+        icon(meshes["yoru"], textures["yoru"], widen=1.15, length=44.0, middle=10.2).save(os.path.join(out, "yoru_icon.png"))
+        GLOSS = 0.75
+        return
     meshes, textures = load()
     if mode == "icons":
         os.makedirs(out, exist_ok=True)

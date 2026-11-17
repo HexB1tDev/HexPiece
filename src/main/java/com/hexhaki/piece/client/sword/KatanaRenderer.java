@@ -36,6 +36,8 @@ public final class KatanaRenderer {
     /** Model pixels: about how long a katana is from pommel to tip, the middle of a sheathed one, and where the right fist's centre
      * grips the handle (the guard at 0, the fist's top just under it; tools/sword_anims.py uses the same). */
     public static final float LENGTH = 28.0F;
+    /** 2.2.7: Yoru, pommel to point (model px). */
+    public static final float YORU_LENGTH = 44.0F;
     public static final float MIDDLE = 7.4F;
     public static final float GRIP = -2.4F;
     static final ResourceLocation WHITE = ResourceLocation.m_214293_("hexhaki", "textures/piece/white.png");
@@ -55,6 +57,9 @@ public final class KatanaRenderer {
 
     /** The mesh at a level of detail ("" the owner's whole mesh, "_mid", "_far"), read once. */
     static KatanaMesh mesh(Katana katana, boolean saya, String lod) {
+        if (saya && katana.carry() == Katana.Carry.BACK) {
+            return null; // 2.2.7: Yoru has no saya (it is tied on the back)
+        }
         String name = katana.key() + (saya ? "_sheath" : "") + lod;
         KatanaMesh mesh = MESHES.get(name);
         if (mesh == null && !FAILED.contains(name)) {
@@ -114,6 +119,35 @@ public final class KatanaRenderer {
             buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_6122_(255, 255, 255, 255).m_7421_(t[v * 2], t[v * 2 + 1])
                 .m_86008_(OverlayTexture.f_118083_).m_85969_(light).m_252939_(normal, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]).m_5752_();
         }
+    }
+
+    /** 2.2.7: Yoru's ropes ({@link com.hexhaki.piece.sword.BackCarry}), made once: body-part px. */
+    private static java.util.List<com.hexhaki.piece.sword.BackCarry.Quad> ropes;
+
+    /**
+     * 2.2.7: the ropes that tie Yoru on, in the body part's frame (px scaled to blocks), lit by the game's entity light as the sword
+     * is: the plain white texture tinted per corner by the hemp's strands.
+     */
+    public static void ropes(PoseStack pose, MultiBufferSource buffers, int light) {
+        if (ropes == null) {
+            ropes = com.hexhaki.piece.sword.BackCarry.ropes();
+        }
+        pose.m_85836_();
+        pose.m_85841_(SCALE, SCALE, SCALE);
+        PoseStack.Pose last = pose.m_85850_();
+        Matrix4f matrix = last.m_252922_();
+        Matrix3f normal = last.m_252943_();
+        VertexConsumer buffer = buffers.m_6299_(RenderType.m_110458_(WHITE));
+        for (com.hexhaki.piece.sword.BackCarry.Quad quad : ropes) {
+            for (int k = 0; k < 4; k++) {
+                int c = quad.rgb()[k];
+                buffer.m_252986_(matrix, quad.xyz()[k * 3], quad.xyz()[k * 3 + 1], quad.xyz()[k * 3 + 2])
+                    .m_6122_((c >> 16) & 255, (c >> 8) & 255, c & 255, 255).m_7421_(0.5F, 0.5F).m_86008_(OverlayTexture.f_118083_)
+                    .m_85969_(light).m_252939_(normal, quad.normals()[k * 3], quad.normals()[k * 3 + 1], quad.normals()[k * 3 + 2])
+                    .m_5752_();
+            }
+        }
+        pose.m_85849_();
     }
 
     /** The blade's highlight: each corner as bright as {@link #shine} finds it this frame, added over the steel. */
