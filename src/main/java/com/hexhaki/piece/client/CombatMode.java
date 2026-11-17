@@ -145,6 +145,9 @@ public final class CombatMode {
 
     /** The badge over the hotbar's left end while combat mode is on: the style's colour and name, and its special keys. */
     static void draw(GuiGraphics graphics, int width, int height) {
+        if (AbilityHud.replaces()) {
+            return; // 2.2.2: the abilities panel on the left shows the style (and everything else)
+        }
         Minecraft minecraft = Minecraft.m_91087_();
         if (!on || minecraft.f_91074_ == null || minecraft.f_91066_ == null) {
             return;

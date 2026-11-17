@@ -142,6 +142,42 @@ public class UiPreview {
         LogbookView.Data swordLog = new LogbookView.Data("HexB1t", swordsman, new int[] {640, 310, 120}, new String[] {"Adept", "Novice",
             "Awakened"}, "", 0, 2);
         save(dir, "logbook-swordsman", w, h, c -> LogbookView.draw(c, log, swordLog, "tab:3", 7.0));
+        // 2.2.2: the one abilities panel on the left (HexGhoul's), in each mode, at the game's scale over a scene and a chat
+        java.util.Map<String, String> keys = java.util.Map.of("attack", "LMB", "use", "RMB", "special_a", "Y", "special_b", "U", "toggle", "R",
+            "armament", "Ctrl+R", "observation", "V", "menu", "P");
+        java.util.List<com.hexhaki.piece.ui.AbilityPanel.Move> haki = java.util.List.of(
+            new com.hexhaki.piece.ui.AbilityPanel.Move("G", "King's Awakening (tap / hold)", "", 0, 0),
+            new com.hexhaki.piece.ui.AbilityPanel.Move("K", "Haki Grip", "", 0, 0), new com.hexhaki.piece.ui.AbilityPanel.Move("L", "WiFi Haki", "", 0, 0));
+        java.util.List<com.hexhaki.piece.ui.AbilityPanel.Move> pika = java.util.List.of(
+            new com.hexhaki.piece.ui.AbilityPanel.Move("G", "Light Beam", "", 34, 60), new com.hexhaki.piece.ui.AbilityPanel.Move("K", "Light Speed Kick", "", 0, 0),
+            new com.hexhaki.piece.ui.AbilityPanel.Move("L", "Yata Mirror", "", 0, 0), new com.hexhaki.piece.ui.AbilityPanel.Move("M", "Amaterasu", "650", 0, 0));
+        Object[][] huds = {
+            {"Swordsman, katana sheathed", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Swordsman", FightingStyle.SWORDSMAN.colour(), true,
+                java.util.List.of("Combo", "", "", ""), "sheathed", null, 0, false, java.util.List.of(), true, false, false, false, haki, 82, 100)},
+            {"Swordsman, drawn, Armament + Ryou", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Swordsman", FightingStyle.SWORDSMAN.colour(), true,
+                java.util.List.of("Combo", "", "", ""), "drawn", "Pika Pika", 0xFFFFE070, false, java.util.List.of(), true, true, true, true, haki, 41, 100)},
+            {"Black Leg", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Black Leg", FightingStyle.BLACK_LEG.colour(), true,
+                java.util.List.of("Combo", "Collier Shoot", "Diable Jambe", "Sky Walk"), null, null, 0, false, java.util.List.of(), true, false, true, false,
+                java.util.List.of(), 100, 100)},
+            {"Pika Pika, its own mode", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
+                java.util.List.of(), null, "Pika Pika", 0xFFFFE070, true, pika, true, false, false, false, haki, 64, 100)}};
+        for (int i = 0; i < huds.length; i++) {
+            com.hexhaki.piece.ui.AbilityPanel.Input input = (com.hexhaki.piece.ui.AbilityPanel.Input)huds[i][1];
+            String label = (String)huds[i][0];
+            // drawn at the GUI scale 2 most screens use, so the text reads as it does in game
+            save(dir, "hud-" + i, 427 * 2, 240 * 2, c -> {
+                c.scale(2.0F);
+                c.gradient(0, 0, 427, 150, 0xFF7FA8D8, 0xFFB9D3EE);
+                c.gradient(0, 150, 427, 240, 0xFF5E8A48, 0xFF3F6A2E);
+                c.fill(0, 158, 200, 180, 0x80000000);
+                c.text("<Shanks> where did he go", 2, 160, 0xFFFFFFFF, true);
+                c.text("<Buggy> behind you", 2, 170, 0xFFFFFFFF, true);
+                c.fill(123, 218, 305, 240, 0xFF3A3A3A);
+                c.text(label, 4, 4, 0xFF101010, false);
+                com.hexhaki.piece.ui.AbilityHudView.Layout l = com.hexhaki.piece.ui.AbilityHudView.layout(c, com.hexhaki.piece.ui.AbilityPanel.of(input));
+                com.hexhaki.piece.ui.AbilityHudView.draw(c, l, 2, 240 - 40 - 90 - 4, 0.6F);
+            });
+        }
         System.out.println("wrote previews to " + dir);
     }
 }

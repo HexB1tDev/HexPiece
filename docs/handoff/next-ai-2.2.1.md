@@ -1,7 +1,7 @@
 # HexPiece: handoff after 2.2.1
 
 Read CLAUDE.md first. This note covers 2.1.9 to 2.2.1; next-ai-2.1.5.md covers the 3D Haki lightning (2.1.5 to 2.1.8) and
-next-ai-2.1.4.md the Swordsman. The next version is 2.2.2.
+next-ai-2.1.4.md the Swordsman. The next version is 2.2.3.
 
 ## Done
 - **2.1.9**: whole sheaths (the katanas' distance meshes stay closed: `tools/katana_mesh.py` simplify with one position per cell, the
@@ -39,13 +39,18 @@ next-ai-2.1.4.md the Swordsman. The next version is 2.2.2.
   it is kept (`drawCut`), a charge held through it begins at its end (`drawCharge`); the quick draw cancels it and goes. Players no
   longer get the draw-cut moves (NPCs still may).
 
+- **2.2.2, one abilities panel on the left** (HexGhoul's AbilityHud): `ui/AbilityPanel` (pure: what it lists from an `Input` of
+  plain values), `ui/AbilityHudView` (HexGhoul's card: accent edge, title + subtitle, the Haki energy gauge, key caps with recharge
+  underlines, locked lines dim with what they need), `client/AbilityHud` (gathers the keys from Controls twice a second, the style
+  and the katana's state, the kit fruit's moves via `BindsClient.keyFor`/`FruitClient.cooldown`/`mastery`, Gear 5's moves on the keys
+  `GearKeys` reads, Haki states and the Haki quick slots via `BindsClient.layout`; drawn above the chat at 0.6; the kit's own `hud` beside
+  it). The patch makes the original's `HakiHud.draw`, `FruitHud.render`, `GearHud.draw` return first (`PiecePatch.HUDS_REPLACED`);
+  `CombatMode`'s badge is off. Render `docs/images/abilities-hud.png`; tests `HudTests`.
+
 ## Open (the owner's requests, in order)
 1. **The Haki slash as a thick energy wave** (the owner: "it's not about just being tall. It's meant to be like an energy wave ... see
    Mihawk's energy projectile from his blade. It is much bigger than that, and it's thick"). A volumetric crescent with real
    thickness, not a plane; keep the server's cut consistent with what is drawn.
-2. **One HUD on the left, HexGhoul's** (the owner: "all the abilities, everything has to be in the same menu, like HUD on the left ... I
-   don't care about mastery in the bottom. I want you to copy the one from Hex Ghoul"): HexGhoul `client/AbilityHud.java`,
-   `AbilityHudView.java`, `docs/images/abilities-hud.png` on `claude/eager-ritchie-xni1ms`. Drop the original's bottom mastery HUD.
 3. **One menu** (the owner: "there's two different types of GUI ... the mastery menu, and then there's another one ... put them all on
    the same thing ... check the fruit mastery GUI. It's still old. ... reorganize the mod as best you can"): merge the original's
    mastery screens, Haki techniques, the fruit mastery GUI and the Captain's Log into one, in our style.

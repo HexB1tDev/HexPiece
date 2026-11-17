@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.2.1"
+VERSION = "2.2.2"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
@@ -56,7 +56,11 @@ PATCHED = {
     "com/hexhaki/client/vfx/HakiVfx.class",
     "com/hexhaki/gameplay/ConquerorLightningPath.class",
     "com/hexhaki/command/HakiCommands.class",
-    "com/hexhaki/fruit/client/FruitKeys.class",  # 2.1.3: R swaps the kit and the style (PiecePatch CALL_REDIRECTS)
+    "com/hexhaki/fruit/client/FruitKeys.class",
+    # 2.2.2: the original's HUDs give way to the one abilities panel (PiecePatch HUDS_REPLACED)
+    "com/hexhaki/client/HakiHud.class",
+    "com/hexhaki/fruit/client/FruitHud.class",
+    "com/hexhaki/client/devilfruit/GearHud.class",  # 2.1.3: R swaps the kit and the style (PiecePatch CALL_REDIRECTS)
     # 2.1.3 Ryou (PiecePatch: CALL_REDIRECTS, WIDENED, TRAMPOLINES, AFTER_ARMAMENT, FLOATS, TEXTS)
     "com/hexhaki/client/render/HakiHandLayer.class",
     "com/hexhaki/client/render/HakiRenderHooks$ForgeBus.class",

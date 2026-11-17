@@ -57,6 +57,16 @@ public final class PiecePatch implements Opcodes {
     static final String BOLTS = "com/hexhaki/piece/client/haki/HakiBolts";
     /** 2.1.7: the full-power storm (client). */
     static final String STORM = "com/hexhaki/piece/client/haki/HakiStorm";
+    /**
+     * 2.2.2 (the owner: "all the abilities, everything has to be in the same menu, like HUD on the left. Like, I don't care about mastery
+     * in the bottom"): the original's three HUDs (Haki with its mastery bars, the fruit's, Gear 5's) first ask {@code AbilityHud.replaces()}
+     * and draw nothing when it answers true: HexGhoul's one panel on the left shows it all.
+     */
+    static final String HUD = "com/hexhaki/piece/client/AbilityHud";
+    static final String[][] HUDS_REPLACED = {
+        {"com/hexhaki/client/HakiHud", "draw", "(Lnet/minecraftforge/client/event/RenderGuiOverlayEvent$Post;)V"},
+        {"com/hexhaki/fruit/client/FruitHud", "render", "(Lnet/minecraftforge/client/event/RenderGuiEvent$Post;)V"},
+        {"com/hexhaki/client/devilfruit/GearHud", "draw", "(Lnet/minecraftforge/client/event/RenderGuiOverlayEvent$Post;)V"}};
     static final String[][] PLAY_HOOKS = {
         {"play", "(Lnet/minecraft/world/entity/Entity;Lcom/lowdragmc/photon/client/fx/FX;)V", "played",
             "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/entity/Entity;)Z"},
@@ -232,6 +242,9 @@ public final class PiecePatch implements Opcodes {
             String owner = (String) text[0];
             entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> replaceText(node, text)));
         }
+        for (String[] hud : HUDS_REPLACED) {
+            entries.put(hud[0] + ".class", transform(entries.get(hud[0] + ".class"), node -> replacedHud(method(node, hud[1], hud[2]))));
+        }
         entries.put("META-INF/mods.toml", modsToml(entries.get("META-INF/mods.toml"), version));
         entries.put("META-INF/MANIFEST.MF", manifest(entries.get("META-INF/MANIFEST.MF"), version));
         Files.createDirectories(output.toAbsolutePath().getParent());
@@ -361,6 +374,18 @@ public final class PiecePatch implements Opcodes {
         head.add(new JumpInsnNode(IFEQ, play));
         head.add(new InsnNode(RETURN));
         head.add(play);
+        head.add(new FrameNode(F_SAME, 0, null, 0, null));
+        method.instructions.insert(head);
+    }
+
+    /** 2.2.2: {@code if (AbilityHud.replaces()) return;} at the head of an original HUD's draw. */
+    static void replacedHud(MethodNode method) {
+        InsnList head = new InsnList();
+        head.add(new MethodInsnNode(INVOKESTATIC, HUD, "replaces", "()Z", false));
+        LabelNode draw = new LabelNode();
+        head.add(new JumpInsnNode(IFEQ, draw));
+        head.add(new InsnNode(RETURN));
+        head.add(draw);
         head.add(new FrameNode(F_SAME, 0, null, 0, null));
         method.instructions.insert(head);
     }
