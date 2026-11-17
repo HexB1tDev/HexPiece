@@ -53,6 +53,7 @@ public final class BoltPreview {
         stormSheet(new File(dir, "bolt-storm.png"));
         drawSheet(new File(dir, "bolt-draw.png"));
         slashSheet(new File(dir, "bolt-slash.png"));
+        bigSlashSheet(new File(dir, "bolt-bigslash.png"));
         W = 300;
         H = 240;
         // large single frames, to judge the tube, the outline and the glow up close
@@ -119,6 +120,65 @@ public final class BoltPreview {
         }
         g.dispose();
         ImageIO.write(sheet, "png", out);
+    }
+
+    /** 2.2.0: the full-charge Haki slash (64 tall, flying 220) beside its owner, as SlashRenderer stands it (SwordRules' centre). */
+    static void bigSlashSheet(File out) throws Exception {
+        int oldW = W;
+        int oldH = H;
+        W = 520;
+        H = 360;
+        double height = com.hexhaki.piece.sword.SwordRules.SLASH_HEIGHT_MAX;
+        double[] alongs = {6, 40, 110, 200};
+        int color = 0xFF2BFF7A;
+        Shot[] shots = {new Shot("night, from the side", new double[] {40, 26, -120}, new double[] {80, 22, 0}, true),
+            new Shot("day, behind the owner", new double[] {-14, 6, -6}, new double[] {40, 18, 0}, false)};
+        BufferedImage sheet = new BufferedImage(W * alongs.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        g.setColor(new Color(236, 234, 228));
+        g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        double half = height / 2.0;
+        double bow = height * 0.2;
+        double thickScale = Math.max(com.hexhaki.piece.sword.SwordRules.slashThickness(height) / com.hexhaki.piece.sword.SwordRules.SLASH_THICKNESS,
+            height * 0.12);
+        double up = com.hexhaki.piece.sword.SwordRules.slashCentre(height);
+        for (int r = 0; r < shots.length; r++) {
+            for (int c = 0; c < alongs.length; c++) {
+                Raster raster = new Raster(shots[r]);
+                raster.scene();
+                double[] centre = {alongs[c], 1.6 + up, 0};
+                for (int i = 0; i < 48; i++) {
+                    boolean across = i >= 24;
+                    for (int pass = 0; pass < 2; pass++) {
+                        double grow = pass == 0 ? 0.0 : 0.12;
+                        double[][] q = new double[4][];
+                        for (int k = 0; k < 4; k++) {
+                            double u = (i % 24 + (k == 1 || k == 2 ? 1 : 0)) / 24.0;
+                            int sgn = k < 2 ? 1 : -1;
+                            double a = (u - 0.5) * 2.0;
+                            double y = a * (half + grow);
+                            double w = ((pass == 0 ? 0.55 : 0.85) * thickScale * (across ? 0.6 : 1.0) * 0.5 * (1 - a * a * 0.85) + grow) * sgn;
+                            double fwd = bow * (1 - a * a) + (across ? 0 : w);
+                            q[k] = sub(new double[] {centre[0] + fwd, centre[1] + y, centre[2] + (across ? w : 0)}, shots[r].eye);
+                        }
+                        float[] col = pass == 0 ? new float[] {0.02F, 0.02F, 0.02F} : Raster.rgb(BoltMesh.scale(color, 1.0));
+                        for (int face = 0; face < 2; face++) {
+                            double[] a0 = q[0], a1 = face == 0 ? q[1] : q[3], a2 = q[2], a3 = face == 0 ? q[3] : q[1];
+                            raster.tri(a0, a1, a2, col, col, col, pass == 1);
+                            raster.tri(a0, a2, a3, col, col, col, pass == 1);
+                        }
+                    }
+                }
+                g.drawImage(raster.image(), c * W, r * (H + 18) + 18, null);
+                g.setColor(new Color(30, 30, 30));
+                g.drawString(shots[r].label + "  " + Math.round(alongs[c]) + " blocks out", c * W + 4, r * (H + 18) + 13);
+            }
+        }
+        g.dispose();
+        ImageIO.write(sheet, "png", out);
+        W = oldW;
+        H = oldH;
     }
 
     /** The flying Haki slash (a crescent 4 blocks tall in a Ryou colour) with its crackle, as SlashRenderer bends it on. */

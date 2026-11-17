@@ -41,8 +41,9 @@ import net.minecraftforge.fml.common.Mod;
  * duplication. Pirate terrain destruction must also respect the server's mob-griefing settings. Bound both block checks and block
  * changes per tick, deduplicate affected positions and impose finite projectile range and lifetime."
  * <ul>
- *   <li>The slash is a vertical plane {@code height} tall and {@link SwordRules#SLASH_THICKNESS} thick, centred on its path, flying
- *       {@link SwordRules#SLASH_SPEED} blocks a tick for {@code range} blocks; everything whose body that plane passes through is hit
+ *   <li>The slash is a vertical plane {@code height} tall and {@link SwordRules#slashThickness} thick, standing up from a little under
+ *       its owner's feet ({@link SwordRules#slashCentre}; 2.2.0: up to 64 blocks tall, flying up to 220), flying {@code speed} blocks a
+ *       tick for {@code range} blocks; everything whose body that plane passes through is hit
  *       once. The clients draw exactly that plane (client/sword/SlashRenderer).</li>
  *   <li>Its blocks: the cells the plane passes through, one block thick, in rows a block apart up its height. Each cell is looked at
  *       once (deduplicated), in the order the plane reaches it; air and fluids are passed; any block the game can break at all is cut,
@@ -71,6 +72,11 @@ public final class HakiSlashes {
         double height;
         double range;
         double travelled;
+        /** 2.2.0: blocks a tick, the plane's thickness, its centre above the start, the chance a plain cut block drops. */
+        double speed;
+        double thick;
+        double centre;
+        double drops;
         float damage;
         int color;
         boolean finisher;
@@ -88,8 +94,8 @@ public final class HakiSlashes {
     }
 
     /** A slash sets off from {@code from} along {@code dir} (the aim at release). */
-    public static void launch(LivingEntity owner, Vec3 from, Vec3 dir, double height, double range, float damage, int color, boolean finisher,
-                              boolean terrain, DamageSource source, Predicate<LivingEntity> foe) {
+    public static void launch(LivingEntity owner, Vec3 from, Vec3 dir, double height, double range, double speed, float damage, int color,
+                              boolean finisher, boolean terrain, DamageSource source, Predicate<LivingEntity> foe) {
         if (!(owner.m_9236_() instanceof ServerLevel level)) {
             return;
         }
@@ -102,6 +108,10 @@ public final class HakiSlashes {
         slash.dir = length < 1.0E-6 ? StyleCombat.facing(owner) : dir.m_82490_(1.0 / length);
         slash.height = height;
         slash.range = range;
+        slash.speed = Math.max(0.5, speed);
+        slash.thick = SwordRules.slashThickness(height);
+        slash.centre = SwordRules.slashCentre(height);
+        slash.drops = SwordRules.dropChance(height);
         slash.damage = damage;
         slash.color = color;
         slash.finisher = finisher;
@@ -116,7 +126,7 @@ public final class HakiSlashes {
 
     static S2CSlash message(Slash slash, double range) {
         return new S2CSlash(slash.id, slash.start.f_82479_, slash.start.f_82480_, slash.start.f_82481_, (float) slash.dir.f_82479_,
-            (float) slash.dir.f_82480_, (float) slash.dir.f_82481_, (float) slash.height, (float) range, (float) SwordRules.SLASH_SPEED,
+            (float) slash.dir.f_82480_, (float) slash.dir.f_82481_, (float) slash.height, (float) range, (float) slash.speed,
             slash.color, (int) ((slash.level.m_46467_() - slash.age) & 0x3FFFFFFF));
     }
 
@@ -125,7 +135,7 @@ public final class HakiSlashes {
         if (event.phase != TickEvent.Phase.END || ACTIVE.isEmpty()) {
             return;
         }
-        int[] budget = {SwordRules.CUT_CHECKS_PER_TICK * 4, (int) Math.round(PieceConfig.get(PieceConfig.CUT_BREAKS,
+        int[] budget = {SwordRules.CUT_CHECKS_PER_TICK * 4, 4 * (int) Math.round(PieceConfig.get(PieceConfig.CUT_BREAKS,
             SwordRules.CUT_BREAKS_PER_TICK)) * 4};
         Iterator<Slash> it = ACTIVE.iterator();
         while (it.hasNext()) {
@@ -150,7 +160,7 @@ public final class HakiSlashes {
         }
         double before = slash.travelled;
         if (before < slash.range) {
-            slash.travelled = Math.min(slash.range, before + SwordRules.SLASH_SPEED);
+            slash.travelled = Math.min(slash.range, before + slash.speed);
             Vec3 a = slash.start.m_82549_(slash.dir.m_82490_(before));
             Vec3 b = slash.start.m_82549_(slash.dir.m_82490_(slash.travelled));
             hitBodies(slash, a, b);
@@ -162,15 +172,16 @@ public final class HakiSlashes {
             cut(slash, budget);
         }
         boolean flown = slash.travelled >= slash.range;
-        return flown && (slash.pending.isEmpty() || slash.age > slash.range / SwordRules.SLASH_SPEED + LINGER);
+        return flown && (slash.pending.isEmpty() || slash.age > slash.range / slash.speed + LINGER);
     }
 
     /** Everything the plane passed through between a and b, not hit yet. */
     static void hitBodies(Slash slash, Vec3 a, Vec3 b) {
         double half = slash.height / 2.0;
-        double thick = SwordRules.SLASH_THICKNESS / 2.0;
-        AABB area = new AABB(Math.min(a.f_82479_, b.f_82479_), Math.min(a.f_82480_, b.f_82480_) - half, Math.min(a.f_82481_, b.f_82481_),
-            Math.max(a.f_82479_, b.f_82479_), Math.max(a.f_82480_, b.f_82480_) + half, Math.max(a.f_82481_, b.f_82481_)).m_82400_(thick + 0.3);
+        double thick = slash.thick / 2.0;
+        double up = slash.centre;
+        AABB area = new AABB(Math.min(a.f_82479_, b.f_82479_), Math.min(a.f_82480_, b.f_82480_) + up - half, Math.min(a.f_82481_, b.f_82481_),
+            Math.max(a.f_82479_, b.f_82479_), Math.max(a.f_82480_, b.f_82480_) + up + half, Math.max(a.f_82481_, b.f_82481_)).m_82400_(thick + 0.3);
         double length = b.m_82546_(a).m_82553_();
         int samples = Math.max(2, (int) Math.ceil(length / 0.3) + 1);
         for (LivingEntity other : slash.level.m_6443_(LivingEntity.class, area,
@@ -181,7 +192,7 @@ public final class HakiSlashes {
                 Vec3 c = a.m_82549_(b.m_82546_(a).m_82490_(k / (double) (samples - 1)));
                 inside = c.f_82479_ >= body.f_82288_ - thick && c.f_82479_ <= body.f_82291_ + thick
                     && c.f_82481_ >= body.f_82290_ - thick && c.f_82481_ <= body.f_82293_ + thick
-                    && c.f_82480_ + half >= body.f_82289_ && c.f_82480_ - half <= body.f_82292_;
+                    && c.f_82480_ + up + half >= body.f_82289_ && c.f_82480_ + up - half <= body.f_82292_;
             }
             if (!inside) {
                 continue;
@@ -206,16 +217,31 @@ public final class HakiSlashes {
         double length = b.m_82546_(a).m_82553_();
         int samples = Math.max(1, (int) Math.ceil(length / 0.5));
         int rows = slash.blocked.length;
-        double bottom = -slash.height / 2.0;
+        double bottom = slash.centre - slash.height / 2.0;
         double rowHeight = slash.height / rows;
+        // across the plane's thickness: a sample every half block (a thick one cuts a wider gash)
+        double sx = -slash.dir.f_82481_;
+        double sz = slash.dir.f_82479_;
+        double sl = Math.sqrt(sx * sx + sz * sz);
+        if (sl < 1.0E-6) {
+            sx = 1.0;
+            sz = 0.0;
+        } else {
+            sx /= sl;
+            sz /= sl;
+        }
+        int across = Math.max(1, (int) Math.ceil(slash.thick / 0.5));
         for (int k = 1; k <= samples; k++) {
             Vec3 c = a.m_82549_(b.m_82546_(a).m_82490_(k / (double) samples));
             for (int row = 0; row < rows; row++) {
                 double y = c.f_82480_ + bottom + (row + 0.5) * rowHeight;
-                BlockPos pos = BlockPos.m_274561_(c.f_82479_, y, c.f_82481_);
-                long key = pos.m_121878_();
-                if (slash.seen.add(key)) {
-                    slash.pending.add(new long[] {key, row});
+                for (int w = 0; w < across; w++) {
+                    double off = across == 1 ? 0.0 : (w / (double) (across - 1) - 0.5) * slash.thick;
+                    BlockPos pos = BlockPos.m_274561_(c.f_82479_ + sx * off, y, c.f_82481_ + sz * off);
+                    long key = pos.m_121878_();
+                    if (slash.seen.add(key)) {
+                        slash.pending.add(new long[] {key, row});
+                    }
                 }
             }
         }
@@ -257,7 +283,9 @@ public final class HakiSlashes {
                     continue;
                 }
             }
-            if (level.m_46953_(pos, true, slash.owner)) {
+            // a block with a block entity (a chest) always drops (what it holds is never lost); a plain one by the explosion rule
+            boolean drop = state.m_155947_() || java.util.concurrent.ThreadLocalRandom.current().nextDouble() < slash.drops;
+            if (level.m_46953_(pos, drop, slash.owner)) {
                 breaks--;
                 budget[1]--;
             }

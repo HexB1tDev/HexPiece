@@ -5,6 +5,7 @@ public abstract class BlockBehaviour {
     public abstract static class BlockStateBase {
         /** randomTick(level, pos, random) (1.3.29: a watered crop may grow a step) */ public void m_222972_(net.minecraft.server.level.ServerLevel level, net.minecraft.core.BlockPos pos, net.minecraft.util.RandomSource random) { throw new UnsupportedOperationException(); }
         /** isAir */ public boolean m_60795_() { throw new UnsupportedOperationException(); }
+        /** hasBlockEntity (2.2.0: a container the Haki slash cuts always drops what it holds) */ public boolean m_155947_() { throw new UnsupportedOperationException(); }
         /** getDestroySpeed(level, pos) */ public float m_60800_(net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos) { throw new UnsupportedOperationException(); }
         /** is(tag) */ public boolean m_204336_(net.minecraft.tags.TagKey<net.minecraft.world.level.block.Block> tag) { throw new UnsupportedOperationException(); }
         /** requiresCorrectToolForDrops */ public boolean m_60834_() { throw new UnsupportedOperationException(); }

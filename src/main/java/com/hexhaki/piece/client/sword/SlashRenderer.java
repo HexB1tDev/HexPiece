@@ -6,6 +6,7 @@ import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.DrawCrackle;
 import com.hexhaki.piece.haki.RyouPalette;
 import com.hexhaki.piece.network.S2CSlash;
+import com.hexhaki.piece.sword.SwordRules;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
@@ -83,7 +84,7 @@ public final class SlashRenderer {
             }
             if (d < slash.range()) {
                 // flecks of its colour shed along the way
-                Vec3 at = point(slash, d);
+                Vec3 at = middle(slash, d);
                 int tint = color(slash) | 0xFF000000;
                 for (int i = 0; i < PieceFx.count(3); i++) {
                     double up = (RANDOM.nextDouble() - 0.5) * slash.height();
@@ -96,6 +97,11 @@ public final class SlashRenderer {
 
     static Vec3 point(S2CSlash slash, double along) {
         return new Vec3(slash.x() + slash.dx() * along, slash.y() + slash.dy() * along, slash.z() + slash.dz() * along);
+    }
+
+    /** 2.2.0: the middle of the slash's plane at {@code along}: standing up from under its owner's feet, as the server's (SwordRules). */
+    static Vec3 middle(S2CSlash slash, double along) {
+        return point(slash, along).m_82520_(0.0, SwordRules.slashCentre(slash.height()), 0.0);
     }
 
     @SubscribeEvent
@@ -172,7 +178,7 @@ public final class SlashRenderer {
             Vec3 dir = new Vec3(slash.dx(), 0.0, slash.dz());
             dir = dir.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : dir.m_82541_();
             Vec3 side = new Vec3(-dir.f_82481_, 0.0, dir.f_82479_);
-            Vec3 centre = point(slash, d);
+            Vec3 centre = middle(slash, d);
             double half = slash.height() / 2.0;
             double bow = slash.height() * 0.2;
             double k = slash.height() / BLADE;
@@ -220,18 +226,24 @@ public final class SlashRenderer {
         Vec3 dir = new Vec3(slash.dx(), slash.dy(), slash.dz());
         Vec3 side = new Vec3(-dir.f_82481_, 0.0, dir.f_82479_);
         side = side.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : side.m_82541_();
-        Vec3 centre = point(slash, along);
+        Vec3 centre = middle(slash, along);
         double half = slash.height() / 2.0;
         double bow = slash.height() * 0.2;
+        // 2.2.0: the band widens with the slash's height (a 64-block slash is a bold crescent, not a wire)
+        thickness *= Math.max(SwordRules.slashThickness(slash.height()) / SwordRules.SLASH_THICKNESS, slash.height() * 0.12);
         float r = ((color >> 16) & 255) / 255.0F * strength;
         float g = ((color >> 8) & 255) / 255.0F * strength;
         float b = (color & 255) / 255.0F * strength;
         float alpha = color == 0 ? strength : 1.0F;
-        for (int i = 0; i < SEGMENTS; i++) {
-            double u0 = i / (double) SEGMENTS;
-            double u1 = (i + 1) / (double) SEGMENTS;
-            Vec3[] q = {edge(centre, dir, side, half, bow, thickness, grow, u0, 1), edge(centre, dir, side, half, bow, thickness, grow, u1, 1),
-                edge(centre, dir, side, half, bow, thickness, grow, u1, -1), edge(centre, dir, side, half, bow, thickness, grow, u0, -1)};
+        // two bands: the crescent in the plane of its flight, and (2.2.0) one across it a little narrower, so seen from behind or ahead it
+        // is a tall blade of light, not an edge-on line
+        for (int i = 0; i < SEGMENTS * 2; i++) {
+            boolean across = i >= SEGMENTS;
+            double u0 = (i % SEGMENTS) / (double) SEGMENTS;
+            double u1 = (i % SEGMENTS + 1) / (double) SEGMENTS;
+            double t = across ? thickness * 0.6 : thickness;
+            Vec3[] q = {edge(centre, dir, side, half, bow, t, grow, u0, 1, across), edge(centre, dir, side, half, bow, t, grow, u1, 1, across),
+                edge(centre, dir, side, half, bow, t, grow, u1, -1, across), edge(centre, dir, side, half, bow, t, grow, u0, -1, across)};
             for (int face = 0; face < 2; face++) {
                 for (int k = 0; k < 4; k++) {
                     Vec3 p = q[face == 0 ? k : 3 - k];
@@ -250,15 +262,19 @@ public final class SlashRenderer {
         }
     }
 
-    /** A point of the crescent's band: u 0 the bottom tip, 1 the top; s +1 the front (convex) edge, -1 the back. */
-    static Vec3 edge(Vec3 centre, Vec3 dir, Vec3 side, double half, double bow, double thickness, double grow, double u, int s) {
+    /**
+     * A point of the crescent's band: u 0 the bottom tip, 1 the top; s +1 one edge, -1 the other: the front (convex) and back edges of the
+     * band in the flight's plane, or (across) its two sides.
+     */
+    static Vec3 edge(Vec3 centre, Vec3 dir, Vec3 side, double half, double bow, double thickness, double grow, double u, int s, boolean across) {
         double a = (u - 0.5) * 2.0;
         double y = a * (half + grow);
         double forward = bow * (1.0 - a * a);
         double width = (thickness * 0.5 * (1.0 - a * a * 0.85) + grow) * s;
         Vec3 flat = new Vec3(dir.f_82479_, 0.0, dir.f_82481_);
         flat = flat.m_82556_() < 1.0E-6 ? dir : flat.m_82541_();
-        return centre.m_82520_(0.0, y, 0.0).m_82549_(flat.m_82490_(forward + width));
+        Vec3 spine = centre.m_82520_(0.0, y, 0.0).m_82549_(flat.m_82490_(forward));
+        return across ? spine.m_82549_(side.m_82490_(width)) : spine.m_82549_(flat.m_82490_(width));
     }
 
     @SubscribeEvent

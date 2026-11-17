@@ -43,20 +43,21 @@ public final class PieceConfig {
             .defineInRange("cutReachMin", SwordRules.CUT_REACH_MIN, 0, 8);
         CUT_REACH_MAX = b.comment("... full charge.").defineInRange("cutReachMax", SwordRules.CUT_REACH_MAX, 0, 8);
         CUT_COOLDOWN = b.comment("Ticks before the next charged cut.").defineInRange("cutCooldown", SwordRules.CUT_COOLDOWN, 0, 1200);
-        SLASH_HEIGHT_MIN = b.comment("The Haki slash: its height (blocks) at the least charge.").defineInRange("slashHeightMin",
-            SwordRules.SLASH_HEIGHT_MIN, 0.5, 32);
-        SLASH_HEIGHT_MAX = b.comment("... at the full charge.").defineInRange("slashHeightMax", SwordRules.SLASH_HEIGHT_MAX, 0.5, 32);
-        SLASH_RANGE_MIN = b.comment("How far it travels (blocks), least charge.").defineInRange("slashRangeMin", SwordRules.SLASH_RANGE_MIN,
-            2, 128);
-        SLASH_RANGE_MAX = b.comment("... full charge.").defineInRange("slashRangeMax", SwordRules.SLASH_RANGE_MAX, 2, 128);
-        SLASH_DAMAGE_MIN = b.comment("Its damage, least charge.").defineInRange("slashDamageMin", SwordRules.SLASH_DAMAGE_MIN, 0, 400);
-        SLASH_DAMAGE_MAX = b.comment("... full charge.").defineInRange("slashDamageMax", SwordRules.SLASH_DAMAGE_MAX, 0, 400);
+        // 2.2.0: the slash's size and damage under new keys, so a world's saved 2.1.x values (a 6-block slash) give way to the new defaults
+        SLASH_HEIGHT_MIN = b.comment("The Haki slash: its height (blocks) at the least charge.").defineInRange("slashHeightLeast",
+            SwordRules.SLASH_HEIGHT_MIN, 0.5, 256);
+        SLASH_HEIGHT_MAX = b.comment("... at the full charge.").defineInRange("slashHeightFull", SwordRules.SLASH_HEIGHT_MAX, 0.5, 256);
+        SLASH_RANGE_MIN = b.comment("How far it travels (blocks), least charge.").defineInRange("slashRangeLeast", SwordRules.SLASH_RANGE_MIN,
+            2, 1024);
+        SLASH_RANGE_MAX = b.comment("... full charge.").defineInRange("slashRangeFull", SwordRules.SLASH_RANGE_MAX, 2, 1024);
+        SLASH_DAMAGE_MIN = b.comment("Its damage, least charge.").defineInRange("slashDamageLeast", SwordRules.SLASH_DAMAGE_MIN, 0, 400);
+        SLASH_DAMAGE_MAX = b.comment("... full charge.").defineInRange("slashDamageFull", SwordRules.SLASH_DAMAGE_MAX, 0, 400);
         SLASH_COST_MIN = b.comment("The Haki energy it costs, least charge.").defineInRange("slashCostMin", SwordRules.SLASH_COST_MIN, 0,
             1000);
         SLASH_COST_MAX = b.comment("... full charge.").defineInRange("slashCostMax", SwordRules.SLASH_COST_MAX, 0, 1000);
         SLASH_COOLDOWN = b.comment("Ticks before the next Haki slash.").defineInRange("slashCooldown", SwordRules.SLASH_COOLDOWN, 0, 2400);
-        CUT_BREAKS = b.comment("Blocks one slash may cut a tick (each looks at six times as many).").defineInRange("cutBlocksPerTick",
-            SwordRules.CUT_BREAKS_PER_TICK, 0, 512);
+        CUT_BREAKS = b.comment("Blocks one slash may cut a tick (each looks at ten times as many).").defineInRange("cutBlocksATick",
+            SwordRules.CUT_BREAKS_PER_TICK, 0, 4096);
         SHEATHE_DELAY = b.comment("Ticks without a cut before the sword is sheathed.").defineInRange("sheatheDelay",
             SwordRules.SHEATHE_DELAY, 2, 200);
         TERRAIN = b.comment("Whether the Haki slash cuts terrain at all (pirates also follow the mobGriefing rule).")

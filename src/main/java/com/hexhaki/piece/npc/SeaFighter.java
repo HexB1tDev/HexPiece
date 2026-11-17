@@ -485,8 +485,8 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
                     Vec3 aim = this.foe == null ? StyleCombat.facing(this) : this.foe.m_146892_().m_82546_(this.m_146892_()).m_82541_();
                     double c = this.releaseCharge;
                     HakiSlashes.launch(this, this.m_146892_().m_82549_(aim.m_82490_(0.6)), aim,
-                        SwordRules.lerp(SwordRules.SLASH_HEIGHT_MIN, SwordRules.SLASH_HEIGHT_MAX, c),
-                        SwordRules.lerp(SwordRules.SLASH_RANGE_MIN, SwordRules.SLASH_RANGE_MAX, c),
+                        SwordRules.lerp(SwordRules.SLASH_HEIGHT_MIN, SwordRules.NPC_SLASH_HEIGHT_MAX, c),
+                        SwordRules.lerp(SwordRules.SLASH_RANGE_MIN, SwordRules.NPC_SLASH_RANGE_MAX, c), SwordRules.SLASH_SPEED,
                         (float) (SwordRules.lerp(SwordRules.SLASH_DAMAGE_MIN, SwordRules.SLASH_DAMAGE_MAX, c) * edge * 0.75), 0, false,
                         PieceConfig.get(PieceConfig.TERRAIN, true), source, this::foe);
                     StyleCombat.sound(this, "fx.whoosh_heavy", 1.0F);

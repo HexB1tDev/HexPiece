@@ -526,15 +526,18 @@ public final class SwordServer {
         double charge = state.releaseCharge;
         if (state.releaseHaki) {
             if (tick == 2) {
+                // 2.2.0: the size grows with the charge squared: a half charge is a big slash, only a full one splits the land
+                double grow = charge * charge;
                 double height = SwordRules.lerp(PieceConfig.get(PieceConfig.SLASH_HEIGHT_MIN, SwordRules.SLASH_HEIGHT_MIN),
-                    PieceConfig.get(PieceConfig.SLASH_HEIGHT_MAX, SwordRules.SLASH_HEIGHT_MAX), charge);
+                    PieceConfig.get(PieceConfig.SLASH_HEIGHT_MAX, SwordRules.SLASH_HEIGHT_MAX), grow);
                 double range = SwordRules.lerp(PieceConfig.get(PieceConfig.SLASH_RANGE_MIN, SwordRules.SLASH_RANGE_MIN),
-                    PieceConfig.get(PieceConfig.SLASH_RANGE_MAX, SwordRules.SLASH_RANGE_MAX), charge);
+                    PieceConfig.get(PieceConfig.SLASH_RANGE_MAX, SwordRules.SLASH_RANGE_MAX), grow);
+                double speed = SwordRules.lerp(SwordRules.SLASH_SPEED, SwordRules.SLASH_SPEED_MAX, charge);
                 double damage = SwordRules.lerp(PieceConfig.get(PieceConfig.SLASH_DAMAGE_MIN, SwordRules.SLASH_DAMAGE_MIN),
                     PieceConfig.get(PieceConfig.SLASH_DAMAGE_MAX, SwordRules.SLASH_DAMAGE_MAX), charge)
                     * edge(state) * PieceRules.masteryDamage(mastery(player));
                 Vec3 from = player.m_146892_().m_82549_(state.aim.m_82490_(0.6));
-                HakiSlashes.launch(player, from, state.aim, height, range, (float) damage, state.releaseColor, state.releaseRyou,
+                HakiSlashes.launch(player, from, state.aim, height, range, speed, (float) damage, state.releaseColor, state.releaseRyou,
                     PieceConfig.get(PieceConfig.TERRAIN, true), StyleCombat.of(player), other -> FruitUtil.foe(player, other));
                 StyleCombat.sound(player, "fx.whoosh_heavy", 1.0F);
                 gain(player, Hit.Weight.FINISHER, 1);
