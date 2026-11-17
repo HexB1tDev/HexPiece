@@ -148,13 +148,69 @@ def textures(zip_path):
 
 # 2.1.4: levels of detail for a katana seen from afar (vertex clustering per part, hard edges kept by bucketing the normals; the owner's
 # full mesh is untouched and drawn whenever it is close): cell size (model px; the blade's half of it), normal buckets per axis
-LODS = {"mid": (0.6, 1.0), "far": (1.0, 0.8)}
+LODS = {"mid": (0.22, 1.0), "far": (0.36, 0.8)}
+
+
+def outer_only(vertices, quads, groups):
+    """The mesh without the hollow saya's inner wall (faces of a "hollow" part whose normal points back toward the tube's middle, found
+    per slice along it): nothing shows it from a distance, and merged with the outer wall a few tenths of a pixel away it would fight
+    it for the depth (dark specks over the saya)."""
+    out_q, out_g = [], []
+    for name, first, count in groups:
+        start = len(out_q)
+        part = quads[first:first + count]
+        if "hollow" not in name:
+            out_q.extend(part)
+            out_g.append((name, start, len(part)))
+            continue
+        slices = {}
+        for quad in part:
+            for vi in quad:
+                x, y, z = vertices[vi][:3]
+                acc = slices.setdefault(round(y / 0.5), [0.0, 0.0, 0])
+                acc[0] += x
+                acc[1] += z
+                acc[2] += 1
+        for quad in part:
+            cx = sum(vertices[vi][0] for vi in quad) / len(quad)
+            cy = sum(vertices[vi][1] for vi in quad) / len(quad)
+            cz = sum(vertices[vi][2] for vi in quad) / len(quad)
+            nx = sum(vertices[vi][5] for vi in quad)
+            nz = sum(vertices[vi][7] for vi in quad)
+            acc = slices.get(round(cy / 0.5))
+            if acc is not None and acc[2]:
+                ox = cx - acc[0] / acc[2]
+                oz = cz - acc[1] / acc[2]
+                if nx * ox + nz * oz < 0.0:
+                    continue  # it faces into the tube: the inner wall
+            out_q.append(quad)
+        out_g.append((name, start, len(out_q) - start))
+    return out_q, out_g
 
 
 def simplify(vertices, quads, groups, cell, buckets):
-    """The mesh with every part's vertices merged per grid cell and normal bucket (positions, uvs and normals averaged); faces that
-    collapse are dropped, duplicates removed; the parts keep their names and order."""
+    """The mesh with every part's vertices merged per grid cell; faces that collapse are dropped, duplicates removed; the parts keep
+    their names and order.
+
+    2.1.9 (the owner: "some holsters are seethrough"): every vertex of a cell takes the SAME position (the cell's average over all its
+    vertices), so the surface stays closed. Before, vertices were merged per cell and normal bucket, each bucket averaging its own
+    position, and on a smooth curved saya the buckets' averages drifted apart: slits opened along the tube where the normal crossed a
+    bucket's edge, and the saya's inside and the world behind showed through them. The normal bucket still keeps apart what faces
+    opposite ways (the saya's inner and outer walls, a few tenths of a pixel apart) for their normals and uvs."""
     import math
+    quads, groups = outer_only(vertices, quads, groups)
+    positions = {}
+    for name, first, count in groups:
+        size = cell * (0.5 if name.startswith("01_Blade") else 1.0)
+        for quad in quads[first:first + count]:
+            for vi in quad:
+                x, y, z = vertices[vi][:3]
+                key = (name, round(x / size), round(y / size), round(z / size))
+                acc = positions.setdefault(key, [0.0, 0.0, 0.0, 0])
+                acc[0] += x
+                acc[1] += y
+                acc[2] += z
+                acc[3] += 1
     out_v, index, out_q, out_g = [], {}, [], []
     seen = set()
     for name, first, count in groups:
@@ -162,18 +218,27 @@ def simplify(vertices, quads, groups, cell, buckets):
         size = cell * (0.5 if name.startswith("01_Blade") else 1.0)
         for quad in quads[first:first + count]:
             ids = []
+            cells = []
             for vi in quad:
                 x, y, z, u, v, nx, ny, nz = vertices[vi]
-                key = (name, round(x / size), round(y / size), round(z / size), round(nx * buckets), round(ny * buckets), round(nz * buckets))
+                where = (name, round(x / size), round(y / size), round(z / size))
+                key = where + (round(nx * buckets), round(ny * buckets), round(nz * buckets))
                 if key not in index:
                     index[key] = len(out_v)
-                    out_v.append([0.0] * 9)
+                    out_v.append([where, 0.0, 0.0, 0.0, 0.0, 0.0, 0])
                 k = index[key]
                 acc = out_v[k]
-                for i in range(8):
-                    acc[i] += vertices[vi][i]
-                acc[8] += 1
+                acc[1] += u
+                acc[2] += v
+                acc[3] += nx
+                acc[4] += ny
+                acc[5] += nz
+                acc[6] += 1
                 ids.append(k)
+                cells.append(where)
+            # a face whose corners fall in fewer than three cells has collapsed (its corners now share positions)
+            if len(set(cells)) < 3:
+                continue
             uniq = list(dict.fromkeys(ids))
             if len(uniq) < 3:
                 continue
@@ -184,11 +249,11 @@ def simplify(vertices, quads, groups, cell, buckets):
             out_q.append(tuple(uniq) if len(uniq) == 4 else (uniq[0], uniq[1], uniq[2], uniq[2]))
         out_g.append((name, start, len(out_q) - start))
     verts = []
-    for acc in out_v:
-        n = acc[8] or 1.0
-        x, y, z, u, v, nx, ny, nz = [a / n for a in acc[:8]]
+    for where, u, v, nx, ny, nz, n in out_v:
+        p = positions[where]
+        n = n or 1.0
         length = math.sqrt(nx * nx + ny * ny + nz * nz) or 1.0
-        verts.append((x, y, z, u, v, nx / length, ny / length, nz / length))
+        verts.append((p[0] / p[3], p[1] / p[3], p[2] / p[3], u / n, v / n, nx / length, ny / length, nz / length))
     return verts, out_q, out_g
 
 

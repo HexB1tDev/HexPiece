@@ -117,7 +117,8 @@ public final class SlashRenderer {
     static void draw(PoseStack pose, Vec3 cam, ClientLevel level, float partial) {
         MultiBufferSource.BufferSource buffers = Minecraft.m_91087_().m_91269_().m_110104_();
         RenderType dark = RenderType.m_110470_(SwordFx.WHITE_TEXTURE);
-        RenderType light = RenderType.m_110488_(SwordFx.WHITE_TEXTURE);
+        // 2.1.9: the light alpha blended, not additive (some setups draw additive geometry opaque)
+        RenderType light = RenderType.m_269166_();
         pose.m_85836_();
         pose.m_252880_((float) -cam.f_82479_, (float) -cam.f_82480_, (float) -cam.f_82481_);
         Matrix4f matrix = pose.m_85850_().m_252922_();
@@ -126,7 +127,7 @@ public final class SlashRenderer {
         for (S2CSlash slash : FLYING.values()) {
             double d = flown(slash, level, partial);
             if (d >= 0 && d < slash.range()) {
-                crescent(core, matrix, normal, slash, d, 0.0, 0x000000, 0.86F, 0.55);
+                crescent(core, matrix, normal, slash, d, 0.0, 0x000000, 0.86F, 0.55, false);
             }
         }
         buffers.m_109912_(dark);
@@ -139,13 +140,13 @@ public final class SlashRenderer {
             int color = color(slash);
             double fade = d >= slash.range() ? Math.max(0.0, 1.0 - (flown(slash, level, partial) - slash.range()) / (slash.speed() * 3.0)) : 1.0;
             if (d < slash.range()) {
-                crescent(glow, matrix, normal, slash, d, 0.12, color, 1.0F, 0.85);
-                crescent(glow, matrix, normal, slash, d, 0.32, color, 0.35F, 0.9);
+                crescent(glow, matrix, normal, slash, d, 0.12, color, 0.95F, 0.85, true);
+                crescent(glow, matrix, normal, slash, d, 0.32, color, 0.35F, 0.9, true);
             }
             for (int ghost = 1; ghost <= 3; ghost++) {
                 double back = d - ghost * slash.speed() * 0.45;
                 if (back > 0) {
-                    crescent(glow, matrix, normal, slash, Math.min(back, slash.range()), 0.1, color, (float) (0.5 / ghost * fade), 0.8);
+                    crescent(glow, matrix, normal, slash, Math.min(back, slash.range()), 0.1, color, (float) (0.5 / ghost * fade), 0.8, true);
                 }
             }
         }
@@ -215,7 +216,7 @@ public final class SlashRenderer {
      * {@code thickness} blocks thick plus {@code grow} each side, in {@code color} at {@code strength}; both faces.
      */
     static void crescent(VertexConsumer buffer, Matrix4f matrix, Matrix3f normal, S2CSlash slash, double along, double grow, int color, float strength,
-                         double thickness) {
+                         double thickness, boolean plain) {
         Vec3 dir = new Vec3(slash.dx(), slash.dy(), slash.dz());
         Vec3 side = new Vec3(-dir.f_82481_, 0.0, dir.f_82479_);
         side = side.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : side.m_82541_();
@@ -234,6 +235,13 @@ public final class SlashRenderer {
             for (int face = 0; face < 2; face++) {
                 for (int k = 0; k < 4; k++) {
                     Vec3 p = q[face == 0 ? k : 3 - k];
+                    if (plain) {
+                        // light: its hue at full brightness, as opaque as it is strong
+                        buffer.m_252986_(matrix, (float) p.f_82479_, (float) p.f_82480_, (float) p.f_82481_)
+                            .m_85950_(((color >> 16) & 255) / 255.0F, ((color >> 8) & 255) / 255.0F, (color & 255) / 255.0F, Math.min(0.9F, strength))
+                            .m_5752_();
+                        continue;
+                    }
                     buffer.m_252986_(matrix, (float) p.f_82479_, (float) p.f_82480_, (float) p.f_82481_).m_85950_(r, g, b, alpha).m_7421_(0.5F, 0.5F)
                         .m_86008_(OverlayTexture.f_118083_).m_85969_(0xF000F0).m_252939_(normal, (float) side.f_82479_, 0.0F,
                             (float) side.f_82481_).m_5752_();

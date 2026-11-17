@@ -3,8 +3,8 @@
 
 The same geometry as client/haki/RyouHands.java: the arm box bent as bendy-lib bends it (BodyFrame.bend, HexGhoul's verified port), a
 hull grown RIM pixels (and three halo hulls) round the hand (the lowest 3.5 pixels of the arm and the fist end), wound inward and drawn with back faces
-culled, depth tested against the arm (which writes depth), additive: what RenderType.eyes does in game. The coated arm is drawn near
-black (the original's Armament coating), the hand pure black. A z-buffer rasteriser (numpy), orthographic.
+culled, depth tested against the arm (which writes depth), additive. 2.1.9: only the hand is coated black (fading in over the wrist),
+the arm is its own sleeve and skin. A z-buffer rasteriser (numpy), orthographic.
 
 Usage: python3 tools/ryou_preview.py out.png
 """
@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw
 
 PX = 1.0 / 16.0
 WRIST, LIT, FIST = 6.5, 7.7, 10.0          # pixels below the shoulder pivot
+COAT_TOP = 5.4                             # 2.1.9: where the hand's black coat begins to fade in up the wrist
 RIM = 0.55                                 # pixels
 HALOS = ((1.0, 0.13), (1.45, 0.08), (1.9, 0.05))  # pixels, strength (they add up)
 DARK = 0.85
@@ -145,8 +146,11 @@ def draw_arm(canvas, view, place, bend_axis, bend, slim, right, color, pulse=1.0
         w = view @ (place @ np.array(n, float))
         return 0.55 + 0.45 * max(0.0, -w[2])
 
-    # the arm: the coated upper part (near black) and the black hand, each face split at the elbow seam and the wrist
-    for y0, y1, base in ((-2, 4, (0.13, 0.12, 0.14)), (4, WRIST, (0.13, 0.12, 0.14)), (WRIST, 10, (0.02, 0.02, 0.025))):
+    # 2.1.9: the arm in its own sleeve and skin; the coat is black over the hand only (the owner: "The whole arm is black instead of just
+    # the hands"), fading in over the wrist from COAT_TOP
+    sleeve, skin, coat = (0.86, 0.84, 0.78), (0.82, 0.62, 0.5), (0.07, 0.07, 0.09)
+    fade = tuple(0.5 * (a + b) for a, b in zip(skin, coat))
+    for y0, y1, base in ((-2, 4, sleeve), (4, COAT_TOP, skin), (COAT_TOP, WRIST, fade), (WRIST, 10, coat)):
         for pts, n in box_faces(min_x, max_x, y0, y1, -2, 2):
             pts, n = oriented((pts, n))
             sp = [project(p) for p in pts]

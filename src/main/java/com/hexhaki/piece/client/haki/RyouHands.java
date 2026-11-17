@@ -1,6 +1,5 @@
 package com.hexhaki.piece.client.haki;
 
-import com.hexhaki.client.devilfruit.render.GearJacketHaki;
 import com.hexhaki.client.render.HakiHandLayer;
 import com.hexhaki.piece.haki.ArmBend;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -45,6 +44,9 @@ public final class RyouHands {
     static final float LIT = 7.7F * PX;
     static final float FIST = 10.0F * PX;
     static final float RIM = 0.55F * PX;
+    /** The coat: just outside the hand and the sleeve's outer layer (a quarter pixel out), and where its fade up the wrist begins. */
+    static final float COAT = 0.35F * PX;
+    static final float COAT_TOP = 5.4F * PX;
     /**
      * The halo: three hulls ever wider and fainter; their light adds up (no depth is written), so it falls off in steps from the rim
      * outward instead of standing round the hand as one flat band.
@@ -58,10 +60,65 @@ public final class RyouHands {
     private RyouHands() {
     }
 
-    /** The coating, always the plain black one (the original tinted it brown-red under Advanced Haki). */
+    /**
+     * The coating: black, over the HAND only (2.1.9, the owner: "The whole arm is black instead of just the hands"; the original's coating
+     * covered the whole arm). A shell a little outside the hand and the sleeve's outer layer, from the wrist to the end of the fist, its
+     * top fading out up the wrist so it never ends in a hard line; bent with the elbow as the arm is.
+     */
     public static void coating(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
                                AbstractClientPlayer player, boolean right) {
-        GearJacketHaki.renderCoating(pose, buffers, light, arm, mastery, false, player, right);
+        if (!arm.f_104207_) {
+            return;
+        }
+        boolean slim = "slim".equals(player.m_108564_());
+        float[] bend = bend(player, right);
+        pose.m_85836_();
+        arm.m_104299_(pose);
+        PoseStack.Pose last = pose.m_85850_();
+        float half = slim ? 1.5F * PX : 2.0F * PX;
+        float centre = (slim ? 0.5F : 1.0F) * PX * (right ? -1.0F : 1.0F);
+        float[] box = {centre / PX - half / PX, centre / PX + half / PX};
+        VertexConsumer buffer = buffers.m_6299_(RenderType.m_110470_(WHITE));
+        float grow = COAT;
+        float x0 = centre - half - grow;
+        float x1 = centre + half + grow;
+        float z0 = -2.0F * PX - grow;
+        float z1 = 2.0F * PX + grow;
+        float y1 = FIST + grow;
+        float[][] corners = {{x0, z0}, {x1, z0}, {x1, z1}, {x0, z1}};
+        float[][] normals = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+        for (int side = 0; side < 4; side++) {
+            float[] a = corners[side];
+            float[] b = corners[(side + 1) % 4];
+            float nx = normals[side][0];
+            float nz = normals[side][1];
+            float[][] fade = {{a[0], COAT_TOP, a[1]}, {b[0], COAT_TOP, b[1]}, {b[0], WRIST, b[1]}, {a[0], WRIST, a[1]}};
+            coat(last, buffer, bend, box, fade, new float[] {0, 0, 1, 1}, nx, 0, nz, light);
+            float[][] hand = {{a[0], WRIST, a[1]}, {b[0], WRIST, b[1]}, {b[0], y1, b[1]}, {a[0], y1, a[1]}};
+            coat(last, buffer, bend, box, hand, new float[] {1, 1, 1, 1}, nx, 0, nz, light);
+        }
+        float[][] end = {{x0, y1, z0}, {x1, y1, z0}, {x1, y1, z1}, {x0, y1, z1}};
+        coat(last, buffer, bend, box, end, new float[] {1, 1, 1, 1}, 0, 1, 0, light);
+        pose.m_85849_();
+    }
+
+    /** A face of the coat, wound to face OUT (seen from outside the hand), black, as opaque as {@code cover} at each corner. */
+    static void coat(PoseStack.Pose pose, VertexConsumer buffer, float[] bend, float[] box, float[][] points, float[] cover, float nx, float ny, float nz,
+                     int light) {
+        float[] e1 = {points[1][0] - points[0][0], points[1][1] - points[0][1], points[1][2] - points[0][2]};
+        float[] e2 = {points[2][0] - points[0][0], points[2][1] - points[0][1], points[2][2] - points[0][2]};
+        float cx = e1[1] * e2[2] - e1[2] * e2[1];
+        float cy = e1[2] * e2[0] - e1[0] * e2[2];
+        float cz = e1[0] * e2[1] - e1[1] * e2[0];
+        boolean outward = cx * nx + cy * ny + cz * nz > 0;
+        Matrix4f matrix = pose.m_252922_();
+        Matrix3f normal = pose.m_252943_();
+        for (int i = 0; i < 4; i++) {
+            int k = outward ? i : 3 - i;
+            float[] p = bent(bend, box[0], box[1], points[k][0], points[k][1], points[k][2]);
+            buffer.m_252986_(matrix, p[0], p[1], p[2]).m_85950_(0.07F, 0.07F, 0.09F, 0.97F * cover[k]).m_7421_(0.5F, 0.5F)
+                .m_86008_(OverlayTexture.f_118083_).m_85969_(light).m_252939_(normal, nx, ny, nz).m_5752_();
+        }
     }
 
     /** The original's arm aura, but not while Ryou is up: Ryou is the hands, not a glow over the arms. */
@@ -95,7 +152,8 @@ public final class RyouHands {
         // first the rim's dark band (alpha blended: black stays black under any light), then its light added over it, then the halo:
         // the band keeps the colour itself on a bright sky, where light added alone would wash out to white
         shell(last, buffers.m_6299_(RenderType.m_110470_(WHITE)), bend, box, centre, half, RIM, 0, DARK * pulse);
-        VertexConsumer light = buffers.m_6299_(RenderType.m_110488_(WHITE));
+        // 2.1.9: the light alpha blended, not additive (some setups draw additive geometry opaque: dark boxes round the hands)
+        VertexConsumer light = buffers.m_6299_(RenderType.m_269166_());
         shell(last, light, bend, box, centre, half, RIM, color, pulse);
         for (int i = 0; i < HALOS.length; i++) {
             shell(last, light, bend, box, centre, half, HALOS[i], color, pulse * HALO_STRENGTHS[i]);
@@ -177,10 +235,13 @@ public final class RyouHands {
             int k = outward ? 3 - i : i;
             float[] p = bent(bend, box[0], box[1], points[k][0], points[k][1], points[k][2]);
             float light = Math.min(1.0F, strength * lit[k]);
-            // a colour of 0 is the dark band: black, its strength the alpha; otherwise light, its strength the brightness
-            float alpha = color == 0 ? light : 1.0F;
-            float shade = color == 0 ? 0.0F : light;
-            buffer.m_252986_(matrix, p[0], p[1], p[2]).m_85950_(r * shade, g * shade, bl * shade, alpha).m_7421_(k == 1 || k == 2 ? 1 : 0,
+            if (color != 0) {
+                // the light: its colour at full brightness, as opaque as it is strong (position and colour only: debugQuads)
+                buffer.m_252986_(matrix, p[0], p[1], p[2]).m_85950_(r, g, bl, Math.min(0.95F, light)).m_5752_();
+                continue;
+            }
+            // the dark band: black, its strength the alpha
+            buffer.m_252986_(matrix, p[0], p[1], p[2]).m_85950_(0.0F, 0.0F, 0.0F, light).m_7421_(k == 1 || k == 2 ? 1 : 0,
                 k >= 2 ? 1 : 0).m_86008_(OverlayTexture.f_118083_).m_85969_(FULL_BRIGHT).m_252939_(normal, -nx, -ny, -nz).m_5752_();
         }
     }

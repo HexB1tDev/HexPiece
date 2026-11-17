@@ -180,7 +180,9 @@ public final class SwordFx {
     static void drawTrails(PoseStack pose, Vec3 cam) {
         double now = System.nanoTime() / 1.0E9;
         MultiBufferSource.BufferSource buffers = Minecraft.m_91087_().m_91269_().m_110104_();
-        RenderType type = RenderType.m_110488_(WHITE_TEXTURE);
+        // 2.1.9 (the owner: "sword swings are black"): alpha blended, not additive: some setups draw additive "eyes" geometry opaque,
+        // and the trail's dim additive steel came out as a dark sheet; a pale streak whose opacity is its strength reads the same anywhere
+        RenderType type = RenderType.m_269166_();
         VertexConsumer buffer = buffers.m_6299_(type);
         pose.m_85836_();
         pose.m_252880_((float) -cam.f_82479_, (float) -cam.f_82480_, (float) -cam.f_82481_);
@@ -212,7 +214,7 @@ public final class SwordFx {
         buffers.m_109912_(type);
     }
 
-    /** One stretch of the ribbon, both faces (additive: its brightness is its strength). */
+    /** One stretch of the ribbon, both faces: pale steel, as opaque as its strength (strongest along the edge, fading behind). */
     static void ribbon(VertexConsumer buffer, Matrix4f matrix, Matrix3f normal, double[] p, double[] q, float a0, float a1) {
         float r = ((STEEL >> 16) & 255) / 255.0F;
         float g = ((STEEL >> 8) & 255) / 255.0F;
@@ -221,9 +223,7 @@ public final class SwordFx {
         for (int side = 0; side < 2; side++) {
             for (int k = 0; k < 4; k++) {
                 double[] c = corners[side == 0 ? k : 3 - k];
-                float s = (float) c[3];
-                buffer.m_252986_(matrix, (float) c[0], (float) c[1], (float) c[2]).m_85950_(r * s, g * s, bl * s, 1.0F).m_7421_(0.5F, 0.5F)
-                    .m_86008_(OverlayTexture.f_118083_).m_85969_(0xF000F0).m_252939_(normal, 0.0F, 1.0F, 0.0F).m_5752_();
+                buffer.m_252986_(matrix, (float) c[0], (float) c[1], (float) c[2]).m_85950_(r, g, bl, (float) Math.min(0.8, c[3] * 1.3)).m_5752_();
             }
         }
     }

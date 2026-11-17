@@ -95,7 +95,8 @@ public final class KatanaRenderer {
         if (bladeMesh != null) {
             quads(last, solid, bladeMesh, 0, bladeMesh.quadCount(), light);
             if (shine > 0.0F && bladeMesh.bladeCount > 0) {
-                highlight(last, buffers.m_6299_(RenderType.m_110488_(WHITE)), bladeMesh, shine);
+                // 2.1.9: alpha blended (some setups draw additive geometry opaque: the owner saw the sword's light as dark)
+                highlight(last, buffers.m_6299_(RenderType.m_269166_()), bladeMesh, shine);
             }
         }
         pose.m_85849_();
@@ -131,8 +132,7 @@ public final class KatanaRenderer {
             at.set(p[v * 3], p[v * 3 + 1], p[v * 3 + 2]);
             matrix.transformPosition(at);
             float light = shine(view.x, view.y, view.z, at.x, at.y, at.z) * strength;
-            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_85950_(light, light, light * 0.97F, 1.0F).m_7421_(0.5F, 0.5F)
-                .m_86008_(OverlayTexture.f_118083_).m_85969_(FULL_BRIGHT).m_252939_(normal, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]).m_5752_();
+            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_85950_(1.0F, 1.0F, 0.97F, Math.min(0.85F, light)).m_5752_();
         }
     }
 

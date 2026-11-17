@@ -1,7 +1,6 @@
 package com.hexhaki.piece.client.haki;
 
 import com.hexhaki.piece.client.fx.PieceFx;
-import com.hexhaki.piece.client.sword.SwordFx;
 import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.BoltMesh;
 import com.hexhaki.piece.haki.BoltPainter;
@@ -19,7 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
@@ -454,15 +452,32 @@ public final class HakiBolts {
             }
         }
         if (GLOW.size > 0) {
-            RenderType light = RenderType.m_110488_(SwordFx.WHITE_TEXTURE);
+            // 2.1.9: alpha blended, not additive (the owner's sword swings came out black: some setups draw additive geometry opaque).
+            // A glow's colour is its light (its brightness is its strength): drawn as its hue at full brightness, as opaque as it was
+            // bright; every corner of a quad takes the hue of its brightest, so a glow fades out, never darkens, toward its rim.
+            RenderType light = RenderType.m_269166_();
             VertexConsumer buffer = buffers.m_6299_(light);
             for (int q = 0; q < GLOW.size; q++) {
+                int top = 0;
+                int hue = 0xFFFFFF;
                 for (int k = 0; k < 4; k++) {
                     int c = GLOW.colors[q * 4 + k];
+                    int bright = Math.max((c >>> 16) & 255, Math.max((c >>> 8) & 255, c & 255));
+                    if (bright > top) {
+                        top = bright;
+                        hue = c;
+                    }
+                }
+                float scale = top > 0 ? 1.0F / top : 0.0F;
+                float r = ((hue >>> 16) & 255) * scale;
+                float g = ((hue >>> 8) & 255) * scale;
+                float b = (hue & 255) * scale;
+                for (int k = 0; k < 4; k++) {
+                    int c = GLOW.colors[q * 4 + k];
+                    float alpha = Math.max((c >>> 16) & 255, Math.max((c >>> 8) & 255, c & 255)) / 255.0F * 0.9F;
                     buffer.m_252986_(matrix, (float) (GLOW.xyz[q * 12 + k * 3] + ox), (float) (GLOW.xyz[q * 12 + k * 3 + 1] + oy),
                             (float) (GLOW.xyz[q * 12 + k * 3 + 2] + oz))
-                        .m_85950_(((c >>> 16) & 255) / 255.0F, ((c >>> 8) & 255) / 255.0F, (c & 255) / 255.0F, 1.0F).m_7421_(0.5F, 0.5F)
-                        .m_86008_(OverlayTexture.f_118083_).m_85969_(0xF000F0).m_252939_(normal, 0.0F, 1.0F, 0.0F).m_5752_();
+                        .m_85950_(r, g, b, alpha).m_5752_();
                 }
             }
             if (end && buffers instanceof MultiBufferSource.BufferSource source) {

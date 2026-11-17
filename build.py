@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.1.8"
+VERSION = "2.1.9"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
@@ -156,7 +156,7 @@ def katana_assets():
     if actual != EXPECTED_KATANA_SHA256:
         raise RuntimeError(f"The katana zip differs from the one inspected: {actual}")
     keys = katana_keys()
-    cache = BUILD / "katana-cache" / (actual[:16] + "-lod2")
+    cache = BUILD / "katana-cache" / (actual[:16] + "-lod3")
     if not (cache / "done").exists():
         sys.path.insert(0, str(ROOT / "tools"))
         import katana_mesh
