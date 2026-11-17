@@ -3,6 +3,7 @@ package com.hexhaki.piece.npc;
 import com.hexhaki.piece.Faction;
 import com.hexhaki.piece.PieceEntities;
 import com.hexhaki.piece.PieceRules;
+import com.hexhaki.piece.PieceSounds;
 import com.hexhaki.piece.server.ProfileServer;
 import com.hexhaki.piece.server.StyleCombat;
 import com.hexhaki.piece.style.FightingStyle;
@@ -17,6 +18,7 @@ import com.hexhaki.piece.sword.SwordAnims;
 import com.hexhaki.piece.sword.SwordCombo;
 import com.hexhaki.piece.sword.SwordMove;
 import com.hexhaki.piece.sword.SwordRules;
+import com.hexhaki.piece.sword.SwordSounds;
 import com.hexhaki.fx.Impact;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -89,6 +91,8 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     private double releaseCharge;
     private long slashReady;
     private final java.util.List<Set<Integer>> swordStruck = new java.util.ArrayList<>();
+    /** 2.2.9: what has been heard of what its sword is doing (the same beats as a player's: SwordSounds). */
+    private final SwordSounds.Cursor swordHeard = new SwordSounds.Cursor();
     private final Set<Integer> releaseStruck = new HashSet<>();
 
     public SeaFighter(EntityType<? extends SeaFighter> type, Level level) {
@@ -442,6 +446,9 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
             this.swordStep(level, now);
         } finally {
             this.showSword();
+            for (SwordSounds.Beat beat : this.swordHeard.advance(this.swordAnim(), this.swordAnimStart(), now, this.katana())) {
+                PieceSounds.play(this, beat);
+            }
         }
     }
 
@@ -489,7 +496,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
                         SwordRules.lerp(SwordRules.SLASH_RANGE_MIN, SwordRules.NPC_SLASH_RANGE_MAX, c), SwordRules.SLASH_SPEED,
                         (float) (SwordRules.lerp(SwordRules.SLASH_DAMAGE_MIN, SwordRules.SLASH_DAMAGE_MAX, c) * edge * 0.75), 0, false,
                         PieceConfig.get(PieceConfig.TERRAIN, true), source, this::foe);
-                    StyleCombat.sound(this, "fx.whoosh_heavy", 1.0F);
+                    PieceSounds.play(this, SwordSounds.SLASH, (float) (0.8 + 0.5 * c), SwordSounds.pitch(katana));
                 } else if (this.rank() < 2 && tick >= 1 && tick <= 3) {
                     float damage = (float) SwordRules.lerp(SwordRules.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MAX, this.releaseCharge) * edge * 0.8F;
                     SwordServer.sweep(this, "sword_release", tick, SwordRules.lerp(SwordRules.CUT_REACH_MIN, SwordRules.CUT_REACH_MAX,

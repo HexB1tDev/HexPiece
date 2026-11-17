@@ -21,7 +21,9 @@
     "subtitle": "subtitles.hexhaki.piece.sword.guard_click",
     "sounds": [
       "hexhaki:piece/sword/guard_click1",
-      "hexhaki:piece/sword/guard_click2"
+      "hexhaki:piece/sword/guard_click2",
+      "hexhaki:piece/sword/guard_click3",
+      "hexhaki:piece/sword/guard_click4"
     ]
   },
   "piece.sword.sheathe": {
@@ -53,14 +55,14 @@
     "subtitle": "subtitles.hexhaki.piece.sword.swing_heavy",
     "sounds": [
       {
-        "name": "hexhaki:piece/sword/whoosh1",
-        "pitch": 1.15,
-        "volume": 0.85
+        "name": "hexhaki:piece/sword/rush1",
+        "pitch": 1.05,
+        "volume": 0.9
       },
       {
-        "name": "hexhaki:piece/sword/whoosh2",
-        "pitch": 1.1,
-        "volume": 0.85
+        "name": "hexhaki:piece/sword/rush2",
+        "pitch": 1.0,
+        "volume": 0.9
       },
       {
         "name": "hexhaki:piece/sword/swing3",

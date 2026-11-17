@@ -33,6 +33,11 @@ public final class PieceSounds {
         SOUNDS.register(modBus);
     }
 
+    /** One beat of a sword ({@link SwordSounds.Beat}) heard where {@code user} is. */
+    public static void play(LivingEntity user, SwordSounds.Beat beat) {
+        play(user, beat.sound(), beat.volume(), beat.pitch());
+    }
+
     /** {@code name} heard where {@code user} is, by everyone near, at {@code volume} and about {@code pitch} (a little varied). */
     public static void play(LivingEntity user, String name, float volume, float pitch) {
         RegistryObject<SoundEvent> sound = BY_NAME.get(name);

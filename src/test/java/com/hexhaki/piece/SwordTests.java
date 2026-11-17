@@ -11,6 +11,7 @@ import com.hexhaki.piece.sword.SwordCombo;
 import com.hexhaki.piece.sword.SwordMove;
 import com.hexhaki.piece.sword.SwordMove.Branch;
 import com.hexhaki.piece.sword.SwordRules;
+import com.hexhaki.piece.sword.SwordSounds;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
@@ -32,6 +33,7 @@ public final class SwordTests {
         koiguchi();
         bigSlash();
         wave();
+        sounds();
         Check.done("SwordTests");
     }
 
@@ -351,5 +353,164 @@ public final class SwordTests {
             return 0.0;
         }
         return Math.max(0.0, (nx * mx + ny * my + nz * mz) / (n * m));
+    }
+    /**
+     * 2.2.9 (the owner: "grab sounds from the web for the swords unsheath, swipe, etc, all the sounds must come from the web (be free
+     * for use)"): every beat is a registered sound inside its animation, every cut swings, each beat is heard once on its tick, and
+     * every clip is defined, mono and credited to its free source.
+     */
+    static void sounds() throws Exception {
+        Set<String> all = new HashSet<>(java.util.Arrays.asList(SwordSounds.ALL));
+        Check.that(all.size() == SwordSounds.ALL.length, "no sound event twice");
+        Pattern end = Pattern.compile("\"endTick\":\\s*(\\d+)");
+        Katana[] blades = {null, Katana.values()[0], Katana.GRYPHON, Katana.YORU};
+        int heard = 0;
+        for (Katana katana : blades) {
+            for (int anim = 1; anim < SwordAnims.MOVES + SwordMove.values().length; anim++) {
+                String name = SwordAnims.name(anim, katana);
+                if (name == null) {
+                    continue;
+                }
+                Matcher m = end.matcher(Files.readString(ANIMATIONS.resolve(name + ".json")));
+                Check.that(m.find(), name + ": its length is found");
+                int length = Integer.parseInt(m.group(1));
+                SwordSounds.Beat[] beats = SwordSounds.of(anim, katana);
+                int last = -1;
+                for (SwordSounds.Beat beat : beats) {
+                    Check.that(all.contains(beat.sound()), name + ": " + beat.sound() + " is a registered sound");
+                    Check.that(beat.tick() >= 0 && beat.tick() < length, name + ": its beat at " + beat.tick() + " falls inside it");
+                    Check.that(beat.tick() >= last, name + ": its beats in order");
+                    Check.that(beat.volume() > 0.0F && beat.volume() <= 1.5F, name + ": a sane volume");
+                    Check.that(beat.pitch() >= 0.5F && beat.pitch() <= 2.0F, name + ": a pitch the game plays (0.5 to 2)");
+                    last = beat.tick();
+                    heard++;
+                }
+                int draw = BladePaths.drawTick(name);
+                for (SwordSounds.Beat beat : beats) {
+                    if (beat.sound().equals(SwordSounds.DRAW)) {
+                        Check.that(draw >= 0 && beat.tick() <= draw, name + ": the blade slides out of the saya before it is out");
+                    }
+                }
+                if (anim >= SwordAnims.MOVES) {
+                    // every cut swings at the start of its window, the heavy ones deep and ringing
+                    for (SwordMove.Cut cut : SwordMove.byOrdinal(anim - SwordAnims.MOVES).cuts()) {
+                        boolean heavy = cut.weight().ordinal() >= com.hexhaki.piece.style.Hit.Weight.HEAVY.ordinal();
+                        boolean swings = false;
+                        boolean rings = false;
+                        for (SwordSounds.Beat beat : beats) {
+                            swings |= beat.tick() == cut.from() && beat.sound().equals(SwordSounds.swing(heavy));
+                            rings |= beat.tick() == cut.from() && beat.sound().equals(SwordSounds.SHING);
+                        }
+                        Check.that(swings && rings == heavy, name + ": its cut at " + cut.from() + " swings" + (heavy ? " and rings" : ""));
+                    }
+                }
+            }
+        }
+        Check.that(heard > 100, "the sword is heard");
+        // the draw, the sheathe and the release are heard; Yoru's great sword lower than a katana, Gryphon's saber higher
+        for (int anim : new int[] {SwordAnims.DRAW, SwordAnims.SHEATHE, SwordAnims.CHARGE_DRAW, SwordAnims.RELEASE, SwordAnims.QUICK_DRAW}) {
+            Check.that(SwordSounds.of(anim, null).length > 0 && SwordSounds.of(anim, Katana.YORU).length > 0, anim + ": heard");
+        }
+        SwordSounds.Beat katanaCut = SwordSounds.of(SwordAnims.of(SwordMove.KESA), Katana.values()[0])[0];
+        Check.that(SwordSounds.of(SwordAnims.of(SwordMove.KESA), Katana.YORU)[0].pitch() < katanaCut.pitch()
+            && SwordSounds.of(SwordAnims.of(SwordMove.KESA), Katana.GRYPHON)[0].pitch() > katanaCut.pitch(), "each blade its own voice");
+        String[] sheathes = {"sword_sheathe", "sword_sheathe_back"};
+        for (String name : sheathes) {
+            SwordSounds.Beat[] beats = SwordSounds.of(name);
+            SwordSounds.Beat close = beats[beats.length - 1];
+            Check.that(close.sound().equals(SwordSounds.GUARD_CLICK) && close.tick() >= BladePaths.sheathTick(name) - 1,
+                name + ": the guard clicks home as the blade goes in");
+        }
+
+        // the cursor: each beat once, on its tick; a skipped tick plays it one late; a new start plays them again
+        for (Katana katana : blades) {
+            for (int anim = 1; anim < SwordAnims.MOVES + SwordMove.values().length; anim++) {
+                SwordSounds.Beat[] beats = SwordSounds.of(anim, katana);
+                for (int every = 1; every <= 2; every++) {
+                    SwordSounds.Cursor cursor = new SwordSounds.Cursor();
+                    java.util.List<SwordSounds.Beat> got = new java.util.ArrayList<>();
+                    long start = 1000;
+                    for (long now = start; now < start + 40; now += every) {
+                        for (SwordSounds.Beat beat : cursor.advance(anim, start, now, katana)) {
+                            Check.that(now - start >= beat.tick() && now - start <= beat.tick() + every - 1, anim + ": on its tick");
+                            got.add(beat);
+                        }
+                        Check.that(cursor.advance(anim, start, now, katana).length == 0, anim + ": never twice in a tick");
+                    }
+                    Check.that(got.size() == beats.length, anim + ": every beat heard once (" + got.size() + " of " + beats.length + ")");
+                }
+            }
+        }
+        int draw = SwordAnims.DRAW;
+        SwordSounds.Cursor cursor = new SwordSounds.Cursor();
+        for (SwordSounds.Beat beat : cursor.advance(draw, 0, 12, null)) {
+            Check.that(beat.tick() >= 12 - SwordSounds.CATCH_UP, "an animation first seen halfway through: its old beats are not played late");
+        }
+        cursor = new SwordSounds.Cursor();
+        int first = 0;
+        for (long now = 0; now < 30; now++) {
+            first += cursor.advance(draw, 0, now, null).length;
+        }
+        int again = 0;
+        for (long now = 30; now < 60; now++) {
+            again += cursor.advance(draw, 30, now, null).length;
+        }
+        Check.that(first > 0 && first == again, "drawn again: heard again");
+
+        // the files: every event in sounds.json with its subtitle, every clip there, mono Ogg Vorbis, credited as free to use
+        Path dir = Path.of("src/main/resources/assets/hexhaki/sounds/piece/sword");
+        String json = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
+        String lang = Files.readString(Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
+        String sources = Files.readString(dir.resolve("SOURCES.txt"));
+        for (String name : SwordSounds.ALL) {
+            Check.that(json.contains("\"" + name + "\": {"), name + ": defined in sounds.json");
+            Check.that(lang.contains("\"subtitles.hexhaki." + name + "\""), name + ": its subtitle");
+        }
+        Matcher event = Pattern.compile("\"(piece\\.[a-z_.]+)\": \\{").matcher(json);
+        while (event.find()) {
+            Check.that(all.contains(event.group(1)), event.group(1) + ": registered");
+        }
+        Set<String> used = new HashSet<>();
+        Matcher clip = Pattern.compile("\"hexhaki:piece/sword/([a-z0-9_]+)\"").matcher(json);
+        while (clip.find()) {
+            used.add(clip.group(1));
+            Check.that(Files.exists(dir.resolve(clip.group(1) + ".ogg")), clip.group(1) + ".ogg exists");
+        }
+        int files = 0;
+        try (java.util.stream.Stream<Path> list = Files.list(dir)) {
+            for (Path file : (Iterable<Path>) list::iterator) {
+                String name = file.getFileName().toString();
+                if (!name.endsWith(".ogg")) {
+                    continue;
+                }
+                files++;
+                String base = name.substring(0, name.length() - 4);
+                Check.that(used.contains(base), name + ": played by some sound event");
+                Matcher credit = Pattern.compile("(?m)^" + Pattern.quote(name) + ": .* by .+, CC0 1\\.0, https://opengameart\\.org/\\S+$")
+                    .matcher(sources);
+                Check.that(credit.find(), name + ": credited in SOURCES.txt (its pack, author, CC0 licence and page)");
+                byte[] data = Files.readAllBytes(file);
+                int at = indexOf(data, "\u0001vorbis".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+                Check.that(data.length > 4 && data[0] == 'O' && data[1] == 'g' && data[2] == 'g' && data[3] == 'S' && at >= 0,
+                    name + ": Ogg Vorbis");
+                Check.that(data[at + 11] == 1, name + ": mono (the game places only mono sounds in the world)");
+                int rate = (data[at + 12] & 0xFF) | (data[at + 13] & 0xFF) << 8 | (data[at + 14] & 0xFF) << 16 | (data[at + 15] & 0xFF) << 24;
+                Check.that(rate == 44100, name + ": 44.1 kHz");
+            }
+        }
+        Check.that(files == used.size() && files >= 40, "every clip is played (" + files + " clips)");
+    }
+
+    static int indexOf(byte[] data, byte[] what) {
+        outer:
+        for (int i = 0; i + what.length <= data.length; i++) {
+            for (int j = 0; j < what.length; j++) {
+                if (data[i + j] != what[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
     }
 }

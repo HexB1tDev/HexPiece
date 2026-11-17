@@ -1,6 +1,7 @@
 HexPiece sword sounds: every clip below is from a CC0 1.0 (public domain) pack on OpenGameArt.org, free to use for any
-purpose, no attribution required; credited here with thanks. Each was trimmed, made mono, normalised and faded out
-(tools/sword_sounds.py).
+purpose, no attribution required; credited here with thanks. Each was trimmed (the guard clicks, shings and clashes cut to their
+attack, so they land on their tick; the steady air whoosh cut into single rushes that rise and die), made mono,
+normalised and faded out (tools/sword_sounds.py).
 
 draw_ring1.ogg: "sword-unsheathe.wav" from "rpg_sound_pack" by artisticdude, CC0 1.0, https://opengameart.org/content/rpg-sound-pack
 draw_ring2.ogg: "sword-unsheathe2.wav" from "rpg_sound_pack" by artisticdude, CC0 1.0, https://opengameart.org/content/rpg-sound-pack
@@ -10,8 +11,10 @@ draw_ring5.ogg: "sword-unsheathe5.wav" from "rpg_sound_pack" by artisticdude, CC
 draw_slide1.ogg: "knife-unsheathe-03.wav" from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
 draw_slide2.ogg: "knife-unsheathe-04.wav" from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
 draw_slide3.ogg: "knife-unsheathe-02.wav" from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
-guard_click1.ogg: "seax-sheathe-02.wav" from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
-guard_click2.ogg: "seax-sheathe-04.wav" from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
+guard_click1.ogg: "seax-sheathe-02.wav" (from 0.17 s) from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
+guard_click2.ogg: "seax-sheathe-04.wav" (from 0.58 s) from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
+guard_click3.ogg: "seax-sheathe-03.wav" (from 0.63 s) from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
+guard_click4.ogg: "seax-sheathe-05.wav" (from 0.14 s) from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
 sheathe_slide1.ogg: "knife-sheathe-02.wav" from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
 sheathe_slide2.ogg: "knife-sheathe-05.wav" from "weapons-apparel" by Vehicle (Jan Schupke), CC0 1.0, https://opengameart.org/content/fantasy-weapons-and-apparel-sfx-library
 swing1.ogg: "swish-1.wav" from "swishes" by artisticdude, CC0 1.0, https://opengameart.org/content/swishes-sound-pack
@@ -27,15 +30,17 @@ swing10.ogg: "swish-10.wav" from "swishes" by artisticdude, CC0 1.0, https://ope
 swing11.ogg: "swish-11.wav" from "swishes" by artisticdude, CC0 1.0, https://opengameart.org/content/swishes-sound-pack
 swing12.ogg: "swish-12.wav" from "swishes" by artisticdude, CC0 1.0, https://opengameart.org/content/swishes-sound-pack
 swing13.ogg: "swish-13.wav" from "swishes" by artisticdude, CC0 1.0, https://opengameart.org/content/swishes-sound-pack
-shing1.ogg: "sword.2.ogg" from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-shing2.ogg: "sword.3.ogg" from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-shing3.ogg: "sword.4.ogg" from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-shing4.ogg: "sword.6.ogg" from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-shing5.ogg: "sword.8.ogg" from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-clash1.ogg: "sword_clash.2.ogg" from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-clash2.ogg: "sword_clash.3.ogg" from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-clash3.ogg: "sword_clash.5.ogg" from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-clash4.ogg: "sword_clash.8.ogg" from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
-clash5.ogg: "sword_clash.10.ogg" from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+shing1.ogg: "sword.2.ogg" (from 0.24 s) from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+shing2.ogg: "sword.3.ogg" (from 0.03 s) from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+shing3.ogg: "sword.4.ogg" (from 0.04 s) from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+shing4.ogg: "sword.6.ogg" (from 0.00 s) from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+shing5.ogg: "sword.8.ogg" (from 0.21 s) from "sword_-_starninjas_1" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+clash1.ogg: "sword_clash.2.ogg" (from 0.02 s) from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+clash2.ogg: "sword_clash.3.ogg" (from 0.10 s) from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+clash3.ogg: "sword_clash.5.ogg" (from 0.12 s) from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+clash4.ogg: "sword_clash.8.ogg" (from 0.13 s) from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
+clash5.ogg: "sword_clash.10.ogg" (from 0.20 s) from "sword_clash_-_starninjas_0" by StarNinjas, CC0 1.0, https://opengameart.org/content/20-sword-sound-effects-attacks-and-clashes
 whoosh1.ogg: "whoosh2_0.wav" (0.00-1.00 s) from "whoosh2_0" by pyranostudios, CC0 1.0, https://opengameart.org/content/air-whoosh
 whoosh2.ogg: "whoosh2_0.wav" (1.05-2.05 s) from "whoosh2_0" by pyranostudios, CC0 1.0, https://opengameart.org/content/air-whoosh
+rush1.ogg: "whoosh2_0.wav" (2.30-2.66 s) from "whoosh2_0" by pyranostudios, CC0 1.0, https://opengameart.org/content/air-whoosh
+rush2.ogg: "whoosh2_0.wav" (3.35-3.71 s) from "whoosh2_0" by pyranostudios, CC0 1.0, https://opengameart.org/content/air-whoosh

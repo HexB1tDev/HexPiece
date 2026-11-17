@@ -7,6 +7,7 @@ import com.hexhaki.fruit.FruitUtil;
 import com.hexhaki.piece.PieceConfig;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.PieceRules;
+import com.hexhaki.piece.PieceSounds;
 import com.hexhaki.piece.network.C2SSword;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CSword;
@@ -21,6 +22,7 @@ import com.hexhaki.piece.sword.SwordAnims;
 import com.hexhaki.piece.sword.SwordCombo;
 import com.hexhaki.piece.sword.SwordMove;
 import com.hexhaki.piece.sword.SwordRules;
+import com.hexhaki.piece.sword.SwordSounds;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -122,6 +124,8 @@ public final class SwordServer {
         long sentStart;
         /** 2.2.7: a legendary blade being put away as combat mode went off (its sheathe plays to the end out of combat). */
         boolean stowing;
+        /** 2.2.9: what has been heard of what the sword is doing (SwordSounds). */
+        final SwordSounds.Cursor heard = new SwordSounds.Cursor();
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -548,10 +552,19 @@ public final class SwordServer {
         if (player.f_19797_ % SCAN_EVERY == 0) {
             scan(player, state);
         }
+        long now = now(player);
         try {
-            tick(player, state, now(player));
+            tick(player, state, now);
         } finally {
+            hear(player, state, now);
             sync(player, state);
+        }
+    }
+
+    /** 2.2.9: the beats of what the sword is doing now (the draw's slide and ring, each cut's swing...), heard by everyone near. */
+    static void hear(ServerPlayer player, State state, long now) {
+        for (SwordSounds.Beat beat : state.heard.advance(anim(state), animStart(state), now, state.katana)) {
+            PieceSounds.play(player, beat);
         }
     }
 
@@ -622,9 +635,6 @@ public final class SwordServer {
         SwordMove.Cut[] cuts = move.cuts();
         for (int i = 0; i < cuts.length; i++) {
             SwordMove.Cut cut = cuts[i];
-            if (tick == cut.from()) {
-                StyleCombat.sound(player, cut.weight().ordinal() >= Hit.Weight.HEAVY.ordinal() ? "fx.whoosh_heavy" : "fx.whoosh_light", 0.8F);
-            }
             if (tick >= cut.from() && tick <= cut.to()) {
                 float damage = cut.damage() * edge(state) * PieceRules.masteryDamage(mastery(player));
                 int landed = sweep(player, move.animation(), tick, SwordRules.EXTEND + reach(state), state.struck.get(i), damage, cut.weight(), cut.back(),
@@ -660,14 +670,14 @@ public final class SwordServer {
                 Vec3 from = player.m_146892_().m_82549_(state.aim.m_82490_(0.6));
                 HakiSlashes.launch(player, from, state.aim, height, range, speed, (float) damage, state.releaseColor, state.releaseRyou,
                     PieceConfig.get(PieceConfig.TERRAIN, true), StyleCombat.of(player), other -> FruitUtil.foe(player, other));
-                StyleCombat.sound(player, "fx.whoosh_heavy", 1.0F);
+                // 2.2.9: the wave rushing off the blade, louder (and heard farther) the more it was charged
+                PieceSounds.play(player, SwordSounds.SLASH, (float) (0.8 + 0.6 * charge), SwordSounds.pitch(state.katana));
                 gain(player, Hit.Weight.FINISHER, 1);
             }
             return;
         }
         if (tick >= 1 && tick <= 3) {
             if (tick == 1) {
-                StyleCombat.sound(player, "fx.whoosh_heavy", 1.0F);
                 Vec3 look = StyleCombat.facing(player);
                 PieceNetwork.around(player, new S2CSwordFx(S2CSwordFx.RELEASE, player.m_20185_(), player.m_20186_(), player.m_20189_(),
                     look.f_82479_, charge, look.f_82481_, 0));
@@ -698,7 +708,6 @@ public final class SwordServer {
             StyleCombat.push(player, new Vec3(look.f_82479_ * step, Math.min(player.m_20184_().f_82480_, 0.0), look.f_82481_ * step));
             player.f_19789_ = 0.0F;
             if (tick == 3) {
-                StyleCombat.sound(player, "fx.whoosh_heavy", 1.0F);
                 PieceNetwork.around(player, new S2CSwordFx(S2CSwordFx.QUICK, player.m_20185_(), player.m_20186_(), player.m_20189_(),
                     look.f_82479_, 0.0, look.f_82481_, 0));
             }
