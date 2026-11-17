@@ -76,4 +76,13 @@ public final class PieceRules {
     public static String berries(long amount) {
         return String.format(java.util.Locale.ROOT, "%,d", amount);
     }
+
+    /**
+     * 2.3.7: the Galaxy Fist (the original's Armament technique, its "convergence") is Iron Fist's alone, and opens with Ryou up (the
+     * owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU haki. ONLY for iron fist."): no other
+     * style, nor Iron Fist without Ryou, can throw it; with Ryou up no Armament mastery is asked for it.
+     */
+    public static boolean galaxyFist(com.hexhaki.piece.style.FightingStyle style, boolean ryou) {
+        return style == com.hexhaki.piece.style.FightingStyle.BRAWLER && ryou;
+    }
 }

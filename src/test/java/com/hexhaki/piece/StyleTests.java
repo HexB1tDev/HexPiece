@@ -19,6 +19,7 @@ public final class StyleTests {
         animations();
         combo();
         rules();
+        galaxy();
         Check.done("StyleTests");
     }
 
@@ -126,5 +127,17 @@ public final class StyleTests {
         Check.that(PieceRules.renownFor(Faction.PIRATE, 2) > PieceRules.renownFor(Faction.PIRATE, 0), "a captain is worth more");
         Check.that(PieceRules.berries(1_234_000L).equals("1,234,000"), "berries print like a poster");
         Check.that(Faction.PIRATE.enemy() == Faction.MARINE && Faction.MARINE.enemy() == Faction.PIRATE, "the two sides");
+    }
+
+    /** 2.3.7: the Galaxy Fist is Iron Fist's alone, with Ryou up. */
+    static void galaxy() throws Exception {
+        for (FightingStyle style : FightingStyle.values()) {
+            Check.that(PieceRules.galaxyFist(style, true) == (style == FightingStyle.BRAWLER), style + ": the Galaxy Fist only for Iron Fist");
+            Check.that(!PieceRules.galaxyFist(style, false), style + ": never without Ryou up");
+        }
+        Check.that(!PieceRules.galaxyFist(null, true), "no style chosen: no Galaxy Fist");
+        String patch = java.nio.file.Files.readString(java.nio.file.Path.of("patch/PiecePatch.java"));
+        Check.that(patch.contains("\"beginConvergence\", \"(Lnet/minecraft/server/level/ServerPlayer;)V\", GALAXY, \"begin\", 1}")
+            && patch.contains("{CONTROLLER, \"beginConvergence\", 520, 0, 2}"), "the original's start goes through HexPiece, its mastery gone");
     }
 }

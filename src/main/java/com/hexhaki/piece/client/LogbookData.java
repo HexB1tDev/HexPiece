@@ -69,7 +69,7 @@ final class LogbookData {
             fruitMastery = GearClientState.mastery;
         }
         List<Section> styleHaki = new ArrayList<>();
-        styleHaki.add(LogbookView.style(profile));
+        styleHaki.add(galaxy(LogbookView.style(profile), profile, haki));
         for (int i = 0; i < 3; i++) {
             styleHaki.add(haki(i, haki[i]));
         }
@@ -138,7 +138,17 @@ final class LogbookData {
         return null;
     }
 
+    /** 2.3.7: Iron Fist's page with the Galaxy Fist on it ({@link LogbookView#galaxy}); open once Ryou can be raised. */
+    static Section galaxy(Section style, PieceProfile profile, int[] haki) {
+        int quick = quick(HakiTechnique.ARM_GALAXY_WAVE);
+        return LogbookView.galaxy(style, profile.chosen() ? profile.style() : null, HakiMasteryScreen.unlocked(HakiTechnique.CONQ_ACOC, haki[2]),
+            keyOf(quick), "Opens with Ryou (" + HakiMasteryScreen.requirement(HakiTechnique.CONQ_ACOC) + ")", quick);
+    }
+
     static String abilityName(int ability, Fruit kit) {
+        if (ability == quick(HakiTechnique.ARM_GALAXY_WAVE)) {
+            return LogbookView.GALAXY;
+        }
         if (Binds.isHaki(ability)) {
             for (HakiTechnique t : HakiTechnique.values()) {
                 if (quick(t) == ability) {
@@ -172,6 +182,9 @@ final class LogbookData {
         List<Entry> entries = new ArrayList<>();
         HakiTechnique next = null;
         for (HakiTechnique t : HakiTechnique.forType(type)) {
+            if (t == HakiTechnique.ARM_GALAXY_WAVE) {
+                continue; // 2.3.7: Iron Fist's now (its page, galaxy below)
+            }
             boolean open = HakiMasteryScreen.unlocked(t, mastery);
             int quick = quick(t);
             String own = permanent(t);
@@ -198,9 +211,9 @@ final class LogbookData {
             about.add("Next: " + next.display + " (" + HakiMasteryScreen.requirement(next) + ").");
         }
         about.add(switch (type) {
-            case ARMAMENT -> "Trained by coated hits, guarding, Blade Cuts, the Haki Leap, the Haki Grip and Haki Projection.";
+            case ARMAMENT -> "Trained by coated hits, guarding, Blade Cuts, the Haki Leap, the Haki Grip and Iron Fist's Galaxy Fist.";
             case OBSERVATION -> "Trained by exploring, surviving, reading danger, dodging and holding WiFi Haki locks.";
-            default -> "Trained by releasing the King's pressure and landing the Haki Grip, WiFi Haki and Haki Projection.";
+            default -> "Trained by releasing the King's pressure and landing the Haki Grip, WiFi Haki and the Galaxy Fist.";
         });
         if (type == HakiType.ARMAMENT) {
             about.add("Haki energy " + Math.round(HakiClientState.energy) + "/" + Math.round(HakiClientState.maxEnergy) + ".");

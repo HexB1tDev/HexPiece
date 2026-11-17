@@ -683,6 +683,27 @@ public final class LogbookView {
                 "Landing blows trains it; heavier moves train it faster."), entries);
     }
 
+    /**
+     * 2.3.7 (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU haki. ONLY for iron fist."): an
+     * Iron Fist page gains the Galaxy Fist (the original's Haki Projection), bindable to its quick slot ({@code quick}) on {@code key},
+     * {@code open} once Ryou can be raised, else {@code lock} says what opens it. Any other style's page is left as it is.
+     */
+    public static Section galaxy(Section style, FightingStyle fighting, boolean open, String key, String lock, int quick) {
+        if (fighting != FightingStyle.BRAWLER) {
+            return style;
+        }
+        List<Entry> entries = new ArrayList<>(style.entries());
+        entries.add(Entry.of(GALAXY, key, "with Ryou up: hold its quick slot", "Ryou up, the fist wound back and the galaxy drawn into "
+            + "it: a tap throws a short burst; a full hold launches you up and brings the fist down as a galaxy that detonates where it "
+            + "lands, the sky's lightning striking round it. Iron Fist's alone.", open, lock).bindable(quick));
+        List<String> about = new ArrayList<>(style.about());
+        about.add("With Ryou up, the Galaxy Fist is Iron Fist's: put it on a quick slot.");
+        return new Section(style.title(), style.status(), style.colour(), style.progress(), about, entries);
+    }
+
+    /** 2.3.7: the original's Haki Projection, as HexPiece names it. */
+    public static final String GALAXY = "Galaxy Fist";
+
     // --- previews ---
 
     /** Data for the previews: a Six Powers pirate (or marine) with Haki, and the Pika fruit or the Nika fruit. */
@@ -699,10 +720,6 @@ public final class LogbookView {
             Entry.of("Reinforcement", "Ctrl+R", "permanent key", "Armament coating. Coated hits, guarding and Haki techniques train Armament mastery.", true, ""),
             Entry.of("Haki Blade Cut", "Swing", "permanent key", "With Armament active, sword swings launch Haki crescents.", true, ""),
             Entry.of("Haki Leap", "Shift+Space", "permanent key", "Charge a forward Haki launch.", true, ""),
-            Entry.of("Haki Projection", nika ? "M" : "N", "hold its quick slot",
-                "[M HOLD, RELEASE TO FIRE] Wind a Haki punch and let go. A tap throws a short close-range burst; a full hold throws a long, wide "
-                + "pressure cylinder that detonates where it lands. Length, width, damage, cost and cooldown all scale with how long you held it.",
-                true, "").bindable(103),
             Entry.of("Ryou", "J", "permanent key", "Late-game multiplier.", false, "Needs Armament 850 and Conqueror's 850"))));
         styleHaki.add(new Section("Observation Haki", "Novice 310/1000", 0xFF2C6BB5, 0.31F, List.of("Rank Novice."), List.of(
             Entry.of("Presence", "V", "permanent key", "Sense every presence around you.", true, ""),
@@ -730,9 +747,10 @@ public final class LogbookView {
                 Entry.of("Amaterasu", "-", "hold", "A sphere of light that burns everything it touches.", false, "Fruit mastery 650").bindable(3))));
         }
         String[] keys = {"G", "K", "L", "M", "B", "Z", "C", "N", "H"};
-        String[] names = nika ? new String[] {"King's Awakening", "Haki Grip", "WiFi Haki", "Haki Projection", "", "", "", "", ""}
-            : new String[] {"Light Beam", "Light Speed Kick", "", "", "King's Awakening", "Haki Grip", "WiFi Haki", "Haki Projection", ""};
-        int[] abilities = nika ? new int[] {100, 101, 102, 103, -1, -1, -1, -1, -1} : new int[] {0, 1, -1, -1, 100, 101, 102, 103, -1};
+        // 2.3.7: the Galaxy Fist (the original's Haki Projection) is Iron Fist's now: not this Six Powers sample's
+        String[] names = nika ? new String[] {"King's Awakening", "Haki Grip", "WiFi Haki", "", "", "", "", "", ""}
+            : new String[] {"Light Beam", "Light Speed Kick", "", "", "King's Awakening", "Haki Grip", "WiFi Haki", "", ""};
+        int[] abilities = nika ? new int[] {100, 101, 102, -1, -1, -1, -1, -1, -1} : new int[] {0, 1, -1, -1, 100, 101, 102, -1, -1};
         return new Data("HexB1t", profile, new int[] {640, 310, 120}, new String[] {"Adept", "Novice", "Awakened"},
             nika ? "Hito Hito no Mi, Model Nika" : "Pika Pika no Mi", 420, styleHaki, fruitPage, keys, names, abilities, points);
     }

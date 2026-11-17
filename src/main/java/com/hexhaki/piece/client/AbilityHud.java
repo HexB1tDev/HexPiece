@@ -158,7 +158,7 @@ public final class AbilityHud {
             case 0 -> "King's Awakening (tap / hold)";
             case 1 -> "Haki Grip";
             case 2 -> "WiFi Haki";
-            case 3 -> "Haki Projection";
+            case 3 -> com.hexhaki.piece.ui.LogbookView.GALAXY; // 2.3.7: the original's Haki Projection, Iron Fist's now
             default -> "Haki";
         };
     }

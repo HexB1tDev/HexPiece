@@ -122,6 +122,7 @@ public final class PiecePatch implements Opcodes {
     static final String RYOU_SERVER = "com/hexhaki/piece/server/RyouServer";
     static final String CONTROLLER = "com/hexhaki/gameplay/HakiServerController";
     static final String CONQUEROR = "com/hexhaki/piece/server/ConquerorRelease";
+    static final String GALAXY = "com/hexhaki/piece/server/GalaxyFist";
     static final String COATING = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/model/geom/ModelPart;FZLnet/minecraft/client/player/AbstractClientPlayer;Z)V";
     static final String AURA = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZFZZ)V";
     static final String AMBIENT = "(Lnet/minecraft/world/entity/Entity;FZJZ)V";
@@ -155,15 +156,20 @@ public final class PiecePatch implements Opcodes {
         {HAND, "renderFirstPerson", HAND, "renderArmAura", AURA, RYOU_HANDS, "armAura", 1},
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentAmbient", AMBIENT, RYOU_FX, "ambient", 1},
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentGroundStorm", GROUND_STORM, RYOU_FX, "groundStorm", 1},
+        // 2.3.7 (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU haki. ONLY for iron fist."):
+        // the Galaxy Fist's start (its "convergence") goes through HexPiece, which lets only an Iron Fist fighter with Ryou up throw it
+        {CONTROLLER, "onAction", CONTROLLER, "beginConvergence", "(Lnet/minecraft/server/level/ServerPlayer;)V", GALAXY, "begin", 1},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
-    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}};
+    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}, {CONTROLLER, "beginConvergence"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any
-     * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either).
+     * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either). 2.3.7: the Galaxy Fist's Armament 520.
      */
     static final Object[][] INTS = {
         {CONTROLLER, "releaseConqueror", 1000, 0, 1},
+        // 2.3.7: the Galaxy Fist asked for Armament mastery 520 (its "Haki Projection" lock): Ryou up is what opens it now
+        {CONTROLLER, "beginConvergence", 520, 0, 2},
     };
     /**
      * 2.1.3: static methods whose whole body becomes a call into HexPiece (same descriptor): class, method, descriptor, new owner, name.

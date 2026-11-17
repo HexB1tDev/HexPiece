@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 (clashes: every move clashable, the impact frame, Ryou meeting Ryou)
+# HexPiece: handoff after 2.3.6 and 2.3.7 (clashes; the Galaxy Fist made Iron Fist's)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.3.7** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.3.8** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,21 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## Done in 2.3.7 (the owner, after 2.3.6: "Continue and dont stop")
+- **Galaxy Fist for Iron Fist** (next-ai-2.2.6.md item 2; the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the
+  user activates RYOU haki. ONLY for iron fist."). In the original it is `HakiTechnique.ARM_GALAXY_WAVE`, shown as "Haki Projection",
+  quick power 103, started by `HakiAction.CONVERGENCE_START` (`HakiServerController.beginConvergence`: Armament mastery 520, energy 8,
+  `galaxyPunching`, GALAXY_FIST_START, the `galaxy_beam_charge` animation) and let go by CONVERGENCE_RELEASE. The patch:
+  CALL_REDIRECTS `onAction`'s call to `beginConvergence` -> `server/GalaxyFist.begin` (lets it go on only when
+  `PieceRules.galaxyFist(style, ryou)`: BRAWLER with armamentOn and acocOn; tells anyone else why not), WIDENED `beginConvergence`,
+  INTS its 520 -> 0 (twice: the check and the lock message). Logbook: `LogbookView.galaxy` adds "Galaxy Fist" to Iron Fist's page
+  (bindable to 103, open once Ryou (CONQ_ACOC) is unlocked); `LogbookData.haki` leaves ARM_GALAXY_WAVE out of Armament's list;
+  `AbilityHud.hakiName`/`abilityName` call 103 "Galaxy Fist". Tests: StyleTests (the rule, the patch rows), MenuTests (no Haki page
+  offers 103; Iron Fist's does). Render: docs/images/logbook-iron-fist-galaxy.png (UiPreview `logbook-iron-fist-galaxy`).
+- The 2.2.6 note said the Galaxy Fist's charge lightning (`addAdvancedGalaxyFistLightning`) was the last flat-beam Haki lightning: it
+  is dead code in the original (its only caller `startGalaxyFistCharge` is never called; the charge is drawn by `GalaxyRenderer`,
+  a disc and inflow ribbons). Its sky strikes go through HakiLightning (3D, Ryou colour). Nothing to convert.
 
 ## Done in 2.3.6
 - **Pure** (`clash/`): `ClashRules` (2.3.3's rules; new: `WINDUP` 3: a blow meets another only in its last 3 ticks before landing, so
@@ -65,7 +80,7 @@ Nothing was ever tested in game (only the owner can).
 2. The Fishman Karate white screen (not found; ask when it happens, a full screenshot; suspects: Photon bloom, ImpactClient's flash).
 3. Not clashable yet: the flying Haki slash (HakiSlashes, a projectile): could meet a slash or a blow later. Iron Body and the
    Shark Skin Counter throw no blow (their own rules hold).
-4. Galaxy Fist for Iron Fist, the Fishman Karate rework, Six Powers (next-ai-2.2.6.md).
+4. The Fishman Karate rework, then Six Powers (next-ai-2.2.6.md items 3 and 4). (Galaxy Fist: done in 2.3.7.)
 
 ## Not verified (only the owner can)
 Everything in game: clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,
