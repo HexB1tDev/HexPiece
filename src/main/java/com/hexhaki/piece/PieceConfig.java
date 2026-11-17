@@ -30,6 +30,8 @@ public final class PieceConfig {
     public static final Supplier<Double> CUT_BREAKS;
     public static final Supplier<Double> SHEATHE_DELAY;
     public static final Supplier<Boolean> TERRAIN;
+    /** 2.2.5: the Conqueror's full-power release tears self-repairing fissures in the ground. */
+    public static final Supplier<Boolean> FISSURES;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -62,6 +64,11 @@ public final class PieceConfig {
             SwordRules.SHEATHE_DELAY, 2, 200);
         TERRAIN = b.comment("Whether the Haki slash cuts terrain at all (pirates also follow the mobGriefing rule).")
             .define("slashCutsTerrain", true);
+        b.pop();
+        b.push("conqueror");
+        FISSURES = b.comment("Whether the Conqueror's full-charge release tears fissures in the ground where its lightning strikes (they"
+            + " grow back on their own 15 to 25 seconds later; nothing is dropped, nothing with a block entity is touched).")
+            .define("fullChargeFissures", true);
         b.pop();
         SPEC = b.build();
     }

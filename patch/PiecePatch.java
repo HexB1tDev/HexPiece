@@ -19,6 +19,7 @@ import jdk.internal.org.objectweb.asm.tree.FrameNode;
 import jdk.internal.org.objectweb.asm.tree.JumpInsnNode;
 import jdk.internal.org.objectweb.asm.tree.LabelNode;
 import jdk.internal.org.objectweb.asm.tree.InsnNode;
+import jdk.internal.org.objectweb.asm.tree.IntInsnNode;
 import jdk.internal.org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import jdk.internal.org.objectweb.asm.tree.LdcInsnNode;
 import jdk.internal.org.objectweb.asm.tree.MethodInsnNode;
@@ -105,6 +106,7 @@ public final class PiecePatch implements Opcodes {
     static final String RYOU_FX = "com/hexhaki/piece/client/haki/RyouFx";
     static final String RYOU_SERVER = "com/hexhaki/piece/server/RyouServer";
     static final String CONTROLLER = "com/hexhaki/gameplay/HakiServerController";
+    static final String CONQUEROR = "com/hexhaki/piece/server/ConquerorRelease";
     static final String COATING = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/model/geom/ModelPart;FZLnet/minecraft/client/player/AbstractClientPlayer;Z)V";
     static final String AURA = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZFZZ)V";
     static final String AMBIENT = "(Lnet/minecraft/world/entity/Entity;FZJZ)V";
@@ -117,6 +119,17 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/client/HakiKeys$ForgeBus", "tick", "com/hexhaki/binds/client/BindsClient", "off", "()Z", HOOKS, "hakiKeysOff", 1},
         {"com/hexhaki/client/HakiKeys$ForgeBus", "movementInput", "com/hexhaki/binds/client/BindsClient", "off", "()Z", HOOKS, "hakiKeysOff", 1},
         {CONTROLLER, "onAction", "com/hexhaki/binds/Binds", "off", "(Lnet/minecraft/world/entity/player/Player;)Z", RYOU_SERVER, "hakiOff", 1},
+        // 2.2.5 (the owner: "the hexpiece joyboy on/off, is not a thing anymore, anyone by default at max charge shall be able to do that.
+        // (keep and override the default max conqueror with the joyboy one since it's better.)", and "At full charge, it should cause
+        // severe tears on the floor like fissures where the lightnings hit, then repair themselves automaticly (same as HexGhoul)"): in
+        // the Conqueror's release the JoyBoy switch reads true (and INTS drops its mastery 1000 to 0: every full-charge radial release is
+        // the supreme one); the release's visual goes out through HexPiece with a seed it keeps, so the server knows the storm the clients
+        // draw; the supreme release's permanent destruction is self-repairing fissures along that storm's ground strikes instead
+        {CONTROLLER, "releaseConqueror", "com/hexhaki/data/HakiData", "joyBoy", "(Lnet/minecraft/world/entity/player/Player;)Z", CONQUEROR, "joyBoy", 1},
+        {CONTROLLER, "releaseConqueror", CONTROLLER, "visual", "(Lnet/minecraft/server/level/ServerPlayer;Lcom/hexhaki/network/msg/S2CHakiVisual$Visual;FI)V",
+            CONQUEROR, "visual", 2},
+        {CONTROLLER, "releaseConqueror", "com/hexhaki/gameplay/SupremeHakiDestruction", "unleash", "(Lnet/minecraft/server/level/ServerPlayer;D)V",
+            CONQUEROR, "fissures", 1},
         // 2.1.3 Ryou (the owner: "Ryou should look like blackened hands with a strong, clean glow outlining their shape. Keep the black
         // coating readable beneath the coloured rim. ... instead of covering the arms with red effects. Remove the fire particles from
         // every Ryou activation, idle and movement effect"): the coating stays plain black, the arm aura is left off while Ryou is up,
@@ -129,7 +142,14 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentGroundStorm", GROUND_STORM, RYOU_FX, "groundStorm", 1},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
-    static final String[][] WIDENED = {{HAND, "renderArmAura"}};
+    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}};
+    /**
+     * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any
+     * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either).
+     */
+    static final Object[][] INTS = {
+        {CONTROLLER, "releaseConqueror", 1000, 0, 1},
+    };
     /**
      * 2.1.3: static methods whose whole body becomes a call into HexPiece (same descriptor): class, method, descriptor, new owner, name.
      * The fist glow becomes Ryou's coloured rim; the fist flames are gone; J (Advanced Haki, now Ryou) is left empty (the owner: "I think
@@ -139,6 +159,8 @@ public final class PiecePatch implements Opcodes {
         {HAND, "renderAdvancedFistGlow", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZZ)V", RYOU_HANDS, "glow"},
         {HAND, "renderAdvancedFistFlames", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FFZZ)V", RYOU_HANDS, "flames"},
         {CONTROLLER, "toggleAcoc", "(Lnet/minecraft/server/level/ServerPlayer;)V", RYOU_SERVER, "acocKey"},
+        // 2.2.5: "/hp joyboy on|off" is not a thing any more: it says so (every full-charge release is the JoyBoy one)
+        {COMMANDS, "setJoyBoy", "(Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/server/level/ServerPlayer;Z)I", CONQUEROR, "joyBoyCommand"},
     };
     /** 2.1.3: once Ryou is unlocked, switching Armament on brings it (RyouServer.afterArmament runs before every return). */
     static final String[] AFTER_ARMAMENT = {CONTROLLER, "toggleArmament", "(Lnet/minecraft/server/level/ServerPlayer;)V", RYOU_SERVER, "afterArmament"};
@@ -230,6 +252,10 @@ public final class PiecePatch implements Opcodes {
         for (Object[] f : FLOATS) {
             String owner = (String) f[0];
             entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> replaceFloat(node, f)));
+        }
+        for (Object[] f : INTS) {
+            String owner = (String) f[0];
+            entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> replaceInt(node, f)));
         }
         for (Object[] f : FLOAT_FIELDS) {
             String owner = (String) f[0];
@@ -457,6 +483,27 @@ public final class PiecePatch implements Opcodes {
         }
         if (hooks < 1) {
             throw new AssertionError("no return in " + node.name + "." + AFTER_ARMAMENT[1]);
+        }
+    }
+
+    /** One {@link #INTS} row: the int pushed as a constant in the method becomes the new value (its own push); the count must match. */
+    static void replaceInt(ClassNode node, Object[] f) {
+        MethodNode method = method(node, (String) f[1], null);
+        int from = (Integer) f[2];
+        int to = (Integer) f[3];
+        int count = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            boolean match = insn instanceof IntInsnNode push && (push.getOpcode() == BIPUSH || push.getOpcode() == SIPUSH) && push.operand == from
+                || insn instanceof LdcInsnNode ldc && ldc.cst instanceof Integer value && value == from;
+            if (match) {
+                AbstractInsnNode replacement = to >= -1 && to <= 5 ? new InsnNode(ICONST_0 + to) : new LdcInsnNode(to);
+                method.instructions.set(insn, replacement);
+                insn = replacement;
+                count++;
+            }
+        }
+        if (count != (Integer) f[4]) {
+            throw new AssertionError("expected " + f[4] + " int constants " + from + " in " + node.name + "." + f[1] + ", found " + count);
         }
     }
 

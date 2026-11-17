@@ -23,6 +23,12 @@ public final class Bolt {
     public static final int CORE = 1;
     public static final int AURA = 2;
     public static final int HEART = 3;
+    /**
+     * 2.2.5: the rim of a huge black bolt (the Conqueror's full-power storm, after the owner's anime frames): a coloured tube a little
+     * wider than its {@link #BODY} drawn just behind it, so it shows only as a hot line round the black, and a wide glow. Never read
+     * from a colour: the storm sets it ({@link #withKind}).
+     */
+    public static final int EDGE = 4;
     /** Longest piece of a crackled stroke, in blocks: fine enough that a bolt reads as lightning, not as a bent stick. */
     public static final double PIECE = 0.15;
     public static final int MOST_LEVELS = 5;
@@ -156,6 +162,12 @@ public final class Bolt {
             widths[i] = (float) (width * (1.0 - (1.0 - tip) * t) * swell);
         }
         return new Bolt(path, widths, color, kindOf(color), delay, duration, crawl, seed, 0.16);
+    }
+
+    /** This stroke as another kind (2.2.5: the storm's {@link #EDGE} strokes). */
+    public Bolt withKind(int kind) {
+        return kind == this.kind ? this : new Bolt(this.points, this.widths, this.color, kind, this.delay, this.duration, this.crawl, this.seed,
+            this.dance);
     }
 
     /** This stroke with its last stretch drawn to a point (a bolt that ends here, not one that hands over to the next piece). */

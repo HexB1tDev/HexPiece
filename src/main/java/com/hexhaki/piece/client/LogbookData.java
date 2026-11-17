@@ -179,6 +179,13 @@ final class LogbookData {
             String info = quick >= 0 ? (t == HakiTechnique.CONQ_SOVEREIGN || t == HakiTechnique.ARM_GALAXY_WAVE ? "hold" : "tap or hold")
                 + " its quick slot" : own != null ? "its own key" : "passive: always on";
             Entry entry = Entry.of(t.display, key, info, live(t.description), open, "Needs " + HakiMasteryScreen.requirement(t));
+            if (t == HakiTechnique.CONQ_JOYBOY) {
+                // 2.2.5 (the owner: "anyone by default at max charge shall be able to do that"): no switch, no unlock
+                entry = Entry.of(t.display, "Full", "every full-charge release", "Every Conqueror's release at full charge is the JoyBoy one, for"
+                    + " everyone: the supreme release, its storm of black lightning in every direction and the fissures it tears in the ground"
+                    + " (they grow back on their own).", true, "");
+                open = true;
+            }
             entries.add(quick >= 0 ? entry.bindable(quick) : entry);
             if (!open && next == null) {
                 next = t;

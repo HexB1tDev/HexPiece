@@ -42,6 +42,9 @@ the start menu and the Captain's Log:
 - Pirate and Marine NPC patrols (pirates also with katanas) that fight each other and the players of the other flag with the same moves; bounty and merit ranks.
 - The Captain's Log (2.2.4: the one menu, the original's Ability Book, Haki Techniques and Gear mastery screens gone into it):
   overview, Style & Haki (moves, techniques, quick slots), Devil Fruit (moves, quick slots, the Nika fruit's upgrades).
+- The Conqueror's full-power release (2.2.5): every full charge is the JoyBoy one; enormous black bolts with a rim of the Ryou colour
+  tear out of a flash in every direction, and where they strike the ground it splits into fissures that grow back on their own
+  (HexGhoul's self-repairing terrain).
 - Haki lightning as real 3D lightning (2.1.5): crackled tubes facing the eye, with a black ink outline, a coloured core, a white-hot heart
   and a glow, striking, flickering, dancing and thinning away; Haki lightning off the katana as it is drawn, charged and released.
 - Every animation reworked (and linted so none comes apart); the Imu fruit removed (its assets kept).

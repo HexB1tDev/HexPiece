@@ -1,7 +1,6 @@
 package com.hexhaki.piece.client.haki;
 
 import com.hexhaki.piece.haki.Bolt;
-import com.hexhaki.piece.haki.BoltPainter;
 import com.hexhaki.piece.haki.ConquerorStorm;
 import com.lowdragmc.photon.client.fx.FX;
 import java.util.ArrayList;
@@ -26,20 +25,22 @@ public final class HakiStorm {
     /** {@code conquerorRelease}'s composition, its charge (0..1), its variant (mastery x 4 + mode) and its seed. */
     public static void release(FX fx, float charge, int variant, long seed) {
         try {
-            if (fx == null || charge < 0.999F) {
+            if (fx == null || charge < 0.96F) {
                 return;
             }
             int mastery = Math.max(0, variant / 4);
-            boolean supreme = charge >= 0.96F && mastery >= 1000;
+            // 2.2.5 (the owner: "anyone by default at max charge shall be able to do that"): every full-charge release is the
+            // supreme (JoyBoy) one, whatever the mastery (the server's releaseConqueror reads the same since this version)
+            boolean supreme = true;
             HakiBolts.Pending pending = HakiBolts.pending(fx);
             List<Bolt> storm = new ArrayList<>();
-            for (ConquerorStorm.Call call : ConquerorStorm.release(mastery, seed, supreme)) {
-                BoltPainter.strokes(call.a(), call.b(), call.width(), call.color(), call.duration(), call.delay(), false, SALT,
-                    ConquerorStorm.LEVELS, storm);
+            for (ConquerorStorm.Strand strand : ConquerorStorm.release(mastery, seed, supreme)) {
+                storm.addAll(ConquerorStorm.bolts(strand));
             }
             pending.bolts.addAll(storm);
             pending.ground.addAll(storm);
             pending.wave = ConquerorStorm.reach(mastery);
+            pending.burst = true;
         } catch (RuntimeException failure) {
             // the release plays as the original made it
         }

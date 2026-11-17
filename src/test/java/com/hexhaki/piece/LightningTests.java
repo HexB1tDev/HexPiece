@@ -299,33 +299,68 @@ public final class LightningTests {
         Check.near(ConquerorStorm.reach(1000), 120, 1e-9, "and 120 at full mastery");
         for (int mastery : new int[] {0, 500, 1000}) {
             for (boolean supreme : new boolean[] {false, true}) {
-                List<ConquerorStorm.Call> calls = ConquerorStorm.release(mastery, 77L, supreme);
-                List<ConquerorStorm.Call> again = ConquerorStorm.release(mastery, 77L, supreme);
-                Check.that(calls.size() == again.size(), "a storm is a pure function of its seed");
-                Check.that(calls.size() > 60 && calls.size() < 800, "a few huge bolts, not a carpet (" + calls.size() + " beams)");
+                List<ConquerorStorm.Strand> strands = ConquerorStorm.release(mastery, 77L, supreme);
+                List<ConquerorStorm.Strand> again = ConquerorStorm.release(mastery, 77L, supreme);
+                Check.that(strands.size() == again.size(), "a storm is a pure function of its seed");
                 double far = 0;
                 int roots = 0;
-                for (ConquerorStorm.Call call : calls) {
-                    Check.that(call.delay() >= 0 && call.duration() > 4, "every beam strikes, and burns a while");
-                    Check.that(call.a()[1] >= 0.0 && call.b()[1] >= 0.0, "every point is a height above the ground");
-                    for (double v : new double[] {call.a()[0], call.a()[2], call.b()[0], call.b()[2]}) {
-                        Check.that(!Double.isNaN(v), "no NaN in a storm");
+                for (int s = 0; s < strands.size(); s++) {
+                    ConquerorStorm.Strand strand = strands.get(s);
+                    Check.that(java.util.Arrays.equals(strand.points(), again.get(s).points()), "the same seed, the same storm (the server's fissures run under it)");
+                    Check.that(strand.delay() >= 0 && strand.duration() > 4 && strand.count() >= 3, "every strand strikes, and burns a while");
+                    for (int i = 0; i < strand.count(); i++) {
+                        Check.that(strand.points()[i * 3 + 1] >= 0.0, "every point is a height above the ground");
+                        Check.that(!Double.isNaN(strand.points()[i * 3]) && !Double.isNaN(strand.points()[i * 3 + 2]), "no NaN in a storm");
+                        Check.that(strand.widths()[i] > 0 && strand.widths()[i] < 6, "a ribbon, not a wall (" + strand.widths()[i] + ")");
+                        far = Math.max(far, Math.hypot(Math.hypot(strand.points()[i * 3], strand.points()[i * 3 + 1]), strand.points()[i * 3 + 2]));
                     }
-                    if (call.color() == ConquerorStorm.CORE) {
-                        far = Math.max(far, Math.sqrt(call.b()[0] * call.b()[0] + call.b()[1] * call.b()[1] + call.b()[2] * call.b()[2]));
-                        double cx = call.a()[0];
-                        double cy = call.a()[1] - 1.2;
-                        double cz = call.a()[2];
-                        if (Math.sqrt(cx * cx + cy * cy + cz * cz) <= 0.91) {
-                            roots++;
-                        }
+                    double cx = strand.points()[0];
+                    double cy = strand.points()[1] - ConquerorStorm.CHEST;
+                    double cz = strand.points()[2];
+                    if (Math.sqrt(cx * cx + cy * cy + cz * cz) <= 2.3) {
+                        roots++;
+                        Check.that(strand.widths()[0] < strand.widths()[strand.count() / 3], "a bolt leaves the flash thin and swells");
+                    }
+                    for (Bolt bolt : ConquerorStorm.bolts(strand)) {
+                        Check.that(bolt.kind == Bolt.BODY || bolt.kind == Bolt.EDGE, "a strand is a black body and its rim");
                     }
                 }
                 double reach = ConquerorStorm.reach(mastery);
                 Check.that(far > reach * 0.65 && far < reach * 1.1, "the storm spreads out to its reach (" + far + " of " + reach + ")");
-                Check.that(roots >= 8 && roots <= 13, "eight to thirteen huge bolts out of the player, over the whole sphere (" + roots + ")");
+                Check.that(roots >= 7 && roots <= 10, "seven to ten huge bolts out of the flash, over the whole sphere (" + roots + ")");
             }
         }
+        // 2.2.5: the fissures run under the strands that tear along the ground, open as the strike reaches them, and are a V
+        for (long seed : new long[] {3L, 77L, 1234L}) {
+            List<ConquerorStorm.Strand> storm = ConquerorStorm.release(1000, seed, true);
+            List<com.hexhaki.piece.haki.Fissure.Cut> cuts = com.hexhaki.piece.haki.Fissure.cuts(storm, seed);
+            Check.that(!cuts.isEmpty(), "a full-power storm tears the ground (seed " + seed + ")");
+            int last = -1;
+            for (com.hexhaki.piece.haki.Fissure.Cut cut : cuts) {
+                Check.that(cut.tick() >= last, "the cuts open in order");
+                last = cut.tick();
+                Check.that(cut.half() > 0.1 && cut.half() <= com.hexhaki.piece.haki.Fissure.HALF_WIDTH * 1.25 + 1e-9
+                    && cut.depth() > 0.3 && cut.depth() <= com.hexhaki.piece.haki.Fissure.DEPTH * 1.2 + 1e-9, "a cut is a tear, not a crater");
+                Check.near(Math.hypot(cut.nx(), cut.nz()), 1.0, 1e-9, "a cut's across is a unit");
+                Check.that(com.hexhaki.piece.haki.Fissure.depthAt(cut, 0) >= com.hexhaki.piece.haki.Fissure.depthAt(cut, cut.half() * 0.7)
+                    && com.hexhaki.piece.haki.Fissure.depthAt(cut, cut.half() * 1.01) == 0, "deepest in its middle, nothing past its sides");
+                Check.that(Math.hypot(cut.x(), cut.z()) < ConquerorStorm.reach(1000) * 1.15, "within the storm's reach");
+            }
+            Check.that(last < 40, "every fissure is open within two seconds (" + last + " ticks)");
+        }
+        // HexGhoul's repair ledger: each position remembered once, back in its own time, deferred and finished
+        com.hexhaki.piece.haki.ScarLedger<String> ledger = new com.hexhaki.piece.haki.ScarLedger<>();
+        Check.that(ledger.record(1L, "stone", 100) && !ledger.record(1L, "air", 50), "a second tear never overwrites the first state");
+        Check.that(ledger.record(2L, "dirt", 80), "another position");
+        Check.that(ledger.poll(79) == null, "nothing due before its time");
+        com.hexhaki.piece.haki.ScarLedger.Scar<String> first = ledger.poll(80);
+        Check.that(first != null && first.original.equals("dirt"), "the earliest comes first");
+        ledger.defer(first, 120, true);
+        com.hexhaki.piece.haki.ScarLedger.Scar<String> second = ledger.poll(120);
+        Check.that(second != null && second.original.equals("stone"), "a deferred one waits its turn");
+        ledger.finish(second);
+        Check.that(ledger.size() == 1 && ledger.contains(2L) && !ledger.contains(1L), "a finished one is gone");
+        Check.that(ledger.poll(120).retries() == 1, "a deferral counted");
         int[] counts = {0, 0};
         BoltMesh.ring(0, -1.6, 0, 6, 100, 0xFFFF1433, 1.0, (glow, v, c) -> {
             counts[glow ? 1 : 0]++;

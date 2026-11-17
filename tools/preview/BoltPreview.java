@@ -31,6 +31,10 @@ public final class BoltPreview {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length == 2 && args[0].equals("gifs")) {
+            gifs(new File(args[1]));
+            return;
+        }
         File dir = new File(args[0]);
         dir.mkdirs();
         double[] ages = {0.5, 1.2, 2.2, 4, 7, 10, 13};
@@ -282,23 +286,25 @@ public final class BoltPreview {
         int oldH = H;
         W = 420;
         H = 300;
-        double[] ages = {1, 4, 8, 12, 18, 26, 34};
-        Shot[] shots = {new Shot("third person", new double[] {-5, 4.5, -9}, new double[] {0, 1.5, 6}, true),
-            new Shot("high above", new double[] {0.5, 95, -40}, new double[] {0, 0, 10}, true),
-            new Shot("day, from afar", new double[] {-60, 12, -95}, new double[] {0, 4, 0}, false)};
-        List<Bolt> bolts = new ArrayList<>();
+        double[] ages = {1, 3, 6, 10, 16, 24};
+        // 2.2.5: the owner's frames looked up at the release from below and afar, at night; the colours are two Ryou colours
+        Object[][] shots = {
+            {new Shot("night, from below and afar", new double[] {-30, 3, -38}, new double[] {0, 12, 0}, true), 0xFFFF2B3D},
+            {new Shot("night, third person", new double[] {-5, 4.5, -9}, new double[] {0, 3.5, 6}, true), 0xFFFF2B3D},
+            {new Shot("night, from below, cyan Ryou", new double[] {-30, 3, -38}, new double[] {0, 12, 0}, true), 0xFF2AE6FF},
+            {new Shot("day, from afar", new double[] {-60, 12, -95}, new double[] {0, 4, 0}, false), 0xFFFF2B3D},
+            {new Shot("night, high above", new double[] {0.5, 95, -40}, new double[] {0, 0, 10}, true), 0xFFFF2B3D}};
+        List<Bolt> base = new ArrayList<>();
         BoltPainter.Chain chain = new BoltPainter.Chain();
         for (Call call : conqueror(1.0F, 1000, false, 8L)) {
             float start = chain.start(call.a, call.delay);
-            BoltPainter.strokes(call.a, call.b, call.width, call.color, call.duration, start, call.forks, 0x4841_4B49L, bolts);
+            BoltPainter.strokes(call.a, call.b, call.width, call.color, call.duration, start, call.forks, 0x4841_4B49L, base);
             chain.land(call.a, call.b, start, call.duration);
         }
-        for (com.hexhaki.piece.haki.ConquerorStorm.Call call : com.hexhaki.piece.haki.ConquerorStorm.release(1000, 8L, true)) {
-            BoltPainter.strokes(call.a(), call.b(), call.width(), call.color(), call.duration(), call.delay(), false, 0x4841_4B49L,
-                com.hexhaki.piece.haki.ConquerorStorm.LEVELS, bolts);
+        for (com.hexhaki.piece.haki.ConquerorStorm.Strand strand : com.hexhaki.piece.haki.ConquerorStorm.release(1000, 8L, true)) {
+            base.addAll(com.hexhaki.piece.haki.ConquerorStorm.bolts(strand));
         }
-        BoltPainter.point(bolts);
-        List<double[]> landings = landings(bolts);
+        BoltPainter.point(base);
         double reach = com.hexhaki.piece.haki.ConquerorStorm.reach(1000);
         BufferedImage sheet = new BufferedImage(W * ages.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = sheet.createGraphics();
@@ -307,21 +313,128 @@ public final class BoltPreview {
         g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         int most = 0;
         for (int r = 0; r < shots.length; r++) {
+            Shot shot = (Shot) shots[r][0];
+            int colour = (Integer) shots[r][1];
+            // as the game does at launch: every stroke in the owner's Ryou colour, the black body kept
+            List<Bolt> bolts = new ArrayList<>();
+            for (Bolt bolt : base) {
+                bolts.add(bolt.tinted(colour & 0xFFFFFF));
+            }
+            List<double[]> landings = landings(bolts);
             for (int c = 0; c < ages.length; c++) {
-                Raster raster = new Raster(shots[r]);
+                Raster raster = new Raster(shot);
                 raster.scene();
                 raster.landings = landings;
                 raster.wave = reach;
+                raster.burst = true;
+                raster.stormColor = colour;
                 int quads = raster.bolts(bolts, ages[c]);
                 most = Math.max(most, quads);
                 g.drawImage(raster.image(), c * W, r * (H + 18) + 18, null);
                 g.setColor(new Color(30, 30, 30));
-                g.drawString(shots[r].label + "  t" + ages[c] + "  " + quads + " quads", c * W + 4, r * (H + 18) + 13);
+                g.drawString(shot.label + "  t" + ages[c] + "  " + quads + " quads", c * W + 4, r * (H + 18) + 13);
             }
         }
         g.dispose();
         ImageIO.write(sheet, "png", out);
-        System.out.println(out.getName() + ": " + bolts.size() + " strokes, " + landings.size() + " strikes, at most " + most + " quads a frame");
+        System.out.println(out.getName() + ": " + base.size() + " strokes, at most " + most + " quads a frame");
+        W = oldW;
+        H = oldH;
+    }
+
+    /** 2.2.5: one large frame of the full-power release, to judge its ribbons, rims and flash up close. */
+    static void stormHero(File out) throws Exception {
+        List<Bolt> base = new ArrayList<>();
+        for (com.hexhaki.piece.haki.ConquerorStorm.Strand strand : com.hexhaki.piece.haki.ConquerorStorm.release(1000, 8L, true)) {
+            base.addAll(com.hexhaki.piece.haki.ConquerorStorm.bolts(strand));
+        }
+        BoltPainter.point(base);
+        List<Bolt> bolts = new ArrayList<>();
+        for (Bolt bolt : base) {
+            bolts.add(bolt.tinted(0xFF2B3D));
+        }
+        Raster raster = new Raster(new Shot("night, from below and afar", new double[] {-30, 3, -38}, new double[] {0, 14, 0}, true));
+        raster.scene();
+        raster.wave = com.hexhaki.piece.haki.ConquerorStorm.reach(1000);
+        raster.burst = true;
+        raster.stormColor = 0xFFFF2B3D;
+        raster.bolts(bolts, 7.0);
+        ImageIO.write(raster.image(), "png", out);
+    }
+
+    /**
+     * 2.2.5: frames for the owner's GIFs (java -cp build/preview:build/classes BoltPreview gifs &lt;dir&gt;): the Conqueror's full-power release
+     * seen from far away (the original's own release lightning, the storm, its flash and shockwave), and the full-charge Haki slash flying
+     * its whole range, seen from the side.
+     */
+    static void gifs(File dir) throws Exception {
+        int oldW = W;
+        int oldH = H;
+        W = 640;
+        H = 400;
+        File release = new File(dir, "release");
+        release.mkdirs();
+        List<Bolt> base = new ArrayList<>();
+        BoltPainter.Chain chain = new BoltPainter.Chain();
+        for (Call call : conqueror(1.0F, 1000, false, 8L)) {
+            float start = chain.start(call.a, call.delay);
+            BoltPainter.strokes(call.a, call.b, call.width, call.color, call.duration, start, call.forks, 0x4841_4B49L, base);
+            chain.land(call.a, call.b, start, call.duration);
+        }
+        for (com.hexhaki.piece.haki.ConquerorStorm.Strand strand : com.hexhaki.piece.haki.ConquerorStorm.release(1000, 8L, true)) {
+            base.addAll(com.hexhaki.piece.haki.ConquerorStorm.bolts(strand));
+        }
+        BoltPainter.point(base);
+        int colour = 0xFFFF2B3D;
+        List<Bolt> bolts = new ArrayList<>();
+        for (Bolt bolt : base) {
+            bolts.add(bolt.tinted(colour & 0xFFFFFF));
+        }
+        List<double[]> landings = landings(bolts);
+        Shot far = new Shot("night, from far away", new double[] {-95, 34, -130}, new double[] {0, 20, 0}, true);
+        int frame = 0;
+        for (double age = 0; age <= 32; age += 0.5) {
+            Raster raster = new Raster(far);
+            raster.plain = 20;
+            raster.scene();
+            raster.landings = landings;
+            raster.wave = com.hexhaki.piece.haki.ConquerorStorm.reach(1000);
+            raster.burst = true;
+            raster.stormColor = colour;
+            raster.bolts(bolts, age);
+            ImageIO.write(raster.image(), "png", new File(release, String.format("f%03d.png", frame++)));
+        }
+        File slash = new File(dir, "slash");
+        slash.mkdirs();
+        double height = com.hexhaki.piece.sword.SwordRules.SLASH_HEIGHT_MAX;
+        double range = com.hexhaki.piece.sword.SwordRules.SLASH_RANGE_MAX;
+        double speed = com.hexhaki.piece.sword.SwordRules.SLASH_SPEED_MAX;
+        double foot = 1.6 + com.hexhaki.piece.sword.SwordRules.slashCentre(height) - height / 2.0;
+        Shot side = new Shot("day, from the side", new double[] {100, 30, -160}, new double[] {100, 26, 0}, false);
+        frame = 0;
+        for (double ticks = 0; ticks <= range / speed + 4; ticks += 1.0) {
+            Raster raster = new Raster(side);
+            raster.plain = 20;
+            raster.scene();
+            raster.minAlpha = 0.002F;
+            double along = Math.min(range, ticks * speed);
+            double fade = ticks * speed <= range ? 1.0 : Math.max(0.0, 1.0 - (ticks - range / speed) / 3.0);
+            if (fade > 0.01) {
+                com.hexhaki.piece.sword.SlashMesh.Quads glow = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                com.hexhaki.piece.sword.SlashMesh.Quads solid = new com.hexhaki.piece.sword.SlashMesh.Quads();
+                com.hexhaki.piece.sword.SlashMesh.Frame f = com.hexhaki.piece.sword.SlashMesh.Frame.of(sub(new double[] {along, foot, 0}, side.eye), 1, 0,
+                    height, along / (height * com.hexhaki.piece.sword.SwordRules.SLASH_BACK));
+                com.hexhaki.piece.sword.SlashMesh.wave(solid, glow, f, 7L, 0xFF2AE6FF, ticks, fade);
+                for (int q = 0; q < solid.n; q++) {
+                    raster.quad(java.util.Arrays.copyOfRange(solid.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(solid.c, q * 4, q * 4 + 4), false);
+                }
+                glow.sortBackToFront();
+                for (int q = 0; q < glow.n; q++) {
+                    raster.quadNoCull(java.util.Arrays.copyOfRange(glow.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(glow.c, q * 4, q * 4 + 4));
+                }
+            }
+            ImageIO.write(raster.image(), "png", new File(slash, String.format("f%03d.png", frame++)));
+        }
         W = oldW;
         H = oldH;
     }
@@ -389,7 +502,7 @@ public final class BoltPreview {
             double y = bolt.points[last + 1];
             double z = bolt.points[last + 2];
             long key = Math.round(x * 32) * 31L + Math.round(y * 32) * 131L + Math.round(z * 32) * 1313L;
-            if (bolt.kind != Bolt.CORE || roots.contains(key) || y > 0.35 || hits.size() >= 16) {
+            if (bolt.kind != Bolt.CORE && bolt.kind != Bolt.EDGE || roots.contains(key) || y > 0.35 || hits.size() >= 16) {
                 continue;
             }
             if (cells.add(Math.round(x * 2) * 7919L + Math.round(z * 2))) {
@@ -453,8 +566,13 @@ public final class BoltPreview {
         float[] triAlpha;
         /** Below this a blended pixel is skipped (2.2.4: the slash's faint halo is drawn). */
         float minAlpha = 0.1F;
+        /** Big tiles each way from the middle (16 blocks each). */
+        int plain = 8;
         List<double[]> landings;
         double wave;
+        /** 2.2.5: the centre's flash, and the colour the storm was tinted to (the shockwave, flash and strikes take it). */
+        boolean burst;
+        int stormColor = 0xFFFF1433;
 
         Raster(Shot shot) {
             this.eye = shot.eye;
@@ -486,9 +604,9 @@ public final class BoltPreview {
                     box(x, -0.2, z, x + 1, 0, z + 1, c);
                 }
             }
-            // beyond, the plain (big tiles)
-            for (int x = -8; x < 8; x++) {
-                for (int z = -8; z < 8; z++) {
+            // beyond, the plain (big tiles; 2.2.5: out to {@link #plain} tiles for the long shots)
+            for (int x = -this.plain; x < this.plain; x++) {
+                for (int z = -this.plain; z < this.plain; z++) {
                     if (x >= -1 && x < 1 && z >= -1 && z < 1) {
                         continue;
                     }
@@ -548,8 +666,16 @@ public final class BoltPreview {
                     }
                 });
             }
+            if (this.burst) {
+                BoltMesh.burst(-this.eye[0], com.hexhaki.piece.haki.ConquerorStorm.CHEST - this.eye[1], -this.eye[2], age, 10.0 + this.wave * 0.1,
+                    this.stormColor, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
+                        quads[0]++;
+                        glowV.add(xyz);
+                        glowC.add(argb);
+                    });
+            }
             if (this.wave > 0) {
-                BoltMesh.ring(-this.eye[0], -this.eye[1], -this.eye[2], age, this.wave, 0xFFFF1433, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
+                BoltMesh.ring(-this.eye[0], -this.eye[1], -this.eye[2], age, this.wave, this.stormColor, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                     quads[0]++;
                     if (glow) {
                         glowV.add(xyz);
@@ -561,7 +687,7 @@ public final class BoltPreview {
             }
             if (this.landings != null) {
                 for (double[] hit : this.landings) {
-                    BoltMesh.landing(hit[0] - this.eye[0], 0.0 - this.eye[1], hit[2] - this.eye[2], age - hit[3], 0xFFFF1433, 1.0,
+                    BoltMesh.landing(hit[0] - this.eye[0], 0.0 - this.eye[1], hit[2] - this.eye[2], age - hit[3], this.stormColor, 1.0,
                         this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                             if (glow) {
                                 glowV.add(xyz);

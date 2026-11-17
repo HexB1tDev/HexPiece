@@ -76,11 +76,13 @@ public final class HakiBolts {
         final java.util.Set<Bolt> ground = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
         /** 2.1.7: the full-power shockwave's reach (0: none). */
         double wave;
+        /** 2.2.5: the full-power flash at the centre. */
+        boolean burst;
     }
 
     /** Bolts set going: at a fixed point, or following {@code entity} (feet, turned with it); where their free ends strike the ground. */
     record Live(List<Bolt> bolts, Entity entity, double x, double y, double z, long start, float end, List<Landing> landings, double wave,
-                int color) {
+                int color, boolean burst) {
     }
 
     /** Where a bolt's free end strikes the ground (world, on its surface), when (ticks from the start), how big, and whether it was heard. */
@@ -126,20 +128,21 @@ public final class HakiBolts {
 
     /** {@code HakiVfx.play(entity, fx)}: true if nothing of the composition is left for Photon to play. */
     public static boolean played(FX fx, Entity entity) {
-        return entity != null && launch(fx, entity, entity.m_9236_(), 0, 0, 0);
+        return entity != null && launch(fx, entity, entity, entity.m_9236_(), 0, 0, 0);
     }
 
     /** {@code HakiVfx.playAtWorld(entity, x, y, z, fx)}. */
     public static boolean playedAt(FX fx, Entity entity, double x, double y, double z) {
-        return entity != null && launch(fx, null, entity.m_9236_(), x, y, z);
+        return entity != null && launch(fx, null, entity, entity.m_9236_(), x, y, z);
     }
 
     /** {@code HakiVfx.playAtFixed(level, x, y, z, fx)}. */
     public static boolean playedFixed(FX fx, ClientLevel level, double x, double y, double z) {
-        return launch(fx, null, level, x, y, z);
+        return launch(fx, null, null, level, x, y, z);
     }
 
-    static boolean launch(FX fx, Entity entity, Level level, double x, double y, double z) {
+    /** {@code entity}: what the effect rides on (null: a fixed point); {@code owner}: whose it is (its colour), or null. */
+    static boolean launch(FX fx, Entity entity, Entity owner, Level level, double x, double y, double z) {
         try {
             Pending pending = PENDING.remove(fx);
             if (pending == null || pending.bolts.isEmpty() || level == null || alive + pending.bolts.size() > MOST) {
@@ -147,12 +150,13 @@ public final class HakiBolts {
             }
             List<IFXObject> objects = fx.getMainFX().objects();
             objects.removeIf(o -> containsSame(pending.beams, o));
-            // 2.2.4: the lightning is its owner's Ryou colour (the player it plays on, or the nearest one to a fixed point)
-            int color = colorOf(entity != null ? entity : nearestPlayer(level, x, y, z));
-            pending.bolts.replaceAll(bolt -> bolt.tinted(color));
             if (!pending.ground.isEmpty()) {
                 onGround(pending, entity, x, y, z, level);
             }
+            // 2.2.4: the lightning is its owner's Ryou colour (the player it plays for, or the nearest one to a fixed point); after the
+            // storm is laid on the ground (that finds its bolts by identity) and before its strikes are found (they take its colour)
+            int color = colorOf(owner != null ? owner : nearestPlayer(level, x, y, z));
+            pending.bolts.replaceAll(bolt -> bolt.tinted(color));
             BoltPainter.point(pending.bolts);
             boolean storm = pending.wave > 0;
             List<Landing> landings = landings(pending.bolts, entity, x, y, z, level, storm ? 20 : MOST_LANDINGS, storm ? 6 : 3, storm);
@@ -166,7 +170,10 @@ public final class HakiBolts {
             if (storm) {
                 end = Math.max(end, (float) BoltMesh.WAVE);
             }
-            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave, color | 0xFF000000));
+            if (pending.burst) {
+                end = Math.max(end, (float) BoltMesh.BURST);
+            }
+            LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave, color | 0xFF000000, pending.burst));
             alive += pending.bolts.size();
             if (!landings.isEmpty() || pending.bolts.size() >= 12) {
                 // the composition's own crackle, at its anchor (the original plays the heavy charge and release sounds itself)
@@ -269,7 +276,7 @@ public final class HakiBolts {
         for (Bolt bolt : bolts) {
             int last = bolt.points.length - 3;
             double[] end = {bolt.points[last], bolt.points[last + 1], bolt.points[last + 2]};
-            if (bolt.kind != Bolt.CORE || roots.contains(BoltPainter.Chain.key(end))) {
+            if (bolt.kind != Bolt.CORE && bolt.kind != Bolt.EDGE || roots.contains(BoltPainter.Chain.key(end))) {
                 continue;
             }
             double wx = ox + end[0] * cos + end[2] * sin;
@@ -409,6 +416,10 @@ public final class HakiBolts {
                 double cy = (live.entity != null ? live.entity.m_20318_(partial).f_82480_ : live.y) - cam.f_82480_;
                 double cz = (live.entity != null ? live.entity.m_20318_(partial).f_82481_ : live.z) - cam.f_82481_;
                 BoltMesh.ring(cx, cy, cz, ticks, live.wave, live.color, shine, sink);
+                if (live.burst) {
+                    // 2.2.5: the flash the storm tears out of, at the chest
+                    BoltMesh.burst(cx, cy + com.hexhaki.piece.haki.ConquerorStorm.CHEST, cz, ticks, 10.0 + live.wave * 0.1, live.color, shine, sink);
+                }
             }
             for (Landing landing : live.landings) {
                 double age = ticks - landing.at;

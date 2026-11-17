@@ -170,6 +170,28 @@ public final class BoltMesh {
                 int body = 0xFF000000 | (color & 0xFFFFFF);
                 tube(p, count, side, half, body, body, 0.0, pixel, dist, sink);
             }
+            case Bolt.EDGE -> {
+                // behind the black body (the same width rule as BODY's), a hot line in the colour hugging it and a wide glow round it
+                double scale = Math.sqrt(fade) * (1.0 + 0.15 * flash);
+                double bright = Math.min(1.0, flicker * (0.85 + 0.15 * fade) + 0.4 * flash);
+                double[] rim = new double[count];
+                double[] halo = new double[count];
+                for (int i = 0; i < count; i++) {
+                    double body = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade);
+                    rim[i] = body * 1.12 + 1.8 * pixel * dist[i] * fade;
+                    halo[i] = body * 2.3 + 0.12;
+                }
+                int glowColor = scale(color, (0.6 * bright * fade + 0.35 * flash) * shine);
+                // the glow too only outside the rim: a full halo ribbon would twist in front of the black where the bolt turns
+                glowBand(p, count, side, rim, halo, glowColor, sink);
+                int hot = mix(scale(color, bright), 0xFFFFFFFF, 0.3 + 0.35 * flash);
+                // only the bands outside the black (nothing of the rim lies behind the body to show through where a wide ribbon twists)
+                double[] inner = new double[count];
+                for (int i = 0; i < count; i++) {
+                    inner[i] = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade) * 0.96;
+                }
+                band(p, count, side, inner, rim, hot, scale(color, 0.75 + 0.25 * bright), -0.5, dist, sink);
+            }
             case Bolt.AURA -> {
                 double strength = ((color >>> 24) & 255) / 255.0 * 0.7 * fade * flicker * (1.0 + 0.6 * flash);
                 double[] half = new double[count];
@@ -489,6 +511,56 @@ public final class BoltMesh {
         }
     }
 
+    /**
+     * 2.2.5: two bands along the path, from {@code inner} to {@code outer} each side of it ({@code near} at the inner edge, {@code far}
+     * at the outer), mitred at its joints: an outline round a body without anything behind the body.
+     */
+    static void band(double[] p, int count, double[] side, double[] inner, double[] outer, int near, int far, double layer, double[] dist,
+                     Sink sink) {
+        double[] v = new double[12];
+        int[] c = new int[4];
+        double[] m = mitres(p, count, side);
+        for (int i = 0; i + 1 < count; i++) {
+            double pushA = push(layer, dist[i]);
+            double pushB = push(layer, dist[i + 1]);
+            for (int s = -1; s <= 1; s += 2) {
+                corner(p, side, i, s * inner[i] * m[i], pushA, dist[i], v, 0);
+                corner(p, side, i + 1, s * inner[i + 1] * m[i + 1], pushB, dist[i + 1], v, 3);
+                corner(p, side, i + 1, s * outer[i + 1] * m[i + 1], pushB, dist[i + 1], v, 6);
+                corner(p, side, i, s * outer[i] * m[i], pushA, dist[i], v, 9);
+                c[0] = near;
+                c[1] = near;
+                c[2] = far;
+                c[3] = far;
+                emit(false, v, c, sink);
+            }
+        }
+    }
+
+    /** 2.2.5: a glow in two bands, {@code color} at {@code inner} fading to nothing at {@code outer}, each side of the path. */
+    static void glowBand(double[] p, int count, double[] side, double[] inner, double[] outer, int color, Sink sink) {
+        if ((color & 0xFFFFFF) == 0) {
+            return;
+        }
+        double[] v = new double[12];
+        int[] c = new int[4];
+        int none = color & 0xFF000000;
+        double[] m = mitres(p, count, side);
+        for (int i = 0; i + 1 < count; i++) {
+            for (int s = -1; s <= 1; s += 2) {
+                corner(p, side, i, s * inner[i] * m[i], -0.02, 1.0, v, 0);
+                corner(p, side, i + 1, s * inner[i + 1] * m[i + 1], -0.02, 1.0, v, 3);
+                corner(p, side, i + 1, s * outer[i + 1] * m[i + 1], -0.02, 1.0, v, 6);
+                corner(p, side, i, s * outer[i] * m[i], -0.02, 1.0, v, 9);
+                c[0] = color;
+                c[1] = color;
+                c[2] = none;
+                c[3] = none;
+                emit(true, v, c, sink);
+            }
+        }
+    }
+
     /** An additive halo along the path: {@code color} along the bolt, nothing at the rims. */
     static void glow(double[] p, int count, double[] side, double[] half, int color, Sink sink) {
         if ((color & 0xFFFFFF) == 0) {
@@ -678,6 +750,55 @@ public final class BoltMesh {
         double dy = p[b * 3 + 1] - p[a * 3 + 1];
         double dz = p[b * 3 + 2] - p[a * 3 + 2];
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    /** Ticks the Conqueror's centre flash lasts. */
+    public static final double BURST = 18.0;
+
+    /**
+     * 2.2.5: the flash where the player stands at the Conqueror's full-power release (the owner's anime frames: a blinding pink-white
+     * light round the tiny figure, the bolts tearing out of it): a disc facing the eye at (x, y, z) (camera space), {@code radius}
+     * blocks, white-hot in the middle through the colour to nothing at its rim; it swells in two ticks and dies over {@link #BURST}.
+     */
+    public static void burst(double x, double y, double z, double age, double radius, int color, double shine, Sink sink) {
+        if (age < 0 || age > BURST) {
+            return;
+        }
+        double grow = Math.min(1.0, (age + 0.5) / 2.5);
+        double life = age < 1.5 ? 1.0 : Math.pow(1.0 - (age - 1.5) / (BURST - 1.5), 1.6);
+        double r = radius * (0.5 + 0.5 * grow);
+        double l = Math.max(1.0E-6, Math.sqrt(x * x + y * y + z * z));
+        // the disc's axes: square to the line of sight
+        double[] u = {-z, 0, x};
+        double ul = Math.hypot(u[0], u[2]);
+        u = ul < 1.0E-6 ? new double[] {1, 0, 0} : new double[] {u[0] / ul, 0, u[2] / ul};
+        double[] v = {y / l * u[2] - z / l * u[1], z / l * u[0] - x / l * u[2], x / l * u[1] - y / l * u[0]};
+        int sides = 24;
+        double[] rings = {0.0, 0.3, 0.62, 1.0};
+        int[] colours = {scale(mix(color, 0xFFFFFFFF, 0.9), life * shine), scale(mix(color, 0xFFFFFFFF, 0.7), life * shine),
+            scale(mix(color, 0xFFFFFFFF, 0.4), life * 0.65 * shine), 0};
+        double[] q = new double[12];
+        int[] c = new int[4];
+        for (int ring = 0; ring + 1 < rings.length; ring++) {
+            for (int k = 0; k < sides; k++) {
+                double a0 = Math.PI * 2.0 * k / sides;
+                double a1 = Math.PI * 2.0 * (k + 1) / sides;
+                double[][] corners = {{rings[ring], a0}, {rings[ring + 1], a0}, {rings[ring + 1], a1}, {rings[ring], a1}};
+                for (int j = 0; j < 4; j++) {
+                    double rr = corners[j][0] * r;
+                    double ca = Math.cos(corners[j][1]) * rr;
+                    double sa = Math.sin(corners[j][1]) * rr;
+                    q[j * 3] = x + u[0] * ca + v[0] * sa;
+                    q[j * 3 + 1] = y + u[1] * ca + v[1] * sa;
+                    q[j * 3 + 2] = z + u[2] * ca + v[2] * sa;
+                }
+                c[0] = colours[ring];
+                c[1] = colours[ring + 1];
+                c[2] = colours[ring + 1];
+                c[3] = colours[ring];
+                emit(true, q, c, sink);
+            }
+        }
     }
 
     /** {@code argb}'s colour times {@code k} (clamped), opaque. */
