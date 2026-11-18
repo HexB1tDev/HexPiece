@@ -115,6 +115,27 @@ public final class HolsterView {
             m[2][3] = s[3];
             return m;
         }
+        if (s[0] == DrawView.ROTATE) {
+            // 2.5.6: about any axis (Rodrigues)
+            double a = Math.toRadians(s[1]);
+            double l = Math.sqrt(s[2] * s[2] + s[3] * s[3] + s[4] * s[4]);
+            double x = s[2] / l;
+            double y = s[3] / l;
+            double z = s[4] / l;
+            double c = Math.cos(a);
+            double n = Math.sin(a);
+            double t = 1 - c;
+            m[0][0] = t * x * x + c;
+            m[0][1] = t * x * y - n * z;
+            m[0][2] = t * x * z + n * y;
+            m[1][0] = t * x * y + n * z;
+            m[1][1] = t * y * y + c;
+            m[1][2] = t * y * z - n * x;
+            m[2][0] = t * x * z - n * y;
+            m[2][1] = t * y * z + n * x;
+            m[2][2] = t * z * z + c;
+            return m;
+        }
         double a = Math.toRadians(s[1]);
         double c = Math.cos(a);
         double n = Math.sin(a);
@@ -184,6 +205,10 @@ public final class HolsterView {
 
     static double[] cross(double[] a, double[] b) {
         return new double[] {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]};
+    }
+
+    static double len(double[] a) {
+        return Math.sqrt(dot(a, a));
     }
 
     static double[] norm(double[] a) {

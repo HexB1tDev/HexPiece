@@ -35,6 +35,7 @@ public final class SwordTests {
         wave();
         sounds();
         holster();
+        drawView();
         Check.done("SwordTests");
     }
 
@@ -701,6 +702,105 @@ public final class SwordTests {
         double t = Math.max(0, Math.min(1, dot3(sub3(p, a), ab) / dot3(ab, ab)));
         double[] c = {a[0] + ab[0] * t, a[1] + ab[1] * t, a[2] + ab[2] * t};
         double[] d = sub3(p, c);
+        return Math.sqrt(dot3(d, d));
+    }
+    /**
+     * 2.5.6 (the owner: "the pull out animation needs to be really gorgeous to look at, sheath and unsheath both", first person):
+     * sword/DrawView: the draw starts exactly where the sheathed view rests and ends exactly where the drawn blade is held, the
+     * sheathing the other way round; nothing jumps between frames (a quarter of a tick); the right fist stays on the handle while it
+     * holds it; everything stays in front of the eye; the blade is clear of the saya by the tick the server lets it cut and home by the
+     * tick it counts it sheathed. Every hip blade, wide and slim arms.
+     */
+    static void drawView() {
+        for (Katana katana : new Katana[] {Katana.CRIMSON_DAWN, Katana.GRYPHON}) {
+            for (boolean slim : new boolean[] {false, true}) {
+                float drawLength = com.hexhaki.piece.sword.SwordAnims.duration(com.hexhaki.piece.sword.SwordAnims.DRAW, katana);
+                float sheatheLength = com.hexhaki.piece.sword.SwordAnims.duration(com.hexhaki.piece.sword.SwordAnims.SHEATHE, katana);
+                com.hexhaki.piece.sword.DrawView.Pose rest = com.hexhaki.piece.sword.DrawView.holster(katana, slim, 0.0F, 0.0F);
+                com.hexhaki.piece.sword.DrawView.Pose held = com.hexhaki.piece.sword.DrawView.held(katana, slim, 0.0F, 0.0F);
+                String drawName = com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, katana);
+                String sheatheName = com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.SHEATHE, katana);
+                int drawTick = com.hexhaki.piece.sword.BladePaths.drawTick(drawName);
+                int sheathTick = com.hexhaki.piece.sword.BladePaths.sheathTick(sheatheName);
+                Check.that(drawTick > 0 && drawTick < drawLength && sheathTick > 0 && sheathTick < sheatheLength, "the server's draw and sheath ticks");
+                com.hexhaki.piece.sword.DrawView.Pose first = com.hexhaki.piece.sword.DrawView.draw(katana, slim, 0.0F, drawLength, drawTick, 0.0F, 0.0F);
+                com.hexhaki.piece.sword.DrawView.Pose last = com.hexhaki.piece.sword.DrawView.draw(katana, slim, drawLength, drawLength, drawTick, 0.0F, 0.0F);
+                Check.that(same(first.blade(), rest.blade()) && same(first.left(), rest.left()), "the draw starts at rest");
+                Check.that(same(last.blade(), held.blade()) && same(last.right(), held.right()), "the draw ends where the blade is held");
+                com.hexhaki.piece.sword.DrawView.Pose s0 = com.hexhaki.piece.sword.DrawView.sheathe(katana, slim, 0.0F, sheatheLength, sheathTick, 0.0F, 0.0F);
+                com.hexhaki.piece.sword.DrawView.Pose s1 = com.hexhaki.piece.sword.DrawView.sheathe(katana, slim, sheatheLength, sheatheLength, sheathTick, 0.0F, 0.0F);
+                Check.that(same(s0.blade(), held.blade()) && same(s0.right(), held.right()), "the sheathing starts where the blade is held");
+                Check.that(same(s1.blade(), rest.blade()) && same(s1.left(), rest.left()), "the sheathing ends at rest");
+                double[] mouth = origin(rest.blade());
+                for (int phase = 0; phase < 2; phase++) {
+                    float length = phase == 0 ? drawLength : sheatheLength;
+                    double[] lastGuard = null;
+                    double[] lastTip = null;
+                    double[] lastFist = null;
+                    for (float t = 0.0F; t <= length + 1e-4; t += 0.25F) {
+                        com.hexhaki.piece.sword.DrawView.Pose p = phase == 0
+                            ? com.hexhaki.piece.sword.DrawView.draw(katana, slim, t, length, drawTick, 0.0F, 0.0F)
+                            : com.hexhaki.piece.sword.DrawView.sheathe(katana, slim, t, length, sheathTick, 0.0F, 0.0F);
+                        double[][] m = com.hexhaki.piece.sword.HolsterView.matrix(p.blade());
+                        double[] guard = apply(m, 0, 0, 0);
+                        double[] tip = apply(m, 0, katana.tip() / 16.0, 0);
+                        double[] grip = apply(m, 0, -2.4 / 16.0, 0);
+                        Check.that(guard[2] < -0.3 && tip[2] < -0.05, "in front of the eye (" + katana + " t" + t + ")");
+                        if (lastGuard != null) {
+                            Check.that(distance(guard, lastGuard) < 0.4 && distance(tip, lastTip) < 1.0, "no jump at t" + t + " (" + katana + ")");
+                        }
+                        if (p.right() != null) {
+                            double[] fist = origin(p.right());
+                            boolean holding = phase == 0 ? t * 19.5F / drawTick >= 6.0F : t < sheathTick;
+                            if (holding) {
+                                Check.that(distance(fist, grip) < 1e-4, "the right fist on the handle at t" + t);
+                            }
+                            if (lastFist != null) {
+                                Check.that(distance(fist, lastFist) < 0.4, "the right hand never jumps (t" + t + ")");
+                            }
+                            lastFist = fist;
+                        }
+                        if (phase == 0 && Math.abs(t - drawTick) < 1e-4) {
+                            // the point at the saya's mouth (where the mouth is now: the left hand draws the saya back) on the very tick
+                            // the server lets the blade cut
+                            // (measured along the blade's straight line: Gryphon's saber curves hard, its real point a few px off it)
+                            Check.that(distance(tip, origin(p.saya())) < (katana == Katana.GRYPHON ? 0.26 : 0.12),
+                                "the point leaves the mouth on the server's draw tick ("
+                                + katana + ", " + distance(tip, origin(p.saya())) + ")");
+                        }
+                        if (phase == 1 && sheathTick >= 0 && t >= sheathTick) {
+                            Check.that(distance(guard, mouth) < 0.02, "home when the server counts it sheathed (t" + t + ")");
+                        }
+                        lastGuard = guard;
+                        lastTip = tip;
+                    }
+                }
+            }
+        }
+    }
+
+    static boolean same(float[][] a, float[][] b) {
+        if (a == null || b == null) {
+            return a == b;
+        }
+        double[][] ma = com.hexhaki.piece.sword.HolsterView.matrix(a);
+        double[][] mb = com.hexhaki.piece.sword.HolsterView.matrix(b);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 4; j++) {
+                if (Math.abs(ma[i][j] - mb[i][j]) > 2e-3) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    static double[] origin(float[][] steps) {
+        return new double[] {steps[0][1], steps[0][2], steps[0][3]};
+    }
+
+    static double distance(double[] a, double[] b) {
+        double[] d = sub3(a, b);
         return Math.sqrt(dot3(d, d));
     }
 }

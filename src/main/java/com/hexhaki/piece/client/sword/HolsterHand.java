@@ -2,6 +2,8 @@ package com.hexhaki.piece.client.sword;
 
 import com.hexhaki.client.render.ArmamentItemBuffers;
 import com.hexhaki.piece.client.StanceLayer;
+import com.hexhaki.piece.sword.BladePaths;
+import com.hexhaki.piece.sword.DrawView;
 import com.hexhaki.piece.sword.HolsterView;
 import com.hexhaki.piece.sword.Katana;
 import com.hexhaki.piece.sword.KatanaItem;
@@ -19,20 +21,29 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.joml.Quaternionf;
 
 /**
- * 2.5.4 (the owner: "the sword first person, if the sword is holstered the hand should be resting on the holster too, not just on the
- * players hand, the first persons are meant to reflect exactly what the player is doing"): while the local player's katana is in its
- * saya at the hip, the game's first-person hand no longer carries it like an item ({@link KatanaItemRenderer#held}): the view shows the
- * sword where it is, its handle and guard rising from the bottom left with the saya's mouth under the guard, and the left hand resting
- * on the end of the handle ({@link HolsterView}: the same steps as tools/holster_preview.py renders). The arm is the game's own
- * ({@code PlayerRenderer.renderLeftHand}: the player's skin, Armament's black and Ryou's aura with it); the hilt black under Armament as
- * in third person; standing ready, the thumb breaks the saya's seal now and then as it does in third person ({@link Koiguchi}). It
- * sways and bobs with the view and rises as the sword is taken up, as the game's hands do.
- * <p>
- * Left to the game and to the sword's animations: a drawn blade (the hand holds it, {@link KatanaItemRenderer#held}), a swing
- * (playerAnimator draws the arm and the blade), and Yoru, carried on the back: there the hands are empty, and nothing is drawn.
- * Anything in the off hand keeps the left hand (only the hilt is shown then).
+ * 2.5.4 (the owner: "the sword first person, if the sword is holstered the hand should be resting on the holster too ... the first
+ * persons are meant to reflect exactly what the player is doing") and 2.5.6 (the owner: "the pull out animation is horrid, if you can
+ * even call it that, the pull out animation needs to be really gorgeous to look at, sheath and unsheath both", "I mean the first
+ * person"): the local player's katana in first person, every moment but a swing (playerAnimator draws those: the arm and the blade
+ * as the cut has them), from {@link DrawView} (the same frames tools/draw_preview.py renders):
+ * <ul>
+ *   <li>sheathed at the hip: the handle and guard rising from the bottom left, the left hand resting on the end of the handle
+ *       ({@link HolsterView}); standing ready, the thumb breaks the saya's seal now and then ({@link Koiguchi});</li>
+ *   <li>the draw: the left hand to the saya's mouth, the right hand up to the handle, the seal broken with a glint, the long slide
+ *       along the saya's curve as the saya is drawn back, the point leaving the mouth and the blade whipping across the view, settling
+ *       into the hand;</li>
+ *   <li>drawn between cuts: the blade up from the right hand, the right arm on its handle;</li>
+ *   <li>the sheathing: the flick clean, the blade swung back and laid at the mouth, slid home slowly, the guard home, the hands back to
+ *       rest;</li>
+ *   <li>Yoru (on the back): the hands empty while it is there; drawn, it comes down over the right shoulder into the hand, and goes
+ *       back up the same way.</li>
+ * </ul>
+ * The arms are the game's own ({@code renderLeftHand}, {@code renderRightHand}: the player's skin, Armament's black and Ryou's aura
+ * with them), the blade black under Armament as in third person (never its saya), everything swaying and bobbing with the view and
+ * rising as the sword is taken up, as the game's hands do. Anything in the off hand keeps the left hand.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class HolsterHand {
@@ -59,37 +70,66 @@ public final class HolsterHand {
                 return;
             }
             int anim = SwordClient.anim(id);
-            float partial = event.getPartialTick();
-            if (SwordClient.swing(anim) || SwordAnims.drawn(anim, SwordClient.ticks(player, partial), katana)) {
+            if (SwordClient.swing(anim)) {
                 return;
             }
-            event.setCanceled(true);
-            if (katana.carry() == Katana.Carry.BACK) {
-                return; // Yoru is on the back: the hands are free
-            }
-            PoseStack pose = event.getPoseStack();
-            MultiBufferSource buffers = event.getMultiBufferSource();
-            int light = event.getPackedLight();
+            float partial = event.getPartialTick();
+            float ticks = SwordClient.ticks(player, partial);
+            boolean slim = "slim".equals(player.m_108564_());
             float equip = event.getEquipProgress();
             float age = player.f_19797_ + partial;
-            pose.m_85836_();
-            apply(pose, HolsterView.katana(equip, age));
-            KatanaRenderer.draw(pose, buffers, katana, false, true, light, 0.0F);
-            double ready = anim == SwordAnims.NONE ? StanceLayer.swordReady(player, partial) : -1.0;
-            float push = ready < 0 ? 0.0F : Koiguchi.push(ready);
-            if (push > 0.0F) {
-                SwordLayer.slide(pose, katana, push);
+            boolean back = katana.carry() == Katana.Carry.BACK;
+            String name = SwordAnims.name(anim, katana);
+            DrawView.Pose pose;
+            float push = 0.0F;
+            if (anim == SwordAnims.DRAW) {
+                pose = back ? DrawView.backDraw(katana, slim, ticks, Math.max(0, BladePaths.drawTick(name)), equip, age)
+                    : DrawView.draw(katana, slim, ticks, SwordAnims.duration(anim, katana), BladePaths.drawTick(name), equip, age);
+            } else if (anim == SwordAnims.SHEATHE) {
+                pose = back ? DrawView.backSheathe(katana, slim, ticks, Math.max(0, BladePaths.sheathTick(name)), equip, age)
+                    : DrawView.sheathe(katana, slim, ticks, SwordAnims.duration(anim, katana), BladePaths.sheathTick(name), equip, age);
+            } else if (SwordAnims.drawn(anim, ticks, katana)) {
+                pose = DrawView.held(katana, slim, equip, age);
+            } else if (back) {
+                pose = new DrawView.Pose(null, null, null, null, 0.0F); // Yoru on the back: the hands are free
+            } else {
+                pose = DrawView.holster(katana, slim, equip, age);
+                double ready = anim == SwordAnims.NONE ? StanceLayer.swordReady(player, partial) : -1.0;
+                push = ready < 0 ? 0.0F : Koiguchi.push(ready);
             }
-            MultiBufferSource hilt = SwordLayer.blackened(player) && katana.blackens() ? ArmamentItemBuffers.black(buffers) : buffers;
-            KatanaRenderer.draw(pose, hilt, katana, true, false, light, 0.0F);
-            pose.m_85849_();
-            if (player.m_21206_().m_41619_()) {
-                EntityRenderer<?> renderer = minecraft.m_91290_().m_114382_(player);
-                if (renderer instanceof PlayerRenderer playerRenderer) {
-                    pose.m_85836_();
-                    apply(pose, HolsterView.arm("slim".equals(player.m_108564_()), equip, age));
-                    playerRenderer.m_117813_(pose, buffers, light, player);
-                    pose.m_85849_();
+            event.setCanceled(true);
+            PoseStack stack = event.getPoseStack();
+            MultiBufferSource buffers = event.getMultiBufferSource();
+            int light = event.getPackedLight();
+            if (pose.saya() != null) {
+                stack.m_85836_();
+                apply(stack, pose.saya());
+                KatanaRenderer.draw(stack, buffers, katana, false, true, light, 0.0F);
+                stack.m_85849_();
+            }
+            if (pose.blade() != null) {
+                stack.m_85836_();
+                apply(stack, pose.blade());
+                if (push > 0.0F) {
+                    SwordLayer.slide(stack, katana, push);
+                }
+                MultiBufferSource steel = SwordLayer.blackened(player) && katana.blackens() ? ArmamentItemBuffers.black(buffers) : buffers;
+                KatanaRenderer.draw(stack, steel, katana, true, false, light, pose.shine());
+                stack.m_85849_();
+            }
+            EntityRenderer<?> renderer = minecraft.m_91290_().m_114382_(player);
+            if (renderer instanceof PlayerRenderer playerRenderer) {
+                if (pose.right() != null) {
+                    stack.m_85836_();
+                    apply(stack, pose.right());
+                    playerRenderer.m_117770_(stack, buffers, light, player);
+                    stack.m_85849_();
+                }
+                if (pose.left() != null && player.m_21206_().m_41619_()) {
+                    stack.m_85836_();
+                    apply(stack, pose.left());
+                    playerRenderer.m_117813_(stack, buffers, light, player);
+                    stack.m_85849_();
                 }
             }
         } catch (RuntimeException | LinkageError failure) {
@@ -97,14 +137,17 @@ public final class HolsterHand {
         }
     }
 
-    /** {@link HolsterView}'s steps on the game's pose. */
+    /** {@link HolsterView}'s and {@link DrawView}'s steps on the game's pose. */
     static void apply(PoseStack pose, float[][] steps) {
         for (float[] s : steps) {
             switch ((int) s[0]) {
                 case HolsterView.MOVE -> pose.m_252880_(s[1], s[2], s[3]);
                 case HolsterView.TURN_X -> pose.m_252781_(Axis.f_252529_.m_252977_(s[1]));
                 case HolsterView.TURN_Y -> pose.m_252781_(Axis.f_252436_.m_252977_(s[1]));
-                default -> pose.m_252781_(Axis.f_252403_.m_252977_(s[1]));
+                case HolsterView.TURN_Z -> pose.m_252781_(Axis.f_252403_.m_252977_(s[1]));
+                case DrawView.ROTATE -> pose.m_252781_(new Quaternionf().rotationAxis((float) Math.toRadians(s[1]), s[2], s[3], s[4]));
+                default -> {
+                }
             }
         }
     }
