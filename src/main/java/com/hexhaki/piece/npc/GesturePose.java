@@ -39,13 +39,16 @@ public final class GesturePose {
         boolean legs = false;
         switch (gesture) {
             case LOOKOUT -> {
-                // the right hand flat over the eyes, the head turning slowly out to one side and across to the other
-                arm(p, RIGHT_ARM, -140.0F, -70.0F, -10.0F);
-                arm(p, LEFT_ARM, 4.0F, 0.0F, -10.0F);
+                // the right hand flat over the eyes, the head turning slowly out to one side and across to the other. 2.4.3: the hand held
+                // in front of the right brow and turned with the head, the body taking most of the turn (the lint in tools/gesture_preview.py
+                // found the hand sunk 3 px into the face: a straight arm cannot reach across to the middle of the brow, and the head
+                // turned into it)
                 float scan = (float) Math.sin((t - IN) * 0.075);
-                p[HEAD][YAW] = 34.0F * scan;
+                arm(p, RIGHT_ARM, -140.0F, -30.0F + 11.0F * scan, -20.0F);
+                arm(p, LEFT_ARM, 4.0F, 0.0F, -10.0F);
+                p[HEAD][YAW] = 16.0F * scan;
                 p[HEAD][PITCH] = -6.0F;
-                p[BODY][YAW] = -6.0F * scan;
+                p[BODY][YAW] = -20.0F * scan;
             }
             case CROSS, TAP -> {
                 folded(p);
@@ -134,6 +137,107 @@ public final class GesturePose {
                 p[HEAD][PITCH] = -3.0F;
                 p[HEAD][YAW] = 10.0F * sway;
             }
+            case BRUSH -> {
+                // 2.4.3, a captain's: the back of the right hand brought across to the left of the coat's front (a straight arm can reach
+                // no higher without going through the chin), three strokes of the dust off it, each swept out and down, a last flick out
+                // to the side, the arm dropped and the chin up after it; the left shoulder held back to be brushed, the left arm easy
+                float up = smooth(t / 10.0F);
+                float flick = smooth((t - 34.0F) / 5.0F);
+                float down = smooth((t - 40.0F) / 9.0F);
+                float stroke = t < 10.0F || t > 34.0F ? 0.0F : ((t - 10.0F) % 8.0F) / 8.0F;
+                // each stroke: a quick sweep out and down over its first half, the hand brought back over its second
+                float brush = stroke < 0.45F ? smooth(stroke / 0.45F) : 1.0F - smooth((stroke - 0.45F) / 0.55F);
+                float across = up * (1.0F - flick);
+                float pitch = (-84.0F + 16.0F * brush) * across - 50.0F * flick * (1.0F - down);
+                float yaw = (-58.0F + 28.0F * brush) * across + 16.0F * flick * (1.0F - down);
+                float roll = -4.0F * across + 22.0F * flick * (1.0F - down) + 4.0F * down;
+                arm(p, RIGHT_ARM, pitch, yaw, roll);
+                arm(p, LEFT_ARM, 10.0F * across + 6.0F, 0.0F, -9.0F);
+                float look = up * (1.0F - flick);
+                float proud = smooth((t - 36.0F) / 8.0F);
+                p[HEAD][YAW] = -20.0F * look + 8.0F * proud * (float) Math.sin((t - 40.0F) * 0.12);
+                p[HEAD][PITCH] = 21.0F * look - 11.0F * proud;
+                p[HEAD][ROLL] = -5.0F * look;
+                p[BODY][YAW] = 7.0F * look;
+                p[BODY][PITCH] = 3.0F * proud;
+            }
+            case SWAGGER -> {
+                // 2.4.3, a captain's: a roll of the shoulders, then chest out and chin up, arms held out from the sides and back, feet
+                // planted wide, rocking on its heels; a slow look over the crew from one side to the other and back, a nod at each end
+                float set = smooth(t / 14.0F);
+                float roll = t < 16.0F ? (float) Math.sin(t * Math.PI / 8.0) * (1.0F - t / 16.0F) : 0.0F;
+                float scan = (float) Math.sin(Math.max(0.0F, t - 14.0F) / (Gesture.SWAGGER.ticks - 24.0F) * Math.PI * 2.0);
+                float ends = (float) Math.pow(Math.abs(scan), 6.0);
+                arm(p, RIGHT_ARM, 14.0F * set, 0.0F, 19.0F * set + 6.0F * roll);
+                arm(p, LEFT_ARM, 14.0F * set, 0.0F, -19.0F * set + 6.0F * roll);
+                legs = true;
+                p[RIGHT_LEG][ROLL] = 7.0F * set;
+                p[LEFT_LEG][ROLL] = -7.0F * set;
+                p[BODY][PITCH] = (4.0F + 1.5F * (float) Math.sin(t * 0.14)) * set; // rocked back on the heels and forward, slowly
+                p[BODY][Y] = 0.02F * set;
+                p[BODY][ROLL] = 3.0F * roll;
+                p[BODY][YAW] = -8.0F * scan * set;
+                p[HEAD][YAW] = 34.0F * scan * set;
+                p[HEAD][PITCH] = -11.0F * set + 7.0F * ends;
+            }
+            case ORDER -> {
+                // 2.4.3, an officer's: the right arm thrown out to point ahead and to the right, a jab, swept across to point ahead and to
+                // the left, a jab, dropped; a firm nod; the left hand behind the back the whole time, the feet set
+                float out = smooth(t / 5.0F) * (1.0F - smooth((t - 44.0F) / 8.0F));
+                float sweep = smooth((t - 22.0F) / 8.0F);
+                float jab = (float) (Math.max(0.0, Math.sin((t - 7.0F) * Math.PI / 4.0)) * (t > 7.0F && t < 11.0F ? 1.0 : 0.0)
+                    + Math.max(0.0, Math.sin((t - 33.0F) * Math.PI / 4.0)) * (t > 33.0F && t < 37.0F ? 1.0 : 0.0));
+                float way = 24.0F - 44.0F * sweep;
+                arm(p, RIGHT_ARM, (-90.0F - 6.0F * jab) * out, way * out, 2.0F * out);
+                arm(p, LEFT_ARM, 26.0F, 0.0F, 11.0F);
+                legs = true;
+                p[RIGHT_LEG][ROLL] = 4.0F;
+                p[LEFT_LEG][ROLL] = -4.0F;
+                float nod = t > 52.0F && t < 62.0F ? (float) Math.sin((t - 52.0F) * Math.PI / 10.0) : 0.0F;
+                p[HEAD][YAW] = 0.75F * way * out;
+                p[HEAD][PITCH] = -3.0F + 5.0F * jab + 13.0F * nod;
+                p[BODY][YAW] = -0.25F * way * out;
+            }
+            case FIDGET -> {
+                // 2.4.3, a recruit's: the weight from foot to foot (the free foot's heel up), hands wrung together in front of the belly,
+                // quick glances over one shoulder and the other, a little hunched
+                float shift = (float) Math.sin(t * 0.21);
+                float wring = (float) Math.sin(t * 0.9);
+                arm(p, RIGHT_ARM, -42.0F + 3.0F * wring, -21.0F + 4.0F * wring, -12.0F);
+                arm(p, LEFT_ARM, -42.0F - 3.0F * wring, 21.0F + 4.0F * wring, 12.0F);
+                legs = true;
+                p[RIGHT_LEG][PITCH] = -7.0F * Math.max(0.0F, shift);
+                p[LEFT_LEG][PITCH] = -7.0F * Math.max(0.0F, -shift);
+                p[RIGHT_LEG][ROLL] = 1.5F;
+                p[LEFT_LEG][ROLL] = -1.5F;
+                p[BODY][ROLL] = 2.5F * shift;
+                p[BODY][X] = 0.03F * shift;
+                p[BODY][PITCH] = -3.0F;
+                p[HEAD][YAW] = keyed(t, new float[] {0, 9, 17, 23, 38, 44, 54, 60}, new float[] {0, -30, -30, 12, 12, 32, 32, -6}, 5.0F);
+                p[HEAD][PITCH] = 9.0F - 4.0F * Math.abs(p[HEAD][YAW]) / 32.0F;
+                p[HEAD][ROLL] = -0.12F * p[HEAD][YAW];
+            }
+            case SCUFF -> {
+                // 2.4.3, a recruit's: head hung, the weight on the left foot, the right toe scuffed at the deck three times; something
+                // kicked away; the head up a little and a sigh, the shoulders dropping
+                float scuffing = t > 8.0F && t < 56.0F ? (float) Math.sin((t - 8.0F) * Math.PI * 2.0 / 16.0) : 0.0F;
+                float kick = t > 58.0F && t < 66.0F ? (float) Math.sin((t - 58.0F) * Math.PI / 8.0) : 0.0F;
+                float sigh = t > 64.0F ? (float) Math.sin(Math.min(1.0F, (t - 64.0F) / 14.0F) * Math.PI) : 0.0F;
+                float lean = smooth(t / 8.0F);
+                float swing = (float) Math.sin(t * 0.11);
+                arm(p, RIGHT_ARM, 5.0F + 4.0F * swing - 10.0F * kick, 0.0F, 4.0F);
+                arm(p, LEFT_ARM, 5.0F - 4.0F * swing + 8.0F * kick, 0.0F, -4.0F);
+                legs = true;
+                p[RIGHT_LEG][PITCH] = -12.0F * scuffing - 30.0F * kick;
+                p[RIGHT_LEG][ROLL] = -3.0F * Math.abs(scuffing) + 2.0F;
+                p[LEFT_LEG][ROLL] = -1.0F;
+                p[BODY][ROLL] = 2.0F * lean;
+                p[BODY][X] = -0.025F * lean;
+                p[BODY][Y] = -0.015F * sigh;
+                p[HEAD][PITCH] = 21.0F - 10.0F * smooth((t - 60.0F) / 6.0F) + 5.0F * sigh;
+                p[HEAD][YAW] = -9.0F + 6.0F * kick;
+                p[HEAD][ROLL] = 5.0F;
+            }
             default -> {
                 return p;
             }
@@ -167,6 +271,22 @@ public final class GesturePose {
     static void folded(float[][] p) {
         arm(p, RIGHT_ARM, -60.0F, 17.0F, -49.0F);
         arm(p, LEFT_ARM, -60.0F, -17.0F, 49.0F);
+    }
+
+    /**
+     * 2.4.3: a value held at each of {@code values} from its tick in {@code times} (in order) and eased to the next over {@code ease}
+     * ticks before that one's tick: quick turns between still holds.
+     */
+    static float keyed(float t, float[] times, float[] values, float ease) {
+        float v = values[0];
+        for (int i = 1; i < times.length; i++) {
+            float from = times[i] - ease;
+            if (t <= from) {
+                break;
+            }
+            v = values[i - 1] + (values[i] - values[i - 1]) * smooth((t - from) / ease);
+        }
+        return v;
     }
 
     static float smooth(float t) {

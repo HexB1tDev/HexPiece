@@ -231,7 +231,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         }
         if (now >= this.nextGesture && this.m_21573_().m_26571_() && this.shownSword() == com.hexhaki.piece.sword.SwordAnims.NONE
             && this.m_20096_() && !this.m_20069_()) {
-            this.setGesture(Gesture.pick(this.faction(), this.m_217043_().m_188500_()), now);
+            this.setGesture(Gesture.pick(this.faction(), this.rank(), this.m_217043_().m_188500_()), now);
             this.m_21573_().m_26573_();
             return true;
         }

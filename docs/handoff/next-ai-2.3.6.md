@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 to 2.4.1 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework; Six Powers' air in 3D; Haki slashes clash)
+# HexPiece: handoff after 2.3.6 to 2.4.3 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework; Six Powers' air in 3D; Haki slashes clash; gestures by rank)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.3** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.4** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,20 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## Done in 2.4.3: NPC gestures by rank (next-ai-2.3.2.md's last open item: "More gestures per persona ... a captain could swagger, a recruit fidget")
+- `npc/Gesture`: five more, appended (sent by ordinal): BRUSH (64 ticks) and SWAGGER (110), a captain's; ORDER (72), an officer's;
+  FIDGET (90) and SCUFF (80), a recruit's. `Gesture.pick(side, rank, roll)` (SeaFighter passes `rank()`): each side's weights plus
+  `RANKS[rank]` (a recruit also yawns and stretches more, an officer folds its arms and thinks more, a captain laughs more and, a
+  Marine one, salutes less; never below 0: `weight`). Each persona's gestures come only for its rank (NpcTests).
+- `npc/GesturePose`: the five poses (`keyed`: holds with quick turns between, for the recruit's glances). A straight NPC arm cannot
+  reach the far shoulder without going through the chin, so the captain brushes the dust off the left of its coat's front.
+- LOOKOUT fixed: the new lint found its hand sunk 3 px into the face (the arm at yaw -70 reached across the brow, the head turned
+  into it). Now the hand is in front of the right brow, turned with the head (yaw -30 + 11 * scan), the body taking most of the turn
+  (head 16, body 20).
+- `tools/gesture_preview.py`: `--only NAME,NAME` and `--lint` (every moment a straight arm's middle line, past the shoulder joint, is
+  in the head or more than half its thickness in the chest). Left: HexGhoul's folded arms (CROSS, TAP) graze the chest for 5 ticks
+  as they fold (sub-pixel), FIDGET once. docs/images/npc-gestures-ranks.png.
 
 ## Done in 2.4.2: the flying Haki slash clashes (open item 3)
 - `HakiSlashes.meet` (each server tick, before the slashes step): two slashes in flight from foes (a.foe tests b's owner), head on (dirs'
@@ -157,6 +171,8 @@ shoots projectiles)")
   RenderSystem.blendFuncSeparate, Camera look/up/left, ComputeFov.
 
 ## Tools
+- `tools/gesture_preview.py DUMP OUT [--keys] [--only NAME,NAME] [--lint]` (DUMP from tools/preview/GestureDump.java, `java -cp
+  build/preview:build/classes GestureDump 1`): the NPC gestures, and the arm-through-head/chest lint.
 - `tools/preview/ImpactPreview.java` (javac -cp build/classes -d build/preview tools/preview/ImpactPreview.java; java -cp
   build/preview:build/classes ImpactPreview BG.png OUT POWER COLOR_A COLOR_B PX PY): the impact frame's batches rasterised over a
   picture exactly as the game blends them (frames at 60 fps). A backdrop: a frame of docs/images/slash-finisher-showcase.mp4
@@ -176,8 +192,9 @@ shoots projectiles)")
    entity to target) the entity selected gets trapped and floats a bit off the ground in a water bubble a bit bigger than the
    entity's or player's size for 5 seconds. (perfect stun, entity can only look around.)": breakable by enough damage or the
    Conqueror's, with a cooldown, unless the owner says otherwise).) Six Powers: done in 2.4.1. Every request on the old lists is
-   done; what is left is the owner's reports and the white screen (item 2). (Item 3, the Haki slash's clash: done in 2.4.2.) (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
+   done; what is left is the owner's reports and the white screen (item 2). (Item 3, the Haki slash's clash: done in 2.4.2;
+   next-ai-2.3.2.md's gestures by persona: 2.4.3.) (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
 
 ## Not verified (only the owner can)
-Everything in game: clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,
+Everything in game: the rank gestures (each NPC rank's own: do they read at a distance?), clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,
 the impact frame on a real GPU and on Android (the blend factors and the framebuffer blit), the Ryou burst, the recoils, NPC clashes.

@@ -70,13 +70,29 @@ public final class NpcTests {
     static void gestures() {
         java.util.Set<com.hexhaki.piece.npc.Gesture> seen = new java.util.HashSet<>();
         for (com.hexhaki.piece.Faction side : new com.hexhaki.piece.Faction[] {com.hexhaki.piece.Faction.PIRATE, com.hexhaki.piece.Faction.MARINE}) {
-            for (double roll = 0.0; roll < 1.0; roll += 0.002) {
-                com.hexhaki.piece.npc.Gesture g = com.hexhaki.piece.npc.Gesture.pick(side, roll);
-                Check.that(g != com.hexhaki.piece.npc.Gesture.NONE, "an idle fighter always picks a real gesture");
-                Check.that(side == com.hexhaki.piece.Faction.MARINE || g != com.hexhaki.piece.npc.Gesture.SALUTE
-                    && g != com.hexhaki.piece.npc.Gesture.EASE, "pirates neither salute nor stand at ease");
-                seen.add(g);
+            for (int rank = 0; rank < 3; rank++) {
+                java.util.Set<com.hexhaki.piece.npc.Gesture> ranked = new java.util.HashSet<>();
+                for (double roll = 0.0; roll < 1.0; roll += 0.002) {
+                    com.hexhaki.piece.npc.Gesture g = com.hexhaki.piece.npc.Gesture.pick(side, rank, roll);
+                    Check.that(g != com.hexhaki.piece.npc.Gesture.NONE, "an idle fighter always picks a real gesture");
+                    Check.that(side == com.hexhaki.piece.Faction.MARINE || g != com.hexhaki.piece.npc.Gesture.SALUTE
+                        && g != com.hexhaki.piece.npc.Gesture.EASE, "pirates neither salute nor stand at ease");
+                    seen.add(g);
+                    ranked.add(g);
+                }
+                // 2.4.3: a persona to each rank, each only its own
+                Check.that(ranked.contains(com.hexhaki.piece.npc.Gesture.FIDGET) == (rank == 0)
+                    && ranked.contains(com.hexhaki.piece.npc.Gesture.SCUFF) == (rank == 0), side + " rank " + rank + ": only a recruit fidgets");
+                Check.that(ranked.contains(com.hexhaki.piece.npc.Gesture.ORDER) == (rank == 1), side + " rank " + rank + ": only an officer orders");
+                Check.that(ranked.contains(com.hexhaki.piece.npc.Gesture.SWAGGER) == (rank == 2)
+                    && ranked.contains(com.hexhaki.piece.npc.Gesture.BRUSH) == (rank == 2), side + " rank " + rank + ": only a captain swaggers");
+                for (com.hexhaki.piece.npc.Gesture g : com.hexhaki.piece.npc.Gesture.values()) {
+                    Check.that(com.hexhaki.piece.npc.Gesture.weight(side, rank, g) >= 0, g + ": no weight below nothing");
+                }
             }
+            Check.that(com.hexhaki.piece.npc.Gesture.weight(com.hexhaki.piece.Faction.MARINE, 2, com.hexhaki.piece.npc.Gesture.SALUTE)
+                < com.hexhaki.piece.npc.Gesture.weight(com.hexhaki.piece.Faction.MARINE, 0, com.hexhaki.piece.npc.Gesture.SALUTE),
+                "a Marine captain salutes less than its recruits");
             Check.that(com.hexhaki.piece.npc.Gesture.pause(0.0) >= 100 && com.hexhaki.piece.npc.Gesture.pause(1.0) <= 400,
                 "a pause of seconds between gestures");
         }

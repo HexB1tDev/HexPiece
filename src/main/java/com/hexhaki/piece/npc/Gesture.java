@@ -8,6 +8,9 @@ import com.hexhaki.piece.Faction;
  * (control/npc/EtoGesture, its client EtoPose: the lookout's hand over the eyes, the folded arms, the stretch, the yawn, the knuckles
  * cracked, the shrug, the hand at the chin, the laugh, the foot tapping), with two of the Marines' own: the salute and standing at
  * ease. {@link GesturePose} poses them; the server picks one now and then for a fighter standing idle ({@link #pick}).
+ * <p>2.4.3 (the handoff's open item, after HexGhoul's Ken, Touka and Eto, each with ways of its own): a persona to each rank. A captain
+ * swaggers ({@link #SWAGGER}, {@link #BRUSH}), an officer gives orders ({@link #ORDER}), a recruit fidgets ({@link #FIDGET},
+ * {@link #SCUFF}); each only by its own rank, over its side's own.
  */
 public enum Gesture {
     NONE(0),
@@ -32,7 +35,17 @@ public enum Gesture {
     /** A Marine's salute: the right hand snapped to the brow, held, brought down. */
     SALUTE(52),
     /** A Marine at ease: feet apart, hands behind the back, a slow sway. */
-    EASE(140);
+    EASE(140),
+    /** 2.4.3, a captain's: dust brushed off the shoulder with the back of the hand, flicked away, the chin up after it. */
+    BRUSH(64),
+    /** 2.4.3, a captain's: chest out, chin up, elbows out, feet planted wide, a slow look over its crew from one side to the other. */
+    SWAGGER(110),
+    /** 2.4.3, an officer's: the arm thrown out to point the crew one way, a jab, swept to point another, a firm nod. */
+    ORDER(72),
+    /** 2.4.3, a recruit's: the weight from foot to foot, hands wrung in front, quick glances over each shoulder. */
+    FIDGET(90),
+    /** 2.4.3, a recruit's: head hung, a toe scuffed at the deck, then something kicked away, a sigh. */
+    SCUFF(80);
 
     /** How long it lasts (ticks). */
     public final int ticks;
@@ -47,21 +60,41 @@ public enum Gesture {
     }
 
     /** Each side's gestures, with how often each comes (weights, in the order of {@link #values()}). */
-    private static final int[] PIRATE = {0, 3, 3, 2, 2, 3, 2, 2, 3, 2, 0, 0};
-    private static final int[] MARINE = {0, 3, 2, 1, 1, 1, 0, 1, 0, 1, 3, 4};
+    private static final int[] PIRATE = {0, 3, 3, 2, 2, 3, 2, 2, 3, 2, 0, 0, 0, 0, 0, 0, 0};
+    private static final int[] MARINE = {0, 3, 2, 1, 1, 1, 0, 1, 0, 1, 3, 4, 0, 0, 0, 0, 0};
+    /**
+     * 2.4.3: what each rank adds over its side's (recruit, officer, captain; the same order): a recruit fidgets and stretches and yawns
+     * more, an officer points and thinks, a captain swaggers, brushes itself off and laughs (a Marine captain salutes less: it is the
+     * one saluted).
+     */
+    private static final int[][] RANKS = {
+        {0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 3},
+        {0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 4, 0, 0},
+        {0, 0, 0, 0, 0, 0, 0, 0, 2, 0, -2, 0, 3, 4, 0, 0, 0}};
 
-    /** The gesture a fighter of {@code side} starts for a random draw {@code roll} (0 inclusive to 1 exclusive); never NONE. */
-    public static Gesture pick(Faction side, double roll) {
-        int[] weights = side == Faction.MARINE ? MARINE : PIRATE;
+    /** How often {@code gesture} comes for a fighter of {@code side} and {@code rank} (0 recruit, 1 officer, 2 captain): never below 0. */
+    public static int weight(Faction side, int rank, Gesture gesture) {
+        int[] base = side == Faction.MARINE ? MARINE : PIRATE;
+        int[] extra = RANKS[Math.max(0, Math.min(RANKS.length - 1, rank))];
+        int i = gesture.ordinal();
+        return Math.max(0, base[i] + extra[i]);
+    }
+
+    /**
+     * The gesture a fighter of {@code side} and {@code rank} starts for a random draw {@code roll} (0 inclusive to 1 exclusive); never
+     * NONE.
+     */
+    public static Gesture pick(Faction side, int rank, double roll) {
+        Gesture[] all = values();
         int total = 0;
-        for (int w : weights) {
-            total += w;
+        for (Gesture g : all) {
+            total += weight(side, rank, g);
         }
         double at = Math.max(0.0, Math.min(0.999999, roll)) * total;
-        for (int i = 0; i < weights.length; i++) {
-            at -= weights[i];
+        for (Gesture g : all) {
+            at -= weight(side, rank, g);
             if (at < 0.0) {
-                return values()[i];
+                return g;
             }
         }
         return LOOKOUT;
