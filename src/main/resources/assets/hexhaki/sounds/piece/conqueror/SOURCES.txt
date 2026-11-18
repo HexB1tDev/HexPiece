@@ -7,6 +7,9 @@ evil_voice_male.ogg: the clip's first part (0 - 3.39 s, the voice line), heavy b
 evil_voice_female.ogg: the same part raised 7 semitones with its formants raised 17 %, a lighter bass boost, the same loudness.
 evil_release_male.ogg: the clip's second part (3.58 s - end, the release), heavy bass and sub boost, -12 LUFS.
 evil_release_female.ogg: the same part raised 2 semitones (formants kept), a lighter bass boost, -12 LUFS.
-2.4.7 (the owner: "The volume of the EVIL conqueror release has to be louder and more bass boosted"): both releases remade with a deeper
-bass and sub boost, heavier compression and a tanh saturation: -9.7 LUFS (was -12.7 male, -12.4 female); below 150 Hz -4.8 dB RMS male
-(was -9.2), -6.5 dB female (was -13.6). The voice lines are unchanged.
+2.4.8 (the owner, testing 2.4.6: "The sound of the evil conquerors is not even audible, bro. I can hear it, and it's just super
+glitchy."): all four remade. The 2.4.6 boost had put the 20-60 Hz band 12 dB over the mids (2.4.7's 21 dB): sub-bass that speakers do
+not play, on which the limiter clamped and pumped. Now the sub under 38 Hz is cut, the bass boost sits near 90-160 Hz where speakers
+play it, a little presence near 2.5-3 kHz, gentle compression and a slow limiter, no sub boost, no saturation: about -10.3 LUFS, crest
+factors 9-10 dB; the 500-2000 Hz band 4-5 dB louder than 2.4.6 for the male files, 2.5 dB for the female ones; the male release's
+60-150 Hz band about +7 dB over its mids (the clip: level), the male voice's +4, the female files' about +2 and 0.

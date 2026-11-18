@@ -33,7 +33,7 @@ Read CLAUDE.md first. This note is the newest; next-ai-2.4.6.md covers 2.4.6 (al
      black. New references proven in verify/api-allowlist.txt ("2.4.7" block); stubs added. NOT seen in game: if the glow is missing,
      wrong or covers the hand, check RenderSystem's matrices at record time, the AFTER_PARTICLES binding, and blitToScreen's state.
 
-## Done in session 6 (released as 2.4.7)
+## Done in session 6 (released as 2.4.7; the evil roar remade again in 2.4.8: next-ai-2.4.8.md)
 3. **The Conqueror's charge and releases** (the owner: "I want a badass animation for the Conqueror Haki charge / release. the current
    one is dog shit."): `tools/conqueror_anims.py` writes conqueror_gear5_charge, supreme_conqueror_release and conqueror_gear5_release
    (`tools/anim_polish.py` GENERATED: it leaves them alone now). Judged with contact sheets (front/side/three, tick by tick through the
