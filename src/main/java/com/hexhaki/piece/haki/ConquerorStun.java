@@ -1,0 +1,62 @@
+package com.hexhaki.piece.haki;
+
+import com.hexhaki.piece.Alignment;
+
+/**
+ * 2.4.9: who the Conqueror's radial release fells, for how long, and whom it hurts, by the releaser's alignment (pure, tested in
+ * {@code LightningTests}). The owner: "every mob hit with the lightning from the Conqueror's release is to be fucking felled ... the
+ * longer you hold the G button, at max charge, I think the stun should go up to 10 seconds", then, asked:
+ * <ul>
+ *   <li>"Good Aligments = Stuns to hostiles and players only (15 seconds stun at max charge) (in the radius of the release)": a good
+ *       player's release hurts no one; its full charge fells hostile mobs and players in its radius, for up to {@link #GOOD_MAX}.</li>
+ *   <li>"Evil alignment = Stuns everything hit in the radius of the release, entities/players hit by the lightning take the damage
+ *       (max stun 9 seconds)": an evil player's full charge fells every mob and player in its radius (and whatever its lightning strikes
+ *       beyond it), for up to {@link #EVIL_MAX}; only what its lightning strikes is hurt.</li>
+ *   <li>Neutral (not asked): the original's release (it fells and hurts hostile mobs and players in its radius), for up to
+ *       {@link #NEUTRAL_MAX} (the owner's first "up to 10 seconds").</li>
+ *   <li>A partial charge: "entities hit by the lightnings ALL both evil/good stun all entities caught. 2 seconds": whatever its
+ *       lightning strikes, mob or player, is felled for {@link #LIGHTNING} ticks, whatever the alignment.</li>
+ * </ul>
+ * A full charge's stun grows with how long G was held after the charge filled: {@link #FIRST} of the most at once, the most after
+ * {@link #RAMP} ticks more.
+ */
+public final class ConquerorStun {
+    public static final int GOOD_MAX = 300;
+    public static final int EVIL_MAX = 180;
+    public static final int NEUTRAL_MAX = 200;
+    /** Ticks held at full charge for the most stun, and the share of it let go the moment the charge fills. */
+    public static final int RAMP = 100;
+    public static final double FIRST = 0.3;
+    /** A partial release's lightning: what it strikes is down this long (ticks). */
+    public static final int LIGHTNING = 40;
+
+    private ConquerorStun() {
+    }
+
+    /** The most stun a full charge of this alignment gives (ticks). */
+    public static int most(int alignment) {
+        if (Alignment.evil(alignment)) {
+            return EVIL_MAX;
+        }
+        return Alignment.good(alignment) ? GOOD_MAX : NEUTRAL_MAX;
+    }
+
+    /** A full charge's stun (ticks), let go {@code heldAtFull} ticks after the charge filled. */
+    public static int full(int alignment, long heldAtFull) {
+        double grown = Math.max(0.0, Math.min(1.0, heldAtFull / (double) RAMP));
+        return (int) Math.round(most(alignment) * (FIRST + (1.0 - FIRST) * grown));
+    }
+
+    /** True if this release fells every mob and player in its radius (an evil full charge), not only hostile ones and players. */
+    public static boolean fellsAll(int alignment, boolean full) {
+        return full && Alignment.evil(alignment);
+    }
+
+    /** True if this release may hurt a body ({@code struck}: its lightning struck it): never for good, only struck ones for evil. */
+    public static boolean hurts(int alignment, boolean struck) {
+        if (Alignment.good(alignment)) {
+            return false;
+        }
+        return !Alignment.evil(alignment) || struck;
+    }
+}

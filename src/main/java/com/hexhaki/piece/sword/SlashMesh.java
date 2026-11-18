@@ -380,6 +380,36 @@ public final class SlashMesh {
      * </ol>
      */
     public static void wave(Quads solid, Quads glow, Frame f, long seed, int rgb, double ticks, double fade) {
+        int solidFrom = solid.n;
+        int glowFrom = glow.n;
+        drawWave(solid, glow, f, seed, rgb, ticks, fade);
+        squeeze(solid, solidFrom, f);
+        squeeze(glow, glowFrom, f);
+    }
+
+    /**
+     * 2.4.9 (the owner: "the sword slash width on all charges should always be 1 block wide, 1x1, never more"): every corner drawn from
+     * quad {@code from} on brought within {@link SwordRules#SLASH_WIDTH} of the slash's line sideways. The body ({@link SwordRules#SLASH_BODY})
+     * is left as it is; what stands out past it (the glow, the halo, the tongues' sides, the foam) is eased into the rest of the width,
+     * smoothly (tanh), never reaching its edge. Only the sideways place changes: from the side the wave is the manga's shape as before.
+     */
+    static void squeeze(Quads q, int from, Frame f) {
+        double body = SwordRules.SLASH_BODY / 2.0;
+        double room = SwordRules.SLASH_WIDTH / 2.0 - body;
+        for (int corner = from * 4; corner < q.n * 4; corner++) {
+            int o = corner * 3;
+            double s = (q.v[o] - f.base[0]) * f.side[0] + (q.v[o + 2] - f.base[2]) * f.side[2];
+            double a = Math.abs(s);
+            if (a <= body) {
+                continue;
+            }
+            double move = Math.signum(s) * (body + room * Math.tanh((a - body) / room)) - s;
+            q.v[o] += f.side[0] * move;
+            q.v[o + 2] += f.side[2] * move;
+        }
+    }
+
+    static void drawWave(Quads solid, Quads glow, Frame f, long seed, int rgb, double ticks, double fade) {
         double r = ((rgb >> 16) & 255) / 255.0;
         double g = ((rgb >> 8) & 255) / 255.0;
         double b = (rgb & 255) / 255.0;

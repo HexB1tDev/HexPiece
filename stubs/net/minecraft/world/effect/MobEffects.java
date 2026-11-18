@@ -9,6 +9,7 @@ public final class MobEffects {
     /** BLINDNESS */ public static final MobEffect f_19610_ = null;
     /** NIGHT_VISION (4.1.54) */ public static final MobEffect f_19611_ = null;
     /** HUNGER */ public static final MobEffect f_19612_ = null;
+    /** WEAKNESS (2.4.9: the original's Conqueror release gives it) */ public static final MobEffect f_19613_ = null;
     /** CONFUSION (Nausea) */ public static final MobEffect f_19604_ = null;
     /** POISON */ public static final MobEffect f_19614_ = null;
     /** WITHER */ public static final MobEffect f_19615_ = null;

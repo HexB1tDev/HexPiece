@@ -132,6 +132,8 @@ public final class PiecePatch implements Opcodes {
     static final String AURA = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZFZZ)V";
     static final String AMBIENT = "(Lnet/minecraft/world/entity/Entity;FZJZ)V";
     static final String GROUND_STORM = "(Lnet/minecraft/world/entity/Entity;FZJ)V";
+    static final String APPLY_CONQUEROR = "(Lnet/minecraft/server/level/ServerPlayer;DFLcom/hexhaki/data/ConquerorMode;ZZZ)V";
+    static final String COMBAT_TARGET = "(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/entity/LivingEntity;)Z";
     static final Object[][] CALL_REDIRECTS = {
         {"com/hexhaki/fruit/client/FruitKeys", "tick", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
         {"com/hexhaki/fruit/client/FruitKeys", "interact", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
@@ -177,9 +179,27 @@ public final class PiecePatch implements Opcodes {
         {CONTROLLER, "releaseConqueror", CONTROLLER, "scheduleSupremeAudio", "(Lnet/minecraft/server/level/ServerPlayer;)V", CONQUEROR,
             "rumble", 1},
         {VFX, "accept0", VFX, "aftershock", "(FJ)Lcom/lowdragmc/photon/client/fx/FX;", STORM, "aftershock", 1},
+        // 2.4.9 (the owner: "every mob hit with the lightning from the Conqueror's release is to be fucking felled ... the longer you hold
+        // the G button, at max charge, I think the stun should go up to 10 seconds", then by alignment): the radial release's effects on
+        // what is in its radius, its full charge's stun, and whom both take go through HexPiece (ConquerorRelease, haki/ConquerorStun)
+        {CONTROLLER, "releaseConqueror", CONTROLLER, "applyConqueror", APPLY_CONQUEROR, CONQUEROR, "apply", 1},
+        {CONTROLLER, "releaseConqueror", CONTROLLER, "forceMaxConquerorStun", "(Lnet/minecraft/server/level/ServerPlayer;DI)V", CONQUEROR,
+            "forceMax", 1},
+        {CONTROLLER, "lambda$applyConqueror$1", CONTROLLER, "isConquerorCombatTarget", COMBAT_TARGET, CONQUEROR, "target", 1},
+        {CONTROLLER, "lambda$forceMaxConquerorStun$2", CONTROLLER, "isConquerorCombatTarget", COMBAT_TARGET, CONQUEROR, "target", 1},
+    };
+    /**
+     * 2.4.9: instance calls made static: class, method, call owner, name, descriptor, new owner, new name, how many. The new method takes
+     * the receiver first, then the call's arguments. The Conqueror's release's damage ({@code LivingEntity.hurt}) asks HexPiece
+     * ({@code ConquerorRelease.hurt}: a good player's hurts no one, an evil player's only what its lightning struck).
+     */
+    static final Object[][] VIRTUAL_REDIRECTS = {
+        {CONTROLLER, "applyConqueror", "net/minecraft/world/entity/LivingEntity", "m_6469_", "(Lnet/minecraft/world/damagesource/DamageSource;F)Z",
+            CONQUEROR, "hurt", 3},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
-    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}, {CONTROLLER, "beginConvergence"}};
+    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"},
+        {CONTROLLER, "beginConvergence", "applyConqueror", "forceMaxConquerorStun", "isConquerorCombatTarget"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any
      * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either). 2.3.7: the Galaxy Fist's Armament 520.
@@ -287,6 +307,10 @@ public final class PiecePatch implements Opcodes {
         for (Object[] redirect : CALL_REDIRECTS) {
             String owner = (String) redirect[0];
             entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> redirectCalls(node, redirect)));
+        }
+        for (Object[] redirect : VIRTUAL_REDIRECTS) {
+            String owner = (String) redirect[0];
+            entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> redirectVirtual(node, redirect)));
         }
         for (String[] widen : WIDENED) {
             entries.put(widen[0] + ".class", transform(entries.get(widen[0] + ".class"), node -> {
@@ -428,7 +452,7 @@ public final class PiecePatch implements Opcodes {
     }
 
     /**
-     * 2.3.3: {@code accept0(message)} first tells {@code HakiTint.owner(message.entityId())} whose visual it builds;
+     * 2.3.3: {@code accept0(message)} first tells {@code HakiTint.visual(message)} (2.4.9; was {@code owner(entityId)}) whose visual it builds;
      * {@code conquerorParticle} turns its colour (its fifth argument) through {@code HakiTint.conqueror} before using it; the
      * Conqueror's and the last stand's own {@code particleTex} calls go to {@code HakiTint.particleTex} (the same, the colour tinted).
      */
@@ -436,8 +460,8 @@ public final class PiecePatch implements Opcodes {
         MethodNode accept = method(node, "accept0", "(Lcom/hexhaki/network/msg/S2CHakiVisual;)V");
         InsnList head = new InsnList();
         head.add(new VarInsnNode(ALOAD, 0));
-        head.add(new MethodInsnNode(INVOKEVIRTUAL, "com/hexhaki/network/msg/S2CHakiVisual", "entityId", "()I", false));
-        head.add(new MethodInsnNode(INVOKESTATIC, TINT, "owner", "(I)V", false));
+        // 2.4.9: the whole message (a Conqueror hit takes its striker's colour: HakiTint.visual)
+        head.add(new MethodInsnNode(INVOKESTATIC, TINT, "visual", "(Lcom/hexhaki/network/msg/S2CHakiVisual;)V", false));
         accept.instructions.insert(head);
         MethodNode particle = method(node, "conquerorParticle", "(IIFFIZ)Lcom/lowdragmc/photon/client/gameobject/emitter/particle/ParticleEmitter;");
         InsnList tint = new InsnList();
@@ -560,6 +584,27 @@ public final class PiecePatch implements Opcodes {
         for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
             if (insn instanceof MethodInsnNode call && call.getOpcode() == INVOKESTATIC && call.owner.equals(redirect[2])
                 && call.name.equals(redirect[3]) && call.desc.equals(redirect[4])) {
+                call.owner = (String) redirect[5];
+                call.name = (String) redirect[6];
+                call.itf = false;
+                count++;
+            }
+        }
+        if (count != (Integer) redirect[7]) {
+            throw new AssertionError("expected " + redirect[7] + " calls of " + redirect[2] + "." + redirect[3] + " in " + node.name + "."
+                + redirect[1] + ", found " + count);
+        }
+    }
+
+    /** One {@link #VIRTUAL_REDIRECTS} row: every matching instance call in the method becomes a static call taking its receiver first. */
+    static void redirectVirtual(ClassNode node, Object[] redirect) {
+        MethodNode method = method(node, (String) redirect[1], null);
+        int count = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.getOpcode() == INVOKEVIRTUAL && call.owner.equals(redirect[2])
+                && call.name.equals(redirect[3]) && call.desc.equals(redirect[4])) {
+                call.setOpcode(INVOKESTATIC);
+                call.desc = "(L" + call.owner + ";" + call.desc.substring(1);
                 call.owner = (String) redirect[5];
                 call.name = (String) redirect[6];
                 call.itf = false;

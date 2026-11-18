@@ -3,6 +3,8 @@ package net.minecraft.world.effect;
 
 public class MobEffectInstance {
     public MobEffectInstance(MobEffect effect, int duration, int amplifier, boolean ambient, boolean visible, boolean showIcon) { throw new UnsupportedOperationException(); }
+    /** 2.4.9: as the original's Conqueror release makes them */
+    public MobEffectInstance(MobEffect effect, int duration, int amplifier, boolean ambient, boolean visible) { throw new UnsupportedOperationException(); }
     /** getDuration */ public int m_19557_() { throw new UnsupportedOperationException(); }
     /** getAmplifier */ public int m_19564_() { throw new UnsupportedOperationException(); }
 }

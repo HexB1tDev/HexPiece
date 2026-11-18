@@ -369,13 +369,14 @@ public final class SwordTests {
         for (double height : new double[] {2, 6, 20, 64}) {
             double bottom = SwordRules.slashCentre(height) - height / 2.0 + 1.6;
             Check.that(bottom <= 0.0 && bottom >= -2.51, "the plane stands up from just under the feet (" + bottom + " at " + height + ")");
-            double t = SwordRules.slashThickness(height);
-            Check.that(t >= SwordRules.SLASH_THICKNESS - 1e-9 && t <= SwordRules.SLASH_THICKNESS_MAX + 1e-9, "thickness in range");
+            // 2.4.9 (the owner: "the sword slash width on all charges should always be 1 block wide, 1x1, never more")
+            Check.near(SwordRules.slashThickness(height), 1.0, 1e-9, "a " + height + " slash hits with a wall one block thick");
             for (double v = 0.0; v <= 1.0; v += 0.1) {
-                Check.that(SwordRules.trenchAt(height, v) <= SwordRules.TRENCH_MAX + 1e-9, "the trench is at most two blocks wide");
+                Check.that(SwordRules.trenchAt(height, v) <= 1.0 + 1e-9, "the trench is at most one block wide");
+                Check.that(Math.max(1, (int) Math.ceil(SwordRules.trenchAt(height, v) / SwordRules.TRENCH_MAX - 1.0E-9)) == 1,
+                    "one cell a row of the trench");
             }
         }
-        Check.that(SwordRules.slashThickness(64) > SwordRules.slashThickness(2), "a taller slash is a wider gash");
         Check.that(SwordRules.NPC_SLASH_HEIGHT_MAX <= 8 && SwordRules.NPC_SLASH_RANGE_MAX <= 40, "a pirate captain's slash stays small");
     }
 
@@ -419,6 +420,14 @@ public final class SwordTests {
                     Check.that(later.layers[q] >= later.layers[q - 1], "layers in order after the sort");
                 }
                 Check.that(top >= height * 0.98 && bottom >= -0.2 - height * 0.01, "the wave rises from its trench to its peak (" + height + ")");
+                // 2.4.9: never wider than a block: every corner of everything drawn within half a block of its line sideways
+                double widest = 0.0;
+                for (com.hexhaki.piece.sword.SlashMesh.Quads q : new com.hexhaki.piece.sword.SlashMesh.Quads[] {glow, later}) {
+                    for (int c = 0; c < q.n * 4; c++) {
+                        widest = Math.max(widest, Math.abs((q.v[c * 3] - base[0]) * frame.side()[0] + (q.v[c * 3 + 2] - base[2]) * frame.side()[2]));
+                    }
+                }
+                Check.that(widest <= 0.5 + 1e-9, "a " + height + " wave is drawn within one block's width (" + widest + " each side)");
             }
             com.hexhaki.piece.sword.SlashMesh.Frame frame = com.hexhaki.piece.sword.SlashMesh.Frame.of(new double[3], 0, 1, height, 1.0);
             for (double v = 0.0; v <= 1.0; v += 0.05) {
@@ -428,7 +437,7 @@ public final class SwordTests {
             Check.that(SwordRules.slashThicknessAt(height, 0.0) >= SwordRules.slashThicknessAt(height, 0.5)
                 && SwordRules.slashThicknessAt(height, 0.5) >= SwordRules.slashThicknessAt(height, 0.95), "widest in the ground, thin at the peak");
         }
-        Check.near(SwordRules.slashThickness(64), 2 * SwordRules.SLASH_SIDE * 64, 1e-9, "a full wave is 9 blocks thick in the ground");
+        Check.near(SwordRules.slashThicknessAt(64, 0.0), SwordRules.SLASH_BODY, 1e-9, "a full wave's body is the body's width in the ground");
     }
 
     /** How far a triangle turns its back on the eye at the origin: 0 facing it (or edge on, or a sliver), up to 1 facing away. */

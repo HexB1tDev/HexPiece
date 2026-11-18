@@ -15,6 +15,7 @@ public class AABB {
     /** contains */ public boolean m_82390_(Vec3 point) { throw new UnsupportedOperationException(); }
     /** getCenter */ public Vec3 m_82399_() { throw new UnsupportedOperationException(); }
     /** inflate */ public AABB m_82400_(double amount) { throw new UnsupportedOperationException(); }
+    /** clip (2.4.9: as the original's charge lightning finds what it strikes) */ public java.util.Optional<Vec3> m_82371_(Vec3 from, Vec3 to) { throw new UnsupportedOperationException(); }
     /** expandTowards(v) */ public AABB m_82369_(Vec3 v) { throw new UnsupportedOperationException(); }
     /** move(pos) */ public AABB m_82338_(net.minecraft.core.BlockPos pos) { throw new UnsupportedOperationException(); }
     /** intersects(other) */ public boolean m_82381_(AABB other) { throw new UnsupportedOperationException(); }

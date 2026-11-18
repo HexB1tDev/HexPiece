@@ -26,6 +26,7 @@ public final class LightningTests {
         landings();
         tinted();
         stunFall();
+        conquerorStun();
         Check.done("LightningTests");
     }
 
@@ -538,6 +539,52 @@ public final class LightningTests {
     }
 
     /** 2.4.4 (the owner: a Haki stun makes any entity "actually fall down ... and stay stunned"): every body falls, lies, gets up. */
+    /** 2.4.9: the Conqueror's release by alignment: who it fells, for how long (by the hold at full), whom it hurts; the storm's strikes. */
+    static void conquerorStun() {
+        com.hexhaki.piece.haki.ConquerorStun.class.getName();
+        int good = 100;
+        int evil = -100;
+        int neutral = 0;
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(good, 100) == 300, "good: 15 seconds at the most");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(evil, 100) == 180, "evil: 9 seconds at the most");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(neutral, 100) == 200, "neutral: 10 seconds at the most");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(good, 400) == 300, "never past the most, however long it is held");
+        int last = -1;
+        for (int held = 0; held <= 120; held += 5) {
+            int stun = com.hexhaki.piece.haki.ConquerorStun.full(evil, held);
+            Check.that(stun >= last, "the longer G is held at full, the longer the stun (" + held + ")");
+            last = stun;
+        }
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(good, 0) == 90, "let go as it fills: 30 % of the most (good 4.5 s)");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.LIGHTNING == 40, "a partial release's lightning fells for 2 seconds");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.fellsAll(evil, true), "an evil full charge fells everything in its radius");
+        Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(evil, false), "an evil partial one does not");
+        Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(good, true) && !com.hexhaki.piece.haki.ConquerorStun.fellsAll(neutral, true),
+            "good and neutral fell hostile mobs and players only");
+        Check.that(!com.hexhaki.piece.haki.ConquerorStun.hurts(good, true) && !com.hexhaki.piece.haki.ConquerorStun.hurts(good, false),
+            "a good release hurts no one");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.hurts(evil, true) && !com.hexhaki.piece.haki.ConquerorStun.hurts(evil, false),
+            "an evil release hurts only what its lightning struck");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.hurts(neutral, false), "a neutral release hurts as the original's");
+        // the storm's strikes: a strand along the ground strikes a body on it, not one beside it nor one under it in the air
+        java.util.List<com.hexhaki.piece.haki.ConquerorStorm.Strand> line = java.util.List.of(new com.hexhaki.piece.haki.ConquerorStorm.Strand(
+            new double[] {0, 0.2, 0, 40, 0.2, 0}, new float[] {0.6F, 0.6F}, new double[] {1, 1}, 0F, 20, 40.0, 1L));
+        Check.that(com.hexhaki.piece.haki.ConquerorStorm.strikes(line, 20, 0.3, 0, 1.8, 0.9), "a strand on the ground strikes a body on it");
+        Check.that(!com.hexhaki.piece.haki.ConquerorStorm.strikes(line, 20, 4, 0, 1.8, 0.9), "not one four blocks to the side");
+        Check.that(!com.hexhaki.piece.haki.ConquerorStorm.strikes(line, 50, 0, 0, 1.8, 0.9), "not one past its end");
+        Check.that(!com.hexhaki.piece.haki.ConquerorStorm.strikes(line, 20, 0, 6, 7.8, 0.9), "not one flying high over it");
+        int struck = 0;
+        for (long seed = 1; seed <= 40; seed++) {
+            java.util.List<com.hexhaki.piece.haki.ConquerorStorm.Strand> storm = com.hexhaki.piece.haki.ConquerorStorm.release(1000, seed, true);
+            for (int a = 0; a < 36; a++) {
+                double d = 25.0;
+                struck += com.hexhaki.piece.haki.ConquerorStorm.strikes(storm, Math.cos(a * Math.PI / 18) * d, Math.sin(a * Math.PI / 18) * d, 0, 1.8,
+                    0.9) ? 1 : 0;
+            }
+        }
+        Check.that(struck > 0 && struck < 40 * 36, "the storm strikes some bodies round it and misses others (" + struck + " of " + 40 * 36 + ")");
+    }
+
     static void stunFall() {
         com.hexhaki.piece.haki.StunFall.Frame start = com.hexhaki.piece.haki.StunFall.at(0, 40, 1L);
         Check.that(start.angle() == 0 && start.slide() == 0, "upright the instant the stun lands");

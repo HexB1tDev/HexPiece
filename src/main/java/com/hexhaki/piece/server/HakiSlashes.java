@@ -41,7 +41,9 @@ import net.minecraftforge.fml.common.Mod;
  * changes per tick, deduplicate affected positions and impose finite projectile range and lifetime."
  * <ul>
  *   <li>2.2.4: the wave's body ({@code SlashMesh}) is the plane's thickness: {@link SwordRules#slashThicknessAt} at each height (9 blocks
- *       in the ground at full charge, thinning to its peak); each row of the trench is that wide.</li>
+ *       in the ground at full charge, thinning to its peak); each row of the trench is that wide. 2.4.9 (the owner: "the sword slash
+ *       width on all charges should always be 1 block wide, 1x1, never more"): the wall it hits with is one block thick, the trench one
+ *       block wide, the wave drawn no wider, at every charge.</li>
  *   <li>The slash is a vertical plane {@code height} tall and {@link SwordRules#slashThickness} thick, standing up from a little under
  *       its owner's feet ({@link SwordRules#slashCentre}; 2.2.0: up to 64 blocks tall, flying up to 220), flying {@code speed} blocks a
  *       tick for {@code range} blocks; everything whose body that plane passes through is hit
@@ -279,12 +281,13 @@ public final class HakiSlashes {
             sx /= sl;
             sz /= sl;
         }
-        // 2.2.4: each row as wide as the wave's body at its height (widest in the ground, thin at the peak: SwordRules.slashThicknessAt)
+        // 2.2.4: each row as wide as the wave's body at its height; 2.4.9 (the owner: "1 block wide, 1x1, never more"): at most
+        // SwordRules.TRENCH_MAX (one block): one cell a row, on the line
         double[] widths = new double[rows];
         int[] acrosses = new int[rows];
         for (int row = 0; row < rows; row++) {
             widths[row] = SwordRules.trenchAt(slash.height, (row + 0.5) / rows);
-            acrosses[row] = Math.max(1, (int) Math.ceil(widths[row] / 0.5));
+            acrosses[row] = Math.max(1, (int) Math.ceil(widths[row] / SwordRules.TRENCH_MAX - 1.0E-9));
         }
         for (int k = 1; k <= samples; k++) {
             Vec3 c = a.m_82549_(b.m_82546_(a).m_82490_(k / (double) samples));

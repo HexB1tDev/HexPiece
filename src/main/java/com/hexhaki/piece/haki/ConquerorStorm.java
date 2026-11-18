@@ -237,6 +237,36 @@ public final class ConquerorStorm {
         return out;
     }
 
+    /**
+     * 2.4.9: does the storm strike a body standing {@code x, z} from the releaser's feet (blocks), from {@code bottom} to {@code top}
+     * above the ground under it, {@code half} blocks round (its half width and a margin)? The strands run as the clients lay them on
+     * the ground (their heights are above the ground): a strand strikes the body where it passes within {@code half} and its stroke
+     * of it sideways, at a height within the body's (a strand overhead passes over it).
+     */
+    public static boolean strikes(List<Strand> storm, double x, double z, double bottom, double top, double half) {
+        for (Strand strand : storm) {
+            double[] p = strand.points();
+            for (int i = 1; i < strand.count(); i++) {
+                double ax = p[(i - 1) * 3];
+                double ay = p[(i - 1) * 3 + 1];
+                double az = p[(i - 1) * 3 + 2];
+                double dx = p[i * 3] - ax;
+                double dy = p[i * 3 + 1] - ay;
+                double dz = p[i * 3 + 2] - az;
+                double len = dx * dx + dz * dz;
+                double t = len < 1.0E-12 ? 0.0 : Math.max(0.0, Math.min(1.0, ((x - ax) * dx + (z - az) * dz) / len));
+                double ex = ax + dx * t - x;
+                double ez = az + dz * t - z;
+                double reach = half + strand.widths()[Math.min(strand.widths().length - 1, i)] / 2.0;
+                double y = ay + dy * t;
+                if (ex * ex + ez * ez <= reach * reach && y >= bottom - 0.5 && y <= top + 0.5) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     static double[] normalise(double[] v) {
         double l = Math.max(1.0E-9, Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]));
         return new double[] {v[0] / l, v[1] / l, v[2] / l};

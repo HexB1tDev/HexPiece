@@ -33,16 +33,15 @@ public final class SwordRules {
     public static final double SLASH_SPEED = 1.8;
     public static final double SLASH_SPEED_MAX = 4.0;
     /**
-     * The slash's thickness across its flight (blocks): it hits what this wall passes through, and cuts the blocks it passes. 2.2.4 (the
-     * owner: "it's not about just being tall. It's meant to be like an energy wave ... see Mihawk's energy projectile from his blade. It is
-     * much bigger than that, and it's thick", and the manga's panel: a wave of light tearing up out of the ground): the wave has a body
-     * ({@link SlashMesh}), {@link #SLASH_SIDE} of its height thick each side where it leaves the ground (so 9 blocks across at full
-     * charge), thinning to its peak ({@link #slashThicknessAt}); the trench it cuts is as wide as the body at each height. Never under
-     * {@link #SLASH_THICKNESS}.
+     * The slash's thickness across its flight (blocks). 2.2.4 gave the wave a body {@code 0.07} of its height thick each side (9 blocks
+     * across at full charge). 2.4.9 (the owner: "the sword slash width on all charges should always be 1 block wide, 1x1, never more",
+     * and asked, the hit, the cut and the wave drawn alike): at every charge the slash hits what a wall {@link #SLASH_WIDTH} thick
+     * passes through, cuts a trench one block wide, and is drawn no wider: its body {@link #SLASH_BODY} across in the ground, thinning
+     * to its peak ({@link #slashThicknessAt}), its glow and tongues squeezed into the rest ({@code SlashMesh.squeeze}). Its height and
+     * its shape along its flight are as they were.
      */
-    public static final double SLASH_THICKNESS = 0.6;
-    public static final double SLASH_SIDE = 0.07;
-    public static final double SLASH_THICKNESS_MAX = 2 * SLASH_SIDE * SLASH_HEIGHT_MAX;
+    public static final double SLASH_WIDTH = 1.0;
+    public static final double SLASH_BODY = 0.7;
     /** The wave's shape, in its height: how far its leading edge stands ahead of the cutting line and its back slope runs behind it. */
     public static final double SLASH_FRONT = 0.18;
     public static final double SLASH_BACK = 0.48;
@@ -105,9 +104,9 @@ public final class SwordRules {
         return height / 2.0 - 1.6 - Math.min(2.5, height * 0.1);
     }
 
-    /** How thick (across its flight, where it leaves the ground) a slash this tall is: its body's width there. */
+    /** How thick across its flight the wall a slash hits with is: {@link #SLASH_WIDTH}, whatever its height (2.4.9). */
     public static double slashThickness(double height) {
-        return Math.max(SLASH_THICKNESS, 2.0 * SLASH_SIDE * height);
+        return SLASH_WIDTH;
     }
 
     /** The share of that thickness the wave has {@code v} of the way up (0 the trench, 1 the peak). */
@@ -115,18 +114,18 @@ public final class SwordRules {
         return Math.pow(Math.max(0.0, 1.0 - Math.max(0.0, v)), 0.6);
     }
 
-    /** How thick the wave (and its trench) is {@code v} of the way up: the body's width there, never under a block's tenth. */
+    /** How thick the wave's body is {@code v} of the way up: {@link #SLASH_BODY} in the ground, thinning, never under a block's tenth. */
     public static double slashThicknessAt(double height, double v) {
-        return Math.max(0.1, slashThickness(height) * slashProfile(v));
+        return Math.max(0.1, SLASH_BODY * slashProfile(v));
     }
 
     /**
      * 2.3.3 (the owner: "your right click is destroying a ridiculous amount of terrain. It should be like maximum like 2 blocks wide.
      * It's destroying buildings and they're not repairing themselves. Like, it should repair itself afterwards and should not drop
      * blocks"): the trench the slash cuts is at most this wide (blocks), however wide the wave's body is drawn; what it cuts drops
-     * nothing and grows back (server/Scars).
+     * nothing and grows back (server/Scars). 2.4.9: one block (one cell a row, on the slash's line).
      */
-    public static final double TRENCH_MAX = 2.0;
+    public static final double TRENCH_MAX = 1.0;
 
     /** How wide the trench is {@code v} of the way up the slash: the body's width there, never over {@link #TRENCH_MAX}. */
     public static double trenchAt(double height, double v) {

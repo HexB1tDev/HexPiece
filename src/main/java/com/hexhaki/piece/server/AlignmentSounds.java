@@ -41,7 +41,9 @@ public final class AlignmentSounds {
             return;
         }
         try {
-            if (!HakiData.flag(player, "conquerorCharging")) {
+            boolean charging = HakiData.flag(player, "conquerorCharging");
+            ConquerorRelease.charging(player, charging, charging ? HakiData.integer(player, "conquerorCharge") : 0); // 2.4.9: the stun's hold
+            if (!charging) {
                 VOICED.remove(player.m_20148_());
                 return;
             }
@@ -70,5 +72,6 @@ public final class AlignmentSounds {
     @SubscribeEvent
     public static void loggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         VOICED.remove(event.getEntity().m_20148_());
+        ConquerorRelease.loggedOut(event.getEntity().m_20148_());
     }
 }

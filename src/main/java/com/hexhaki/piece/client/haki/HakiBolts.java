@@ -359,6 +359,13 @@ public final class HakiBolts {
      * neutral pale steel for anyone else (a pirate captain) or while a player's has not arrived yet.
      */
     static int colorOf(Entity owner) {
+        if (!(owner instanceof Player)) {
+            // 2.4.9: a Conqueror hit on a mob is drawn in the colour of the player whose release struck it (HakiTint)
+            int struck = HakiTint.hitColour();
+            if (struck != 0) {
+                return struck & 0xFFFFFF;
+            }
+        }
         return (owner instanceof Player ? RyouColors.orNeutral(owner.m_19879_()) : RyouPalette.NEUTRAL) & 0xFFFFFF;
     }
 
