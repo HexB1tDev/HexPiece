@@ -182,6 +182,12 @@ public final class PiecePatch implements Opcodes {
         {CONTROLLER, "toggleAcoc", "(Lnet/minecraft/server/level/ServerPlayer;)V", RYOU_SERVER, "acocKey"},
         // 2.2.5: "/hp joyboy on|off" is not a thing any more: it says so (every full-charge release is the JoyBoy one)
         {COMMANDS, "setJoyBoy", "(Lnet/minecraft/commands/CommandSourceStack;Lnet/minecraft/server/level/ServerPlayer;Z)I", CONQUEROR, "joyBoyCommand"},
+        // 2.4.4 (the owner: "whenever haki stun lands on the entity or player, no matter if it's modded or not, I want that entity to
+        // ragdoll and like fall ... instead of the current animation, that makes them like just like look up weird"): every stun's
+        // knockdown (the release, the tap, the full charge, a charging user, the last stand) is a fall (HakiFalls), not the swimming pose
+        // and the player knockdown animations
+        {CONTROLLER, "knockDown", "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/LivingEntity;IZ)V",
+            "com/hexhaki/piece/server/HakiFalls", "knockDown"},
     };
     /** 2.1.3: once Ryou is unlocked, switching Armament on brings it (RyouServer.afterArmament runs before every return). */
     static final String[] AFTER_ARMAMENT = {CONTROLLER, "toggleArmament", "(Lnet/minecraft/server/level/ServerPlayer;)V", RYOU_SERVER, "afterArmament"};

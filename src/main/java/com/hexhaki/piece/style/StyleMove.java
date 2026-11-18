@@ -63,12 +63,13 @@ public enum StyleMove {
     FK_BULLET(FightingStyle.FISHMAN_KARATE, Slot.HEAVY, "Water Bullet", "The hand raised to the sky: five drops of water gather over it "
         + "out of the air. Pushed forward, they fire, each locking onto a foe in front.", 28, 28, 90, 0, Motion.NONE, Effect.BULLETS,
         bullets()),
-    // 2.3.9 (the owner's rework): a punch where he looks, its water shockwave striking all in its path, knocking them off their feet
+    // 2.3.9 (the owner's rework): a punch where he looks, its water shockwave striking all in its path, knocking them off their feet.
+    // 2.4.4 (the owner: "it doesn't look very strong"): stepped into harder (a 0.4 lunge, was 0.22), lands as a finisher (hit-stop, shake)
     // (water/BrickFist, style/Tumble); in the Shark Skin Counter's place
     FK_BRICK_FIST(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_A, "Brick Fist", "A punch where you look: a shockwave of water rushes out of "
-        + "the fist, throwing everything in its path off its feet.", 18, 18, 140, 60, Motion.lunge(6, 0.22), Effect.SHOCKWAVE,
+        + "the fist, throwing everything in its path off its feet.", 18, 18, 140, 60, Motion.lunge(6, 0.4), Effect.SHOCKWAVE,
         Hit.line(com.hexhaki.piece.water.BrickFist.STRIKE, com.hexhaki.piece.water.BrickFist.REACH, com.hexhaki.piece.water.BrickFist.RADIUS,
-            9.0F, Weight.HEAVY).throwing(1.5, 0.5)),
+            9.0F, Weight.FINISHER).throwing(1.5, 0.5)),
     // 2.4.0 (the owner's rework): both hands to the sky, the one in your sights sealed in a floating ball of water for 5 s
     // (water/WaterPrison, server/WaterPrisons); in the Five-Thousand Brick Wave's place. No blow: it holds
     FK_PRISON(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B, "Water Prison", "Both hands to the sky: the one in your sights is sealed in a "

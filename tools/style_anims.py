@@ -69,10 +69,11 @@ def p(*pieces, **parts):
 #   lowered (it would lift or sink the walking feet), its turn, lean and the arms carry the blow. Kicks, the knee, the ground punch
 #   and the shoulder charge keep their legs.
 PUNCHES = ("style_fishman_karate_palm", "style_fishman_karate_backfist", "style_fishman_karate_brick", "style_fishman_karate_bullet",
-           "style_fishman_karate_brick_fist", "style_fishman_karate_prison", "style_brawler_jab", "style_brawler_cross",
+           "style_fishman_karate_prison", "style_brawler_jab", "style_brawler_cross",
            "style_brawler_hook", "style_brawler_upper", "style_brawler_haymaker", "style_brawler_gatling",
            "style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
-EASE_IN = set(PUNCHES) | {"style_fishman_karate_knee", "style_brawler_charge"}
+# 2.4.4: the Brick Fist eases in like a punch but plants its legs (it is stepped into: the owner, "it doesn't look very strong")
+EASE_IN = set(PUNCHES) | {"style_fishman_karate_knee", "style_brawler_charge", "style_fishman_karate_brick_fist"}
 FREE_LEGS = set(PUNCHES)
 
 
@@ -389,6 +390,9 @@ def fishman_karate():
     # right hand straight up to the sky by tick 4 (water/WaterBullet.RAISED), held, trembling a little as the drops gather over it
     # (4-12), the eyes on them; pushed forward, pointing, at 14-15; held pointing as the five fire one a tick (16-20), each kicking it
     # back a hair; then down
+    # 2.4.4 (the owner: the drops "way too ... to the right side of the player, not in the center, like above the head"): the arch is
+    # centred over the head now (WaterBullet.CROWN), its right end over the raised fist; the arm stays straight up (any pose that brings
+    # a Minecraft fist nearer the middle puts it in front of the forehead, through the head as it looks up, not up in the sky)
     sky = p(FK, rightArm=arm(-176, 0, 6, -4), leftArm=arm(-40, 22, -12, -84), body={"bend": -5, "yaw": 4}, head={"pitch": -16})
     point = p(FK, rightArm=arm(-92, -6, 4, 0), leftArm=arm(-30, 18, -14, -70), body={"bend": 4, "yaw": 12, "z": -0.06}, head={"pitch": 0})
     kick = p(point, rightArm=arm(-97, -6, 4, -6), body={"bend": 3, "yaw": 11, "z": -0.04})
@@ -404,20 +408,29 @@ def fishman_karate():
           "pushed forward and fired, each locked onto a foe in front.")
     # 2.3.9 (the owner: "Brick Fist: The user punches where he's looking creating a water shockwave"): the right fist drawn back to the
     # hip and the body wound away from the look, the left hand out ahead sighting (2-6); driven straight out along the look on tick 8
-    # (water/BrickFist.STRIKE), the whole body turned through behind it, held out as the shockwave rushes off it, then back
+    # (water/BrickFist.STRIKE), the whole body turned through behind it, held out as the shockwave rushes off it, then back.
+    # 2.4.4 (the owner: "it doesn't look very strong"): planted and stepped into: the feet set wide (the left forward, knee bent), the
+    # body sunk and wound further away (yaw -50), held a beat; then the rear leg drives straight, the hips and shoulders turn through
+    # (yaw 40), the body lunges 0.36 forward behind the fist and stays sunk while the wave rushes off it
+    stance = {"rightLeg": leg(16, 4, 14), "leftLeg": leg(-20, -4, 22)}
+    loaded = {"rightLeg": leg(20, 5, 20), "leftLeg": leg(-24, -4, 30)}
+    driven = {"rightLeg": leg(30, 4, 2), "leftLeg": leg(-32, -4, 34)}
     write(s + "brick_fist", 18, [
-        (2, "inoutsine", p(FK, rightArm=arm(34, 8, 14, -112), leftArm=arm(-82, 12, -6, -10), body={"yaw": -34, "bend": 2}, head={"yaw": 26})),
-        (6, "insine", p(FK, rightArm=arm(40, 10, 16, -118), leftArm=arm(-86, 14, -6, -6), body={"yaw": -40, "bend": 4, "z": 0.04},
-                        head={"yaw": 30})),
-        (8, "outexpo", p(FK, rightArm=arm(-90, -4, 2, 0), leftArm=arm(30, 0, -12, -104), body={"yaw": 30, "z": -0.22, "bend": 8},
-                         head={"yaw": -14})),
-        (9, "outback", p(FK, rightArm=arm(-93, -4, 2, 0), leftArm=arm(32, 0, -12, -106), body={"yaw": 33, "z": -0.24, "bend": 9},
-                         head={"yaw": -15})),
-        (12, "inoutsine", p(FK, rightArm=arm(-88, -2, 3, -4), leftArm=arm(26, 0, -12, -100), body={"yaw": 26, "z": -0.18, "bend": 6},
-                            head={"yaw": -11})),
-        (15, "inoutsine", p(FK, rightArm=arm(-46, 0, 8, -50), body={"yaw": 6, "z": -0.06})),
+        (2, "inoutsine", p(FK, stance, rightArm=arm(36, 8, 14, -114), leftArm=arm(-82, 12, -6, -10), body={"yaw": -38, "bend": 3, "y": -0.05},
+                           head={"yaw": 28})),
+        (6, "insine", p(FK, loaded, rightArm=arm(44, 12, 18, -124), leftArm=arm(-88, 16, -6, -4), body={"yaw": -50, "bend": 6, "z": 0.08,
+                        "y": -0.08}, head={"yaw": 34})),
+        (7, "linear", p(FK, loaded, rightArm=arm(45, 12, 18, -125), leftArm=arm(-88, 16, -6, -4), body={"yaw": -51, "bend": 6, "z": 0.09,
+                        "y": -0.08}, head={"yaw": 35})),
+        (8, "outexpo", p(FK, driven, rightArm=arm(-90, -4, 2, 0), leftArm=arm(34, 0, -14, -108), body={"yaw": 36, "z": -0.32, "bend": 10,
+                         "y": -0.08}, head={"yaw": -16})),
+        (9, "outback", p(FK, driven, rightArm=arm(-94, -4, 2, 0), leftArm=arm(36, 0, -14, -110), body={"yaw": 40, "z": -0.36, "bend": 11,
+                         "y": -0.08}, head={"yaw": -18})),
+        (12, "inoutsine", p(FK, driven, rightArm=arm(-89, -2, 3, -4), leftArm=arm(28, 0, -12, -102), body={"yaw": 31, "z": -0.3, "bend": 8,
+                            "y": -0.07}, head={"yaw": -12})),
+        (15, "inoutsine", p(FK, rightArm=arm(-46, 0, 8, -50), body={"yaw": 6, "z": -0.08})),
         (18, "inoutsine", FK),
-    ], "Fishman Karate: the Brick Fist, a punch where he looks, a shockwave of water rushing out of it.")
+    ], "Fishman Karate: the Brick Fist, a punch where he looks, stepped into, a shockwave of water rushing out of it.")
     # 2.4.0 (the owner: "Water Prison: The user pulls both hands up into the sky (Needs an entity to target) the entity selected gets
     # trapped"): both hands up to the sky by tick 4 (water/WaterPrison.GATHER), spread, the head up, held, trembling as the water
     # gathers round the target (4-12); on the seal (14) both brought down and forward together, the hands closing on it; then down

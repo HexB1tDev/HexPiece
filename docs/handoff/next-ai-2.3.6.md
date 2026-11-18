@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 to 2.4.3 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework; Six Powers' air in 3D; Haki slashes clash; gestures by rank)
+# HexPiece: handoff after 2.3.6 to 2.4.4 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework; Six Powers' air in 3D; Haki slashes clash; gestures by rank; the Haki stun fall)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.4** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.5** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,42 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## The owner after the GIF reel (session 4, late)
+- Asked for GIFs of everything from the last two sessions: made and published as an artifact (claude.ai/artifact/Qez8HbAQ31bWyRr2PrtsYG;
+  the files in the scratchpad, copied to `gifs/`, which .git/info/exclude keeps out of git). Then: "I don't need to render anything
+  anymore. I'll test when I get to my office." So: no more renders for the owner unless asked; they test in game.
+- Their feedback on the GIFs, done in 2.4.4: the Water Bullet "to the right side of the player, not in the center, like above the
+  head"; the Brick Fist "the particles are great ... I love the texture ... it's just ... very lackluster ... it doesn't look very
+  strong"; and "whenever haki stun lands on the entity or player, no matter if it's modded or not, I want that entity to ragdoll and
+  like fall to a random side, usually like opposite where the lightning hit ... just a very small like fall backwards type thing and
+  like keep them stunned. Like instead of the current animation, that makes them like just like look up weird" ("this should affect
+  literally all entities").
+
+## Done in 2.4.4
+- **Haki stun fall** (pure `haki/StunFall`, tests `LightningTests.stunFall`; server `server/HakiFalls`; client `client/fx/Tumbles.fall`;
+  packet `network/S2CFall` id 15; protocol 7). Every stun goes through the original's private
+  `HakiServerController.knockDown(ServerLevel, LivingEntity, int, boolean)` (applyConqueror, stunConquerorTap 30 ticks,
+  forceMaxConquerorStun, stunConquerorChargeContact 20, knockDownForLastStand): TRAMPOLINES now sends it to `HakiFalls.knockDown`.
+  The original's version forced Pose.SWIMMING on non-players (the "look up weird": a mob's head tips back, its body stays upright)
+  and played players haki_knockdown_left/right/twitch or haki_pain_convulse/clutch; neither happens now. HakiFalls keeps the body in
+  the original's forced stun (`HexHakiForcedConquerorStunUntil` in its persistent data: HakiEvents.forcedConquerorStun freezes it
+  each tick) for `StunFall.down(ticks)` (at least 40), slowness, a mob's target and path dropped; picks the way it falls (`away`: its
+  push if any (the tap throws it back), else the last release (`released`, from ConquerorRelease.visual) within 60 ticks and 64
+  blocks, else the nearest other player within 32, else any way; then `StunFall.direction`: within 35 degrees of away, one in four
+  to a side); a new stun on a body already down only extends it. The client turns the whole body from its feet (any model): slid
+  back up to 0.25, lifted by half its width times flatness, tipped LIE 84 degrees (FALL 7 ticks, accelerating; a 0.16 rad bounce
+  over 5), head square on the body and lolled 0.5 rad, twitches every 14-22 ticks; up over GETUP 12 ticks after `down`.
+  Not done: the stunned player's own first-person camera does not fall with them (only others see it); a camera tilt could follow.
+- **Water Bullet**: `WaterBullet.CROWN` {0, 2.45, 0.06}: the arch is centred over the head (it was over FIST, 0.34 right). The arm
+  stays straight up: a numeric search (tools/anim.skeleton) found no pose that brings the fist nearer the middle without it ending in
+  front of the forehead or through the head (a raised Minecraft fist only reaches the top of the head).
+- **Brick Fist**: `BrickFist` RINGS 5 (was 3), SPEED 2.2 (1.7), OPEN 0.55 to 3.0 (0.3 to 1.9), THICK 0.42 to 0.12 (0.2 to 0.05),
+  `torrent(age)` (a jet of 5 stretched water bodies under the rings, drawn in WaterFx with the rings); WaterFx.shock: a bigger burst
+  (spray 44+26, two rings, a crown of 22 bits); S2CWater.SPLASH (11) on every body struck (`WaterFx.struck`); Weight.FINISHER (was
+  HEAVY), lunge 0.4 (0.22); sounds item.trident.riptide_3 and entity.generic.explode (0.45, pitch 1.5); the animation planted (legs
+  in it now, out of PUNCHES/FREE_LEGS, kept in EASE_IN; StyleTests lets its legs be animated): wound to yaw -51, a held beat, the
+  rear leg driving, a 0.36 lunge.
 
 ## Done in 2.4.3: NPC gestures by rank (next-ai-2.3.2.md's last open item: "More gestures per persona ... a captain could swagger, a recruit fidget")
 - `npc/Gesture`: five more, appended (sent by ordinal): BRUSH (64 ticks) and SWAGGER (110), a captain's; ORDER (72), an officer's;
@@ -207,5 +243,6 @@ shoots projectiles)")
    next-ai-2.3.2.md's gestures by persona: 2.4.3.) (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
 
 ## Not verified (only the owner can)
-Everything in game: the rank gestures (each NPC rank's own: do they read at a distance?), clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,
+Everything in game: the Haki stun fall (on players, mobs, modded mobs: does it look right on odd models? the direction?), the
+centred Water Bullet arch, the stronger Brick Fist, the rank gestures (each NPC rank's own: do they read at a distance?), clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,
 the impact frame on a real GPU and on Android (the blend factors and the framebuffer blit), the Ryou burst, the recoils, NPC clashes.

@@ -101,7 +101,8 @@ public final class StyleTests {
             }
             String json = Files.readString(ANIMATIONS.resolve(move.animation() + ".json"));
             Check.that(!json.contains("\"tick\": 0,"), move + ": no pose forced on tick 0, the arms rise from where they are");
-            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.IF_CHARGE;
+            // 2.4.4: the Brick Fist is planted and stepped into (the owner: "it doesn't look very strong")
+            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.IF_CHARGE || move == StyleMove.FK_BRICK_FIST;
             Check.that(legged == legs.matcher(json).find(), move + (legged ? ": its legs are part of the blow" : ": the legs stay the game's"));
         }
     }
@@ -167,6 +168,9 @@ public final class StyleTests {
         Check.that(a[0] < m[0] && m[0] < e[0] && m[1] > a[1] && Math.abs(a[1] - e[1]) < 1e-9 && a[2] == m[2],
             "a flat arch across the fist, its middle highest, level across");
         Check.that(m[1] > com.hexhaki.piece.water.WaterBullet.FIST[1], "over the fist");
+        // 2.4.4 (the owner: "not in the center, like above the head"): centred over the head, above its top (1.875 blocks)
+        Check.near((a[0] + e[0]) * 0.5, 0.0, 1e-9, "the arch centred over the head, not the fist");
+        Check.that(a[1] - com.hexhaki.piece.water.WaterBullet.RADIUS > 1.875 + 0.3, "every drop well above the head");
         for (int targets = 0; targets <= 7; targets++) {
             for (int i = 0; i < 5; i++) {
                 int t = com.hexhaki.piece.water.WaterBullet.target(i, targets);
@@ -207,6 +211,31 @@ public final class StyleTests {
             && com.hexhaki.piece.water.BrickFist.travelled(0, 100) == -1, "its rings set out one a tick and are gone at its reach");
         Check.that(com.hexhaki.piece.water.BrickFist.left(0) == 1.0 && com.hexhaki.piece.water.BrickFist.left(com.hexhaki.piece.water.BrickFist.REACH) == 0.0,
             "whole as it sets out, gone at its reach");
+        // 2.4.4 (the owner: "it doesn't look very strong"): heavy rings, a torrent under them, a finisher's blow
+        Check.that(com.hexhaki.piece.water.BrickFist.rings() >= 5 && com.hexhaki.piece.water.BrickFist.major(0, com.hexhaki.piece.water.BrickFist.REACH) >= 2.5
+            && com.hexhaki.piece.water.BrickFist.minor(0, 0) >= 0.4, "five heavy rings, opening wide");
+        for (int k = 0; k < com.hexhaki.piece.water.BrickFist.rings(); k++) {
+            Check.that(com.hexhaki.piece.water.BrickFist.major(k, 1.0) > com.hexhaki.piece.water.BrickFist.minor(k, 1.0) * 1.5
+                && com.hexhaki.piece.water.BrickFist.minor(k, 1.0) > 0, "ring " + k + ": still a ring");
+            Check.that(com.hexhaki.piece.water.BrickFist.travelled(k, k + 0.5) > 0, "ring " + k + " sets out");
+        }
+        double[] jet = com.hexhaki.piece.water.BrickFist.torrent(1.0);
+        Check.that(jet != null && jet[0] > com.hexhaki.piece.water.BrickFist.travelled(0, 1.0) && jet[1] >= 0 && jet[1] < jet[0],
+            "the torrent's head just ahead of the first ring, its tail behind");
+        Check.that(com.hexhaki.piece.water.BrickFist.torrent(-1) == null && com.hexhaki.piece.water.BrickFist.torrent(30) == null,
+            "no torrent before the punch or long after");
+        double lastHead = 0;
+        for (double age = 0; age < 30; age += 0.25) {
+            double[] t = com.hexhaki.piece.water.BrickFist.torrent(age);
+            if (t == null) {
+                continue;
+            }
+            Check.that(t[0] >= lastHead - 1e-9 && t[0] <= com.hexhaki.piece.water.BrickFist.REACH + 0.5 + 1e-9, "the torrent only rushes out, no further than it reaches");
+            lastHead = t[0];
+        }
+        Check.that(com.hexhaki.piece.water.BrickFist.torrentRadius(1) > com.hexhaki.piece.water.BrickFist.torrentRadius(0),
+            "thicker at its head than at the fist");
+        Check.that(hit.weight() == Hit.Weight.FINISHER, "it lands like a finisher (hit-stop, shake)");
         // the rag doll (HexGhoul's)
         com.hexhaki.piece.style.Tumble.Frame start = com.hexhaki.piece.style.Tumble.at(0, Double.NaN);
         Check.that(start.tumble() == 0 && start.flat() == 0, "upright the instant it is struck");

@@ -148,6 +148,7 @@ public final class WaterFx {
             }
             case S2CWater.SPILL -> spill(level, message.user());
             case S2CWater.SHOCK -> shock(at, dir.m_82541_(), level.m_46467_());
+            case S2CWater.SPLASH -> struck(at, dir.m_82541_());
             case S2CWater.KNOCKED -> Tumbles.knocked(message.target(), dir);
             case S2CWater.AIR_SHOT, S2CWater.AIR_HIT -> AirFx.accept(message);
             case S2CWater.PRISON_GATHER -> PRISONS.put(message.target(), new Prison(level.m_46467_() - com.hexhaki.piece.water.WaterPrison.GATHER));
@@ -171,11 +172,40 @@ public final class WaterFx {
         }
     }
 
-    /** 2.3.9: a Brick Fist's shockwave sets out from the fist: a burst of water off it, then its rings (drawn, shedding spray each tick). */
+    /**
+     * 2.3.9: a Brick Fist's shockwave sets out from the fist: a burst of water off it, then its rings (drawn, shedding spray each tick).
+     * 2.4.4 (the owner: "it doesn't look very strong"): the burst is a blast: a crown of water flung out round the fist and forward,
+     * two rings thrown wide across the look, a cone of spray along it; and the torrent (drawn) under the rings.
+     */
     static void shock(Vec3 fist, Vec3 dir, long now) {
         SHOCKS.add(new Shock(fist, dir, now, RANDOM.nextLong()));
-        spray(fist, dir.m_82490_(0.35), 18, 0.25);
-        PieceFx.at(PieceFx.RING, false, 6, fist).colors(0xB0D8F2FF, 0x00D8F2FF).size(0.2, 1.6).bloom(0).spawn();
+        spray(fist, dir.m_82490_(0.55), 44, 0.3);
+        spray(fist.m_82549_(dir.m_82490_(1.2)), dir.m_82490_(0.7), 26, 0.45);
+        PieceFx.at(PieceFx.RING, false, 9, fist).colors(0xC8E2F6FF, 0x00D8F2FF).size(0.35, 3.4).bloom(0).spawn();
+        PieceFx.at(PieceFx.RING, false, 6, fist.m_82549_(dir.m_82490_(0.6))).colors(0xE0F0FFFF, 0x00E0F0FF).size(0.2, 2.2).bloom(0).spawn();
+        Vec3[] across = across(dir);
+        int n = PieceFx.count(22);
+        for (int i = 0; i < n; i++) {
+            // the crown: water flung out round the fist, most of it forward
+            double a = RANDOM.nextDouble() * Math.PI * 2.0;
+            Vec3 out = across[0].m_82490_(Math.cos(a)).m_82549_(across[1].m_82490_(Math.sin(a)));
+            Vec3 velocity = out.m_82490_(0.14 + RANDOM.nextDouble() * 0.16).m_82549_(dir.m_82490_(0.35 + RANDOM.nextDouble() * 0.45))
+                .m_82520_(0.0, 0.06, 0.0);
+            bit(fist.m_82549_(out.m_82490_(0.25)), velocity, 0.035 + RANDOM.nextDouble() * 0.05, 12 + RANDOM.nextInt(8));
+        }
+    }
+
+    /** 2.4.4: the Brick Fist's shockwave struck a body: a heavy splash on it, water thrown on past it the way the wave rushed. */
+    static void struck(Vec3 at, Vec3 dir) {
+        splash(at, dir.m_82490_(-1.0), 2.4);
+        spray(at, dir.m_82490_(0.45), 30, 0.5);
+        PieceFx.at(PieceFx.RING, false, 8, at).colors(0xC0DCF4FF, 0x00D8F2FF).size(0.3, 2.6).bloom(0).spawn();
+        int n = PieceFx.count(14);
+        for (int i = 0; i < n; i++) {
+            Vec3 out = new Vec3(r(1), r(0.7) + 0.35, r(1)).m_82541_();
+            bit(at, out.m_82490_(0.1 + RANDOM.nextDouble() * 0.12).m_82549_(dir.m_82490_(0.3 + RANDOM.nextDouble() * 0.3)),
+                0.035 + RANDOM.nextDouble() * 0.045, 14 + RANDOM.nextInt(8));
+        }
     }
 
     /** 2.4.0: a Water Prison bursts (or lets go): the ball of water flung apart and falling, spray every way, a ring. */
@@ -368,14 +398,14 @@ public final class WaterFx {
                 Vec3 middle = shock.from().m_82549_(shock.dir().m_82490_(d));
                 double open = com.hexhaki.piece.water.BrickFist.major(k, d);
                 Vec3[] across = across(shock.dir());
-                int n = PieceFx.count((float) (5 * com.hexhaki.piece.water.BrickFist.left(d)));
+                int n = PieceFx.count((float) (8 * com.hexhaki.piece.water.BrickFist.left(d)));
                 for (int i = 0; i < n; i++) {
                     double a = RANDOM.nextDouble() * Math.PI * 2.0;
                     Vec3 out = across[0].m_82490_(Math.cos(a)).m_82549_(across[1].m_82490_(Math.sin(a)));
                     PieceFx.at(PieceFx.DROP, false, 9 + RANDOM.nextInt(5), middle.m_82549_(out.m_82490_(open)))
                         .velocity(out.m_82490_(0.06).m_82549_(shock.dir().m_82490_(0.25))).colors(MIST, MIST_FADE).size(0.07, 0.03).fall(0.02)
                         .drag(0.88).bloom(0).spawn();
-                    if (k == 0 && RANDOM.nextFloat() < 0.35F) {
+                    if (k <= 1 && RANDOM.nextFloat() < 0.4F) {
                         bit(middle.m_82549_(out.m_82490_(open)), out.m_82490_(0.12).m_82549_(shock.dir().m_82490_(0.3)).m_82520_(0.0, 0.06, 0.0),
                             0.03 + RANDOM.nextDouble() * 0.025, 12 + RANDOM.nextInt(6));
                     }
@@ -477,6 +507,21 @@ public final class WaterFx {
         List<WaterMesh.Ring> rings = new ArrayList<>();
         for (Shock shock : SHOCKS) {
             double age = now - shock.start() + partial;
+            // 2.4.4: the torrent the rings ride on, in stretched bodies of water from its tail to its head, overlapping
+            double[] jet = com.hexhaki.piece.water.BrickFist.torrent(age);
+            if (jet != null) {
+                int blobs = com.hexhaki.piece.water.BrickFist.TORRENT_BLOBS;
+                double step = (jet[0] - jet[1]) / blobs;
+                double fade = com.hexhaki.piece.water.BrickFist.left(jet[0]);
+                for (int b = 0; b < blobs; b++) {
+                    double u = (b + 0.5) / blobs;
+                    double radius = com.hexhaki.piece.water.BrickFist.torrentRadius(u);
+                    Vec3 at = shock.from().m_82549_(shock.dir().m_82490_(jet[1] + step * (b + 0.5))).m_82546_(cam);
+                    bodies.add(new WaterMesh.Body(at.f_82479_, at.f_82480_, at.f_82481_, radius, new double[] {shock.dir().f_82479_,
+                        shock.dir().f_82480_, shock.dir().f_82481_}, Math.max(1.0, step * 0.85 / radius), 0.09, age + b * 0.7, shock.seed() * 31L + b,
+                        WaterMesh.PRISON * (0.55 + 0.45 * fade)));
+                }
+            }
             for (int k = 0; k < com.hexhaki.piece.water.BrickFist.rings(); k++) {
                 double d = com.hexhaki.piece.water.BrickFist.travelled(k, age);
                 if (d < 0) {

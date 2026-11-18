@@ -41,6 +41,7 @@ public final class ConquerorRelease {
     /** The original's {@code HakiServerController.visual}, with the seed kept. */
     public static void visual(ServerPlayer player, S2CHakiVisual.Visual visual, float power, int variant) {
         WaterPrisons.conqueror(player); // 2.4.0: a Water Prison round the one letting it out bursts
+        HakiFalls.released(player); // 2.4.4: the bodies it knocks down fall away from it
         long seed = player.m_217043_().m_188505_();
         if (visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE) {
             SEEDS.put(player.m_19879_(), seed);

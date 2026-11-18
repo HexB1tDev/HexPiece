@@ -155,6 +155,9 @@ public final class StyleCombat {
             PieceNetwork.around(user, new com.hexhaki.piece.network.S2CWater(com.hexhaki.piece.network.S2CWater.SHOCK, 0, user.m_19879_(), 0, -1,
                 fist.f_82479_, fist.f_82480_, fist.f_82481_, (float) look3.f_82479_, (float) look3.f_82480_, (float) look3.f_82481_));
             WaterServer.vanilla(level, fist, "entity.player.splash.high_speed", 1.0F, 0.8F);
+            // 2.4.4 (the owner: "it doesn't look very strong"): the torrent's rush, and the blow's weight under it
+            WaterServer.vanilla(level, fist, "item.trident.riptide_3", 1.0F, 0.85F);
+            WaterServer.vanilla(level, fist, "entity.generic.explode", 0.45F, 1.5F);
         } else if (hit.line()) {
             Vec3 from = user.m_146892_();
             PieceNetwork.around(user, new S2CStyleFx(move.ordinal(), 2, user.m_19879_(), end[0].f_82479_, end[0].f_82480_, end[0].f_82481_,
@@ -177,6 +180,11 @@ public final class StyleCombat {
             Impact.hit(user, target, spec(hit, launch));
             if (shock) {
                 Knockdowns.knocked(target, launch); // 2.3.9: off its feet, a rag doll
+                // 2.4.4: a heavy splash on it, seen by everyone near
+                Vec3 wet = middle(target);
+                Vec3 along = user.m_20154_();
+                PieceNetwork.around(target, new com.hexhaki.piece.network.S2CWater(com.hexhaki.piece.network.S2CWater.SPLASH, 0, user.m_19879_(), 0,
+                    target.m_19879_(), wet.f_82479_, wet.f_82480_, wet.f_82481_, (float) along.f_82479_, (float) along.f_82480_, (float) along.f_82481_));
             }
             if (hit.stun() > 0) {
                 target.m_7292_(new MobEffectInstance(MobEffects.f_19597_, hit.stun(), 3, false, false, false));

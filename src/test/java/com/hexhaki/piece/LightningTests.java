@@ -24,6 +24,7 @@ public final class LightningTests {
         storm();
         sphere();
         tinted();
+        stunFall();
         Check.done("LightningTests");
     }
 
@@ -468,5 +469,55 @@ public final class LightningTests {
         Check.that((heart.color >>> 24) == 0xFF && (heart.color & 0xFF) >= (ryou & 0xFF) && ((heart.color >> 16) & 0xFF) > ((ryou >> 16) & 0xFF),
             "a hot heart is the colour whitened");
         Check.that(core.points == points && core.seed == 1L, "the bolt itself is unchanged");
+    }
+
+    /** 2.4.4 (the owner: a Haki stun makes any entity "actually fall down ... and stay stunned"): every body falls, lies, gets up. */
+    static void stunFall() {
+        com.hexhaki.piece.haki.StunFall.Frame start = com.hexhaki.piece.haki.StunFall.at(0, 40, 1L);
+        Check.that(start.angle() == 0 && start.slide() == 0, "upright the instant the stun lands");
+        double last = -1;
+        for (double t = 0; t <= com.hexhaki.piece.haki.StunFall.FALL_TICKS; t += 0.25) {
+            double a = com.hexhaki.piece.haki.StunFall.at(t, 40, 1L).angle();
+            Check.that(a >= last, "it falls over, never back, while it falls");
+            last = a;
+        }
+        com.hexhaki.piece.haki.StunFall.Frame lying = com.hexhaki.piece.haki.StunFall.at(25, 40, 1L);
+        Check.that(lying.angle() > Math.toRadians(70) && lying.angle() < Math.toRadians(95) && lying.flat() > 0.9,
+            "it lies down, nearly flat, not through the ground");
+        Check.that(lying.slide() > 0 && lying.slide() <= 0.5, "a small fall back: slid a little, not thrown");
+        Check.that(Math.abs(lying.head()) > 0.2, "its head lolled to one side");
+        for (double t = com.hexhaki.piece.haki.StunFall.FALL_TICKS + com.hexhaki.piece.haki.StunFall.SETTLE_TICKS; t < 40; t += 0.5) {
+            Check.that(com.hexhaki.piece.haki.StunFall.at(t, 40, 7L).angle() > Math.toRadians(70), "it stays down while it is stunned");
+        }
+        Check.that(com.hexhaki.piece.haki.StunFall.at(40 + com.hexhaki.piece.haki.StunFall.GETUP_TICKS * 0.5, 40, 1L).angle() < lying.angle(),
+            "it gets up once the stun is over");
+        Check.that(com.hexhaki.piece.haki.StunFall.over(40 + com.hexhaki.piece.haki.StunFall.GETUP_TICKS, 40)
+            && !com.hexhaki.piece.haki.StunFall.over(39, 40), "and is done once it is up");
+        Check.that(com.hexhaki.piece.haki.StunFall.down(10) == com.hexhaki.piece.haki.StunFall.MIN_DOWN
+            && com.hexhaki.piece.haki.StunFall.down(200) == 200, "down a while at least, longer for a longer stun");
+        // the way it falls: mostly away from the user, some to a side, never toward the user; any way when no user is known
+        int away = 0;
+        int sideways = 0;
+        for (int i = 0; i < 400; i++) {
+            double r1 = (i % 20) / 20.0 + 0.01;
+            double r2 = (i / 20) / 20.0 + 0.01;
+            double[] d = com.hexhaki.piece.haki.StunFall.direction(0, 1, r1, r2);
+            Check.near(Math.hypot(d[0], d[1]), 1.0, 1e-9, "a way on the ground");
+            Check.that(d[1] > -0.35, "never back toward the one who let it out");
+            if (d[1] > Math.cos(Math.toRadians(36))) {
+                away++;
+            } else {
+                sideways++;
+            }
+        }
+        Check.that(away > sideways * 2 && sideways > 0, "usually straight away, now and then to one side");
+        double[] any = com.hexhaki.piece.haki.StunFall.direction(0, 0, 0.3, 0.6);
+        Check.near(Math.hypot(any[0], any[1]), 1.0, 1e-9, "some way even when no one is known");
+        for (long seed = 0; seed < 50; seed++) {
+            for (double t = 0; t < 60; t += 0.5) {
+                com.hexhaki.piece.haki.StunFall.Frame f = com.hexhaki.piece.haki.StunFall.at(t, 40, seed);
+                Check.that(Double.isFinite(f.angle()) && f.angle() >= -1e-9 && f.angle() < Math.toRadians(95), "a fall no further than flat");
+            }
+        }
     }
 }

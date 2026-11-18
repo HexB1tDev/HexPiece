@@ -31,6 +31,8 @@ public record S2CWater(int kind, int id, int user, int index, int target, double
     /** 2.4.1: Six Powers: a bullet of Haki-hardened air shot from a finger (its number, from (x, y, z), its velocity), and where it struck. */
     public static final int AIR_SHOT = 9;
     public static final int AIR_HIT = 10;
+    /** 2.4.4: the Brick Fist's shockwave struck the body {@code target} at (x, y, z), rushing along (dx, dy, dz): a heavy splash on it. */
+    public static final int SPLASH = 11;
 
     public static void encode(S2CWater message, FriendlyByteBuf buffer) {
         buffer.writeByte(message.kind);

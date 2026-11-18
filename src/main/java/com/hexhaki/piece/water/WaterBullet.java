@@ -6,8 +6,9 @@ package com.hexhaki.piece.water;
  * forward (pointing forward) and the bullets auto fire and lock on to any entity infront of the user. (damage)", and of all its water:
  * "the water actually materializes from the air particles in the air".
  *
- * <p>The right hand goes up ({@link #RAISED}); over the fist the air's moisture gathers into five drops one after another, each drawn
- * in out of a mist round its place and swelling to a full drop ({@link #grown}), along a flat arch across the fist ({@link #formation});
+ * <p>The right hand goes up ({@link #RAISED}); over the head the air's moisture gathers into five drops one after another, each drawn
+ * in out of a mist round its place and swelling to a full drop ({@link #grown}), along a flat arch centred over the head
+ * ({@link #formation}, 2.4.4: it was across the fist, off to the right);
  * the hand is pushed forward and the drops fire one a tick from {@link #FIRE} ({@link #fireTick}), each locked onto a foe in front (the
  * nearest first, round again when there are fewer than five: {@link #target}) and turning after it as it flies ({@link #steer}). One
  * that finds nothing flies straight on along the look and falls apart into spray when its life runs out.
@@ -24,12 +25,17 @@ public final class WaterBullet {
     public static final int FIRE = 16;
     /** A drop's radius (blocks). */
     public static final double RADIUS = 0.13;
-    /** The arch: its half width across the fist, how much higher its middle stands than its ends, and how far over the fist it is. */
+    /** The arch: its half width, how much higher its middle stands than its ends. */
     public static final double ARCH = 0.5;
     public static final double ARCH_RISE = 0.2;
-    public static final double OVER = 0.32;
     /** The raised fist: right of the feet's middle, above the feet, ahead (blocks, in the user's facing). */
     public static final double[] FIST = {0.34, 2.18, 0.12};
+    /**
+     * 2.4.4 (the owner, on 2.4.3's render: "the bullets are coming out ... way too ... to the right side of the player, not in the
+     * center, like above the head"): the arch's middle, over the middle of the head (its ends level 0.57 over the top of the head, its
+     * right end over the raised fist), no longer over the fist (it stood a third of a block right of the head's middle).
+     */
+    public static final double[] CROWN = {0.0, 2.45, 0.06};
     /** Flight: blocks a tick, the most it turns toward its target a tick, ticks before it falls apart. */
     public static final double SPEED = 1.5;
     public static final double TURN = Math.toRadians(24.0);
@@ -43,10 +49,10 @@ public final class WaterBullet {
     private WaterBullet() {
     }
 
-    /** Drop {@code i}'s place, blocks right, up and ahead of the user's feet (its facing): along the arch over the raised fist. */
+    /** Drop {@code i}'s place, blocks right, up and ahead of the user's feet (its facing): along the arch over the head. */
     public static double[] formation(int i) {
         double t = COUNT == 1 ? 0.0 : (i / (double) (COUNT - 1)) * 2.0 - 1.0;
-        return new double[] {FIST[0] + t * ARCH, FIST[1] + OVER + ARCH_RISE * (1.0 - t * t), FIST[2]};
+        return new double[] {CROWN[0] + t * ARCH, CROWN[1] + ARCH_RISE * (1.0 - t * t), CROWN[2]};
     }
 
     /** The tick drop {@code i} starts to gather. */
