@@ -208,6 +208,10 @@ public final class PiecePatch implements Opcodes {
     static final Object[][] VIRTUAL_REDIRECTS = {
         {CONTROLLER, "applyConqueror", "net/minecraft/world/entity/LivingEntity", "m_6469_", "(Lnet/minecraft/world/damagesource/DamageSource;F)Z",
             CONQUEROR, "hurt", 3},
+        // 2.5.3 (the owner: "sometimes the player's skin vanishes when starting a world"): Gear 5's white skin reads the player's skin
+        // back from its texture through HexPiece (HakiSkin.readBack), which throws when the readback is not a real skin (haki/SkinCheck),
+        // so the original closes its copy and tries again later instead of drawing the player with an empty one
+        {JACKET, "create", "com/mojang/blaze3d/platform/NativeImage", "m_85045_", "(IZ)V", HAKI_SKIN, "readBack", 1},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"},

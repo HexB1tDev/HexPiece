@@ -1,249 +1,26 @@
 #!/usr/bin/env python3
-"""2.1.3: renders Ryou's hands off-game, to judge them (the house rule: judge every render yourself). 2.3.3: the black coat with
-its coloured outline along every edge of the hand (RyouHands.glow), drawn without back-face culling (the owner's setup).
+"""Renders Ryou's fists off-game to judge them (the house rule: judge every render yourself). 2.5.3: the game's own code does the work:
+tools/preview/RyouPreview.java draws the player model's arm (every skin texel, bent by ArmBend, blackened and glossed by HandCoat) and
+the aura exactly as haki/FistAura builds it (alpha blended, depth tested, no depth written), in several shots (the owner's picture angle,
+side, bent elbow, first person, daylight, 8 blocks, the inventory), the flame over time, and close-ups beside the owner's target
+(docs/handoff/ryou-fist-target.jpg). Run python3 build.py first (it compiles build/classes).
 
-The same geometry as client/haki/RyouHands.java: the arm box bent as bendy-lib bends it (BodyFrame.bend, HexGhoul's verified port), a
-hull grown RIM pixels (and three halo hulls) round the hand (the lowest 3.5 pixels of the arm and the fist end), wound inward and drawn with back faces
-culled, depth tested against the arm (which writes depth), additive. 2.1.9: only the hand is coated black (fading in over the wrist),
-the arm is its own sleeve and skin. A z-buffer rasteriser (numpy), orthographic.
-
-Usage: python3 tools/ryou_preview.py out.png
+Usage: python3 tools/ryou_preview.py [out-dir]       (default build/ryou-preview)
 """
-import math
+import os
+import subprocess
 import sys
 
-import numpy as np
-from PIL import Image, ImageDraw
-
-PX = 1.0 / 16.0
-WRIST, LIT, FIST = 6.5, 7.7, 10.0          # pixels below the shoulder pivot
-COAT_TOP = 5.4                             # 2.1.9: where the hand's black coat begins to fade in up the wrist
-COAT, LIFT, EDGE = 0.35, 0.06, 0.55         # 2.3.3: the coat off the hand, the outline off the coat, its band's width (pixels)
-HALO_INNER, HALO_OUTER = 4.2, 7.5             # 2.3.4: the fist's glow discs' radii (pixels)
-SPRITE = np.asarray(Image.open(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)), "..",
-                    "src/main/resources/assets/hexhaki/textures/piece/particle/mote.png")).convert("RGBA"), float)[:, :, 3] / 255.0
-
-
-def bent(bend_axis, amount, min_x, max_x, q):
-    """bendy-lib's applyBend on an arm point (pixels), as RyouHands.bent."""
-    if abs(amount) < 1e-4:
-        return q
-    qx, qy, qz = q
-    ax, az = math.cos(bend_axis), math.sin(bend_axis)
-    cx, cy = (min_x + max_x) / 2.0, 4.0
-    dist_a, dist_b, half = qy - 10.0, qy + 2.0, 6.0
-    from_bend = -(az * (qx - cx) - ax * qz)
-    shear = math.tan(amount / 2.0) * from_bend
-    if abs(dist_a) < abs(dist_b):
-        qy += -dist_a / half * shear
-        dx, dy, dz = qx - cx, qy - cy, qz
-        c, s = math.cos(amount), math.sin(amount)
-        kd = ax * dx + az * dz
-        rx = dx * c + (-az * dy) * s + ax * kd * (1 - c)
-        ry = dy * c + (az * dx - ax * dz) * s
-        rz = dz * c + (ax * dy) * s + az * kd * (1 - c)
-        return (cx + rx, cy + ry, rz)
-    return (qx, qy - dist_b / half * shear, qz)
-
-
-def box_faces(x0, x1, y0, y1, z0, z1):
-    """The six faces of a box, each [4 corners] wound counter-clockwise seen from outside, with its outward normal."""
-    c = lambda x, y, z: (x, y, z)
-    return [
-        ([c(x0, y0, z0), c(x0, y1, z0), c(x1, y1, z0), c(x1, y0, z0)], (0, 0, -1)),
-        ([c(x1, y0, z1), c(x1, y1, z1), c(x0, y1, z1), c(x0, y0, z1)], (0, 0, 1)),
-        ([c(x0, y0, z1), c(x0, y1, z1), c(x0, y1, z0), c(x0, y0, z0)], (-1, 0, 0)),
-        ([c(x1, y0, z0), c(x1, y1, z0), c(x1, y1, z1), c(x1, y0, z1)], (1, 0, 0)),
-        ([c(x0, y0, z1), c(x0, y0, z0), c(x1, y0, z0), c(x1, y0, z1)], (0, -1, 0)),
-        ([c(x0, y1, z0), c(x0, y1, z1), c(x1, y1, z1), c(x1, y1, z0)], (0, 1, 0)),
-    ]
-
-
-def oriented(face):
-    """Make a face's corners counter-clockwise about its outward normal."""
-    pts, n = face
-    a, b, c = (np.array(p, float) for p in pts[:3])
-    if np.dot(np.cross(b - a, c - a), n) < 0:
-        pts = pts[::-1]
-    return pts, n
-
-
-def shell(min_x, max_x, grow):
-    """The hull's faces as RyouHands.shell builds them: the four sides in a wrist band (fading) and a hand band, then the fist end."""
-    x0, x1, z0, z1, y1 = min_x - grow, max_x + grow, -2 - grow, 2 + grow, FIST + grow
-    out = []
-    for top, bottom, lit_top in ((WRIST, LIT, 0.0), (LIT, y1, 1.0)):
-        for pts, n in box_faces(x0, x1, top, bottom, z0, z1)[:4]:
-            pts, n = oriented((pts, n))
-            out.append((pts, n, [lit_top if p[1] == top else 1.0 for p in pts]))
-    pts, n = oriented(box_faces(x0, x1, WRIST, y1, z0, z1)[5])
-    out.append((pts, n, [1.0] * 4))
-    return out
-
-
-def rot(pitch, yaw, roll):
-    """ModelPart rotation Rz Ry Rx (radians)."""
-    cx, sx, cy, sy, cz, sz = math.cos(pitch), math.sin(pitch), math.cos(yaw), math.sin(yaw), math.cos(roll), math.sin(roll)
-    rx = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
-    ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
-    rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
-    return rz @ ry @ rx
-
-
-class Canvas:
-    def __init__(self, w, h, bg):
-        self.w, self.h = w, h
-        self.color = np.zeros((h, w, 3), float)
-        self.color[:, :] = np.array(bg, float) / 255.0
-        self.depth = np.full((h, w), np.inf)
-
-    def tri(self, p, rgb, additive=False, intensity=None, cull_back=True, write_depth=True, blend=None):
-        """p: 3 screen points (x, y, depth). Counter-clockwise on screen = front (screen y down, so the sign flips)."""
-        (x0, y0, d0), (x1, y1, d1), (x2, y2, d2) = p
-        area = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
-        if abs(area) < 1e-9 or (cull_back and area > 0):
-            return
-        minx, maxx = max(int(min(x0, x1, x2)), 0), min(int(max(x0, x1, x2)) + 1, self.w - 1)
-        miny, maxy = max(int(min(y0, y1, y2)), 0), min(int(max(y0, y1, y2)) + 1, self.h - 1)
-        if minx > maxx or miny > maxy:
-            return
-        xs, ys = np.meshgrid(np.arange(minx, maxx + 1) + 0.5, np.arange(miny, maxy + 1) + 0.5)
-        w0 = ((x1 - xs) * (y2 - ys) - (x2 - xs) * (y1 - ys)) / area
-        w1 = ((x2 - xs) * (y0 - ys) - (x0 - xs) * (y2 - ys)) / area
-        w2 = 1 - w0 - w1
-        inside = (w0 >= 0) & (w1 >= 0) & (w2 >= 0)
-        d = w0 * d0 + w1 * d1 + w2 * d2
-        region = (slice(miny, maxy + 1), slice(minx, maxx + 1))
-        visible = inside & (d <= self.depth[region] + 1e-6)
-        if blend is not None:
-            a = (blend[0] * w0 + blend[1] * w1 + blend[2] * w2)[..., None]
-            mixed = self.color[region] * (1 - a) + np.array(rgb, float)[None, None, :] * a
-            self.color[region] = np.where(visible[..., None], mixed, self.color[region])
-            if write_depth:
-                self.depth[region] = np.where(visible, d, self.depth[region])
-        elif additive:
-            k = intensity[0] * w0 + intensity[1] * w1 + intensity[2] * w2
-            add = np.array(rgb, float)[None, None, :] * k[..., None]
-            self.color[region] = np.where(visible[..., None], np.minimum(1.0, self.color[region] + add), self.color[region])
-        else:
-            self.color[region] = np.where(visible[..., None], np.array(rgb, float)[None, None, :], self.color[region])
-            if write_depth:
-                self.depth[region] = np.where(visible, d, self.depth[region])
-
-    def disc(self, cx, cy, depth, radius, rgb, alpha):
-        """The mote sprite (textures/piece/particle/mote.png) as a disc facing the eye: its alpha profile by distance from the middle,
-        times alpha; depth tested at its middle's depth, not written; pixels under a tenth of opacity dropped (the shader's discard)."""
-        x0, x1 = max(int(cx - radius), 0), min(int(cx + radius) + 1, self.w - 1)
-        y0, y1 = max(int(cy - radius), 0), min(int(cy + radius) + 1, self.h - 1)
-        if x0 > x1 or y0 > y1:
-            return
-        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
-        u = (xs - cx) / (2 * radius) + 0.5
-        v = (ys - cy) / (2 * radius) + 0.5
-        inside = (u >= 0) & (u < 1) & (v >= 0) & (v < 1)
-        sw, sh = SPRITE.shape
-        a = SPRITE[np.clip((v * sh).astype(int), 0, sh - 1), np.clip((u * sw).astype(int), 0, sw - 1)] * alpha
-        region = (slice(y0, y1 + 1), slice(x0, x1 + 1))
-        ok = inside & (a >= 0.1) & (depth <= self.depth[region] + 1e-6)
-        mixed = self.color[region] * (1 - a[..., None]) + np.array(rgb, float)[None, None, :] * a[..., None]
-        self.color[region] = np.where(ok[..., None], mixed, self.color[region])
-
-    def image(self):
-        return Image.fromarray((self.color * 255).clip(0, 255).astype(np.uint8))
-
-
-def draw_arm(canvas, view, place, bend_axis, bend, slim, right, color, pulse=1.0, scale=26.0, origin=(150, 70)):
-    """One arm: posed by `place` (3x3 rotation), bent, seen through `view` (3x3 rotation); then its Ryou rim."""
-    centre = (0.5 if slim else 1.0) * (-1 if right else 1)
-    half = 1.5 if slim else 2.0
-    min_x, max_x = centre - half, centre + half
-
-    def project(q):
-        b = bent(bend_axis, bend, min_x, max_x, q)
-        w = view @ (place @ np.array(b, float))
-        return (origin[0] + w[0] * scale, origin[1] + w[1] * scale, w[2])
-
-    def light(n):
-        w = view @ (place @ np.array(n, float))
-        return 0.55 + 0.45 * max(0.0, -w[2])
-
-    # 2.3.4: the arm in its own sleeve and skin, the hand blackened in the skin itself (haki/HandCoat: the arm's rows 6..11, 15%, 45%,
-    # 80%, then black; each colour channel c -> c + (0.1 c + 6/255 - c) * amount)
-    sleeve, skin = (0.86, 0.84, 0.78), (0.82, 0.62, 0.5)
-    rows = [(-2, 4, sleeve, 0.0), (4, 5, skin, 0.15), (5, 6, skin, 0.45), (6, 7, skin, 0.8), (7, 10, skin, 1.0)]
-    for y0, y1, base0, amount in rows:
-        base = tuple(c + (0.1 * c + 6 / 255 - c) * amount for c in base0)
-        for pts, n in box_faces(min_x, max_x, y0, y1, -2, 2):
-            pts, n = oriented((pts, n))
-            sp = [project(p) for p in pts]
-            shade = light(n)
-            rgb = tuple(c * shade for c in base)
-            canvas.tri([sp[0], sp[1], sp[2]], rgb)
-            canvas.tri([sp[0], sp[2], sp[3]], rgb)
-    # 2.3.3: the outline on the coat (RyouHands.glow): a band along every edge of every face, fading up the wrist, alpha blended at full
-    # brightness; drawn here with back faces NOT culled (the owner's setup: a face turned away must hide behind the hand by depth)
-    rgb = [((color >> 16) & 255) / 255.0, ((color >> 8) & 255) / 255.0, (color & 255) / 255.0]
-    for pts, n, lit in outline(min_x, max_x):
-        sp = [project(q) for q in pts]
-        k = [min(1.0, pulse * lit[i]) for i in range(4)]
-        canvas.tri([sp[0], sp[1], sp[2]], rgb, cull_back=False, blend=[k[0], k[1], k[2]], write_depth=False)
-        canvas.tri([sp[0], sp[2], sp[3]], rgb, cull_back=False, blend=[k[0], k[2], k[3]], write_depth=False)
-    # 2.3.4: the fist's glow (RyouHands.halo): two discs of the mote sprite facing the eye, at the fist's middle, depth tested, no depth
-    # written (the fist hides their middles), alpha blended
-    c = project((centre, FIST - 1.6, 0.0))
-    for radius, alpha in ((HALO_INNER, 0.85), (HALO_OUTER, 0.42)):
-        canvas.disc(c[0], c[1], c[2], radius * scale, rgb, alpha * pulse)
-
-
-def outline(min_x, max_x):
-    """RyouHands.glow's bands (pixels): [(4 corners, normal, lit at each corner)]."""
-    g = COAT + LIFT
-    x0, x1, z0, z1, y1 = min_x - g, max_x + g, -2 - g, 2 + g, FIST + g
-    w = EDGE
-    out = []
-    corners = [(x0, z0), (x1, z0), (x1, z1), (x0, z1)]
-    normals = [(0, -1), (1, 0), (0, 1), (-1, 0)]
-    for side in range(4):
-        a, c = corners[side], corners[(side + 1) % 4]
-        nx, nz = normals[side]
-        ln = math.hypot(c[0] - a[0], c[1] - a[1])
-        ux, uz = (c[0] - a[0]) / ln * w, (c[1] - a[1]) / ln * w
-        for e in ((a[0], a[1], a[0] + ux, a[1] + uz), (c[0] - ux, c[1] - uz, c[0], c[1])):
-            out.append(([(e[0], COAT_TOP, e[1]), (e[2], COAT_TOP, e[3]), (e[2], WRIST, e[3]), (e[0], WRIST, e[1])], (nx, 0, nz), [0, 0, 1, 1]))
-            out.append(([(e[0], WRIST, e[1]), (e[2], WRIST, e[3]), (e[2], y1, e[3]), (e[0], y1, e[1])], (nx, 0, nz), [1, 1, 1, 1]))
-        out.append(([(a[0], y1 - w, a[1]), (c[0], y1 - w, c[1]), (c[0], y1, c[1]), (a[0], y1, a[1])], (nx, 0, nz), [1, 1, 1, 1]))
-    for rim in (((x0, y1, z0), (x1, y1, z0), (x1, y1, z0 + w), (x0, y1, z0 + w)), ((x0, y1, z1 - w), (x1, y1, z1 - w), (x1, y1, z1), (x0, y1, z1)),
-                ((x0, y1, z0 + w), (x0 + w, y1, z0 + w), (x0 + w, y1, z1 - w), (x0, y1, z1 - w)),
-                ((x1 - w, y1, z0 + w), (x1, y1, z0 + w), (x1, y1, z1 - w), (x1 - w, y1, z1 - w))):
-        out.append((list(rim), (0, 1, 0), [1, 1, 1, 1]))
-    return out
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else "ryou.png"
-    cases = [
-        ("hanging, front", rot(0, 0, 0), 0.0, 0.0, False, rot(0, 0, 0)),
-        ("hanging, 3/4", rot(0, 0, 0), 0.0, 0.0, False, rot(0.25, 0.7, 0)),
-        ("fist raised, elbow bent 90", rot(-1.3, 0.15, 0.1), 0.0, -1.57, False, rot(0.2, 1.2, 0)),
-        ("punch out, side", rot(-1.55, 0, 0), 0.0, -0.15, False, rot(0, 1.57, 0)),
-        ("slim arm, 3/4", rot(-0.6, 0.2, 0.15), 0.4, -0.9, True, rot(0.2, 0.6, 0)),
-        ("first person (close)", rot(-1.4, -0.2, 0.0), 0.0, -0.3, False, rot(-0.35, 0.35, 0)),
-    ]
-    colors = [0xFF2B3D, 0x2AE6FF, 0x9B4BFF, 0x34FF7C, 0xFFD93A, 0x2E9BFF]
-    tile_w, tile_h = 300, 300
-    img = Image.new("RGB", (tile_w * len(cases), tile_h * 2 + 20), (20, 20, 20))
-    d = ImageDraw.Draw(img)
-    for col, (label, place, axis, amount, slim, view) in enumerate(cases):
-        for row, bg in enumerate(((22, 26, 36), (178, 196, 214))):
-            canvas = Canvas(tile_w, tile_h, bg)
-            close = label.startswith("first")
-            scale = 30.0 if close else 17.0
-            hand = view @ (place @ np.array(bent(axis, amount, -2.0, 2.0, (0.0, 8.5, 0.0)), float))
-            draw_arm(canvas, view, place, axis, amount, slim, True, colors[col], scale=scale,
-                     origin=(tile_w / 2 - hand[0] * scale, tile_h * 0.62 - hand[1] * scale))
-            img.paste(canvas.image(), (col * tile_w, 20 + row * tile_h))
-        d.text((col * tile_w + 6, 4), label, fill=(230, 230, 230))
-    img.save(out)
+    out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "build", "ryou-preview")
+    classes = os.path.join(ROOT, "build", "classes")
+    preview = os.path.join(ROOT, "build", "preview")
+    os.makedirs(preview, exist_ok=True)
+    subprocess.run(["javac", "-cp", classes, "-d", preview, os.path.join(ROOT, "tools", "preview", "RyouPreview.java")], check=True)
+    subprocess.run(["java", "-cp", preview + os.pathsep + classes, "RyouPreview", out], check=True, cwd=ROOT)
 
 
 if __name__ == "__main__":

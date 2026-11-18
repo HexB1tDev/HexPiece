@@ -2,6 +2,7 @@ package com.hexhaki.piece.client.haki;
 
 import com.hexhaki.client.RemoteHakiStates;
 import com.hexhaki.piece.haki.HandCoat;
+import com.hexhaki.piece.haki.SkinCheck;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -42,10 +43,16 @@ public final class HakiSkin {
         final int[] pixels;
         final float[] amounts;
         final float[] reveals;
+        /** 2.5.3: the skin's texture as it was read, and when to read it again (nanoseconds) and how many times it was. */
+        final AbstractTexture origin;
+        long nextCheck;
+        int checks;
         int step = -1;
 
         Entry(ResourceLocation source, boolean slim, ResourceLocation location, DynamicTexture texture, NativeImage base, int[] pixels,
-              float[] amounts, float[] reveals) {
+              float[] amounts, float[] reveals, AbstractTexture origin) {
+            this.origin = origin;
+            this.nextCheck = System.nanoTime() + CHECKS[0];
             this.source = source;
             this.slim = slim;
             this.location = location;
@@ -75,6 +82,14 @@ public final class HakiSkin {
     private static final Map<UUID, Fade> FADES = new HashMap<>();
     /** When a player whose copy could not be made may be tried again (nanoseconds). */
     private static final Map<UUID, Long> RETRY = new HashMap<>();
+    /** 2.5.3: how many times in a row a player's copy could not be made (after a few, it is tried less often). */
+    private static final Map<UUID, Integer> FAILS = new HashMap<>();
+    /**
+     * 2.5.3: when a copy is read again after it is made (nanoseconds after the last check): the skin's texture may be uploaded again
+     * after the first read (the downloaded skin arriving over the default one at world start), and the copy's own upload may not have
+     * taken; then every minute.
+     */
+    static final long[] CHECKS = {1_000_000_000L, 2_000_000_000L, 5_000_000_000L, 12_000_000_000L, 60_000_000_000L};
     private static Object world;
 
     private HakiSkin() {
@@ -104,6 +119,10 @@ public final class HakiSkin {
             }
             boolean slim = "slim".equals(player.m_108564_());
             Entry entry = CACHE.get(id);
+            if (entry != null && now >= entry.nextCheck && !recheck(entry, minecraft.m_91097_(), now)) {
+                drop(id); // the skin's texture changed under the copy: made again from it
+                entry = null;
+            }
             if (entry == null || !entry.source.equals(skin) || entry.slim != slim) {
                 Long retry = RETRY.get(id);
                 if (retry != null && now < retry) {
@@ -112,11 +131,15 @@ public final class HakiSkin {
                 drop(id);
                 entry = create(id, skin, slim, minecraft.m_91097_());
                 if (entry == null) {
-                    RETRY.put(id, now + 1_000_000_000L);
+                    // 2.5.3: the player keeps their own skin meanwhile (the coat is drawn over the hands); tried every second, then
+                    // every ten after a few misses
+                    int fails = FAILS.merge(id, 1, Integer::sum);
+                    RETRY.put(id, now + (fails < 6 ? 1_000_000_000L : 10_000_000_000L));
                     return skin;
                 }
                 CACHE.put(id, entry);
                 RETRY.remove(id);
+                FAILS.remove(id);
             }
             int step = Math.round(progress * STEPS);
             if (step != entry.step) {
@@ -167,22 +190,12 @@ public final class HakiSkin {
         if (source == null) {
             return null;
         }
-        int previous = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-        NativeImage base;
-        int width;
-        int height;
-        try {
-            GlStateManager._bindTexture(source.m_117963_());
-            width = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
-            height = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
-            if (width < 64 || width % 64 != 0 || (height != width && height * 2 != width)) {
-                return null;
-            }
-            base = new NativeImage(width, height, false);
-            base.m_85045_(0, false);
-        } finally {
-            GlStateManager._bindTexture(previous);
+        NativeImage base = read(source);
+        if (base == null) {
+            return null;
         }
+        int width = base.m_84982_();
+        int height = base.m_85084_();
         java.util.List<int[]> hand = new java.util.ArrayList<>();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -206,7 +219,79 @@ public final class HakiSkin {
         DynamicTexture texture = new DynamicTexture(copy);
         ResourceLocation location = new ResourceLocation("hexhaki", "dynamic/haki_hands/" + id);
         textures.m_118495_(location, texture);
-        return new Entry(skin, slim, location, texture, base, pixels, amounts, reveals);
+        return new Entry(skin, slim, location, texture, base, pixels, amounts, reveals, source);
+    }
+
+    /**
+     * 2.5.3: the skin's pixels read back from its texture, or null when they cannot be (no texture yet, a size no skin has, or a
+     * readback that is not a real skin: {@link SkinCheck#real}: at world start, or through the owner's OpenGL ES layer, it can come back
+     * empty, and an empty copy drew the player invisible).
+     */
+    static NativeImage read(AbstractTexture source) {
+        int previous = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        try {
+            GlStateManager._bindTexture(source.m_117963_());
+            int width = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_WIDTH);
+            int height = GlStateManager._getTexLevelParameter(GL11.GL_TEXTURE_2D, 0, GL11.GL_TEXTURE_HEIGHT);
+            if (width < 64 || width > 1024 || width % 64 != 0 || (height != width && height * 2 != width)) {
+                return null;
+            }
+            NativeImage image = new NativeImage(width, height, false);
+            try {
+                image.m_85045_(0, false);
+            } catch (RuntimeException failure) {
+                image.close();
+                return null;
+            }
+            if (!SkinCheck.real(image::m_84985_, width, height)) {
+                image.close();
+                return null;
+            }
+            return image;
+        } finally {
+            GlStateManager._bindTexture(previous);
+        }
+    }
+
+    /**
+     * 2.5.3: a copy read again ({@link #CHECKS}): false when the skin's texture is another object or holds other pixels now (made again);
+     * a readback that fails keeps the copy as it is. Either way the copy is uploaded again (in case its first upload did not take).
+     */
+    private static boolean recheck(Entry entry, TextureManager textures, long now) {
+        entry.nextCheck = now + CHECKS[Math.min(entry.checks + 1, CHECKS.length - 1)];
+        entry.checks++;
+        AbstractTexture source = textures.m_118506_(entry.source);
+        if (source == null) {
+            return true;
+        }
+        if (source != entry.origin) {
+            return false;
+        }
+        NativeImage fresh = read(source);
+        if (fresh != null) {
+            try {
+                if (fresh.m_84982_() != entry.base.m_84982_() || fresh.m_85084_() != entry.base.m_85084_()
+                    || !SkinCheck.same(fresh::m_84985_, entry.base::m_84985_, fresh.m_84982_(), fresh.m_85084_())) {
+                    return false;
+                }
+            } finally {
+                fresh.close();
+            }
+        }
+        entry.texture.m_117985_();
+        return true;
+    }
+
+    /**
+     * 2.5.3: the original's Gear 5 skin ({@code GearJacketSkin.create}, PiecePatch VIRTUAL_REDIRECTS) reads the skin back through here:
+     * the same readback, then the same check; a readback that is not a real skin throws, so the original closes its copy and tries
+     * again later (its own RETRY) instead of keeping an empty one.
+     */
+    public static void readBack(NativeImage image, int level, boolean opaque) {
+        image.m_85045_(level, opaque);
+        if (!SkinCheck.real(image::m_84985_, image.m_84982_(), image.m_85084_())) {
+            throw new IllegalStateException("the skin read back empty");
+        }
     }
 
     /** 2.4.7: the hand's pixels recoloured for {@code progress}: each as black as it has turned by then ({@link HandCoat#at}). */
@@ -219,7 +304,8 @@ public final class HakiSkin {
             float t = Math.max(0.0F, Math.min(1.0F, (progress - entry.reveals[i]) / HandCoat.SPREAD));
             float amount = entry.amounts[i] * t * t * (3.0F - 2.0F * t);
             int own = entry.base.m_84985_(x, y);
-            image.m_84988_(x, y, amount > 0.0F ? HandCoat.coat(own, amount) : own);
+            // 2.5.3: the black's gloss (a few near-white pixels on the knuckles) set as it finishes
+            image.m_84988_(x, y, amount > 0.0F ? HandCoat.finish(own, x, y, width, entry.base.m_85084_(), entry.slim, amount) : own);
         }
         entry.texture.m_117985_();
     }
@@ -237,6 +323,7 @@ public final class HakiSkin {
             drop(id);
         }
         RETRY.clear();
+        FAILS.clear();
         FADES.clear();
     }
 }

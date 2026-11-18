@@ -11,5 +11,6 @@ public class RenderLevelStageEvent extends net.minecraftforge.eventbus.api.Event
         public static final Stage AFTER_ENTITIES = null;
         public static final Stage AFTER_SKY = null;
         public static final Stage AFTER_PARTICLES = null;
+        public static final Stage AFTER_BLOCK_ENTITIES = null;
     }
 }

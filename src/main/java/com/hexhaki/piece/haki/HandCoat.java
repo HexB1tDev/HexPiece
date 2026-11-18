@@ -95,6 +95,99 @@ public final class HandCoat {
         return amount * t * t * (3.0F - 2.0F * t);
     }
 
+    /** 2.5.3: the gloss's colour (near white, a little cold) and how far toward it each highlight goes: strong, mid, soft. */
+    public static final int GLOSS = 0xDCE2EC;
+    static final float STRONG = 0.86F;
+    static final float MID = 0.55F;
+    static final float SOFT = 0.3F;
+
+    /**
+     * 2.5.3 (the owner's target picture: the coated fist is glossy jet black, a white highlight on each knuckle and along the top of the
+     * fingers): how much of the gloss pixel ({@code x}, {@code y}) carries (0 none). A few pixels per arm and sleeve: on the fist's end
+     * (the knuckles: two strong, two mid, along its front edge, which is the top of a punching fist), a short streak on the arm's front
+     * face just above the end (the top of the fist), a soft one on the outer side. Scaled for a larger skin (every pixel of a block).
+     */
+    public static float shine(int x, int y, int width, int height, boolean slim) {
+        int scale = width / 64;
+        if (scale <= 0 || amount(x, y, width, height, slim) <= 0.0F) {
+            return 0.0F;
+        }
+        int px = x / scale;
+        int py = y / scale;
+        int arms = height * 2 == width ? 1 : ARMS.length;
+        int w = slim ? 3 : 4;
+        for (int i = 0; i < arms; i++) {
+            int u = ARMS[i][0];
+            int v = ARMS[i][1];
+            boolean left = i == 1 || i == 3;
+            // the fist's end: columns minX..maxX, rows from the back (0) to the front (DEPTH - 1)
+            int ex = px - (u + DEPTH + w);
+            int ez = py - v;
+            if (ex >= 0 && ex < w && ez >= 0 && ez < DEPTH) {
+                // the knuckles: the front edge catches the light all along, one bright spot just behind it
+                int k = left ? w - 1 - ex : ex;
+                if (ez == DEPTH - 1) {
+                    return k == 1 ? STRONG : MID * 0.75F;
+                }
+                if (ez == DEPTH - 2 && k == 2) {
+                    return SOFT;
+                }
+                return 0.0F;
+            }
+            int column = px - u;
+            int row = py - v - DEPTH;
+            if (column < 0 || column >= 2 * DEPTH + 2 * w || row < 0 || row >= HEIGHT) {
+                continue;
+            }
+            // the front face (the top of a punching fist): a short streak running down to the knuckles
+            int front = column - DEPTH;
+            if (front >= 0 && front < w) {
+                int k = left ? w - 1 - front : front;
+                if (row == 10 && k == 1) {
+                    return STRONG * 0.8F;
+                }
+                if (row == 9 && k == 1 || row == 11 && k == 2) {
+                    return MID * 0.7F;
+                }
+                return 0.0F;
+            }
+            // the outer side (the right arm's -x face, the left arm's +x face)
+            int outer = left ? column - DEPTH - w : column;
+            if (outer >= 0 && outer < DEPTH) {
+                if (row == 10 && outer == 1) {
+                    return MID * 0.8F;
+                }
+                if (row == 9 && outer == 2 || row == 11 && outer == 1) {
+                    return SOFT;
+                }
+            }
+            return 0.0F;
+        }
+        return 0.0F;
+    }
+
+    /**
+     * 2.5.3: {@code pixel} as the coat finishes it at {@code amount} (0..1 of its full black): black ({@link #coat}), then its gloss
+     * ({@link #shine}) laid on as the black sets (none until the pixel is three quarters black); its alpha untouched.
+     */
+    public static int finish(int pixel, int x, int y, int width, int height, boolean slim, float amount) {
+        int black = coat(pixel, amount);
+        float shine = shine(x, y, width, height, slim);
+        float set = Math.max(0.0F, Math.min(1.0F, (amount - 0.75F) / 0.25F));
+        return shine > 0.0F && set > 0.0F ? gloss(black, shine * set) : black;
+    }
+
+    /** {@code pixel} {@code t} of the way to {@link #GLOSS}, its alpha kept (channels in either order: the gloss is near grey). */
+    static int gloss(int pixel, float t) {
+        int out = pixel & 0xFF000000;
+        for (int shift = 0; shift < 24; shift += 8) {
+            int c = (pixel >> shift) & 255;
+            int g = (GLOSS >> shift) & 255;
+            out |= Math.round(c + (g - c) * t) << shift;
+        }
+        return out;
+    }
+
     /**
      * {@code pixel} (four 8-bit channels, alpha the top byte; the colour channels in either order) {@code amount} of the way to black,
      * a tenth of its own shading kept so the skin's folds still read; its alpha untouched (a sleeve's empty pixels stay empty).

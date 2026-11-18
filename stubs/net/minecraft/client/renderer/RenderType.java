@@ -10,4 +10,5 @@ public abstract class RenderType {
     /** entityTranslucent(texture) */ public static RenderType m_110473_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
     /** armorCutoutNoCull (4.0.0: the owner's outfits and masks) */ public static RenderType m_110431_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
     /** entityTranslucentEmissive(texture) (2.3.4): alpha blended, full bright and unshaded, both faces, depth tested, no depth written */ public static RenderType m_234338_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
+    /** entityShadow(texture) (2.5.3): the entity shadow's: alpha blended with no cut-off, depth tested, no depth written, unlit, back faces culled (Ryou's fist aura) */ public static RenderType m_110485_(net.minecraft.resources.ResourceLocation texture) { throw new UnsupportedOperationException(); }
 }

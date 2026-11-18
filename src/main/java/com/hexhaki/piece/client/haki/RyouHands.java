@@ -126,37 +126,26 @@ public final class RyouHands {
     }
 
     /**
-     * The glow round one hand, in the player's own Ryou colour. 2.4.7 (the owner: "I dont want the Ryou haki to be a painted outline
-     * ... the glow around the outline is not meant to be literal painted lines, it's meant to be kinda like the minecraft glow effect
-     * around the firsts, thats it"): the painted bands along the hand's edges (2.3.3) and the halo discs (2.3.4) are gone; the hand is
-     * black in the skin itself ({@link HakiSkin}, spreading pixel by pixel) and glows as the game makes a glowing entity glow: its box
-     * (just outside the hand, from the wrist to the end of the fist, bent with the elbow as the arm is) is handed to {@link RyouGlow},
-     * which outlines it with the game's own glowing-outline shaders. Breathing slowly, flaring as Ryou comes on.
+     * The aura round one hand, in the player's own Ryou colour. 2.4.7 - 2.5.2 handed the fist's box to a post-chain outline (RyouGlow:
+     * it flickered on the owner's device and hid the release's lightning). 2.5.3 (the owner, with the picture
+     * docs/handoff/ryou-fist-target.jpg: "this is the fucking target look"): the aura is geometry hugging the fist's outline as the eye
+     * sees it ({@link com.hexhaki.piece.haki.FistAura}: a hot rim, a bright band, a soft flame-edged haze trailing up the arm, sparks),
+     * bent with the elbow as the arm is, drawn by {@link RyouAura}. Breathing slowly, flaring as Ryou comes on, more sparks in a punch.
      */
     public static void glow(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, ModelPart arm, float age, boolean slim,
                             boolean right) {
         if (!arm.f_104207_) {
             return;
         }
-        int color = RyouColors.orNeutral(player.m_19879_());
-        float strength = Math.min(1.0F, pulse(age, player.m_19879_()) + RyouFx.flare(player.m_19879_()));
+        int id = player.m_19879_();
+        int color = RyouColors.orNeutral(id);
+        float strength = Math.min(1.0F, pulse(age, id) + RyouFx.flare(id));
         float[] bend = bend(player, right);
+        float punch = player.m_21324_(net.minecraft.client.Minecraft.m_91087_().m_91296_());
         pose.m_85836_();
         arm.m_104299_(pose);
-        float half = slim ? 1.5F * PX : 2.0F * PX;
-        float centre = (slim ? 0.5F : 1.0F) * PX * (right ? -1.0F : 1.0F);
-        float[] box = {centre / PX - half / PX, centre / PX + half / PX};
-        float x0 = centre - half - COAT;
-        float x1 = centre + half + COAT;
-        float z0 = -2.0F * PX - COAT;
-        float z1 = 2.0F * PX + COAT;
-        float[][] square = {{x0, z0}, {x1, z0}, {x1, z1}, {x0, z1}};
-        float[][] corners = new float[8][];
-        for (int i = 0; i < 4; i++) {
-            corners[i] = bent(bend, box[0], box[1], square[i][0], WRIST, square[i][1]);
-            corners[i + 4] = bent(bend, box[0], box[1], square[i][0], FIST + COAT, square[i][1]);
-        }
-        RyouGlow.box(pose.m_85850_().m_252922_(), corners, color, strength);
+        RyouAura.draw(pose.m_85850_(), buffers, bend[0], bend[1], slim, right, age, id * 31 + (right ? 1 : 2), color, strength,
+            punch);
         pose.m_85849_();
     }
 

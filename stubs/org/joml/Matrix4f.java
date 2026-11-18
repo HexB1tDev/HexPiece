@@ -9,4 +9,5 @@ public class Matrix4f implements Matrix4fc {
     /** 2.4.7 */ public Matrix4f mul(Matrix4fc right) { throw new UnsupportedOperationException(); }
     /** 2.4.7 */ public Vector3f transformProject(Vector3f point) { throw new UnsupportedOperationException(); }
     /** 2.3.4 */ public Vector3f transformDirection(Vector3f direction) { throw new UnsupportedOperationException(); }
+    /** 2.5.3 (the original uses it) */ public float determinant() { throw new UnsupportedOperationException(); }
 }

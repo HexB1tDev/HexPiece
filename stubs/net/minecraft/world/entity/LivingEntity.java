@@ -35,6 +35,7 @@ public abstract class LivingEntity extends Entity {
     /** getEffect */ public net.minecraft.world.effect.MobEffectInstance m_21124_(net.minecraft.world.effect.MobEffect effect) { throw new UnsupportedOperationException(); }
     /** addEffect */ public boolean m_7292_(net.minecraft.world.effect.MobEffectInstance effect) { throw new UnsupportedOperationException(); }
     /** addEffect(effect, source) */ public boolean m_147207_(net.minecraft.world.effect.MobEffectInstance effect, Entity source) { throw new UnsupportedOperationException(); }
+    /** getAttackAnim(partialTick) (2.5.3): how far into its swing the arm is, 0..1 */ public float m_21324_(float partialTick) { throw new UnsupportedOperationException(); }
     /** getMainHandItem */ public net.minecraft.world.item.ItemStack m_21205_() { throw new UnsupportedOperationException(); }
     /** getItemBySlot */ public net.minecraft.world.item.ItemStack m_6844_(EquipmentSlot slot) { throw new UnsupportedOperationException(); }
     /** setItemSlot (4.0.0: an NPC's outfit and mask) */ public void m_8061_(EquipmentSlot slot, net.minecraft.world.item.ItemStack stack) { throw new UnsupportedOperationException(); }
