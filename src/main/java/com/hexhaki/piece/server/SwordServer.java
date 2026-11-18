@@ -709,8 +709,9 @@ public final class SwordServer {
                 PieceNetwork.around(player, new S2CSwordFx(S2CSwordFx.RELEASE, player.m_20185_(), player.m_20186_(), player.m_20189_(),
                     look.f_82479_, charge, look.f_82481_, 0));
             }
+            // 2.4.5: the blade's own reach on top (range by sword)
             double extend = SwordRules.lerp(PieceConfig.get(PieceConfig.CUT_REACH_MIN, SwordRules.CUT_REACH_MIN),
-                PieceConfig.get(PieceConfig.CUT_REACH_MAX, SwordRules.CUT_REACH_MAX), charge);
+                PieceConfig.get(PieceConfig.CUT_REACH_MAX, SwordRules.CUT_REACH_MAX), charge) + reach(state);
             float damage = (float) SwordRules.lerp(PieceConfig.get(PieceConfig.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MIN),
                 PieceConfig.get(PieceConfig.CUT_DAMAGE_MAX, SwordRules.CUT_DAMAGE_MAX), charge) * edge(state)
                 * PieceRules.masteryDamage(mastery(player));
@@ -825,7 +826,7 @@ public final class SwordServer {
         return state.katana == null ? 1.0F : state.katana.edge();
     }
 
-    /** 2.2.7: blocks the held blade's cuts reach past a katana's (Yoru's great sword). */
+    /** 2.2.7: blocks the held blade's cuts reach past a katana's (Yoru's great sword); 2.4.5: every blade its own ({@link Katana#reach()}). */
     static double reach(State state) {
         return state.katana == null ? 0.0 : state.katana.reach();
     }

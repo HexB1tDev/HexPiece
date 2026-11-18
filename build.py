@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.4.4"
+VERSION = "2.4.5"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -482,6 +482,24 @@ def _clear(name):
     return name, sword_anims.clearance(sword_anims.MOVES[name])
 
 
+def check_blade_tips():
+    """2.4.5: Katana.tip() (each blade's length, model px from the guard to the point, which its reach is reckoned from) is each of
+    the owner's meshes' own (tools/sword_view.mesh), so a mesh changed is a reach changed."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import sword_view
+    src = (ROOT / "src/main/java/com/hexhaki/piece/sword/Katana.java").read_text(encoding="utf-8")
+    keys = dict(re.findall(r'^\s+([A-Z_]+)\("([a-z_]+)", "[^"]+", "[^"]*", Grade\.', src, re.M))
+    tips = dict(re.findall(r'case ([A-Z_]+) -> ([\d.]+)F;', src))
+    wrong = []
+    for enum, key in keys.items():
+        measured = float(sword_view.mesh(key)[0][:, 1].max())
+        if enum not in tips or abs(float(tips[enum]) - measured) > 0.02:
+            wrong.append(f"{enum}: {tips.get(enum)} (the mesh: {measured:.2f})")
+    if wrong:
+        raise RuntimeError(f"Katana.tip() is not the meshes' own: {wrong}")
+    print(f"Blade lengths: {len(keys)} blades, Katana.tip() is each mesh's own")
+
+
 def check_sword_poses():
     """2.3.2 (the owner: "the arm is twisted in a bunch of these, how does this pass", "the sword handle clipping through the
     shoulder?"): every sword animation, every half tick, through tools/sword_anims.py's clearance check: no arm turned, folded or
@@ -533,6 +551,7 @@ def main():
     check_imu()
     check_animations()
     check_sword_poses()
+    check_blade_tips()
 
     test_sources = sources("src/test/java")
     suites = []

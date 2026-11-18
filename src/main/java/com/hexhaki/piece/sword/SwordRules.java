@@ -72,6 +72,10 @@ public final class SwordRules {
     /** Past the blade's tip, the cut's swept volume reaches this far (blocks): the air the cut moves. And the volume's radius. */
     public static final double EXTEND = 0.8;
     public static final double RADIUS = 0.35;
+    /** 2.4.5: model px from the guard to the point of the blade every cut's path is written with (tools/sword_rig.py BLADE_TIP). */
+    public static final float PATH_TIP = 21.0F;
+    /** 2.4.5: blocks a model px of a blade in a player's hand comes to (a pixel, at the player model's 0.9375 scale). */
+    public static final double PX = 0.9375 / 16.0;
 
     private SwordRules() {
     }

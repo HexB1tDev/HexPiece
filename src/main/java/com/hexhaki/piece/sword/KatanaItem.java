@@ -62,8 +62,9 @@ public final class KatanaItem extends Item {
         for (String line : wrap(this.katana.description(), WRAP)) {
             lines.add(Component.m_237113_(line).m_130944_(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
         }
-        lines.add(Component.m_237113_(String.format(java.util.Locale.ROOT, "Edge x%.2f", this.katana.edge())
-            + (this.katana.reach() > 0.5 ? "  ·  long reach" : "")).m_130940_(ChatFormatting.GRAY));
+        // 2.4.5: every blade's own reach (range by sword), past a plain katana's cut
+        lines.add(Component.m_237113_(String.format(java.util.Locale.ROOT, "Edge x%.2f  ·  Reach %+.1f", this.katana.edge(), this.katana.reach()))
+            .m_130940_(ChatFormatting.GRAY));
         if (this.katana.legend()) {
             lines.add(Component.m_237113_(this.katana.carry() == Katana.Carry.BACK ? "Worn on the back; drawn whenever you fight"
                 : "Drawn whenever you fight").m_130938_(style -> style.m_178520_(0xE0B860)));

@@ -251,7 +251,10 @@ ELBOW_MAX = 125.0
 # SHOULDER_BACK degrees, up past straight overhead no more than SHOULDER_OVER (the solver once raised a sword overhead by swinging the
 # arm backwards over the shoulder, 130 degrees behind the body, and wound the track a full turn)
 SHOULDER_BACK, SHOULDER_OVER = 60.0, 190.0
-ULNAR, RADIAL = 40.0, 25.0
+# 2.4.5 (the owner: "the arms should be fully stretched and the blade pointed forward far from the player's chest"): the hand may tip
+# the blade 60 degrees towards the fingers (was 40). The rig's handle crosses the fist square; a real hand holds it slanted across the
+# palm (about 20 degrees), so a real wrist's 40 reads as 60 here: the blade can run on along the arm's line, as in the owner's lunge
+ULNAR, RADIAL = 60.0, 25.0
 PRONATION = 80.0
 WRIST_BEND = 65.0
 

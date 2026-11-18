@@ -498,9 +498,17 @@ def densify(beats):
         if dense:
             # a beat marked direct is reached along the shortest arc (2.3.2: a raise over the top, which route would take out in front)
             via = None if getattr(b, "direct", False) else route(blade_a[1], blade_b[1])
+            # 2.4.5: next to a lunge (the reach grip) the hand slides along the handle with the swing, and the fist swings round the
+            # shoulder (its distance eased between the two), so the arm stays out straight through the cut, never pulled in to a
+            # chord between the two fists
+            reach_ab = getattr(a, "lunge", False) or getattr(b, "lunge", False)
             for k in range(a.tick + 1, b.tick):
                 u = anim.ease(b.easing, (k - a.tick) / gap)
                 fist = tuple(np.array(blade_a[0]) * (1 - u) + np.array(blade_b[0]) * u)
+                if reach_ab:
+                    da = np.array(blade_a[0], float) - SHOULDER_R
+                    db = np.array(blade_b[0], float) - SHOULDER_R
+                    fist = tuple(SHOULDER_R + slerp(da, db, u) * (np.linalg.norm(da) * (1 - u) + np.linalg.norm(db) * u))
                 if via is None:
                     bd = slerp(blade_a[1], blade_b[1], u)
                 else:
@@ -515,6 +523,8 @@ def densify(beats):
                 legs = {part: _mix(a.legs.get(part, {}), b.legs.get(part, {}), u) for part in set(a.legs) | set(b.legs)}
                 mid = Beat(k, "linear", blade=(fist, tuple(bd), tuple(unit(ed))), left=left, body=_mix(a.body, b.body, u),
                            legs=legs, head=_mix(a.head, b.head, u), torso=_mix(a.torso, b.torso, u), saya=_mix(saya_a, saya_b, u))
+                if reach_ab:
+                    mid.slide = getattr(a, "slide", 0.0) * (1 - u) + getattr(b, "slide", 0.0) * u
                 if getattr(a, "upper", None) is not None and getattr(b, "upper", None) is not None:
                     mid.upper = a.upper
                 elif back_a or back_b:
@@ -1398,19 +1408,90 @@ def widen(pose, ref, k):
     return (fist, tuple(blade), tuple(edge))
 
 
-def strike(name, duration, wind, mid, end, cut_ticks, description, wind_body, end_body, wind_left=L_AIM, end_left=L_BACK,
-           wind_legs=LEGS_BACK, end_legs=LEGS_DEEP, wind_tick=3, hold=2, head_wind=None, head_end=None, overshoot=None,
-           cuts=None, start=None, raise_=None):
+# --- 2.4.5: the owner's reach ---------------------------------------------------------------------------------------------------
+# The owner, after 2.4.4: "The swings are not fixed, the arm barely extends forward during m1 swings. (the arms should be fully
+# stretched and the blade pointed forward far from the player's chest, to be the max range it can be", with a picture of a swordsman's
+# lunge: the feet far apart, the front knee deep, the rear leg nearly straight, the torso side-on, the sword arm thrown straight out from
+# the shoulder with the blade running on along its line, the free arm straight back. Before, every cut was straight for half a tick
+# (the blade steeply up) and then folded (the elbow 45-70 degrees), the follow-through held with the blade wrapped round behind the
+# left hip. Now every cut strikes with the arm straight (the fist LUNGE_REACH px from the shoulder: the elbow about 5 degrees; 8.4 was
+# 22) and ends in that lunge, the blade pointed at the foe; the hand slides down the handle to its end as the arm goes out (a reach
+# grip, LUNGE_SLIDE px: the handle's end in the fist, so the hand can tip the blade onto the arm's line, LUNGE_KINK degrees off it
+# towards the edge, without the pommel going through the forearm). The tip reaches about 2.5 blocks ahead of the feet (it was 1.6).
+LUNGE_REACH = 8.55
+LUNGE_KINK = 30.0
+LUNGE_SLIDE = 3.0
+# a rising cut's end (the draws on the run and in the air): forward and a little up, the edge rolled over down and out to the right
+# as it stops (so the arm runs under and to the right of the blade's line; edge up, the arm went up out of the first-person view)
+RISE_BLADE, RISE_EDGE = (0.06, 0.18, 1.0), (0.55, -0.7, -0.2)
+# the lunge's legs: the right (front) leg far forward, the knee deep; the left (rear) leg far back and nearly straight
+LEGS_LUNGE_WIDE = {"rightLeg": leg(-52, 8, 74), "leftLeg": leg(40, -8, 8)}
+# the free arm stretched straight back and out for balance
+L_LUNGE = {"pitch": 50.0, "yaw": 0.0, "roll": -34.0, "bend": -4.0}
+
+
+def world(body, d):
+    """A direction given as the player faces in the world (right, up, forward), in the layer frame of a beat whose body is body."""
+    return unit(rig.layer_dir_from_entity({"body": dict(body)}, (d[0], d[1], -d[2])))
+
+
+def extend(pose, kink=LUNGE_KINK, reach_px=LUNGE_REACH):
+    """2.4.5: (fist, blade, edge) with the arm thrown straight out: the fist reach_px from the shoulder along the blade's line tipped
+    kink degrees towards the edge (the wrist's bend between them), the blade and the edge as given (layer frame)."""
+    _, bd, ed = pose
+    bd = unit(bd)
+    ed = np.array(ed, float)
+    ed = unit(ed - bd * (ed @ bd))
+    k = math.radians(kink)
+    arm = math.cos(k) * bd + math.sin(k) * ed
+    return (tuple(SHOULDER_R + reach_px * arm), tuple(bd), tuple(ed))
+
+
+def lunge(body, blade, edge, turn=0.0):
+    """2.4.5: the lunge's (fist, blade, edge) for a beat whose body is body, the blade and its edge given in the world (right, up,
+    forward); turn: the blade swung that many degrees further on towards its edge (the overshoot)."""
+    bd = world(body, blade)
+    ed = world(body, edge)
+    ed = unit(ed - bd * (ed @ bd))
+    if turn:
+        r = math.radians(turn)
+        bd, ed = unit(math.cos(r) * bd + math.sin(r) * ed), unit(math.cos(r) * ed - math.sin(r) * bd)
+    return extend((None, tuple(bd), tuple(ed)))
+
+
+def reaching(beat):
+    """2.4.5: a beat in the reach grip (the hand at the handle's end, the arm out)."""
+    beat.slide = LUNGE_SLIDE
+    beat.lunge = True
+    # the elbow kept straight (the solver's price on the bend; a fist a twentieth of a pixel short of the reach left it 12 degrees)
+    beat.elbow = -2.0
+    return beat
+
+
+def strike(name, duration, wind, mid, cut_ticks, description, wind_body, end_body, end_blade, end_edge, wind_left=L_AIM,
+           end_left=L_LUNGE, wind_legs=LEGS_BACK, end_legs=LEGS_LUNGE_WIDE, wind_tick=3, hold=2, head_wind=None, head_end=None,
+           cuts=None, start=None, raise_=None, mid_extended=True):
     """A heavy one-handed cut: from the low stance, a big wind-up (the hips coiled the other way), a held coil, then the strike in two
-    ticks (fast out of the coil, the edge leading), an overshoot, a hold at the end of the cut (the weight of it), and an easy
-    recovery into the stance. wind/mid/end: (fist, blade, edge) of the coil, the middle of the cut and its end."""
+    ticks (fast out of the coil, the edge leading, the arm straight), an overshoot, a hold in the lunge at the end of the cut (the
+    weight of it), and an easy recovery into the stance. wind/mid: (fist, blade, edge) of the coil and the middle of the cut (layer
+    frame); 2.4.5: end_blade/end_edge: where the blade points at the end and its edge faces, in the world as the player faces (right,
+    up, forward): the lunge (see LUNGE_REACH)."""
     lo, hi = cut_ticks
-    # 2.3.5 (the owner: "longer swings", "more range"): the cut's arc taken further round both ways from its middle, the coil further
-    # back and the follow-through further through (the blade's directions along their great circles, the fists along their lines,
-    # then held to the arm's reach): the same ticks, a longer swing
+    # 2.3.5 (the owner: "longer swings", "more range"): the coil taken further back round the cut's arc from its middle (the blade's
+    # direction along its great circle, the fist along its line, then held to the arm's reach)
     wind = widen(wind, mid, ARC_WIND)
-    overshoot = widen(overshoot or end, mid, ARC_OVER)
-    end = widen(end, mid, ARC_END)
+    if mid_extended:
+        mid = extend(mid)
+    else:
+        mid = held(*mid)
+    if head_end is None:
+        # the head turned back to the foe from the side-on body
+        head_end = {"yaw": -0.8 * end_body.get("yaw", 0.0), "pitch": -4}
+    over = dict(end_body)
+    over["z"] = end_body.get("z", 0.0) - 0.04
+    over["y"] = end_body.get("y", 0.0) - 0.02
+    end = lunge(end_body, end_blade, end_edge)
+    overshoot = lunge(over, end_blade, end_edge, turn=6.0)
     beats = [start or stance_beat(0, "linear")]
     coil = dict(wind_body)
     if raise_ is not None:
@@ -1426,13 +1507,12 @@ def strike(name, duration, wind, mid, end, cut_ticks, description, wind_body, en
     deeper["bend"] = coil.get("bend", 0.0) - 2.0
     beats.append(b(lo - 1, "outsine", held(*wind), wind_left, deeper, wind_legs, head_wind or {}))
     mid_body = {k: (coil.get(k, 0.0) + end_body.get(k, 0.0)) / 2 for k in set(coil) | set(end_body)}
-    beats.append(b(lo, "insine", held(*mid), end_left, mid_body, end_legs, {}))
-    beats.append(b(hi, "outexpo", held(*end), end_left, end_body, end_legs, head_end or {}))
-    over = dict(end_body)
-    over["yaw"] = end_body.get("yaw", 0.0) * 1.1
-    over["bend"] = end_body.get("bend", 0.0) + 2.0
-    beats.append(b(hi + 1, "outback", held(*(overshoot or end)), end_left, over, end_legs, head_end or {}))
-    beats.append(b(hi + 1 + hold, "linear", held(*(overshoot or end)), end_left, over, end_legs, head_end or {}))
+    mid_legs = {part: _mix(wind_legs.get(part, {}), end_legs.get(part, {}), 0.6) for part in set(wind_legs) | set(end_legs)}
+    beats.append(reaching(b(lo, "insine", mid, end_left, mid_body, mid_legs, {})) if mid_extended else
+                 b(lo, "insine", mid, end_left, mid_body, mid_legs, {}))
+    beats.append(reaching(b(hi, "outexpo", end, end_left, end_body, end_legs, head_end)))
+    beats.append(reaching(b(hi + 1, "outback", overshoot, end_left, over, end_legs, head_end)))
+    beats.append(reaching(b(hi + 1 + hold, "linear", overshoot, end_left, over, end_legs, head_end)))
     beats.append(stance_beat(duration))
     return write(Move(name, duration, beats, description, cuts=cuts or ((lo, hi),)))
 
@@ -1449,6 +1529,8 @@ def moves(with_draws=True):
     draw_rise = [out_dir, D(-0.3, -0.4, 1), D(0.4, 0.12, 0.92), D(0.95, 0.3, 0.1)]
     draw_rise_f = [H(10.0, 0.8, 5.2), H(6.6, 4.4, 7.6), H(4.8, 4.0, 7.8), H(8.6, 3.4, 3.0)]
     still = {"bend": 8, "yaw": 14, "y": -0.11}
+    draw_end = {"bend": 4, "yaw": 12, "y": -0.16, "z": -0.36}
+    draw_over = dict(draw_end, z=-0.4, y=-0.18)
     write_draw(Move("sword_draw_cut", 13, [
         noto(0, "linear", 0.0, body={"bend": 8, "yaw": 8, "y": -0.05}, legs=LEGS_EASY, head={"pitch": -6}),
         noto(1, "outsine", 0.0, body=still, legs=DRAW_LEGS, head={"pitch": -10}),
@@ -1456,43 +1538,47 @@ def moves(with_draws=True):
         noto(3, "linear", NOTO_OUT, body=dict(still, yaw=10), legs=DRAW_LEGS, head={"pitch": -8}),
         b(4, "linear", cut(draw_rise, draw_rise_f, 0.45), L_BACK, {"bend": 10, "yaw": 0, "y": -0.13, "z": -0.14}, LEGS_DEEP,
           {"pitch": -8}),
-        b(5, "outexpo", cut(draw_rise, draw_rise_f, 1.0), L_BACK, {"bend": 6, "yaw": -40, "y": -0.12, "z": -0.18}, LEGS_DEEP,
-          {"pitch": -6, "yaw": 22}),
-        b(6, "outback", held(H(8.6, 3.0, 2.2), D(1, 0.32, -0.05), D(0.1, 0.1, -1)), L_BACK, {"bend": 6, "yaw": -46, "y": -0.12,
-          "z": -0.18}, LEGS_DEEP, {"pitch": -6, "yaw": 24}),
-        b(8, "linear", held(H(8.6, 3.0, 2.2), D(1, 0.32, -0.05), D(0.1, 0.1, -1)), L_BACK, {"bend": 6, "yaw": -46, "y": -0.12,
-          "z": -0.18}, LEGS_DEEP, {"pitch": -6, "yaw": 24}),
+        # 2.4.5: out of the saya straight into the owner's lunge (see LUNGE_REACH), the blade thrown out forward and a little right
+        reaching(b(5, "outexpo", lunge(draw_end, (0.1, 0.12, 1.0), (0.55, -0.75, -0.2)), L_LUNGE, draw_end, LEGS_LUNGE_WIDE,
+                   {"pitch": -4, "yaw": -10})),
+        reaching(b(6, "outback", lunge(draw_over, (0.1, 0.12, 1.0), (0.55, -0.75, -0.2), 6.0), L_LUNGE, draw_over, LEGS_LUNGE_WIDE,
+                   {"pitch": -4, "yaw": -10})),
+        reaching(b(8, "linear", lunge(draw_over, (0.1, 0.12, 1.0), (0.55, -0.75, -0.2), 6.0), L_LUNGE, draw_over, LEGS_LUNGE_WIDE,
+                   {"pitch": -4, "yaw": -10})),
         stance_beat(13, body={"yaw": -6, "bend": 2, "z": -0.1}),
     ], "Swordsman: the draw cut. Stillness, the hand on the hilt, then the blade drawn out of the koiguchi and up, straight into a "
-       "rising cut across.", draw=2, cuts=((4, 5),)))
+       "rising cut across that ends in a long lunge.", draw=2, cuts=((4, 5),)))
 
-    # the dashing draw: low and far forward on the run, drawn into a rising cut from the left knee up past the right shoulder
+    # the dashing draw: low and far forward on the run, drawn into a rising cut from the left knee up past the right shoulder (2.4.5:
+    # ending thrown out forward in the lunge, the blade up and a little right)
     rise = [out_dir, D(-0.05, -0.1, 1), D(0.6, 0.5, 0.65), D(0.9, 0.55, -0.05)]
     rise_f = [H(10.0, 0.8, 5.2), H(4.6, 5.2, 7.8), H(5.0, 2.8, 6.8), H(6.8, 0.2, 3.6)]
     dash = {"bend": 14, "yaw": 16, "y": -0.16, "z": -0.1}
+    dash_end = {"bend": -2, "yaw": 18, "y": -0.14, "z": -0.46}
+    dash_over = dict(dash_end, z=-0.5, y=-0.16)
     write_draw(Move("sword_advancing_draw", 14, [
         noto(0, "linear", 0.0, body={"bend": 14, "yaw": 10, "y": -0.08}, legs=LEGS_LUNGE, head={"pitch": -14}),
         noto(1, "outsine", 0.0, body=dash, legs=LEGS_DEEP, head={"pitch": -18}),
         noto(2, "insine", 7.0, body=dict(dash, z=-0.22), legs=LEGS_DEEP, head={"pitch": -18}),
         noto(3, "linear", NOTO_OUT, body=dict(dash, z=-0.3), legs=LEGS_DEEP, head={"pitch": -16}),
         b(4, "linear", cut(rise, rise_f, 0.3), L_BACK, {"bend": 18, "yaw": 8, "y": -0.16, "z": -0.38}, LEGS_DEEP, {"pitch": -14}),
-        b(6, "outexpo", cut(rise, rise_f, 1.0), L_OUT, {"bend": -6, "yaw": -34, "y": -0.04, "z": -0.42}, LEGS_LUNGE,
-          {"pitch": 4, "yaw": 18}),
-        b(7, "outback", cut(rise, rise_f, 1.0), L_OUT, {"bend": -8, "yaw": -38, "y": -0.03, "z": -0.42}, LEGS_LUNGE,
-          {"pitch": 4, "yaw": 20}),
-        b(9, "linear", cut(rise, rise_f, 1.0), L_OUT, {"bend": -8, "yaw": -38, "y": -0.03, "z": -0.42}, LEGS_LUNGE,
-          {"pitch": 4, "yaw": 20}),
+        reaching(b(6, "outexpo", lunge(dash_end, RISE_BLADE, RISE_EDGE), L_LUNGE, dash_end, LEGS_LUNGE_WIDE, {"pitch": -6, "yaw": -14})),
+        reaching(b(7, "outback", lunge(dash_over, RISE_BLADE, RISE_EDGE, 6.0), L_LUNGE, dash_over, LEGS_LUNGE_WIDE,
+                   {"pitch": -6, "yaw": -14})),
+        reaching(b(9, "linear", lunge(dash_over, RISE_BLADE, RISE_EDGE, 6.0), L_LUNGE, dash_over, LEGS_LUNGE_WIDE,
+                   {"pitch": -6, "yaw": -14})),
         stance_beat(14, body={"yaw": -6, "bend": 2, "z": -0.3}),
     ], "Swordsman: the dashing draw. Low and far forward, the blade drawn on the run into a rising cut.", draw=2, cuts=((4, 6),)))
 
+    air_end = {"bend": -4, "yaw": 18, "pitch": -8}
     write_draw(Move("sword_aerial_draw", 12, [
         noto(0, "linear", 0.0, body={"bend": 8, "yaw": 8}, legs=LEGS_TUCK, head={"pitch": -10}),
         noto(1, "insine", 7.0, body={"bend": 8, "yaw": 16}, legs=LEGS_TUCK, head={"pitch": -12}),
         noto(2, "linear", NOTO_OUT, body={"bend": 8, "yaw": 18}, legs=LEGS_TUCK, head={"pitch": -12}),
         b(3, "linear", cut(rise, rise_f, 0.3), L_BACK, {"bend": 10, "yaw": 6, "pitch": -6}, LEGS_TUCK, {"pitch": -8}),
-        b(5, "outexpo", cut(rise, rise_f, 1.0), L_OUT, {"bend": -6, "yaw": -40, "pitch": -10}, LEGS_REACH, {"yaw": 20}),
-        b(6, "outback", cut(rise, rise_f, 1.0), L_OUT, {"bend": -8, "yaw": -44, "pitch": -10}, LEGS_REACH, {"yaw": 22}),
-        b(8, "linear", cut(rise, rise_f, 1.0), L_OUT, {"bend": -8, "yaw": -44, "pitch": -8}, LEGS_REACH, {"yaw": 22}),
+        reaching(b(5, "outexpo", lunge(air_end, RISE_BLADE, RISE_EDGE), L_LUNGE, air_end, LEGS_REACH, {"yaw": -14})),
+        reaching(b(6, "outback", lunge(air_end, RISE_BLADE, RISE_EDGE, 6.0), L_LUNGE, air_end, LEGS_REACH, {"yaw": -14})),
+        reaching(b(8, "linear", lunge(air_end, RISE_BLADE, RISE_EDGE, 6.0), L_LUNGE, air_end, LEGS_REACH, {"yaw": -14})),
         stance_beat(12, legs=LEGS_TUCK),
     ], "Swordsman: the falling draw, in the air: drawn up and across as the body turns.", draw=1, cuts=((3, 5),), ground=False))
 
@@ -1531,93 +1617,89 @@ def moves(with_draws=True):
         "Swordsman: the quick draw with the blade already out: down the line in a blink, flung across behind.", cuts=((3, 6),)))
 
     # ------------------------------------------------------------------------------------------------ the ground string
+    # 2.4.5: every cut of the strings ends in the owner's lunge (see LUNGE_REACH): end_blade / end_edge in the world (right, up, forward),
+    # the body side-on (yaw +: the right shoulder forward), low and far forward over the front knee. The cut stops with the edge turned
+    # down (the hand tips the blade towards its edge: the arm runs under the blade's line, so in first person it comes up from the
+    # lower right and the blade goes on from the fist to the crosshair; an edge to the side swung the arm across the middle of the view)
     strike("sword_kesa", 14,
            wind=(H(5.6, -4.6, 1.2), D(0.3, 0.45, -0.85), D(0.2, 0.85, 0.4)),
            mid=(H(4.0, 1.6, 7.6), D(0.15, 0.4, 1), D(0, -1, 0.4)),
-           end=(H(1.6, 8.4, 5.6), D(-0.6, -0.68, 0.42), D(-0.55, 0.65, -0.5)),
-           overshoot=(H(1.4, 8.8, 5.0), D(-0.66, -0.7, 0.28), D(-0.55, 0.65, -0.5)),
-           cut_ticks=(5, 6), wind_body={"yaw": -42, "bend": -10, "y": 0.0}, end_body={"yaw": 34, "bend": 24, "y": -0.12, "z": -0.22},
-           head_wind={"yaw": 18, "pitch": -4}, head_end={"yaw": -12, "pitch": 8},
-           description="Swordsman: the kesa cut, from high over the right shoulder down through the left hip, the whole body behind it.")
+           end_blade=(-0.14, -0.06, 1.0), end_edge=(-0.55, -0.83, -0.05),
+           cut_ticks=(5, 6), wind_body={"yaw": -42, "bend": -10, "y": 0.0}, end_body={"yaw": 40, "bend": 4, "y": -0.17, "z": -0.42},
+           head_wind={"yaw": 18, "pitch": -4},
+           description="Swordsman: the kesa cut, from high over the right shoulder down across to the left, ending in a long lunge with "
+                       "the arm and the blade thrown out at the foe.")
     strike("sword_gyaku_kesa", 14,
            # (2.3.5: the coil and the middle of the strike a pixel lower: the longer swing passed the fist in front of the chin)
            wind=(H(-0.6, 3.8, 5.4), D(-0.88, 0.42, -0.22), D(-0.2, 0.6, 0.78)),
            mid=(H(2.8, 3.6, 7.8), D(-0.1, 0.35, 1), D(0, -1, 0.35)),
-           end=(H(7.4, 8.4, 3.8), D(0.66, -0.64, 0.38), D(0.6, 0.65, -0.45)),
-           overshoot=(H(7.6, 8.8, 3.0), D(0.72, -0.64, 0.25), D(0.6, 0.65, -0.45)),
-           cut_ticks=(5, 6), wind_body={"yaw": 46, "bend": -6}, end_body={"yaw": -36, "bend": 20, "y": -0.11, "z": -0.2},
-           wind_left=L_TUCK, end_left=L_OUT, head_wind={"yaw": -16}, head_end={"yaw": 14, "pitch": 6},
-           description="Swordsman: the reverse kesa, from high over the left shoulder down through the right hip.")
+           end_blade=(0.06, -0.06, 1.0), end_edge=(0.55, -0.83, -0.05),
+           cut_ticks=(5, 6), wind_body={"yaw": 46, "bend": -6}, end_body={"yaw": 22, "bend": 4, "y": -0.17, "z": -0.38},
+           wind_left=L_TUCK, head_wind={"yaw": -16},
+           description="Swordsman: the reverse kesa, from high over the left shoulder down across to the right, ending in a long lunge.")
     strike("sword_yoko", 13,
            wind=(H(8.2, 5.4, -2.0), D(0.72, 0.12, -0.68), D(0.68, 0, 0.72)),
            mid=(H(4.6, 5.0, 8.0), D(0.2, 0.02, 1), D(-1, 0, 0.2)),
-           end=(H(0.4, 5.6, 6.4), D(-0.92, 0.04, 0.38), D(-0.38, 0, -0.92)),
-           overshoot=(H(0.0, 5.8, 5.8), D(-0.96, 0.04, 0.2), D(-0.2, 0, -0.98)),
-           cut_ticks=(5, 6), wind_body={"yaw": -52, "bend": 4, "y": -0.05}, end_body={"yaw": 46, "bend": 10, "y": -0.08, "z": -0.18},
-           head_wind={"yaw": 24}, head_end={"yaw": -20},
-           description="Swordsman: the horizontal cut, right to left at the waist, the hips wound back and unwound through it.")
+           end_blade=(-0.16, 0.06, 1.0), end_edge=(-0.35, -0.94, 0.06),
+           cut_ticks=(5, 6), wind_body={"yaw": -52, "bend": 4, "y": -0.05}, end_body={"yaw": 42, "bend": 6, "y": -0.16, "z": -0.4},
+           head_wind={"yaw": 24},
+           description="Swordsman: the horizontal cut, right to left, the hips wound back and unwound through it into a long lunge.")
     strike("sword_gyaku_yoko", 13,
            wind=BACKHAND_COIL,
            mid=(H(3.4, 5.0, 8.0), D(-0.15, 0.02, 1), D(1, 0, 0.15)),
-           end=(H(8.4, 5.6, 3.2), D(0.94, 0.06, 0.32), D(0.32, 0, -0.94)),
-           overshoot=(H(8.4, 5.6, 2.2), D(0.98, 0.06, 0.12), D(0.12, 0, -0.99)),
-           cut_ticks=(5, 6), wind_body={"yaw": 50, "bend": 4, "y": -0.05}, end_body={"yaw": -46, "bend": 10, "y": -0.08, "z": -0.18},
-           wind_left=L_AIM, end_left=L_OUT, head_wind={"yaw": -22}, head_end={"yaw": 20},
-           description="Swordsman: the return cut, a backhand from the left hip across to the right.")
+           end_blade=(0.04, 0.06, 1.0), end_edge=(0.35, -0.94, 0.06),
+           cut_ticks=(5, 6), wind_body={"yaw": 50, "bend": 4, "y": -0.05}, end_body={"yaw": 20, "bend": 6, "y": -0.16, "z": -0.38},
+           wind_left=L_AIM, head_wind={"yaw": -22},
+           description="Swordsman: the return cut, a backhand from the left hip across to the right, the arm thrown out straight.")
     strike("sword_kiriage", 14,
            wind=(H(1.6, 9.0, 4.2), D(-0.55, -0.74, 0.38), D(0.45, -0.25, 0.86)),
            mid=(H(4.0, 4.8, 8.0), D(0.02, 0.0, 1), D(0, 1, 0)),
-           end=(H(8.0, -1.0, 3.6), D(0.62, 0.76, 0.18), D(0.2, 0.2, -0.95)),
-           overshoot=(H(8.2, -1.6, 2.8), D(0.66, 0.75, 0.0), D(0.2, 0.2, -0.95)),
-           cut_ticks=(5, 6), wind_body={"yaw": 40, "bend": 22, "y": -0.14}, end_body={"yaw": -30, "bend": -12, "y": 0.02, "z": -0.16},
-           wind_legs=LEGS_DEEP, end_legs=LEGS_LUNGE, wind_left=L_BACK, end_left=L_BACK,
-           head_wind={"yaw": -14, "pitch": -6}, head_end={"yaw": 14, "pitch": -8},
-           description="Swordsman: the rising cut, from the left knee up past the right shoulder, rising with it.")
+           end_blade=(0.06, 0.18, 1.0), end_edge=(0.55, -0.7, -0.2),
+           cut_ticks=(5, 6), wind_body={"yaw": 40, "bend": 22, "y": -0.14}, end_body={"yaw": 24, "bend": -4, "y": -0.1, "z": -0.36},
+           wind_legs=LEGS_DEEP, wind_left=L_BACK, head_wind={"yaw": -14, "pitch": -6}, mid_extended=False,
+           description="Swordsman: the rising cut, from the left knee up past the right shoulder, rising with it into the lunge.")
     strike("sword_tsuki", 14,
            wind=(H(6.6, 7.6, -2.0), D(0.04, 0.08, 1), D(0, -1, 0.08)),
            mid=(H(4.0, 5.6, 6.0), D(0.0, 0.05, 1), D(0, -1, 0.05)),
-           end=(H(2.2, 4.4, 8.2), D(-0.04, 0.03, 1), D(0, -1, 0.03)),
-           overshoot=(H(2.0, 4.4, 8.4), D(-0.05, 0.02, 1), D(0, -1, 0.02)),
+           end_blade=(0.0, 0.22, 1.0), end_edge=(0.0, -1.0, 0.22),
            cut_ticks=(5, 7), wind_body={"yaw": -38, "bend": 4, "y": -0.07, "z": 0.06},
-           end_body={"yaw": 22, "bend": 14, "y": -0.14, "z": -0.46}, wind_left=L_AIM, end_left=L_BACK,
-           head_wind={"yaw": 16}, head_end={"yaw": -8},
-           description="Swordsman: the thrust, drawn back to the hip and driven in with a long lunge, the left hand sighting along it.")
+           end_body={"yaw": 44, "bend": 6, "y": -0.2, "z": -0.52}, wind_left=L_AIM, head_wind={"yaw": 16}, mid_extended=False,
+           description="Swordsman: the thrust, drawn back to the hip and driven in with a long lunge, the arm and the blade one line.")
     strike("sword_makko", 17,
            wind=(H(5.8, -6.2, 0.8), D(0.22, -0.32, -0.92), D(0.1, 0.94, -0.3)),
            mid=(H(5.4, -0.8, 6.6), D(0.12, 0.62, 0.78), D(0, -0.78, 0.62)),
-           end=(H(3.0, 6.6, 7.2), D(0.04, -0.55, 0.84), D(0, -0.84, -0.55)),
-           overshoot=(H(3.0, 7.8, 6.4), D(0.04, -0.78, 0.62), D(0, -0.62, -0.78)),
+           end_blade=(0.02, -0.1, 1.0), end_edge=(0.0, -1.0, -0.1),
            cut_ticks=(7, 8), wind_tick=4, hold=3, raise_=(2, RAISED), wind_body={"yaw": -20, "bend": -16, "y": 0.02},
-           end_body={"yaw": 6, "bend": 30, "y": -0.18, "z": -0.32}, wind_left=L_AIM, end_left=L_BACK,
-           head_wind={"pitch": -10, "yaw": 8}, head_end={"pitch": 10},
+           end_body={"yaw": 30, "bend": 10, "y": -0.22, "z": -0.46}, wind_left=L_AIM,
+           head_wind={"pitch": -10, "yaw": 8},
            description="Swordsman: the heaven splitter, the finisher: raised high behind the shoulder, then straight down through the "
-                       "centre with a step in.")
+                       "centre with a long step in, the arm and the blade thrown out at the foe.")
 
     # ------------------------------------------------------------------------------------------------ the moving string
     strike("sword_advancing_cut", 13,
            wind=(H(8.0, 7.6, -1.2), D(0.7, -0.2, -0.68), D(0.68, 0, 0.72)),
            mid=(H(4.6, 7.2, 7.6), D(0.2, -0.12, 1), D(-1, 0, 0.2)),
-           end=(H(0.6, 7.6, 6.2), D(-0.9, -0.1, 0.4), D(-0.4, 0, -0.9)),
+           end_blade=(-0.16, -0.2, 1.0), end_edge=(-0.4, -0.88, -0.2),
            cut_ticks=(5, 6), wind_body={"yaw": -44, "bend": 22, "y": -0.16, "z": -0.1},
-           end_body={"yaw": 40, "bend": 30, "y": -0.2, "z": -0.46}, wind_legs=LEGS_DEEP, end_legs=LEGS_DEEP,
-           head_wind={"yaw": 18, "pitch": -16}, head_end={"yaw": -16, "pitch": -20},
-           description="Swordsman: the advancing cut, a long low step and a cut across at knee height at the end of it.")
+           end_body={"yaw": 40, "bend": 14, "y": -0.24, "z": -0.52}, wind_legs=LEGS_DEEP,
+           head_wind={"yaw": 18, "pitch": -16},
+           description="Swordsman: the advancing cut, a long low step and a cut across at knee height at the end of it, thrown out far.")
 
     # the pivot cut: a full turn to the right on the front foot, the arm flung out flat, the blade sweeping everything round
-    spin = held(H(9.0, 5.8, 1.6), D(0.98, 0.03, 0.18), D(0.18, 0, -0.98))
+    # 2.4.5: the arm out straight through the spin and at its end (the owner's reach)
+    spin = extend((None, D(0.98, 0.03, 0.18), D(0.18, 0, -0.98)))
+    spin_end = extend((None, D(0.96, 0.04, 0.28), D(0.28, 0, -0.96)))
     write(Move("sword_pivot_cut", 15, [
         stance_beat(0, "linear"),
         b(3, "inoutsine", held(*PIVOT_COIL), L_AIM, {"yaw": 52, "bend": 6, "y": -0.1}, LEGS_DEEP, {"yaw": -20}),
         b(4, "outsine", held(*PIVOT_COIL), L_AIM, {"yaw": 58, "bend": 4, "y": -0.11}, LEGS_DEEP, {"yaw": -22}),
         b(5, "insine", held(H(5.0, 5.6, 7.6), D(0.25, 0.04, 1), D(1, 0, -0.25)), L_AIM, {"yaw": 10, "bend": 8, "y": -0.1}, LEGS_DEEP,
           {"yaw": -10}),
-        b(7, "linear", spin, L_OUT, {"yaw": -110, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -8}),
-        b(9, "linear", spin, L_OUT, {"yaw": -230, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -8}),
-        b(10, "outsine", spin, L_OUT, {"yaw": -330, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -6}),
-        b(11, "constant", held(H(8.6, 5.8, 2.6), D(0.96, 0.04, 0.28), D(0.28, 0, -0.96)), L_OUT, {"yaw": 22, "bend": 6, "y": -0.07},
-          LEGS_LUNGE, {"yaw": -4}),
-        b(12, "linear", held(H(8.6, 5.8, 2.6), D(0.96, 0.04, 0.28), D(0.28, 0, -0.96)), L_OUT, {"yaw": 18, "bend": 6, "y": -0.07},
-          LEGS_LUNGE, {"yaw": -4}),
+        reaching(b(7, "linear", spin, L_OUT, {"yaw": -110, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -8})),
+        reaching(b(9, "linear", spin, L_OUT, {"yaw": -230, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -8})),
+        reaching(b(10, "outsine", spin, L_OUT, {"yaw": -330, "bend": 6, "y": -0.08}, LEGS_DEEP, {"yaw": -6})),
+        reaching(b(11, "constant", spin_end, L_OUT, {"yaw": 22, "bend": 6, "y": -0.07}, LEGS_LUNGE, {"yaw": -4})),
+        reaching(b(12, "linear", spin_end, L_OUT, {"yaw": 18, "bend": 6, "y": -0.07}, LEGS_LUNGE, {"yaw": -4})),
         stance_beat(15),
     ], "Swordsman: the pivot cut, a full turn on the front foot with the arm flung out flat, all round.", cuts=((5, 10),)))
 
@@ -1627,20 +1709,24 @@ def moves(with_draws=True):
         b(2, "inoutsine", held(H(5.6, -4.4, 1.2), D(0.3, 0.45, -0.85), D(0.2, 0.85, 0.4)), L_AIM, {"yaw": -36, "bend": -8}, LEGS_TUCK,
           {"yaw": 14}),
         b(3, "insine", held(H(4.0, 1.6, 7.6), D(0.15, 0.4, 1), D(0, -1, 0.4)), L_BACK, {"yaw": -6, "bend": 8}, LEGS_TUCK),
-        b(4, "outexpo", held(H(1.6, 8.0, 5.6), D(-0.6, -0.68, 0.42), D(-0.55, 0.65, -0.5)), L_BACK, {"yaw": 28, "bend": 18},
-          LEGS_TUCK, {"yaw": -10}),
+        # 2.4.5: each diagonal ends with the arm and the blade thrown out at the foe (the owner's reach)
+        reaching(b(4, "outexpo", lunge({"yaw": 30, "bend": 8}, (-0.16, -0.12, 1.0), (-0.55, -0.83, -0.05)), L_LUNGE,
+                   {"yaw": 30, "bend": 8}, LEGS_TUCK, {"yaw": -18})),
         b(6, "inoutsine", held(H(-0.6, 2.6, 5.4), D(-0.88, 0.42, -0.22), D(-0.2, 0.6, 0.78)), L_TUCK, {"yaw": 40, "bend": -4},
           LEGS_TUCK, {"yaw": -14}),
         b(8, "insine", held(H(2.8, 2.6, 7.8), D(-0.1, 0.35, 1), D(0, -1, 0.35)), L_OUT, {"yaw": 6, "bend": 8}, LEGS_TUCK),
-        b(9, "outexpo", held(H(7.4, 8.2, 3.8), D(0.66, -0.64, 0.38), D(0.6, 0.65, -0.45)), L_OUT, {"yaw": -34, "bend": 18},
-          LEGS_REACH, {"yaw": 12}),
-        b(10, "outback", held(H(7.6, 8.6, 3.0), D(0.72, -0.64, 0.25), D(0.6, 0.65, -0.45)), L_OUT, {"yaw": -38, "bend": 20},
-          LEGS_REACH, {"yaw": 14}),
+        reaching(b(9, "outexpo", lunge({"yaw": 16, "bend": 8}, (0.18, -0.12, 1.0), (0.55, -0.83, -0.05)), L_LUNGE,
+                   {"yaw": 16, "bend": 8}, LEGS_REACH, {"yaw": -10})),
+        reaching(b(10, "outback", lunge({"yaw": 16, "bend": 9}, (0.18, -0.12, 1.0), (0.55, -0.83, -0.05), 6.0), L_LUNGE,
+                   {"yaw": 16, "bend": 9}, LEGS_REACH, {"yaw": -10})),
         stance_beat(14, legs=LEGS_TUCK),
     ], "Swordsman: the aerial cross, two diagonals crossing in the air, each its own cut.", cuts=((3, 4), (8, 9)), ground=False))
 
     # 2.3.2: the fist carried out to the right of the face on its way from the wind-up (at 6.6 the forearm crossed the brow)
-    wheel = held(H(7.4, -1.0, 6.0), D(0.14, 0.66, 0.74), D(0, 0.74, -0.66))
+    # (2.4.5: 0.5 px further right: the wider wrist let the solver bring the fist past the face between ticks 2 and 3)
+    wheel = held(H(7.9, -1.0, 6.0), D(0.14, 0.66, 0.74), D(0, 0.74, -0.66))
+    # 2.4.5: the wheel's end thrown out at the foe (the owner's reach), the arm straight
+    wheel_end = extend((None, D(0.04, -0.4, 0.92), D(0, -0.92, -0.4)))
     write(Move("sword_aerial_wheel", 15, [
         stance_beat(0, "linear", legs=LEGS_TUCK),
         b(1, "insine", held(*RAISED), L_AIM, {"pitch": 6, "bend": -6}, LEGS_TUCK, {"pitch": -4}),
@@ -1649,11 +1735,9 @@ def moves(with_draws=True):
         b(4, "linear", wheel, L_BACK, {"pitch": -70, "bend": 12}, LEGS_TUCK),
         b(6, "linear", wheel, L_BACK, {"pitch": -180, "bend": 14}, LEGS_TUCK),
         b(8, "linear", wheel, L_BACK, {"pitch": -290, "bend": 12}, LEGS_TUCK),
-        b(9, "outsine", held(H(3.0, 7.0, 7.0), D(0.04, -0.55, 0.84), D(0, -0.84, -0.55)), L_BACK, {"pitch": -352, "bend": 22},
-          LEGS_REACH),
-        b(10, "constant", held(H(3.0, 7.0, 7.0), D(0.04, -0.55, 0.84), D(0, -0.84, -0.55)), L_BACK, {"pitch": 8, "bend": 22},
-          LEGS_REACH),
-        b(11, "linear", held(H(3.0, 7.6, 6.6), D(0.04, -0.7, 0.7), D(0, -0.7, -0.7)), L_BACK, {"bend": 22}, LEGS_REACH),
+        reaching(b(9, "outsine", wheel_end, L_LUNGE, {"pitch": -352, "bend": 14}, LEGS_REACH)),
+        reaching(b(10, "constant", wheel_end, L_LUNGE, {"pitch": 8, "bend": 14}, LEGS_REACH)),
+        reaching(b(11, "linear", extend((None, D(0.04, -0.5, 0.86), D(0, -0.86, -0.5))), L_LUNGE, {"bend": 14}, LEGS_REACH)),
         stance_beat(15, legs=LEGS_TUCK),
     ], "Swordsman: the wheel, a forward somersault with the blade carried round a full vertical circle.", cuts=((4, 9),), ground=False))
 
@@ -1664,12 +1748,13 @@ def moves(with_draws=True):
         b(5, "outsine", held(H(7.7, -5.6, 1.2), D(0.25, 0.95, 0.18), D(0, -0.2, 1)), L_AIM, {"bend": -16, "pitch": 8}, LEGS_TUCK,
           {"pitch": -12}),
         b(6, "insine", held(H(4.8, 1.0, 6.8), D(0.1, -0.2, 1), D(0, -1, -0.2)), L_BACK, {"bend": 8}, LEGS_TUCK, {"pitch": 4}),
-        b(7, "outexpo", held(H(3.4, 6.8, 6.6), D(0.03, -0.96, 0.28), D(0, 0.28, 0.96)), L_OUT, {"bend": 28, "y": -0.22}, LEGS_DEEP,
-          {"pitch": 16}),
-        b(9, "outback", held(H(3.2, 8.0, 6.0), D(0.02, -1, 0.1), D(0, 0.1, 1)), L_OUT, {"bend": 32, "y": -0.32}, LEGS_DEEP,
-          {"pitch": 18}),
-        b(12, "linear", held(H(3.2, 8.0, 6.0), D(0.02, -1, 0.1), D(0, 0.1, 1)), L_OUT, {"bend": 30, "y": -0.3}, LEGS_DEEP,
-          {"pitch": 16}),
+        # 2.4.5: driven down with the arm straight out in front (the owner's reach)
+        reaching(b(7, "outexpo", extend((None, D(0.03, -0.96, 0.28), D(0, 0.28, 0.96))), L_OUT, {"bend": 28, "y": -0.22}, LEGS_DEEP,
+                   {"pitch": 16})),
+        reaching(b(9, "outback", extend((None, D(0.02, -1, 0.1), D(0, 0.1, 1))), L_OUT, {"bend": 32, "y": -0.32}, LEGS_DEEP,
+                   {"pitch": 18})),
+        reaching(b(12, "linear", extend((None, D(0.02, -1, 0.1), D(0, 0.1, 1))), L_OUT, {"bend": 30, "y": -0.3}, LEGS_DEEP,
+                   {"pitch": 16})),
         stance_beat(17),
     ], "Swordsman: the plunge, the aerial finisher: raised high, then driven point-down as the body drops onto it.",
         cuts=((6, 9),), ground=False))
@@ -1700,18 +1785,21 @@ def moves(with_draws=True):
         b(26, "inoutsine", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
     ], "Swordsman: drawing straight up into the charge.", draw=1, loop=6))
 
+    release_end = {"yaw": 30, "bend": 10, "y": -0.22, "z": -0.46}
+    release_over = dict(release_end, z=-0.5, y=-0.24)
     write(Move("sword_release", 15, [
         b(0, "linear", charge_pose, L_AIM, charge_body, charge_legs, {"pitch": -10, "yaw": 10}),
         b(1, "insine", held(H(5.4, -0.8, 6.6), D(0.12, 0.62, 0.78), D(0, -0.78, 0.62)), L_BACK, {"yaw": -6, "bend": 2, "z": -0.1},
           LEGS_LUNGE, {"pitch": -2}),
-        b(2, "outexpo", held(H(3.0, 6.6, 7.2), D(0.04, -0.55, 0.84), D(0, -0.84, -0.55)), L_BACK, {"yaw": 6, "bend": 30, "y": -0.18,
-          "z": -0.34}, LEGS_DEEP, {"pitch": 10}),
-        b(3, "outback", held(H(3.0, 7.8, 6.4), D(0.04, -0.78, 0.62), D(0, -0.62, -0.78)), L_BACK, {"yaw": 6, "bend": 33, "y": -0.2,
-          "z": -0.36}, LEGS_DEEP, {"pitch": 12}),
-        b(7, "linear", held(H(3.0, 7.8, 6.4), D(0.04, -0.78, 0.62), D(0, -0.62, -0.78)), L_BACK, {"yaw": 6, "bend": 32, "y": -0.2,
-          "z": -0.36}, LEGS_DEEP, {"pitch": 12}),
+        # 2.4.5: into the owner's lunge, the arm and the blade thrown out at the foe
+        reaching(b(2, "outexpo", lunge(release_end, (0.02, -0.1, 1.0), (0.0, -1.0, -0.1)), L_LUNGE, release_end, LEGS_LUNGE_WIDE,
+                   {"pitch": -4, "yaw": -24})),
+        reaching(b(3, "outback", lunge(release_over, (0.02, -0.1, 1.0), (0.0, -1.0, -0.1), 6.0), L_LUNGE, release_over,
+                   LEGS_LUNGE_WIDE, {"pitch": -4, "yaw": -24})),
+        reaching(b(7, "linear", lunge(release_over, (0.02, -0.1, 1.0), (0.0, -1.0, -0.1), 6.0), L_LUNGE, release_over,
+                   LEGS_LUNGE_WIDE, {"pitch": -4, "yaw": -24})),
         stance_beat(15, body={"yaw": -6, "bend": 2, "z": -0.3}),
-    ], "Swordsman: the charged slash released: straight down from high behind the shoulder, the step in behind it.",
+    ], "Swordsman: the charged slash released: straight down from high behind the shoulder into a long lunge.",
         cuts=((1, 3),)))
 
     # 2.3.6 (the owner: "every move is clashable ... I want a impact frame whenever a clash happens"): a cut met by another blow

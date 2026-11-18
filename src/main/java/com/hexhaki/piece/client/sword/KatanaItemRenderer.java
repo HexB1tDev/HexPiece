@@ -2,6 +2,7 @@ package com.hexhaki.piece.client.sword;
 
 import com.hexhaki.piece.sword.Katana;
 import com.hexhaki.piece.sword.KatanaItem;
+import com.hexhaki.piece.sword.SwordAnims;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import java.util.function.Consumer;
@@ -20,8 +21,8 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
  * do) and in an item frame. In the inventory its icon is drawn instead (its model's GUI view is the icon, Forge's separate_transforms;
  * build.py writes the models). In a hand it draws nothing at all: the player's sword layer ({@link SwordLayer}) shows the active katana,
  * sheathed at the hip or drawn in the hand, so a katana is never seen twice. The one exception is the game's own first-person view of a
- * katana held without a sword move playing: there the hand holds it sheathed, as one carries a sword. Armament Haki blackens the sword
- * there, never its saya (2.2.6).
+ * katana held without a sword move playing: there the hand holds it sheathed, as one carries a sword, or (2.4.5) the bare blade while
+ * the sword is drawn. Armament Haki blackens the sword there, never its saya (2.2.6).
  */
 public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static KatanaItemRenderer instance;
@@ -101,9 +102,32 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         // blackens whatever an Armament user holds by handing this renderer black buffers (its ItemInHandRendererMixin); the sword takes
         // them, the saya is drawn into the game's own buffers (the ones the first-person hand is drawn with), in its own colours
         MultiBufferSource own = Minecraft.m_91087_().m_91269_().m_110104_();
+        // 2.4.5 (the owner: "Gryphon in first person when unsheathed still shows has having the sheath on when it doesnt"): while the
+        // sword is out (the guard, the idle, a draw once the blade has left the saya) the hand holds the bare blade, glinting as it does
+        // in third person; the saya is drawn only while the blade is in it. Every blade the same.
+        boolean bare = drawnNow(katana);
         // 2.2.7: Yoru is never blackened either
-        KatanaRenderer.draw(pose, katana.blackens() ? buffers : own, katana, true, false, light, 0.0F);
-        KatanaRenderer.draw(pose, own, katana, false, true, light, 0.0F);
+        KatanaRenderer.draw(pose, katana.blackens() ? buffers : own, katana, true, false, light, bare ? (katana.blackens() ? 1.0F : 0.45F) : 0.0F);
+        if (!bare) {
+            KatanaRenderer.draw(pose, own, katana, false, true, light, 0.0F);
+        }
         pose.m_85849_();
+    }
+
+    /**
+     * 2.4.5: is the local player's sword out of its saya this frame ({@link SwordAnims#drawn}, as {@link SwordLayer} asks for every
+     * player in third person)? Only the first-person hand asks: that hand is always the local player's.
+     */
+    static boolean drawnNow(Katana katana) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        net.minecraft.client.player.LocalPlayer player = minecraft.f_91074_;
+        if (player == null) {
+            return false;
+        }
+        int id = player.m_19879_();
+        if (SwordClient.katana(id) != katana) {
+            return false;
+        }
+        return SwordAnims.drawn(SwordClient.anim(id), SwordClient.ticks(player, minecraft.m_91296_()), katana);
     }
 }

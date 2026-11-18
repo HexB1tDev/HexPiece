@@ -62,10 +62,10 @@ public enum Katana {
     // off (or the fruit is taken up); Yoru worn on the back and longer in reach, never blackened by Haki.
     GRYPHON("gryphon", "Gryphon", "Saber", Grade.SAIJO_O_WAZAMONO,
         "A western saber under a gold bell guard and knucklebow, its scabbard lacquered blue. Its master is said to have split the sky over a "
-            + "war with a single swing, and to have never needed a second.", Carry.HIP, 1.55F, 0.25),
+            + "war with a single swing, and to have never needed a second.", Carry.HIP, 1.55F, 0.3),
     YORU("yoru", "Yoru", "Kokuto", Grade.SAIJO_O_WAZAMONO,
         "The black blade: a cross-hilted great sword as tall as a man, carried on the back. The finest sword in the world, gone black from a "
-            + "lifetime of Haki: there is no blacker left to give it, and the lightning only runs round it.", Carry.BACK, 1.75F, 1.1);
+            + "lifetime of Haki: there is no blacker left to give it, and the lightning only runs round it.", Carry.BACK, 1.75F, 0.75);
 
     /** 2.2.7: where a blade is worn: in its saya at the left hip, or tied on the back with no saya (Yoru). */
     public enum Carry {
@@ -112,9 +112,48 @@ public enum Katana {
         return this.edge;
     }
 
-    /** 2.2.7: blocks its cuts reach past a katana's (Yoru: a great sword). */
+    /**
+     * 2.2.7, 2.4.5 (the owner: "Different swords should have different range (Yoru is the biggest)"): blocks its cuts reach past the
+     * blade every cut's path is written with (every blade plays the katanas' one animation set, so range is the blade's, not the
+     * animation's): its own length past that blade's ({@link #tip()} against {@link SwordRules#PATH_TIP}, in the player's scale), its
+     * grade's reach ({@link Grade#reach()}) and a legendary blade's own (Gryphon 0.3, Yoru 0.75). Yoru reaches furthest (about 1.86),
+     * then Gryphon (0.84), then the supreme, great and skillful grades; a short plain blade a little less than the path's own.
+     */
     public double reach() {
-        return this.reach;
+        return this.reach + this.grade.reach() + (this.tip() - SwordRules.PATH_TIP) * SwordRules.PX;
+    }
+
+    /** 2.4.5: model px from the guard to the point, measured from the owner's mesh of this blade (build.py checks them). */
+    public float tip() {
+        return switch (this) {
+            case CRIMSON_DAWN -> 20.90F;
+            case SILVER_CRANE -> 22.20F;
+            case OBSIDIAN_ECLIPSE -> 20.30F;
+            case AZURE_TIDE -> 22.50F;
+            case JADE_SERPENT -> 23.30F;
+            case SAKURA_VEIL -> 20.20F;
+            case AMBER_WASP -> 19.10F;
+            case FROSTGLASS -> 21.50F;
+            case ROYAL_AMETHYST -> 23.60F;
+            case COPPER_RONIN -> 20.60F;
+            case COBALT_STORM -> 21.90F;
+            case LOTUS_BLOOM -> 20.70F;
+            case BLOOD_MOON -> 22.80F;
+            case PEARL_HERON -> 23.10F;
+            case SUNFIRE -> 21.30F;
+            case BLACKWATER -> 24.00F;
+            case EMERALD_THORN -> 20.50F;
+            case ROSEGOLD_WHISPER -> 22.10F;
+            case ASHEN_WOLF -> 20.10F;
+            case STARFALL -> 22.90F;
+            case DESERT_MIRAGE -> 22.60F;
+            case VENOM_ORCHID -> 21.40F;
+            case DRAGONBONE -> 23.50F;
+            case IMPERIAL_PHOENIX -> 24.30F;
+            case MIDNIGHT_LOTUS -> 22.40F;
+            case GRYPHON -> 22.44F;
+            case YORU -> 32.20F;
+        };
     }
 
     /** 2.2.7: whether Armament Haki blackens it (Yoru is black already: only its lightning shows). */

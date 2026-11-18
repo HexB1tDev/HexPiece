@@ -183,6 +183,11 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     }
 
     /** 2.1.4: its katana (null: none). */
+    /** 2.4.5: blocks its katana's cuts reach past the path's blade (range by sword), 0 with none. */
+    static double reach(Katana katana) {
+        return katana == null ? 0.0 : katana.reach();
+    }
+
     public Katana katana() {
         int k = this.f_19804_.m_135370_(KATANA);
         return k <= 0 ? null : Katana.byOrdinal(k - 1);
@@ -595,7 +600,8 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
                 for (int i = 0; i < cuts.length; i++) {
                     SwordMove.Cut cut = cuts[i];
                     if (tick >= cut.from() && tick <= cut.to()) {
-                        SwordServer.sweep(this, this.swordMove.animation(), tick, SwordRules.EXTEND, this.swordStruck.get(i),
+                        // 2.4.5: its katana's own reach, as a player's
+                        SwordServer.sweep(this, this.swordMove.animation(), tick, SwordRules.EXTEND + reach(katana), this.swordStruck.get(i),
                             cut.damage() * edge * PieceRules.masteryDamage(mastery), cut.weight(), cut.back(), cut.up(), cut.stun(), this::foe,
                             source);
                     }
@@ -718,7 +724,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         if (this.swordMove != null) {
             SwordMove.Cut[] cuts = this.swordMove.cuts();
             double reach = com.hexhaki.piece.clash.ClashBlows.bladeReach(this.swordMove.animation(), cuts[0].from() - 1,
-                cuts[cuts.length - 1].to(), SwordRules.EXTEND, 2.6) + SwordRules.RADIUS + 0.3;
+                cuts[cuts.length - 1].to(), SwordRules.EXTEND + reach(katana), 2.6) + SwordRules.RADIUS + 0.3;
             com.hexhaki.piece.clash.ClashBlows.Window window = com.hexhaki.piece.clash.ClashBlows.sword(this.swordMove,
                 (int) (now - this.swordStart), reach);
             return window == null ? null : window.at(this.swordStart, window.hit() * edge * PieceRules.masteryDamage(mastery), false, 0);

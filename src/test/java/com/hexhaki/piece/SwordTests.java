@@ -52,6 +52,7 @@ public final class SwordTests {
         Check.that(Katana.YORU.carry() == Katana.Carry.BACK && Katana.GRYPHON.carry() == Katana.Carry.HIP, "Yoru on the back, Gryphon at the hip");
         Check.that(!Katana.YORU.blackens() && Katana.GRYPHON.blackens(), "Yoru never turns black");
         Check.that(Katana.YORU.reach() > Katana.GRYPHON.reach() && Katana.GRYPHON.reach() >= 0.0, "Yoru reaches furthest");
+        reach();
         Check.that(Katana.YORU.ordinal() == 26 && Katana.GRYPHON.ordinal() == 25, "new blades at the end (saved by key, sent by ordinal)");
         for (int rank = 0; rank < 3; rank++) {
             for (int pick = 0; pick < 60; pick++) {
@@ -144,6 +145,40 @@ public final class SwordTests {
         for (Grade grade : Grade.values()) {
             Check.that(grade.edge() >= 1.0F && grade.rarity() == grade.ordinal(), grade + ": rarity and edge in order");
         }
+    }
+
+    /**
+     * 2.4.5 (the owner: "Different swords should have different range (Yoru is the biggest)"): every blade its own reach, by its
+     * length and its grade, without an animation of its own: Yoru furthest, Gryphon next, past every graded blade; each grade's blades
+     * further on average than the grade below; none so short that a cut ends before the path's own blade (the sweep still reaches past
+     * the tip); the numbers the release notes give.
+     */
+    static void reach() {
+        double graded = 0.0;
+        for (Katana katana : Katana.values()) {
+            if (!katana.legend()) {
+                graded = Math.max(graded, katana.reach());
+                Check.that(SwordRules.EXTEND + katana.reach() > 0.5, katana + ": its cut still reaches past its point");
+                Check.that(katana.tip() > 15.0F && katana.tip() < 30.0F, katana + ": a katana's length");
+            }
+        }
+        Check.that(Katana.GRYPHON.reach() > graded && Katana.YORU.reach() > Katana.GRYPHON.reach() + 0.5,
+            "Gryphon past every graded blade, Yoru far past Gryphon");
+        double previous = -1.0;
+        for (Grade grade : Grade.values()) {
+            double sum = 0.0;
+            int count = 0;
+            for (Katana katana : Katana.values()) {
+                if (!katana.legend() && katana.grade() == grade) {
+                    sum += katana.reach();
+                    count++;
+                }
+            }
+            Check.that(count > 0 && sum / count > previous, grade + ": its blades reach further on average than the grade below");
+            previous = sum / count;
+        }
+        Check.that(Math.abs(Katana.YORU.reach() - 1.86) < 0.02 && Math.abs(Katana.GRYPHON.reach() - 0.84) < 0.02,
+            "Yoru +1.86 and Gryphon +0.84 blocks, as the release notes say (" + Katana.YORU.reach() + ", " + Katana.GRYPHON.reach() + ")");
     }
 
     static void moves() {
