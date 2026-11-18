@@ -15,8 +15,10 @@ public final class PieceNetwork {
     /** 1 (2.1.1): profiles, the start menu, fighting styles. 2 (2.1.2): C2SCombat (message 5), combat mode; S2CStance
      * (message 6), who holds a stance; S2CStyleFx stage 3. 3 (2.1.3): S2CRyou (message 7), a player's Ryou colour. 4 (2.1.4): the
      * Swordsman: C2SSword (8), S2CSword (9), S2CSwordFx (10), S2CSlash (11), S2CFinisher (12). 5 (2.3.6): S2CClash (13), two
-     * blows meeting. 6 (2.3.8): S2CWater (14), Fishman Karate's water. */
-    private static final String PROTOCOL = "7";
+     * blows meeting. 6 (2.3.8): S2CWater (14), Fishman Karate's water. 7 (2.4.4): S2CFall (15), the Haki stun fall. 8 (2.4.5): no
+     * new message; the Conqueror's release storm is drawn from its seed on both sides (the server opens fissures under the strands
+     * every client draws) and its shape changed, so the two sides must be the same version. */
+    private static final String PROTOCOL = "8";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
