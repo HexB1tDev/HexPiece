@@ -19,7 +19,8 @@ from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ANIMS = os.path.join(ROOT, "src/main/resources/assets/hexhaki/player_animation")
-KEYS = {"STANCE": "R", "M1_1": "M1 (1)", "M1_2": "M1 (2)", "M1_3": "M1 (3)", "M1_4": "M1 (4)", "HEAVY": "Right click", "SPECIAL_A": "Y", "SPECIAL_B": "U"}
+KEYS = {"STANCE": "R", "M1_1": "M1 (1)", "M1_2": "M1 (2)", "M1_3": "M1 (3)", "M1_4": "M1 (4)", "HEAVY": "Right click", "SPECIAL_A": "Y", "SPECIAL_B": "U",
+        "CLASH": "Clash"}
 W, H = 300, 330
 SCALE = 6.2
 
@@ -167,6 +168,10 @@ def main():
         mine = [m for m in moves if m["style"] == style]
         order = ["M1_1", "M1_2", "M1_3", "M1_4", "HEAVY", "SPECIAL_A", "SPECIAL_B"]
         mine.sort(key=lambda m: order.index(m["slot"]))
+        # 2.3.6: the recoil a clash throws the style into, after its moves
+        if os.path.exists(os.path.join(ANIMS, f"style_{style}_clash.json")):
+            mine.append({"style": style, "styleName": mine[0]["styleName"], "slot": "CLASH", "name": "recoil", "animation": f"style_{style}_clash",
+                         "hits": []})
         path = os.path.join(out_dir, f"style-{style.replace('_', '-')}.gif")
         frames = render(style, mine, path)
         print(f"{path}: {frames} frames, {os.path.getsize(path) // 1024} KB")

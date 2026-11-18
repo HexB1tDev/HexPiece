@@ -39,6 +39,21 @@ public final class BoltPreview {
             clash(new File(args[1]));
             return;
         }
+        if (args.length == 3 && args[0].equals("clash") && args[2].equals("frames")) {
+            // the burst as frames for a GIF (each a quarter tick), day and night, 480 x 360
+            W = 480;
+            H = 360;
+            double[] ages = new double[49];
+            for (int i = 0; i < ages.length; i++) {
+                ages[i] = i * 0.25;
+            }
+            clash(new File(args[1]), ages, true);
+            return;
+        }
+        if (args.length == 2 && args[0].equals("slashclash")) {
+            slashClash(new File(args[1]));
+            return;
+        }
         if (args.length == 2 && args[0].equals("slashgif")) {
             slashGif(new File(args[1]));
             return;
@@ -359,6 +374,11 @@ public final class BoltPreview {
      * point between them; a sheet of moments by day and by night (java -cp build/preview:build/classes BoltPreview clash DIR).
      */
     static void clash(File dir) throws Exception {
+        clash(dir, new double[] {0.5, 1.5, 3.0, 6.0, 10.0}, false);
+    }
+
+    /** The burst at {@code ages}: a sheet each for day and night, or ({@code frames}) every age its own picture. */
+    static void clash(File dir, double[] ages, boolean frames) throws Exception {
         dir.mkdirs();
         float power = 2.2F;
         int colorA = 0xFF2244;
@@ -377,9 +397,8 @@ public final class BoltPreview {
             ((i / 2) % 2 == 0 ? first : second).add(lifted);
         }
         double flash = 1.6 + 0.7 * power;
-        double[] ages = {0.5, 1.5, 3.0, 6.0, 10.0};
         for (boolean night : new boolean[] {false, true}) {
-            List<BufferedImage> frames = new ArrayList<>();
+            List<BufferedImage> images = new ArrayList<>();
             for (double age : ages) {
                 Raster raster = new Raster(new Shot("clash", new double[] {-7.5, 2.6, -6.0}, new double[] {0, 1.2, 0}, night));
                 raster.scene();
@@ -397,14 +416,20 @@ public final class BoltPreview {
                 raster.flash = flash * 0.7;
                 raster.stormColor = 0xFF000000 | colorB;
                 raster.boltsAt(second, age, at);
-                frames.add(raster.image());
+                images.add(raster.image());
             }
-            int w = frames.get(0).getWidth();
-            int h = frames.get(0).getHeight();
-            BufferedImage sheet = new BufferedImage(w * frames.size(), h, BufferedImage.TYPE_INT_RGB);
+            if (frames) {
+                for (int i = 0; i < images.size(); i++) {
+                    ImageIO.write(images.get(i), "png", new File(dir, String.format("%s_%03d.png", night ? "night" : "day", i)));
+                }
+                continue;
+            }
+            int w = images.get(0).getWidth();
+            int h = images.get(0).getHeight();
+            BufferedImage sheet = new BufferedImage(w * images.size(), h, BufferedImage.TYPE_INT_RGB);
             java.awt.Graphics2D g = sheet.createGraphics();
-            for (int i = 0; i < frames.size(); i++) {
-                g.drawImage(frames.get(i), i * w, 0, null);
+            for (int i = 0; i < images.size(); i++) {
+                g.drawImage(images.get(i), i * w, 0, null);
                 g.setColor(java.awt.Color.WHITE);
                 g.drawString("t" + ages[i], i * w + 6, 14);
             }
@@ -592,6 +617,184 @@ public final class BoltPreview {
         }
         W = oldW;
         H = oldH;
+    }
+
+    /**
+     * 2.4.2: two Ryou Haki slashes from foes, head on, meeting (server/HakiSlashes.meet): each held where it was stopped and fading over
+     * three ticks as SlashRenderer fades one at its range, the two colours' burst where they met (ClashBurst, as ClashFx plays it) and the
+     * impact frame over the view (ImpactFrame, blended as tools/preview/ImpactPreview blends it). Frames f000.png on, a third of a tick
+     * apart from the meeting for six ticks, half a tick otherwise; their ticks in ticks.txt.
+     */
+    static void slashClash(File dir) throws Exception {
+        int oldW = W;
+        int oldH = H;
+        W = 640;
+        H = 400;
+        dir.mkdirs();
+        double height = 9.0;
+        double speed = 2.4;
+        double start = 16.0;
+        double gap = 1.0;
+        double range = start - gap;
+        double meet = range / speed;
+        int colorA = 0xFF2B3D;
+        int colorB = 0x2AE6FF;
+        float power = 2.0F;
+        double foot = com.hexhaki.piece.sword.SwordRules.slashCentre(height) - height / 2.0;
+        double centre = com.hexhaki.piece.sword.SwordRules.slashCentre(height);
+        List<Bolt> all = com.hexhaki.piece.haki.ClashBurst.bolts(power, colorA, colorB, 1.2, 77L);
+        List<Bolt> first = new ArrayList<>();
+        List<Bolt> second = new ArrayList<>();
+        for (int i = 0; i < all.size(); i++) {
+            Bolt bolt = all.get(i);
+            double[] pts = bolt.points.clone();
+            for (int k = 1; k < pts.length; k += 3) {
+                pts[k] += com.hexhaki.piece.haki.ConquerorStorm.CHEST;
+            }
+            ((i / 2) % 2 == 0 ? first : second).add(new Bolt(pts, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl,
+                bolt.seed, bolt.dance));
+        }
+        Shot shot = new Shot("night", new double[] {0, 5.5, -19}, new double[] {0, 4.5, 0}, true);
+        StringBuilder ticks = new StringBuilder();
+        int frame = 0;
+        List<Double> times = new ArrayList<>();
+        for (double t = 0; t < meet; t += 0.5) {
+            times.add(t);
+        }
+        for (double t = meet; t < meet + 6.0; t += 1.0 / 3.0) {
+            times.add(t);
+        }
+        for (double t = meet + 6.0; t <= meet + 14.0; t += 0.5) {
+            times.add(t);
+        }
+        for (double t : times) {
+            Raster raster = new Raster(shot);
+            raster.plain = 12;
+            raster.scene();
+            raster.minAlpha = 0.002F;
+            double over = t - meet;
+            double fade = over <= 0 ? 1.0 : Math.max(0.0, 1.0 - over / 3.0);
+            double along = Math.min(range, t * speed);
+            if (fade > 0.01) {
+                slash(raster, shot, new double[] {-start + along, foot, 0}, 1, height, 7L, 0xFF000000 | colorA, t, fade);
+                slash(raster, shot, new double[] {start - along, foot, 0}, -1, height, 11L, 0xFF000000 | colorB, t, fade);
+            }
+            if (over >= 0) {
+                raster.wave = 0;
+                raster.burst = true;
+                double[] at = {0, centre - com.hexhaki.piece.haki.ConquerorStorm.CHEST, 0};
+                raster.flash = 1.6 + 0.7 * power;
+                raster.stormColor = 0xFF000000 | colorA;
+                raster.boltsAt(first, over, at);
+                raster.flash = (1.6 + 0.7 * power) * 0.7;
+                raster.stormColor = 0xFF000000 | colorB;
+                raster.boltsAt(second, over, at);
+            }
+            BufferedImage image = raster.image();
+            if (over >= 0) {
+                image = impact(image, over, power, colorA, colorB);
+            }
+            ImageIO.write(image, "png", new File(dir, String.format("f%03d.png", frame++)));
+            ticks.append(String.format("%.4f%n", t));
+        }
+        java.nio.file.Files.writeString(new File(dir, "ticks.txt").toPath(), ticks.toString());
+        W = oldW;
+        H = oldH;
+    }
+
+    /** The clash's impact frame {@code age} ticks in over a view whose meeting point is the middle of it, as ImpactPreview blends it. */
+    static BufferedImage impact(BufferedImage view, double age, float power, int colorA, int colorB) {
+        int w = view.getWidth();
+        int h = view.getHeight();
+        float[][] rgb = new float[3][w * h];
+        for (int i = 0; i < w * h; i++) {
+            int c = view.getRGB(i % w, i / w);
+            rgb[0][i] = ((c >> 16) & 255) / 255.0F;
+            rgb[1][i] = ((c >> 8) & 255) / 255.0F;
+            rgb[2][i] = (c & 255) / 255.0F;
+        }
+        for (com.hexhaki.piece.clash.ImpactFrame.Batch batch : com.hexhaki.piece.clash.ImpactFrame.at(age, w, h, w * 0.5, h * 0.5, power, colorA,
+            colorB, 1234L)) {
+            if (batch.mode() == com.hexhaki.piece.clash.ImpactFrame.CONTRAST) {
+                for (int k = 0; k < 3; k++) {
+                    for (int i = 0; i < w * h; i++) {
+                        rgb[k][i] = Math.min(1.0F, 2.0F * rgb[k][i] * rgb[k][i]);
+                    }
+                }
+                continue;
+            }
+            for (int t = 0; t + 2 < batch.count(); t += 3) {
+                ImpactPreview.tri(rgb, w, h, batch, t, batch.mode() == com.hexhaki.piece.clash.ImpactFrame.INVERT);
+            }
+        }
+        BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        for (int i = 0; i < w * h; i++) {
+            int r = Math.round(Math.max(0, Math.min(1, rgb[0][i])) * 255);
+            int g = Math.round(Math.max(0, Math.min(1, rgb[1][i])) * 255);
+            int b = Math.round(Math.max(0, Math.min(1, rgb[2][i])) * 255);
+            out.setRGB(i % w, i / w, r << 16 | g << 8 | b);
+        }
+        return out;
+    }
+
+    /** One Haki slash's wave and crackle as SlashRenderer lays them: its line's foot at {@code base}, flying {@code dx} along x. */
+    static void slash(Raster raster, Shot shot, double[] base, double dx, double height, long seed, int color, double ticks, double fade) {
+        boolean night = shot.night();
+        com.hexhaki.piece.sword.SlashMesh.Quads glow = new com.hexhaki.piece.sword.SlashMesh.Quads();
+        com.hexhaki.piece.sword.SlashMesh.Quads solid = new com.hexhaki.piece.sword.SlashMesh.Quads();
+        com.hexhaki.piece.sword.SlashMesh.Frame f = com.hexhaki.piece.sword.SlashMesh.Frame.of(sub(base, shot.eye), dx, 0, height,
+            Math.abs(ticks * 2.4) / (height * com.hexhaki.piece.sword.SwordRules.SLASH_BACK));
+        com.hexhaki.piece.sword.SlashMesh.wave(solid, glow, f, seed, color, ticks, fade);
+        for (int q = 0; q < solid.n; q++) {
+            raster.quad(java.util.Arrays.copyOfRange(solid.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(solid.c, q * 4, q * 4 + 4), false);
+        }
+        List<Bolt> bolts = new ArrayList<>();
+        List<Double> ages = new ArrayList<>();
+        double k = height / 1.28;
+        long window = (long) Math.floor(ticks / com.hexhaki.piece.haki.DrawCrackle.WINDOW);
+        for (long w = Math.max(0, window - 2); w <= window; w++) {
+            for (Bolt bolt : com.hexhaki.piece.haki.DrawCrackle.set(seed * 0x9E3779B97F4A7C15L, w, 0.0, 1.28, Double.NaN, 1.3, color)) {
+                double age = ticks - w * com.hexhaki.piece.haki.DrawCrackle.WINDOW - bolt.delay;
+                if (age < 0 || age > bolt.duration || fade < 0.5) {
+                    continue;
+                }
+                double[] pts = new double[bolt.points.length];
+                for (int i = 0; i < bolt.count(); i++) {
+                    double v = Math.max(0.0, Math.min(0.97, bolt.points[i * 3 + 1] / 1.28 * 0.97));
+                    double[] p = com.hexhaki.piece.sword.SlashMesh.edge(f, v, height * 0.01 + Math.abs(bolt.points[i * 3]) * k, bolt.points[i * 3 + 2] * k);
+                    pts[i * 3] = p[0];
+                    pts[i * 3 + 1] = p[1];
+                    pts[i * 3 + 2] = p[2];
+                }
+                float[] widths = bolt.widths.clone();
+                for (int i = 0; i < widths.length; i++) {
+                    widths[i] *= (float) Math.min(3.0, Math.pow(k, 0.75));
+                }
+                bolts.add(new Bolt(pts, widths, bolt.color, bolt.kind, 0, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                ages.add(age);
+            }
+        }
+        raster.light();
+        double pixel = 2.0 * Math.tan(FOV / 2) / H;
+        List<double[]> gv = new ArrayList<>();
+        List<int[]> gc = new ArrayList<>();
+        for (int i = 0; i < bolts.size(); i++) {
+            BoltMesh.build(bolts.get(i), BoltMesh.Frame.at(0, 0, 0), ages.get(i), pixel, night ? 1.0 : 0.5, (g, xyz, argb) -> {
+                if (g) {
+                    gv.add(xyz);
+                    gc.add(argb);
+                } else {
+                    raster.quad(xyz, argb, false);
+                }
+            });
+        }
+        for (int i = 0; i < gv.size(); i++) {
+            raster.glowQuad(gv.get(i), gc.get(i));
+        }
+        glow.sortBackToFront();
+        for (int q = 0; q < glow.n; q++) {
+            raster.quadNoCull(java.util.Arrays.copyOfRange(glow.v, q * 12, q * 12 + 12), java.util.Arrays.copyOfRange(glow.c, q * 4, q * 4 + 4));
+        }
     }
 
     /** One bolt coming down to strike the ground in front of the camera (two pieces, the original's three strokes each). */

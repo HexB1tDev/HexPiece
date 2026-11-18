@@ -175,6 +175,13 @@ shoots projectiles)")
   RenderSystem.blendFuncSeparate, Camera look/up/left, ComputeFov.
 
 ## Tools
+- GIFs for the owner (after 2.4.3, no version): `tools/style_gif.py` ends each style on its clash recoil; `BoltPreview clash DIR frames`
+  (the Ryou burst every quarter tick, 480 x 360) and `BoltPreview slashclash DIR` (2.4.2: two slashes meeting, the burst and the
+  impact frame over the view, `ticks.txt`); `SlashShowcase` now cuts the 2.3.3 trench (`SwordRules.trenchAt`, at most 2 blocks: it
+  still used the old width). Water/air frames: WaterPreview SCENE [time] per frame over a frame of slash-finisher-showcase.mp4.
+  Found while making them: the first-person sword swing (`sword_gif.py --views fp`) shows the blade off screen for most of a cut
+  (the arm a block at the bottom): if the owner still finds first person lackluster, the fix is the first-person-only swing on the
+  vanilla hand noted in next-ai-2.3.2.md.
 - `tools/gesture_preview.py DUMP OUT [--keys] [--only NAME,NAME] [--lint]` (DUMP from tools/preview/GestureDump.java, `java -cp
   build/preview:build/classes GestureDump 1`): the NPC gestures, and the arm-through-head/chest lint.
 - `tools/preview/ImpactPreview.java` (javac -cp build/classes -d build/preview tools/preview/ImpactPreview.java; java -cp

@@ -26,7 +26,7 @@ import javax.imageio.ImageIO;
  *   <li>the wave and its crackle exactly as {@code client/sword/SlashRenderer} lays them ({@link SlashMesh#wave}, {@link DrawCrackle} along
  *       {@link SlashMesh#edge}, {@link BoltMesh}), its motes as {@code SlashRenderer.tick} sheds them;</li>
  *   <li>the trench: the cells {@code server/HakiSlashes.queueCells} picks (rows {@code ceil(height)} tall from {@link SwordRules#slashCentre}
- *       down, each {@link SwordRules#slashThicknessAt} wide, sampled every half block), cut the tick the plane reaches them, with break
+ *       down, each {@link SwordRules#trenchAt} wide (2.3.3: never over 2 blocks), sampled every half block), cut the tick the plane reaches them, with break
  *       debris;</li>
  *   <li>the victim (the owner's skin, art/user_skin.png): hit when the plane reaches its box ({@code HakiSlashes.hitBodies}), held by the
  *       finisher ({@code server/Finishers}: its motion stopped, gravity still acting unless {@code hover}), the line drawing round it for
@@ -118,7 +118,7 @@ public final class SlashShowcase {
         double[] widths = new double[rows];
         int[] acrosses = new int[rows];
         for (int row = 0; row < rows; row++) {
-            widths[row] = SwordRules.slashThicknessAt(HEIGHT, (row + 0.5) / rows);
+            widths[row] = SwordRules.trenchAt(HEIGHT, (row + 0.5) / rows);
             acrosses[row] = Math.max(1, (int) Math.ceil(widths[row] / 0.5));
         }
         Set<Long> seen = new HashSet<>();
