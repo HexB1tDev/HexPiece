@@ -1,15 +1,14 @@
-Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.4.6.md (the
-newest: good and evil, the alignment bar, the evil Conqueror's sounds from the owner's clip), then next-ai-2.4.5.md (the owner's 2.4.4
-report fixed: the first-person blade, the M1 lunge, range by sword, the release's lag and lightning landings), next-ai-2.4.4.md (that
-report and the reference pose), next-ai-2.3.6.md and next-ai-2.3.2.md (the sword solver and the owner's rule: one animation set for every
-blade). 2.4.6 is released (v2.4.6); the next version is 2.4.7 (`python3 tools/next_version.py --write`). Check the branch's last "Build
-HexPiece" run is green first.
+Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.4.7.md (the
+newest: 2.4.7 IN PROGRESS, stopped mid-session: the HUD fix and the Ryou skin/glow are done and pushed but unreleased; the Conqueror
+charge/release animations are not done), then next-ai-2.4.6.md and next-ai-2.4.5.md. build.py VERSION is already 2.4.7 (unreleased):
+do not bump it again until 2.4.7 is released. The last push was made without a CI check (the stop rule): check the branch's last
+"Build HexPiece" run first and fix it if red.
 
-Ask the owner first how 2.4.5 and 2.4.6 went in game (they test at their office): the M1 lunge, the blade with no sheath in first person,
-each sword's range, the full release's lag (if it still lags: FPS or the server freezing?) and where its lightning strikes; the alignment
-bar, `/hexpiece alignment`, the evil voice line and roar (loud enough, the female version), where evil and good should begin (now -25 and
-+25). Good's release sound comes when they send it; killing humans makes a player evil once humans exist. Fix what they report, in their
-order.
+Then finish the owner's item 3: "I want a badass animation for the Conqueror Haki charge / release. the current one is dog shit."
+(conqueror_gear5_charge while holding G, supreme_conqueror_release for a full charge, conqueror_gear5_release for a partial one: plan in
+the handoff). Author them in a generator, judge them yourself with tools/anim_preview.py and anim.lint, then release 2.4.7 with plain
+release notes (the old HUD gone, Ryou's hands black in the skin spreading pixel by pixel with the game's own glow round the fists, the
+new Conqueror animations) and ask the owner to test.
 
 Run on the "HexPiece" cloud environment. House rules (CLAUDE.md): versions roll over at 9, keep only 5 releases, a push is done only
 when GitHub's runs are green, never claim in-game testing, every sound from the web and free to use (or the owner's own). The owner's
