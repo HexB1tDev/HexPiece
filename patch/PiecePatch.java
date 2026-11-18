@@ -161,7 +161,12 @@ public final class PiecePatch implements Opcodes {
         // every Ryou activation, idle and movement effect"): the coating stays plain black, the arm aura is left off while Ryou is up,
         // the ambient effects of a Ryou player are RyouFx's (no embers, the player's own colour).
         {HAND, "render", "com/hexhaki/client/devilfruit/render/GearJacketHaki", "renderCoating", COATING, RYOU_HANDS, "coating", 2},
-        {HAND, "renderFirstPerson", "com/hexhaki/client/devilfruit/render/GearJacketHaki", "renderCoating", COATING, RYOU_HANDS, "coating", 1},
+        // 2.5.4: the first-person hand is drawn straight (playerAnimator leaves it alone): its coat and aura are not bent with the elbow
+        {HAND, "renderFirstPerson", "com/hexhaki/client/devilfruit/render/GearJacketHaki", "renderCoating", COATING, RYOU_HANDS,
+            "coatingFirstPerson", 1},
+        {HAND, "renderFirstPerson", HAND, "renderAdvancedFistGlow",
+            "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZZ)V",
+            RYOU_HANDS, "glowFirstPerson", 1},
         {HAND, "render", HAND, "renderArmAura", AURA, RYOU_HANDS, "armAura", 2},
         {HAND, "renderFirstPerson", HAND, "renderArmAura", AURA, RYOU_HANDS, "armAura", 1},
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentAmbient", AMBIENT, RYOU_FX, "ambient", 1},

@@ -21,8 +21,9 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
  * do) and in an item frame. In the inventory its icon is drawn instead (its model's GUI view is the icon, Forge's separate_transforms;
  * build.py writes the models). In a hand it draws nothing at all: the player's sword layer ({@link SwordLayer}) shows the active katana,
  * sheathed at the hip or drawn in the hand, so a katana is never seen twice. The one exception is the game's own first-person view of a
- * katana held without a sword move playing: there the hand holds it sheathed, as one carries a sword, or (2.4.5) the bare blade while
- * the sword is drawn. Armament Haki blackens the sword there, never its saya (2.2.6).
+ * katana held without a sword move playing: there the hand holds the bare blade while the sword is drawn (2.4.5). 2.5.4: while it is
+ * sheathed, {@link HolsterHand} shows it at the hip with the left hand resting on it instead; the sheathed sword carried in the hand
+ * is left only for a katana that is not the player's active sword. Armament Haki blackens the sword there, never its saya (2.2.6).
  */
 public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
     private static KatanaItemRenderer instance;

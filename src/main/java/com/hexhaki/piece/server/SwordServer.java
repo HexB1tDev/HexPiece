@@ -423,11 +423,17 @@ public final class SwordServer {
             return;
         }
         boolean haki = HakiData.flag(player, "armamentOn");
-        long ready = haki ? state.slashReady : state.cutReady;
+        // 2.5.4: the Haki slash cools for 30 seconds; meanwhile the charge is a steel cut (on its own cooldown), the slash's wait shown
+        boolean cooling = haki && now < state.slashReady;
+        long ready = haki && !cooling ? state.slashReady : state.cutReady;
         if (now < ready) {
-            player.m_5661_(Component.m_237113_((haki ? "Haki slash" : "Charged cut") + ": " + String.format(java.util.Locale.ROOT, "%.1f",
-                (ready - now) / 20.0) + "s"), true);
+            player.m_5661_(Component.m_237113_((haki && !cooling ? "Haki slash" : "Charged cut") + ": "
+                + String.format(java.util.Locale.ROOT, "%.1f", (ready - now) / 20.0) + "s"), true);
             return;
+        }
+        if (cooling) {
+            player.m_5661_(Component.m_237113_("Haki slash: " + String.format(java.util.Locale.ROOT, "%.1f", (state.slashReady - now) / 20.0)
+                + "s, the cut is steel alone"), true);
         }
         state.chargeDrew = sheathed(state, now);
         state.chargeStart = now;
@@ -447,7 +453,9 @@ public final class SwordServer {
         if (haki) {
             double cost = SwordRules.lerp(PieceConfig.get(PieceConfig.SLASH_COST_MIN, SwordRules.SLASH_COST_MIN),
                 PieceConfig.get(PieceConfig.SLASH_COST_MAX, SwordRules.SLASH_COST_MAX), charge);
-            if (now < state.slashReady || !HakiData.consume(player, (float) cost)) {
+            if (now < state.slashReady) {
+                haki = false; // 2.5.4: still cooling (told as the charge began): a steel cut
+            } else if (!HakiData.consume(player, (float) cost)) {
                 haki = false;
                 player.m_5661_(Component.m_237113_("Not enough Haki: the cut is steel alone"), true);
             } else {

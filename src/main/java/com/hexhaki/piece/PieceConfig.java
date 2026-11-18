@@ -57,7 +57,9 @@ public final class PieceConfig {
         SLASH_COST_MIN = b.comment("The Haki energy it costs, least charge.").defineInRange("slashCostMin", SwordRules.SLASH_COST_MIN, 0,
             1000);
         SLASH_COST_MAX = b.comment("... full charge.").defineInRange("slashCostMax", SwordRules.SLASH_COST_MAX, 0, 1000);
-        SLASH_COOLDOWN = b.comment("Ticks before the next Haki slash.").defineInRange("slashCooldown", SwordRules.SLASH_COOLDOWN, 0, 2400);
+        // 2.5.4: under a new key, so a world's saved 3 seconds gives way to the new 30 (the owner: "vastly increase the cooldown")
+        SLASH_COOLDOWN = b.comment("Ticks before the next Haki slash (20 a second).").defineInRange("slashCooldownTicks",
+            SwordRules.SLASH_COOLDOWN, 0, 12000);
         CUT_BREAKS = b.comment("Blocks one slash may cut a tick (each looks at ten times as many).").defineInRange("cutBlocksATick",
             SwordRules.CUT_BREAKS_PER_TICK, 0, 4096);
         SHEATHE_DELAY = b.comment("Ticks without a cut before the sword is sheathed.").defineInRange("sheatheDelay",

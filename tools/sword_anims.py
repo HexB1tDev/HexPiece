@@ -756,7 +756,11 @@ def solve_and_write(move):
                 lift_clear(beat, move.profile)
         solve(move.beats, move.ground, lambda t: move.drawn_at(t) and not sliding(move, t))
         report(move.name, move.beats)
-    parts = move.parts or {k: v for k, v in WRITE_PARTS.items() if not (move.free_legs and k in ("rightLeg", "leftLeg"))}
+    # 2.5.4 (the owner: "Fix the head on sword animations, it should not be animated and should be free"): no sword animation keys the
+    # head; it looks where the player looks (the solver still poses it to keep the blade clear of it)
+    parts = move.parts or {k: v for k, v in WRITE_PARTS.items()
+                           if k != "head" and not (move.free_legs and k in ("rightLeg", "leftLeg"))}
+    parts = {k: v for k, v in parts.items() if k != "head"}
     if move.loop is not None:
         # a loop ends where it returns to: the same pose, solved once (two solves of one target can differ)
         ret = [beat for beat in move.beats if beat.tick == move.loop]

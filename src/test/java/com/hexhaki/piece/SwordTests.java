@@ -34,6 +34,7 @@ public final class SwordTests {
         bigSlash();
         wave();
         sounds();
+        holster();
         Check.done("SwordTests");
     }
 
@@ -378,6 +379,9 @@ public final class SwordTests {
             }
         }
         Check.that(SwordRules.NPC_SLASH_HEIGHT_MAX <= 8 && SwordRules.NPC_SLASH_RANGE_MAX <= 40, "a pirate captain's slash stays small");
+        // 2.5.4 (the owner: "vastly increase the cooldown of the sword slash projection move"): 30 seconds between Haki slashes, ten
+        // times the 2.1.4 three, and far longer than the steel cut's
+        Check.that(SwordRules.SLASH_COOLDOWN == 600 && SwordRules.SLASH_COOLDOWN >= 10 * SwordRules.CUT_COOLDOWN, "the Haki slash cools for 30 s");
     }
 
     /**
@@ -627,5 +631,76 @@ public final class SwordTests {
             return i;
         }
         return -1;
+    }
+    /**
+     * 2.5.4 (the owner: "if the sword is holstered the hand should be resting on the holster too ... the first persons are meant to
+     * reflect exactly what the player is doing"): the first-person sheathed katana and the left hand on it (sword/HolsterView), seen by
+     * the game's first-person hand camera (70 degrees top to bottom), on a 16:9 screen and a phone's 20:9: the guard and the pommel on
+     * the screen, the handle rising up and right from the guard, the edge up, the fist resting on the handle (its centre a little over
+     * the handle's axis, near its end), the arm coming up from below the screen, everything sinking as the sword is taken up.
+     */
+    static void holster() {
+        double[][] k = com.hexhaki.piece.sword.HolsterView.matrix(com.hexhaki.piece.sword.HolsterView.katana(0.0F, 0.0F));
+        double[] guard = apply(k, 0, 0, 0);
+        double[] pommel = apply(k, 0, -6.5 / 16.0, 0);
+        double[] edge = sub3(apply(k, -1.0 / 16.0, 0, 0), guard);
+        for (double aspect : new double[] {16.0 / 9.0, 20.0 / 9.0}) {
+            Check.that(onScreen(guard, aspect, 0.98) && onScreen(pommel, aspect, 0.9), "the guard and the pommel in view (" + aspect + ")");
+        }
+        double[] g = screen(guard);
+        double[] p = screen(pommel);
+        Check.that(p[0] > g[0] + 0.05 && p[1] > g[1] + 0.05, "the handle rises up and right from the guard");
+        Check.that(g[0] < -0.2 && g[1] < -0.6, "the hilt at the bottom left");
+        Check.that(edge[1] > 0.5 / 16.0, "the edge up, as a katana is worn");
+        for (boolean slim : new boolean[] {false, true}) {
+            double[][] a = com.hexhaki.piece.sword.HolsterView.matrix(com.hexhaki.piece.sword.HolsterView.arm(slim, 0.0F, 0.0F));
+            // the game's renderLeftHand: the part moves to its pivot and sways -0.1 about z; the fist's centre and the shoulder in it
+            double[][] part = com.hexhaki.piece.sword.HolsterView.mul(a, com.hexhaki.piece.sword.HolsterView.step(new float[] {0, 5.0F / 16,
+                (slim ? 2.5F : 2.0F) / 16, 0}));
+            part = com.hexhaki.piece.sword.HolsterView.mul(part, com.hexhaki.piece.sword.HolsterView.step(new float[] {3,
+                (float) Math.toDegrees(-0.1)}));
+            double[] fist = apply(part, (slim ? 0.5 : 1.0) / 16.0, 8.5 / 16.0, 0);
+            double[] shoulder = apply(part, (slim ? 0.5 : 1.0) / 16.0, -2.0 / 16.0, 0);
+            double off = distanceToSegment(fist, guard, pommel) * 16.0;
+            Check.that(off > 0.8 && off < 2.4, "the fist rests on the handle (" + off + " px over it)");
+            double along = dot3(sub3(fist, guard), sub3(pommel, guard)) / dot3(sub3(pommel, guard), sub3(pommel, guard));
+            Check.that(along > 0.55 && along < 1.0, "on its end, the guard and the saya's mouth left in sight");
+            Check.that(onScreen(fist, 16.0 / 9.0, 0.95), "the fist in view");
+            Check.that(screen(shoulder)[1] < -1.0, "the arm comes up from below the screen");
+            double[] lowered = apply(com.hexhaki.piece.sword.HolsterView.matrix(com.hexhaki.piece.sword.HolsterView.katana(1.0F, 0.0F)), 0, 0, 0);
+            Check.near(lowered[1], guard[1] - 0.6, 1e-6, "taken up, it rises from 0.6 below, as the game's hands");
+        }
+    }
+
+    static double[] apply(double[][] m, double x, double y, double z) {
+        return new double[] {m[0][0] * x + m[0][1] * y + m[0][2] * z + m[0][3], m[1][0] * x + m[1][1] * y + m[1][2] * z + m[1][3],
+            m[2][0] * x + m[2][1] * y + m[2][2] * z + m[2][3]};
+    }
+
+    /** Where a view point lands, the screen's half height 1 (the first-person hand's 70 degrees), x the same scale. */
+    static double[] screen(double[] v) {
+        double f = 1.0 / Math.tan(Math.toRadians(35.0));
+        return new double[] {f * v[0] / -v[2], f * v[1] / -v[2]};
+    }
+
+    static boolean onScreen(double[] v, double aspect, double margin) {
+        double[] s = screen(v);
+        return v[2] < 0 && Math.abs(s[0]) < aspect * margin && Math.abs(s[1]) < margin;
+    }
+
+    static double[] sub3(double[] a, double[] b) {
+        return new double[] {a[0] - b[0], a[1] - b[1], a[2] - b[2]};
+    }
+
+    static double dot3(double[] a, double[] b) {
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    }
+
+    static double distanceToSegment(double[] p, double[] a, double[] b) {
+        double[] ab = sub3(b, a);
+        double t = Math.max(0, Math.min(1, dot3(sub3(p, a), ab) / dot3(ab, ab)));
+        double[] c = {a[0] + ab[0] * t, a[1] + ab[1] * t, a[2] + ab[2] * t};
+        double[] d = sub3(p, c);
+        return Math.sqrt(dot3(d, d));
     }
 }

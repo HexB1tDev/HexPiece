@@ -56,13 +56,23 @@ public final class RyouHands {
      */
     public static void coating(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
                                AbstractClientPlayer player, boolean right) {
+        coating(pose, buffers, light, arm, player, right, bend(player, right));
+    }
+
+    /** 2.5.4: the coat on the game's own first-person hand: straight, as that arm is drawn ({@link #glowFirstPerson}). */
+    public static void coatingFirstPerson(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
+                                          AbstractClientPlayer player, boolean right) {
+        coating(pose, buffers, light, arm, player, right, new float[] {0.0F, 0.0F});
+    }
+
+    static void coating(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, AbstractClientPlayer player, boolean right,
+                        float[] bend) {
         // 2.3.4 (the owner: "it's not the actual skin blackening"): the hands are blackened in the skin itself (HakiSkin); this coat
         // is only drawn where that copy could not be made
         if (!arm.f_104207_ || HakiSkin.blackened(player)) {
             return;
         }
         boolean slim = "slim".equals(player.m_108564_());
-        float[] bend = bend(player, right);
         pose.m_85836_();
         arm.m_104299_(pose);
         PoseStack.Pose last = pose.m_85850_();
@@ -134,13 +144,28 @@ public final class RyouHands {
      */
     public static void glow(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, ModelPart arm, float age, boolean slim,
                             boolean right) {
+        glow(pose, buffers, player, arm, age, slim, right, bend(player, right));
+    }
+
+    /**
+     * 2.5.4: the aura on the game's own first-person hand (the original's {@code HakiHandLayer.renderFirstPerson}, PiecePatch
+     * CALL_REDIRECTS): that arm is drawn straight, whatever animation plays (playerAnimator leaves the first-person hand alone), so its
+     * aura is not bent with the animation's elbow (the swordsman's stance bends the left one about 50 degrees, and the hand resting on
+     * the holstered sword, client/sword/HolsterHand, is that arm).
+     */
+    public static void glowFirstPerson(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, ModelPart arm, float age,
+                                       boolean slim, boolean right) {
+        glow(pose, buffers, player, arm, age, slim, right, new float[] {0.0F, 0.0F});
+    }
+
+    static void glow(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, ModelPart arm, float age, boolean slim,
+                     boolean right, float[] bend) {
         if (!arm.f_104207_) {
             return;
         }
         int id = player.m_19879_();
         int color = RyouColors.orNeutral(id);
         float strength = Math.min(1.0F, pulse(age, id) + RyouFx.flare(id));
-        float[] bend = bend(player, right);
         float punch = player.m_21324_(net.minecraft.client.Minecraft.m_91087_().m_91296_());
         pose.m_85836_();
         arm.m_104299_(pose);

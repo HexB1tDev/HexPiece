@@ -45,7 +45,11 @@ public final class SwordRules {
     /** The wave's shape, in its height: how far its leading edge stands ahead of the cutting line and its back slope runs behind it. */
     public static final double SLASH_FRONT = 0.18;
     public static final double SLASH_BACK = 0.48;
-    public static final int SLASH_COOLDOWN = 60;
+    /**
+     * Ticks before the next Haki slash. 2.5.4 (the owner: "vastly increase the cooldown of the sword slash projection move"): 30 seconds
+     * (it was 3); while it cools, the charged cut is steel alone (its own cooldown).
+     */
+    public static final int SLASH_COOLDOWN = 600;
     /** A captain's slash stays the size it was (a pirate captain is not to carve the world). */
     public static final double NPC_SLASH_HEIGHT_MAX = 6.0;
     public static final double NPC_SLASH_RANGE_MAX = 36.0;
