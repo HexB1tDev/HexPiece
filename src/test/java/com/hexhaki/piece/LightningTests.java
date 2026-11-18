@@ -561,11 +561,20 @@ public final class LightningTests {
         Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(evil, false), "an evil partial one does not");
         Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(good, true) && !com.hexhaki.piece.haki.ConquerorStun.fellsAll(neutral, true),
             "good and neutral fell hostile mobs and players only");
-        Check.that(!com.hexhaki.piece.haki.ConquerorStun.hurts(good, true) && !com.hexhaki.piece.haki.ConquerorStun.hurts(good, false),
-            "a good release hurts no one");
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.hurts(evil, true) && !com.hexhaki.piece.haki.ConquerorStun.hurts(evil, false),
-            "an evil release hurts only what its lightning struck");
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.hurts(neutral, false), "a neutral release hurts as the original's");
+        Check.that(!com.hexhaki.piece.haki.ConquerorStun.hurts(good), "a good release hurts no one");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.hurts(evil) && com.hexhaki.piece.haki.ConquerorStun.hurts(neutral),
+            "evil and neutral releases hurt");
+        // the owner: "half the current HP of the mob or person hit. Always half, but even if the player or entity has half a heart, then
+        // it doesn't deal any damage. It's not meant to kill."
+        Check.near(com.hexhaki.piece.haki.ConquerorStun.evilDamage(20F), 10F, 1e-6, "half of a full player's health");
+        Check.near(com.hexhaki.piece.haki.ConquerorStun.evilDamage(7F), 3.5F, 1e-6, "half of what is left");
+        Check.near(com.hexhaki.piece.haki.ConquerorStun.evilDamage(1F), 0F, 1e-6, "nothing at half a heart");
+        Check.near(com.hexhaki.piece.haki.ConquerorStun.evilDamage(0.5F), 0F, 1e-6, "nothing under it");
+        float health = 20F;
+        for (int release = 0; release < 50; release++) {
+            health -= com.hexhaki.piece.haki.ConquerorStun.evilDamage(health);
+            Check.that(health > 0F, "it never kills (release " + release + ", " + health + " left)");
+        }
         // the storm's strikes: a strand along the ground strikes a body on it, not one beside it nor one under it in the air
         java.util.List<com.hexhaki.piece.haki.ConquerorStorm.Strand> line = java.util.List.of(new com.hexhaki.piece.haki.ConquerorStorm.Strand(
             new double[] {0, 0.2, 0, 40, 0.2, 0}, new float[] {0.6F, 0.6F}, new double[] {1, 1}, 0F, 20, 40.0, 1L));

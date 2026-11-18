@@ -74,9 +74,9 @@ public final class ConquerorRelease {
         final int alignment;
         final boolean full;
         final int stun;
-        /** The bodies its lightning strikes (found as the release's damage is dealt). */
+        /** The bodies its lightning strikes (found as the release's damage is dealt), and (2.4.9) the bodies it has hurt. */
         List<LivingEntity> struck = List.of();
-        final Set<Integer> struckIds = new HashSet<>();
+        final Set<Integer> hurt = new HashSet<>();
 
         Release(ServerPlayer player, long seed, float power) {
             this.player = player;
@@ -172,9 +172,6 @@ public final class ConquerorRelease {
         if (r != null) {
             try {
                 r.struck = struck(r, radius);
-                for (LivingEntity body : r.struck) {
-                    r.struckIds.add(body.m_19879_());
-                }
             } catch (RuntimeException failure) {
                 r.struck = List.of();
             }
@@ -183,23 +180,43 @@ public final class ConquerorRelease {
         if (r == null || !(player.m_9236_() instanceof ServerLevel level)) {
             return;
         }
-        if (!r.full) {
-            for (LivingEntity body : r.struck) {
-                fell(level, body, ConquerorStun.LIGHTNING);
+        boolean evil = com.hexhaki.piece.Alignment.evil(r.alignment);
+        Vec3 at = player.m_20182_();
+        for (LivingEntity body : r.struck) {
+            if (!body.m_6084_()) {
+                continue;
             }
-        } else if (ConquerorStun.fellsAll(r.alignment, true)) {
-            Vec3 at = player.m_20182_();
-            for (LivingEntity body : r.struck) {
-                if (body.m_20182_().m_82554_(at) > radius && body.m_6084_()) {
-                    body.m_6469_(player.m_269291_().m_269075_(player), FAR_DAMAGE);
-                    fell(level, body, r.stun);
-                }
+            // an evil release's lightning takes half of what each body it strikes has left (once: not again for one hurt in the radius)
+            if (evil && r.hurt.add(body.m_19879_())) {
+                halve(body, player.m_269291_().m_269075_(player));
+            }
+            if (!r.full) {
+                fell(level, body, ConquerorStun.LIGHTNING);
+            } else if (evil && body.m_20182_().m_82554_(at) > radius) {
+                fell(level, body, r.stun);
             }
         }
     }
 
-    /** What an evil full charge's lightning does to what it strikes beyond its radius (the original's least, its outer third's). */
-    static final float FAR_DAMAGE = 10.0F;
+    /**
+     * 2.4.9 (the owner: "half the current HP of the mob or person hit. Always half, but even if the player or entity has half a heart,
+     * then it doesn't deal any damage. It's not meant to kill."): {@code body} hurt by {@code source} for half its health left, and
+     * brought to exactly that half if its armour took some of the blow; nothing at half a heart or under; never killed. A body the game
+     * keeps from harm (a creative player, one just hurt) is not hurt.
+     */
+    static boolean halve(LivingEntity body, DamageSource source) {
+        float health = body.m_21223_();
+        float amount = ConquerorStun.evilDamage(health);
+        if (amount <= 0.0F) {
+            return false;
+        }
+        float left = health - amount;
+        boolean hit = body.m_6469_(source, amount);
+        if (hit && body.m_6084_() && body.m_21223_() > left) {
+            body.m_21153_(left);
+        }
+        return hit;
+    }
 
     /**
      * 2.4.9: the original's {@code forceMaxConquerorStun} (a full charge's stun on what is in its radius) for the releaser's stun
@@ -252,12 +269,17 @@ public final class ConquerorRelease {
 
     /**
      * 2.4.9: the release's damage ({@code LivingEntity.hurt} in the original's {@code applyConqueror}): a good player's hurts no one,
-     * an evil player's only what its lightning struck, a neutral one's as the original's.
+     * an evil player's takes half of what is left ({@link #halve}), a neutral one's as the original's.
      */
     public static boolean hurt(LivingEntity body, DamageSource source, float amount) {
         Release r = current;
-        if (r != null && r.tick == body.m_9236_().m_46467_() && !ConquerorStun.hurts(r.alignment, r.struckIds.contains(body.m_19879_()))) {
-            return false;
+        if (r != null && r.tick == body.m_9236_().m_46467_()) {
+            if (!ConquerorStun.hurts(r.alignment)) {
+                return false;
+            }
+            if (com.hexhaki.piece.Alignment.evil(r.alignment)) {
+                return r.hurt.add(body.m_19879_()) && halve(body, source);
+            }
         }
         return body.m_6469_(source, amount);
     }

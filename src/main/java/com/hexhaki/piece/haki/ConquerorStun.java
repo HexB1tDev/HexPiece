@@ -11,11 +11,15 @@ import com.hexhaki.piece.Alignment;
  *       player's release hurts no one; its full charge fells hostile mobs and players in its radius, for up to {@link #GOOD_MAX}.</li>
  *   <li>"Evil alignment = Stuns everything hit in the radius of the release, entities/players hit by the lightning take the damage
  *       (max stun 9 seconds)": an evil player's full charge fells every mob and player in its radius (and whatever its lightning strikes
- *       beyond it), for up to {@link #EVIL_MAX}; only what its lightning strikes is hurt.</li>
+ *       beyond it), for up to {@link #EVIL_MAX}.</li>
  *   <li>Neutral (not asked): the original's release (it fells and hurts hostile mobs and players in its radius), for up to
  *       {@link #NEUTRAL_MAX} (the owner's first "up to 10 seconds").</li>
  *   <li>A partial charge: "entities hit by the lightnings ALL both evil/good stun all entities caught. 2 seconds": whatever its
  *       lightning strikes, mob or player, is felled for {@link #LIGHTNING} ticks, whatever the alignment.</li>
+ *   <li>Then: "I do think that the evil one should actually deal damage, but never kill. It should always, deal, make it deal, half the
+ *       current HP of the mob or person hit. Always half, but even if the player or entity has half a heart, then it doesn't deal any
+ *       damage. It's not meant to kill.": an evil release takes half the health left of every body it hits (all it fells in its
+ *       radius and all its lightning strikes), never killing ({@link #evilDamage}).</li>
  * </ul>
  * A full charge's stun grows with how long G was held after the charge filled: {@link #FIRST} of the most at once, the most after
  * {@link #RAMP} ticks more.
@@ -52,11 +56,16 @@ public final class ConquerorStun {
         return full && Alignment.evil(alignment);
     }
 
-    /** True if this release may hurt a body ({@code struck}: its lightning struck it): never for good, only struck ones for evil. */
-    public static boolean hurts(int alignment, boolean struck) {
-        if (Alignment.good(alignment)) {
-            return false;
-        }
-        return !Alignment.evil(alignment) || struck;
+    /** True if this release may hurt what it hits: a good player's never (an evil one's by {@link #evilDamage}, a neutral one's as the original's). */
+    public static boolean hurts(int alignment) {
+        return !Alignment.good(alignment);
+    }
+
+    /** Half a heart (health points): a body this low is not hurt by an evil release. */
+    public static final float SPARED = 1.0F;
+
+    /** What an evil release takes from a body with {@code health} left: half of it, nothing at {@link #SPARED} or under. Never all. */
+    public static float evilDamage(float health) {
+        return health <= SPARED ? 0.0F : health / 2.0F;
     }
 }
