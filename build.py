@@ -50,6 +50,8 @@ KATANA_MODELS = "assets/hexhaki/models/item/katana_"
 # 2.2.6: the katanas' inventory icons, where the item atlas finds them (textures/item/...)
 KATANA_ICONS = "assets/hexhaki/textures/item/katana/"
 ICONS = "src/main/resources/" + KATANA_ICONS
+# 2.5.6: the blades' tempered atlases (tools/katana_temper.py; Yoru keeps its own)
+TEMPERED = ROOT / "textures" / "tempered"
 BUILD = Path(os.environ.get("HEXPIECE_BUILD_DIR", ROOT / "build"))
 OUTPUT = BUILD / f"hexpiece-{VERSION}.jar"
 BASE = BUILD / "base.jar"
@@ -180,7 +182,8 @@ def katana_keys():
 def katana_assets():
     """{jar entry: bytes} for the owner's katanas: every blade and saya mesh packed whole (tools/katana_mesh.py), the 25 atlases as
     they are, and one item model per katana (its 3D self everywhere but the inventory, where its icon is drawn: Forge's
-    separate_transforms loader, the base builtin/entity so client/sword/KatanaItemRenderer draws it). Packing takes a few seconds;
+    separate_transforms loader, the base builtin/entity so client/sword/KatanaItemRenderer draws it), each atlas with its temper
+    repainted (2.5.6, tempered()). Packing takes a few seconds;
     the result is cached under build/ by the zip's SHA-256."""
     actual = hashlib.sha256(KATANA_ZIP.read_bytes()).hexdigest()
     if actual != EXPECTED_KATANA_SHA256:
@@ -209,7 +212,7 @@ def katana_assets():
         texture = cache / "textures" / f"{key}.png"
         if not texture.exists():
             raise RuntimeError(f"The katana zip has no texture {key}.png")
-        entries[f"{KATANA_TEXTURES}{key}.png"] = texture.read_bytes()
+        entries[f"{KATANA_TEXTURES}{key}.png"] = tempered(key, texture.read_bytes())
         # 2.2.6 (the owner: "The current blades in game all show as missing texture icons"): since 1.19.3 only textures under
         # textures/item and textures/block (or ones an atlas file names) are stitched into the item atlas; the icons were under
         # textures/piece, so the inventory drew the missing texture. They live under textures/item now.
@@ -228,6 +231,23 @@ def katana_assets():
         entries[f"{KATANA_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
     entries.update(legend_assets())
     return entries
+
+
+def tempered(key, original):
+    """2.5.6 (the owner: "improve the temper on all swords but yoru, the blade is too bland not good looking at all, simply improve the
+    texture thats it, same for Gryphon"): the blade's atlas with its temper repainted (textures/tempered/, made from the owner's atlas
+    by tools/katana_temper.py; the owner's own atlas is never changed). The manifest holds the SHA-256 of the atlas each was made from:
+    a changed atlas fails the build until the script is run again, so a stale temper never ships."""
+    manifest = json.loads((TEMPERED / "manifest.json").read_text(encoding="utf-8"))
+    path = TEMPERED / f"{key}.png"
+    if key not in manifest or not path.exists():
+        raise RuntimeError(f"No tempered atlas for {key}: run python3 tools/katana_temper.py")
+    if manifest[key] != hashlib.sha256(original).hexdigest():
+        raise RuntimeError(f"{key}'s atlas changed since its temper was made: run python3 tools/katana_temper.py")
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise RuntimeError(f"textures/tempered/{key}.png is not a PNG")
+    return data
 
 
 def legend_assets():
@@ -255,7 +275,8 @@ def legend_assets():
         for base in meshes[key]:
             for lod in ("", "_mid", "_far"):
                 entries[f"{KATANA_MESHES}{base}{lod}.hkm"] = (cache / f"{base}{lod}.hkm").read_bytes()
-        entries[f"{KATANA_TEXTURES}{key}.png"] = (cache / f"{key}.png").read_bytes()
+        atlas = (cache / f"{key}.png").read_bytes()
+        entries[f"{KATANA_TEXTURES}{key}.png"] = atlas if key == "yoru" else tempered(key, atlas)
         icon = f"hexhaki:item/katana/{key}_icon"
         if not (ROOT / ICONS / f"{key}_icon.png").exists():
             raise RuntimeError(f"No inventory icon for {key} (tools/katana_render.py legend-icons)")

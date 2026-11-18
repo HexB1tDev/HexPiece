@@ -7,14 +7,15 @@ fails the build until this is run again). Yoru is left as it is.
 
 How: each blade triangle of the owner's mesh is rasterised into its texture, so every blade texel knows where it lies on the blade:
 how far along (y, model px), how far across from the edge to the spine (0..1), and which face (the flat, the spine, the edge bevel).
-From the owner's own texture it reads, row by row along the blade, where its hardened edge ends (the hamon line: each blade keeps its
-own pattern, zigzag, waves or straight) and its colours (the body's tint, the edge's). Then it paints, per texel:
-  - the body (ji): the blade's own tint, polished (lighter toward the temper line, darker past the ridge), with a fine forging grain
-    (hada) running along the blade;
+From the owner's own texture it reads, row by row along the blade, where its hardened edge ends: the owner draws it as a thin bright
+outline, found as the first thin bright stroke from the edge (each blade keeps its own pattern: zigzag, waves, square teeth, straight).
+Gryphon has none painted: it gets irregular rounded waves (gunome). Then it paints, per texel:
+  - the body (ji): the owner's painting, polished lighter toward the temper line, with the folded steel's grain (hada) flowing
+    along the blade like wood grain;
   - the hardened edge (hasaki): frosted, misty white over the tint, cloud-like;
   - the temper line (nioiguchi): the owner's line, smoothed and drawn as a soft bright glow, with sparkling crystals (nie) along it
     and thin streaks (ashi) running from it toward the edge;
-  - the ridge (shinogi) a crisp highlight, the spine (mune) dark and polished, the edge bevel bright.
+  - the edge bevel brightened as a honed edge; the spine as the owner painted it.
 
 Usage: python3 tools/katana_temper.py [--preview OUT_DIR]      (numpy and PIL; run locally, the results are committed)
 """
@@ -120,6 +121,31 @@ def noise(shape, scale, seed, stretch=(1.0, 1.0)):
     return top + (bot - top) * fy[:, None]
 
 
+def hamon_line(lum, side, across, rows):
+    """Per texture row, how far across the face (0 the edge) the owner's hamon outline first crosses it (NaN where none is seen)."""
+    h, w = lum.shape
+    pad = np.pad(lum, 3, mode="constant", constant_values=np.nan)
+    ridge = np.full((h, w), -1.0)
+    for dy, dx in ((0, 1), (1, 0), (1, 1), (1, -1)):
+        for k in (2, 3):
+            a = pad[3 + dy * k:3 + dy * k + h, 3 + dx * k:3 + dx * k + w]
+            b = pad[3 - dy * k:3 - dy * k + h, 3 - dx * k:3 - dx * k + w]
+            r = lum - np.fmax(a, b)
+            ridge = np.fmax(ridge, np.nan_to_num(r, nan=-1.0))
+    ridge = np.where(side, ridge, -1.0)
+    contrast = np.percentile(ridge[side], 99.0)
+    line = np.full(h, np.nan)
+    for r in rows:
+        xs = np.flatnonzero(side[r])
+        order = xs[np.argsort(across[r, xs])]
+        a = across[r, order]
+        v = ridge[r, order]
+        hit = np.flatnonzero((a >= 0.035) & (a <= 0.66) & (v > 0.35 * contrast))
+        if len(hit):
+            line[r] = a[hit[0]]
+    return line
+
+
 def temper(key):
     """The tempered atlas for key (an RGBA uint8 array) and its source's SHA-256."""
     raw = source(key)
@@ -130,87 +156,98 @@ def temper(key):
     bins, edge, spine, ridge = cross_section(key)
     y = np.where(on, pos[..., 1], 0.0)
     bi = np.clip(np.round(y / 0.25).astype(int), 0, len(bins) - 1)
-    width = np.maximum(spine[bi] - edge[bi], 1e-3)
-    across = np.clip(np.where(on, (pos[..., 0] - edge[bi]) / width, 0.0), 0.0, 1.0)
-    ridge_a = np.clip((ridge[bi] - edge[bi]) / width, 0.3, 0.9)
+    geo = np.clip(np.where(on, (pos[..., 0] - edge[bi]) / np.maximum(spine[bi] - edge[bi], 1e-3), 0.0), 0.0, 1.0)
     side = on & (np.abs(np.nan_to_num(nrm[..., 2])) > 0.55)
     spine_face = on & ~side & (np.nan_to_num(nrm[..., 0]) > 0.3)
     bevel = on & ~side & ~spine_face
-
-    # the owner's hamon line, row by row along the blade: where the edge's colour gives way to the body's
     rgb = img[..., :3]
-    length = y[on].max()
-    ybins = np.arange(0.5, length + 0.01, 0.25)
-    abins = np.linspace(0, 1, 41)
-    edge_col = np.median(rgb[side & (across < 0.06)], axis=0)
-    body_col = np.median(rgb[side & (across > 0.45) & (across < 0.7)], axis=0)
-    line = np.full(len(ybins), np.nan)
-    diff = body_col - edge_col
-    span = float(diff @ diff) + 1e-6
-    for i, yb in enumerate(ybins):
-        row = side & (np.abs(y - yb) < 0.2)
-        if row.sum() < 8:
-            continue
-        prof = []
-        for j in range(len(abins) - 1):
-            cell = row & (across >= abins[j]) & (across < abins[j + 1])
-            prof.append(np.median(rgb[cell], axis=0) if cell.any() else None)
-        likeness = [None if c is None else float((c - edge_col) @ diff) / span for c in prof]
-        for j, l in enumerate(likeness):
-            if l is not None and l > 0.5:
-                line[i] = abins[j]
-                break
+
+    # across each flat face in the texture itself: per texture row, from the face's first texel to its last, turned so 0 is the edge
+    # side (the mesh says which way the edge lies); the owner's painting is laid out that way
+    across = np.zeros((h, w))
+    rows = np.flatnonzero(side.any(axis=1))
+    for r in rows:
+        xs = np.flatnonzero(side[r])
+        lo, hi = xs.min(), xs.max()
+        across[r, xs] = (xs - lo) / max(1, hi - lo)
+    if np.corrcoef(across[side], geo[side])[0, 1] < 0:
+        across = np.where(side, 1.0 - across, across)
+
+    # the owner's hamon line, row by row. The owner paints the hardened edge as a paler zone from the edge out to a thin bright outline
+    # (a zigzag, waves, square teeth, a straight line), the body past it: the line is the first thin bright stroke crossing the face
+    # from the edge. Thin in any direction (where the outline runs along a row, as at a tooth's side, it is thin down the column), so
+    # never the broad polished band; a pale stripe on the very edge is too near the edge to count, the body's dots lie past the line
+    lum = rgb @ np.array([0.299, 0.587, 0.114])
+    lum = np.where(side, lum, np.nan)
+    line = hamon_line(lum, side, across, rows)
+    edge_col = np.median(rgb[side & (across > 0.02) & (across < 0.08)], axis=0)
     good = ~np.isnan(line)
-    if good.sum() < 4:
-        line = np.full(len(ybins), 0.28)
+    steps = np.abs(np.diff(line[rows][good[rows]]))
+    painted = good[rows].mean() > 0.8 and len(steps) > 40 and np.percentile(steps, 90) < 0.06
+    if not painted:
+        # no hardened edge painted (Gryphon's plain steel): a temper of irregular rounded waves (gunome) a quarter of the way across,
+        # each wave its own height and width
+        seed = int(hashlib.sha256(key.encode()).hexdigest()[:8], 16)
+        rng = np.random.default_rng(seed + 7)
+        rr = np.arange(h, dtype=float)
+        line = np.full(h, 0.22)
+        at = 0.0
+        while at < h:
+            width = rng.uniform(0.04, 0.07) * len(rows)
+            height = rng.uniform(0.05, 0.10)
+            u = (rr - at) / width
+            hump = np.where((u >= 0) & (u <= 1), np.sin(np.pi * np.clip(u, 0, 1)) ** 0.7, 0.0)
+            line = np.maximum(line, 0.20 + height * hump)
+            at += width * rng.uniform(0.85, 1.0)
+        line = line + 0.015 * np.sin(rr / 37.0)
     else:
-        line = np.interp(np.arange(len(line)), np.flatnonzero(good), line[good])
-    line = np.clip(line, 0.08, 0.6)
-    # smoothed a little (the owner's pattern kept, its stair-steps gone)
-    k = np.array([1, 2, 3, 2, 1], float)
-    line = np.convolve(np.pad(line, 2, mode="edge"), k / k.sum(), mode="valid")
-    hamon = np.interp(y, ybins, line)
+        # a stray row (a dot, a mark touching the line) never makes a spike: each row against its neighbours'
+        idx = np.flatnonzero(good)
+        vals = line[good]
+        med = np.array([np.median(vals[max(0, i - 3):i + 4]) for i in range(len(vals))])
+        keep = np.abs(vals - med) < 0.06
+        line = np.interp(np.arange(h), idx[keep], vals[keep])
+    line = np.clip(line, 0.05, 0.66)
+    k = np.array([1, 2, 1], float)
+    line = np.convolve(np.pad(line, 1, mode="edge"), k / k.sum(), mode="valid")
+    d = across - line[:, None]                                     # < 0 in the hardened edge
 
     seed = int(hashlib.sha256(key.encode()).hexdigest()[:8], 16)
-    n_grain = noise((h, w), 3.0, seed, stretch=(4.0, 0.6))      # long grain along the blade (rows run along it in these atlases)
-    n_mist = noise((h, w), 10.0, seed + 1)
-    n_fine = noise((h, w), 1.2, seed + 2)
+    n_grain = noise((h, w), 2.5, seed, stretch=(5.0, 0.5))       # the forging grain, long along the blade (texture rows)
+    n_mist = noise((h, w), 9.0, seed + 1)
+    n_fine = noise((h, w), 1.0, seed + 2)
     rng = np.random.default_rng(seed + 3)
     speck = rng.random((h, w))
 
-    tint = body_col / max(1e-3, body_col.max())
-    lum = float(body_col @ np.array([0.3, 0.59, 0.11]))
-    base = np.clip(0.42 + 0.55 * lum, 0.45, 0.82)
-    steel = tint * base
-    hot = np.clip(edge_col * 0.35 + 0.72, 0, 1)                   # the hardened edge: frosted white over its own tint
-
-    d = across - hamon                                             # < 0 inside the hardened edge
-    out = rgb.copy()
-    # the body: polished, lighter toward the temper line, darker past the ridge, a fine grain along the blade
-    polish = 1.0 + 0.10 * np.exp(-np.maximum(d, 0) / 0.18) - 0.16 * np.clip((across - ridge_a) / 0.2, 0, 1)
-    grain = 0.94 + 0.12 * n_grain + 0.03 * (n_fine - 0.5)
-    body = steel[None, None, :] * (polish * grain)[..., None]
-    # the hardened edge: misty and frosted
-    mist = 0.88 + 0.16 * n_mist + 0.05 * (n_fine - 0.5)
-    edge_paint = hot[None, None, :] * mist[..., None]
-    # the line: a soft bright glow (nioi) over the boundary
-    t = 1.0 / (1.0 + np.exp(d / 0.012))                           # 1 in the edge, 0 in the body, a soft step
+    # the body: the owner's own painting kept, polished a touch (lighter toward the line), its grain brought out
+    polish = 1.0 + 0.08 * np.exp(-np.maximum(d, 0) / 0.15)
+    grain = 0.965 + 0.07 * n_grain + 0.02 * (n_fine - 0.5)
+    # the forging grain (hada): the folded steel's layers, flowing along the blade and wandering like wood grain
+    n_warp = noise((h, w), 6.0, seed + 4, stretch=(6.0, 0.6))
+    hada = np.sin(2 * np.pi * (across * 20.0 + 1.6 * n_warp))
+    grain = grain * (1.0 + 0.035 * hada)
+    body = rgb * (polish * grain)[..., None]
+    # the hardened edge: a pale, misty frost over the edge's own tint (never flat white), clouded
+    frost = edge_col + (np.array([0.93, 0.95, 0.98]) - edge_col) * 0.55
+    mist = 0.90 + 0.12 * n_mist + 0.04 * (n_fine - 0.5)
+    edge_paint = frost[None, None, :] * mist[..., None]
+    edge_paint = edge_paint * 0.85 + rgb * 0.15                   # a trace of the owner's painting under the frost
+    t = 1.0 / (1.0 + np.exp(d / 0.010))
     paint = body * (1 - t[..., None]) + edge_paint * t[..., None]
-    glow = np.exp(-(d / 0.022) ** 2)
-    paint = paint + (np.array([1.0, 1.0, 1.0]) - paint) * (0.55 * glow)[..., None]
-    # nie: bright crystals scattered along the line
-    nie = (np.abs(d) < 0.05) & (speck > 0.93 - 0.05 * n_mist)
-    paint[nie] = np.minimum(1.0, paint[nie] * 0.4 + 0.75)
-    # ashi: thin streaks from the line toward the edge, every so often along the blade
-    phase = (y * 1.7 + 3.0 * n_mist) % 4.0
-    ashi = (d < 0) & (d > -0.16) & (np.abs(phase - 2.0) < 0.18)
-    paint[ashi] = np.minimum(1.0, paint[ashi] * 0.75 + 0.3)
-    # the ridge: a crisp highlight; the spine dark and polished; the edge bevel bright
-    ridge_line = np.exp(-((across - ridge_a) / 0.018) ** 2)
-    paint = paint + (1.0 - paint) * (0.35 * ridge_line)[..., None]
+    # the temper line itself: a soft, bright, breathing glow (nioi)
+    glow = np.exp(-(d / 0.018) ** 2) * (0.75 + 0.25 * n_mist)
+    paint = paint + (np.array([1.0, 1.0, 1.0]) - paint) * (0.45 * glow)[..., None]
+    # nie: fine crystals along the line, sparse
+    nie = (np.abs(d) < 0.035) & (speck > 0.965 - 0.02 * n_mist)
+    paint[nie] = np.minimum(1.0, paint[nie] * 0.5 + 0.6)
+    # ashi: faint streaks from the line toward the edge, now and then
+    phase = (np.arange(h)[:, None] / 7.0 + 2.5 * n_mist) % 3.0
+    ashi = (d < -0.01) & (d > -0.12) & (np.abs(phase - 1.5) < 0.12)
+    paint[ashi] = np.minimum(1.0, paint[ashi] * 0.85 + 0.16)
+    out = rgb.copy()
     out[side] = paint[side]
-    out[spine_face] = (steel * 0.55)[None, :] * (0.9 + 0.2 * n_grain[spine_face])[:, None]
-    out[bevel] = np.clip(hot * 0.92 + 0.06 * (n_fine[bevel][:, None] - 0.5), 0, 1)
+    # the spine and the edge bevel: the owner's, the bevel brightened as a honed edge catches light
+    out[bevel] = np.minimum(1.0, rgb[bevel] * 1.1 + 0.06)
     result = img.copy()
     result[..., :3] = np.where(on[..., None], np.clip(out, 0, 1), img[..., :3])
     return (result * 255 + 0.5).astype(np.uint8), hashlib.sha256(raw).hexdigest()
