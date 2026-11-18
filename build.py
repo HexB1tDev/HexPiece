@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.5.6"
+VERSION = "2.5.7"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -527,8 +527,8 @@ def _clear(name):
     return name, sword_anims.clearance(sword_anims.MOVES[name])
 
 
-IMPACT_FIELDS = {"flash": "int", "flashStart": "long", "flashUntil": "long", "comboCount": "int", "comboAt": "long",
-                 "title": "java.lang.String", "titleAt": "long", "shakeUntil": "long", "shake": "float", "kick": "float", "kickBefore": "float",
+IMPACT_FIELDS = {"flash": "int", "flashStart": "long", "flashUntil": "long", "comboCount": "int", "comboMove": "java.lang.String",
+                 "comboAt": "long", "title": "java.lang.String", "titleAt": "long", "shakeUntil": "long", "shake": "float", "kick": "float", "kickBefore": "float",
                  "fovPunch": "float", "fovBefore": "float", "SHUDDER": "java.util.Map<java.lang.Integer, java.lang.Long>"}
 
 
@@ -543,7 +543,47 @@ def check_impact_fields():
             raise RuntimeError(f"ImpactClient.{name} ({kind}) is not where ImpactReset clears it")
     if "public static void drawFlash(" not in out or "ImpactReset.flash:" not in out:
         raise RuntimeError("ImpactClient's flash is not drawn through ImpactReset.flash")
-    print(f"Impact reset: {len(IMPACT_FIELDS)} fields of the original's ImpactClient, its flash guarded")
+    # 2.5.7 (the owner's crash, "the crash happens in new worlds too": 2.5.6 reset the title to null, and the original's drawTitle
+    # calls title.isEmpty() every frame): ImpactReset must put every field back to the original's own starting value, read from its
+    # static initializer (a field it never sets starts at 0, false or null; none may be reset to null)
+    start = {}
+    clinit = out[out.index("static {};"):]
+    pending = None
+    for line in clinit.splitlines():
+        m = re.search(r"//\s*(String|long|int|float)\s*(.*)$", line)
+        if m and ("ldc" in line or "const" in line):
+            pending = (m.group(1), m.group(2).strip())
+            continue
+        c = re.search(r"\b(iconst|lconst|fconst)_(\w+)", line)
+        if c:
+            pending = ("const", c.group(2))
+            continue
+        f = re.search(r"putstatic\s+#\d+\s+// Field (\w+):", line)
+        if f and pending:
+            start[f.group(1)] = pending
+            pending = None
+    java = (ROOT / "src/main/java/com/hexhaki/piece/client/fx/ImpactReset.java").read_text(encoding="utf-8")
+    sets = dict(re.findall(r'set\("(\w+)", ([^)]*)\);', java))
+    expected = {}
+    for name, kind in IMPACT_FIELDS.items():
+        if name == "SHUDDER":
+            continue
+        if name in start:
+            what, value = start[name]
+            if what == "String":
+                expected[name] = '"' + value + '"'
+            elif what == "long" and value.rstrip("l") == "-9223372036854775808":
+                expected[name] = "Long.MIN_VALUE"
+            else:
+                raise RuntimeError(f"ImpactClient.{name} starts as {what} {value}: teach check_impact_fields that value")
+        else:
+            expected[name] = {"int": "0", "long": "0L", "float": "0.0F"}.get(kind, "null")
+        if expected[name] == "null":
+            raise RuntimeError(f"ImpactClient.{name} starts null: ImpactReset cannot reset it safely")
+        if sets.get(name) != expected[name]:
+            raise RuntimeError(f"ImpactReset sets {name} to {sets.get(name)}, the original starts it as {expected[name]}")
+    print(f"Impact reset: {len(IMPACT_FIELDS)} fields of the original's ImpactClient, each reset to its own starting value, its flash "
+          f"guarded")
 
 
 def check_blade_tips():

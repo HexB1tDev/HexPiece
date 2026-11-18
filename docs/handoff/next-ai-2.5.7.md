@@ -1,10 +1,10 @@
-# HexPiece: handoff after 2.5.6 (2.5.6: the first-person draw and sheathing, the blades' temper; 2.5.5: the white screen fixed)
+# HexPiece: handoff after 2.5.7 (2.5.7: the crash on joining a world fixed; 2.5.6: the first-person draw and sheathing, the blades' temper)
 
 Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.5.5.md (the white screen, the free head, the holster view, the
 slash's cooldown), next-ai-2.5.3.md (Ryou's fist aura: the owner calls it "beautiful and perfect": keep it), next-ai-2.5.2.md,
 next-ai-2.5.1.md (**the owner's device**: Android, Amethyst, MobileGlues = OpenGL ES).
 
-Branch `claude/nice-bell-gam7qf`. **2.5.6 is released** (if the Release run is green: check). **The next version is 2.5.7**
+Branch `claude/nice-bell-gam7qf`. **2.5.7 is released** (if the Release run is green: check). **The next version is 2.5.8**
 (`python3 tools/next_version.py --write`). Nothing has ever been tested in game except by the owner.
 
 ## The owner (session 8, after 2.5.5, verbatim)
@@ -13,6 +13,17 @@ Branch `claude/nice-bell-gam7qf`. **2.5.6 is released** (if the Release run is g
 - "also improve the temper on all swords but yoru, the blade is too bland not good looking at all, simply improve the texture thats
   it, same for Gryphon"
 - (The chat was cleared by accident once; the work was on disk and a WIP commit was pushed.)
+
+## Done (2.5.7): the crash on joining any world (2.5.5 and 2.5.6 had it)
+- The owner sent a crash report (2.5.6, Windows, NVIDIA): `NullPointerException: Cannot invoke "String.isEmpty()" because
+  "com.hexhaki.fx.client.ImpactClient.title" is null` at `ImpactClient.drawTitle` from `hud`; then "the crash happens in new worlds
+  too". Cause: 2.5.5's `client/fx/ImpactReset.reset` (run whenever the client level changes: every world join) set `title` to null;
+  the original's static initializer starts it as "" and drawTitle calls `title.isEmpty()` every frame.
+- Fix: reset sets every field to the original's own starting value: `title` and `comboMove` "", `comboAt` and `titleAt`
+  Long.MIN_VALUE, the rest 0; `set` refuses null. build.py `check_impact_fields` now reads the original's `static {}` (javap) and fails
+  unless every `set("name", value)` in ImpactReset.java is that field's starting value (and none starts null); checked to catch the
+  old `set("title", null)`. `pushed` (a per-frame flag of shudderBegin/End) is deliberately not reset.
+- Lesson: when clearing another class's state by reflection, restore its initializer's values, never null/0 by assumption.
 
 ## Done (2.5.6): the first-person draw, held and sheathing
 - `sword/DrawView` (pure; `Pose(saya, blade, right, left, shine)` as step lists, `Frame(p, q)` = position + quaternion, keyed and eased;
@@ -52,7 +63,8 @@ Branch `claude/nice-bell-gam7qf`. **2.5.6 is released** (if the Release run is g
   them if the owner asks.
 
 ## Open
-1. The owner's report on 2.5.6: the first-person draw / held / sheathe (only judged in renders), the temper.
+1. The owner's report on 2.5.7 (no crash on joining a world) and 2.5.6: the first-person draw / held / sheathe (only judged in
+   renders), the temper.
 2. From 2.5.4 / 2.5.5: the free head, the holster view, the slash's 30 s cooldown, the white screen (confirm it is gone).
 3. Waiting on the owner from 2.4.7 - 2.5.2 (next-ai-2.5.2.md).
 

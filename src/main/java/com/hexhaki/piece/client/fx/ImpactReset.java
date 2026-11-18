@@ -74,7 +74,12 @@ public final class ImpactReset {
         lastTime = Long.MIN_VALUE;
     }
 
-    /** The original's impact state back to nothing: no flash, combo, title, shake, kick, FOV punch or shudder. */
+    /**
+     * The original's impact state back to exactly what it starts with (its static initializer; build.py check_impact_fields proves
+     * every value against it): no flash, combo, title, shake, kick, FOV punch or shudder. 2.5.7: the title and the combo's move are
+     * the empty text, never null (2.5.6's null crashed the game on joining any world: the original's drawTitle asks
+     * {@code title.isEmpty()} every frame), and the combo's and title's times the earliest there is, as the original sets them.
+     */
     static void reset() {
         if (broken) {
             return;
@@ -84,9 +89,10 @@ public final class ImpactReset {
             set("flashStart", 0L);
             set("flashUntil", 0L);
             set("comboCount", 0);
-            set("comboAt", 0L);
-            set("title", null);
-            set("titleAt", 0L);
+            set("comboMove", "");
+            set("comboAt", Long.MIN_VALUE);
+            set("title", "");
+            set("titleAt", Long.MIN_VALUE);
             set("shakeUntil", 0L);
             set("shake", 0.0F);
             set("kick", 0.0F);
@@ -104,6 +110,9 @@ public final class ImpactReset {
     }
 
     static void set(String name, Object value) throws ReflectiveOperationException {
+        if (value == null) {
+            throw new IllegalArgumentException(name); // the original reads its fields without a null check
+        }
         Field field = ImpactClient.class.getDeclaredField(name);
         field.setAccessible(true);
         field.set(null, value);
