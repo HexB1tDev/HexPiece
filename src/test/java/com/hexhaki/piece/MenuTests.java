@@ -10,6 +10,35 @@ import java.util.List;
  * scrolling, picking, binding and hit tests; the figures' outlines and the shape fill that draws them.
  */
 public final class MenuTests {
+    /**
+     * 2.4.6 (the owner: "100 is pure good, 0 is neutal, -100 pure evil"): the alignment's rules, the sounds evil plays by gender, and the
+     * log's bar (pure evil at its left end, neutral in the middle, pure good at its right end).
+     */
+    static void alignment() {
+        Check.that(com.hexhaki.piece.Alignment.clamp(-250) == -100 && com.hexhaki.piece.Alignment.clamp(250) == 100
+            && com.hexhaki.piece.Alignment.clamp(7) == 7, "alignment runs -100..100");
+        Check.that("Pure Evil".equals(com.hexhaki.piece.Alignment.label(-100)) && "Evil".equals(com.hexhaki.piece.Alignment.label(-60))
+            && "Neutral".equals(com.hexhaki.piece.Alignment.label(0)) && "Good".equals(com.hexhaki.piece.Alignment.label(40))
+            && "Pure Good".equals(com.hexhaki.piece.Alignment.label(100)), "its names along the bar");
+        Check.that(com.hexhaki.piece.Alignment.evil(-25) && !com.hexhaki.piece.Alignment.evil(-24) && com.hexhaki.piece.Alignment.good(25)
+            && !com.hexhaki.piece.Alignment.good(24) && !com.hexhaki.piece.Alignment.evil(0) && !com.hexhaki.piece.Alignment.good(0),
+            "evil from -25 down, good from 25 up, neutral between");
+        Check.near(com.hexhaki.piece.Alignment.along(-100), 0.0, 1e-9, "pure evil at the bar's left end");
+        Check.near(com.hexhaki.piece.Alignment.along(0), 0.5, 1e-9, "neutral in its middle");
+        Check.near(com.hexhaki.piece.Alignment.along(100), 1.0, 1e-9, "pure good at its right end");
+        Check.that(com.hexhaki.piece.Alignment.evilVoice(Gender.FEMALE).endsWith("_female")
+            && com.hexhaki.piece.Alignment.evilVoice(Gender.MALE).endsWith("_male")
+            && com.hexhaki.piece.Alignment.evilVoice(Gender.UNSET).endsWith("_male")
+            && com.hexhaki.piece.Alignment.evilRelease(Gender.FEMALE).endsWith("_female"), "a woman's voice for a woman, a man's otherwise");
+        for (String sound : com.hexhaki.piece.Alignment.SOUNDS) {
+            Check.that(java.util.Arrays.asList(com.hexhaki.piece.Alignment.SOUNDS).contains(com.hexhaki.piece.Alignment.evilVoice(Gender.FEMALE))
+                && sound.startsWith("piece.conqueror.evil_"), "every alignment sound is registered (" + sound + ")");
+        }
+        // the log draws it on the overview: the pointer where the value is, red filled towards evil, gold towards good
+        LogbookView.Data evil = LogbookView.sample(0, false);
+        Check.that(evil.profile().alignment() == -60, "the preview's pirate is evil");
+    }
+
     public static void main(String[] args) {
         rows();
         scrolling();
@@ -18,6 +47,7 @@ public final class MenuTests {
         nika();
         silhouettes();
         fill();
+        alignment();
         Check.done("MenuTests");
     }
 
@@ -126,7 +156,7 @@ public final class MenuTests {
             "another style's page is left as it is");
         int[] mastery = new int[com.hexhaki.piece.style.FightingStyle.values().length];
         com.hexhaki.piece.PieceProfile iron = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE,
-            com.hexhaki.piece.style.FightingStyle.BRAWLER, true, mastery, 0L);
+            com.hexhaki.piece.style.FightingStyle.BRAWLER, true, mastery, 0L, 0);
         LogbookView.Section ironPage = LogbookView.galaxy(LogbookView.style(iron), com.hexhaki.piece.style.FightingStyle.BRAWLER, true, "N", "", 103);
         LogbookView.Entry galaxy = ironPage.entries().get(ironPage.entries().size() - 1);
         Check.that(galaxy.ability() == 103 && galaxy.open() && LogbookView.GALAXY.equals(galaxy.name()), "Iron Fist's page offers the Galaxy Fist");

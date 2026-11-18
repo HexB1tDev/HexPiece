@@ -1,5 +1,6 @@
 package com.hexhaki.piece.ui;
 
+import com.hexhaki.piece.Alignment;
 import com.hexhaki.piece.Faction;
 import com.hexhaki.piece.Gender;
 import com.hexhaki.piece.PieceProfile;
@@ -20,7 +21,8 @@ import java.util.List;
  * menu, same category ... the only menu that is separate is the devil fruit powers"). The original's Ability Book, Haki Techniques and
  * Gear mastery screens are gone into it (the client opens this wherever they opened). Three pages:</p>
  * <ul>
- *   <li>Overview: the wanted poster (a marine's service record), the flag, title, style and every mastery at a glance.</li>
+ *   <li>Overview: the wanted poster (a marine's service record), the flag, title, style and every mastery at a glance; 2.4.6: the
+ *       alignment bar (good and evil).</li>
  *   <li>Style &amp; Haki: the fighting style's moves and mastery, then Armament, Observation and Conqueror's Haki, each with every
  *       technique, what it needs and its key; the Conqueror's quick powers are bound to a quick slot here.</li>
  *   <li>Devil Fruit: the fruit's moves, its mastery and its quick slots (a kit fruit), or the Nika fruit's techniques and the upgrades
@@ -457,6 +459,17 @@ public final class LogbookView {
             PirateUi.bar(c, left, y + 10, barRight, y + 14, data.haki()[i] / 1000F, i == 2 ? 0xFF8A2030 : 0xFF1D3F66, 0xFFD6E2F0);
             y += 18;
         }
+        // 2.4.6 (the owner: "create the bar of good/evil in the mastery menu"): -100 pure evil at the left, 0 neutral in the middle,
+        // 100 pure good at the right
+        if (y + 14 <= l.bottom()) {
+            int a = p.alignment();
+            label(c, "Alignment", left, y);
+            String said = Alignment.label(a) + " " + (a > 0 ? "+" + a : String.valueOf(a));
+            c.text(said, barRight - c.width(said), y, Alignment.evil(a) ? PirateUi.EVIL : Alignment.good(a) ? 0xFF8A6410 : PirateUi.BLUE_INK,
+                false);
+            PirateUi.alignment(c, left, y + 10, barRight, y + 14, a);
+            y += 18;
+        }
         long next = PieceRules.nextTitle(p.faction(), p.renown());
         if (p.faction().choice() && next > 0 && y + 10 <= l.bottom()) {
             String goal = p.faction() == Faction.PIRATE ? "Next title at " + PieceRules.berries(next) + " berries" : "Next rank at " + next + " merit";
@@ -711,7 +724,7 @@ public final class LogbookView {
         int[] mastery = new int[FightingStyle.values().length];
         mastery[FightingStyle.SIX_POWERS.ordinal()] = 240;
         PieceProfile profile = new PieceProfile(Gender.FEMALE, tab % 2 == 0 ? Faction.PIRATE : Faction.MARINE, FightingStyle.SIX_POWERS, true,
-            mastery, tab % 2 == 0 ? 152_000_000L : 260L);
+            mastery, tab % 2 == 0 ? 152_000_000L : 260L, tab % 2 == 0 ? -60 : 40);
         List<Section> styleHaki = new ArrayList<>();
         styleHaki.add(style(profile));
         styleHaki.add(new Section("Armament Haki", "Adept 640/1000", 0xFF1D3F66, 0.64F, List.of("Rank Adept. Next: Supreme Armament at 700.",

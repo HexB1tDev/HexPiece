@@ -1,0 +1,9 @@
+2.4.6: the evil Conqueror's sounds (sound events piece.conqueror.evil_voice_male/female, piece.conqueror.evil_release_male/female).
+Made from the owner's own clip, EvilConqueror.mp3 (sent by the owner in session 5, kept unchanged in input/EvilConqueror.mp3), by
+tools/evil_conqueror_sounds.py (ffmpeg: rubberband, bass, asubboost, acompressor, alimiter, libvorbis). The owner: "Evil gets the sound
+I sent, when it's full charge (holding G) the voice line plays " SAWAGASHII" and when released the other sound plays. Bass boost it and
+increase the volume, make it more female if the player is a woman, male is this but more bass boosted."
+evil_voice_male.ogg: the clip's first part (0 - 3.39 s, the voice line), heavy bass and sub boost, compressed, -12 LUFS, peaks -0.7 dB.
+evil_voice_female.ogg: the same part raised 7 semitones with its formants raised 17 %, a lighter bass boost, the same loudness.
+evil_release_male.ogg: the clip's second part (3.58 s - end, the release), heavy bass and sub boost, -12 LUFS.
+evil_release_female.ogg: the same part raised 2 semitones (formants kept), a lighter bass boost, -12 LUFS.

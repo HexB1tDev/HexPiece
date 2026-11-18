@@ -48,7 +48,8 @@ public final class ProfileServer {
             mastery[style.ordinal()] = PieceRules.clampMastery(root.m_128451_("Mastery_" + style.id()));
         }
         return new PieceProfile(Gender.byOrdinal(root.m_128451_("Gender")), Faction.byOrdinal(root.m_128451_("Faction")),
-            FightingStyle.byOrdinal(root.m_128451_("Style")), root.m_128471_("Chosen"), mastery, root.m_128454_("Renown"));
+            FightingStyle.byOrdinal(root.m_128451_("Style")), root.m_128471_("Chosen"), mastery, root.m_128454_("Renown"),
+            com.hexhaki.piece.Alignment.clamp(root.m_128451_("Alignment")));
     }
 
     /** The start menu's picks: kept, the player told, everyone who sees them told. Refused once set sail (an operator can reset). */
@@ -124,14 +125,22 @@ public final class ProfileServer {
         sync(player);
     }
 
+    /** 2.4.6: sets {@code player}'s alignment ({@link com.hexhaki.piece.Alignment}: -100 pure evil, 0 neutral, 100 pure good); returns it. */
+    public static int setAlignment(ServerPlayer player, int value) {
+        int alignment = com.hexhaki.piece.Alignment.clamp(value);
+        root(player).m_128405_("Alignment", alignment);
+        sync(player);
+        return alignment;
+    }
+
     static S2CProfile full(ServerPlayer player, PieceProfile profile) {
         return new S2CProfile(player.m_19879_(), profile.gender().ordinal(), profile.faction().ordinal(), profile.style().ordinal(), true,
-            profile.chosen(), profile.mastery().clone(), profile.renown());
+            profile.chosen(), profile.mastery().clone(), profile.renown(), profile.alignment());
     }
 
     static S2CProfile seen(ServerPlayer player, PieceProfile profile) {
         return new S2CProfile(player.m_19879_(), profile.gender().ordinal(), profile.faction().ordinal(), profile.style().ordinal(), false,
-            false, new int[0], 0L);
+            false, new int[0], 0L, 0);
     }
 
     /** The player told everything, everyone who sees them what shows. */

@@ -45,6 +45,7 @@ public final class ConquerorRelease {
         long seed = player.m_217043_().m_188505_();
         if (visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE) {
             SEEDS.put(player.m_19879_(), seed);
+            AlignmentSounds.released(player, power); // 2.4.6: an evil player's full release roars
         }
         HakiNetwork.tracking(player, new S2CHakiVisual(player.m_19879_(), visual, power, variant, seed));
     }

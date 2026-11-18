@@ -560,8 +560,8 @@ public final class SwordTests {
         }
         Matcher event = Pattern.compile("\"(piece\\.[a-z_.]+)\": \\{").matcher(json);
         while (event.find()) {
-            Check.that(all.contains(event.group(1)) || event.group(1).equals(com.hexhaki.piece.clash.ClashRules.SOUND),
-                event.group(1) + ": registered");
+            Check.that(all.contains(event.group(1)) || event.group(1).equals(com.hexhaki.piece.clash.ClashRules.SOUND)
+                || java.util.Arrays.asList(com.hexhaki.piece.Alignment.SOUNDS).contains(event.group(1)), event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
         Matcher clip = Pattern.compile("\"hexhaki:piece/sword/([a-z0-9_]+)\"").matcher(json);
@@ -592,6 +592,19 @@ public final class SwordTests {
             }
         }
         Check.that(files == used.size() && files >= 40, "every clip is played (" + files + " clips)");
+        // 2.4.6: the evil Conqueror's sounds (the owner's own clip): defined, subtitled, each a mono 44.1 kHz Ogg Vorbis file, credited
+        Path conqueror = Path.of("src/main/resources/assets/hexhaki/sounds/piece/conqueror");
+        String credits = Files.readString(conqueror.resolve("SOURCES.txt"));
+        for (String name : com.hexhaki.piece.Alignment.SOUNDS) {
+            String file = name.substring("piece.conqueror.".length());
+            Check.that(json.contains("\"" + name + "\": {") && json.contains("\"hexhaki:piece/conqueror/" + file + "\""), name + ": defined");
+            Check.that(lang.contains("\"subtitles.hexhaki.piece.conqueror." + file.replaceAll("_(male|female)$", "") + "\""), name + ": its subtitle");
+            byte[] data = Files.readAllBytes(conqueror.resolve(file + ".ogg"));
+            int at = indexOf(data, "\u0001vorbis".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+            Check.that(data[0] == 'O' && data[1] == 'g' && data[2] == 'g' && data[3] == 'S' && at >= 0 && data[at + 11] == 1,
+                file + ".ogg: mono Ogg Vorbis");
+            Check.that(credits.contains(file + ".ogg: "), file + ".ogg: credited in SOURCES.txt (the owner's own clip)");
+        }
     }
 
     static int indexOf(byte[] data, byte[] what) {

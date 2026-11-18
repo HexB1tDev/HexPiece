@@ -14,7 +14,8 @@ import net.minecraftforge.registries.RegistryObject;
 
 /**
  * 2.2.9: HexPiece's own sound events ({@code hexhaki:piece.*}, defined in the merged {@code sounds.json}): the Swordsman's, from the
- * web (CC0, OpenGameArt: {@link SwordSounds}). Played on the server for everyone near.
+ * web (CC0, OpenGameArt: {@link SwordSounds}); the clashes' and (2.4.6) the evil Conqueror's, the owner's own. Played on the server for
+ * everyone near.
  */
 public final class PieceSounds {
     private static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, HexPiece.MODID);
@@ -27,6 +28,10 @@ public final class PieceSounds {
         // 2.3.6: two blows meeting (the owner's own clash sounds, from HexGhoul)
         String clash = com.hexhaki.piece.clash.ClashRules.SOUND;
         BY_NAME.put(clash, SOUNDS.register(clash, () -> SoundEvent.m_262824_(HexHaki.id(clash))));
+        // 2.4.6: the evil Conqueror's voice line and roar (the owner's own clip, Alignment)
+        for (String name : Alignment.SOUNDS) {
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
     }
 
     private PieceSounds() {
@@ -49,6 +54,18 @@ public final class PieceSounds {
         }
         float vary = 0.95F + near.m_217043_().m_188501_() * 0.1F;
         near.m_9236_().m_6263_(null, x, y, z, sound.get(), SoundSource.PLAYERS, volume, pitch * vary);
+    }
+
+    /**
+     * 2.4.6: {@code name} heard where {@code user} is, by everyone near, at {@code volume} and its own pitch (a voice line is never
+     * varied: a varied pitch is another voice).
+     */
+    public static void voice(LivingEntity user, String name, float volume) {
+        RegistryObject<SoundEvent> sound = BY_NAME.get(name);
+        if (sound == null || user == null) {
+            return;
+        }
+        user.m_9236_().m_6263_(null, user.m_20185_(), user.m_20186_() + 1.4, user.m_20189_(), sound.get(), SoundSource.PLAYERS, volume, 1.0F);
     }
 
     /** {@code name} heard where {@code user} is, by everyone near, at {@code volume} and about {@code pitch} (a little varied). */

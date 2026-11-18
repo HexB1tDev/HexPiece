@@ -32,7 +32,7 @@ public final class PieceClient {
         Minecraft minecraft = Minecraft.m_91087_();
         if (message.full() && minecraft.f_91074_ != null && minecraft.f_91074_.m_19879_() == message.entity()) {
             self = new PieceProfile(Gender.byOrdinal(message.gender()), Faction.byOrdinal(message.faction()),
-                FightingStyle.byOrdinal(message.style()), message.chosen(), message.mastery(), message.renown());
+                FightingStyle.byOrdinal(message.style()), message.chosen(), message.mastery(), message.renown(), message.alignment());
         }
     }
 

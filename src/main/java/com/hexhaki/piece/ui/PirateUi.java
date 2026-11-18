@@ -255,6 +255,34 @@ public final class PirateUi {
     }
 
     /** A filled progress bar. */
+    /** 2.4.6: evil's red and good's gold on the alignment bar, and their pale tracks. */
+    public static final int EVIL = 0xFF7A1020;
+    public static final int EVIL_TRACK = 0xFFE8D2D2;
+    public static final int GOOD = 0xFFD9A21E;
+    public static final int GOOD_TRACK = 0xFFF0E7C6;
+
+    /**
+     * 2.4.6: the alignment bar ({@link com.hexhaki.piece.Alignment}): pure evil at the left end, neutral at the mark in the middle,
+     * pure good at the right end; filled from the middle out to the value (red towards evil, gold towards good), a pointer over it.
+     */
+    public static void alignment(UiCanvas c, int x0, int y0, int x1, int y1, int value) {
+        int mid = (x0 + x1) / 2;
+        c.fill(x0, y0, mid, y1, EVIL_TRACK);
+        c.fill(mid, y0, x1, y1, GOOD_TRACK);
+        int at = x0 + Math.round((x1 - x0) * com.hexhaki.piece.Alignment.along(value));
+        if (at < mid) {
+            c.fill(at, y0, mid, y1, EVIL);
+            c.fill(at, y0, mid, y0 + 1, 0x50FFFFFF);
+        } else if (at > mid) {
+            c.fill(mid, y0, at, y1, GOOD);
+            c.fill(mid, y0, at, y0 + 1, 0x50FFFFFF);
+        }
+        border(c, x0, y0, x1, y1, 0x60000000);
+        c.fill(mid, y0 - 1, mid + 1, y1 + 1, 0xFF4A4A4A);
+        int px = Math.max(x0 + 2, Math.min(x1 - 2, at));
+        c.polygon(new float[] {px - 2.5F, px + 2.5F, px}, new float[] {y0 - 3.5F, y0 - 3.5F, y0 + 0.5F}, INK);
+    }
+
     public static void bar(UiCanvas c, int x0, int y0, int x1, int y1, float fraction, int fill, int back) {
         c.fill(x0, y0, x1, y1, back);
         int w = Math.round((x1 - x0) * Math.max(0F, Math.min(1F, fraction)));

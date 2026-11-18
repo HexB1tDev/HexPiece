@@ -175,7 +175,7 @@ public class UiPreview {
         int[] swordMastery = new int[FightingStyle.values().length];
         swordMastery[FightingStyle.SWORDSMAN.ordinal()] = 380;
         com.hexhaki.piece.PieceProfile swordsman = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE, FightingStyle.SWORDSMAN, true,
-            swordMastery, 48_000_000L);
+            swordMastery, 48_000_000L, 0);
         LogbookView.Data base = LogbookView.sample(0, false);
         java.util.List<LogbookView.Section> swordPage = new java.util.ArrayList<>(base.styleHaki());
         swordPage.set(0, LogbookView.style(swordsman));
@@ -189,7 +189,7 @@ public class UiPreview {
         int[] ironMastery = new int[FightingStyle.values().length];
         ironMastery[FightingStyle.BRAWLER.ordinal()] = 520;
         com.hexhaki.piece.PieceProfile iron = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE, FightingStyle.BRAWLER, true,
-            ironMastery, 300_000_000L);
+            ironMastery, 300_000_000L, 100);
         java.util.List<LogbookView.Section> ironPage = new java.util.ArrayList<>(base.styleHaki());
         ironPage.set(0, LogbookView.galaxy(LogbookView.style(iron), FightingStyle.BRAWLER, true, "N", "Opens with Ryou", 103));
         LogbookView.Data ironLog = new LogbookView.Data("HexB1t", iron, base.haki(), base.hakiRanks(), "", 0, ironPage, java.util.List.of(),

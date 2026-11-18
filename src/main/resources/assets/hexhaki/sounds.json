@@ -123,5 +123,41 @@
         "pitch": 0.56
       }
     ]
+  },
+  "piece.conqueror.evil_voice_male": {
+    "subtitle": "subtitles.hexhaki.piece.conqueror.evil_voice",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/evil_voice_male",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.conqueror.evil_voice_female": {
+    "subtitle": "subtitles.hexhaki.piece.conqueror.evil_voice",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/evil_voice_female",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.conqueror.evil_release_male": {
+    "subtitle": "subtitles.hexhaki.piece.conqueror.evil_release",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/evil_release_male",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.conqueror.evil_release_female": {
+    "subtitle": "subtitles.hexhaki.piece.conqueror.evil_release",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/evil_release_female",
+        "attenuation_distance": 48
+      }
+    ]
   }
 }
