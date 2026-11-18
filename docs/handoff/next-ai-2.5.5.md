@@ -1,10 +1,10 @@
-# HexPiece: handoff after 2.5.4 (the head free in sword animations; first person with the sword sheathed; the Haki slash's cooldown)
+# HexPiece: handoff after 2.5.5 (2.5.5: the white screen fixed; 2.5.4: the head free in sword animations, first person with the sword sheathed, the Haki slash's cooldown)
 
 Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.5.3.md (Ryou's fist aura as geometry, the release's lightning
 under Ryou, the skin readback; the Fishman Karate white screen still open), next-ai-2.5.2.md, next-ai-2.5.1.md (**the owner's device**:
 Android, Amethyst, MobileGlues = OpenGL ES).
 
-Branch `claude/nice-bell-gam7qf`. **2.5.4 is released** (if the Release run is green: check). **The next version is 2.5.5**
+Branch `claude/nice-bell-gam7qf`. **2.5.5 is released** (if the Release run is green: check). **The next version is 2.5.6**
 (`python3 tools/next_version.py --write`). Nothing has ever been tested in game except by the owner.
 
 ## The owner (session 7, after 2.5.3, verbatim)
@@ -40,12 +40,29 @@ Branch `claude/nice-bell-gam7qf`. **2.5.4 is released** (if the Release run is g
   CALL_REDIRECTS in `HakiHandLayer.renderFirstPerson`): playerAnimator leaves the first-person hand unbent, but the aura read the
   playing animation's elbow bend (the stance bends the left one ~50 degrees, and the holster's arm is that one).
 
+## Done (2.5.5): the "Fishman Karate white screen" (open since 2.3.2)
+- The owner: "The starter Menu, yes the screen is FULLY white permanently, no matter what I do. Yes I can open the Esc. No it does not
+  happen with other styles", two screenshots (white; only the abilities panel's shadowed title "FISHMAN KARATE" and the chat line
+  "You set sail as a pirate, fighting with Fishman Karate." showing, the chat box's background dark navy: the world under it) and the
+  log of that session (2.5.2, a fresh "New World (6)" after fighting marines in another world; no error at all).
+- Cause: the original's `com/hexhaki/fx/client/ImpactClient` (hit flash, combo, title, shake; RenderGuiEvent.Post) keeps
+  flashStart/flashUntil/comboAt/titleAt/shakeUntil in `ClientLevel.getGameTime` and never clears them (no logout handler). A flash
+  from a world with a large game time is "running" in a new world (clock near 0) for hours: `hud` draws it while now < flashUntil + 3,
+  with progress < 0 read as full strength, a white quad over the whole HUD at z 0 after everything: only what the game draws a hair
+  in front survives (shadowed text's glyphs, the chat at z 50). The start menu covers it until Set Sail. Not style-specific.
+- Fix: `client/fx/ImpactReset` clears ImpactClient's fields by reflection whenever the client level changes or its game time goes
+  back, and on logout; PiecePatch WIDENED `ImpactClient.drawFlash` and CALL_REDIRECTS its call in `hud` to `ImpactReset.flash`, which
+  draws only for 0 <= progress <= 4 (else clears). build.py `check_impact_fields` proves every field name and type in the patched jar
+  and the guarded call (a reflection test in the suites cannot load the class: Minecraft is not on the test classpath).
+- Not checked: other original effects keyed on game time (HakiImpactScreen, KingsGripImpactFrame, ConquerorShockScreen,
+  CinematicController) may have the same stale-state flaw across worlds; none was seen.
+
 ## Open
 1. The owner's report on 2.5.4 (the head, the holster view, the cooldown). Possible follow-ups: the holster view during a draw (the
    left hand stays on the hilt until the blade is out, then the right hand holds it: a first-person draw could be animated); the
    third-person stance only rests the hand on the hilt when standing still in combat mode, first person always while sheathed (the
    owner's words: "if the sword is holstered the hand should be resting on the holster"); ask if they want them to match differently.
-2. **The Fishman Karate white screen** (next-ai-2.5.3.md Open 1): still waiting for the owner's answers.
+2. The white screen: fixed in 2.5.5 (above); ask the owner to confirm.
 3. Waiting on the owner from 2.4.7 - 2.5.2 (next-ai-2.5.2.md).
 
 ## Tools

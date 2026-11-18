@@ -89,6 +89,9 @@ public final class PiecePatch implements Opcodes {
     /** 2.3.4: the original's skin swap (Gear 5's white skin) and HexPiece's Armament hands on it. */
     static final String JACKET = "com/hexhaki/client/devilfruit/render/GearJacketSkin";
     static final String HAKI_SKIN = "com/hexhaki/piece/client/haki/HakiSkin";
+    /** 2.5.5: the original's hit effects (flash, combo, title, shake), and HexPiece's guard over its flash. */
+    static final String IMPACT = "com/hexhaki/fx/client/ImpactClient";
+    static final String IMPACT_RESET = "com/hexhaki/piece/client/fx/ImpactReset";
     static final String SKIN_DESC = "(Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/resources/ResourceLocation;)"
         + "Lnet/minecraft/resources/ResourceLocation;";
     /** 2.3.3: the original's other bolt painter, handed to HakiLightning.fxBolt. */
@@ -204,6 +207,10 @@ public final class PiecePatch implements Opcodes {
         {VFX, "conquerorTapCone", HAKI_FX, "airRing", EMITTER_5, TINT, "airRing", 1},
         {VFX, "conquerorTapCone", HAKI_FX, "flash", EMITTER_5, TINT, "flash", 1},
         {VFX, "conquerorTapCone", HAKI_FX, "smoke", "(IIFFIFLjava/util/Random;)" + EMITTER, TINT, "smoke", 1},
+        // 2.5.5 (the owner's "Fishman Karate white screen": a flash from another world, its game-time end far ahead of the new world's
+        // clock, drawn full white over the HUD every frame): the flash goes through HexPiece, which draws it only while time runs
+        // forward from its start and clears a stale one (client/fx/ImpactReset)
+        {IMPACT, "hud", IMPACT, "drawFlash", "(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", IMPACT_RESET, "flash", 1},
     };
     /**
      * 2.4.9: instance calls made static: class, method, call owner, name, descriptor, new owner, new name, how many. The new method takes
@@ -219,7 +226,7 @@ public final class PiecePatch implements Opcodes {
         {JACKET, "create", "com/mojang/blaze3d/platform/NativeImage", "m_85045_", "(IZ)V", HAKI_SKIN, "readBack", 1},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
-    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"},
+    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},
         {CONTROLLER, "beginConvergence", "applyConqueror", "forceMaxConquerorStun", "isConquerorCombatTarget"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any

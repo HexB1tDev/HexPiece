@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.5.4"
+VERSION = "2.5.5"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -73,6 +73,7 @@ PATCHED = {
     "com/hexhaki/HexHaki.class",
     "com/hexhaki/client/vfx/HakiVfx.class",
     "com/hexhaki/client/vfx/HakiFx.class",  # 2.3.3: its bolt painter handed to HakiLightning.fxBolt (the 3D lightning)
+    "com/hexhaki/fx/client/ImpactClient.class",  # 2.5.5: its flash drawn through ImpactReset (a stale one from another world: the white screen)
     "com/hexhaki/client/devilfruit/render/GearJacketSkin.class",  # 2.3.4: its skins pass through HakiSkin (Armament's black hands)
     "com/hexhaki/gameplay/ConquerorLightningPath.class",
     "com/hexhaki/command/HakiCommands.class",
@@ -505,6 +506,25 @@ def _clear(name):
     return name, sword_anims.clearance(sword_anims.MOVES[name])
 
 
+IMPACT_FIELDS = {"flash": "int", "flashStart": "long", "flashUntil": "long", "comboCount": "int", "comboAt": "long",
+                 "title": "java.lang.String", "titleAt": "long", "shakeUntil": "long", "shake": "float", "kick": "float", "kickBefore": "float",
+                 "fovPunch": "float", "fovBefore": "float", "SHUDDER": "java.util.Map<java.lang.Integer, java.lang.Long>"}
+
+
+def check_impact_fields():
+    """2.5.5 (the owner's "Fishman Karate white screen": the original's hit flash left over from another world, drawn white over the
+    HUD): client/fx/ImpactReset clears the original's ImpactClient by its fields' names (reflection); every one must be there, static,
+    of the type it is set to, and its flash drawn through the guard (drawFlash public, hud calling ImpactReset.flash)."""
+    out = subprocess.run(["javap", "-p", "-c", "-cp", str(OUTPUT), "com.hexhaki.fx.client.ImpactClient"], capture_output=True, text=True,
+                         check=True).stdout
+    for name, kind in IMPACT_FIELDS.items():
+        if not re.search(r"^\s*private static (final )?" + re.escape(kind) + r" " + name + ";", out, re.M):
+            raise RuntimeError(f"ImpactClient.{name} ({kind}) is not where ImpactReset clears it")
+    if "public static void drawFlash(" not in out or "ImpactReset.flash:" not in out:
+        raise RuntimeError("ImpactClient's flash is not drawn through ImpactReset.flash")
+    print(f"Impact reset: {len(IMPACT_FIELDS)} fields of the original's ImpactClient, its flash guarded")
+
+
 def check_blade_tips():
     """2.4.5: Katana.tip() (each blade's length, model px from the guard to the point, which its reach is reckoned from) is each of
     the owner's meshes' own (tools/sword_view.mesh), so a mesh changed is a reach changed."""
@@ -572,6 +592,7 @@ def main():
         ROOT / "verify" / "api-allowlist.txt", ROOT / "verify" / "hexghoul-allowlist.txt")
     added, animations = check_archive_scope()
     check_srg_shapes()
+    check_impact_fields()
     check_imu()
     check_animations()
     check_sword_poses()
