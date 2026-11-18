@@ -48,9 +48,11 @@ import net.minecraftforge.event.level.BlockEvent;
 public final class Scars {
     /** Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE: the clients told, no neighbour updates. */
     static final int SILENT = 2 | 16;
-    static final int DESTROY_BUDGET = 700;
-    static final int CHECK_BUDGET = 30_000;
-    static final int RESTORE_BUDGET = 900;
+    // 2.4.5 (the full release's lag): at most 240 blocks torn and 200 grown back a tick (were 700 and 900): each is a light update and
+    // a chunk rebuild on every client near, and a release's fissures and their regrowth came down in a handful of ticks
+    static final int DESTROY_BUDGET = 240;
+    static final int CHECK_BUDGET = 12_000;
+    static final int RESTORE_BUDGET = 200;
     static final long RESTORE_MIN = 300L;
     static final long RESTORE_JITTER = 200L;
     static final int BLOCK_BREAK = 2001;

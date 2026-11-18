@@ -149,7 +149,11 @@ public final class HakiBolts {
                 return false;
             }
             List<IFXObject> objects = fx.getMainFX().objects();
-            objects.removeIf(o -> containsSame(pending.beams, o));
+            // 2.4.5: by identity through a set (the release's thousands of beams against its thousands of objects, compared pair by
+            // pair, were a hitch of their own the moment it was let go)
+            java.util.Set<IFXObject> beams = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+            beams.addAll(pending.beams);
+            objects.removeIf(beams::contains);
             if (entity != null) {
                 // 2.2.6 (the owner: "Haki is not meant to come directly from the player's body"): lightning laid on the body it plays on
                 // crawls over the shell round it instead (the storm's strands start outside it already, and are found by identity below)
@@ -364,15 +368,6 @@ public final class HakiBolts {
             }
         }
         return best;
-    }
-
-    static boolean containsSame(List<IFXObject> list, Object o) {
-        for (IFXObject item : list) {
-            if (item == o) {
-                return true;
-            }
-        }
-        return false;
     }
 
     @SubscribeEvent

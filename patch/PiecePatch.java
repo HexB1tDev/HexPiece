@@ -80,7 +80,8 @@ public final class PiecePatch implements Opcodes {
     static final String SEGMENT = "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;II)V";
     static final String GENERATE = "(FIJZ)Ljava/util/List;";
     /** HakiVfx helpers the new painters reuse (access widened only, bodies untouched). */
-    static final String[] VFX_WIDENED = {"rageBeam", "beam", "add", "fx", "play", "playAtWorld", "playAtFixed", "particleTex"};
+    static final String[] VFX_WIDENED = {"rageBeam", "beam", "add", "fx", "play", "playAtWorld", "playAtFixed", "particleTex",
+        "addConquerorRangeLightning"};
     /** 2.3.4: the original's skin swap (Gear 5's white skin) and HexPiece's Armament hands on it. */
     static final String JACKET = "com/hexhaki/client/devilfruit/render/GearJacketSkin";
     static final String HAKI_SKIN = "com/hexhaki/piece/client/haki/HakiSkin";
@@ -159,6 +160,10 @@ public final class PiecePatch implements Opcodes {
         // 2.3.7 (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU haki. ONLY for iron fist."):
         // the Galaxy Fist's start (its "convergence") goes through HexPiece, which lets only an Iron Fist fighter with Ryou up throw it
         {CONTROLLER, "onAction", CONTROLLER, "beginConvergence", "(Lnet/minecraft/server/level/ServerPlayer;)V", GALAXY, "begin", 1},
+        // 2.4.5 (the owner: "Conqueror Haki full release lags a ton when releasing the full charge"): the release's range lightning goes
+        // through HexPiece, which leaves out the supreme release's second pass (the same bolts again from a second seed, 7 ticks
+        // later: half the release's 3D lightning, 80,000 quads a frame at its height)
+        {VFX, "conquerorRelease", VFX, "addConquerorRangeLightning", "(Lcom/lowdragmc/photon/client/fx/FX;FIJZI)V", STORM, "range", 2},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}, {CONTROLLER, "beginConvergence"}};

@@ -16,9 +16,14 @@ import java.util.SplittableRandom;
 public final class Fissure {
     /** A cut's spacing along a fissure (blocks). */
     static final double STEP = 0.6;
-    /** At full tear: half the width (blocks) and the depth below the surface. */
-    public static final double HALF_WIDTH = 2.4;
-    public static final double DEPTH = 6.0;
+    /**
+     * At full tear: half the width (blocks) and the depth below the surface. 2.4.5 (the owner: "Conqueror Haki full release lags a
+     * ton when releasing the full charge"): 1.5 and 3.5 (were 2.4 and 6): a release tore out about 10,000 blocks over 50 chunk
+     * sections in under a second (700 a tick, each a light update and a chunk rebuild on every client near), and grew them all back
+     * at once 15-25 s later; now about a third of that, spread thinner ({@code server/Scars}' budgets).
+     */
+    public static final double HALF_WIDTH = 1.5;
+    public static final double DEPTH = 3.5;
 
     /**
      * One slot of a fissure: at (x, z) blocks from the player's feet, across the line (nx, nz), {@code half} wide each side,

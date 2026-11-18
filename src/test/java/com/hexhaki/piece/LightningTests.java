@@ -23,6 +23,7 @@ public final class LightningTests {
         landing();
         storm();
         sphere();
+        landings();
         tinted();
         stunFall();
         Check.done("LightningTests");
@@ -398,6 +399,71 @@ public final class LightningTests {
     }
 
     /** 2.1.8: the lightning goes out over the whole sphere, fresh every time, no blind spots. */
+    /**
+     * 2.4.5 (the owner: the release's lightning "feels like the lightning is going always to the same spot"): every bolt of a release
+     * that comes down strikes the ground at its own place: round the player in its own sector (never two within a third of a sector),
+     * out at 30..95 % of the radius, never at the feet; the storm's strands that come down strike at least three blocks out; another
+     * release, other places.
+     */
+    static void landings() {
+        double radius = 50.0;
+        java.util.Map<Long, Integer> spots = new java.util.HashMap<>();
+        int[][] cells = new int[12][3];
+        int strikes = 0;
+        for (long seed = 1; seed <= 200; seed++) {
+            int mains = ConquerorBolts.count(1.0F, 1000, true);
+            List<double[]> bolts = ConquerorBolts.generate(1.0F, 1000, seed * 1000003L, true, radius);
+            List<Double> angles = new java.util.ArrayList<>();
+            for (int i = 0; i < mains; i++) {
+                double[] p = bolts.get(i);
+                for (int k = 1; k < p.length / 3; k++) {
+                    double out = Math.hypot(p[k * 3], p[k * 3 + 2]);
+                    if (p[k * 3 + 1] <= ConquerorBolts.FLOOR + 1e-6 && out > 3.0) {
+                        Check.that(out >= radius * ConquerorBolts.LAND_NEAR - 1e-6 && out <= radius * ConquerorBolts.LAND_FAR + 1e-6,
+                            "a release's bolt strikes the ground 30..95 % of the radius out (" + out + ")");
+                        angles.add(Math.atan2(p[k * 3 + 2], p[k * 3]));
+                        spots.merge(Math.round(p[k * 3] / 4) * 100003L + Math.round(p[k * 3 + 2] / 4), 1, Integer::sum);
+                        double turn = Math.atan2(p[k * 3 + 2], p[k * 3]) + Math.PI;
+                        double share = (out / radius - ConquerorBolts.LAND_NEAR) / (ConquerorBolts.LAND_FAR - ConquerorBolts.LAND_NEAR);
+                        cells[Math.min(11, (int) (turn / (Math.PI * 2.0) * 12))][Math.max(0, Math.min(2, (int) (share * 3)))]++;
+                        strikes++;
+                        break;
+                    }
+                }
+            }
+            for (int a = 0; a < angles.size(); a++) {
+                for (int b = a + 1; b < angles.size(); b++) {
+                    double d = Math.abs(Math.IEEEremainder(angles.get(a) - angles.get(b), Math.PI * 2.0));
+                    Check.that(d >= Math.PI * 2.0 / angles.size() * 0.39, "two strikes of one release are never in the same spot ("
+                        + Math.toDegrees(d) + " degrees apart)");
+                }
+            }
+            for (ConquerorStorm.Strand strand : ConquerorStorm.release(1000, seed * 1000003L, true)) {
+                double[] p = strand.points();
+                if (Math.hypot(p[0], p[2]) > 2.6 || strand.tear()[0] > 0) {
+                    continue; // a branch
+                }
+                for (int k = 0; k < strand.count(); k++) {
+                    if (strand.tear()[k] > 0) {
+                        Check.that(Math.hypot(p[k * 3], p[k * 3 + 2]) >= 3.0, "a strand that comes down strikes away from the feet");
+                        break;
+                    }
+                }
+            }
+        }
+        Check.that(strikes > 400, "releases strike the ground often (" + strikes + ")");
+        for (int sector = 0; sector < 12; sector++) {
+            for (int ring = 0; ring < 3; ring++) {
+                Check.that(cells[sector][ring] > 0, "over many releases every way round and every distance is struck");
+            }
+        }
+        int most = 0;
+        for (int count : spots.values()) {
+            most = Math.max(most, count);
+        }
+        Check.that(most < strikes * 0.03, "no place is struck again and again (" + most + " of " + strikes + ")");
+    }
+
     static void sphere() {
         for (int n : new int[] {3, 8, 13}) {
             for (long seed = 0; seed < 40; seed++) {

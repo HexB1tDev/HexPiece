@@ -22,6 +22,19 @@ public final class HakiStorm {
     private HakiStorm() {
     }
 
+    /**
+     * 2.4.5 (the owner: "Conqueror Haki full release lags a ton when releasing the full charge"): {@code conquerorRelease}'s range
+     * lightning (the patch sends both its calls here). The first pass is drawn as the original draws it; the supreme release's second
+     * (another seed, {@code baseDelay} 7) is left out: it doubled the 3D lightning near the player (up to 80,000 quads a frame for a
+     * second, built on the CPU every frame), and the storm's strands already reach far past it.
+     */
+    public static void range(FX fx, float charge, int mastery, long seed, boolean release, int baseDelay) {
+        if (baseDelay > 0) {
+            return;
+        }
+        com.hexhaki.client.vfx.HakiVfx.addConquerorRangeLightning(fx, charge, mastery, seed, release, baseDelay);
+    }
+
     /** {@code conquerorRelease}'s composition, its charge (0..1), its variant (mastery x 4 + mode) and its seed. */
     public static void release(FX fx, float charge, int variant, long seed) {
         try {

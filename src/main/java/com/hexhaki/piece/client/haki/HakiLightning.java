@@ -32,8 +32,12 @@ import org.joml.Vector3f;
  * as the fallback for a composition played some other way.
  */
 public final class HakiLightning {
-    /** Beams this painter may add in one burst window before falling back to the original's straight beams. */
-    static final int BUDGET = 2400;
+    /**
+     * Beams this painter may add in one burst window before falling back to the original's straight beams. 2.4.5: 800 (was 2400):
+     * they are only the fallback for a composition not drawn in 3D, and each is a Photon emitter made (and dropped) the moment a
+     * release is let go.
+     */
+    static final int BUDGET = 800;
     static final long WINDOW_NANOS = 60_000_000L;
     static final long SALT = 0x4841_4B49L;
     private static long windowStart;

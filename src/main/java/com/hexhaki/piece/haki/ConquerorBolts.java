@@ -66,12 +66,23 @@ public final class ConquerorBolts {
         // 2.1.8 (the owner: "The lightning should spread in a perfect sphere randomly every single time, being able to target random
         // areas of that sphere"): the bolts go out along directions spread over the whole sphere, fresh every time (Sphere)
         double[] directions = Sphere.directions(count, random);
+        // 2.4.5 (the owner, of the release: "feels like the lightning is going always to the same spot"): a release's bolts that go
+        // down no longer meet the ground where their line does (about 2.4 blocks out, every one at the player's feet) but arc out and
+        // strike it at their own distance: the landings spread round the player (each in its own sector) and out (by area) to the edge
+        double[] landing = dome ? landings(directions, count, random) : null;
         List<double[]> mains = new ArrayList<>();
         List<double[]> forks = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             double dx = directions[i * 3];
             double dy = directions[i * 3 + 1];
             double dz = directions[i * 3 + 2];
+            if (landing != null && !Double.isNaN(landing[i * 2])) {
+                mains.add(strike(dx, dy, dz, landing[i * 2], landing[i * 2 + 1] * radius, radius, random, c));
+                for (int f = 0, n = 1 + (random.nextDouble() < 0.6 ? 1 : 0); f < n; f++) {
+                    forks.add(fork(mains.get(mains.size() - 1), random, f));
+                }
+                continue;
+            }
             double flat = Math.hypot(dx, dz);
             double hx;
             double hz;
@@ -123,6 +134,110 @@ public final class ConquerorBolts {
         List<double[]> all = new ArrayList<>(mains);
         all.addAll(forks);
         return all;
+    }
+
+    /** 2.4.5: a release's bolt lands on the ground when it is aimed lower than this (the sine of its angle above level). */
+    public static final double LANDS_BELOW = 0.2;
+    /** 2.4.5: where a release's landings fall, as shares of the radius (spread by area between them). */
+    public static final double LAND_NEAR = 0.3;
+    public static final double LAND_FAR = 0.95;
+    /** 2.4.5: how high a landing bolt's arc rises over the line from its root to where it strikes (share of that line, at most). */
+    static final double LAND_ARC = 0.16;
+    static final double LAND_ARC_MOST = 6.0;
+
+    /**
+     * 2.4.5: for each of a release's bolts aimed low ({@link #LANDS_BELOW}), its heading round the player (radians) and how far out it
+     * strikes (a share of the radius); NaN for one that goes up. The landing bolts are dealt round the player evenly from a random
+     * start, each turned a little within its own sector, and out at distances spread by area between {@link #LAND_NEAR} and
+     * {@link #LAND_FAR}, shuffled among them: never two in the same spot, never all near the feet.
+     */
+    static double[] landings(double[] directions, int count, SplittableRandom random) {
+        double[] out = new double[count * 2];
+        java.util.Arrays.fill(out, Double.NaN);
+        List<Integer> low = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            if (directions[i * 3 + 1] < LANDS_BELOW) {
+                low.add(i);
+            }
+        }
+        int n = low.size();
+        if (n == 0) {
+            return out;
+        }
+        // the sectors in the order of the bolts' own headings, so each keeps roughly the way it was going
+        low.sort((a, b) -> Double.compare(Math.atan2(directions[a * 3 + 2], directions[a * 3]), Math.atan2(directions[b * 3 + 2], directions[b * 3])));
+        double start = random.nextDouble() * Math.PI * 2.0;
+        int[] order = new int[n];
+        for (int k = 0; k < n; k++) {
+            order[k] = k;
+        }
+        for (int k = n - 1; k > 0; k--) {
+            int j = random.nextInt(k + 1);
+            int t = order[k];
+            order[k] = order[j];
+            order[j] = t;
+        }
+        for (int k = 0; k < n; k++) {
+            int i = low.get(k);
+            out[i * 2] = start + (k + 0.5 + random.nextDouble(-0.3, 0.3)) * Math.PI * 2.0 / n;
+            double u = (order[k] + random.nextDouble()) / n;
+            out[i * 2 + 1] = Math.sqrt(LAND_NEAR * LAND_NEAR + (LAND_FAR * LAND_FAR - LAND_NEAR * LAND_NEAR) * u);
+        }
+        return out;
+    }
+
+    /**
+     * 2.4.5: a release's bolt that strikes the ground {@code out} blocks away along {@code heading}: out of the shell along its own
+     * line, arcing up over the ground (higher the further it goes) and down onto it, then a short run along the ground beyond.
+     */
+    static double[] strike(double dx, double dy, double dz, double heading, double out, double radius, SplittableRandom random, float c) {
+        double hx = Math.cos(heading);
+        double hz = Math.sin(heading);
+        double flat = Math.hypot(dx, dz);
+        // out of the shell on the landing's side, at the height its own aim gives (low ones from the shell's foot)
+        double ux = flat < 0.15 ? hx : hx * Math.sqrt(1.0 - dy * dy);
+        double uz = flat < 0.15 ? hz : hz * Math.sqrt(1.0 - dy * dy);
+        double uy = flat < 0.15 ? Math.max(-0.5, Math.min(LANDS_BELOW, dy)) : dy;
+        double ul = Math.sqrt(ux * ux + uy * uy + uz * uz);
+        double[] root = shell(ux / ul, uy / ul, uz / ul, 0.96 + random.nextDouble() * 0.1);
+        if (root[1] < GROUND_ROOT) {
+            root = ring(hx, hz);
+        }
+        double rootOut = Math.hypot(root[0], root[2]);
+        double reach = Math.max(out, rootOut + 2.0);
+        double[] hit = {hx * reach, FLOOR, hz * reach};
+        double line = Math.sqrt((hit[0] - root[0]) * (hit[0] - root[0]) + (hit[1] - root[1]) * (hit[1] - root[1])
+            + (hit[2] - root[2]) * (hit[2] - root[2]));
+        double[] fly = arcHigh(root, hit, random, 0.12, Math.min(LAND_ARC_MOST, LAND_ARC * line), c);
+        double run = Math.min(radius - reach, radius * (0.06 + 0.1 * random.nextDouble()));
+        if (run < 0.8) {
+            return fly;
+        }
+        double turn = random.nextDouble(-0.35, 0.35);
+        double[] end = {hit[0] + Math.cos(heading + turn) * run, FLOOR + random.nextDouble() * 0.4, hit[2] + Math.sin(heading + turn) * run};
+        double[] along = arc(hit, end, random, 0.15, 0.09, c);
+        double[] bolt = new double[fly.length + along.length - 3];
+        System.arraycopy(fly, 0, bolt, 0, fly.length);
+        System.arraycopy(along, 3, bolt, fly.length, along.length - 3);
+        return bolt;
+    }
+
+    /** {@link #arc} with its rise given in blocks (not capped at {@link #MOST_LIFT}): a long landing bolt arcs well up over the ground. */
+    static double[] arcHigh(double[] root, double[] tip, SplittableRandom random, double bow, double rise, float charge) {
+        double[] spineTip = tip.clone();
+        double[] out = arc(root, spineTip, random, bow, 0.0, charge);
+        int n = out.length / 3;
+        double total = 0;
+        double[] along = new double[n];
+        for (int i = 1; i < n; i++) {
+            total += distance(new double[] {out[i * 3 - 3], out[i * 3 - 2], out[i * 3 - 1]}, new double[] {out[i * 3], out[i * 3 + 1], out[i * 3 + 2]});
+            along[i] = total;
+        }
+        for (int i = 1; i < n - 1; i++) {
+            double t = along[i] / Math.max(1.0E-9, total);
+            out[i * 3 + 1] += rise * Math.sin(Math.PI * t);
+        }
+        return out;
     }
 
     /** 2.2.6: the point of the shell along the direction (dx, dy, dz) from its centre (unit), {@code scale} times as far. */

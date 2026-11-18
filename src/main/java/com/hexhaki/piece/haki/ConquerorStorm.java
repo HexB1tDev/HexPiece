@@ -15,8 +15,9 @@ import java.util.SplittableRandom;
  * (a {@link Strand}: one polyline, so it bends at mitred joints with no caps between its pieces, never a chain of blobs): long straight
  * runs joined by sharp kinks as lightning kinks, swelling as it leaves the flash and tapering far out, black with a rim of the colour
  * (drawn as a {@link Bolt#BODY} and a {@link Bolt#EDGE} on the same points: the frames' hot outline and glow); now and then a branch.
- * The ones that go down strike the ground near the player and tear along it outward: their points on the ground ({@link Strand#tear}
- * above 0) are where the server opens fissures ({@code server/Fissures}, from the same seed). The shockwave ring and the centre's flash
+ * The ones that go down glide out low and strike the ground at their own distance (2.4.5; before, all of them near the player) and tear
+ * along it outward: their points on the ground ({@link Strand#tear} above 0) are where the server opens fissures ({@code server/Fissures},
+ * from the same seed). The shockwave ring and the centre's flash
  * are drawn by {@code client/haki/HakiBolts}; the client tints the strokes to the owner's Ryou colour.
  *
  * <p>Every point is given as a height above the ground under it (x, height, z; blocks from the player's feet): the client lays the
@@ -34,6 +35,9 @@ public final class ConquerorStorm {
     public static final double CHEST = 1.2;
     /** A point on the ground (height above it): the strands tear along the ground at about this. */
     public static final double GROUND = 0.2;
+    /** 2.4.5: where a strand aimed down strikes the ground, as shares of its length (spread by area between them). */
+    public static final double LAND_NEAR = 0.08;
+    public static final double LAND_FAR = 0.38;
 
     /**
      * One bolt (or branch) of the storm: its points (x, height above the ground, z; blocks from the player's feet), its stroke width at
@@ -133,6 +137,17 @@ public final class ConquerorStorm {
      */
     static void bolt(List<Strand> out, SplittableRandom random, double[] dir, double length, float delay, double size) {
         Builder b = new Builder();
+        // 2.4.5 (the owner: "feels like the lightning is going always to the same spot"): a strand aimed down used to meet the ground
+        // within two blocks of the feet (every one there) and tear outward from it; now it glides out low from the flash and strikes
+        // the ground at its own distance, LAND_NEAR..LAND_FAR of its length (spread by area), and tears on from there
+        double land = -1.0;
+        if (dir[1] < 0.0) {
+            double flatDir = Math.hypot(dir[0], dir[2]);
+            double turn = flatDir < 0.15 ? random.nextDouble() * Math.PI * 2.0 : Math.atan2(dir[2], dir[0]);
+            double u = random.nextDouble();
+            land = length * Math.sqrt(LAND_NEAR * LAND_NEAR + (LAND_FAR * LAND_FAR - LAND_NEAR * LAND_NEAR) * u);
+            dir = normalise(new double[] {Math.cos(turn), -(CHEST - GROUND) / land, Math.sin(turn)});
+        }
         double[] a = {dir[0] * START, Math.max(GROUND, CHEST + dir[1] * START), dir[2] * START};
         double[] h = dir.clone();
         double flat = Math.hypot(dir[0], dir[2]);
@@ -149,6 +164,11 @@ public final class ConquerorStorm {
                 h = normalise(new double[] {h[0] * 0.55 + dir[0] * 0.45 + wander[0] * 0.42, h[1] * 0.55 + dir[1] * 0.45 + wander[1] * 0.42,
                     h[2] * 0.55 + dir[2] * 0.45 + wander[2] * 0.42});
                 next = new double[] {a[0] + h[0] * step, a[1] + h[1] * step, a[2] + h[2] * step};
+                if (land > 0.0) {
+                    // on its glide down to where it lands, wandering a little either side of it
+                    double share = Math.min(1.0, (walked + step) / land);
+                    next[1] = share >= 1.0 ? GROUND - 1.0 : CHEST + (GROUND - CHEST) * share + random.nextDouble(-0.3, 0.3) * (1.0 - share);
+                }
                 if (next[1] < GROUND) {
                     // it struck the ground: from here it tears along it, outward
                     grounded = true;
