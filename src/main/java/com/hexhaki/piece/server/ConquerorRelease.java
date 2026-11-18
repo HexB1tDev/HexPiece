@@ -2,13 +2,16 @@ package com.hexhaki.piece.server;
 
 import com.hexhaki.command.HakiCommands;
 import com.hexhaki.data.HakiData;
+import com.hexhaki.gameplay.HakiServerController;
 import com.hexhaki.data.HakiType;
 import com.hexhaki.network.HakiNetwork;
 import com.hexhaki.network.msg.S2CHakiVisual;
+import com.hexhaki.registry.ModSounds;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Player;
 
 /**
@@ -24,6 +27,10 @@ import net.minecraft.world.entity.player.Player;
  *       original chose it: the player's random), kept for the moment; the supreme release's permanent destruction (the original's
  *       {@code SupremeHakiDestruction}) is the self-repairing fissures under the storm that seed draws ({@link #fissures},
  *       {@link Fissures}).</li>
+ *   <li>2.4.7, the owner: "the crackle lightning sound at the end is to be removed along with all the old sounds of the letting go of G
+ *       button max charge, keep the explosion sound and the new one we just added": the full release keeps only the original's blast
+ *       (the explosion) and the evil roar ({@link AlignmentSounds}); its snap ({@link #sound}) and its rumble ({@link #rumble}) are
+ *       gone, and its lightning lands silently (client/haki/HakiStorm, HakiBolts). A partial release keeps its own sound.</li>
  * </ul>
  */
 public final class ConquerorRelease {
@@ -56,6 +63,21 @@ public final class ConquerorRelease {
         if (seed != null) {
             Fissures.open(player, seed, HakiData.mastery(player, HakiType.CONQUEROR));
         }
+    }
+
+    /**
+     * The release's sounds ({@code HakiServerController.sound}, which plays each a second later, as the original's {@code delayedSound}
+     * does): all but the full release's snap.
+     */
+    public static void sound(ServerPlayer player, SoundEvent sound, float volume, float pitch) {
+        if (sound == ModSounds.CONQUEROR_SUPREME_SNAP.get()) {
+            return;
+        }
+        HakiServerController.delayedSound(player, sound, volume, pitch);
+    }
+
+    /** The full release's rumble ({@code scheduleSupremeAudio}): left out. */
+    public static void rumble(ServerPlayer player) {
     }
 
     /** {@code /hp joyboy on|off}: there is no switch any more. */

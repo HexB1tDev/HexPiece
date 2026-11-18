@@ -7,3 +7,6 @@ evil_voice_male.ogg: the clip's first part (0 - 3.39 s, the voice line), heavy b
 evil_voice_female.ogg: the same part raised 7 semitones with its formants raised 17 %, a lighter bass boost, the same loudness.
 evil_release_male.ogg: the clip's second part (3.58 s - end, the release), heavy bass and sub boost, -12 LUFS.
 evil_release_female.ogg: the same part raised 2 semitones (formants kept), a lighter bass boost, -12 LUFS.
+2.4.7 (the owner: "The volume of the EVIL conqueror release has to be louder and more bass boosted"): both releases remade with a deeper
+bass and sub boost, heavier compression and a tanh saturation: -9.7 LUFS (was -12.7 male, -12.4 female); below 150 Hz -4.8 dB RMS male
+(was -9.2), -6.5 dB female (was -13.6). The voice lines are unchanged.

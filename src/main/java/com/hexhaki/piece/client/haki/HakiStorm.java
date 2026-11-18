@@ -14,7 +14,8 @@ import java.util.List;
  * <p>The patch calls {@link #release} as the original's {@code HakiVfx.conquerorRelease(charge, variant, seed)} hands back its
  * composition: at full charge the {@link ConquerorStorm} is painted into the same composition ({@link HakiBolts#pending}), so it is
  * let go with it, from the same point, when the original plays it; {@link HakiBolts} lays it on the terrain, sweeps its shockwave out
- * and lands its strikes. The original's own release (its range lightning, burst and dome, its sounds) is untouched.
+ * and lands its strikes. The original's own release (its range lightning, burst and dome) is untouched. 2.4.7: the full release's
+ * lightning lands silently (the owner: "the crackle lightning sound at the end is to be removed along with all the old sounds").
  */
 public final class HakiStorm {
     static final long SALT = 0x5354_4F52L;
@@ -33,6 +34,16 @@ public final class HakiStorm {
             return;
         }
         com.hexhaki.client.vfx.HakiVfx.addConquerorRangeLightning(fx, charge, mastery, seed, release, baseDelay);
+    }
+
+    /**
+     * 2.4.7: the full release's aftershocks ({@code HakiVfx.aftershock}, three of them, to 74 ticks after it), as the original makes
+     * them, but silent: the owner had their crackle taken out with the rest of the full release's old sounds.
+     */
+    public static FX aftershock(float power, long seed) {
+        FX fx = com.hexhaki.client.vfx.HakiVfx.aftershock(power, seed);
+        HakiBolts.silence(fx);
+        return fx;
     }
 
     /** {@code conquerorRelease}'s composition, its charge (0..1), its variant (mastery x 4 + mode) and its seed. */
@@ -54,6 +65,7 @@ public final class HakiStorm {
             pending.ground.addAll(storm);
             pending.wave = ConquerorStorm.reach(mastery);
             pending.burst = true;
+            pending.silent = true;
         } catch (RuntimeException failure) {
             // the release plays as the original made it
         }

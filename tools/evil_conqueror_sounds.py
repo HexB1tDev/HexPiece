@@ -11,7 +11,11 @@ sweeps, unvoiced). Each is written twice (mono Ogg Vorbis, 44.1 kHz, for positio
   - female: the voice raised 7 semitones with its formants raised 17 % (a woman's voice, not a sped-up man's), a lighter bass boost,
     the same loudness. The release (no voice in it) is raised 2 semitones with its formants kept, a lighter bass boost.
 
-Needs ffmpeg with rubberband and libvorbis (the cloud sessions have it). Usage: python3 tools/evil_conqueror_sounds.py
+2.4.7 (the owner: "The volume of the EVIL conqueror release has to be louder and more bass boosted"): the release is shaped harder
+than the voice line: a deeper bass and sub boost (male more than female), heavier compression, a tanh saturation (the boosted low end
+grows harmonics that small speakers and headphones can play) and a louder finish (RELEASE_TARGET, limited at the same ceiling).
+
+Needs ffmpeg with rubberband and libvorbis (the cloud sessions have it). Usage: python3 tools/evil_conqueror_sounds.py [--voice]   (--voice: the voice lines too)
 """
 import os
 import subprocess
@@ -43,6 +47,9 @@ def female_voice(rate):
 # how loud the finished sounds are (integrated loudness, LUFS; the clip itself is about -23): game sound effects sit near -12 to -14,
 # and Minecraft cannot play a file louder than it is (a volume over 1 only carries it further)
 TARGET = -12.0
+# 2.4.7: the release, louder still (see the top)
+RELEASE_TARGET = -9.5
+RELEASE_LOUD = "acompressor=threshold=-30dB:ratio=6:attack=3:release=140:makeup=12dB"
 
 
 def loudness(path):
@@ -55,20 +62,37 @@ def loudness(path):
     raise RuntimeError("no loudness for " + path)
 
 
-def run(part, chain, name, rate=44100):
-    """The part shaped by chain, measured, brought to TARGET and held under full scale by the limiter, written as Ogg Vorbis."""
+def band(path, cutoff=150):
+    """The RMS level (dB) of a file below cutoff Hz: how much low end it has."""
+    out = subprocess.run(["ffmpeg", "-hide_banner", "-i", path, "-af", f"lowpass=f={cutoff},lowpass=f={cutoff},astats=metadata=0", "-f",
+                          "null", "-"], capture_output=True, text=True).stderr
+    for line in out.splitlines():
+        if "RMS level dB" in line:
+            return float(line.split(":")[-1])
+    raise RuntimeError("no level for " + path)
+
+
+def run(part, chain, name, rate=44100, target=TARGET, drive=False):
+    """The part shaped by chain, measured, brought to target and held under full scale by the limiter, written as Ogg Vorbis. drive
+    (2.4.7, the release): the gain goes into a tanh saturation before the limiter, raised until the finished file reaches target."""
     start, end = part
     cut = ["-ss", str(start)] + (["-to", str(end)] if end is not None else [])
     shaped = os.path.join(OUT, name + ".tmp.wav")
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", SOURCE] + cut + ["-ac", "1", "-ar", str(rate), "-af", chain,
                     shaped], check=True)
-    gain = TARGET - loudness(shaped)
+    gain = target - loudness(shaped)
     final = os.path.join(OUT, name + ".ogg")
-    subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", shaped, "-af",
-                    f"volume={gain:.2f}dB,alimiter=limit=0.89:attack=2:release=60:level=false,{FADE}", "-c:a", "libvorbis", "-q:a", "6",
-                    final], check=True)
+    for _ in range(6 if drive else 1):
+        clip = "asoftclip=type=tanh:threshold=0.85," if drive else ""
+        subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", shaped, "-af",
+                        f"volume={gain:.2f}dB,{clip}alimiter=limit=0.89:attack=2:release=60:level=false,{FADE}", "-c:a", "libvorbis",
+                        "-q:a", "6", final], check=True)
+        missing = target - loudness(final)
+        if abs(missing) < 0.3:
+            break
+        gain += missing
     os.remove(shaped)
-    print(f"{final}: {loudness(final):.1f} LUFS")
+    print(f"{final}: {loudness(final):.1f} LUFS, below 150 Hz {band(final):.1f} dB RMS")
 
 
 def main():
@@ -79,10 +103,16 @@ def main():
     # male: "this but more bass boosted"
     male_bass = "bass=g=11:f=95:w=0.7,asubboost=dry=1:wet=0.6:decay=0.4:feedback=0.2:cutoff=90,lowshelf=g=4:f=180"
     female_bass = "bass=g=6:f=140:w=0.7"
-    run(VOICE, f"{male_bass},{LOUD}", "evil_voice_male", rate)
-    run(VOICE, f"{female_voice(rate)},{female_bass},highshelf=g=2:f=3500,{LOUD}", "evil_voice_female", rate)
-    run(RELEASE, f"{male_bass},{LOUD}", "evil_release_male", rate)
-    run(RELEASE, f"rubberband=pitch={2 ** (2 / 12):.5f}:formant=preserved,{female_bass},{LOUD}", "evil_release_female", rate)
+    if "--voice" in sys.argv:  # the voice lines are as 2.4.6 made them; only remade when asked
+        run(VOICE, f"{male_bass},{LOUD}", "evil_voice_male", rate)
+        run(VOICE, f"{female_voice(rate)},{female_bass},highshelf=g=2:f=3500,{LOUD}", "evil_voice_female", rate)
+    # 2.4.7: the release louder and with more bass than the voice line ("louder and more bass boosted")
+    release_male_bass = ("bass=g=15:f=80:w=0.8,asubboost=dry=1:wet=1:decay=0.6:feedback=0.35:cutoff=100,lowshelf=g=6:f=200,"
+                         "equalizer=f=55:t=q:w=1.2:g=4")
+    release_female_bass = "bass=g=11:f=100:w=0.8,asubboost=dry=1:wet=0.7:decay=0.5:feedback=0.25:cutoff=110,lowshelf=g=4:f=220"
+    run(RELEASE, f"{release_male_bass},{RELEASE_LOUD}", "evil_release_male", rate, RELEASE_TARGET, True)
+    run(RELEASE, f"rubberband=pitch={2 ** (2 / 12):.5f}:formant=preserved,{release_female_bass},{RELEASE_LOUD}", "evil_release_female",
+        rate, RELEASE_TARGET, True)
 
 
 if __name__ == "__main__":

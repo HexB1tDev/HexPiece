@@ -78,6 +78,8 @@ public final class HakiBolts {
         double wave;
         /** 2.2.5: the full-power flash at the centre. */
         boolean burst;
+        /** 2.4.7: the full release's and its aftershocks': no zap, no thunder (the blast and the evil roar are its only sounds). */
+        boolean silent;
     }
 
     /** Bolts set going: at a fixed point, or following {@code entity} (feet, turned with it); where their free ends strike the ground. */
@@ -124,6 +126,13 @@ public final class HakiBolts {
             PENDING.put(fx, pending);
         }
         return pending;
+    }
+
+    /** 2.4.7: {@code fx}'s lightning lands without a sound. */
+    static void silence(FX fx) {
+        if (fx != null) {
+            pending(fx).silent = true;
+        }
     }
 
     /** {@code HakiVfx.play(entity, fx)}: true if nothing of the composition is left for Photon to play. */
@@ -178,7 +187,8 @@ public final class HakiBolts {
             pending.bolts.replaceAll(bolt -> bolt.tinted(color));
             BoltPainter.point(pending.bolts);
             boolean storm = pending.wave > 0;
-            List<Landing> landings = landings(pending.bolts, entity, x, y, z, level, storm ? 20 : MOST_LANDINGS, storm ? 6 : 3, storm);
+            int loud = pending.silent ? 0 : storm ? 6 : 3;
+            List<Landing> landings = landings(pending.bolts, entity, x, y, z, level, storm ? 20 : MOST_LANDINGS, loud, storm);
             float end = 0;
             for (Bolt bolt : pending.bolts) {
                 end = Math.max(end, bolt.end());
@@ -195,7 +205,7 @@ public final class HakiBolts {
             LIVE.add(new Live(pending.bolts, entity, x, y, z, level.m_46467_(), end, landings, pending.wave, color | 0xFF000000,
                 pending.burst ? 10.0 + pending.wave * 0.1 : 0.0));
             alive += pending.bolts.size();
-            if (!landings.isEmpty() || pending.bolts.size() >= 12) {
+            if (!pending.silent && (!landings.isEmpty() || pending.bolts.size() >= 12)) {
                 // the composition's own crackle, at its anchor (the original plays the heavy charge and release sounds itself)
                 Vec3 at = entity != null ? entity.m_20182_() : new Vec3(x, y, z);
                 zap(level, at.f_82479_, at.f_82480_ + 1.0, at.f_82481_, (float) Math.min(0.55, 0.18 + pending.bolts.size() * 0.0004));

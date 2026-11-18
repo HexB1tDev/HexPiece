@@ -85,7 +85,7 @@ public final class PiecePatch implements Opcodes {
     static final String GENERATE = "(FIJZ)Ljava/util/List;";
     /** HakiVfx helpers the new painters reuse (access widened only, bodies untouched). */
     static final String[] VFX_WIDENED = {"rageBeam", "beam", "add", "fx", "play", "playAtWorld", "playAtFixed", "particleTex",
-        "addConquerorRangeLightning"};
+        "addConquerorRangeLightning", "aftershock"};
     /** 2.3.4: the original's skin swap (Gear 5's white skin) and HexPiece's Armament hands on it. */
     static final String JACKET = "com/hexhaki/client/devilfruit/render/GearJacketSkin";
     static final String HAKI_SKIN = "com/hexhaki/piece/client/haki/HakiSkin";
@@ -168,6 +168,15 @@ public final class PiecePatch implements Opcodes {
         // through HexPiece, which leaves out the supreme release's second pass (the same bolts again from a second seed, 7 ticks
         // later: half the release's 3D lightning, 80,000 quads a frame at its height)
         {VFX, "conquerorRelease", VFX, "addConquerorRangeLightning", "(Lcom/lowdragmc/photon/client/fx/FX;FIJZI)V", STORM, "range", 2},
+        // 2.4.7 (the owner: "the crackle lightning sound at the end is to be removed along with all the old sounds of the letting go of G
+        // button max charge, keep the explosion sound and the new one we just added"): the release's sounds go through HexPiece, which
+        // drops the full release's snap and leaves out its rumble (the blast, the explosion, stays; a partial release keeps its own), and
+        // the full release's aftershocks are made silent (their lightning crackled after the blast)
+        {CONTROLLER, "releaseConqueror", CONTROLLER, "sound", "(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/sounds/SoundEvent;FF)V",
+            CONQUEROR, "sound", 3},
+        {CONTROLLER, "releaseConqueror", CONTROLLER, "scheduleSupremeAudio", "(Lnet/minecraft/server/level/ServerPlayer;)V", CONQUEROR,
+            "rumble", 1},
+        {VFX, "accept0", VFX, "aftershock", "(FJ)Lcom/lowdragmc/photon/client/fx/FX;", STORM, "aftershock", 1},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}, {CONTROLLER, "beginConvergence"}};

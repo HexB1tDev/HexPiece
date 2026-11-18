@@ -40,6 +40,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "src/main/resources/assets/hexhaki/player_animation")
 LIMB_ANGLES = ("pitch", "yaw", "roll", "bend")
 LOOP_WORDS = ("charge", "idle", "stance", "float", "fly", "run", "walk", "ready", "loop", "hold")
+# 2.4.7: the Conqueror's charge and releases are tools/conqueror_anims.py's own (this pass leaves them alone)
+GENERATED = {"conqueror_gear5_charge", "supreme_conqueror_release", "conqueror_gear5_release"}
 # synchronised pairs (attacker and victim are played together and must stay in step): only the safe passes (easing, head)
 PAIRED = ("thragg_",)
 # arms seen in first person (HakiAnimations.OWN_FIRST_PERSON_ARM): no counter-swing of the off arm (it would cross the view)
@@ -353,6 +355,8 @@ def main():
             continue
         file = entry[len(prefix):]
         name = file[:-5]
+        if name in GENERATED:
+            continue  # 2.4.7: written by tools/conqueror_anims.py
         data = json.loads(jar.read(entry).decode("utf-8"))
         if name in hand:
             out = hand[name](data)

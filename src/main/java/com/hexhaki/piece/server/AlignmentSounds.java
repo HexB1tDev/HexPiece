@@ -21,7 +21,7 @@ import net.minecraftforge.fml.common.Mod;
  *   <li>The voice line: the moment the original's charge (its {@code conquerorCharge}, 0..100, climbing while G is held) reaches 100,
  *       once a charge, heard by everyone near.</li>
  *   <li>The roar: when a full charge is let out (the release's visual, {@link ConquerorRelease#visual}, at power 1), over the
- *       original's own snap, blast and rumble (none of them a voice).</li>
+ *       original's own blast (2.4.7: its snap, rumble and crackle are gone: {@link ConquerorRelease#sound}).</li>
  * </ul>
  * A woman's versions for a female player, a man's otherwise. Good's own sounds are to come.
  */
