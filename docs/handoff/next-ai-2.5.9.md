@@ -1,10 +1,10 @@
-# HexPiece: handoff after 2.5.8 (2.5.8: first person with an empty hand, the arm under Haki; 2.5.7: the crash on joining a world; 2.5.6: the first-person draw and sheathing, the blades' temper)
+# HexPiece: handoff after 2.5.9 (2.5.9: the Water Bullet server crash; 2.5.8: first person with an empty hand, the arm under Haki; 2.5.7: the crash on joining a world; 2.5.6: the first-person draw and sheathing, the blades' temper)
 
 Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.5.5.md (the white screen, the free head, the holster view, the
 slash's cooldown), next-ai-2.5.3.md (Ryou's fist aura: the owner calls it "beautiful and perfect": keep it), next-ai-2.5.2.md,
 next-ai-2.5.1.md (**the owner's device**: Android, Amethyst, MobileGlues = OpenGL ES).
 
-Branch `claude/nice-bell-gam7qf`. **2.5.8 is released** (if the Release run is green: check). **The next version is 2.5.9**
+Branch `claude/nice-bell-gam7qf`. **2.5.9 is released** (if the Release run is green: check). **The next version is 2.6.0** (x.y.9 rolls over)
 (`python3 tools/next_version.py --write`). Nothing has ever been tested in game except by the owner.
 
 ## The owner (session 8, after 2.5.5, verbatim)
@@ -18,6 +18,17 @@ Branch `claude/nice-bell-gam7qf`. **2.5.8 is released** (if the Release run is g
 - "First person is fucked, theres no unsheath animation or whatever"; then "another bug when haki is on, also no animation" with a
   screenshot (first person, EMPTY main hand, Haki on: only the purple Ryou aura's outline where the right arm should be, no arm);
   then "its just some swords, some have it some dont".
+
+## Done (2.5.9): the server crash in the Water Bullet
+- The owner's crash report (2.5.8, Windows, singleplayer): `ConcurrentModificationException` at `HashMap$HashIterator.remove` /
+  `Collection.removeIf` in `server/WaterServer.waterTick` (line 160). Cause: `GATHERING.entrySet().removeIf(...)` whose predicate
+  called `spill(user)`, which does `GATHERING.remove(id)` on the same map: every Water Bullet stopped before its last drop (its user
+  hit, dead, out of the move: a player's or a SeaFighter's) crashed the server tick.
+- Fix: `spill(user, gathering)` without touching the map; the tick walks a snapshot (`new ArrayList<>(GATHERING.entrySet())`),
+  `GATHERING.remove(id, gathering)` per finished one, each in try/catch (forgotten on a failure). The FLYING drops loop walks a
+  snapshot too (a drop's strike runs damage events). The other removeIf loops (Scars, Clashes, HakiFalls, client fx) were checked:
+  their predicates touch other collections only.
+- Lesson: never mutate a collection from inside its own removeIf/iterator; walk a snapshot when the step calls out.
 
 ## Done (2.5.8)
 - **The empty hand.** SwordServer.scan/free: a Swordsman fights with the main hand empty (the active katana anywhere in the

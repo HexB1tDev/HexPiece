@@ -10,7 +10,6 @@ import com.hexhaki.piece.water.WaterBullet;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -143,7 +142,11 @@ public final class WaterServer {
 
     /** A fighter whose Water Bullet stopped before every drop was fired: the drops still over its fist fall. */
     static void spill(LivingEntity user) {
-        Gathering gathering = GATHERING.remove(user.m_19879_());
+        spill(user, GATHERING.remove(user.m_19879_()));
+    }
+
+    /** The drops of {@code gathering} still over {@code user}'s fist fall (the gathering already forgotten by the caller). */
+    static void spill(LivingEntity user, Gathering gathering) {
         if (gathering != null && gathering.fired < WaterBullet.COUNT) {
             PieceNetwork.around(user, new S2CWater(S2CWater.SPILL, 0, user.m_19879_(), gathering.fired, -1, user.m_20185_(), user.m_20186_(),
                 user.m_20189_(), 0, 0, 0));
@@ -156,34 +159,48 @@ public final class WaterServer {
             return;
         }
         if (!GATHERING.isEmpty()) {
+            // 2.5.9 (the owner's server crash, ConcurrentModificationException here): until now this was a removeIf over the map
+            // whose check spilled a stopped Water Bullet's drops through spill(user), which removes from the same map mid-iteration:
+            // every Water Bullet stopped before its last drop (its user hit, dead or out of the move) crashed the server. Now a
+            // snapshot is walked and each finished gathering forgotten by its own id, and a failure forgets it instead of stopping
+            // the game
             long now = level.m_46467_();
-            GATHERING.entrySet().removeIf(entry -> {
-                var body = level.m_6815_(entry.getKey());
-                if (!(body instanceof LivingEntity user)) {
-                    // another world's, or gone: forgotten once its move would have ended
-                    return now - entry.getValue().start > 120;
+            for (Map.Entry<Integer, Gathering> entry : new ArrayList<>(GATHERING.entrySet())) {
+                int id = entry.getKey();
+                Gathering gathering = entry.getValue();
+                try {
+                    var body = level.m_6815_(id);
+                    if (!(body instanceof LivingEntity user)) {
+                        // another world's, or gone: forgotten once its move would have ended
+                        if (now - gathering.start > 120) {
+                            GATHERING.remove(id, gathering);
+                        }
+                    } else if (!user.m_6084_() || !gathering(user)) {
+                        GATHERING.remove(id, gathering);
+                        spill(user, gathering);
+                    }
+                } catch (RuntimeException failure) {
+                    GATHERING.remove(id, gathering); // water never stops the game
                 }
-                if (!user.m_6084_() || !gathering(user)) {
-                    spill(user);
-                    return true;
-                }
-                return false;
-            });
+            }
         }
         if (FLYING.isEmpty()) {
             return;
         }
-        for (Iterator<Drop> it = FLYING.iterator(); it.hasNext(); ) {
-            Drop drop = it.next();
+        // a snapshot as well: a drop's strike runs the game's damage (and every mod's hurt events), which must never be able to
+        // disturb this walk
+        for (Drop drop : new ArrayList<>(FLYING)) {
             if (drop.level != level) {
                 continue;
             }
+            boolean gone;
             try {
-                if (fly(drop)) {
-                    it.remove();
-                }
+                gone = fly(drop);
             } catch (RuntimeException failure) {
-                it.remove(); // water never stops the game
+                gone = true; // water never stops the game
+            }
+            if (gone) {
+                FLYING.remove(drop);
             }
         }
     }
