@@ -134,6 +134,7 @@ public final class PiecePatch implements Opcodes {
     static final String GROUND_STORM = "(Lnet/minecraft/world/entity/Entity;FZJ)V";
     static final String APPLY_CONQUEROR = "(Lnet/minecraft/server/level/ServerPlayer;DFLcom/hexhaki/data/ConquerorMode;ZZZ)V";
     static final String COMBAT_TARGET = "(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/entity/LivingEntity;)Z";
+    static final String ANIMATE = "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;I)V";
     static final Object[][] CALL_REDIRECTS = {
         {"com/hexhaki/fruit/client/FruitKeys", "tick", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
         {"com/hexhaki/fruit/client/FruitKeys", "interact", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
@@ -187,6 +188,10 @@ public final class PiecePatch implements Opcodes {
             "forceMax", 1},
         {CONTROLLER, "lambda$applyConqueror$1", CONTROLLER, "isConquerorCombatTarget", COMBAT_TARGET, CONQUEROR, "target", 1},
         {CONTROLLER, "lambda$forceMaxConquerorStun$2", CONTROLLER, "isConquerorCombatTarget", COMBAT_TARGET, CONQUEROR, "target", 1},
+        // 2.5.1 (the owner: "evil gets one animation (EVIL/Disturbing) and good gets another (Peaceful/in pain)"): the charge's and the
+        // release's animations go through HexPiece, which plays the releaser's alignment's (tools/conqueror_anims.py)
+        {CONTROLLER, "beginConqueror", CONTROLLER, "animate", ANIMATE, CONQUEROR, "animate", 1},
+        {CONTROLLER, "releaseConqueror", CONTROLLER, "animate", ANIMATE, CONQUEROR, "animate", 2},
     };
     /**
      * 2.4.9: instance calls made static: class, method, call owner, name, descriptor, new owner, new name, how many. The new method takes

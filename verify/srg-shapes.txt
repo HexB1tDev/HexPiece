@@ -1,0 +1,548 @@
+# SRG members HexPiece references, as MCPConfig's 1.20.1 joined.tsrg has them (method: id, obfuscated descriptor; field: id). Written by tools/srg_shapes.py; checked by build.py.
+f_102608_
+f_102609_
+f_102610_
+f_102808_
+f_102809_
+f_102810_
+f_102811_
+f_102812_
+f_102813_
+f_102814_
+f_102815_
+f_102816_
+f_102817_
+f_103374_
+f_103375_
+f_103376_
+f_103377_
+f_103378_
+f_104200_
+f_104201_
+f_104202_
+f_104203_
+f_104204_
+f_104205_
+f_104207_
+f_118083_
+f_12490_
+f_135028_
+f_171164_
+f_171165_
+f_171166_
+f_171404_
+f_19597_
+f_19609_
+f_19613_
+f_19789_
+f_19791_
+f_19797_
+f_19802_
+f_19854_
+f_19855_
+f_19856_
+f_19859_
+f_19860_
+f_19864_
+f_20883_
+f_20884_
+f_20885_
+f_20886_
+f_22276_
+f_22277_
+f_22278_
+f_22279_
+f_233553_
+f_233554_
+f_233555_
+f_252403_
+f_252436_
+f_252529_
+f_279569_
+f_46132_
+f_46428_
+f_50016_
+f_82288_
+f_82289_
+f_82290_
+f_82291_
+f_82292_
+f_82293_
+f_82478_
+f_82479_
+f_82480_
+f_82481_
+f_83915_
+f_83916_
+f_83920_
+f_85815_
+f_91002_
+f_91061_
+f_91062_
+f_91063_
+f_91065_
+f_91066_
+f_91073_
+f_91074_
+f_91077_
+f_91080_
+f_92095_
+f_92096_
+m_104299_ (Leij;)V
+m_104315_ (Lfee;)V
+m_104805_ (F)F
+m_107264_ (DDD)V
+m_107276_ ()Z
+m_107344_ (Lfhm;)V
+m_108560_ ()Lacq;
+m_108564_ ()Ljava/lang/String;
+m_109153_ ()Lemz;
+m_109912_ (Lfkf;)V
+m_110023_ (F)V
+m_110025_ (II)V
+m_110036_ (Ljava/lang/String;)Legv;
+m_110104_ ()Lfjx$a;
+m_110458_ (Lacq;)Lfkf;
+m_110470_ (Lacq;)Lfkf;
+m_110473_ (Lacq;)Lfkf;
+m_114382_ (Lbfj;)Lfox;
+m_115326_ (Lftg;)Z
+m_117963_ ()I
+m_117985_ ()V
+m_117991_ ()Lehk;
+m_118495_ (Lacq;Lfug;)V
+m_118506_ (Lacq;)Lfug;
+m_118513_ (Lacq;)V
+m_120367_ (Lfxy;)V
+m_121878_ ()J
+m_122022_ (J)Lgu;
+m_123341_ ()I
+m_123342_ ()I
+m_123343_ ()I
+m_128356_ (Ljava/lang/String;J)V
+m_128365_ (Ljava/lang/String;Lrk;)Lrk;
+m_128379_ (Ljava/lang/String;Z)V
+m_128405_ (Ljava/lang/String;I)V
+m_128441_ (Ljava/lang/String;)Z
+m_128451_ (Ljava/lang/String;)I
+m_128454_ (Ljava/lang/String;)J
+m_128469_ (Ljava/lang/String;)Lqr;
+m_128471_ (Ljava/lang/String;)Z
+m_130103_ (J)Lsf;
+m_130258_ ()J
+m_130938_ (Ljava/util/function/UnaryOperator;)Ltj;
+m_130940_ (Ln;)Ltj;
+m_130944_ ([Ln;)Ltj;
+m_135353_ (Ljava/lang/Class;Labz;)Laby;
+m_135370_ (Laby;)Ljava/lang/Object;
+m_135372_ (Laby;Ljava/lang/Object;)V
+m_135381_ (Laby;Ljava/lang/Object;)V
+m_135815_ ()Ljava/lang/String;
+m_135827_ ()Ljava/lang/String;
+m_141937_ ()I
+m_146892_ ()Leei;
+m_146908_ ()F
+m_146909_ ()F
+m_146926_ (F)V
+m_150109_ ()Lbyn;
+m_151558_ ()I
+m_155947_ ()Z
+m_166779_ (Leio$b;Leio;)V
+m_167973_ ()Lfea;
+m_167982_ ()Lflt;
+m_171324_ (Ljava/lang/String;)Lfee;
+m_171423_ (FFFFFF)Lfeg;
+m_171488_ (FFFFFFLfei;)Lfej;
+m_171514_ (II)Lfej;
+m_171558_ ()Lfej;
+m_171564_ ()Lfee;
+m_171565_ (Lfem;II)Lfek;
+m_171576_ ()Lfen;
+m_171599_ (Ljava/lang/String;Lfej;Lfeg;)Lfen;
+m_174023_ (Lfec;)Lfee;
+m_178520_ (I)Lts;
+m_188499_ ()Z
+m_188500_ ()D
+m_188501_ ()F
+m_188503_ (I)I
+m_188505_ ()J
+m_19879_ ()I
+m_20089_ ()Lbgl;
+m_20096_ ()Z
+m_20145_ ()Z
+m_20148_ ()Ljava/util/UUID;
+m_20154_ ()Leei;
+m_20159_ ()Z
+m_20182_ ()Leei;
+m_20184_ ()Leei;
+m_20185_ ()D
+m_20186_ ()D
+m_20189_ ()D
+m_20191_ ()Leed;
+m_20202_ ()Lbfj;
+m_20205_ ()F
+m_20206_ ()F
+m_20242_ (Z)V
+m_20254_ (I)V
+m_20256_ (Leei;)V
+m_20280_ (Lbfj;)D
+m_20318_ (F)Leei;
+m_20615_ (Lcmm;)Lbfj;
+m_20699_ (FF)Lbfn$a;
+m_20702_ (I)Lbfn$a;
+m_20704_ (Lbfn$b;Lbgc;)Lbfn$a;
+m_20712_ (Ljava/lang/String;)Lbfn;
+m_20717_ (I)Lbfn$a;
+m_21153_ (F)V
+m_21195_ (Lbey;)Z
+m_21205_ ()Lcfz;
+m_21223_ ()F
+m_213780_ ()Lapf;
+m_213877_ ()Z
+m_214293_ (Ljava/lang/String;Ljava/lang/String;)Lacq;
+m_21525_ ()Z
+m_21552_ ()Lbhf$a;
+m_21557_ (Z)V
+m_21573_ ()Lbpj;
+m_217043_ ()Lapf;
+m_22100_ (D)V
+m_22265_ ()Lbhf;
+m_22268_ (Lbhb;D)Lbhf$a;
+m_231175_ ()Leie$b;
+m_231202_ (Leie$b;)V
+m_231551_ ()Ljava/lang/Object;
+m_231929_ ()Lenq;
+m_237113_ (Ljava/lang/String;)Ltj;
+m_246342_ (Lcfz;)V
+m_24960_ (Lbfj;FF)V
+m_252775_ ()Lorg/joml/Vector3f;
+m_252781_ (Lorg/joml/Quaternionf;)V
+m_252880_ (FFF)V
+m_252922_ ()Lorg/joml/Matrix4f;
+m_252939_ (Lorg/joml/Matrix3f;FFF)Lein;
+m_252943_ ()Lorg/joml/Matrix3f;
+m_252977_ (F)Lorg/joml/Quaternionf;
+m_252986_ (Lorg/joml/Matrix4f;FFF)Lein;
+m_253028_ ()Lorg/joml/Vector3f;
+m_253058_ ()Lorg/joml/Vector3f;
+m_25352_ (ILbmv;)V
+m_257501_ (Lcef$b;)Lcef$a;
+m_257652_ ()Lcef;
+m_257737_ (Ljava/util/function/Supplier;)Lcef$a;
+m_257941_ (Lsw;)Lcef$a;
+m_262824_ (Lacq;)Lamg;
+m_263171_ (Lhe;F)Lfxt;
+m_26519_ (DDDD)Z
+m_26571_ ()Z
+m_26573_ ()V
+m_266367_ ()Lfwx;
+m_269058_ ()Lfkf;
+m_269075_ (Lbyo;)Lben;
+m_269166_ ()Lfkf;
+m_269291_ ()Lbeo;
+m_269333_ (Lbfz;)Lben;
+m_274561_ (DDD)Lgu;
+m_280024_ (IIIIII)V
+m_280056_ (Leov;Ljava/lang/String;IIIZ)I
+m_280168_ ()Leij;
+m_280411_ (Lacq;IIIIFFIIII)V
+m_280509_ (IIIII)V
+m_286007_ (Ljava/lang/Runnable;)V
+m_36316_ ()Lcom/mojang/authlib/GameProfile;
+m_41487_ (I)Lcfu$a;
+m_41497_ (Lcgq;)Lcfu$a;
+m_41619_ ()Z
+m_41720_ ()Lcfu;
+m_41751_ (Lqr;)V
+m_41783_ ()Lqr;
+m_45547_ (Lclv;)Leee;
+m_45786_ (Lbfj;)Z
+m_46207_ (Lcmi$e;)Z
+m_46467_ ()J
+m_46469_ ()Lcmi;
+m_46472_ ()Lacp;
+m_46796_ (ILgu;I)V
+m_46805_ (Lgu;)Z
+m_49956_ (Ldcb;)I
+m_49966_ ()Ldcb;
+m_5478_ (Lbfi;)Lacq;
+m_5478_ (Lbfj;)Lacq;
+m_5478_ (Lbfp;)Lacq;
+m_5478_ (Lbfr;)Lacq;
+m_5478_ (Lbfy;)Lacq;
+m_5478_ (Lbgb;)Lacq;
+m_5478_ (Lbrg;)Lacq;
+m_5478_ (Lbrm;)Lacq;
+m_5478_ (Lbro;)Lacq;
+m_5478_ (Lbrq;)Lacq;
+m_5478_ (Lbrr;)Lacq;
+m_5478_ (Lbrs;)Lacq;
+m_5478_ (Lbrt;)Lacq;
+m_5478_ (Lbrv;)Lacq;
+m_5478_ (Lbrx;)Lacq;
+m_5478_ (Lbry;)Lacq;
+m_5478_ (Lbrz;)Lacq;
+m_5478_ (Lbsa;)Lacq;
+m_5478_ (Lbsb;)Lacq;
+m_5478_ (Lbsc;)Lacq;
+m_5478_ (Lbsd;)Lacq;
+m_5478_ (Lbse;)Lacq;
+m_5478_ (Lbsf;)Lacq;
+m_5478_ (Lbsg;)Lacq;
+m_5478_ (Lbsh;)Lacq;
+m_5478_ (Lbsj;)Lacq;
+m_5478_ (Lbsk;)Lacq;
+m_5478_ (Lbsl;)Lacq;
+m_5478_ (Lbsm;)Lacq;
+m_5478_ (Lbso;)Lacq;
+m_5478_ (Lbsp;)Lacq;
+m_5478_ (Lbss;)Lacq;
+m_5478_ (Lbsx;)Lacq;
+m_5478_ (Lbta;)Lacq;
+m_5478_ (Lbtd;)Lacq;
+m_5478_ (Lbtg;)Lacq;
+m_5478_ (Lbtj;)Lacq;
+m_5478_ (Lbtk;)Lacq;
+m_5478_ (Lbtm;)Lacq;
+m_5478_ (Lbtn;)Lacq;
+m_5478_ (Lbtx;)Lacq;
+m_5478_ (Lbua;)Lacq;
+m_5478_ (Lbub;)Lacq;
+m_5478_ (Lbuv;)Lacq;
+m_5478_ (Lbux;)Lacq;
+m_5478_ (Lbva;)Lacq;
+m_5478_ (Lbvb;)Lacq;
+m_5478_ (Lbvc;)Lacq;
+m_5478_ (Lbvg;)Lacq;
+m_5478_ (Lbvh;)Lacq;
+m_5478_ (Lbvi;)Lacq;
+m_5478_ (Lbvl;)Lacq;
+m_5478_ (Lbvm;)Lacq;
+m_5478_ (Lbvn;)Lacq;
+m_5478_ (Lbvo;)Lacq;
+m_5478_ (Lbvs;)Lacq;
+m_5478_ (Lbvt;)Lacq;
+m_5478_ (Lbvw;)Lacq;
+m_5478_ (Lbvx;)Lacq;
+m_5478_ (Lbvy;)Lacq;
+m_5478_ (Lbwa;)Lacq;
+m_5478_ (Lbwb;)Lacq;
+m_5478_ (Lbwe;)Lacq;
+m_5478_ (Lbwf;)Lacq;
+m_5478_ (Lbwh;)Lacq;
+m_5478_ (Lbwi;)Lacq;
+m_5478_ (Lbwj;)Lacq;
+m_5478_ (Lbwl;)Lacq;
+m_5478_ (Lbwm;)Lacq;
+m_5478_ (Lbwn;)Lacq;
+m_5478_ (Lbwp;)Lacq;
+m_5478_ (Lbwq;)Lacq;
+m_5478_ (Lbwr;)Lacq;
+m_5478_ (Lbws;)Lacq;
+m_5478_ (Lbwu;)Lacq;
+m_5478_ (Lbwv;)Lacq;
+m_5478_ (Lbww;)Lacq;
+m_5478_ (Lbwy;)Lacq;
+m_5478_ (Lbxs;)Lacq;
+m_5478_ (Lbyb;)Lacq;
+m_5478_ (Lbyh;)Lacq;
+m_5478_ (Lbyw;)Lacq;
+m_5478_ (Lbyx;)Lacq;
+m_5478_ (Lbyy;)Lacq;
+m_5478_ (Lbzb;)Lacq;
+m_5478_ (Lbzc;)Lacq;
+m_5478_ (Lbzf;)Lacq;
+m_5478_ (Lbzi;)Lacq;
+m_5478_ (Lbzl;)Lacq;
+m_5478_ (Lbzs;)Lacq;
+m_5478_ (Lbzt;)Lacq;
+m_5478_ (Lcaf;)Lacq;
+m_5478_ (Lcah;)Lacq;
+m_5478_ (Lfiv;)Lacq;
+m_5483_ (DDD)Lein;
+m_5624_ (Lbfj;D)Z
+m_5661_ (Lsw;Z)V
+m_5752_ ()V
+m_5833_ ()Z
+m_6021_ (DDD)V
+m_6069_ ()Z
+m_60734_ ()Lcpn;
+m_60795_ ()Z
+m_60800_ (Lcls;Lgu;)F
+m_60819_ ()Ldxe;
+m_6084_ ()Z
+m_6117_ ()Z
+m_6122_ (IIII)Lein;
+m_6147_ ()Z
+m_6162_ ()Z
+m_6263_ (Lbyo;DDDLamg;Lami;FF)V
+m_6299_ (Lfkf;)Lein;
+m_6443_ (Ljava/lang/Class;Leed;Ljava/util/function/Predicate;)Ljava/util/List;
+m_6469_ (Lben;F)Z
+m_6643_ ()I
+m_6662_ ()Leeg$a;
+m_6710_ (Lbfz;)V
+m_6761_ (I)Z
+m_6815_ (I)Lbfj;
+m_6844_ (Lbfo;)Lcfz;
+m_6907_ ()Ljava/util/List;
+m_6924_ (Ldhk$a;II)I
+m_6973_ (Lbfj;FFFFF)V
+m_6973_ (Lbfz;FFFFF)V
+m_6973_ (Lbgb;FFFFF)V
+m_6973_ (Lbrg;FFFFF)V
+m_6973_ (Lbrm;FFFFF)V
+m_6973_ (Lbro;FFFFF)V
+m_6973_ (Lbrv;FFFFF)V
+m_6973_ (Lbrx;FFFFF)V
+m_6973_ (Lbsa;FFFFF)V
+m_6973_ (Lbsb;FFFFF)V
+m_6973_ (Lbsd;FFFFF)V
+m_6973_ (Lbsf;FFFFF)V
+m_6973_ (Lbsh;FFFFF)V
+m_6973_ (Lbsm;FFFFF)V
+m_6973_ (Lbso;FFFFF)V
+m_6973_ (Lbsp;FFFFF)V
+m_6973_ (Lbss;FFFFF)V
+m_6973_ (Lbsx;FFFFF)V
+m_6973_ (Lbta;FFFFF)V
+m_6973_ (Lbtd;FFFFF)V
+m_6973_ (Lbtg;FFFFF)V
+m_6973_ (Lbtj;FFFFF)V
+m_6973_ (Lbtk;FFFFF)V
+m_6973_ (Lbtx;FFFFF)V
+m_6973_ (Lbub;FFFFF)V
+m_6973_ (Lbuv;FFFFF)V
+m_6973_ (Lbux;FFFFF)V
+m_6973_ (Lbvk;FFFFF)V
+m_6973_ (Lbvy;FFFFF)V
+m_6973_ (Lbwc;FFFFF)V
+m_6973_ (Lbwe;FFFFF)V
+m_6973_ (Lbwh;FFFFF)V
+m_6973_ (Lbwi;FFFFF)V
+m_6973_ (Lbwl;FFFFF)V
+m_6973_ (Lbwp;FFFFF)V
+m_6973_ (Lbwq;FFFFF)V
+m_6973_ (Lbwv;FFFFF)V
+m_6973_ (Lbxs;FFFFF)V
+m_6973_ (Lcah;FFFFF)V
+m_7106_ (Lit;DDDDDD)V
+m_7200_ ()Lfbf;
+m_7292_ (Lbfa;)Z
+m_7392_ (Lbfi;FFLeij;Lfjx;I)V
+m_7392_ (Lbfj;FFLeij;Lfjx;I)V
+m_7392_ (Lbfp;FFLeij;Lfjx;I)V
+m_7392_ (Lbfy;FFLeij;Lfjx;I)V
+m_7392_ (Lbfz;FFLeij;Lfjx;I)V
+m_7392_ (Lbgb;FFLeij;Lfjx;I)V
+m_7392_ (Lbse;FFLeij;Lfjx;I)V
+m_7392_ (Lbsl;FFLeij;Lfjx;I)V
+m_7392_ (Lbsm;FFLeij;Lfjx;I)V
+m_7392_ (Lbso;FFLeij;Lfjx;I)V
+m_7392_ (Lbua;FFLeij;Lfjx;I)V
+m_7392_ (Lbub;FFLeij;Lfjx;I)V
+m_7392_ (Lbva;FFLeij;Lfjx;I)V
+m_7392_ (Lbvb;FFLeij;Lfjx;I)V
+m_7392_ (Lbvc;FFLeij;Lfjx;I)V
+m_7392_ (Lbvg;FFLeij;Lfjx;I)V
+m_7392_ (Lbvh;FFLeij;Lfjx;I)V
+m_7392_ (Lbvi;FFLeij;Lfjx;I)V
+m_7392_ (Lbvs;FFLeij;Lfjx;I)V
+m_7392_ (Lbvy;FFLeij;Lfjx;I)V
+m_7392_ (Lbwa;FFLeij;Lfjx;I)V
+m_7392_ (Lbwb;FFLeij;Lfjx;I)V
+m_7392_ (Lbwl;FFLeij;Lfjx;I)V
+m_7392_ (Lbws;FFLeij;Lfjx;I)V
+m_7392_ (Lbyu;FFLeij;Lfjx;I)V
+m_7392_ (Lbyx;FFLeij;Lfjx;I)V
+m_7392_ (Lbyy;FFLeij;Lfjx;I)V
+m_7392_ (Lbzb;FFLeij;Lfjx;I)V
+m_7392_ (Lbzc;FFLeij;Lfjx;I)V
+m_7392_ (Lbzf;FFLeij;Lfjx;I)V
+m_7392_ (Lbzi;FFLeij;Lfjx;I)V
+m_7392_ (Lbzs;FFLeij;Lfjx;I)V
+m_7392_ (Lbzt;FFLeij;Lfjx;I)V
+m_7392_ (Lcaf;FFLeij;Lfjx;I)V
+m_7392_ (Lcah;FFLeij;Lfjx;I)V
+m_7392_ (Lfiv;FFLeij;Lfjx;I)V
+m_7421_ (FF)Lein;
+m_7495_ ()Lgu;
+m_7495_ ()Lhz;
+m_7500_ ()Z
+m_76178_ ()Z
+m_7639_ ()Lbfj;
+m_7640_ ()Lbfj;
+m_7678_ (DDDFF)V
+m_7695_ (Leij;Lein;IIFFFF)V
+m_7731_ (Lgu;Ldcb;I)Z
+m_7785_ (DDDLamg;Lami;FFZ)V
+m_7933_ (III)Z
+m_7966_ (Lbyo;Lgu;)Z
+m_7967_ (Lbfj;)Z
+m_8020_ (I)Lcfz;
+m_8055_ (Lgu;)Ldcb;
+m_8097_ ()V
+m_81375_ ()Laig;
+m_82127_ (Ljava/lang/String;)Lcom/mojang/brigadier/builder/LiteralArgumentBuilder;
+m_82129_ (Ljava/lang/String;Lcom/mojang/brigadier/arguments/ArgumentType;)Lcom/mojang/brigadier/builder/RequiredArgumentBuilder;
+m_82371_ (Leei;Leei;)Ljava/util/Optional;
+m_82390_ (Leei;)Z
+m_82400_ (D)Leed;
+m_82450_ ()Leei;
+m_82490_ (D)Leei;
+m_82520_ (DDD)Leei;
+m_82526_ (Leei;)D
+m_82537_ (Leei;)Leei;
+m_82541_ ()Leei;
+m_82546_ (Leei;)Leei;
+m_82549_ (Leei;)Leei;
+m_82553_ ()D
+m_82554_ (Leei;)D
+m_82556_ ()D
+m_82557_ (Leei;)D
+m_83931_ (FFFF)V
+m_83941_ (IIZ)V
+m_83945_ (Legv;)V
+m_83947_ (Z)V
+m_83954_ (Z)V
+m_83957_ (IIZ)V
+m_83975_ ()I
+m_84982_ ()I
+m_84985_ (II)I
+m_84988_ (III)V
+m_85045_ (IZ)V
+m_85054_ (Lehk;)V
+m_85836_ ()V
+m_85837_ (DDD)V
+m_85841_ (FFF)V
+m_85849_ ()V
+m_85850_ ()Leij$a;
+m_85913_ ()Leil;
+m_85915_ ()Leie;
+m_85950_ (FFFF)Lein;
+m_85969_ (I)Lein;
+m_86008_ (I)Lein;
+m_90583_ ()Leei;
+m_90612_ ()Z
+m_90832_ (II)Z
+m_90857_ ()Z
+m_90859_ ()Z
+m_90865_ ()Ljava/lang/String;
+m_91087_ ()Lenn;
+m_91097_ ()Lfuw;
+m_91098_ ()Lakx;
+m_91104_ ()Z
+m_91106_ ()Lfzc;
+m_91152_ (Leuq;)V
+m_91269_ ()Lfkd;
+m_91290_ ()Lfow;
+m_91296_ ()F
+m_91385_ ()Legv;
+m_92176_ ()Lena;
+m_9236_ ()Lcmd;
+m_9236_ ()Lcmm;
+m_92895_ (Ljava/lang/String;)I
+m_93076_ ()Lepj;
+m_93814_ ()I
+m_93815_ ()D
+m_96637_ ()Z

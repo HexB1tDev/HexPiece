@@ -326,6 +326,21 @@ public final class ConquerorRelease {
         return out;
     }
 
+    /**
+     * 2.5.1 (the owner: "evil gets one animation (EVIL/Disturbing) and good gets another (Peaceful/in pain) like a hand on the face and
+     * then a stare"): the original's {@code animate} in the Conqueror's charge and release, the animation the releaser's alignment's
+     * ({@link ConquerorStun#animation}).
+     */
+    public static void animate(ServerPlayer player, String name, int fade) {
+        String chosen = name;
+        try {
+            chosen = ConquerorStun.animation(name, ProfileServer.of(player).alignment());
+        } catch (RuntimeException failure) {
+            // the original's
+        }
+        HakiServerController.animate(player, chosen, fade);
+    }
+
     /** {@code /hp joyboy on|off}: there is no switch any more. */
     public static int joyBoyCommand(CommandSourceStack source, ServerPlayer player, boolean on) {
         HakiCommands.reply(source, "§eJoyBoy is not a switch any more: every full-charge Conqueror's release is the JoyBoy one, for everyone.");

@@ -1,0 +1,28 @@
+{
+ "version": 3,
+ "name": "conqueror_good_release_partial",
+ "author": "HexPiece 2.5.1",
+ "description": "Conqueror's Haki, a partial charge let go (good): the hand snaps down off the face into the stare and the arms ease out a little; the exhale.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 48,
+  "stopTick": 48,
+  "isLoop": false,
+  "returnTick": 0,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {"tick":0,"easing":"linear","body":{"bend":13.96},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":19.53,"yaw":-0.41,"roll":0.04},"rightArm":{"pitch":-82.23,"yaw":-44.43,"roll":3.4,"bend":-72.96},"leftArm":{"pitch":-34.54,"yaw":32.27,"roll":6.86,"bend":-82.73}},
+   {"tick":3,"easing":"outexpo","body":{"bend":-0.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.4,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":2.0,"yaw":0.0,"roll":7.8,"bend":-8.0},"leftArm":{"pitch":2.0,"yaw":0.0,"roll":-7.8,"bend":-8.0}},
+   {"tick":6,"easing":"outexpo","body":{"bend":-2.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.8,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":9.2,"yaw":0.0,"roll":17.6,"bend":-5.6},"leftArm":{"pitch":9.2,"yaw":0.0,"roll":-17.6,"bend":-5.6}},
+   {"tick":7,"easing":"linear","body":{"bend":-2.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.8,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":9.2,"yaw":0.0,"roll":17.57,"bend":-5.6},"leftArm":{"pitch":9.2,"yaw":0.0,"roll":-17.87,"bend":-5.6}},
+   {"tick":9,"easing":"linear","body":{"bend":-2.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.8,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":9.2,"yaw":0.0,"roll":18.03,"bend":-5.6},"leftArm":{"pitch":9.2,"yaw":0.0,"roll":-17.61,"bend":-5.6}},
+   {"tick":11,"easing":"linear","body":{"bend":-2.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.8,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":9.2,"yaw":0.0,"roll":17.41,"bend":-5.6},"leftArm":{"pitch":9.2,"yaw":0.0,"roll":-17.17,"bend":-5.6}},
+   {"tick":13,"easing":"linear","body":{"bend":-2.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.8,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":9.2,"yaw":0.0,"roll":17.99,"bend":-5.6},"leftArm":{"pitch":9.2,"yaw":0.0,"roll":-17.86,"bend":-5.6}},
+   {"tick":15,"easing":"linear","body":{"bend":-2.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.8,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":9.2,"yaw":0.0,"roll":17.36,"bend":-5.6},"leftArm":{"pitch":9.2,"yaw":0.0,"roll":-17.44,"bend":-5.6}},
+   {"tick":17,"easing":"linear","body":{"bend":-2.8},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":-4.8,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":9.2,"yaw":0.0,"roll":17.45,"bend":-5.6},"leftArm":{"pitch":9.2,"yaw":0.0,"roll":-17.83,"bend":-5.6}},
+   {"tick":33,"easing":"inoutsine","body":{"bend":4.0},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":2.0,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":2.0,"yaw":0.0,"roll":6.0,"bend":-10.0},"leftArm":{"pitch":2.0,"yaw":0.0,"roll":-6.0,"bend":-10.0}},
+   {"tick":48,"easing":"inoutsine","body":{"bend":0.0},"torso":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"head":{"pitch":0.0,"yaw":0.0,"roll":0.0},"rightArm":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0},"leftArm":{"pitch":0.0,"yaw":0.0,"roll":0.0,"bend":0.0}}
+  ]
+ }
+}

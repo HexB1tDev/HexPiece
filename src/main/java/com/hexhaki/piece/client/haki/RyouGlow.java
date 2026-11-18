@@ -145,11 +145,13 @@ public final class RyouGlow {
             RenderSystem.enableBlend();
             RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
                 GlStateManager.SourceFactor.ZERO, GlStateManager.DestFactor.ONE);
-            target.m_83961_(main.f_83915_, main.f_83916_, false);
+            target.m_83957_(main.f_83915_, main.f_83916_, false); // 2.5.1: m_83957_ (2.4.7 named m_83961_, clear-depth (Z)V: it crashed)
             RenderSystem.disableBlend();
             RenderSystem.defaultBlendFunc();
-        } catch (Exception failure) {
-            broken = true; // a glow that cannot be drawn is never drawn again this session; the hands stay black
+        } catch (Exception | LinkageError failure) {
+            // a glow that cannot be drawn is never drawn again this session; the hands stay black (2.5.1: a missing method too, as
+            // the owner's crash was: it threw a LinkageError, which this did not catch)
+            broken = true;
         } finally {
             boxes.size = 0;
             main.m_83947_(false);

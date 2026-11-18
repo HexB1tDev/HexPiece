@@ -94,6 +94,21 @@ public final class StunFall {
         return new Frame(angle, slide, head, Math.abs(Math.sin(angle)));
     }
 
+    /**
+     * 2.5.1: a stunned player's own first-person view as they go over (the open item since 2.4.4: their own camera did not fall with
+     * them; the game cannot lower the eye, so the view turns as the head would): how far it rolls (degrees; + the world turning
+     * anticlockwise on the screen, as when the head goes over to the right) and pitches (degrees; + down) at {@code angle} over (radians,
+     * a {@link Frame}'s), falling along {@code fallX, fallZ} (unit, on the ground) while facing {@code yaw} (degrees, Minecraft's: 0 looks
+     * along +z) as they fell. Over backwards they lie looking at the sky, forwards at the ground, to a side with the world on its side.
+     */
+    public static double[] view(double angle, double fallX, double fallZ, double yaw) {
+        double r = Math.toRadians(yaw);
+        double forward = fallX * -Math.sin(r) + fallZ * Math.cos(r);
+        double right = fallX * -Math.cos(r) + fallZ * -Math.sin(r);
+        double degrees = Math.toDegrees(angle);
+        return new double[] {degrees * right, degrees * forward};
+    }
+
     /** True once it is back on its feet. */
     public static boolean over(double t, int down) {
         return t >= down + GETUP_TICKS;

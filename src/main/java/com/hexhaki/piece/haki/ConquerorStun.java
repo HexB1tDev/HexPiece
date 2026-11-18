@@ -61,6 +61,24 @@ public final class ConquerorStun {
         return !Alignment.good(alignment);
     }
 
+    /**
+     * 2.5.1 (the owner: "evil gets one animation (EVIL/Disturbing) and good gets another (Peaceful/in pain) like a hand on the face and
+     * then a stare"): the Conqueror's charge's and releases' animation for this alignment (tools/conqueror_anims.py writes them all):
+     * good and evil their own, neutral (and anything else, the tap, a clear) the name it was asked for.
+     */
+    public static String animation(String name, int alignment) {
+        String side = Alignment.evil(alignment) ? "evil" : Alignment.good(alignment) ? "good" : null;
+        if (side == null) {
+            return name;
+        }
+        return switch (name) {
+            case "conqueror_gear5_charge" -> "conqueror_" + side + "_charge";
+            case "supreme_conqueror_release" -> "conqueror_" + side + "_release";
+            case "conqueror_gear5_release" -> "conqueror_" + side + "_release_partial";
+            default -> name;
+        };
+    }
+
     /** Half a heart (health points): a body this low is not hurt by an evil release. */
     public static final float SPARED = 1.0F;
 

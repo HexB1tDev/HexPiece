@@ -17,6 +17,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLivingEvent;
+import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -31,6 +32,7 @@ import org.joml.Quaternionf;
  * <p>2.4.4: and every body a Haki stun knocks down ({@link #fall}, {@link StunFall}; any model, players, mobs, modded ones: the whole of
  * it is turned): tipped over from its feet the way it falls, slid back a little, lifted by half its width as it lies so it lies on the
  * ground and not in it, its head lolled; up again when the stun is over.
+ * <p>2.5.1: and a player's own first-person view goes over with them ({@link #fallView}).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class Tumbles {
@@ -60,6 +62,8 @@ public final class Tumbles {
     }
 
     private static final Map<Integer, Fallen> FALLEN = new HashMap<>();
+    /** 2.5.1: the way this client's own player faced (yaw, degrees) when they were knocked down. */
+    private static float ownYaw;
     /** The heads turned this frame (each body's own head turn and pitch, put back after it is drawn), the bodies turned. */
     private static final Map<LivingEntity, float[]> HEADS = new IdentityHashMap<>();
     private static final Set<LivingEntity> TURNED = Collections.newSetFromMap(new IdentityHashMap<>());
@@ -92,6 +96,10 @@ public final class Tumbles {
         }
         // a fall puts any tumble still going to rest (the stun's fall is what shows now)
         KNOCKED.remove(message.id());
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (minecraft.f_91074_ != null && minecraft.f_91074_.m_19879_() == message.id()) {
+            ownYaw = minecraft.f_91074_.m_146908_();
+        }
         FALLEN.put(message.id(), new Fallen(message.dx() / length, message.dz() / length, now, message.down(), message.seed()));
     }
 
@@ -170,6 +178,30 @@ public final class Tumbles {
         stack.m_252880_((float) (fallen.x() * frame.slide()), lift, (float) (fallen.z() * frame.slide()));
         stack.m_252781_(new Quaternionf().rotateAxis((float) frame.angle(), (float) fallen.z(), 0.0F, (float) -fallen.x()));
         TURNED.add(entity);
+    }
+
+    /**
+     * 2.5.1: this client's own player knocked down, seen in first person: the view goes over with them ({@link StunFall#view}: rolled
+     * the way they fall, tipped to the sky or the ground), lies there, and comes back up as they get up. In third person their body is
+     * drawn falling as everyone else's is ({@link #fallBefore}).
+     */
+    @SubscribeEvent
+    public static void fallView(ViewportEvent.ComputeCameraAngles event) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (minecraft.f_91074_ == null || minecraft.f_91066_ == null || !minecraft.f_91066_.m_92176_().m_90612_()) {
+            return;
+        }
+        Fallen fallen = FALLEN.get(minecraft.f_91074_.m_19879_());
+        if (fallen == null) {
+            return;
+        }
+        StunFall.Frame frame = StunFall.at(clock((float) event.getPartialTick()) - fallen.at(), fallen.down(), fallen.seed());
+        if (frame.angle() <= 1.0E-4) {
+            return;
+        }
+        double[] view = StunFall.view(frame.angle(), fallen.x(), fallen.z(), ownYaw);
+        event.setRoll(event.getRoll() + (float) view[0]);
+        event.setPitch(Math.max(-90.0F, Math.min(90.0F, event.getPitch() + (float) view[1])));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

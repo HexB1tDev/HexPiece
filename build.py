@@ -7,7 +7,8 @@ build works on the supplied jar itself. Pipeline (Java 17+ and Python 3, no down
   3. compile compile-only API stubs (stubs/) -> build/stubs   (never packaged),
   4. compile src/main/java against build/base.jar + stubs with --release 17 -> build/classes,
   5. assemble build/hexpiece-<version>.jar with src/main/resources (lang keys and sound events merged, animations replaced),
-  6. verify bytecode, every external API reference, server safety (patch/PieceVerify) and the archive scope,
+  6. verify bytecode, every external API reference, server safety (patch/PieceVerify) and the archive scope; every SRG member's
+     descriptor against MCPConfig's (verify/srg-shapes.txt, 2.5.1),
   7. check the Imu fruit is gone from the code while its assets are kept,
   8. compile and run the pure-logic tests in src/test/java.
 The owner's katanas (input/Hex_Katana_Atelier_1.20.1.zip, 2.1.4) are packed into the jar at step 5 (tools/katana_mesh.py: every OBJ
@@ -24,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.5.0"
+VERSION = "2.5.1"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -459,6 +460,27 @@ ANIMATION_LINT_EXCEPTIONS = {
 }
 
 
+def check_srg_shapes():
+    """2.5.1 (the owner's crash on Ryou: RenderTarget.m_83961_ was named for blitToScreen, and is another method): every SRG member
+    HexPiece's classes reference has the descriptor MCPConfig's joined.tsrg gives that id (verify/srg-shapes.txt, written by
+    tools/srg_shapes.py; class types compared as classes, the rest exactly)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import srg_shapes  # noqa: E402
+    known = {}
+    for line in (ROOT / "verify" / "srg-shapes.txt").read_text(encoding="utf-8").splitlines():
+        if line and not line.startswith("#"):
+            parts = line.split(" ")
+            known.setdefault(parts[0], set()).add(srg_shapes.shape(parts[1]) if len(parts) > 1 else "")
+    problems = []
+    for name, desc in sorted(srg_shapes.references(str(CLASSES))):
+        if name not in known:
+            problems.append(f"{name} {desc}: not in verify/srg-shapes.txt (run python3 tools/srg_shapes.py)")
+        elif name.startswith("m_") and srg_shapes.shape(desc) not in known[name]:
+            problems.append(f"{name} {desc}: joined.tsrg gives this id another descriptor")
+    if problems:
+        raise RuntimeError("SRG references that do not exist in 1.20.1:\n  " + "\n  ".join(problems))
+
+
 def check_animations():
     sys.path.insert(0, str(ROOT / "tools"))
     import anim
@@ -549,6 +571,7 @@ def main():
     run("java", *EXPORTS, "-cp", TOOLS, "PieceVerify", OUTPUT, INPUT, STUBS, CHANGED_LIST,
         ROOT / "verify" / "api-allowlist.txt", ROOT / "verify" / "hexghoul-allowlist.txt")
     added, animations = check_archive_scope()
+    check_srg_shapes()
     check_imu()
     check_animations()
     check_sword_poses()

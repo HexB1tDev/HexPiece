@@ -26,6 +26,7 @@ public final class LightningTests {
         landings();
         tinted();
         stunFall();
+        stunView();
         conquerorStun();
         Check.done("LightningTests");
     }
@@ -561,6 +562,24 @@ public final class LightningTests {
         Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(evil, false), "an evil partial one does not");
         Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(good, true) && !com.hexhaki.piece.haki.ConquerorStun.fellsAll(neutral, true),
             "good and neutral fell hostile mobs and players only");
+        // 2.5.1: each alignment's charge and releases: every name it can play is a file (tools/conqueror_anims.py), upper body only
+        for (int alignment : new int[] {good, evil, neutral}) {
+            for (String name : new String[] {"conqueror_gear5_charge", "supreme_conqueror_release", "conqueror_gear5_release"}) {
+                String chosen = com.hexhaki.piece.haki.ConquerorStun.animation(name, alignment);
+                java.io.File file = new java.io.File("src/main/resources/assets/hexhaki/player_animation/" + chosen + ".json");
+                Check.that(file.isFile(), chosen + " exists (" + name + ", alignment " + alignment + ")");
+                try {
+                    String text = new String(java.nio.file.Files.readAllBytes(file.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+                    Check.that(!text.contains("Leg\""), chosen + ": the legs are left to the game");
+                } catch (java.io.IOException failure) {
+                    Check.that(false, chosen + " unreadable");
+                }
+            }
+        }
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.animation("conqueror_gear5_charge", good).equals("conqueror_good_charge")
+            && com.hexhaki.piece.haki.ConquerorStun.animation("supreme_conqueror_release", evil).equals("conqueror_evil_release")
+            && com.hexhaki.piece.haki.ConquerorStun.animation("conqueror_tap_point", evil).equals("conqueror_tap_point"),
+            "good and evil have their own; the tap is everyone's");
         Check.that(!com.hexhaki.piece.haki.ConquerorStun.hurts(good), "a good release hurts no one");
         Check.that(com.hexhaki.piece.haki.ConquerorStun.hurts(evil) && com.hexhaki.piece.haki.ConquerorStun.hurts(neutral),
             "evil and neutral releases hurt");
@@ -592,6 +611,25 @@ public final class LightningTests {
             }
         }
         Check.that(struck > 0 && struck < 40 * 36, "the storm strikes some bodies round it and misses others (" + struck + " of " + 40 * 36 + ")");
+    }
+
+    /** 2.5.1: a stunned player's own view goes over with them: to the sky backwards, the ground forwards, the world on its side sideways. */
+    static void stunView() {
+        double lie = com.hexhaki.piece.haki.StunFall.LIE;
+        double deg = Math.toDegrees(lie);
+        // facing +z (yaw 0): backwards is -z, forwards +z, their right is -x
+        double[] back = com.hexhaki.piece.haki.StunFall.view(lie, 0, -1, 0);
+        Check.near(back[1], -deg, 1e-9, "over backwards: looking up at the sky");
+        Check.near(back[0], 0, 1e-9, "over backwards: not rolled");
+        double[] front = com.hexhaki.piece.haki.StunFall.view(lie, 0, 1, 0);
+        Check.near(front[1], deg, 1e-9, "over forwards: looking at the ground");
+        double[] right = com.hexhaki.piece.haki.StunFall.view(lie, -1, 0, 0);
+        Check.near(right[0], deg, 1e-9, "over to the right: rolled right");
+        Check.near(right[1], 0, 1e-9, "over to the right: not tipped");
+        // facing -x (yaw 90): their right is -z
+        double[] turned = com.hexhaki.piece.haki.StunFall.view(lie, 0, -1, 90);
+        Check.near(turned[0], deg, 1e-9, "the roll follows the way they faced as they fell");
+        Check.near(com.hexhaki.piece.haki.StunFall.view(0, 0, -1, 0)[1], 0, 1e-12, "upright: the view as it is");
     }
 
     static void stunFall() {
