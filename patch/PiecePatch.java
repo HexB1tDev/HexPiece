@@ -67,7 +67,11 @@ public final class PiecePatch implements Opcodes {
     static final String[][] HUDS_REPLACED = {
         {"com/hexhaki/client/HakiHud", "draw", "(Lnet/minecraftforge/client/event/RenderGuiOverlayEvent$Post;)V"},
         {"com/hexhaki/fruit/client/FruitHud", "render", "(Lnet/minecraftforge/client/event/RenderGuiEvent$Post;)V"},
-        {"com/hexhaki/client/devilfruit/GearHud", "draw", "(Lnet/minecraftforge/client/event/RenderGuiOverlayEvent$Post;)V"}};
+        {"com/hexhaki/client/devilfruit/GearHud", "draw", "(Lnet/minecraftforge/client/event/RenderGuiOverlayEvent$Post;)V"},
+        // 2.4.7 (the owner, with a screenshot of the original's energy and mastery panel in the bottom left: "Why the fuck is the mastery
+        // hud menu back?"): the original's fourth HUD, its reskinned board (com.hexhaki.patch.HudSkin), drawn whenever its "board"
+        // setting is on; it was never asked, so it came back the moment that setting was switched on
+        {"com/hexhaki/patch/HudSkin", "render", "(Lnet/minecraftforge/client/event/RenderGuiEvent$Post;)V"}};
     static final String[][] PLAY_HOOKS = {
         {"play", "(Lnet/minecraft/world/entity/Entity;Lcom/lowdragmc/photon/client/fx/FX;)V", "played",
             "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/entity/Entity;)Z"},

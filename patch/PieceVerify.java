@@ -416,8 +416,9 @@ public final class PieceVerify implements Opcodes {
                     problems.add(name + " -> unproven C " + other);
                 }
             }
-            // Dedicated server safety.
-            if (!clientPackage(name)) {
+            // Dedicated server safety (2.4.7: a class registered only for Dist.CLIENT is client code wherever it sits: the original's
+            // com/hexhaki/patch/HudSkin, patched to give way to the abilities panel)
+            if (!clientPackage(name) && !subscribesForClient(node)) {
                 Set<String> named = new HashSet<>();
                 refs(node, false, named);
                 for (String other : named) {

@@ -24,7 +24,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.4.6"
+VERSION = "2.4.7"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -81,6 +81,7 @@ PATCHED = {
     "com/hexhaki/client/HakiHud.class",
     "com/hexhaki/fruit/client/FruitHud.class",
     "com/hexhaki/client/devilfruit/GearHud.class",  # 2.1.3: R swaps the kit and the style (PiecePatch CALL_REDIRECTS)
+    "com/hexhaki/patch/HudSkin.class",  # 2.4.7: the original's reskinned board gives way to the abilities panel too
     # 2.1.3 Ryou (PiecePatch: CALL_REDIRECTS, WIDENED, TRAMPOLINES, AFTER_ARMAMENT, FLOATS, TEXTS)
     "com/hexhaki/client/render/HakiHandLayer.class",
     "com/hexhaki/client/render/HakiRenderHooks$ForgeBus.class",
