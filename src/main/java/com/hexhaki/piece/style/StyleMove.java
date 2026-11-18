@@ -69,9 +69,11 @@ public enum StyleMove {
         + "the fist, throwing everything in its path off its feet.", 18, 18, 140, 60, Motion.lunge(6, 0.22), Effect.SHOCKWAVE,
         Hit.line(com.hexhaki.piece.water.BrickFist.STRIKE, com.hexhaki.piece.water.BrickFist.REACH, com.hexhaki.piece.water.BrickFist.RADIUS,
             9.0F, Weight.HEAVY).throwing(1.5, 0.5)),
-    FK_WAVE(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B, "Five-Thousand Brick Wave", "A fist into the ground: the shock runs out ahead "
-        + "and throws everything in its path.", 22, 22, 220, 200, Motion.NONE, Effect.QUAKE,
-        Hit.heavy(12, 8.0, 11.0F).wide(70).throwing(1.0, 0.7)),
+    // 2.4.0 (the owner's rework): both hands to the sky, the one in your sights sealed in a floating ball of water for 5 s
+    // (water/WaterPrison, server/WaterPrisons); in the Five-Thousand Brick Wave's place. No blow: it holds
+    FK_PRISON(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B, "Water Prison", "Both hands to the sky: the one in your sights is sealed in a "
+        + "ball of water and held floating off the ground for 5 seconds, free only to look around. Enough damage, or their Conqueror's "
+        + "Haki, bursts it.", 22, 22, 400, 200, Motion.NONE, Effect.PRISON),
 
     // --- Iron Fist: pirate boxing ---------------------------------------------------------------------------------------------
     IF_JAB(FightingStyle.BRAWLER, Slot.M1_1, "Jab", "A quick lead-hand jab.", 7, 4, 0, 0,
@@ -110,7 +112,9 @@ public enum StyleMove {
         /** 2.3.8: its blows are drops of water gathered over the fist and fired as homing shots (server/WaterServer). */
         BULLETS,
         /** 2.3.9: its blow is a shockwave of water along the look: all it strikes are knocked off their feet (server/Knockdowns). */
-        SHOCKWAVE
+        SHOCKWAVE,
+        /** 2.4.0: no blow: the one in the user's sights is sealed in a ball of water and held (server/WaterPrisons). */
+        PRISON
     }
 
     private final FightingStyle style;

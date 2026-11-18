@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 to 2.3.9 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's Water Bullet and Brick Fist)
+# HexPiece: handoff after 2.3.6 to 2.4.0 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework: Water Bullet, Brick Fist, Water Prison)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.0** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.1** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,24 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## Done in 2.4.0: the Fishman Karate rework, part 3 (the Water Prison): the rework is complete
+- **Water Prison** (`StyleMove.FK_PRISON`, U, in the Five-Thousand Brick Wave's place; `Effect.PRISON`, no hits; mastery 200,
+  cooldown 400, 22 ticks; pure `water/WaterPrison`): `StyleServer.press` needs `WaterPrisons.sights` (the nearest foe whose box, grown
+  AIM 0.35, the look passes through within RANGE 16: `WaterPrison.sights`, a slab test) or refuses ("no one in your sights", nothing
+  spent); then `WaterPrisons.aim`. Each tick (`WaterPrisons.tick`, from StyleServer.tick / SeaFighter.tickMove): GATHER 4 ->
+  `S2CWater.PRISON_GATHER` (+ "block.bubble_column.upwards_inside"), SEAL 14 -> `seal`: lifted LIFT 0.6, noGravity, held HOLD 100
+  ticks (`prisonTick`: put back by teleportTo if it drifts > 0.12, zero velocity, slowness 9, Clashes.stagger), `PRISON_SEAL`; ends
+  (`release`: gravity back, `PRISON_BURST`) at HOLD, when BREAKS 14 damage has been dealt inside (`prisonHurt`), or on its Conqueror's
+  release (`ConquerorRelease.visual` -> `WaterPrisons.conqueror`). `prisonAttack` cancels every attack of a held body (a perfect
+  stun). Sea fighters throw it at their foe in range (SeaFighter: begin + aim; M1 instead if none). Interrupted or clashed moves drop
+  the aim (`WaterPrisons.stop`). Client `WaterFx`: PRISONS: the mist drawn in onto the swelling ball (`WaterPrison.grown`), the ball
+  (`WaterMesh.Body`, radius `WaterPrison.radius(height, width)`: 1.18 x half the body + 0.3, opacity PRISON) round the body's middle,
+  air bubbles rising inside while held, `burstPrison` (spray, a ring, 12-22 droplets). Animation `style_fishman_karate_prison` (both hands
+  up by 4, held, brought down together on 14; the anim lint caught a 22-degree roll at pitch -168 swinging the arms through the head:
+  -176 / 8 now). Removed with the wave: its animation, `StyleFx.wave`. `S2CWater.index` is a short now (the hold's ticks).
+  Tests: StyleTests.prison.
+- Not done: drowning (the owner said "perfect stun, entity can only look around": no damage inside).
 
 ## Done in 2.3.9: the Fishman Karate rework, part 2 (the Brick Fist, rag dolls)
 - **Brick Fist** (`StyleMove.FK_BRICK_FIST`, Y, in the Shark Skin Counter's place; `Effect.SHOCKWAVE`; pure `water/BrickFist`): a
@@ -129,11 +147,11 @@ Nothing was ever tested in game (only the owner can).
 2. The Fishman Karate white screen (not found; ask when it happens, a full screenshot; suspects: Photon bloom, ImpactClient's flash).
 3. Not clashable yet: the flying Haki slash (HakiSlashes, a projectile): could meet a slash or a blow later. Iron Body and the
    Shark Skin Counter throw no blow (their own rules hold).
-4. The Fishman Karate rework: the Water Prison (U, in the Five-Thousand Brick Wave's place: "pulls both hands up into the sky (Needs an
+4. (Done in 2.4.0: the Water Prison (U, in the Five-Thousand Brick Wave's place: "pulls both hands up into the sky (Needs an
    entity to target) the entity selected gets trapped and floats a bit off the ground in a water bubble a bit bigger than the
    entity's or player's size for 5 seconds. (perfect stun, entity can only look around.)": breakable by enough damage or the
-   Conqueror's, with a cooldown, unless the owner says otherwise; WaterMesh's PRISON opacity is ready for its bubble). Then Six
-   Powers (next-ai-2.2.6.md item 4). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
+   Conqueror's, with a cooldown, unless the owner says otherwise).) Next: Six Powers (next-ai-2.2.6.md item 4: the owner,
+   "Improve air particles, speed them up and make them 3d. (finger pistol with haki shoots projectiles)"). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
 
 ## Not verified (only the owner can)
 Everything in game: clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,

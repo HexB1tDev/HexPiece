@@ -47,6 +47,20 @@ public final class WaterFx {
     private static final Map<Integer, Flying> FLYING = new HashMap<>();
     /** Droplets thrown off a burst (and fallen drops): small bodies under gravity. */
     private static final List<Bit> BITS = new ArrayList<>();
+    /** 2.4.0: Water Prisons: the body held (its id), when its move began, when it was sealed (-1: still gathering) and until when. */
+    private static final Map<Integer, Prison> PRISONS = new HashMap<>();
+
+    static final class Prison {
+        final long start;
+        long sealed = -1;
+        long until;
+
+        Prison(long start) {
+            this.start = start;
+            this.until = start + com.hexhaki.piece.water.WaterPrison.SEAL + 4;
+        }
+    }
+
     /** 2.3.9: the Brick Fist's shockwaves rushing out (where from, the way, when: game ticks). */
     private static final List<Shock> SHOCKS = new ArrayList<>();
     private static final int MOST_BITS = 160;
@@ -135,6 +149,22 @@ public final class WaterFx {
             case S2CWater.SPILL -> spill(level, message.user());
             case S2CWater.SHOCK -> shock(at, dir.m_82541_(), level.m_46467_());
             case S2CWater.KNOCKED -> Tumbles.knocked(message.target(), dir);
+            case S2CWater.PRISON_GATHER -> PRISONS.put(message.target(), new Prison(level.m_46467_() - com.hexhaki.piece.water.WaterPrison.GATHER));
+            case S2CWater.PRISON_SEAL -> {
+                Prison prison = PRISONS.computeIfAbsent(message.target(), id -> new Prison(level.m_46467_()
+                    - com.hexhaki.piece.water.WaterPrison.SEAL));
+                prison.sealed = level.m_46467_();
+                prison.until = prison.sealed + message.index() + 10;
+                spray(at.m_82520_(0.0, 0.9, 0.0), Vec3.f_82478_, 14, 0.8);
+            }
+            case S2CWater.PRISON_BURST -> {
+                Prison prison = PRISONS.remove(message.target());
+                Entity body = level.m_6815_(message.target());
+                double radius = body == null ? 1.2 : com.hexhaki.piece.water.WaterPrison.radius(body.m_20206_(), body.m_20205_());
+                if (prison != null) {
+                    burstPrison(at, radius, message.index() == 1);
+                }
+            }
             default -> {
             }
         }
@@ -145,6 +175,23 @@ public final class WaterFx {
         SHOCKS.add(new Shock(fist, dir, now, RANDOM.nextLong()));
         spray(fist, dir.m_82490_(0.35), 18, 0.25);
         PieceFx.at(PieceFx.RING, false, 6, fist).colors(0xB0D8F2FF, 0x00D8F2FF).size(0.2, 1.6).bloom(0).spawn();
+    }
+
+    /** 2.4.0: a Water Prison bursts (or lets go): the ball of water flung apart and falling, spray every way, a ring. */
+    static void burstPrison(Vec3 middle, double radius, boolean burst) {
+        spray(middle, Vec3.f_82478_, burst ? 40 : 24, radius * 0.8);
+        PieceFx.at(PieceFx.RING, false, 9, middle).colors(0xB0C8EEFF, 0x00C8EEFF).size(0.4, radius * 2.6).bloom(0).spawn();
+        int n = PieceFx.count(burst ? 22 : 12);
+        for (int i = 0; i < n; i++) {
+            Vec3 out = new Vec3(r(1), r(1), r(1)).m_82541_();
+            bit(middle.m_82549_(out.m_82490_(radius * 0.9)), out.m_82490_((burst ? 0.16 : 0.06) + RANDOM.nextDouble() * 0.1).m_82520_(0.0, 0.05, 0.0),
+                0.04 + RANDOM.nextDouble() * 0.05, 14 + RANDOM.nextInt(8));
+        }
+    }
+
+    /** The middle of a held body's bubble now (its body's middle). */
+    static Vec3 middle(Entity body, float partial) {
+        return body.m_20318_(partial).m_82520_(0.0, body.m_20206_() * 0.5, 0.0);
     }
 
     /** The drops still over a fist fall from it. */
@@ -276,6 +323,34 @@ public final class WaterFx {
                     0.0, r(0.02))).colors(0x80D8F2FF, 0x00E8F8FF).size(0.045, 0.02).fall(0.015).drag(0.92).bloom(0).spawn();
             }
         }
+        for (Iterator<Map.Entry<Integer, Prison>> it = PRISONS.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<Integer, Prison> entry = it.next();
+            Prison prison = entry.getValue();
+            Entity body = level.m_6815_(entry.getKey());
+            if (body == null || now > prison.until) {
+                it.remove();
+                continue;
+            }
+            double radius = com.hexhaki.piece.water.WaterPrison.radius(body.m_20206_(), body.m_20205_());
+            Vec3 middle = middle(body, 1.0F);
+            if (prison.sealed < 0) {
+                // the air's moisture drawn in from all round it, onto the swelling ball
+                int n = PieceFx.count(10);
+                for (int k = 0; k < n; k++) {
+                    Vec3 dirOut = new Vec3(r(1), r(1), r(1)).m_82541_();
+                    int life = 4 + RANDOM.nextInt(4);
+                    double from = radius * (1.6 + RANDOM.nextDouble() * 0.9);
+                    PieceFx.at(PieceFx.DROP, false, life, middle.m_82549_(dirOut.m_82490_(from)))
+                        .velocity(dirOut.m_82490_(-(from - radius) / life)).colors(0x00D8F2FF, 0xA0E0F6FF).size(0.05, 0.07).drag(1.0).bloom(0)
+                        .spawn();
+                }
+            } else if (RANDOM.nextFloat() < 0.6F * PieceFx.density()) {
+                // air rising inside it, small bright bubbles
+                Vec3 in = new Vec3(r(radius * 0.6), -radius * 0.5 + RANDOM.nextDouble() * radius * 0.4, r(radius * 0.6));
+                PieceFx.at(PieceFx.MOTE, false, 12 + RANDOM.nextInt(8), middle.m_82549_(in)).velocity(new Vec3(r(0.01), 0.05, r(0.01)))
+                    .colors(0xC0E8FAFF, 0x00FFFFFF).size(0.05, 0.03).wander(0.01).bloom(0).spawn();
+            }
+        }
         for (Iterator<Shock> it = SHOCKS.iterator(); it.hasNext(); ) {
             Shock shock = it.next();
             double age = now - shock.start();
@@ -334,7 +409,7 @@ public final class WaterFx {
     @SubscribeEvent
     public static void waterStage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || GATHERING.isEmpty() && FLYING.isEmpty() && BITS.isEmpty()
-            && SHOCKS.isEmpty()) {
+            && SHOCKS.isEmpty() && PRISONS.isEmpty()) {
             return;
         }
         ClientLevel level = Minecraft.m_91087_().f_91073_;
@@ -380,6 +455,23 @@ public final class WaterFx {
             bodies.add(new WaterMesh.Body(at.f_82479_, at.f_82480_, at.f_82481_, bit.radius * (1.0 - 0.4 * bit.age / (double) bit.life),
                 new double[] {bit.velocity.f_82479_, bit.velocity.f_82480_, bit.velocity.f_82481_}, 1.0 + Math.min(1.5, speed * 4.0), 0.06,
                 bit.age + partial, bit.seed, WaterMesh.DROP));
+        }
+        for (Map.Entry<Integer, Prison> entry : PRISONS.entrySet()) {
+            Entity body = level.m_6815_(entry.getKey());
+            if (body == null) {
+                continue;
+            }
+            Prison prison = entry.getValue();
+            double age = now - prison.start + partial;
+            double grown = prison.sealed >= 0 ? 1.0 : com.hexhaki.piece.water.WaterPrison.grown(age);
+            if (grown <= 0.02) {
+                continue;
+            }
+            Vec3 at = middle(body, partial).m_82546_(cam);
+            double radius = com.hexhaki.piece.water.WaterPrison.radius(body.m_20206_(), body.m_20205_()) * grown;
+            // swelling, it shivers hard; held, it barely moves
+            bodies.add(new WaterMesh.Body(at.f_82479_, at.f_82480_, at.f_82481_, radius, null, 1.0, prison.sealed >= 0 ? 0.035 : 0.09 * (1.2 - grown),
+                age, entry.getKey() * 977L, WaterMesh.PRISON * (0.6 + 0.4 * grown)));
         }
         List<WaterMesh.Ring> rings = new ArrayList<>();
         for (Shock shock : SHOCKS) {
@@ -429,6 +521,7 @@ public final class WaterFx {
     }
 
     static void clear() {
+        PRISONS.clear();
         SHOCKS.clear();
         GATHERING.clear();
         FLYING.clear();

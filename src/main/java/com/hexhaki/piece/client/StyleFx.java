@@ -74,7 +74,7 @@ public final class StyleFx {
     static double height(StyleMove move) {
         return switch (move) {
             case BL_SWEEP -> 0.35;
-            case BL_SKY, FK_WAVE -> 0.15;
+            case BL_SKY -> 0.15;
             case BL_FLAME -> 0.6;
             case BL_SNAP, FK_KNEE -> 1.0;
             case BL_HOOK, BL_MUTTON -> 1.2;
@@ -123,9 +123,6 @@ public final class StyleFx {
         if (water(move)) {
             Vec3 from = round ? feet.m_82520_(0, h, 0) : feet.m_82549_(facing.m_82490_(1.2)).m_82520_(0, h, 0);
             droplets(from, round ? null : facing, 8 + weight * 5, 0.45 + weight * 0.08);
-            if (move == StyleMove.FK_WAVE) {
-                wave(feet, facing);
-            }
         }
         if (move.effect() == StyleMove.Effect.FIRE) {
             flames(feet.m_82520_(0, h, 0), 1.3, 14);
@@ -192,23 +189,6 @@ public final class StyleFx {
             PieceFx.at(PieceFx.STEAM, false, 18 + RANDOM.nextInt(10), at.m_82520_(r(0.3), r(0.3), r(0.3)))
                 .velocity(new Vec3(r(0.06), 0.02 + RANDOM.nextDouble() * 0.04, r(0.06))).colors(0x70E4F6FF, 0x00E4F6FF).size(0.5, 1.4)
                 .drag(0.92).spawn();
-        }
-    }
-
-    /** The ground punch's wave: a wall of water running out ahead, falling back as spray. */
-    static void wave(Vec3 feet, Vec3 facing) {
-        for (int step = 0; step < 6; step++) {
-            int s = step;
-            PieceFx.later(step, () -> {
-                Vec3 at = feet.m_82549_(facing.m_82490_(1.5 + s * 1.2));
-                Vec3 side = new Vec3(-facing.f_82481_, 0, facing.f_82479_);
-                for (int i = -3; i <= 3; i++) {
-                    Vec3 spot = at.m_82549_(side.m_82490_(i * 0.35 * (1 + s * 0.25)));
-                    PieceFx.at(PieceFx.DROP, false, 18, spot.m_82520_(0, 0.1, 0)).velocity(facing.m_82490_(0.1).m_82520_(0, 0.35 + RANDOM.nextDouble() * 0.2, 0))
-                        .colors(WATER_DEEP, 0x307CC4F0).size(0.28, 0.12).fall(0.05).drag(0.96).bloom(0).spawn();
-                }
-                PieceFx.at(PieceFx.RING, false, 8, at.m_82520_(0, 0.2, 0)).colors(0x90A8DCFF, 0x00A8DCFF).size(0.5, 2.4).bloom(0).spawn();
-            });
         }
     }
 

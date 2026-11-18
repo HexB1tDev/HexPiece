@@ -69,10 +69,10 @@ def p(*pieces, **parts):
 #   lowered (it would lift or sink the walking feet), its turn, lean and the arms carry the blow. Kicks, the knee, the ground punch
 #   and the shoulder charge keep their legs.
 PUNCHES = ("style_fishman_karate_palm", "style_fishman_karate_backfist", "style_fishman_karate_brick", "style_fishman_karate_bullet",
-           "style_fishman_karate_brick_fist", "style_brawler_jab", "style_brawler_cross",
+           "style_fishman_karate_brick_fist", "style_fishman_karate_prison", "style_brawler_jab", "style_brawler_cross",
            "style_brawler_hook", "style_brawler_upper", "style_brawler_haymaker", "style_brawler_gatling",
            "style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
-EASE_IN = set(PUNCHES) | {"style_fishman_karate_knee", "style_fishman_karate_wave", "style_brawler_charge"}
+EASE_IN = set(PUNCHES) | {"style_fishman_karate_knee", "style_brawler_charge"}
 FREE_LEGS = set(PUNCHES)
 
 
@@ -418,19 +418,19 @@ def fishman_karate():
         (15, "inoutsine", p(FK, rightArm=arm(-46, 0, 8, -50), body={"yaw": 6, "z": -0.06})),
         (18, "inoutsine", FK),
     ], "Fishman Karate: the Brick Fist, a punch where he looks, a shockwave of water rushing out of it.")
-    write(s + "wave", 22, [
-        (0, "linear", FK),
-        (4, "outsine", p(FK, legs(8, 8), rightArm=arm(-168, -6, 10, -40), leftArm=arm(-40, 10, -20, -30), body={"y": 0.06, "pitch": 10, "yaw": 0},
-                         head={"pitch": -16})),
-        (9, "insine", p(FK, legs(40, 14), rightArm=arm(-150, -6, 10, -20), leftArm=arm(-30, 10, -24, -30), body={"y": -0.14, "bend": 14, "yaw": 0},
-                        head={"pitch": -4})),
-        (12, "outexpo", p(FK, legs(78, 18), rightArm=arm(-34, -4, 6, 0), leftArm=arm(20, 10, -30, -40), body={"y": -0.42, "bend": 40, "yaw": 0},
-                          head={"pitch": -24})),
-        (13, "outback", p(FK, legs(84, 18), rightArm=arm(-30, -4, 6, 0), leftArm=arm(22, 10, -32, -40), body={"y": -0.46, "bend": 42, "yaw": 0},
-                          head={"pitch": -25})),
-        (17, "inoutsine", p(FK, legs(40, 14), body={"y": -0.2, "bend": 12, "yaw": -6})),
+    # 2.4.0 (the owner: "Water Prison: The user pulls both hands up into the sky (Needs an entity to target) the entity selected gets
+    # trapped"): both hands up to the sky by tick 4 (water/WaterPrison.GATHER), spread, the head up, held, trembling as the water
+    # gathers round the target (4-12); on the seal (14) both brought down and forward together, the hands closing on it; then down
+    sky = p(FK, rightArm=arm(-176, 0, 8, -6), leftArm=arm(-176, 0, -8, -6), body={"bend": -6}, head={"pitch": -14})
+    write(s + "prison", 22, [
+        (2, "insine", p(FK, rightArm=arm(-120, 0, 12, -50), leftArm=arm(-120, 0, -12, -50), body={"bend": -3}, head={"pitch": -8})),
+        (4, "outexpo", sky)] + shake(sky, [7, 10], 0.9, (("rightArm", "roll"), ("leftArm", "roll"))) + [
+        (12, "inoutsine", p(sky, rightArm=arm(-179, 0, 5, -4), leftArm=arm(-179, 0, -5, -4))),
+        (14, "outexpo", p(FK, rightArm=arm(-92, -18, 6, -10), leftArm=arm(-92, 18, -6, -10), body={"bend": 6, "z": -0.06}, head={"pitch": 2})),
+        (15, "outback", p(FK, rightArm=arm(-90, -20, 6, -6), leftArm=arm(-90, 20, -6, -6), body={"bend": 7, "z": -0.07}, head={"pitch": 2})),
+        (18, "inoutsine", p(FK, rightArm=arm(-60, -10, 8, -40), leftArm=arm(-60, 10, -8, -40), body={"bend": 3})),
         (22, "inoutsine", FK),
-    ], "Fishman Karate: a fist into the ground, the shock running out ahead.")
+    ], "Fishman Karate: both hands to the sky, the one in your sights sealed in a ball of water.")
 
 
 # ------------------------------------------------------------------------------------------------------------- Iron Fist

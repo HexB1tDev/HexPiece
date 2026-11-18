@@ -406,7 +406,18 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         this.m_21573_().m_26573_();
         this.face(this.foe);
         if (now >= this.nextAttack && !com.hexhaki.piece.server.Clashes.staggered(this, now)) {
-            this.begin(this.choose(now), now);
+            StyleMove next = this.choose(now);
+            if (next != null && next.effect() == StyleMove.Effect.PRISON) {
+                if (this.foe == null || this.foe.m_20280_(this) > com.hexhaki.piece.water.WaterPrison.RANGE * com.hexhaki.piece.water.WaterPrison.RANGE
+                    || com.hexhaki.piece.server.WaterPrisons.held(this.foe)) {
+                    next = StyleMove.of(this.style(), Slot.M1_1);
+                } else {
+                    this.begin(next, now);
+                    com.hexhaki.piece.server.WaterPrisons.aim(this, this.foe);
+                    return;
+                }
+            }
+            this.begin(next, now);
         }
     }
 
@@ -472,6 +483,10 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         DamageSource source = this.m_269291_().m_269333_(this);
         if (this.move.effect() == StyleMove.Effect.BULLETS) {
             com.hexhaki.piece.server.WaterServer.bullets(this, this.move, tick, this.moveStart, mastery, this::foe, source);
+            return;
+        }
+        if (this.move.effect() == StyleMove.Effect.PRISON) {
+            com.hexhaki.piece.server.WaterPrisons.tick(this, tick);
             return;
         }
         for (Hit hit : this.move.hits()) {
@@ -725,6 +740,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
      * else simply dropped (a blade came through its bare blow).
      */
     public void clashed(long now, boolean recoil) {
+        com.hexhaki.piece.server.WaterPrisons.stop(this);
         if (this.move != null) {
             this.move = null;
             this.f_19804_.m_135381_(MOVE, recoil ? CLASH_MOVE : 0);

@@ -22,6 +22,7 @@ public final class StyleTests {
         galaxy();
         waterBullet();
         brickFist();
+        prison();
         Check.done("StyleTests");
     }
 
@@ -47,7 +48,7 @@ public final class StyleTests {
                     Check.that(hit.damage() > 0 && hit.damage() <= 14, move + ": damage in range");
                     Check.that(hit.reach() > 0 && hit.reach() <= 25, move + ": reach in range");
                 }
-                boolean defensive = move.effect() == StyleMove.Effect.GUARD;
+                boolean defensive = move.effect() == StyleMove.Effect.GUARD || move.effect() == StyleMove.Effect.PRISON;
                 Check.that(defensive || move.hits().length > 0, move + ": an attack has blows");
                 Check.that(move.animation().startsWith("style_" + style.id() + "_"), move + ": its animation is named for its style");
             }
@@ -99,7 +100,7 @@ public final class StyleTests {
             }
             String json = Files.readString(ANIMATIONS.resolve(move.animation() + ".json"));
             Check.that(!json.contains("\"tick\": 0,"), move + ": no pose forced on tick 0, the arms rise from where they are");
-            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.FK_WAVE || move == StyleMove.IF_CHARGE;
+            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.IF_CHARGE;
             Check.that(legged == legs.matcher(json).find(), move + (legged ? ": its legs are part of the blow" : ": the legs stay the game's"));
         }
     }
@@ -218,5 +219,29 @@ public final class StyleTests {
         com.hexhaki.piece.style.Tumble.Frame up = com.hexhaki.piece.style.Tumble.at(10 + com.hexhaki.piece.style.Tumble.DOWN_TICKS
             + com.hexhaki.piece.style.Tumble.GETUP_TICKS, 10);
         Check.that(up.flat() < 1.0e-6 && Math.abs(up.head()) < 1.0e-9, "and stands as it was");
+    }
+
+    /** 2.4.0: the Water Prison. */
+    static void prison() {
+        StyleMove move = StyleMove.of(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B);
+        Check.that(move == StyleMove.FK_PRISON && move.effect() == StyleMove.Effect.PRISON && move.hits().length == 0, "U is the Water Prison");
+        Check.that(move.duration() > com.hexhaki.piece.water.WaterPrison.SEAL, "it seals before its move ends");
+        Check.that(com.hexhaki.piece.water.WaterPrison.HOLD == 100, "5 seconds");
+        Check.that(com.hexhaki.piece.water.WaterPrison.radius(1.8, 0.6) > 0.9 + 0.1 && com.hexhaki.piece.water.WaterPrison.radius(1.8, 0.6) < 1.8,
+            "a bubble a bit bigger than the body");
+        Check.that(com.hexhaki.piece.water.WaterPrison.grown(com.hexhaki.piece.water.WaterPrison.GATHER) == 0.0
+            && com.hexhaki.piece.water.WaterPrison.grown(com.hexhaki.piece.water.WaterPrison.SEAL) == 1.0, "it swells out of nothing to whole");
+        double[] eye = {0, 1.6, 0};
+        double[] look = {0, 0, 1};
+        Check.near(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {-0.3, 0, 5}, new double[] {0.3, 1.8, 5.6}),
+            5 - com.hexhaki.piece.water.WaterPrison.AIM, 1e-9, "the one in your sights");
+        Check.that(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {2, 0, 5}, new double[] {2.6, 1.8, 5.6}) < 0,
+            "not one beside your look");
+        Check.that(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {-0.3, 0, 20}, new double[] {0.3, 1.8, 20.6}) < 0,
+            "not one out of reach");
+        Check.that(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {-0.3, 0, -6}, new double[] {0.3, 1.8, -5.4}) < 0,
+            "not one behind");
+        Check.that(!com.hexhaki.piece.water.WaterPrison.bursts(13.9F) && com.hexhaki.piece.water.WaterPrison.bursts(14F),
+            "enough damage bursts it");
     }
 }

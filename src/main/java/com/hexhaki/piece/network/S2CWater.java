@@ -23,12 +23,17 @@ public record S2CWater(int kind, int id, int user, int index, int target, double
     public static final int SHOCK = 4;
     /** 2.3.9: the body {@code target} knocked off its feet, launched along (dx, dy, dz): a rag doll (client/fx/Tumbles). */
     public static final int KNOCKED = 5;
+    /** 2.4.0: the Water Prison: the water gathering round {@code target} (the move began {@code WaterPrison.GATHER} ticks ago), it sealed
+     *  in at (x, y, z) for {@code index} ticks, the bubble bursting ({@code index} 1) or let go of (0). */
+    public static final int PRISON_GATHER = 6;
+    public static final int PRISON_SEAL = 7;
+    public static final int PRISON_BURST = 8;
 
     public static void encode(S2CWater message, FriendlyByteBuf buffer) {
         buffer.writeByte(message.kind);
         buffer.writeInt(message.id);
         buffer.writeInt(message.user);
-        buffer.writeByte(message.index);
+        buffer.writeShort(message.index);
         buffer.writeInt(message.target);
         buffer.writeDouble(message.x);
         buffer.writeDouble(message.y);
@@ -39,7 +44,7 @@ public record S2CWater(int kind, int id, int user, int index, int target, double
     }
 
     public static S2CWater decode(FriendlyByteBuf buffer) {
-        return new S2CWater(buffer.readByte(), buffer.readInt(), buffer.readInt(), buffer.readByte(), buffer.readInt(), buffer.readDouble(),
+        return new S2CWater(buffer.readByte(), buffer.readInt(), buffer.readInt(), buffer.readShort(), buffer.readInt(), buffer.readDouble(),
             buffer.readDouble(), buffer.readDouble(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat());
     }
 
