@@ -11,6 +11,6 @@ public class GlStateManager {
         ONE, ONE_MINUS_SRC_ALPHA, ZERO, /** 2.3.6 */ SRC_COLOR
     }
     public enum SourceFactor {
-        ONE, SRC_ALPHA, /** 2.3.6 */ ONE_MINUS_DST_COLOR, /** 2.3.6 */ DST_COLOR
+        ONE, SRC_ALPHA, /** 2.3.6 */ ONE_MINUS_DST_COLOR, /** 2.3.6 */ DST_COLOR, /** 2.4.7 */ ZERO
     }
 }

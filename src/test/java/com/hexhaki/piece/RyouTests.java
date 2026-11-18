@@ -34,6 +34,41 @@ public final class RyouTests {
         Check.that((coated >>> 24) == 0xFF && (coated & 255) < 24 && ((coated >> 16) & 255) < 30, "black, its shading kept faintly");
         Check.that(com.hexhaki.piece.haki.HandCoat.coat(0x00B08070, 1.0F) >>> 24 == 0, "an empty sleeve pixel stays empty");
         Check.that(com.hexhaki.piece.haki.HandCoat.coat(0xFFB08070, 0.0F) == 0xFFB08070, "untouched at nothing");
+        // 2.4.7 (the owner: "turn the player's hands black the skin itself like the Nika fruit changes the skin (slowly pixel by pixel"):
+        // the black spreads: nothing at 0, all of it at 1, never lighter as it goes on, the fist's end first and the wrist last, and
+        // neighbouring pixels out of step with each other (pixel by pixel, not a band)
+        int pixels = 0;
+        int stepped = 0;
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                float full = com.hexhaki.piece.haki.HandCoat.amount(x, y, 64, 64, false);
+                if (full <= 0.0F) {
+                    Check.that(com.hexhaki.piece.haki.HandCoat.at(x, y, 64, 64, false, 1.0F) == 0.0F, "nothing past the hand");
+                    continue;
+                }
+                pixels++;
+                Check.that(com.hexhaki.piece.haki.HandCoat.at(x, y, 64, 64, false, 0.0F) == 0.0F, "untouched as it starts");
+                Check.near(com.hexhaki.piece.haki.HandCoat.at(x, y, 64, 64, false, 1.0F), full, 1e-6, "all of it at the end");
+                float last = 0.0F;
+                for (int k = 1; k <= 20; k++) {
+                    float now = com.hexhaki.piece.haki.HandCoat.at(x, y, 64, 64, false, k / 20.0F);
+                    Check.that(now >= last - 1e-6, "never lighter as the coat comes on");
+                    last = now;
+                }
+                if (x + 1 < 64 && com.hexhaki.piece.haki.HandCoat.amount(x + 1, y, 64, 64, false) > 0.0F
+                    && Math.abs(com.hexhaki.piece.haki.HandCoat.reveal(x, y, 64, 64, false)
+                        - com.hexhaki.piece.haki.HandCoat.reveal(x + 1, y, 64, 64, false)) > 0.02F) {
+                    stepped++;
+                }
+            }
+        }
+        Check.that(pixels > 100 && stepped > pixels / 3, "pixel by pixel: most neighbours turn at their own moment (" + stepped + " of " + pixels + ")");
+        // the right arm (40, 16): its fist's end (48..51, 16..19) before its knuckle row (row 11: y 31) before its wrist (row 6: y 26)
+        float fist = com.hexhaki.piece.haki.HandCoat.reveal(49, 17, 64, 64, false);
+        float knuckles = com.hexhaki.piece.haki.HandCoat.reveal(45, 31, 64, 64, false);
+        float wrist = com.hexhaki.piece.haki.HandCoat.reveal(45, 26, 64, 64, false);
+        Check.that(fist < knuckles + 0.15F && knuckles < wrist, "the fist first, then up the hand to the wrist (" + fist + ", " + knuckles + ", "
+            + wrist + ")");
     }
 
     /** 2.3.3: the Conqueror's red particles take the player's Ryou hue, keeping their brightness and alpha. */

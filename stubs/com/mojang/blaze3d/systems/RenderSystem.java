@@ -3,6 +3,8 @@ package com.mojang.blaze3d.systems;
 
 public final class RenderSystem {
     public static void enableBlend() { throw new UnsupportedOperationException(); }
+    /** 2.4.7 */ public static org.joml.Matrix4f getProjectionMatrix() { throw new UnsupportedOperationException(); }
+    /** 2.4.7 */ public static org.joml.Matrix4f getModelViewMatrix() { throw new UnsupportedOperationException(); }
     public static void disableBlend() { throw new UnsupportedOperationException(); }
     public static void defaultBlendFunc() { throw new UnsupportedOperationException(); }
     public static void blendFuncSeparate(com.mojang.blaze3d.platform.GlStateManager.SourceFactor srcColor,

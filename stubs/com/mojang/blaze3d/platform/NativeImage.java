@@ -6,5 +6,7 @@ public final class NativeImage implements AutoCloseable {
     /** downloadTexture(level, opaque): reads the bound texture back */ public void m_85045_(int level, boolean opaque) { throw new UnsupportedOperationException(); }
     /** getPixelRGBA (packed ABGR) */ public int m_84985_(int x, int y) { throw new UnsupportedOperationException(); }
     /** setPixelRGBA (packed ABGR) */ public void m_84988_(int x, int y, int abgr) { throw new UnsupportedOperationException(); }
+    /** copyFrom (2.4.7; the original's GearJacketSkin) */ public void m_85054_(NativeImage other) { throw new UnsupportedOperationException(); }
+    /** getWidth (2.4.7; the original's GearJacketSkin) */ public int m_84982_() { throw new UnsupportedOperationException(); }
     @Override public void close() { throw new UnsupportedOperationException(); }
 }

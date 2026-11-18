@@ -126,3 +126,23 @@ F com/mojang/blaze3d/platform/GlStateManager$SourceFactor ONE_MINUS_DST_COLOR Lc
 F com/mojang/blaze3d/platform/GlStateManager$SourceFactor DST_COLOR Lcom/mojang/blaze3d/platform/GlStateManager$SourceFactor;   # [srg] unobfuscated: joined.tsrg GlStateManager$SourceFactor DST_COLOR DST_COLOR 84739
 F com/mojang/blaze3d/platform/GlStateManager$DestFactor SRC_COLOR Lcom/mojang/blaze3d/platform/GlStateManager$DestFactor;   # [srg] unobfuscated: joined.tsrg GlStateManager$DestFactor SRC_COLOR SRC_COLOR 84644, beside ONE 84636 and ZERO 84645 the original uses
 M net/minecraftforge/client/event/ViewportEvent$ComputeFov usedConfiguredFov ()Z   # [forge] 1.20.1 client/event/ViewportEvent.java ComputeFov.usedConfiguredFov() (line 395, raw GitHub MinecraftForge 1.20.1): true for the world's view, false for the hand's; beside getFOV the original uses
+
+# --- 2.4.7: Ryou's fists glow with the game's own glowing outline (client/haki/RyouGlow; the owner: "kinda like the minecraft glow
+# effect around the firsts"): the fists' boxes drawn into a post chain's own target (shaders/post/entity_outline.json, as LevelRenderer
+# initOutline makes its entity outline), the chain run, its target blended over the frame as LevelRenderer.doEntityOutline does it.
+# fka = PostChain (intermediary class_279, yarn PostEffectProcessor), egv = RenderTarget (class_276, yarn Framebuffer), fuw = TextureManager
+# (class_1060), akx = ResourceManager (class_3300), acq = ResourceLocation (class_2960).
+C net/minecraft/client/renderer/PostChain                                         # [srg] joined.tsrg fka C_4145_; intermediary CLASS fka class_279 (yarn PostEffectProcessor)
+M net/minecraft/client/renderer/PostChain <init> (Lnet/minecraft/client/renderer/texture/TextureManager;Lnet/minecraft/server/packs/resources/ResourceManager;Lcom/mojang/blaze3d/pipeline/RenderTarget;Lnet/minecraft/resources/ResourceLocation;)V   # [srg] joined.tsrg fka <init> (Lfuw;Lakx;Legv;Lacq;)V; yarn PostEffectProcessor(TextureManager, ResourceManager, Framebuffer, Identifier)
+M net/minecraft/client/renderer/PostChain m_110023_ (F)V                          # [srg] process: joined.tsrg fka a (F)V m_110023_; intermediary METHOD fka (F)V a method_1258 (yarn render)
+M net/minecraft/client/renderer/PostChain m_110025_ (II)V                         # [srg] resize: joined.tsrg fka a (II)V m_110025_; intermediary METHOD fka (II)V a method_1259 (yarn setupDimensions)
+M net/minecraft/client/renderer/PostChain m_110036_ (Ljava/lang/String;)Lcom/mojang/blaze3d/pipeline/RenderTarget;   # [srg] getTempTarget: joined.tsrg fka a (Ljava/lang/String;)Legv; m_110036_; intermediary METHOD fka (Ljava/lang/String;)Legv; a method_1264 (yarn getSecondaryTarget)
+M com/mojang/blaze3d/pipeline/RenderTarget m_83945_ (Lcom/mojang/blaze3d/pipeline/RenderTarget;)V   # [srg] copyDepthFrom: joined.tsrg egv a (Legv;)V m_83945_; intermediary METHOD egv (Legv;)V a method_29329 (yarn copyDepthFrom)
+M com/mojang/blaze3d/pipeline/RenderTarget m_83931_ (FFFF)V                       # [srg] setClearColor: joined.tsrg egv a (FFFF)V m_83931_; intermediary METHOD egv (FFFF)V a method_1236 (yarn setClearColor)
+M com/mojang/blaze3d/pipeline/RenderTarget m_83954_ (Z)V                          # [srg] clear: joined.tsrg egv b (Z)V m_83954_; intermediary METHOD egv (Z)V b method_1230 (yarn clear)
+M com/mojang/blaze3d/pipeline/RenderTarget m_83961_ (IIZ)V                        # [srg] blitToScreen: joined.tsrg egv c (IIZ)V m_83961_; intermediary METHOD egv (IIZ)V c method_22594 (yarn draw(width, height, disableBlend))
+M com/mojang/blaze3d/systems/RenderSystem getProjectionMatrix ()Lorg/joml/Matrix4f;   # [srg] unobfuscated: joined.tsrg RenderSystem getProjectionMatrix ()Lorg/joml/Matrix4f; getProjectionMatrix
+M com/mojang/blaze3d/systems/RenderSystem getModelViewMatrix ()Lorg/joml/Matrix4f;    # [srg] unobfuscated: joined.tsrg RenderSystem getModelViewMatrix ()Lorg/joml/Matrix4f; getModelViewMatrix
+F com/mojang/blaze3d/platform/GlStateManager$SourceFactor ZERO Lcom/mojang/blaze3d/platform/GlStateManager$SourceFactor;   # [srg] unobfuscated: joined.tsrg GlStateManager$SourceFactor ZERO ZERO (doEntityOutline's alpha factor)
+F com/mojang/blaze3d/platform/GlStateManager$DestFactor ONE_MINUS_SRC_ALPHA Lcom/mojang/blaze3d/platform/GlStateManager$DestFactor;   # [srg] unobfuscated: joined.tsrg GlStateManager$DestFactor ONE_MINUS_SRC_ALPHA ONE_MINUS_SRC_ALPHA
+M org/joml/Matrix4f transformProject (Lorg/joml/Vector3f;)Lorg/joml/Vector3f;   # [lib] JOML 1.10 (bundled with 1.20.1): Matrix4f.transformProject(Vector3f v): v = this * (v, 1), divided by its w

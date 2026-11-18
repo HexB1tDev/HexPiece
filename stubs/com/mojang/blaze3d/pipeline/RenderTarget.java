@@ -8,4 +8,8 @@ public abstract class RenderTarget {
     /** bindWrite */ public void m_83947_(boolean setViewport) { throw new UnsupportedOperationException(); }
     /** getColorTextureId */ public int m_83975_() { throw new UnsupportedOperationException(); }
     /** resize */ public void m_83941_(int width, int height, boolean onOsx) { throw new UnsupportedOperationException(); }
+    /** copyDepthFrom (2.4.7) */ public void m_83945_(RenderTarget other) { throw new UnsupportedOperationException(); }
+    /** setClearColor (2.4.7) */ public void m_83931_(float red, float green, float blue, float alpha) { throw new UnsupportedOperationException(); }
+    /** clear (2.4.7) */ public void m_83954_(boolean onOsx) { throw new UnsupportedOperationException(); }
+    /** blitToScreen (2.4.7) */ public void m_83961_(int width, int height, boolean disableBlend) { throw new UnsupportedOperationException(); }
 }
