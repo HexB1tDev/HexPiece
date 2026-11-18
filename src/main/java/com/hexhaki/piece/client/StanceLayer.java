@@ -165,6 +165,12 @@ public final class StanceLayer {
         return player.m_9236_().m_46467_() - playing.since() + partial;
     }
 
+    /** 2.5.8: {@code player} is a Swordsman in combat mode (their stance is the sword's). */
+    public static boolean swordsman(AbstractClientPlayer player) {
+        FightingStyle style = HELD.get(player.m_19879_());
+        return style != null && style.sword();
+    }
+
     @SubscribeEvent
     public static void loggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
         HELD.clear();

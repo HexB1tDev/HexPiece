@@ -17,6 +17,9 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -41,9 +44,10 @@ import org.joml.Quaternionf;
  *   <li>Yoru (on the back): the hands empty while it is there; drawn, it comes down over the right shoulder into the hand, and goes
  *       back up the same way.</li>
  * </ul>
- * The arms are the game's own ({@code renderLeftHand}, {@code renderRightHand}: the player's skin, Armament's black and Ryou's aura
- * with them), the blade black under Armament as in third person (never its saya), everything swaying and bobbing with the view and
- * rising as the sword is taken up, as the game's hands do. Anything in the off hand keeps the left hand.
+ * The arms are the game's own, through Forge's arm event as the game draws its own ({@link #arm}: the player's skin, Armament's
+ * coat and Ryou's aura with them), the blade black under Armament as in third person (never its saya), everything swaying and bobbing
+ * with the view and rising as the sword is taken up, as the game's hands do. Anything in the off hand keeps the left hand. 2.5.8: all
+ * of it with the hand empty too (the active katana at the hip); sheathed with the hand empty, the game's own right arm stays.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class HolsterHand {
@@ -60,18 +64,27 @@ public final class HolsterHand {
         }
         Minecraft minecraft = Minecraft.m_91087_();
         LocalPlayer player = minecraft.f_91074_;
-        Katana katana = KatanaItem.of(event.getItemStack());
-        if (player == null || katana == null) {
-            return;
+        ItemStack stack0 = event.getItemStack();
+        boolean empty = stack0 == null || stack0.m_41619_();
+        Katana held = KatanaItem.of(stack0);
+        if (player == null || held == null && !empty) {
+            return; // something else in the hand: the game's own
         }
         try {
             int id = player.m_19879_();
-            if (SwordClient.katana(id) != katana) {
+            // 2.5.8 (the owner: "First person is fucked, theres no unsheath animation"): a Swordsman fights with the hand EMPTY as
+            // well (the active katana anywhere in the inventory, worn at the hip: SwordServer.scan), and until now only a katana held
+            // as the item was drawn here: with the hand empty the game drew its bare arm through every draw, cut and sheathing
+            Katana katana = SwordClient.katana(id);
+            if (katana == null || held != null && held != katana) {
                 return;
             }
             int anim = SwordClient.anim(id);
             if (SwordClient.swing(anim)) {
                 return;
+            }
+            if (empty && anim == SwordAnims.NONE && !StanceLayer.swordsman(player)) {
+                return; // the hand empty, out of the Swordsman's combat mode, the sword doing nothing: the game's own hand
             }
             float partial = event.getPartialTick();
             float ticks = SwordClient.ticks(player, partial);
@@ -82,6 +95,7 @@ public final class HolsterHand {
             String name = SwordAnims.name(anim, katana);
             DrawView.Pose pose;
             float push = 0.0F;
+            boolean rest = false;
             if (anim == SwordAnims.DRAW) {
                 pose = back ? DrawView.backDraw(katana, slim, ticks, Math.max(0, BladePaths.drawTick(name)), equip, age)
                     : DrawView.draw(katana, slim, ticks, SwordAnims.duration(anim, katana), BladePaths.drawTick(name), equip, age);
@@ -92,12 +106,19 @@ public final class HolsterHand {
                 pose = DrawView.held(katana, slim, equip, age);
             } else if (back) {
                 pose = new DrawView.Pose(null, null, null, null, 0.0F); // Yoru on the back: the hands are free
+                rest = true;
             } else {
                 pose = DrawView.holster(katana, slim, equip, age);
                 double ready = anim == SwordAnims.NONE ? StanceLayer.swordReady(player, partial) : -1.0;
                 push = ready < 0 ? 0.0F : Koiguchi.push(ready);
+                rest = true;
             }
-            event.setCanceled(true);
+            // the sword sheathed and the hand empty: the right hand is free, and the game keeps drawing it (its punches, its digging)
+            // beside the sheathed sword and the left hand on its hilt
+            boolean free = empty && rest;
+            if (!free) {
+                event.setCanceled(true);
+            }
             PoseStack stack = event.getPoseStack();
             MultiBufferSource buffers = event.getMultiBufferSource();
             int light = event.getPackedLight();
@@ -119,21 +140,36 @@ public final class HolsterHand {
             }
             EntityRenderer<?> renderer = minecraft.m_91290_().m_114382_(player);
             if (renderer instanceof PlayerRenderer playerRenderer) {
-                if (pose.right() != null) {
+                if (pose.right() != null && !free) {
                     stack.m_85836_();
                     apply(stack, pose.right());
-                    playerRenderer.m_117770_(stack, buffers, light, player);
+                    arm(playerRenderer, stack, buffers, light, player, true);
                     stack.m_85849_();
                 }
                 if (pose.left() != null && player.m_21206_().m_41619_()) {
                     stack.m_85836_();
                     apply(stack, pose.left());
-                    playerRenderer.m_117813_(stack, buffers, light, player);
+                    arm(playerRenderer, stack, buffers, light, player, false);
                     stack.m_85849_();
                 }
             }
         } catch (RuntimeException | LinkageError failure) {
             broken = true; // the game's own hand from the next frame
+        }
+    }
+
+    /**
+     * 2.5.8: an arm as the game draws its own first-person arm: Forge's arm event first (the original's Armament answers it with the
+     * Haki coat, Ryou's aura and the fist's glow, a Gear arm with its own), the plain arm if no one took it.
+     */
+    static void arm(PlayerRenderer renderer, PoseStack stack, MultiBufferSource buffers, int light, LocalPlayer player, boolean right) {
+        if (ForgeHooksClient.renderSpecificFirstPersonArm(stack, buffers, light, player, right ? HumanoidArm.RIGHT : HumanoidArm.LEFT)) {
+            return;
+        }
+        if (right) {
+            renderer.m_117770_(stack, buffers, light, player);
+        } else {
+            renderer.m_117813_(stack, buffers, light, player);
         }
     }
 

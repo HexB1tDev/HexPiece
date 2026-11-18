@@ -1,10 +1,10 @@
-# HexPiece: handoff after 2.5.7 (2.5.7: the crash on joining a world fixed; 2.5.6: the first-person draw and sheathing, the blades' temper)
+# HexPiece: handoff after 2.5.8 (2.5.8: first person with an empty hand, the arm under Haki; 2.5.7: the crash on joining a world; 2.5.6: the first-person draw and sheathing, the blades' temper)
 
 Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.5.5.md (the white screen, the free head, the holster view, the
 slash's cooldown), next-ai-2.5.3.md (Ryou's fist aura: the owner calls it "beautiful and perfect": keep it), next-ai-2.5.2.md,
 next-ai-2.5.1.md (**the owner's device**: Android, Amethyst, MobileGlues = OpenGL ES).
 
-Branch `claude/nice-bell-gam7qf`. **2.5.7 is released** (if the Release run is green: check). **The next version is 2.5.8**
+Branch `claude/nice-bell-gam7qf`. **2.5.8 is released** (if the Release run is green: check). **The next version is 2.5.9**
 (`python3 tools/next_version.py --write`). Nothing has ever been tested in game except by the owner.
 
 ## The owner (session 8, after 2.5.5, verbatim)
@@ -13,6 +13,32 @@ Branch `claude/nice-bell-gam7qf`. **2.5.7 is released** (if the Release run is g
 - "also improve the temper on all swords but yoru, the blade is too bland not good looking at all, simply improve the texture thats
   it, same for Gryphon"
 - (The chat was cleared by accident once; the work was on disk and a WIP commit was pushed.)
+
+## The owner (session 8, after 2.5.7, verbatim)
+- "First person is fucked, theres no unsheath animation or whatever"; then "another bug when haki is on, also no animation" with a
+  screenshot (first person, EMPTY main hand, Haki on: only the purple Ryou aura's outline where the right arm should be, no arm);
+  then "its just some swords, some have it some dont".
+
+## Done (2.5.8)
+- **The empty hand.** SwordServer.scan/free: a Swordsman fights with the main hand empty (the active katana anywhere in the
+  inventory, at the hip); HolsterHand only took over with the katana ITEM in the hand, so an empty hand showed the game's bare arm
+  through draws, held and sheathings (since 2.5.4's holster view). Now: hand empty or the active katana held; with the hand empty and
+  anim NONE only for a Swordsman in combat mode (`StanceLayer.swordsman`: the stance style the server sends in combat mode); sheathed
+  with the hand empty ("rest": holster, Yoru on the back) the event is NOT cancelled (the game's own right arm stays, punching and
+  digging) and our right arm is not drawn; draw/held/sheathe cancel and draw everything.
+- **The arm under Haki.** The original's first-person Armament (`HakiRenderHooks$ForgeBus.arm`, RenderArmEvent) cancels the game's
+  arm and draws NO arm: its `GearJacketHaki.renderCoating` was a whole black arm. 2.3.4+ draws only a hand coat, and none when
+  HakiSkin blackened the skin; 2.5.4 sent first person through `RyouHands.coatingFirstPerson`, so the arm vanished (the owner's
+  screenshot). Now `coatingFirstPerson` first draws the arm with the game's `PlayerRenderer.renderRightHand/renderLeftHand` (the
+  skin through the original's `GearJacketSkinMixin` on getSkinTextureLocation, i.e. blackened), then the coat where the skin is not.
+  (The Gear fruit's own RenderArmEvent handler draws its rubber arm and cancels; either handler wins, as in the original.)
+- **HolsterHand's arms through Forge's arm event** (`HolsterHand.arm`: `ForgeHooksClient.renderSpecificFirstPersonArm`, the call
+  ItemInHandRenderer makes; the plain renderRight/LeftHand if no one cancels): so the Haki coat and Ryou aura show on the draw/held
+  arms (2.5.6's notes claimed it; it was not true until now). New references: ForgeHooksClient (stub + [forge] evidence),
+  HumanoidArm.LEFT ([srg]).
+- **Open question to the owner ("some swords have it, some don't"):** Gryphon and Yoru draw by themselves on entering combat mode
+  (SwordServer.legend); the 25 katanas stay sheathed until the first cut or charge (drawFirst) and sheathe after SHEATHE_DELAY idle.
+  The release notes ask whether that is the difference they meant. Not changed (a gameplay change: ask first).
 
 ## Done (2.5.7): the crash on joining any world (2.5.5 and 2.5.6 had it)
 - The owner sent a crash report (2.5.6, Windows, NVIDIA): `NullPointerException: Cannot invoke "String.isEmpty()" because
@@ -63,7 +89,8 @@ Branch `claude/nice-bell-gam7qf`. **2.5.7 is released** (if the Release run is g
   them if the owner asks.
 
 ## Open
-1. The owner's report on 2.5.7 (no crash on joining a world) and 2.5.6: the first-person draw / held / sheathe (only judged in
+1. The owner's answer on "some swords have it, some don't" (see 2.5.8 above), and their report on 2.5.8 (empty hand, Haki arm),
+   2.5.7 (no crash on joining a world) and 2.5.6: the first-person draw / held / sheathe (only judged in
    renders), the temper.
 2. From 2.5.4 / 2.5.5: the free head, the holster view, the slash's 30 s cooldown, the white screen (confirm it is gone).
 3. Waiting on the owner from 2.4.7 - 2.5.2 (next-ai-2.5.2.md).

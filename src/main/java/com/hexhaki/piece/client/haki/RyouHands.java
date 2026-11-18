@@ -7,10 +7,12 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import dev.kosmx.playerAnim.core.util.Pair;
 import dev.kosmx.playerAnim.impl.IAnimatedPlayer;
 import dev.kosmx.playerAnim.impl.animation.AnimationApplier;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix3f;
@@ -59,9 +61,25 @@ public final class RyouHands {
         coating(pose, buffers, light, arm, player, right, bend(player, right));
     }
 
-    /** 2.5.4: the coat on the game's own first-person hand: straight, as that arm is drawn ({@link #glowFirstPerson}). */
+    /**
+     * 2.5.4: the coat on the game's own first-person hand: straight, as that arm is drawn ({@link #glowFirstPerson}).
+     * <p>
+     * 2.5.8 (the owner, with a screenshot of the first-person view, Haki on: only the purple aura's outline where the arm should be,
+     * "another bug when haki is on"): the original's first-person Armament ({@code HakiRenderHooks.ForgeBus.arm}) cancels the game's
+     * arm and draws none of its own: its coat was a whole black arm. Since 2.3.4 the coat is only the hands and is left off where the
+     * hands are blackened in the skin itself (HakiSkin), so nothing drew the arm at all. The arm is drawn here first, by the game's own
+     * hand renderer (the player's skin, blackened through the original's skin hook; its sleeve), then the coat where the skin could
+     * not be blackened, then the original's aura and glow over it.
+     */
     public static void coatingFirstPerson(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
                                           AbstractClientPlayer player, boolean right) {
+        if (Minecraft.m_91087_().m_91290_().m_114382_(player) instanceof PlayerRenderer renderer) {
+            if (right) {
+                renderer.m_117770_(pose, buffers, light, player);
+            } else {
+                renderer.m_117813_(pose, buffers, light, player);
+            }
+        }
         coating(pose, buffers, light, arm, player, right, new float[] {0.0F, 0.0F});
     }
 
