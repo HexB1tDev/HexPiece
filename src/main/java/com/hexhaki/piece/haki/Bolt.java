@@ -243,6 +243,52 @@ public final class Bolt {
      * Where point {@code i} is this frame: its place on the path, shifted across it by the dance (a new shape every two ticks; the
      * ends never move, so a bolt made of several strokes stays one chain). {@code out} gets xyz.
      */
+    /** 2.5.2: the sphere it is drawn within (its dance and its glow included): centre x, y, z and radius, in its own frame; made once. */
+    private double[] bounds;
+
+    public double[] bounds() {
+        double[] b = this.bounds;
+        if (b != null) {
+            return b;
+        }
+        int n = this.count();
+        double cx = 0;
+        double cy = 0;
+        double cz = 0;
+        for (int i = 0; i < n; i++) {
+            cx += this.points[i * 3];
+            cy += this.points[i * 3 + 1];
+            cz += this.points[i * 3 + 2];
+        }
+        cx /= Math.max(1, n);
+        cy /= Math.max(1, n);
+        cz /= Math.max(1, n);
+        double r = 0;
+        double piece = 0;
+        double widest = 0;
+        for (int i = 0; i < n; i++) {
+            double dx = this.points[i * 3] - cx;
+            double dy = this.points[i * 3 + 1] - cy;
+            double dz = this.points[i * 3 + 2] - cz;
+            r = Math.max(r, Math.sqrt(dx * dx + dy * dy + dz * dz));
+            widest = Math.max(widest, this.widths[i]);
+            if (i > 0) {
+                double ex = this.points[i * 3] - this.points[(i - 1) * 3];
+                double ey = this.points[i * 3 + 1] - this.points[(i - 1) * 3 + 1];
+                double ez = this.points[i * 3 + 2] - this.points[(i - 1) * 3 + 2];
+                piece = Math.max(piece, Math.sqrt(ex * ex + ey * ey + ez * ez));
+            }
+        }
+        // a point dances at most dance x its piece across (in two directions), its glow a few of its widths out
+        r += this.dance * piece * 1.5 + widest * 4.0 + 0.5;
+        b = new double[] {cx, cy, cz, r};
+        this.bounds = b;
+        return b;
+    }
+
+    /** 2.5.2: each inner point's two directions across the bolt and its dance's reach (7 a point), made once (the points never move). */
+    private double[] across;
+
     public void dancing(int i, double age, double[] out) {
         out[0] = this.points[i * 3];
         out[1] = this.points[i * 3 + 1];
@@ -251,17 +297,43 @@ public final class Bolt {
         if (this.dance <= 0 || i == 0 || i == n - 1) {
             return;
         }
+        double[] a = this.across;
+        if (a == null) {
+            a = new double[n * 7];
+            for (int k = 1; k < n - 1; k++) {
+                double px = this.points[(k + 1) * 3] - this.points[(k - 1) * 3];
+                double py = this.points[(k + 1) * 3 + 1] - this.points[(k - 1) * 3 + 1];
+                double pz = this.points[(k + 1) * 3 + 2] - this.points[(k - 1) * 3 + 2];
+                System.arraycopy(Jag.across(px, py, pz), 0, a, k * 7, 6);
+                a[k * 7 + 6] = Math.sqrt(px * px + py * py + pz * pz) * 0.5 * this.dance;
+            }
+            this.across = a;
+        }
         long frame = (long) Math.floor(Math.max(0.0, age) / 2.0);
-        double px = this.points[(i + 1) * 3] - this.points[(i - 1) * 3];
-        double py = this.points[(i + 1) * 3 + 1] - this.points[(i - 1) * 3 + 1];
-        double pz = this.points[(i + 1) * 3 + 2] - this.points[(i - 1) * 3 + 2];
-        double piece = Math.sqrt(px * px + py * py + pz * pz) * 0.5;
-        double[] across = Jag.across(px, py, pz);
-        SplittableRandom random = new SplittableRandom(this.seed * 0x9E3779B97F4A7C15L + i * 0x632BE59BD9B4E019L + frame * 0x85EBCA77C2B2AE63L);
-        double u = random.nextDouble(-1.0, 1.0) * this.dance * piece;
-        double v = random.nextDouble(-1.0, 1.0) * this.dance * piece;
-        out[0] += across[0] * u + across[3] * v;
-        out[1] += across[1] * u + across[4] * v;
-        out[2] += across[2] * u + across[5] * v;
+        // 2.5.2: the very numbers new SplittableRandom(start).nextDouble(-1, 1) gives, twice, without making one a point a frame
+        long start = this.seed * 0x9E3779B97F4A7C15L + i * 0x632BE59BD9B4E019L + frame * 0x85EBCA77C2B2AE63L;
+        double reach = a[i * 7 + 6];
+        double u = unit(start + GAMMA) * reach;
+        double v = unit(start + 2 * GAMMA) * reach;
+        int o = i * 7;
+        out[0] += a[o] * u + a[o + 3] * v;
+        out[1] += a[o + 1] * u + a[o + 4] * v;
+        out[2] += a[o + 2] * u + a[o + 5] * v;
+    }
+
+    /** SplittableRandom's step and its mixer (SplitMix64), as java.util.SplittableRandom has them. */
+    static final long GAMMA = 0x9E3779B97F4A7C15L;
+
+    static long mix64(long z) {
+        z = (z ^ (z >>> 30)) * 0xBF58476D1CE4E5B9L;
+        z = (z ^ (z >>> 27)) * 0x94D049BB133111EBL;
+        return z ^ (z >>> 31);
+    }
+
+    /** {@code nextDouble(-1, 1)} of a SplittableRandom whose seed has just been stepped to {@code stepped}. */
+    static double unit(long stepped) {
+        double r = (mix64(stepped) >>> 11) * 0x1.0p-53;
+        r = r * 2.0 - 1.0;
+        return r >= 1.0 ? Math.nextDown(1.0) : r;
     }
 }

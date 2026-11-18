@@ -135,6 +135,8 @@ public final class PiecePatch implements Opcodes {
     static final String APPLY_CONQUEROR = "(Lnet/minecraft/server/level/ServerPlayer;DFLcom/hexhaki/data/ConquerorMode;ZZZ)V";
     static final String COMBAT_TARGET = "(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/entity/LivingEntity;)Z";
     static final String ANIMATE = "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;I)V";
+    static final String EMITTER = "Lcom/lowdragmc/photon/client/gameobject/emitter/particle/ParticleEmitter;";
+    static final String EMITTER_5 = "(IIFFI)" + EMITTER;
     static final Object[][] CALL_REDIRECTS = {
         {"com/hexhaki/fruit/client/FruitKeys", "tick", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
         {"com/hexhaki/fruit/client/FruitKeys", "interact", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
@@ -192,6 +194,11 @@ public final class PiecePatch implements Opcodes {
         // release's animations go through HexPiece, which plays the releaser's alignment's (tools/conqueror_anims.py)
         {CONTROLLER, "beginConqueror", CONTROLLER, "animate", ANIMATE, CONQUEROR, "animate", 1},
         {CONTROLLER, "releaseConqueror", CONTROLLER, "animate", ANIMATE, CONQUEROR, "animate", 2},
+        // 2.5.2 (the owner: "the ring is still red (the ring that forms around the blast area)"): the tap's rings, flash and smoke
+        // (HakiFx's own emitters, never tinted) in the Ryou colour
+        {VFX, "conquerorTapCone", HAKI_FX, "airRing", EMITTER_5, TINT, "airRing", 1},
+        {VFX, "conquerorTapCone", HAKI_FX, "flash", EMITTER_5, TINT, "flash", 1},
+        {VFX, "conquerorTapCone", HAKI_FX, "smoke", "(IIFFIFLjava/util/Random;)" + EMITTER, TINT, "smoke", 1},
     };
     /**
      * 2.4.9: instance calls made static: class, method, call owner, name, descriptor, new owner, new name, how many. The new method takes

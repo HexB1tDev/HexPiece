@@ -2,7 +2,7 @@ Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Rea
 newest: 2.5.1 released: the Conqueror's charge and release animations by alignment, upper body only (good: a hand over the face then a
 calm stare; evil: limp, an unnatural head tilt, twitches, a laugh); a stunned player's own first-person view falls with them), then
 next-ai-2.5.0.md (the evil half-health damage), next-ai-2.4.9.md (the release by alignment, the 1-block slash) and next-ai-2.4.7.md.
-The next version is 2.5.2 (python3 tools/next_version.py --write). Check the branch's last "Build HexPiece" and "Release HexPiece"
+2.5.2 (the full release cheaper to draw) is released too. The next version is 2.5.3 (python3 tools/next_version.py --write). Check the branch's last "Build HexPiece" and "Release HexPiece"
 runs first.
 
 Ask the owner how 2.4.7-2.5.1 went in game and do what they report. If they still see the full release lag, find out whether it is

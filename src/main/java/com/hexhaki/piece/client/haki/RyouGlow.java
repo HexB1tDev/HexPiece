@@ -27,9 +27,9 @@ import org.joml.Vector3f;
  * The game outlines a glowing entity by drawing its silhouette in its colour into a framebuffer of its own, running the post chain
  * {@code shaders/post/entity_outline.json} over it (the silhouette's edges, blurred into a soft band) and laying the result over the
  * frame. This does the same for the fists only: while the hand layer draws a Ryou hand ({@link RyouHands#glow}) its box is recorded
- * here as it lands on the screen; once the level is drawn the boxes go into this chain's own target (the world's depth copied in
- * first, so a wall or a body in front hides the fist's glow as it hides the fist), the chain runs, and the outline is blended over the
- * frame exactly as the game blends its own. The first-person hand is drawn after the level, in its own projection: its fists are
+ * here as it lands on the screen; once the level is drawn the boxes go into this chain's own target, the chain runs, and the outline is
+ * blended over the frame exactly as the game blends its own. (2.4.7 copied the world's depth in first, so walls hid the glow; 2.5.2:
+ * not any more, it flickered on the owner's device; the glow shows through walls as the game's own Glowing outline does.) The first-person hand is drawn after the level, in its own projection: its fists are
  * outlined just before the HUD. No painted lines, no geometry that depends on culling: the game's own shaders and blending.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
@@ -46,6 +46,11 @@ public final class RyouGlow {
     private static int height;
     /** The chain could not be made or failed: no glow (the hands are still black). */
     private static boolean broken;
+    /**
+     * 2.5.2 (the owner: "the glow is too intense, and is flickering on and off"): the fists' silhouette is drawn this strong (the
+     * outline's brightness goes about with its square: a little under half the game's own Glowing outline).
+     */
+    static final float INTENSITY = 0.65F;
 
     private RyouGlow() {
     }
@@ -85,7 +90,7 @@ public final class RyouGlow {
             Vector3f ndc = projection.transformProject(new Vector3f(at.x, at.y, at.z));
             screen[i] = new float[] {ndc.x, ndc.y, ndc.z};
         }
-        int alpha = Math.round(255.0F * Math.max(0.0F, Math.min(1.0F, strength)));
+        int alpha = Math.round(255.0F * INTENSITY * Math.max(0.0F, Math.min(1.0F, strength)));
         int colour = alpha << 24 | (rgb & 0xFFFFFF);
         int[][] faces = {{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}};
         Boxes into = levelDone ? HAND : WORLD;
@@ -107,7 +112,9 @@ public final class RyouGlow {
             HAND.size = 0;
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             // the level's opaque world, its entities and particles are drawn: their depth is complete
-            composite(WORLD, true, event.getPartialTick());
+            // 2.5.2: no depth copy (on the owner's device, OpenGL ES through MobileGlues, copying the depth between framebuffers every
+            // frame is not reliable: the glow flickered on and off); the glow shows through walls, as the game's own Glowing does
+            composite(WORLD, false, event.getPartialTick());
             levelDone = true;
         }
     }

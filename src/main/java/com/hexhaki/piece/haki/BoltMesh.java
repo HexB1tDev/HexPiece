@@ -84,7 +84,7 @@ public final class BoltMesh {
             return new Frame(x, y, z, Math.cos(radians), Math.sin(radians));
         }
 
-        void place(double[] local, double[] out, int at) {
+        public void place(double[] local, double[] out, int at) {
             double lx = local[0];
             double lz = local[2];
             out[at] = this.x + lx * this.cos + lz * this.sin;
@@ -140,6 +140,26 @@ public final class BoltMesh {
      * The bolt at {@code age} ticks after its delay (nothing before 0 or after its duration), placed by {@code frame}; {@code pixel} is
      * the size of a screen pixel one block from the eye (the minimum line widths come from it).
      */
+    /**
+     * 2.5.2 (the owner's 2.4.4 "Conqueror Haki full release lags a ton"): a stroke wholly outside the view is not built. The half-angle
+     * round the view's forward that is drawn, kept wider than any field of view the game shows (110 degrees, sped up by a sprint, on an
+     * ultrawide screen reaches about 76 degrees at the corners).
+     */
+    public static final double VIEW_HALF = Math.toRadians(80.0);
+
+    /**
+     * True if a sphere at {@code x, y, z} from the eye, {@code r} round, can show in a view looking along the unit {@code fx, fy, fz}
+     * (any part of it within {@link #VIEW_HALF} of the forward, or the eye inside it).
+     */
+    public static boolean seen(double x, double y, double z, double r, double fx, double fy, double fz) {
+        double d = Math.sqrt(x * x + y * y + z * z);
+        if (d <= r) {
+            return true;
+        }
+        double cos = Math.max(-1.0, Math.min(1.0, (x * fx + y * fy + z * fz) / d));
+        return Math.acos(cos) - Math.asin(r / d) <= VIEW_HALF;
+    }
+
     public static void build(Bolt bolt, Frame frame, double age, double pixel, Sink sink) {
         build(bolt, frame, age, pixel, 1.0, sink);
     }
@@ -149,8 +169,8 @@ public final class BoltMesh {
      * sky (added light washes out against a bright sky, and lightning reads by its ink there).
      */
     public static void build(Bolt bolt, Frame frame, double age, double pixel, double shine, Sink sink) {
-        if (age < 0 || age > bolt.duration) {
-            return;
+        if (age < 0 || age > bolt.duration || bolt.kind == Bolt.HEART) {
+            return; // 2.5.2: a heart draws nothing (its core is white-hot already): its points are not even placed
         }
         int full = bolt.count();
         // far away, the finest kinks are smaller than a pixel: every second (fourth ...) point is the coarser crackle they ride on

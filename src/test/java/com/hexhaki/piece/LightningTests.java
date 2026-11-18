@@ -28,6 +28,7 @@ public final class LightningTests {
         stunFall();
         stunView();
         conquerorStun();
+        culled();
         Check.done("LightningTests");
     }
 
@@ -611,6 +612,53 @@ public final class LightningTests {
             }
         }
         Check.that(struck > 0 && struck < 40 * 36, "the storm strikes some bodies round it and misses others (" + struck + " of " + 40 * 36 + ")");
+    }
+
+    /** 2.5.2: strokes wholly outside the view are not built; one in it, or round the eye, always is; a heart builds nothing. */
+    static void culled() {
+        Check.that(BoltMesh.seen(0, 0, -10, 1, 0, 0, -1), "straight ahead: seen");
+        Check.that(!BoltMesh.seen(0, 0, 10, 1, 0, 0, -1), "straight behind: not built");
+        Check.that(BoltMesh.seen(0, 0, 3, 5, 0, 0, -1), "behind but round the eye: seen");
+        Check.that(BoltMesh.seen(10, 0, -1, 1, 0, 0, -1), "far to the side, a little ahead: seen (wider than any view)");
+        Check.that(!BoltMesh.seen(10, 0, 4, 1, 0, 0, -1), "to the side and behind: not built");
+        // every point a bolt is drawn at lies in its sphere, danced or not
+        Bolt bolt = new Bolt(new double[] {0, 0, 0, 1, 2, 0, 3, 1, 1, 6, 0, 2}, new float[] {0.2F, 0.2F, 0.15F, 0.1F}, 0xFFFF0000, Bolt.CORE, 0F,
+            12, 0F, 42L, 0.3);
+        double[] b = bolt.bounds();
+        double[] at = new double[3];
+        for (double age = 0; age < 12; age += 0.5) {
+            for (int i = 0; i < bolt.count(); i++) {
+                bolt.dancing(i, age, at);
+                double d = Math.sqrt(Math.pow(at[0] - b[0], 2) + Math.pow(at[1] - b[1], 2) + Math.pow(at[2] - b[2], 2));
+                Check.that(d <= b[3], "a danced point stays inside the bolt's sphere");
+            }
+        }
+        // 2.5.2: the dance made without a SplittableRandom a point a frame is exactly the one made with it
+        java.util.Random draw = new java.util.Random(7);
+        for (int trial = 0; trial < 2000; trial++) {
+            long seed = draw.nextLong();
+            int i = 1 + draw.nextInt(2);
+            double age = draw.nextDouble() * 30;
+            Bolt d = new Bolt(bolt.points, bolt.widths, bolt.color, bolt.kind, 0F, 12, 0F, seed, 0.3);
+            d.dancing(i, age, at);
+            long frame = (long) Math.floor(Math.max(0.0, age) / 2.0);
+            java.util.SplittableRandom random = new java.util.SplittableRandom(seed * 0x9E3779B97F4A7C15L + i * 0x632BE59BD9B4E019L
+                + frame * 0x85EBCA77C2B2AE63L);
+            double px = d.points[(i + 1) * 3] - d.points[(i - 1) * 3];
+            double py = d.points[(i + 1) * 3 + 1] - d.points[(i - 1) * 3 + 1];
+            double pz = d.points[(i + 1) * 3 + 2] - d.points[(i - 1) * 3 + 2];
+            double piece = Math.sqrt(px * px + py * py + pz * pz) * 0.5;
+            double[] across = com.hexhaki.piece.haki.Jag.across(px, py, pz);
+            double u = random.nextDouble(-1.0, 1.0) * 0.3 * piece;
+            double v = random.nextDouble(-1.0, 1.0) * 0.3 * piece;
+            Check.near(at[0], d.points[i * 3] + across[0] * u + across[3] * v, 1e-12, "the same dance (x)");
+            Check.near(at[1], d.points[i * 3 + 1] + across[1] * u + across[4] * v, 1e-12, "the same dance (y)");
+            Check.near(at[2], d.points[i * 3 + 2] + across[2] * u + across[5] * v, 1e-12, "the same dance (z)");
+        }
+        int[] quads = {0};
+        BoltMesh.build(new Bolt(bolt.points, bolt.widths, 0xFFFFFFFF, Bolt.HEART, 0F, 12, 0F, 42L, 0.3), BoltMesh.Frame.at(0, 0, -5), 3, 0.001,
+            (glow, xyz, argb) -> quads[0]++);
+        Check.that(quads[0] == 0, "a heart builds nothing");
     }
 
     /** 2.5.1: a stunned player's own view goes over with them: to the sky backwards, the ground forwards, the world on its side sideways. */

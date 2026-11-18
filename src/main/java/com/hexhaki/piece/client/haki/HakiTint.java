@@ -62,6 +62,21 @@ public final class HakiTint {
         return ryou == 0 ? argb : HueTint.tint(argb, ryou);
     }
 
+    /** 2.5.2: the tap's ring ({@code HakiFx.airRing}) with its colour tinted. */
+    public static ParticleEmitter airRing(int duration, int life, float startSize, float grow, int color) {
+        return com.hexhaki.client.vfx.HakiFx.airRing(duration, life, startSize, grow, conqueror(color));
+    }
+
+    /** 2.5.2: the tap's flash ({@code HakiFx.flash}) with its colour tinted. */
+    public static ParticleEmitter flash(int duration, int life, float speed, float size, int color) {
+        return com.hexhaki.client.vfx.HakiFx.flash(duration, life, speed, size, conqueror(color));
+    }
+
+    /** 2.5.2: the tap's smoke ({@code HakiFx.smoke}) with its colour tinted. */
+    public static ParticleEmitter smoke(int duration, int life, float speed, float size, int color, float swell, java.util.Random random) {
+        return com.hexhaki.client.vfx.HakiFx.smoke(duration, life, speed, size, conqueror(color), swell, random);
+    }
+
     /** {@code HakiVfx.particleTex} with its colour tinted. */
     public static ParticleEmitter particleTex(int duration, int lifetime, float speed, float size, int color, boolean bloom,
                                               ResourceLocation texture) {

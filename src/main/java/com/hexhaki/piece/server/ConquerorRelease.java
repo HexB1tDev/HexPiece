@@ -73,19 +73,22 @@ public final class ConquerorRelease {
         final int mastery;
         final int alignment;
         final boolean full;
+        /** 2.5.2: a tap (the cone): it fells every mob in its cone (the owner: "tap G isnt stunning entities (tested on wild horse)"). */
+        final boolean tap;
         final int stun;
         /** The bodies its lightning strikes (found as the release's damage is dealt), and (2.4.9) the bodies it has hurt. */
         List<LivingEntity> struck = List.of();
         final Set<Integer> hurt = new HashSet<>();
 
-        Release(ServerPlayer player, long seed, float power) {
+        Release(ServerPlayer player, long seed, float power, boolean tap) {
+            this.tap = tap;
             this.player = player;
             this.tick = player.m_9236_().m_46467_();
             this.seed = seed;
             this.power = power;
             this.mastery = HakiData.mastery(player, HakiType.CONQUEROR);
             this.alignment = ProfileServer.of(player).alignment();
-            this.full = power >= 0.999F;
+            this.full = !tap && power >= 0.999F;
             Long since = FULL_SINCE.get(player.m_20148_());
             this.stun = ConquerorStun.full(this.alignment, since == null ? 0L : Math.max(0L, this.tick - since));
         }
@@ -108,8 +111,10 @@ public final class ConquerorRelease {
         if (visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE) {
             SEEDS.put(player.m_19879_(), seed);
             AlignmentSounds.released(player, power); // 2.4.6: an evil player's full release roars
+        }
+        if (visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE || visual == S2CHakiVisual.Visual.CONQUEROR_TAP_CONE) {
             try {
-                current = new Release(player, seed, power);
+                current = new Release(player, seed, power, visual == S2CHakiVisual.Visual.CONQUEROR_TAP_CONE);
             } catch (RuntimeException failure) {
                 current = null; // the release goes on as the original's
             }
@@ -251,12 +256,12 @@ public final class ConquerorRelease {
 
     /**
      * 2.4.9: whom the release takes ({@code isConquerorCombatTarget} in the original's {@code applyConqueror} and
-     * {@code forceMaxConquerorStun}): an evil full charge every mob and player but the releaser's own mount and riders; else the
-     * original's (players, hostile mobs, bosses, a mob that targets the releaser).
+     * {@code forceMaxConquerorStun}): an evil full charge, and (2.5.2) a tap of any alignment (its cone), every mob and player but the
+     * releaser's own mount and riders; else the original's (players, hostile mobs, bosses, a mob that targets the releaser).
      */
     public static boolean target(ServerPlayer source, LivingEntity body) {
         Release r = active(source);
-        if (r != null && ConquerorStun.fellsAll(r.alignment, r.full)) {
+        if (r != null && (r.tap || ConquerorStun.fellsAll(r.alignment, r.full))) {
             return felled(source, body);
         }
         return HakiServerController.isConquerorCombatTarget(source, body);

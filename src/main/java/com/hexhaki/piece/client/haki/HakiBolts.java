@@ -431,6 +431,16 @@ public final class HakiBolts {
         SOLID.clear();
         GLOW.clear();
         BoltMesh.Sink sink = (glow, xyz, argb) -> (glow ? GLOW : SOLID).add(xyz, argb);
+        // 2.5.2: the view's forward, in the eye-centred world the bolts are placed in (strokes wholly outside the view are not built)
+        Matrix4f inverse = new Matrix4f(pose.m_85850_().m_252922_()).invert();
+        Vector3f origin = inverse.transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
+        Vector3f tip = inverse.transformPosition(new Vector3f(0.0F, 0.0F, -1.0F));
+        double ax = tip.x - origin.x;
+        double ay = tip.y - origin.y;
+        double az = tip.z - origin.z;
+        double al = Math.max(1.0E-9, Math.sqrt(ax * ax + ay * ay + az * az));
+        double[] ahead = {ax / al, ay / al, az / al};
+        double[] centre = new double[3];
         Iterator<Live> it = LIVE.iterator();
         while (it.hasNext()) {
             Live live = it.next();
@@ -450,7 +460,11 @@ public final class HakiBolts {
                 frame = BoltMesh.Frame.at(live.x - cam.f_82479_, live.y - cam.f_82480_, live.z - cam.f_82481_);
             }
             for (Bolt bolt : live.bolts) {
-                BoltMesh.build(bolt, frame, ticks - bolt.delay, PIXEL, shine, sink);
+                double[] b = bolt.bounds();
+                frame.place(b, centre, 0);
+                if (BoltMesh.seen(centre[0], centre[1], centre[2], b[3], ahead[0], ahead[1], ahead[2])) {
+                    BoltMesh.build(bolt, frame, ticks - bolt.delay, PIXEL, shine, sink);
+                }
             }
             if (live.wave > 0 || live.flash > 0) {
                 double cx = (live.entity != null ? live.entity.m_20318_(partial).f_82479_ : live.x) - cam.f_82479_;
