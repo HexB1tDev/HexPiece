@@ -28,6 +28,9 @@ public record S2CWater(int kind, int id, int user, int index, int target, double
     public static final int PRISON_GATHER = 6;
     public static final int PRISON_SEAL = 7;
     public static final int PRISON_BURST = 8;
+    /** 2.4.1: Six Powers: a bullet of Haki-hardened air shot from a finger (its number, from (x, y, z), its velocity), and where it struck. */
+    public static final int AIR_SHOT = 9;
+    public static final int AIR_HIT = 10;
 
     public static void encode(S2CWater message, FriendlyByteBuf buffer) {
         buffer.writeByte(message.kind);

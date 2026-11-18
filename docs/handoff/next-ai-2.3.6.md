@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 to 2.4.0 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework: Water Bullet, Brick Fist, Water Prison)
+# HexPiece: handoff after 2.3.6 to 2.4.1 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework; Six Powers' air in 3D)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.1** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.2** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,22 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## Done in 2.4.1: Six Powers (next-ai-2.2.6.md item 4: "Improve air particles, speed them up and make them 3d. (finger pistol with haki
+shoots projectiles)")
+- `water/WaterMesh.Look` (deep, shallow, gathered, base alpha, rim alpha): WATER, AIR (0.03 + 0.8 fresnel: all but clear, a bright rim),
+  HAKI (black glossy); body/ring/shade take a look (the old calls are WATER).
+- Pure `air/AirMesh.crescent`: an arc of radius R spanning +-70 deg, bulging along its flight, its tips swept back, a lens cross-section
+  (thickness across its plane, depth along its bulge) tapering to the tips (`taper`), shaded AIR, back to front; `tilted` turns its tips'
+  line about the flight (a kick's sweep).
+- Client `client/fx/AirFx` (its own AFTER_PARTICLES pass, debugQuads): `StyleFx.swing` hands every Six Powers blow to `AirFx.swing`:
+  the Storm Leg a crescent (R 1.0, tilted -30, 2 blocks a tick, 2.6 ticks), other blows a ring of air (AIR torus opening fast), all round
+  a big ring; streaks STREAK_SPEED 1.8x. `StyleFx.shot` hands the Air Blade to `AirFx.blade`: a crescent R 1.6 tilted 35 deg at
+  BLADE_SPEED 4.5 (was 2.2), two fainter ones a tick and two after, a ring and dust at its end.
+- Server `server/AirServer`: SP_FINGER_R/L landing with Armament on (StyleServer.tick, players only: NPCs have no Haki) shoots a
+  bullet of hardened air from the eye along the look (SPEED 4, RANGE 18, DAMAGE 4 x mastery): first foe along its path (box + 0.3) or
+  block (ClipContext), `S2CWater.AIR_SHOT` / `AIR_HIT` (WaterFx.accept passes them to AirFx: a HAKI body stretched 3x, rings of air).
+- Render: docs/images/six-powers-air.png (WaterPreview `air`, `airside`). Tests: StyleTests.air.
 
 ## Done in 2.4.0: the Fishman Karate rework, part 3 (the Water Prison): the rework is complete
 - **Water Prison** (`StyleMove.FK_PRISON`, U, in the Five-Thousand Brick Wave's place; `Effect.PRISON`, no hits; mastery 200,
@@ -150,8 +166,8 @@ Nothing was ever tested in game (only the owner can).
 4. (Done in 2.4.0: the Water Prison (U, in the Five-Thousand Brick Wave's place: "pulls both hands up into the sky (Needs an
    entity to target) the entity selected gets trapped and floats a bit off the ground in a water bubble a bit bigger than the
    entity's or player's size for 5 seconds. (perfect stun, entity can only look around.)": breakable by enough damage or the
-   Conqueror's, with a cooldown, unless the owner says otherwise).) Next: Six Powers (next-ai-2.2.6.md item 4: the owner,
-   "Improve air particles, speed them up and make them 3d. (finger pistol with haki shoots projectiles)"). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
+   Conqueror's, with a cooldown, unless the owner says otherwise).) Six Powers: done in 2.4.1. Every request on the old lists is
+   done; what is left is the owner's reports, the flying Haki slash's clash (item 3), and the white screen (item 2). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
 
 ## Not verified (only the owner can)
 Everything in game: clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,

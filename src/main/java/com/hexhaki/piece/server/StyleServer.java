@@ -260,6 +260,10 @@ public final class StyleServer {
                 int mastery = profile.mastery(move.style());
                 int landed = StyleCombat.land(player, move, hit, mastery, other -> FruitUtil.foe(player, other), state.struck,
                     StyleCombat.of(player));
+                if ((move == StyleMove.SP_FINGER_R || move == StyleMove.SP_FINGER_L) && armed(player)) {
+                    // 2.4.1 (the owner: "finger pistol with haki shoots projectiles"): a bullet of hardened air off the finger
+                    AirServer.shoot(player, mastery, other -> FruitUtil.foe(player, other), StyleCombat.of(player));
+                }
                 if (landed > 0) {
                     ProfileServer.addMastery(player, move.style(), PieceRules.masteryGain(mastery, 1 + hit.weight().ordinal()));
                 }

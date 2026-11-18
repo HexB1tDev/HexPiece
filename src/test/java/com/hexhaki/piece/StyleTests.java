@@ -23,6 +23,7 @@ public final class StyleTests {
         waterBullet();
         brickFist();
         prison();
+        air();
         Check.done("StyleTests");
     }
 
@@ -243,5 +244,30 @@ public final class StyleTests {
             "not one behind");
         Check.that(!com.hexhaki.piece.water.WaterPrison.bursts(13.9F) && com.hexhaki.piece.water.WaterPrison.bursts(14F),
             "enough damage bursts it");
+    }
+
+    /** 2.4.1: Six Powers' air in 3D. */
+    static void air() {
+        Check.near(com.hexhaki.piece.air.AirMesh.taper(0), 1.0, 1e-9, "a cut of air is whole in its middle");
+        Check.that(com.hexhaki.piece.air.AirMesh.taper(1) < 1e-6 && com.hexhaki.piece.air.AirMesh.taper(-1) < 1e-6, "and drawn to a point at its tips");
+        double[] f = {0, 0, 1};
+        double[] a = com.hexhaki.piece.air.AirMesh.tilted(f, new double[] {1, 0, 0}, 35);
+        Check.near(a[0] * f[0] + a[1] * f[1] + a[2] * f[2], 0.0, 1e-9, "tilted, its tips' line stays square to its flight");
+        Check.near(Math.toDegrees(Math.acos(a[0])), 35.0, 1e-6, "tilted by the leg's sweep");
+        int[] tris = {0};
+        boolean[] see = {true};
+        com.hexhaki.piece.air.AirMesh.crescent(new com.hexhaki.piece.air.AirMesh.Crescent(0, 0, -4, f, new double[] {1, 0, 0}, 1.6,
+            Math.toRadians(70), 0.1, 0.3, 1.0), 24, 8, (xyz, argb) -> {
+                tris[0]++;
+                for (int c : argb) {
+                    see[0] &= (c >>> 24) < 250;
+                }
+            });
+        Check.that(tris[0] == 24 * 8 * 2, "a crescent of whole triangles");
+        Check.that(see[0], "air is never solid");
+        Check.that(com.hexhaki.piece.water.WaterMesh.AIR.base() < 0.1 && com.hexhaki.piece.water.WaterMesh.HAKI.base() > 0.8,
+            "air all but clear straight on, Haki black");
+        Check.that(com.hexhaki.piece.client.fx.AirFx.BLADE_SPEED > 2.2 * 1.9, "the Air Blade at least twice as fast as it was");
+        Check.that(com.hexhaki.piece.server.AirServer.RANGE >= 15 && com.hexhaki.piece.server.AirServer.SPEED >= 3, "the finger's Haki bullet flies far, fast");
     }
 }

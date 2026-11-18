@@ -90,6 +90,14 @@ public final class StyleFx {
         int weight = Math.floorMod(code, 10);
         boolean round = code / 10 % 2 == 1;
         double h = height(move);
+        if (move.style() == FightingStyle.SIX_POWERS) {
+            // 2.4.1: Six Powers' air in 3D, faster (client/fx/AirFx)
+            com.hexhaki.piece.client.fx.AirFx.swing(move, feet, facing, h, weight, round);
+            if (weight >= 2) {
+                dust(feet, round ? null : facing, 8 + weight * 3);
+            }
+            return;
+        }
         Vec3 side = new Vec3(-facing.f_82481_, 0, facing.f_82479_);
         if (round) {
             int n = PieceFx.count(14 + weight * 4);
@@ -196,6 +204,10 @@ public final class StyleFx {
 
     /** A shot along {@code from} to {@code to}: the Air Blade's crescent, or a water bullet. */
     static void shot(StyleMove move, Vec3 from, Vec3 to) {
+        if (move.style() == FightingStyle.SIX_POWERS) {
+            com.hexhaki.piece.client.fx.AirFx.blade(from, to); // 2.4.1: the Air Blade, a crescent of air in 3D, twice as fast
+            return;
+        }
         Vec3 path = to.m_82546_(from);
         double distance = Math.max(0.5, path.m_82553_());
         Vec3 direction = path.m_82490_(1.0 / distance);

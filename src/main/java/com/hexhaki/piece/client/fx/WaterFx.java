@@ -149,6 +149,7 @@ public final class WaterFx {
             case S2CWater.SPILL -> spill(level, message.user());
             case S2CWater.SHOCK -> shock(at, dir.m_82541_(), level.m_46467_());
             case S2CWater.KNOCKED -> Tumbles.knocked(message.target(), dir);
+            case S2CWater.AIR_SHOT, S2CWater.AIR_HIT -> AirFx.accept(message);
             case S2CWater.PRISON_GATHER -> PRISONS.put(message.target(), new Prison(level.m_46467_() - com.hexhaki.piece.water.WaterPrison.GATHER));
             case S2CWater.PRISON_SEAL -> {
                 Prison prison = PRISONS.computeIfAbsent(message.target(), id -> new Prison(level.m_46467_()

@@ -23,6 +23,18 @@ public final class WaterMesh {
     /** Where the sky's light comes from (unit vector, world: up, a little to the side). */
     static final double[] SKY = normalise(new double[] {0.35, 1.0, 0.22});
 
+    /**
+     * 2.4.1: what a body is made of, as the eye sees it: its colour looked straight through and toward its rim, the light gathered on its
+     * far side, how much of it shows straight on and how much more at its rim.
+     */
+    public record Look(int deep, int shallow, int gathered, double base, double rim) {
+    }
+
+    /** Water; 2.4.1: air pressed hard (Six Powers: all but clear, a bright rim and glints); Armament Haki (black, glossy). */
+    public static final Look WATER = new Look(DEEP, SHALLOW, GATHERED, 0.2, 0.62);
+    public static final Look AIR = new Look(0xD6ECFF, 0xFFFFFF, 0xFFFFFF, 0.03, 0.8);
+    public static final Look HAKI = new Look(0x0B0A10, 0x3C3A4A, 0x9AA4B8, 0.92, 0.1);
+
     /** Takes each triangle: three points (x, y, z, eye-relative) and their colours (argb). */
     public interface Sink {
         void tri(double[] xyz, int[] argb);
@@ -60,12 +72,22 @@ public final class WaterMesh {
 
     /** The body's triangles, back to front from the eye at the origin, to {@code sink}. */
     public static void body(Body body, Sink sink) {
+        body(body, WATER, sink);
+    }
+
+    /** 2.4.1: as above, of {@code look}. */
+    public static void body(Body body, Look look, Sink sink) {
         int[] res = resolution(body.radius(), Math.sqrt(body.x() * body.x() + body.y() * body.y() + body.z() * body.z()));
-        body(body, res[0], res[1], sink);
+        body(body, res[0], res[1], look, sink);
     }
 
     /** As above with {@code rings} rings of latitude and {@code sides} around. */
     public static void body(Body body, int rings, int sides, Sink sink) {
+        body(body, rings, sides, WATER, sink);
+    }
+
+    /** 2.4.1: as above, of {@code look}. */
+    public static void body(Body body, int rings, int sides, Look look, Sink sink) {
         double[] along = body.along() == null ? new double[] {0, 1, 0} : normalise(body.along());
         double k = Math.max(1.0, body.stretch());
         int count = (rings + 1) * sides;
@@ -109,7 +131,7 @@ public final class WaterMesh {
         tris.sort((p, q) -> Double.compare(q[3], p[3]));
         int[] colours = new int[count];
         for (int v = 0; v < count; v++) {
-            colours[v] = shade(points[v], normals[v], body.opacity());
+            colours[v] = shade(points[v], normals[v], body.opacity(), look);
         }
         double[] xyz = new double[9];
         int[] argb = new int[3];
@@ -135,6 +157,11 @@ public final class WaterMesh {
 
     /** The ring's triangles, back to front from the eye at the origin, to {@code sink}. */
     public static void ring(Ring ring, int around, int tube, Sink sink) {
+        ring(ring, around, tube, WATER, sink);
+    }
+
+    /** 2.4.1: as above, of {@code look} (Six Powers' rings of air). */
+    public static void ring(Ring ring, int around, int tube, Look look, Sink sink) {
         double[] axis = normalise(ring.axis());
         double[] e1 = Math.abs(axis[1]) < 0.9 ? normalise(cross(axis, new double[] {0, 1, 0})) : normalise(cross(axis, new double[] {1, 0, 0}));
         double[] e2 = cross(axis, e1);
@@ -168,7 +195,7 @@ public final class WaterMesh {
         tris.sort((p, q) -> Double.compare(q[3], p[3]));
         int[] colours = new int[count];
         for (int v = 0; v < count; v++) {
-            colours[v] = shade(points[v], normals[v], ring.opacity());
+            colours[v] = shade(points[v], normals[v], ring.opacity(), look);
         }
         for (double[] t : tris) {
             double[] xyz = new double[9];
@@ -197,16 +224,21 @@ public final class WaterMesh {
      * and more of it toward the rim, the sky's glint, the gathered light on the side away from the sky; {@code opacity} scales it all.
      */
     public static int shade(double[] p, double[] n, double opacity) {
+        return shade(p, n, opacity, WATER);
+    }
+
+    /** 2.4.1: as above, of {@code look}. */
+    public static int shade(double[] p, double[] n, double opacity, Look look) {
         double[] v = normalise(new double[] {-p[0], -p[1], -p[2]});
         double facing = Math.abs(n[0] * v[0] + n[1] * v[1] + n[2] * v[2]);
         double fresnel = Math.pow(1.0 - facing, 2.2);
         double[] h = normalise(new double[] {SKY[0] + v[0], SKY[1] + v[1], SKY[2] + v[2]});
         double spec = Math.pow(Math.max(0.0, n[0] * h[0] + n[1] * h[1] + n[2] * h[2]), 48.0);
         double gathered = Math.pow(Math.max(0.0, -(n[0] * SKY[0] + n[1] * SKY[1] + n[2] * SKY[2])), 2.0) * 0.45;
-        double[] colour = mix(rgb(DEEP), rgb(SHALLOW), Math.min(1.0, 0.25 + fresnel * 1.2));
-        colour = mix(colour, rgb(GATHERED), gathered);
+        double[] colour = mix(rgb(look.deep()), rgb(look.shallow()), Math.min(1.0, 0.25 + fresnel * 1.2));
+        colour = mix(colour, rgb(look.gathered()), gathered);
         colour = mix(colour, new double[] {1, 1, 1}, Math.min(1.0, spec * 1.4));
-        double alpha = (0.2 + 0.62 * fresnel + 0.18 * gathered + 0.75 * spec) * opacity;
+        double alpha = (look.base() + look.rim() * fresnel + 0.18 * gathered + 0.75 * spec) * opacity;
         return argb(Math.max(0.0, Math.min(1.0, alpha)), colour);
     }
 

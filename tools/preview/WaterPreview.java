@@ -20,6 +20,9 @@ public final class WaterPreview {
         double time = args.length > 3 ? Double.parseDouble(args[3]) : 0.0;
         List<WaterMesh.Body> bodies = new ArrayList<>();
         List<WaterMesh.Ring> rings = new ArrayList<>();
+        List<com.hexhaki.piece.air.AirMesh.Crescent> cuts = new ArrayList<>();
+        List<WaterMesh.Ring> airRings = new ArrayList<>();
+        List<WaterMesh.Body> haki = new ArrayList<>();
         switch (scene) {
             case "drops" -> {
                 // five drops in a flat arch over a raised fist, the fist 0.55 above the eye, 2.6 ahead
@@ -39,6 +42,25 @@ public final class WaterPreview {
             case "bullet" -> bullet(bodies, time);
             case "shock", "shockside" -> {
                 shock(rings, time, scene.equals("shockside"));
+            }
+            case "air" -> {
+                // 2.4.1: the Air Blade flying off from behind the kicker, tilted the way the leg swept; a Storm Leg's small cut beside it
+                double[] f = {0, 0.05, -1};
+                cuts.add(new com.hexhaki.piece.air.AirMesh.Crescent(0.2, 0.0, -3.6 - time * 4.5, f,
+                    com.hexhaki.piece.air.AirMesh.tilted(f, new double[] {1, 0, 0}, 35), 1.6, Math.toRadians(70), 0.07, 0.3, 1.0));
+                airRings.add(new WaterMesh.Ring(-0.9, -0.2, -3.0, new double[] {0.3, 0, -1}, 0.35 + 0.25 * time, 0.07, 0.0, time, 1, 1.0));
+                haki.add(new WaterMesh.Body(-1.3, 0.25, -4.0 - time * 4.0, 0.07, new double[] {0, 0, -1}, 3.0, 0.0, time, 2, 1.0));
+            }
+            case "airside" -> {
+                double[] f = {1, 0, 0};
+                for (int k = 0; k < 3; k++) {
+                    double t = time - k * 0.7;
+                    if (t < 0) {
+                        continue;
+                    }
+                    cuts.add(new com.hexhaki.piece.air.AirMesh.Crescent(-3.0 + t * 4.5, -0.1, -6.0, f,
+                        com.hexhaki.piece.air.AirMesh.tilted(f, new double[] {0, 0, 1}, 90), 1.6, Math.toRadians(70), 0.07, 0.3, 1.0 - 0.3 * k));
+                }
             }
             case "bubble" -> bodies.add(new WaterMesh.Body(0.0, -0.1, -4.2, 1.3, null, 1.0, 0.03, time, 3, WaterMesh.PRISON));
             default -> bodies.add(new WaterMesh.Body(0.0, 0.0, -0.75, 0.16, null, 1.0, 0.07, time, 5, WaterMesh.DROP));
@@ -72,6 +94,16 @@ public final class WaterPreview {
         rings.sort((p, q) -> Double.compare(q.z() * q.z() + q.x() * q.x(), p.z() * p.z() + p.x() * p.x()));
         for (WaterMesh.Ring ring : rings) {
             WaterMesh.ring(ring, 40, 10, draw);
+        }
+        for (WaterMesh.Ring ring : airRings) {
+            WaterMesh.ring(ring, 36, 8, WaterMesh.AIR, draw);
+        }
+        cuts.sort((p, q) -> Double.compare(q.z() * q.z() + q.x() * q.x(), p.z() * p.z() + p.x() * p.x()));
+        for (com.hexhaki.piece.air.AirMesh.Crescent cut : cuts) {
+            com.hexhaki.piece.air.AirMesh.crescent(cut, 28, 8, draw);
+        }
+        for (WaterMesh.Body body : haki) {
+            WaterMesh.body(body, 8, 14, WaterMesh.HAKI, draw);
         }
         for (WaterMesh.Body body : bodies) {
             WaterMesh.body(body, (xyz, argb) -> {
