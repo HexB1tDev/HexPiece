@@ -24,6 +24,10 @@ Nothing was ever tested in game (only the owner can).
 - `tools/gesture_preview.py`: `--only NAME,NAME` and `--lint` (every moment a straight arm's middle line, past the shoulder joint, is
   in the head or more than half its thickness in the chest). Left: HexGhoul's folded arms (CROSS, TAP) graze the chest for 5 ticks
   as they fold (sub-pixel), FIDGET once. docs/images/npc-gestures-ranks.png.
+- `NpcTests.gestureClearance` (after 2.4.3, no version: nothing in game changed): the head check in Java, in the vanilla model's own
+  geometry (each part Rz Ry Rx about its pivot, at its weight): no arm's middle line past the shoulder joint inside the head's box
+  drawn in by 0.4 px. It fails the old LOOKOUT (1.52 px deep) and passes every gesture now; a new gesture that puts an arm through
+  the head fails the build.
 
 ## Done in 2.4.2: the flying Haki slash clashes (open item 3)
 - `HakiSlashes.meet` (each server tick, before the slashes step): two slashes in flight from foes (a.foe tests b's owner), head on (dirs'
