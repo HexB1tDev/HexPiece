@@ -103,6 +103,71 @@ public final class Clashes {
         return true;
     }
 
+    /**
+     * 2.4.2: the flying Haki slash of {@code owner} (along {@code dir}, {@code damage} hard, {@code ryou} its Ryou colour or 0) reaches
+     * {@code body} at {@code at}: true if a blow of {@code body}'s coming back at it (facing it) meets it there. A slash is a blade's:
+     * a bare blow meets it only with Armament on. Met: the slash stops there (the caller's), the body's move stops, it is staggered,
+     * held and thrown back the way the slash flew (the harder the slash was than its blow, the further), heard and seen.
+     */
+    public static boolean slashMeets(LivingEntity owner, LivingEntity body, Vec3 dir, float damage, int ryou, Vec3 at) {
+        if (!(body.m_9236_() instanceof ServerLevel level)) {
+            return false;
+        }
+        long now = level.m_46467_();
+        ClashRules.Blow theirs = blowOf(body, now);
+        if (theirs == null || !ClashRules.onItsWay(theirs, now)) {
+            return false;
+        }
+        Vec3 look = StyleCombat.facing(body);
+        if (!ClashRules.faces(look.f_82479_, look.f_82481_, -dir.f_82479_, -dir.f_82481_)) {
+            return false;
+        }
+        ClashRules.Blow slash = new ClashRules.Blow(ClashRules.Kind.BLADE, now, now, 0.0, damage, true, ryou);
+        if (!ClashRules.clashable(slash, theirs)) {
+            return false;
+        }
+        float power = ClashRules.power(damage, theirs.hit());
+        double ratio = ClashRules.ratio(theirs.hit(), damage);
+        stop(body, now, true);
+        stagger(body, now, ClashRules.stagger(ratio));
+        double flat = Math.max(1.0E-4, Math.hypot(dir.f_82479_, dir.f_82481_));
+        Impact.hit(owner, body, spec(power, ClashRules.frameTicks(power) + 2, dir.f_82479_ / flat, dir.f_82481_ / flat,
+            ClashRules.thrown(power, ratio), ClashRules.lifted(ratio)));
+        heard(body, at, power, true);
+        PieceNetwork.around(body, new S2CClash(++next, at.f_82479_, at.f_82480_, at.f_82481_, (float) (dir.f_82479_ / flat),
+            (float) (dir.f_82481_ / flat), power, ryou, theirs.ryou(), owner.m_19879_(), body.m_19879_(),
+            S2CClash.BLADE_A | (theirs.blade() ? S2CClash.BLADE_B : 0) | (ClashRules.overwhelmed(ratio) ? S2CClash.OVERWHELMED : 0)));
+        return true;
+    }
+
+    /**
+     * 2.4.2: two flying Haki slashes met head on at {@code at} ({@code a}'s flying along {@code dir}): both stopped there (the caller's);
+     * the clash heard and seen by everyone near either thrower, both Ryou colours bursting out if both were Ryou slashes.
+     */
+    public static void slashesMeet(LivingEntity a, LivingEntity b, Vec3 at, Vec3 dir, float hitA, float hitB, int ryouA, int ryouB) {
+        if (!(a.m_9236_() instanceof ServerLevel level)) {
+            return;
+        }
+        float power = ClashRules.power(hitA, hitB);
+        heard(a, at, power, true);
+        if (ClashRules.quakes(power)) {
+            Impact.quake(level, new Vec3(at.f_82479_, at.f_82480_ - 1.0, at.f_82481_), 4.0 + 2.5 * power, Math.min(1.0F, 0.35F + 0.25F * power), 10);
+        }
+        double flat = Math.max(1.0E-4, Math.hypot(dir.f_82479_, dir.f_82481_));
+        S2CClash message = new S2CClash(++next, at.f_82479_, at.f_82480_, at.f_82481_, (float) (dir.f_82479_ / flat), (float) (dir.f_82481_ / flat),
+            power, ryouA, ryouB, a.m_19879_(), b.m_19879_(), S2CClash.BLADE_A | S2CClash.BLADE_B);
+        PieceNetwork.around(a, message);
+        PieceNetwork.around(b, message);
+    }
+
+    /** A clash heard at {@code at}: the blows meeting, and steel when a blade is in it. */
+    static void heard(LivingEntity near, Vec3 at, float power, boolean steel) {
+        PieceSounds.playAt(near, at.f_82479_, at.f_82480_, at.f_82481_, ClashRules.SOUND, ClashRules.volume(power), ClashRules.pitch(power));
+        if (steel) {
+            PieceSounds.playAt(near, at.f_82479_, at.f_82480_, at.f_82481_, com.hexhaki.piece.sword.SwordSounds.CLASH, 0.9F + 0.2F * power, 0.9F);
+        }
+    }
+
     /** What {@code body} is throwing now (a player's style move or sword, a sea fighter's), or null. */
     static ClashRules.Blow blowOf(LivingEntity body, long now) {
         if (body instanceof ServerPlayer player) {

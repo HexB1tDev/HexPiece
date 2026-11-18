@@ -1,6 +1,6 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.3.6.md (the
-newest: clashes in 2.3.6, the Galaxy Fist made Iron Fist's in 2.3.7, Fishman's Water Bullet in 2.3.8, Brick Fist in 2.3.9 and Water Prison in 2.4.0, Six Powers' 3D air in 2.4.1), then next-ai-2.3.2.md (2.3.2 to 2.3.5) and next-ai-2.3.0.md
-(the clash rules in the owner's words). 2.4.1 is released (v2.4.1); the next version is 2.4.2 (`python3 tools/next_version.py --write`). Check the branch's
+newest: clashes in 2.3.6, the Galaxy Fist made Iron Fist's in 2.3.7, Fishman's Water Bullet in 2.3.8, Brick Fist in 2.3.9 and Water Prison in 2.4.0, Six Powers' 3D air in 2.4.1, Haki slashes clashing in 2.4.2), then next-ai-2.3.2.md (2.3.2 to 2.3.5) and next-ai-2.3.0.md
+(the clash rules in the owner's words). 2.4.2 is released (v2.4.2); the next version is 2.4.3 (`python3 tools/next_version.py --write`). Check the branch's
 "Build HexPiece" run of the last push is green first.
 
 The owner had not tested 2.3.4 or 2.3.5 in game at the start of session 4, and 2.3.6 (clashes) and 2.3.7 (Galaxy Fist) are new: ask
@@ -13,7 +13,7 @@ Just copy. They're all the same." Every blade plays the katanas' one animation s
 and charge draw off its back are its own. Never bring per-blade sets back; never re-check per blade.
 
 Every request on the owner's lists is done (the last, Six Powers' air, in 2.4.1); after their reports, ask what is next;
-the flying Haki slash is not clashable yet (next-ai-2.3.6.md). Run on the "HexPiece" cloud environment. HexGhoul is at
+Run on the "HexPiece" cloud environment. HexGhoul is at
 HexB1tDev/HexGhoul, branch claude/eager-ritchie-xni1ms (public: clone read-only). House rules: versions roll over at 9, keep only 5
 releases, judge every render yourself (GIFs too; `tools/sword_gif.py` has a first-person view, `tools/preview/ImpactPreview.java`
 renders the impact frame), never claim in-game testing, every sound from the web and free to use (or the owner's own). The owner's

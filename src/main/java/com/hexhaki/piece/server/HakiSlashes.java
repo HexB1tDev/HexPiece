@@ -137,6 +137,7 @@ public final class HakiSlashes {
         }
         int[] budget = {SwordRules.CUT_CHECKS_PER_TICK * 4, 4 * (int) Math.round(PieceConfig.get(PieceConfig.CUT_BREAKS,
             SwordRules.CUT_BREAKS_PER_TICK)) * 4};
+        meet();
         Iterator<Slash> it = ACTIVE.iterator();
         while (it.hasNext()) {
             Slash slash = it.next();
@@ -150,6 +151,49 @@ public final class HakiSlashes {
                 it.remove();
             }
         }
+    }
+
+    /**
+     * 2.4.2: two slashes still flying, from foes, coming at each other head on: where their fronts meet (or would pass this tick) at
+     * heights that overlap, both stop there and clash ({@code Clashes.slashesMeet}).
+     */
+    static void meet() {
+        for (int i = 0; i < ACTIVE.size(); i++) {
+            Slash a = ACTIVE.get(i);
+            if (a.travelled >= a.range) {
+                continue;
+            }
+            for (int j = i + 1; j < ACTIVE.size(); j++) {
+                Slash b = ACTIVE.get(j);
+                if (b.travelled >= b.range || b.level != a.level || b.owner == a.owner || !a.foe.test(b.owner)) {
+                    continue;
+                }
+                double head = a.dir.f_82479_ * b.dir.f_82479_ + a.dir.f_82480_ * b.dir.f_82480_ + a.dir.f_82481_ * b.dir.f_82481_;
+                if (head > -0.3) {
+                    continue; // not coming at each other
+                }
+                Vec3 fa = a.start.m_82549_(a.dir.m_82490_(a.travelled)).m_82520_(0.0, a.centre, 0.0);
+                Vec3 fb = b.start.m_82549_(b.dir.m_82490_(b.travelled)).m_82520_(0.0, b.centre, 0.0);
+                double across = Math.hypot(fa.f_82479_ - fb.f_82479_, fa.f_82481_ - fb.f_82481_);
+                double upDown = Math.abs(fa.f_82480_ - fb.f_82480_);
+                if (across > a.speed + b.speed + 1.0 || upDown > (a.height + b.height) * 0.5) {
+                    continue;
+                }
+                Vec3 at = fa.m_82549_(fb).m_82490_(0.5);
+                stopAt(a, at.m_82520_(0.0, -a.centre, 0.0));
+                stopAt(b, at.m_82520_(0.0, -b.centre, 0.0));
+                Clashes.slashesMeet(a.owner, b.owner, at, a.dir, a.damage, b.damage, a.finisher ? a.color | 0xFF000000 : 0,
+                    b.finisher ? b.color | 0xFF000000 : 0);
+            }
+        }
+    }
+
+    /** 2.4.2: a slash stops flying where it reaches {@code point} (on its line): every client near draws it no further. */
+    static void stopAt(Slash slash, Vec3 point) {
+        double along = Math.max(0.0, Math.min(slash.range, point.m_82546_(slash.start).m_82526_(slash.dir)));
+        slash.travelled = along;
+        slash.range = along;
+        PieceNetwork.around(slash.owner, message(slash, slash.range));
     }
 
     /** One tick of a slash; true when it is over. */
@@ -199,6 +243,11 @@ public final class HakiSlashes {
             }
             slash.hit.add(other.m_19879_());
             Vec3 middle = StyleCombat.middle(other);
+            if (Clashes.slashMeets(slash.owner, other, slash.dir, slash.damage, slash.finisher ? slash.color | 0xFF000000 : 0, middle)) {
+                // 2.4.2: a blow coming back at it met it there: it flies no further
+                stopAt(slash, slash.start.m_82549_(slash.dir.m_82490_(Math.max(0.0, middle.m_82546_(slash.start).m_82526_(slash.dir)))));
+                return;
+            }
             if (slash.finisher && other.m_21223_() <= slash.damage && Finishers.start(slash.owner, other, slash.dir, slash.damage,
                 slash.source)) {
                 continue; // the Ryou finisher takes it from here

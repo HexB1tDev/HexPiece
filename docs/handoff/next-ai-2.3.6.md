@@ -1,8 +1,8 @@
-# HexPiece: handoff after 2.3.6 to 2.4.1 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework; Six Powers' air in 3D)
+# HexPiece: handoff after 2.3.6 to 2.4.1 (clashes; the Galaxy Fist made Iron Fist's; Fishman Karate's rework; Six Powers' air in 3D; Haki slashes clash)
 
 Read CLAUDE.md first. This note is the newest; next-ai-2.3.2.md covers 2.3.2 to 2.3.5 (one animation set for every blade, the
 owner's in-game bugs, Haki hands from the skin, bigger swings), next-ai-2.3.0.md the clash rules in the owner's words, next-ai-2.2.6.md
-the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.2** (`python3 tools/next_version.py --write`).
+the open requests in detail. Branch `claude/nice-bell-gam7qf`. **The next version is 2.4.3** (`python3 tools/next_version.py --write`).
 Nothing was ever tested in game (only the owner can).
 
 ## State (session 4)
@@ -10,6 +10,15 @@ Nothing was ever tested in game (only the owner can).
   the Fishman Karate white screen again. So both are still open: ask again next session.
 - 2.3.6 released: clashes (next-ai-2.3.0.md item 1). Build green locally (PieceVerify proves every reference, 30 sword animations
   natural and clear, 11 suites); check the branch's Build and Release runs.
+
+## Done in 2.4.2: the flying Haki slash clashes (open item 3)
+- `HakiSlashes.meet` (each server tick, before the slashes step): two slashes in flight from foes (a.foe tests b's owner), head on (dirs'
+  dot < -0.3), their fronts (start + dir * travelled, + centre) within both speeds + 1 across and half their heights up/down: both
+  `stopAt` the middle (range cut to there, the S2CSlash resent: the client replaces it by id and draws it no further) and
+  `Clashes.slashesMeet` (heard, a quake if hard, S2CClash to everyone near either thrower; Ryou colours when both were Ryou slashes,
+  `finisher`). `hitBodies`: before hurting a body, `Clashes.slashMeets` (its blow on its way, facing the slash, clashable with a BLADE
+  armed Blow of the slash's damage): the body's move stops, staggered, Impact.hit thrown along the slash's flight by
+  `ClashRules.thrown(power, ratio)`; the slash stops at the body. `Clashes.heard` shares the sounds.
 
 ## Done in 2.4.1: Six Powers (next-ai-2.2.6.md item 4: "Improve air particles, speed them up and make them 3d. (finger pistol with haki
 shoots projectiles)")
@@ -167,7 +176,7 @@ shoots projectiles)")
    entity to target) the entity selected gets trapped and floats a bit off the ground in a water bubble a bit bigger than the
    entity's or player's size for 5 seconds. (perfect stun, entity can only look around.)": breakable by enough damage or the
    Conqueror's, with a cooldown, unless the owner says otherwise).) Six Powers: done in 2.4.1. Every request on the old lists is
-   done; what is left is the owner's reports, the flying Haki slash's clash (item 3), and the white screen (item 2). (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
+   done; what is left is the owner's reports and the white screen (item 2). (Item 3, the Haki slash's clash: done in 2.4.2.) (Galaxy Fist: done in 2.3.7; Water Bullet: 2.3.8; Brick Fist: 2.3.9.)
 
 ## Not verified (only the owner can)
 Everything in game: clashes happening at all (timing, facing, reach), the hit-stop and the throw (Impact.hit on both), the stagger,
