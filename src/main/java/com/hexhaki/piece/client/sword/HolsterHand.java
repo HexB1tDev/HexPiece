@@ -60,6 +60,8 @@ public final class HolsterHand {
      */
     private static int failures;
     private static long restUntil;
+    /** 2.6.8 diagnostics: when to write the next line to latest.log. */
+    private static long nextNote;
 
     private HolsterHand() {
     }
@@ -173,8 +175,21 @@ public final class HolsterHand {
                 }
             }
             failures = 0;
+            // 2.6.8 diagnostics (the owner: "the problem is in the sheath animation + haki"): once a second, while the sword draws or
+            // sheathes with Haki on, what is drawn (for latest.log)
+            long now = System.nanoTime();
+            if ((anim == SwordAnims.DRAW || anim == SwordAnims.SHEATHE) && SwordLayer.blackened(player) && now >= nextNote) {
+                nextNote = now + 1_000_000_000L;
+                com.hexhaki.piece.HexPiece.LOGGER.info("HexPiece first person: anim " + anim + " t " + ticks + " katana " + katana.key()
+                    + " item " + (empty ? "empty" : "katana") + " saya " + (pose.saya() != null) + " blade " + (pose.blade() != null)
+                    + " right " + (pose.right() != null) + " left " + (pose.left() != null) + " coat " + BladeCoatClient.progress(player)
+                    + " haki skin " + com.hexhaki.piece.client.haki.HakiSkin.coated(player));
+            }
         } catch (RuntimeException | LinkageError failure) {
             failures++;
+            if (failures <= 5 || failures % 200 == 0) {
+                com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece first person failed (" + failures + " in a row)", failure);
+            }
             restUntil = System.nanoTime() + 10_000_000_000L; // 2.6.5: never strobing between this and the game's hand
         }
     }
