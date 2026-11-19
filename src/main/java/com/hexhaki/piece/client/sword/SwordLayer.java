@@ -81,6 +81,12 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         float ticks = SwordClient.ticks(player, partial);
         boolean drawn = SwordAnims.drawn(anim, ticks, katana);
         boolean firstPerson = FirstPersonMode.isFirstPersonPass();
+        if (firstPerson && !SwordClient.swing(anim)) {
+            // 2.6.6 (the owner: "whenever haki is activated with a sword in hand in first person ... the blade animations flash in and
+            // out"): turning Haki on plays the original's activation animation, which shows the model's arms in first person; this
+            // layer then drew a second blade in that hand over HolsterHand's. In first person the model's blade is only a swing's
+            return;
+        }
         ModifierLayer<IAnimation> layer = SwordClient.existing(player);
         // 2.2.7: Yoru never turns black (it is black already: only its Haki lightning shows). 2.6.1: only the steel takes the coat, and
         // it runs up the blade from the guard as the hands blacken (BladeCoatClient; the handle, guard and saya never)
