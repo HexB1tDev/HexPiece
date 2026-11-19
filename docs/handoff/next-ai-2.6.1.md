@@ -1,11 +1,11 @@
-# HexPiece: handoff after 2.6.0 (the Conqueror's sounds: 35 % quieter, the evil voice line louder and voice-only, a CC0 explosion on letting go of G; the stun by hold: tap 5 s, hold 10-20 s, good 30 s)
+# HexPiece: handoff after 2.6.1 (2.6.1: the first-person draw and sheathing without flips, the right-click charge in first person, the Haki coat on the blade only and spreading, the Ryou sound quieter; 2.6.0: the Conqueror's sounds and stun)
 
 Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.5.9.md (the Water Bullet crash, first person with an empty hand,
 the arm under Haki, the first-person draw/sheathe DrawView + HolsterHand, the temper), next-ai-2.5.5.md, next-ai-2.5.3.md (Ryou's
 fist aura: "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
 Branch `claude/nice-bell-gam7qf` (the newest branch: 2.5.9 was pushed there after the 2.4.7 handoff; `git fetch` it first).
-**The next version is 2.6.1.** Nothing has ever been tested in game except by the owner.
+**The next version is 2.6.2.** 2.6.0 is released (its runs were green). Nothing has ever been tested in game except by the owner.
 
 ## The owner (session 9, after 2.5.9, verbatim)
 1. "Conqueror sounds reduced by 35% but the line evil voice line increased by a ton, its barely audible, after the key is let go,
@@ -16,6 +16,50 @@ Branch `claude/nice-bell-gam7qf` (the newest branch: 2.5.9 was pushed there afte
    smooth as possible without buggy frames."
 4. (added) "also cut the voice line (evil) so that as soon as the voice ends, the sound ends, cause currently after the voice line
    theres a weird SFX when it's just meant to be the voice line"
+5. (after 2.6.0, on a render of the old draw, t22-t23.5) "see what I mean? ... I mean wtf is this sequence"
+6. "Haki coating is ONLY on the blade of the swords, never on the handle or saya"
+7. "also the haki coating (ryou sound) is too high, too loud." and "the swords man right click has no first person animation"
+8. "please make sure the haki coating on the blade is also progressive not instant (like the arms slowly turning black)."
+
+## Done (2.6.1): the first-person draw and sheathing (sword/DrawView)
+- The causes, measured (a scratch analyser: the blade's way in the view per frame, its share across the view, the turn per tick of
+  the blade and of the right arm): (a) the draw's post-clear path went exit -> OUT -> CROSS (pointing into the screen: a stub) ->
+  WHIP (pointing right) -> HELD: slerping CROSS->WHIP swung the point over the top, then back: view angle 188 -> 158 -> 64 -> 11 -> 21
+  -> 110 degrees; (b) the sheathing flicked right then swung back up over to the left (stubs, the fist 339 degrees/tick at t0.5);
+  (c) `gripped()` took the arm's roll from the blade's way across the arm, a tiny vector when the blade nearly continues the forearm
+  (held: 23 degrees apart, 8 on the way in): the fist spun up to 192 degrees/tick.
+- Now: the draw after the point clears is `curve()` (a quadratic Bezier, de Casteljau by slerp: no corner) exit -> SPRING -> held with
+  "outquart": the view angle falls 188 -> 110 monotonically, at least 0.92 across the view, the turn rate falling evenly (39, 30, 25,
+  21 ... degrees/tick). The exit uses the saya at CLEAR_AT (a fixed start). The edge turns edge-on for about a tick in the fastest
+  part (a glint). The sheathing: held -> FLICK (point at 186 degrees, edge UP, flat to the eye) with "outquad" over FLICK_AT 4, held
+  (settled: 2.5 degrees lower) to FLICK_HOLD 7, carried to the laid frame by LAY_AT 10 (under 3 degrees of wobble), then as before.
+  `gripped()` adds 0.6 x the view's up (across the arm) to the blade's way: no flips. The empty saya sinks SAYA_SINK 0.55 over
+  SINK_TICKS 5 after the draw (was: vanished at FREE+4) and rises back before the sheathing.
+- SwordTests.drawSmooth (every blade, quarter ticks): never under half across the view; at most 26 degrees a quarter tick for the
+  blade and the right fist; the draw's point rises one way only after the clear; the sheathing's snap one way only; the charge too.
+
+## Done (2.6.1): the right-click charge in first person
+- Right click = the Haki slash charge (SwordAnims.CHARGE from the held blade, CHARGE_DRAW from the saya; RELEASE is a swing, still
+  playerAnimator's in first person). HolsterHand drew the static held/holster pose for both. Now `DrawView.charge` (held -> CHARGE_GRIP
+  {0.62, 0, -0.86}, the blade back over the right shoulder {-0.24, 0.76, 0.60}, in CHARGE_RAISE 5 ticks), `chargeDraw` (the hands to
+  the handle and mouth, the blade slid out by QUICK_CLEAR 2.2, swept up by QUICK_UP 6.5 with "outquad", the saya sinking) and
+  `backCharge` (Yoru: from over the shoulder). Then `trembled`: two smooth sines about the grip, 0.35 -> 1.6 degrees over 40 ticks.
+  A legendary blade's CHARGE_DRAW is the drawn charge (as SwordAnims.name maps it). tools/draw_preview.py writes charge.png and
+  charge_draw.png.
+
+## Done (2.6.1): the Haki coat on swords
+- Until 2.6.0 Armament's black buffers (the original's `ArmamentItemBuffers.black`: a vertex colour override) took the whole sword
+  mesh: the handle and guard went black (the saya was kept out in 2.2.6). Now `KatanaRenderer.draw(..., coat)` paints only the mesh's
+  `01_Blade...` quads (every mesh, every LOD has it first), each vertex at `255 x (1 - BladeCoat.at(y / tip, vertex, coat))`; the
+  rest in its own colours; the highlight now white over the black (it was black through the wrapper). No black buffers for swords
+  anywhere (SwordLayer, HolsterHand, KatanaItemRenderer ignore the original's).
+- `sword/BladeCoat` (pure, tested): ON_NANOS 1.1 s after DELAY_NANOS 0.35 s (the fist first), OFF_NANOS 0.6 s, SPREAD 0.18, reveal =
+  0.02 + along x 0.70 + jitter x 0.10 (guard first, ragged). `client/sword/BladeCoatClient`: per-player fades (by entity id, cleared
+  per level), on = SwordLayer.blackened (Armament). Judged on a render of the held blade at 8 moments (scratch).
+
+## Done (2.6.1): the Ryou sound
+- `RyouServer.afterArmament` played the original's acoc_on (19 s, -3 to -8 dB RMS for most of it) at 0.45 straight to everyone
+  near; now ACOC_ON_VOLUME 0.16. ARMAMENT_ON (via delayedSound, 0.45) unchanged.
 
 ## Done (2.6.0): sounds
 - **35 % quieter**: the original plays its Haki sounds a second late (`HakiServerController.delayedSound`: `ServerTimeline.later(20)`,
@@ -58,9 +102,11 @@ Branch `claude/nice-bell-gam7qf` (the newest branch: 2.5.9 was pushed there afte
 - `hold(level, body, ticks)`: slowness 10 / weakness 6 for exactly `ticks` (the old ones removed first) + `HakiFalls.knockDown`.
 
 ## Open
-1. **Next: the first-person draw / sheathe (the owner's item 3)**: "as smooth as possible without buggy frames". `sword/DrawView`
-   (pure poses), `client/sword/HolsterHand` (picks them by the anim), `tools/draw_preview.py` renders the game's frames.
-2. The owner's report on 2.6.0 (the voice, the explosions, the old blast after, the stun times), 2.5.9 and before (next-ai-2.5.9.md).
+1. The owner's report on 2.6.1 (the first-person draw, sheathing and charge; the coat on the blade; the Ryou sound) and on 2.6.0
+   (the voice, the explosions, the old blast after, the stun times), 2.5.9 and before (next-ai-2.5.9.md).
+2. The release (RELEASE, a swing) in first person is playerAnimator's THIRD_PERSON_MODEL view; the charge's first-person pose was
+   placed to read as "over the shoulder", not fitted to where the model's arm starts the release: if the owner sees a jump at the
+   release, fit CHARGE_GRIP/CHARGE_BLADE to the release's first frame.
 
 ## Tools
 - `tools/conqueror_explosion.py SRC` (2.6.0), `tools/evil_conqueror_sounds.py [--voice]`, `tools/draw_preview.py`,

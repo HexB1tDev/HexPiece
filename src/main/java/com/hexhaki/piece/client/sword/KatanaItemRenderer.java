@@ -107,8 +107,11 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         // sword is out (the guard, the idle, a draw once the blade has left the saya) the hand holds the bare blade, glinting as it does
         // in third person; the saya is drawn only while the blade is in it. Every blade the same.
         boolean bare = drawnNow(katana);
-        // 2.2.7: Yoru is never blackened either
-        KatanaRenderer.draw(pose, katana.blackens() ? buffers : own, katana, true, false, light, bare ? (katana.blackens() ? 1.0F : 0.45F) : 0.0F);
+        // 2.2.7: Yoru is never blackened either. 2.6.1 (the owner: "Haki coating is ONLY on the blade of the swords, never on the handle
+        // or saya", "progressive not instant"): the original's black buffers are not used; the steel alone takes the coat, running up it
+        // as the hands blacken (BladeCoatClient: this hand is always the local player's)
+        float coat = katana.blackens() ? BladeCoatClient.progress(Minecraft.m_91087_().f_91074_) : 0.0F;
+        KatanaRenderer.draw(pose, own, katana, true, false, light, bare ? (katana.blackens() ? 1.0F : 0.45F) : 0.0F, coat);
         if (!bare) {
             KatanaRenderer.draw(pose, own, katana, false, true, light, 0.0F);
         }

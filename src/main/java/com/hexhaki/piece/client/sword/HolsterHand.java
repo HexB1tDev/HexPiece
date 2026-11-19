@@ -1,6 +1,5 @@
 package com.hexhaki.piece.client.sword;
 
-import com.hexhaki.client.render.ArmamentItemBuffers;
 import com.hexhaki.piece.client.StanceLayer;
 import com.hexhaki.piece.sword.BladePaths;
 import com.hexhaki.piece.sword.DrawView;
@@ -39,13 +38,16 @@ import org.joml.Quaternionf;
  *       along the saya's curve as the saya is drawn back, the point leaving the mouth and the blade whipping across the view, settling
  *       into the hand;</li>
  *   <li>drawn between cuts: the blade up from the right hand, the right arm on its handle;</li>
+ *   <li>2.6.1: the right click's charge: the blade drawn back over the right shoulder, trembling as it builds (from the saya, drawn
+ *       straight up into it);</li>
  *   <li>the sheathing: the flick clean, the blade swung back and laid at the mouth, slid home slowly, the guard home, the hands back to
  *       rest;</li>
  *   <li>Yoru (on the back): the hands empty while it is there; drawn, it comes down over the right shoulder into the hand, and goes
  *       back up the same way.</li>
  * </ul>
  * The arms are the game's own, through Forge's arm event as the game draws its own ({@link #arm}: the player's skin, Armament's
- * coat and Ryou's aura with them), the blade black under Armament as in third person (never its saya), everything swaying and bobbing
+ * coat and Ryou's aura with them), the blade's steel black under Armament as in third person (2.6.1: running up it, never its handle
+ * or saya), everything swaying and bobbing
  * with the view and rising as the sword is taken up, as the game's hands do. Anything in the off hand keeps the left hand. 2.5.8: all
  * of it with the hand empty too (the active katana at the hip); sheathed with the hand empty, the game's own right arm stays.
  */
@@ -96,7 +98,19 @@ public final class HolsterHand {
             DrawView.Pose pose;
             float push = 0.0F;
             boolean rest = false;
-            if (anim == SwordAnims.DRAW) {
+            if (anim == SwordAnims.CHARGE || anim == SwordAnims.CHARGE_DRAW) {
+                // 2.6.1 (the owner: "the swords man right click has no first person animation"): the charge, drawn back over the
+                // shoulder and trembling (from the saya: drawn straight up into it; Yoru: off its back into it); a legendary blade is
+                // always out, so its charge is the drawn one
+                boolean fromSaya = anim == SwordAnims.CHARGE_DRAW && (!katana.legend() || back);
+                if (!fromSaya) {
+                    pose = DrawView.charge(katana, slim, ticks, equip, age);
+                } else if (back) {
+                    pose = DrawView.backCharge(katana, slim, ticks, Math.max(0, BladePaths.drawTick(name)), equip, age);
+                } else {
+                    pose = DrawView.chargeDraw(katana, slim, ticks, equip, age);
+                }
+            } else if (anim == SwordAnims.DRAW) {
                 pose = back ? DrawView.backDraw(katana, slim, ticks, Math.max(0, BladePaths.drawTick(name)), equip, age)
                     : DrawView.draw(katana, slim, ticks, SwordAnims.duration(anim, katana), BladePaths.drawTick(name), equip, age);
             } else if (anim == SwordAnims.SHEATHE) {
@@ -134,8 +148,8 @@ public final class HolsterHand {
                 if (push > 0.0F) {
                     SwordLayer.slide(stack, katana, push);
                 }
-                MultiBufferSource steel = SwordLayer.blackened(player) && katana.blackens() ? ArmamentItemBuffers.black(buffers) : buffers;
-                KatanaRenderer.draw(stack, steel, katana, true, false, light, pose.shine());
+                // 2.6.1: the coat on the steel only, running up it as the hands blacken (BladeCoatClient)
+                KatanaRenderer.draw(stack, buffers, katana, true, false, light, pose.shine(), BladeCoatClient.progress(player));
                 stack.m_85849_();
             }
             EntityRenderer<?> renderer = minecraft.m_91290_().m_114382_(player);

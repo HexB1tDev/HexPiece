@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""2.5.6: renders the first-person draw and sheathing (sword/DrawView, played in game by client/sword/HolsterHand) to judge them: the
+"""2.5.6: renders the first-person draw and sheathing (2.6.1: and the right click's charge) (sword/DrawView, played in game by client/sword/HolsterHand) to judge them: the
 game's own frames (dumped by tools/preview/DrawDump.java from build/classes), the owner's katana and saya meshes (tools/sword_view.py),
 the arms as the game's renderLeftHand/renderRightHand draw them, seen by the first-person hand camera (70 degrees, phone-wide).
 
@@ -123,6 +123,9 @@ def main():
     data = dump(key, step, slim)
     sheet(data["draw"], key, slim, 6).save(os.path.join(out, "draw.png"))
     sheet(data["sheathe"], key, slim, 6).save(os.path.join(out, "sheathe.png"))
+    # 2.6.1: the right click's charge (from the held blade, and drawn from the saya), every other tick of its first 40
+    sheet(data["charge"][::2], key, slim, 6).save(os.path.join(out, "charge.png"))
+    sheet(data["charge_draw"][::2], key, slim, 6).save(os.path.join(out, "charge_draw.png"))
     frame(dict(data["held"], t=0), key, 660, 300, slim).save(os.path.join(out, "held.png"))
     frame(dict(data["holster"], t=0), key, 660, 300, slim).save(os.path.join(out, "holster.png"))
     print("wrote", out)

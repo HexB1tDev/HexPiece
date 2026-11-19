@@ -1,7 +1,6 @@
 package com.hexhaki.piece.client.sword;
 
 import com.hexhaki.client.RemoteHakiStates;
-import com.hexhaki.client.render.ArmamentItemBuffers;
 import com.hexhaki.piece.client.StanceLayer;
 import com.hexhaki.piece.sword.BladePaths;
 import com.hexhaki.piece.sword.BackCarry;
@@ -83,10 +82,11 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         boolean drawn = SwordAnims.drawn(anim, ticks, katana);
         boolean firstPerson = FirstPersonMode.isFirstPersonPass();
         ModifierLayer<IAnimation> layer = SwordClient.existing(player);
-        // 2.2.7: Yoru never turns black (it is black already: only its Haki lightning shows)
-        MultiBufferSource bladeBuffers = blackened(player) && katana.blackens() ? ArmamentItemBuffers.black(buffers) : buffers;
+        // 2.2.7: Yoru never turns black (it is black already: only its Haki lightning shows). 2.6.1: only the steel takes the coat, and
+        // it runs up the blade from the guard as the hands blacken (BladeCoatClient; the handle, guard and saya never)
+        float coat = katana.blackens() ? BladeCoatClient.progress(player) : 0.0F;
         if (katana.carry() == Katana.Carry.BACK) {
-            back(pose, buffers, bladeBuffers, light, player, katana, model, layer, anim, ticks, drawn, firstPerson, partial);
+            back(pose, buffers, coat, light, player, katana, model, layer, anim, ticks, drawn, firstPerson, partial);
             return;
         }
         // 2.3.2 (the owner, of a draw: "pulls sword out, but nothing goes with the arm?"): between its noto beats the blade slides along
@@ -106,7 +106,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                     if (push > 0.0F) {
                         slide(pose, katana, push);
                     }
-                    KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 0.0F);
+                    KatanaRenderer.draw(pose, buffers, katana, true, false, light, 0.0F, coat);
                     if (push > 0.0F) {
                         HakiDraw.sliding(pose, buffers, player, SwordAnims.NONE, (float) ready, push, partial);
                     }
@@ -118,7 +118,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                 if (sliding) {
                     // along the saya's own curve (2.3.2: each blade its own), out the interpolated amount
                     slide(pose, katana, slideOut[0]);
-                    KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 1.0F);
+                    KatanaRenderer.draw(pose, buffers, katana, true, false, light, 1.0F, coat);
                     SwordFx.record(player, pose, ticks);
                     HakiDraw.sliding(pose, buffers, player, anim, ticks, slideOut[0], partial);
                 }
@@ -129,7 +129,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             pose.m_85836_();
             hand(pose, player, model, layer, partial);
             // its black steel only glints (the owner's unsheath reference: white glints running along a black blade)
-            KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F);
+            KatanaRenderer.draw(pose, buffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F, coat);
             SwordFx.record(player, pose, ticks);
             HakiDraw.held(pose, buffers, player, anim, ticks, partial);
             pose.m_85849_();
@@ -141,7 +141,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
      * drawn (its own draw over the shoulder hands it over the very tick the fist closes on it there, as tools/sword_anims.py solves it).
      * The ropes stay on the back either way; first person shows only the hand.
      */
-    void back(PoseStack pose, MultiBufferSource buffers, MultiBufferSource bladeBuffers, int light, AbstractClientPlayer player, Katana katana,
+    void back(PoseStack pose, MultiBufferSource buffers, float coat, int light, AbstractClientPlayer player, Katana katana,
               PlayerModel<AbstractClientPlayer> model, ModifierLayer<IAnimation> layer, int anim, float ticks, boolean drawn,
               boolean firstPerson, float partial) {
         // 2.3.2: no natural arm reaches the hilt behind the head exactly (it misses by about 3 px), so while the hand lifts Yoru out of
@@ -163,7 +163,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                 if (lifting) {
                     pose.m_252880_(0.0F, -lift * KatanaRenderer.SCALE, 0.0F);
                 }
-                KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, 0.0F);
+                KatanaRenderer.draw(pose, buffers, katana, true, false, light, 0.0F, coat);
             }
             pose.m_85849_();
         }
@@ -178,7 +178,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                 pose.m_252781_(Axis.f_252529_.m_252977_(glide[5]));
             }
             // its black steel only glints (the owner's unsheath reference: white glints running along a black blade)
-            KatanaRenderer.draw(pose, bladeBuffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F);
+            KatanaRenderer.draw(pose, buffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F, coat);
             SwordFx.record(player, pose, ticks);
             HakiDraw.held(pose, buffers, player, anim, ticks, partial);
             pose.m_85849_();

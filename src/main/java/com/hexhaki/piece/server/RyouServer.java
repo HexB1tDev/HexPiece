@@ -62,6 +62,13 @@ public final class RyouServer {
         return color;
     }
 
+    /**
+     * 2.6.1 (the owner: "the haki coating (ryou sound) is too high, too loud"): Ryou's coming-on sound (the original's acoc_on: 19
+     * seconds, most of it within 3 to 8 dB of full scale, played straight to everyone near, not through the original's balance) at
+     * 0.16, a third of 2.6.0's 0.45 (about 9 dB quieter).
+     */
+    static final float ACOC_ON_VOLUME = 0.16F;
+
     /** End of the original's toggleArmament: Armament just came on and Ryou is unlocked, so Ryou comes on with it. */
     public static void afterArmament(ServerPlayer player) {
         if (!HakiData.flag(player, "armamentOn") || HakiData.flag(player, "acocOn") || !HakiProgression.advancedHakiUnlocked(player)) {
@@ -70,7 +77,7 @@ public final class RyouServer {
         ensure(player);
         HakiData.flag(player, "acocOn", true);
         HakiServerController.sync(player);
-        FruitUtil.sound(player, ModSounds.ACOC_ON.get(), 0.45F, 1.0F);
+        FruitUtil.sound(player, ModSounds.ACOC_ON.get(), ACOC_ON_VOLUME, 1.0F);
     }
 
     /** J (the original's toggleAcoc): empty for now. */

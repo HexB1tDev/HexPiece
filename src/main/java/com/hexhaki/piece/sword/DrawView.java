@@ -39,11 +39,13 @@ public final class DrawView {
     static final float FREE = 20.0F;
     static final float ARC_AT = 22.5F;
     static final float DRAW_END = 28.0F;
+    /** 2.6.1: how long the empty saya takes to sink out of the view after the draw, or to rise into it before the sheathing (ticks). */
+    static final float SINK_TICKS = 5.0F;
     /** Model px out of the saya: the seal broken. */
     static final float PUSH = 1.4F;
     /** The sheathing's moments for a katana's 24 ticks (the guard home at 21). */
-    static final float FLICK_AT = 2.6F;
-    static final float FLICK_HOLD = 6.0F;
+    static final float FLICK_AT = 4.0F;
+    static final float FLICK_HOLD = 7.0F;
     static final float LAY_AT = 10.0F;
     static final float REST_AT = 12.0F;
     static final float DEEP_AT = 18.0F;
@@ -56,6 +58,8 @@ public final class DrawView {
     static final double[] HELD_GRIP = {0.42, -0.48, -0.92};
     static final double[] HELD_BLADE = {-0.32, 0.86, -0.40};
     static final double[] HELD_EDGE = {-0.6, 0.0, -0.8};
+    /** 2.6.1: how much the view's up steadies the right fist's roll against the blade's way ({@link #gripped}). */
+    static final double ROLL_STEADY = 0.6;
     /** The right shoulder, below the lower right of the view: every right arm runs from here to its fist. */
     static final double[] R_SHOULDER = {0.50, -1.0, -0.38};
     /** Where the right arm waits below the view (its fist), and the left arm's way out to the lower left. */
@@ -68,21 +72,25 @@ public final class DrawView {
     static final double SAYA_BIKI = 9.0;
     /** ... and how far it draws the saya back along its own line meanwhile (model px), so the right hand need not reach so far. */
     static final double SAYA_PULL = 7.0;
-    /** The whip's two frames (view): across the middle of the view, edge leading, then out to the right, before settling. */
-    static final double[] WHIP_GRIP = {0.28, -0.32, -0.94};
-    static final double[] WHIP_BLADE = {0.95, 0.12, -0.30};
-    static final double[] WHIP_EDGE = {0.0, -1.0, -0.2};
-    /** The arc's first quarters: the point out to the left, then forward across the middle. */
-    static final double[] OUT_GRIP = {0.40, -0.40, -1.40};
-    static final double[] OUT_BLADE = {-0.88, 0.08, -0.47};
-    static final double[] OUT_EDGE = {0.0, -0.2, -1.0};
-    static final double[] CROSS_GRIP = {0.22, -0.36, -1.06};
-    static final double[] CROSS_BLADE = {-0.30, 0.10, -0.95};
-    static final double[] CROSS_EDGE = {1.0, -0.1, 0.0};
-    /** The chiburi: the blade snapped out and down to the right. */
-    static final double[] FLICK_GRIP = {0.40, -0.40, -0.95};
-    static final double[] FLICK_BLADE = {0.88, -0.22, -0.42};
-    static final double[] FLICK_EDGE = {0.1, -1.0, 0.1};
+    /**
+     * 2.6.1 (the owner, on 2.6.0's draw: "wtf is this sequence", the blade flipping up, right, up again in a tick and a half): once the
+     * point leaves the mouth the blade rises in ONE arc, its point turning one way only (clockwise in the view) from the saya's line to
+     * the held blade, never pointing at the camera; this is what the arc is drawn toward (a curve, {@link #curve}), the hand pushing it
+     * forward and up as the point clears. Its edge turns from up (as in the saya) to the held blade's in the fastest tick: the blade
+     * edge-on for a moment, a glint along it.
+     */
+    static final double[] SPRING_GRIP = {0.50, -0.36, -1.24};
+    static final double[] SPRING_BLADE = {-0.96, 0.22, -0.16};
+    static final double[] SPRING_EDGE = {0.0, 0.25, -1.0};
+    /**
+     * 2.6.1: the sheathing's snap (chiburi), the same way the noto goes on: the blade brought down from the held blade to the left with a
+     * snap, turned edge up as it comes (as it lies in the saya), held a beat with its flat to the eye; then laid at the mouth.
+     */
+    static final double[] FLICK_GRIP = {0.52, -0.44, -1.06};
+    static final double[] FLICK_BLADE = {-0.994, -0.105, 0.05};
+    static final double[] FLICK_EDGE = {0.1, 1.0, 0.15};
+    /** 2.6.1: how far the empty saya sinks out of the view once the blade is out (and rises back before the sheathing), blocks. */
+    static final double SAYA_SINK = 0.55;
 
     private DrawView() {
     }
@@ -113,13 +121,10 @@ public final class DrawView {
             blade = slid(katana, saya, slideOut(katana, k));
             shine = k < PUSH_AT - 1.5F ? 0.0F : 1.0F;
         } else {
-            Frame exit = slid(katana, saya, clear(katana));
-            // the point leaves the mouth swinging out to the left, then sweeps across the front of the view to the right, edge
-            // leading (each key a quarter of the turn, so the arc never takes the short way round behind the eye)
-            // one motion through the keys (each placed by how far the blade turns to reach it, so it never stops at one): a whip that
-            // is fastest as the point leaves and slows into the hand
-            blade = along(ease("outcubic", (k - CLEAR_AT) / (DRAW_END - CLEAR_AT)),
-                new Frame[] {exit, byIntent(OUT_GRIP, OUT_BLADE, OUT_EDGE), byIntent(CROSS_GRIP, CROSS_BLADE, CROSS_EDGE), whip(), heldBlade()});
+            // 2.6.1: the point free, the blade springs out to the left and rises in one arc into the hand, fastest as it leaves the
+            // mouth and settling slowly (the exit taken with the saya as it was at the mouth: the start never moves)
+            Frame exit = slid(katana, saya(sayaBiki(CLEAR_AT)), clear(katana));
+            blade = curve(ease("outquart", (k - CLEAR_AT) / (DRAW_END - CLEAR_AT)), exit, spring(), heldBlade());
             shine = 1.0F;
         }
         blade = lifted(blade, equip, age);
@@ -137,8 +142,10 @@ public final class DrawView {
         } else {
             left = between(mouth, away(LEFT_AWAY, mouth), ease("insine", Math.min(1.0F, (k - FREE) / 4.0F)));
         }
-        boolean sayaShown = k < FREE + 4.0F;
-        return new Pose(sayaShown ? steps(lifted(saya, equip, age)) : null, steps(blade), rightArm(right, slim),
+        // 2.6.1: the empty saya sinks out of the view (until 2.6.0 it vanished at once four ticks after the point left)
+        double sink = k < FREE ? 0.0 : SAYA_SINK * ease("insine", (k - FREE) / SINK_TICKS);
+        boolean sayaShown = k < FREE + SINK_TICKS;
+        return new Pose(sayaShown ? steps(lifted(sunk(saya, sink), equip, age)) : null, steps(blade), rightArm(right, slim),
             k < FREE + 4.0F ? leftArm(left, slim) : null, shine);
     }
 
@@ -149,10 +156,12 @@ public final class DrawView {
             : 0.0);
         Frame blade;
         if (k < LAY_AT) {
-            Frame laid = lean(slid(katana, saya, clear(katana)), 0.35);
-            blade = keyed(k, new float[] {0.0F, FLICK_AT, FLICK_HOLD, FLICK_HOLD + 2.0F, LAY_AT},
-                new Frame[] {heldBlade(), flick(), flick(), byIntent(CROSS_GRIP, CROSS_BLADE, CROSS_EDGE), laid},
-                new String[] {"outcubic", "linear", "inoutsine", "outsine"});
+            // 2.6.1: the blade snapped down to the left (its point one way only) edge up, held a beat with its flat to the eye, then
+            // carried to the mouth (until 2.6.0: flicked right, then swung back up and over to the left, the fist twisting)
+            Frame laid = lean(slid(katana, saya(SAYA_BIKI), clear(katana)), 0.35);
+            blade = keyed(k, new float[] {0.0F, FLICK_AT, FLICK_HOLD, LAY_AT},
+                new Frame[] {heldBlade(), flick(), settled(flick()), laid},
+                new String[] {"outquad", "inoutsine", "inoutsine"});
         } else if (k < REST_AT) {
             blade = between(lean(slid(katana, saya, clear(katana)), 0.35), slid(katana, saya, clear(katana)), ease("outsine", (k - LAY_AT) / (REST_AT - LAY_AT)));
         } else {
@@ -173,8 +182,112 @@ public final class DrawView {
         } else {
             left = between(mouth, rest, ease("inoutsine", Math.min(1.0F, (k - HOME_AT) / 3.0F)));
         }
-        return new Pose(k >= FLICK_HOLD ? steps(lifted(saya, equip, age)) : null, steps(blade), k < SHEATHE_END ? rightArm(right, slim) : null,
-            left == null ? null : leftArm(left, slim), k >= REST_AT && k < HOME_AT ? 1.0F : 0.45F);
+        // 2.6.1: the saya rises back into the view as the left hand comes to its mouth (until 2.6.0 it appeared at once)
+        double sink = k >= LAY_AT ? 0.0 : SAYA_SINK * (1.0 - ease("outsine", (k - (LAY_AT - SINK_TICKS)) / SINK_TICKS));
+        boolean sayaShown = k >= LAY_AT - SINK_TICKS;
+        return new Pose(sayaShown ? steps(lifted(sunk(saya, sink), equip, age)) : null, steps(blade),
+            k < SHEATHE_END ? rightArm(right, slim) : null, left == null ? null : leftArm(left, slim),
+            k >= REST_AT && k < HOME_AT ? 1.0F : 0.45F);
+    }
+
+    /**
+     * 2.6.1 (the owner: "the swords man right click has no first person animation"): the right click's charge (the Haki slash held until
+     * it is let go; third person: "the blade raised high behind the right shoulder, the body drawn back like a bow"), seen from the
+     * eye: the fist up at the right of the view, the blade drawn back over the right shoulder (its point past the top of the view, behind
+     * the eye), trembling harder as the charge builds. The release (a swing) is playerAnimator's, from this same place.
+     */
+    static final double[] CHARGE_GRIP = {0.62, 0.0, -0.86};
+    static final double[] CHARGE_BLADE = {-0.24, 0.76, 0.60};
+    static final double[] CHARGE_EDGE = {0.0, 0.3, -1.0};
+    /** How long the blade takes to be drawn back into the charge from the held blade (ticks; the third person's 5). */
+    static final float CHARGE_RAISE = 5.0F;
+    /** The charge's tremble: the least and most (degrees), how long it takes to reach the most (ticks), its two rates (per tick). */
+    static final double TREMBLE_LEAST = 0.35;
+    static final double TREMBLE_MOST = 1.6;
+    static final float TREMBLE_BUILD = 40.0F;
+    static final double TREMBLE_SLOW = 0.155;
+    static final double TREMBLE_FAST = 0.37;
+    /** The charge drawn straight from the saya (third person: out by its second tick, in the charge by its fifth): its moments. */
+    static final float QUICK_GRIP = 1.0F;
+    static final float QUICK_CLEAR = 2.2F;
+    static final float QUICK_UP = 6.5F;
+    /** Where the blade springs to as it leaves the saya on its way up into the charge. */
+    static final double[] QUICK_GRIP_AT = {0.56, -0.30, -1.10};
+    static final double[] QUICK_BLADE = {-0.85, 0.50, -0.10};
+    static final double[] QUICK_EDGE = {0.0, 0.25, -1.0};
+
+    /** The charge from the blade held between cuts: drawn back over the shoulder, then held trembling ({@code t} ticks in). */
+    public static Pose charge(Katana katana, boolean slim, float t, float equip, float age) {
+        Frame blade = t < CHARGE_RAISE ? between(heldBlade(), chargeBlade(), ease("inoutsine", t / CHARGE_RAISE)) : chargeBlade();
+        blade = lifted(trembled(blade, t - CHARGE_RAISE), equip, age);
+        return new Pose(null, steps(blade), rightArm(gripped(blade), slim), null, 1.0F);
+    }
+
+    /**
+     * The charge drawn from the saya ({@code t} ticks in): the left hand to the mouth as the right closes on the handle, the blade
+     * slid out fast and swept up and back over the shoulder in one arc, then held trembling; the empty saya sinks out of the view.
+     */
+    public static Pose chargeDraw(Katana katana, boolean slim, float t, float equip, float age) {
+        Frame saya = saya(0.0);
+        Frame blade;
+        if (t < QUICK_CLEAR) {
+            float out = t < 0.4F ? 0.0F : (float) (clear(katana) * ease("insine", (t - 0.4F) / (QUICK_CLEAR - 0.4F)));
+            blade = slid(katana, saya, out);
+        } else {
+            Frame exit = slid(katana, saya, clear(katana));
+            blade = curve(ease("outquad", (t - QUICK_CLEAR) / (QUICK_UP - QUICK_CLEAR)), exit, byIntent(QUICK_GRIP_AT, QUICK_BLADE, QUICK_EDGE),
+                chargeBlade());
+        }
+        blade = lifted(trembled(blade, t - QUICK_UP), equip, age);
+        Frame grip = gripped(blade);
+        Frame right = t < QUICK_GRIP ? between(away(RIGHT_AWAY, grip), grip, ease("outcubic", t / QUICK_GRIP)) : grip;
+        Frame mouth = lifted(mouth(saya), equip, age);
+        Frame left;
+        if (t < QUICK_GRIP) {
+            left = between(lifted(restLeft(), equip, age), mouth, ease("inoutsine", t / QUICK_GRIP));
+        } else if (t < QUICK_CLEAR) {
+            left = mouth;
+        } else {
+            left = between(mouth, away(LEFT_AWAY, mouth), ease("insine", Math.min(1.0F, (t - QUICK_CLEAR) / 3.0F)));
+        }
+        double sink = t < QUICK_CLEAR ? 0.0 : SAYA_SINK * ease("insine", (t - QUICK_CLEAR) / SINK_TICKS);
+        return new Pose(t < QUICK_CLEAR + SINK_TICKS ? steps(lifted(sunk(saya, sink), equip, age)) : null, steps(blade),
+            rightArm(right, slim), t < QUICK_CLEAR + 3.0F ? leftArm(left, slim) : null, 1.0F);
+    }
+
+    /** Yoru's charge off its back ({@code t} ticks in, out of its ropes at {@code free}): down over the shoulder into the charge. */
+    public static Pose backCharge(Katana katana, boolean slim, float t, float free, float equip, float age) {
+        if (t < free) {
+            return new Pose(null, null, null, null, 0.0F);
+        }
+        Frame over = byIntent(OVER_GRIP, OVER_BLADE, OVER_EDGE);
+        Frame blade = keyed(t, new float[] {free, free + BACK_SWING}, new Frame[] {over, chargeBlade()}, new String[] {"inoutsine"});
+        blade = lifted(trembled(blade, t - free - BACK_SWING), equip, age);
+        return new Pose(null, steps(blade), rightArm(gripped(blade), slim), null, 1.0F);
+    }
+
+    static Frame chargeBlade() {
+        return byIntent(CHARGE_GRIP, CHARGE_BLADE, CHARGE_EDGE);
+    }
+
+    /**
+     * {@code f} trembling {@code held} ticks into the hold (nothing before): two slow, smooth swayings about the grip (never a jolt
+     * from one frame to the next), growing from {@link #TREMBLE_LEAST} to {@link #TREMBLE_MOST} degrees as the charge builds.
+     */
+    static Frame trembled(Frame f, float held) {
+        if (held <= 0.0F) {
+            return f;
+        }
+        double grow = Math.min(1.0, held / TREMBLE_BUILD);
+        double in = Math.min(1.0, held / 3.0); // eased in over the first ticks of the hold
+        double amount = in * (TREMBLE_LEAST + (TREMBLE_MOST - TREMBLE_LEAST) * grow);
+        double a = amount * (Math.sin(2 * Math.PI * TREMBLE_SLOW * held) + 0.5 * Math.sin(2 * Math.PI * TREMBLE_FAST * held + 1.3)) / 1.5;
+        double b = amount * 0.7 * Math.sin(2 * Math.PI * TREMBLE_FAST * 0.83 * held + 0.4);
+        double[] grip = point(f, 0, KatanaGrip.GRIP, 0);
+        double[] q = mul(axisAngle(new double[] {0, 0, 1}, Math.toRadians(a)), mul(axisAngle(new double[] {1, 0, 0}, Math.toRadians(b)), f.q()));
+        Frame turned = new Frame(f.p(), q);
+        double[] moved = point(turned, 0, KatanaGrip.GRIP, 0);
+        return new Frame(HolsterView.add(f.p(), HolsterView.sub(grip, moved)), q);
     }
 
     /** Yoru's moves (off its back, onto it): above the view, over the right shoulder, the blade pointing back. */
@@ -299,12 +412,26 @@ public final class DrawView {
         return byIntent(HELD_GRIP, HELD_BLADE, HELD_EDGE);
     }
 
-    static Frame whip() {
-        return byIntent(WHIP_GRIP, WHIP_BLADE, WHIP_EDGE);
+    static Frame spring() {
+        return byIntent(SPRING_GRIP, SPRING_BLADE, SPRING_EDGE);
     }
 
     static Frame flick() {
         return byIntent(FLICK_GRIP, FLICK_BLADE, FLICK_EDGE);
+    }
+
+    /** The snap's end held a beat: drifted a hair back toward the body and the point a hair lower (a held pose that still breathes). */
+    static Frame settled(Frame f) {
+        double[] grip = point(f, 0, KatanaGrip.GRIP, 0);
+        double[] q = mul(axisAngle(new double[] {0, 0, 1}, Math.toRadians(2.5)), f.q());
+        Frame turned = new Frame(f.p(), q);
+        double[] moved = point(turned, 0, KatanaGrip.GRIP, 0);
+        return new Frame(HolsterView.add(HolsterView.add(f.p(), HolsterView.sub(grip, moved)), new double[] {-0.02, -0.01, 0.03}), q);
+    }
+
+    /** {@code f} lowered {@code by} blocks (the view's down). */
+    static Frame sunk(Frame f, double by) {
+        return by == 0.0 ? f : new Frame(HolsterView.add(f.p(), new double[] {0, -by, 0}), f.q());
     }
 
     /** A blade's frame with its grip (the fist's centre on the handle) at {@code grip}, pointing {@code blade}, its edge toward {@code edge}. */
@@ -327,10 +454,15 @@ public final class DrawView {
         double[] fist = point(blade, 0, KatanaGrip.GRIP, 0);
         double[] y = HolsterView.norm(HolsterView.sub(fist, R_SHOULDER));
         double[] b = rotate(blade.q(), new double[] {0, 1, 0});
-        double[] front = HolsterView.sub(b, HolsterView.scale(y, HolsterView.dot(b, y)));
+        // 2.6.1: the roll from the blade's way across the arm, steadied by the view's up across it: when the blade nearly continues
+        // the arm (the held blade is 23 degrees off it) its way across is a tiny vector that swung the fist round by up to 190 degrees
+        // a tick (2.6.0's draw settling, and its sheathing's start); the view's up never lies along the arm
+        double[] across = HolsterView.sub(b, HolsterView.scale(y, HolsterView.dot(b, y)));
+        double[] up = {0, 1, 0};
+        double[] steady = HolsterView.sub(up, HolsterView.scale(y, HolsterView.dot(up, y)));
+        double[] front = HolsterView.add(across, HolsterView.scale(steady, ROLL_STEADY));
         if (HolsterView.dot(front, front) < 1.0E-6) {
-            front = rotate(blade.q(), new double[] {-1, 0, 0});
-            front = HolsterView.sub(front, HolsterView.scale(y, HolsterView.dot(front, y)));
+            front = steady;
         }
         double[] z = HolsterView.scale(HolsterView.norm(front), -1);
         double[] x = HolsterView.cross(y, z);
@@ -433,6 +565,15 @@ public final class DrawView {
         return frames[frames.length - 1];
     }
 
+    /**
+     * 2.6.1: the frame {@code s} (0..1) along a smooth curve from {@code a} to {@code c} drawn toward {@code b} (a quadratic Bezier, its
+     * turns by slerp, de Casteljau): no corner at a middle key, so the blade's turn speeds and slows without a hitch.
+     */
+    static Frame curve(double s, Frame a, Frame b, Frame c) {
+        double u = Math.max(0.0, Math.min(1.0, s));
+        return between(between(a, b, u), between(b, c, u), u);
+    }
+
     static Frame between(Frame a, Frame b, double u) {
         double[] p = {a.p()[0] + (b.p()[0] - a.p()[0]) * u, a.p()[1] + (b.p()[1] - a.p()[1]) * u, a.p()[2] + (b.p()[2] - a.p()[2]) * u};
         return new Frame(p, slerp(a.q(), b.q(), u));
@@ -446,6 +587,8 @@ public final class DrawView {
             case "outsine" -> Math.sin(t * Math.PI / 2);
             case "inoutsine" -> -(Math.cos(Math.PI * t) - 1) / 2;
             case "outcubic" -> 1 - Math.pow(1 - t, 3);
+            case "outquart" -> 1 - Math.pow(1 - t, 4);
+            case "outquad" -> 1 - (1 - t) * (1 - t);
             case "outexpo" -> t >= 1 ? 1 : 1 - Math.pow(2, -10 * t);
             case "outback" -> {
                 double c1 = 1.70158;

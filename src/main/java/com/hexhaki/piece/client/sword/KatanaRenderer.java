@@ -1,6 +1,7 @@
 package com.hexhaki.piece.client.sword;
 
 import com.hexhaki.piece.HexPiece;
+import com.hexhaki.piece.sword.BladeCoat;
 import com.hexhaki.piece.sword.Katana;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -87,6 +88,18 @@ public final class KatanaRenderer {
      * {@code shine} 0 draws no highlight, 1 the full one.
      */
     public static void draw(PoseStack pose, MultiBufferSource buffers, Katana katana, boolean blade, boolean saya, int light, float shine) {
+        draw(pose, buffers, katana, blade, saya, light, shine, 0.0F);
+    }
+
+    /**
+     * 2.6.1 (the owner: "Haki coating is ONLY on the blade of the swords, never on the handle or saya", "progressive not instant (like
+     * the arms slowly turning black)"): the sword with its steel (the mesh's 01_Blade part) coated {@code coat} of the way
+     * ({@link BladeCoat}: from the guard up to the point, each vertex a little out of step), everything else (the habaki, guard, handle,
+     * saya) in its own colours. Until 2.6.0 the whole sword, handle and guard too, went black at once through Armament's black buffers
+     * (only the saya was kept out, 2.2.6). The glints run white over the black steel (the owner's unsheath reference).
+     */
+    public static void draw(PoseStack pose, MultiBufferSource buffers, Katana katana, boolean blade, boolean saya, int light, float shine,
+                            float coat) {
         pose.m_85836_();
         pose.m_85841_(SCALE, SCALE, SCALE);
         PoseStack.Pose last = pose.m_85850_();
@@ -98,13 +111,37 @@ public final class KatanaRenderer {
             quads(last, solid, sayaMesh, 0, sayaMesh.quadCount(), light);
         }
         if (bladeMesh != null) {
-            quads(last, solid, bladeMesh, 0, bladeMesh.quadCount(), light);
+            if (coat <= 0.0F || bladeMesh.bladeCount <= 0 || !katana.blackens()) {
+                quads(last, solid, bladeMesh, 0, bladeMesh.quadCount(), light);
+            } else {
+                int first = bladeMesh.bladeFirst;
+                int end = first + bladeMesh.bladeCount;
+                quads(last, solid, bladeMesh, 0, first, light);
+                quads(last, solid, bladeMesh, end, bladeMesh.quadCount() - end, light);
+                coated(last, solid, bladeMesh, first, bladeMesh.bladeCount, light, coat, Math.max(1.0F, katana.tip()));
+            }
             if (shine > 0.0F && bladeMesh.bladeCount > 0) {
                 // 2.1.9: alpha blended (some setups draw additive geometry opaque: the owner saw the sword's light as dark)
                 highlight(last, buffers.m_6299_(RenderType.m_269166_()), bladeMesh, shine);
             }
         }
         pose.m_85849_();
+    }
+
+    /** 2.6.1: the steel's quads, each vertex as black as the coat has made it ({@link BladeCoat#at}: by how far up the blade it is). */
+    static void coated(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int first, int count, int light, float coat, float tip) {
+        Matrix4f matrix = pose.m_252922_();
+        Matrix3f normal = pose.m_252943_();
+        int[] q = mesh.quads;
+        float[] p = mesh.pos;
+        float[] t = mesh.uv;
+        float[] n = mesh.nrm;
+        for (int i = first * 4, end = (first + count) * 4; i < end; i++) {
+            int v = q[i];
+            int c = Math.round(255.0F * (1.0F - BladeCoat.at(p[v * 3 + 1] / tip, v, coat)));
+            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_6122_(c, c, c, 255).m_7421_(t[v * 2], t[v * 2 + 1])
+                .m_86008_(OverlayTexture.f_118083_).m_85969_(light).m_252939_(normal, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]).m_5752_();
+        }
     }
 
     static void quads(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int first, int count, int light) {

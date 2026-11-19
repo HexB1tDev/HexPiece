@@ -713,6 +713,8 @@ public final class SwordTests {
      * tick it counts it sheathed. Every hip blade, wide and slim arms.
      */
     static void drawView() {
+        drawSmooth();
+        bladeCoat();
         for (Katana katana : new Katana[] {Katana.CRIMSON_DAWN, Katana.GRYPHON}) {
             for (boolean slim : new boolean[] {false, true}) {
                 float drawLength = com.hexhaki.piece.sword.SwordAnims.duration(com.hexhaki.piece.sword.SwordAnims.DRAW, katana);
@@ -778,6 +780,187 @@ public final class SwordTests {
                 }
             }
         }
+    }
+
+    /**
+     * 2.6.1 (the owner, on 2.6.0's first-person draw: "wtf is this sequence", the blade up, then right with the handle out of the fist's
+     * left, then up again within a tick and a half; then "as smooth as possible without buggy frames"): every blade, every quarter tick
+     * of the draw and the sheathing:
+     * <ul>
+     *   <li>the blade never points at (or away from) the eye: at least half of it across the view (2.6.0 shrank it to a stub);</li>
+     *   <li>it never turns more than 26 degrees in a quarter tick, nor does the right fist (2.6.0's fist spun 85 degrees in one as the
+     *       held blade came to lie along the forearm);</li>
+     *   <li>once the point leaves the mouth the draw's blade turns one way only (clockwise in the view, the point rising) to the held
+     *       blade, and the sheathing's snap one way only (counterclockwise) down to the left: no back and forth.</li>
+     * </ul>
+     */
+    static void drawSmooth() {
+        for (Katana katana : Katana.values()) {
+            if (katana.carry() == Katana.Carry.BACK) {
+                continue; // Yoru: its own moves over the shoulder (checked below)
+            }
+            float drawLength = com.hexhaki.piece.sword.SwordAnims.duration(com.hexhaki.piece.sword.SwordAnims.DRAW, katana);
+            float sheatheLength = com.hexhaki.piece.sword.SwordAnims.duration(com.hexhaki.piece.sword.SwordAnims.SHEATHE, katana);
+            int drawTick = com.hexhaki.piece.sword.BladePaths.drawTick(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, katana));
+            int sheathTick = com.hexhaki.piece.sword.BladePaths.sheathTick(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.SHEATHE, katana));
+            for (int phase = 0; phase < 2; phase++) {
+                float length = phase == 0 ? drawLength : sheatheLength;
+                double[][] lastBlade = null;
+                double[][] lastRight = null;
+                double lastAngle = Double.NaN;
+                for (float t = 0.0F; t <= length + 1e-4; t += 0.25F) {
+                    com.hexhaki.piece.sword.DrawView.Pose p = phase == 0
+                        ? com.hexhaki.piece.sword.DrawView.draw(katana, false, t, length, drawTick, 0.0F, 0.0F)
+                        : com.hexhaki.piece.sword.DrawView.sheathe(katana, false, t, length, sheathTick, 0.0F, 0.0F);
+                    String at = (phase == 0 ? "draw" : "sheathe") + " t" + t + " (" + katana + ")";
+                    double[][] m = com.hexhaki.piece.sword.HolsterView.matrix(p.blade());
+                    double[] way = {m[0][1], m[1][1], m[2][1]};
+                    double across = Math.hypot(way[0], way[1]) / Math.sqrt(dot3(way, way));
+                    Check.that(across >= 0.5, "the blade never points at the eye: " + at + " (" + across + ")");
+                    double angle = Math.toDegrees(Math.atan2(way[1], way[0]));
+                    if (lastBlade != null) {
+                        Check.that(turn(m, lastBlade) <= 26.0, "the blade turns at most 26 degrees a quarter tick: " + at + " (" + turn(m, lastBlade) + ")");
+                        double step = angle - lastAngle;
+                        step = step > 180 ? step - 360 : step < -180 ? step + 360 : step;
+                        if (phase == 0 && t > drawTick + 0.25F) {
+                            Check.that(step <= 0.5, "the drawn blade's point rises one way only: " + at + " (" + step + " degrees)");
+                        }
+                        if (phase == 1 && t * 21.0F / sheathTick <= 4.0F) {
+                            Check.that(step >= -0.5, "the sheathing's snap goes one way only: " + at + " (" + step + " degrees)");
+                        }
+                    }
+                    if (p.right() != null) {
+                        double[][] r = com.hexhaki.piece.sword.HolsterView.matrix(p.right());
+                        if (lastRight != null) {
+                            Check.that(turn(r, lastRight) <= 26.0, "the right fist never spins: " + at + " (" + turn(r, lastRight) + ")");
+                        }
+                        lastRight = r;
+                    } else {
+                        lastRight = null;
+                    }
+                    lastBlade = m;
+                    lastAngle = angle;
+                }
+            }
+        }
+        // 2.6.1: the right click's charge (from the held blade, and drawn from the saya), every blade: the same limits, and it starts
+        // where the blade is held (from the held blade) or at rest (from the saya)
+        for (Katana katana : Katana.values()) {
+            boolean back = katana.carry() == Katana.Carry.BACK;
+            int free = Math.max(0, com.hexhaki.piece.sword.BladePaths.drawTick(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.CHARGE_DRAW, katana)));
+            Check.that(same(com.hexhaki.piece.sword.DrawView.charge(katana, false, 0.0F, 0.0F, 0.0F).blade(),
+                com.hexhaki.piece.sword.DrawView.held(katana, false, 0.0F, 0.0F).blade()), "the charge starts where the blade is held (" + katana + ")");
+            if (!back) {
+                Check.that(same(com.hexhaki.piece.sword.DrawView.chargeDraw(katana, false, 0.0F, 0.0F, 0.0F).blade(),
+                    com.hexhaki.piece.sword.DrawView.holster(katana, false, 0.0F, 0.0F).blade()), "the charge from the saya starts at rest (" + katana + ")");
+            }
+            for (int from = 0; from < 2; from++) {
+                double[][] lastBlade = null;
+                double[][] lastRight = null;
+                for (float t = 0.0F; t <= 60.0F; t += 0.25F) {
+                    com.hexhaki.piece.sword.DrawView.Pose p = from == 0 ? com.hexhaki.piece.sword.DrawView.charge(katana, false, t, 0.0F, 0.0F)
+                        : back ? com.hexhaki.piece.sword.DrawView.backCharge(katana, false, t, free, 0.0F, 0.0F)
+                        : com.hexhaki.piece.sword.DrawView.chargeDraw(katana, false, t, 0.0F, 0.0F);
+                    if (p.blade() == null) {
+                        lastBlade = null;
+                        lastRight = null;
+                        continue;
+                    }
+                    String at = (from == 0 ? "charge" : "charge from the saya") + " t" + t + " (" + katana + ")";
+                    double[][] m = com.hexhaki.piece.sword.HolsterView.matrix(p.blade());
+                    double[] way = {m[0][1], m[1][1], m[2][1]};
+                    Check.that(Math.hypot(way[0], way[1]) / Math.sqrt(dot3(way, way)) >= 0.5, "the blade never points at the eye: " + at);
+                    if (lastBlade != null) {
+                        Check.that(turn(m, lastBlade) <= 26.0, "the blade turns at most 26 degrees a quarter tick: " + at + " (" + turn(m, lastBlade) + ")");
+                    }
+                    if (p.right() != null) {
+                        double[][] r = com.hexhaki.piece.sword.HolsterView.matrix(p.right());
+                        if (lastRight != null) {
+                            Check.that(turn(r, lastRight) <= 26.0, "the right fist never spins: " + at + " (" + turn(r, lastRight) + ")");
+                        }
+                        lastRight = r;
+                    }
+                    lastBlade = m;
+                }
+            }
+        }
+        // Yoru, over the shoulder: the same limits on its turn
+        Katana yoru = java.util.Arrays.stream(Katana.values()).filter(k -> k.carry() == Katana.Carry.BACK).findFirst().orElse(null);
+        if (yoru != null) {
+            int free = Math.max(0, com.hexhaki.piece.sword.BladePaths.drawTick(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, yoru)));
+            double[][] last = null;
+            for (float t = free; t <= free + 8; t += 0.25F) {
+                double[][] m = com.hexhaki.piece.sword.HolsterView.matrix(com.hexhaki.piece.sword.DrawView.backDraw(yoru, false, t, free, 0.0F, 0.0F).blade());
+                if (last != null) {
+                    Check.that(turn(m, last) <= 26.0, "Yoru turns at most 26 degrees a quarter tick (t" + t + ": " + turn(m, last) + ")");
+                }
+                last = m;
+            }
+        }
+    }
+
+    /**
+     * 2.6.1 (the owner: "Haki coating is ONLY on the blade of the swords, never on the handle or saya", "progressive not instant (like
+     * the arms slowly turning black)"): the blade's coat waits for the fist, runs up from the guard to the point over about a second,
+     * a point of the steel at a time, and draws back from the point.
+     */
+    static void bladeCoat() {
+        Check.near(com.hexhaki.piece.sword.BladeCoat.progress(true, 0L, 0.0F), 0.0, 1e-6, "not at once");
+        Check.near(com.hexhaki.piece.sword.BladeCoat.progress(true, com.hexhaki.piece.sword.BladeCoat.DELAY_NANOS, 0.0F), 0.0, 1e-6,
+            "the fist first: the blade waits");
+        Check.near(com.hexhaki.piece.sword.BladeCoat.progress(true, com.hexhaki.piece.sword.BladeCoat.DELAY_NANOS
+            + com.hexhaki.piece.sword.BladeCoat.ON_NANOS, 0.0F), 1.0, 1e-6, "all black after the delay and its run");
+        Check.that(com.hexhaki.piece.sword.BladeCoat.progress(true, 0L, 0.4F) > 0.39F, "turned round part way: no new wait");
+        Check.near(com.hexhaki.piece.sword.BladeCoat.progress(false, com.hexhaki.piece.sword.BladeCoat.OFF_NANOS, 1.0F), 0.0, 1e-6,
+            "off: drawn back within its time");
+        float last = -1;
+        for (long ms = 0; ms <= 1600; ms += 50) {
+            float p = com.hexhaki.piece.sword.BladeCoat.progress(true, ms * 1_000_000L, 0.0F);
+            Check.that(p >= last, "the coat only spreads while on (" + ms + " ms)");
+            last = p;
+        }
+        int blackGuard = 0;
+        int blackPoint = 0;
+        for (int seed = 0; seed < 400; seed++) {
+            Check.near(com.hexhaki.piece.sword.BladeCoat.at(0.5F, seed, 0.0F), 0.0, 1e-6, "bare at 0");
+            Check.near(com.hexhaki.piece.sword.BladeCoat.at(0.5F, seed, 1.0F), 1.0, 1e-6, "black at 1");
+            float before = 0;
+            for (float p = 0; p <= 1.0001F; p += 0.02F) {
+                float at = com.hexhaki.piece.sword.BladeCoat.at(0.3F, seed, p);
+                Check.that(at >= before - 1e-6, "a point of the steel only darkens as the coat spreads");
+                before = at;
+            }
+            blackGuard += com.hexhaki.piece.sword.BladeCoat.at(0.05F, seed, 0.45F) > 0.99F ? 1 : 0;
+            blackPoint += com.hexhaki.piece.sword.BladeCoat.at(0.95F, seed, 0.45F) > 0.01F ? 1 : 0;
+        }
+        Check.that(blackGuard == 400 && blackPoint == 0, "half way: black at the guard, bare at the point (" + blackGuard + ", " + blackPoint + ")");
+        // out of step: the same height turns at different moments, point by point
+        java.util.Set<Integer> moments = new java.util.HashSet<>();
+        for (int seed = 0; seed < 50; seed++) {
+            moments.add(Math.round(com.hexhaki.piece.sword.BladeCoat.reveal(0.5F, seed) * 100));
+        }
+        Check.that(moments.size() > 5, "the front is ragged, not a line (" + moments.size() + " moments)");
+    }
+
+    /** The angle (degrees) between two frames' turns (their 3x3 parts, columns scaled out). */
+    static double turn(double[][] a, double[][] b) {
+        double[][] na = new double[3][3];
+        double[][] nb = new double[3][3];
+        for (int j = 0; j < 3; j++) {
+            double la = Math.sqrt(a[0][j] * a[0][j] + a[1][j] * a[1][j] + a[2][j] * a[2][j]);
+            double lb = Math.sqrt(b[0][j] * b[0][j] + b[1][j] * b[1][j] + b[2][j] * b[2][j]);
+            for (int i = 0; i < 3; i++) {
+                na[i][j] = a[i][j] / la;
+                nb[i][j] = b[i][j] / lb;
+            }
+        }
+        double trace = 0;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                trace += na[i][j] * nb[i][j];
+            }
+        }
+        return Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, (trace - 1.0) / 2.0))));
     }
 
     static boolean same(float[][] a, float[][] b) {
