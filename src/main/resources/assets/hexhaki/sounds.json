@@ -147,7 +147,8 @@
     "sounds": [
       {
         "name": "hexhaki:piece/conqueror/evil_release_male",
-        "attenuation_distance": 48
+        "attenuation_distance": 77,
+        "volume": 0.40625
       }
     ]
   },
@@ -156,7 +157,18 @@
     "sounds": [
       {
         "name": "hexhaki:piece/conqueror/evil_release_female",
-        "attenuation_distance": 48
+        "attenuation_distance": 77,
+        "volume": 0.40625
+      }
+    ]
+  },
+  "piece.conqueror.explosion": {
+    "subtitle": "subtitles.hexhaki.piece.conqueror.explosion",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/explosion",
+        "volume": 0.25,
+        "attenuation_distance": 64
       }
     ]
   }

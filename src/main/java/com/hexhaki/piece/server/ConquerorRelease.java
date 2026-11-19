@@ -54,6 +54,12 @@ import net.minecraft.world.phys.Vec3;
  *       HexPiece's, and what its lightning strikes is found here ({@link #struck}: the bolts the clients draw, rebuilt from the
  *       release's seed: its range lightning, and a full charge's storm). Each release is {@link #current} from its visual to its
  *       sounds, all within the original's {@code releaseConqueror}, in one server tick.</li>
+ *   <li>2.6.0, the owner: "The Conqueror release stun increased tap G = 5 seconds stun, hold G (min) = 10 seconds, max hold G = 20
+ *       seconds, Max hold G good alignment = 30 seconds" ({@link ConquerorStun#held}): a tap fells every body it hits for 5 seconds
+ *       (the original's 1.5: {@link #apply}, the bodies found by its damage, {@link #hurt}); a held release fells what it takes in its
+ *       radius and what its lightning strikes for its hold's stun (10 to 20 seconds, a good player's to 30), a full charge everything
+ *       in its radius ({@link #forceMax}). And "after the key is let go, add a proper explosion sound": every release explodes the
+ *       moment it is let out ({@link ConquerorSounds#explode}).</li>
  * </ul>
  */
 public final class ConquerorRelease {
@@ -64,7 +70,7 @@ public final class ConquerorRelease {
     /** 2.4.9: the radial release being let out now (between its visual and its sounds, in one tick), or null. */
     static Release current;
 
-    /** 2.4.9: a radial release being let out: who, when, its seed, charge, mastery, the releaser's alignment, and its stun. */
+    /** 2.4.9: a release being let out: who, when, its seed, charge, mastery, the releaser's alignment, and its stun (2.6.0: a tap's too). */
     static final class Release {
         final ServerPlayer player;
         final long tick;
@@ -79,6 +85,8 @@ public final class ConquerorRelease {
         /** The bodies its lightning strikes (found as the release's damage is dealt), and (2.4.9) the bodies it has hurt. */
         List<LivingEntity> struck = List.of();
         final Set<Integer> hurt = new HashSet<>();
+        /** 2.6.0: a tap's bodies (the original's tap hurts each it hits, then stuns it: {@link #hurt} keeps them). */
+        final List<LivingEntity> tapped = new ArrayList<>();
 
         Release(ServerPlayer player, long seed, float power, boolean tap) {
             this.tap = tap;
@@ -90,7 +98,8 @@ public final class ConquerorRelease {
             this.alignment = ProfileServer.of(player).alignment();
             this.full = !tap && power >= 0.999F;
             Long since = FULL_SINCE.get(player.m_20148_());
-            this.stun = ConquerorStun.full(this.alignment, since == null ? 0L : Math.max(0L, this.tick - since));
+            long heldAtFull = since == null ? 0L : Math.max(0L, this.tick - since);
+            this.stun = tap ? ConquerorStun.TAP : ConquerorStun.held(this.alignment, power, heldAtFull);
         }
     }
 
@@ -113,6 +122,7 @@ public final class ConquerorRelease {
             AlignmentSounds.released(player, power); // 2.4.6: an evil player's full release roars
         }
         if (visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE || visual == S2CHakiVisual.Visual.CONQUEROR_TAP_CONE) {
+            ConquerorSounds.explode(player, power, visual == S2CHakiVisual.Visual.CONQUEROR_TAP_CONE); // 2.6.0: the moment G is let go
             try {
                 current = new Release(player, seed, power, visual == S2CHakiVisual.Visual.CONQUEROR_TAP_CONE);
             } catch (RuntimeException failure) {
@@ -169,12 +179,16 @@ public final class ConquerorRelease {
     /**
      * 2.4.9: the original's {@code applyConqueror} (the release's push, damage and effects on what is in its radius). A radial release:
      * what its lightning strikes is found first (so its damage can follow the releaser's alignment, {@link #hurt}); after it, a partial
-     * charge's lightning fells whatever it struck for {@link ConquerorStun#LIGHTNING} ticks (any alignment), and an evil full charge's
-     * lightning hurts and fells what it struck beyond the radius (its storm runs far past it).
+     * charge fells what it takes in its radius and whatever its lightning struck (any alignment) for its stun, and an evil full
+     * charge's lightning hurts and fells what it struck beyond the radius (its storm runs far past it). 2.6.0: a tap fells every body
+     * it hit (the original stunned them 1.5 seconds) for {@link ConquerorStun#TAP}.
      */
     public static void apply(ServerPlayer player, double radius, float power, ConquerorMode mode, boolean joy, boolean maxHold, boolean tapped) {
-        Release r = tapped ? null : active(player);
-        if (r != null) {
+        Release r = active(player);
+        if (r != null && r.tap != tapped) {
+            r = null; // not the release this is (never: one release a tick)
+        }
+        if (r != null && !r.tap) {
             try {
                 r.struck = struck(r, radius);
             } catch (RuntimeException failure) {
@@ -185,8 +199,21 @@ public final class ConquerorRelease {
         if (r == null || !(player.m_9236_() instanceof ServerLevel level)) {
             return;
         }
+        if (r.tap) {
+            for (LivingEntity body : r.tapped) {
+                hold(level, body, r.stun);
+            }
+            return;
+        }
         boolean evil = com.hexhaki.piece.Alignment.evil(r.alignment);
         Vec3 at = player.m_20182_();
+        if (!r.full) {
+            // 2.6.0: a held release fells for its hold's stun what it takes in its radius (the original only what its push overwhelmed,
+            // for 3 to 4 seconds); a full charge does it in forceMax
+            for (LivingEntity body : taken(player, level, radius)) {
+                hold(level, body, r.stun);
+            }
+        }
         for (LivingEntity body : r.struck) {
             if (!body.m_6084_()) {
                 continue;
@@ -196,9 +223,9 @@ public final class ConquerorRelease {
                 halve(body, player.m_269291_().m_269075_(player));
             }
             if (!r.full) {
-                fell(level, body, ConquerorStun.LIGHTNING);
+                hold(level, body, r.stun);
             } else if (evil && body.m_20182_().m_82554_(at) > radius) {
-                fell(level, body, r.stun);
+                hold(level, body, r.stun);
             }
         }
     }
@@ -225,8 +252,8 @@ public final class ConquerorRelease {
 
     /**
      * 2.4.9: the original's {@code forceMaxConquerorStun} (a full charge's stun on what is in its radius) for the releaser's stun
-     * ({@link ConquerorStun#full}: by alignment, longer the longer G was held after the charge filled); every body it fells is down
-     * (the ones already down too) and slowed and weakened for exactly that long (the original's push gave them 10 seconds of it).
+     * ({@link ConquerorStun#held}: by alignment, longer the longer G was held); every body it fells is down (the ones already down too)
+     * and slowed and weakened for exactly that long ({@link #hold}).
      */
     public static void forceMax(ServerPlayer player, double radius, int ticks) {
         Release r = active(player);
@@ -235,22 +262,30 @@ public final class ConquerorRelease {
         if (r == null || !(player.m_9236_() instanceof ServerLevel level)) {
             return;
         }
-        for (LivingEntity body : level.m_6443_(LivingEntity.class, player.m_20191_().m_82400_(radius),
-            e -> e != player && e.m_6084_() && e.m_20280_(player) <= radius * radius && target(player, e))) {
-            body.m_21195_(MobEffects.f_19597_);
-            body.m_21195_(MobEffects.f_19613_);
-            body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, stun, 10, false, false));
-            body.m_7292_(new MobEffectInstance(MobEffects.f_19613_, stun, 6, false, false));
-            HakiFalls.knockDown(level, body, stun, false);
+        for (LivingEntity body : taken(player, level, radius)) {
+            hold(level, body, stun);
         }
     }
 
-    /** {@code body} felled for {@code ticks}: the original's forced stun (frozen, its aim dropped) and the fall (HakiFalls). */
-    static void fell(ServerLevel level, LivingEntity body, int ticks) {
+    /** The bodies a release by {@code player} takes in its radius ({@link #target}), as the original's {@code forceMaxConquerorStun} finds them. */
+    static List<LivingEntity> taken(ServerPlayer player, ServerLevel level, double radius) {
+        return level.m_6443_(LivingEntity.class, player.m_20191_().m_82400_(radius),
+            e -> e != player && e.m_6084_() && e.m_20280_(player) <= radius * radius && target(player, e));
+    }
+
+    /**
+     * 2.6.0: {@code body} down for exactly {@code ticks} (a release's whole stun): slowed and weakened that long (the original's shorter
+     * effects taken off first) and fallen (HakiFalls: kept in the original's forced stun while it lies there; again while it is down,
+     * it only stays down longer).
+     */
+    static void hold(ServerLevel level, LivingEntity body, int ticks) {
         if (!body.m_6084_()) {
             return;
         }
-        body.m_7292_(new MobEffectInstance(MobEffects.f_19613_, ticks, 3, false, false));
+        body.m_21195_(MobEffects.f_19597_);
+        body.m_21195_(MobEffects.f_19613_);
+        body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, ticks, 10, false, false));
+        body.m_7292_(new MobEffectInstance(MobEffects.f_19613_, ticks, 6, false, false));
         HakiFalls.knockDown(level, body, ticks, false);
     }
 
@@ -279,6 +314,9 @@ public final class ConquerorRelease {
     public static boolean hurt(LivingEntity body, DamageSource source, float amount) {
         Release r = current;
         if (r != null && r.tick == body.m_9236_().m_46467_()) {
+            if (r.tap && !r.tapped.contains(body)) {
+                r.tapped.add(body); // 2.6.0: the tap stuns it after (apply)
+            }
             if (!ConquerorStun.hurts(r.alignment)) {
                 return false;
             }

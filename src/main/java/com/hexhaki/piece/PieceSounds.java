@@ -14,8 +14,8 @@ import net.minecraftforge.registries.RegistryObject;
 
 /**
  * 2.2.9: HexPiece's own sound events ({@code hexhaki:piece.*}, defined in the merged {@code sounds.json}): the Swordsman's, from the
- * web (CC0, OpenGameArt: {@link SwordSounds}); the clashes' and (2.4.6) the evil Conqueror's, the owner's own. Played on the server for
- * everyone near.
+ * web (CC0, OpenGameArt: {@link SwordSounds}); the clashes' and (2.4.6) the evil Conqueror's, the owner's own; (2.6.0) the Conqueror's
+ * release explosion, from the web (CC0). Played on the server for everyone near.
  */
 public final class PieceSounds {
     private static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, HexPiece.MODID);
@@ -32,6 +32,9 @@ public final class PieceSounds {
         for (String name : Alignment.SOUNDS) {
             BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
         }
+        // 2.6.0: the Conqueror's release explosion (CC0 recordings from the web, haki/ConquerorMix)
+        String explosion = com.hexhaki.piece.haki.ConquerorMix.EXPLOSION;
+        BY_NAME.put(explosion, SOUNDS.register(explosion, () -> SoundEvent.m_262824_(HexHaki.id(explosion))));
     }
 
     private PieceSounds() {

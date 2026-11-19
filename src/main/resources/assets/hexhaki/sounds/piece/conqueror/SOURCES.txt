@@ -13,3 +13,21 @@ not play, on which the limiter clamped and pumped. Now the sub under 38 Hz is cu
 play it, a little presence near 2.5-3 kHz, gentle compression and a slow limiter, no sub boost, no saturation: about -10.3 LUFS, crest
 factors 9-10 dB; the 500-2000 Hz band 4-5 dB louder than 2.4.6 for the male files, 2.5 dB for the female ones; the male release's
 60-150 Hz band about +7 dB over its mids (the clip: level), the male voice's +4, the female files' about +2 and 0.
+2.6.0 (the owner, testing 2.5.9: "the evil voice line increased by a ton, its barely audible" and "cut the voice line (evil) so that as
+soon as the voice ends, the sound ends, cause currently after the voice line theres a weird SFX"): evil_voice_male.ogg and
+evil_voice_female.ogg remade by tools/evil_conqueror_sounds.py --voice: only the voice now (0 - 1.20 s of the owner's clip, the last
+90 ms tapered; the rumble and the sweep after it are gone), mixed speech first for any speaker, a phone's too (under 90 Hz cut, 350 Hz
+lowered, 2.5 kHz and 5 kHz raised, a firm compressor and a soft clip): about -8.6 LUFS, its 300-4000 Hz band about 4 dB louder than
+2.4.8's and no longer under a rumble. The release roars are unchanged (2.4.8's files; in game 35 % quieter through their sounds.json
+volume, their reach kept).
+
+explosion.ogg (2.6.0, sound event piece.conqueror.explosion, the moment G is let go; the owner: "add a proper explosion sound (FROM
+THE WEB)"): made by tools/conqueror_explosion.py from four CC0 1.0 (public domain, free for any use, no attribution required)
+recordings, credited here with thanks, all taken from the GitHub collection lavenderdotpet/CC0-Public-Domain-Sounds (commit
+f2b6264f9ab89fabc266914c3654685d68c5a39b, licensed CC0 1.0 as a whole), https://github.com/lavenderdotpet/CC0-Public-Domain-Sounds:
+  - "50-cc0-sci-fi-sfx/explosion_01.ogg", from "50 CC0 Sci-Fi SFX" by rubberduck (OpenGameArt), CC0 1.0
+  - "25-CC0-bang-sfx/cannon_01.ogg", from "25 CC0 bang / firework SFX" by rubberduck (OpenGameArt), CC0 1.0
+  - "warfork-cc0/sounds/weapons/gren_strong_explosion2.ogg", from Warfork's CC0 assets by Team Forbidden, CC0 1.0
+  - "sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg", from "Sci-fi Sounds" by Kenney (kenney.nl), CC0 1.0
+Lined up on their onsets and layered, lowered in pitch (0.88), a rolling tail added (a convolution with decaying darkened noise), the sub
+under 40 Hz cut and the low end held down for phone speakers, the roar and crack raised, gently compressed, -12 LUFS, mono, 3.6 s.

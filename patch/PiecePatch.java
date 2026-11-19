@@ -211,6 +211,12 @@ public final class PiecePatch implements Opcodes {
         // clock, drawn full white over the HUD every frame): the flash goes through HexPiece, which draws it only while time runs
         // forward from its start and clears a stale one (client/fx/ImpactReset)
         {IMPACT, "hud", IMPACT, "drawFlash", "(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", IMPACT_RESET, "flash", 1},
+        // 2.6.0 (the owner: "Conqueror sounds reduced by 35% but the line evil voice line increased by a ton"): the Haki sounds the
+        // original plays a second late (its delayedSound) go through HexPiece, which plays its Conqueror sounds 35 % quieter
+        // (server/ConquerorSounds; every other sound as it was)
+        {CONTROLLER, "lambda$delayedSound$26", "com/hexhaki/patch/SoundBalance", "pos",
+            "(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/core/BlockPos;Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FF)V",
+            "com/hexhaki/piece/server/ConquerorSounds", "pos", 1},
     };
     /**
      * 2.4.9: instance calls made static: class, method, call owner, name, descriptor, new owner, new name, how many. The new method takes

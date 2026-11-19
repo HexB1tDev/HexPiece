@@ -1,17 +1,16 @@
-Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf). Read CLAUDE.md, then docs/handoff/next-ai-2.5.9.md (the
-newest: 2.5.9's fix of the Water Bullet server crash; 2.5.8's first person with an empty hand and the arm under Haki, an open question on "some swords"; 2.5.7's fix of the crash on joining any world; 2.5.6's first-person draw, held and sheathing, sword/DrawView + client/sword/HolsterHand; the blades' temper,
-tools/katana_temper.py -> textures/tempered/, packed by build.py while the source hashes match), then next-ai-2.5.5.md (the white
-screen fix, the free head, the holster view, the Haki slash's 30 s cooldown), next-ai-2.5.3.md (Ryou's fist aura, which the owner
-calls "beautiful and perfect": keep it), next-ai-2.5.2.md and next-ai-2.5.1.md (the owner's device: Android, OpenGL ES through
-MobileGlues). 2.5.9 is released; the next version is 2.6.0 (python3 tools/next_version.py --write). Check the branch's last "Build
-HexPiece" and "Release HexPiece" runs first.
+Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest). Read CLAUDE.md, then
+docs/handoff/next-ai-2.6.0.md (the newest: 2.6.0's Conqueror sounds, 35 % quieter through server/ConquerorSounds, the evil voice
+line voice-only and louder, the CC0 explosion on letting go of G, tools/conqueror_explosion.py; the stun by hold in
+haki/ConquerorStun: tap 5 s, hold 10-20 s, good 30 s), then next-ai-2.5.9.md (the first-person draw and sheathing: sword/DrawView +
+client/sword/HolsterHand, tools/draw_preview.py; the blades' temper), next-ai-2.5.3.md (Ryou's fist aura, which the owner calls
+"beautiful and perfect": keep it) and next-ai-2.5.1.md (the owner's device: Android, OpenGL ES through MobileGlues). The next version
+is 2.6.1 (python3 tools/next_version.py --write). Check the branch's last "Build HexPiece" and "Release HexPiece" runs first.
 
-Then act on the owner's report of 2.5.9 (no crash with the Water Bullet), 2.5.8 (empty-hand first person, the arm with Haki on, their answer on "some swords"), 2.5.7 and 2.5.6: the first-person draw and sheathing (tools/draw_preview.py renders the game's own frames;
-judge it yourself, don't send renders unless asked) and the new temper on the blades (all but Yoru).
+Then the owner's item 3: "focus on bettering the first person Sheath / Unsheath animations so it's as smooth as possible without buggy
+frames" (render with tools/draw_preview.py, judge every frame yourself, fix and render again), and act on their report of 2.6.0.
 
-Run on the "HexPiece" cloud environment. House rules (CLAUDE.md): versions roll over at 9, keep only 5 releases, a push is done only
-when GitHub's runs are green, never claim in-game testing, every sound from the web and free to use (or the owner's own). Rendering on
-the owner's device: alpha-blended, depth-tested geometry that is right without culling, through the game's own RenderTypes; never a
-framebuffer blit or post chain in the middle of the level (it broke the projection for everything after it). Stop rule: when the owner
-says so, or the moment the WEEKLY usage reaches 98%, write the handoff and the next prompt FIRST, commit, push, and stop, without
-checking CI.
+House rules (CLAUDE.md): versions roll over at 9, keep only 5 releases, a push is done only when GitHub's runs are green, never claim
+in-game testing, every sound from the web and free to use (or the owner's own). Rendering on the owner's device: alpha-blended,
+depth-tested geometry that is right without culling, through the game's own RenderTypes; never a framebuffer blit or post chain in the
+middle of the level. Stop rule: when the owner says so, or the moment the WEEKLY usage reaches 98%, write the handoff and the next
+prompt FIRST, commit, push, and stop, without checking CI.

@@ -20,7 +20,16 @@ a gentle compressor (-20 dB, 3:1, 10 ms / 200 ms) and a slow limiter (5 ms / 150
 the 500-2000 Hz band: the male release's 60-150 Hz about +7 dB and its 20-60 Hz level with the mids; the female one's 60-150 Hz about
 +3; the voices' about +4 (male) and 0 (female); crest factors 8-10 dB (not crushed); -10 LUFS or a little under, the limiter at -1 dB.
 
-Needs ffmpeg with rubberband and libvorbis (the cloud sessions have it). Usage: python3 tools/evil_conqueror_sounds.py
+2.6.0 (the owner, testing 2.5.9: "the evil voice line increased by a ton, its barely audible" and "cut the voice line (evil) so that
+as soon as the voice ends, the sound ends, cause currently after the voice line theres a weird SFX when it's just meant to be the voice
+line"): the voice line is only the voice now, "Sa-wa-ga-shi-i" to the end of its last vowel (the formants above 1.5 kHz are at the
+noise floor from 1.16 s: VOICE ends at 1.20 s, the last 90 ms tapered); the rumble after it and the sweep at 2.78 s are gone. It was
+mixed for big speakers (its 300-4000 Hz band 5-8 dB under the whole, the rumble under it carried as loud as the voice, inaudible on a
+phone's speaker, the owner's device): now speech first (VOICE_CHAIN: the low end under 90 Hz cut, the mud near 350 Hz lowered, the
+presence near 2.5 kHz and the "s"/"sh" near 5 kHz raised, a firm compressor, a soft clip that adds edge without crackle) and brought
+to VOICE_TARGET, 3.5 LU over 2.4.8's; in game it is the only Conqueror sound not lowered by 2.6.0's 35 % (server/ConquerorSounds).
+
+Needs ffmpeg with rubberband and libvorbis (the cloud sessions have it). Usage: python3 tools/evil_conqueror_sounds.py [--voice] (--voice: the voice lines only)
 """
 import os
 import subprocess
@@ -30,8 +39,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOURCE = os.path.join(ROOT, "input", "EvilConqueror.mp3")
 OUT = os.path.join(ROOT, "src", "main", "resources", "assets", "hexhaki", "sounds", "piece", "conqueror")
 
-# the two parts (seconds), cut at the silence between them
-VOICE = (0.0, 3.39)
+# the two parts (seconds): the voice (2.6.0: only the voice, to the end of its last vowel) and the release after the silence
+VOICE = (0.0, 1.20)
+VOICE_FADE = "afade=t=in:d=0.01,areverse,afade=t=in:d=0.09,areverse"
+# 2.6.0: the voice for any speaker (a phone's too): speech first
+VOICE_CHAIN = ("highpass=f=90:poles=2,equalizer=f=350:t=q:w=1.0:g=-3,equalizer=f=2500:t=q:w=1.0:g=5,equalizer=f=5000:t=q:w=1.2:g=3,"
+               "acompressor=threshold=-26dB:ratio=4:attack=4:release=90:makeup=4dB,volume=4dB,asoftclip=type=tanh,volume=-4dB")
+VOICE_TARGET = -6.8
 RELEASE = (3.58, None)
 
 # 2.4.8: the sub no speaker plays, cut (it only took the limiter's headroom); a gentle compressor
@@ -76,7 +90,7 @@ def band(path, cutoff=150):
     raise RuntimeError("no level for " + path)
 
 
-def run(part, chain, name, rate=44100, target=TARGET):
+def run(part, chain, name, rate=44100, target=TARGET, fade=FADE):
     """The part shaped by chain, measured, raised to target into a slow limiter (raised again until the file reaches it, or as near
     as the limiter allows), written as Ogg Vorbis."""
     start, end = part
@@ -88,7 +102,7 @@ def run(part, chain, name, rate=44100, target=TARGET):
     final = os.path.join(OUT, name + ".ogg")
     for _ in range(5):
         subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", shaped, "-af",
-                        f"volume={gain:.2f}dB,alimiter=limit=0.89:attack=5:release=150:level=false,{FADE}", "-c:a", "libvorbis",
+                        f"volume={gain:.2f}dB,alimiter=limit=0.89:attack=5:release=150:level=false,{fade}", "-c:a", "libvorbis",
                         "-q:a", "6", final], check=True)
         missing = target - loudness(final)
         if abs(missing) < 0.25 or gain > 30:
@@ -99,13 +113,16 @@ def run(part, chain, name, rate=44100, target=TARGET):
 
 
 def main():
+    voice_only = "--voice" in sys.argv[1:]
     if not os.path.exists(SOURCE):
         sys.exit("the owner's clip is missing: " + SOURCE)
     os.makedirs(OUT, exist_ok=True)
     rate = 44100
     # male: "this but more bass boosted" (the release the most); female: lighter
-    run(VOICE, "lowshelf=g=8:f=150:w=0.6,equalizer=f=2500:t=q:w=1.2:g=2", "evil_voice_male", rate)
-    run(VOICE, f"{female_voice(rate)},lowshelf=g=6:f=200:w=0.6,highshelf=g=2:f=3500", "evil_voice_female", rate)
+    run(VOICE, f"lowshelf=g=2:f=160:w=0.6,{VOICE_CHAIN}", "evil_voice_male", rate, VOICE_TARGET, VOICE_FADE)
+    run(VOICE, f"{female_voice(rate)},highpass=f=130:poles=2,{VOICE_CHAIN}", "evil_voice_female", rate, VOICE_TARGET, VOICE_FADE)
+    if voice_only:
+        return
     run(RELEASE, "lowshelf=g=9:f=160:w=0.6,equalizer=f=90:t=q:w=1:g=3,equalizer=f=2800:t=q:w=1.2:g=2", "evil_release_male", rate)
     run(RELEASE, f"rubberband=pitch={2 ** (2 / 12):.5f}:formant=preserved,lowshelf=g=5:f=180:w=0.6,equalizer=f=3000:t=q:w=1.2:g=2",
         "evil_release_female", rate)

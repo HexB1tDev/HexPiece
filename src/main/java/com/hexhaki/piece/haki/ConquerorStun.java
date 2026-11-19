@@ -3,52 +3,67 @@ package com.hexhaki.piece.haki;
 import com.hexhaki.piece.Alignment;
 
 /**
- * 2.4.9: who the Conqueror's radial release fells, for how long, and whom it hurts, by the releaser's alignment (pure, tested in
- * {@code LightningTests}). The owner: "every mob hit with the lightning from the Conqueror's release is to be fucking felled ... the
- * longer you hold the G button, at max charge, I think the stun should go up to 10 seconds", then, asked:
+ * 2.4.9: who the Conqueror's release fells, for how long, and whom it hurts, by the releaser's alignment (pure, tested in
+ * {@code LightningTests}). The owner: "every mob hit with the lightning from the Conqueror's release is to be fucking felled", then,
+ * asked:
  * <ul>
- *   <li>"Good Aligments = Stuns to hostiles and players only (15 seconds stun at max charge) (in the radius of the release)": a good
- *       player's release hurts no one; its full charge fells hostile mobs and players in its radius, for up to {@link #GOOD_MAX}.</li>
- *   <li>"Evil alignment = Stuns everything hit in the radius of the release, entities/players hit by the lightning take the damage
- *       (max stun 9 seconds)": an evil player's full charge fells every mob and player in its radius (and whatever its lightning strikes
- *       beyond it), for up to {@link #EVIL_MAX}.</li>
- *   <li>Neutral (not asked): the original's release (it fells and hurts hostile mobs and players in its radius), for up to
- *       {@link #NEUTRAL_MAX} (the owner's first "up to 10 seconds").</li>
- *   <li>A partial charge: "entities hit by the lightnings ALL both evil/good stun all entities caught. 2 seconds": whatever its
- *       lightning strikes, mob or player, is felled for {@link #LIGHTNING} ticks, whatever the alignment.</li>
+ *   <li>"Good Aligments = Stuns to hostiles and players only ... (in the radius of the release)": a good player's release hurts no
+ *       one; its full charge fells hostile mobs and players in its radius.</li>
+ *   <li>"Evil alignment = Stuns everything hit in the radius of the release, entities/players hit by the lightning take the damage": an
+ *       evil player's full charge fells every mob and player in its radius (and whatever its lightning strikes beyond it).</li>
+ *   <li>Neutral (not asked): the original's release (it fells and hurts hostile mobs and players in its radius).</li>
+ *   <li>A partial charge: "entities hit by the lightnings ALL both evil/good stun all entities caught": whatever its lightning strikes,
+ *       mob or player, is felled, whatever the alignment (2.6.0: and what it takes in its radius, for as long as any held release).</li>
  *   <li>Then: "I do think that the evil one should actually deal damage, but never kill. It should always, deal, make it deal, half the
  *       current HP of the mob or person hit. Always half, but even if the player or entity has half a heart, then it doesn't deal any
  *       damage. It's not meant to kill.": an evil release takes half the health left of every body it hits (all it fells in its
  *       radius and all its lightning strikes), never killing ({@link #evilDamage}).</li>
  * </ul>
- * A full charge's stun grows with how long G was held after the charge filled: {@link #FIRST} of the most at once, the most after
- * {@link #RAMP} ticks more.
+ * 2.6.0, how long (the owner: "The Conqueror release stun increased tap G = 5 seconds stun, hold G (min) = 10 seconds, max hold G = 20
+ * seconds, Max hold G good alignment = 30 seconds"): a tap fells what it hits for {@link #TAP} ticks; a held release (any charge) for
+ * {@link #HOLD_MIN} at the shortest hold, growing evenly with the hold (the charge filling, {@link #FILL} ticks, then held full for
+ * {@link #RAMP} more) to {@link #HOLD_MAX}, a good player's to {@link #GOOD_MAX} ({@link #held}).
  */
 public final class ConquerorStun {
-    public static final int GOOD_MAX = 300;
-    public static final int EVIL_MAX = 180;
-    public static final int NEUTRAL_MAX = 200;
-    /** Ticks held at full charge for the most stun, and the share of it let go the moment the charge fills. */
+    /** A tap (G pressed and let go at once): 5 seconds. */
+    public static final int TAP = 100;
+    /** A held release at the shortest hold: 10 seconds. */
+    public static final int HOLD_MIN = 200;
+    /** A held release at the longest hold: 20 seconds; a good player's 30. */
+    public static final int HOLD_MAX = 400;
+    public static final int GOOD_MAX = 600;
+    /**
+     * The original's charge: it fills in FILL ticks held (its {@code CONQUEROR_FULL_CHARGE_TICKS}: the charge is the ticks held times
+     * 0.625), and G held up to TAP_TICKS is a tap ({@code CONQUEROR_TAP_MAX_CHARGE_TICKS}).
+     */
+    public static final int FILL = 160;
+    public static final int TAP_TICKS = 10;
+    /** Ticks held at full charge for the most stun. */
     public static final int RAMP = 100;
-    public static final double FIRST = 0.3;
-    /** A partial release's lightning: what it strikes is down this long (ticks). */
-    public static final int LIGHTNING = 40;
 
     private ConquerorStun() {
     }
 
-    /** The most stun a full charge of this alignment gives (ticks). */
+    /** The most stun a held release of this alignment gives (ticks). */
     public static int most(int alignment) {
-        if (Alignment.evil(alignment)) {
-            return EVIL_MAX;
-        }
-        return Alignment.good(alignment) ? GOOD_MAX : NEUTRAL_MAX;
+        return Alignment.good(alignment) ? GOOD_MAX : HOLD_MAX;
     }
 
-    /** A full charge's stun (ticks), let go {@code heldAtFull} ticks after the charge filled. */
-    public static int full(int alignment, long heldAtFull) {
-        double grown = Math.max(0.0, Math.min(1.0, heldAtFull / (double) RAMP));
-        return (int) Math.round(most(alignment) * (FIRST + (1.0 - FIRST) * grown));
+    /**
+     * How far along the longest hold a release is (0..1): {@code power} the original's charge (0..1, at least 0.04), {@code heldAtFull}
+     * the ticks G was held after the charge filled (counted only at full charge). 0 at the shortest hold (just past a tap), 1 at the
+     * full charge held {@link #RAMP} ticks.
+     */
+    public static double progress(float power, long heldAtFull) {
+        double charge = Math.max(0.0, Math.min(1.0, power));
+        double held = charge >= 0.999 ? Math.max(0L, Math.min(RAMP, heldAtFull)) : 0.0;
+        double ticks = charge * FILL + held;
+        return Math.max(0.0, Math.min(1.0, (ticks - TAP_TICKS) / (FILL + RAMP - TAP_TICKS)));
+    }
+
+    /** A held release's stun (ticks): {@link #HOLD_MIN} at the shortest hold to {@link #most} at the longest. */
+    public static int held(int alignment, float power, long heldAtFull) {
+        return (int) Math.round(HOLD_MIN + (most(alignment) - HOLD_MIN) * progress(power, heldAtFull));
     }
 
     /** True if this release fells every mob and player in its radius (an evil full charge), not only hostile ones and players. */

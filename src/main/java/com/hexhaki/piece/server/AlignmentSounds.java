@@ -24,6 +24,10 @@ import net.minecraftforge.fml.common.Mod;
  *       original's own blast (2.4.7: its snap, rumble and crackle are gone: {@link ConquerorRelease#sound}).</li>
  * </ul>
  * A woman's versions for a female player, a man's otherwise. Good's own sounds are to come.
+ *
+ * <p>2.6.0 (the owner: "Conqueror sounds reduced by 35% but the line evil voice line increased by a ton"): the voice line plays at
+ * full loudness (remade louder, and only the voice: tools/evil_conqueror_sounds.py); the roar at 0.65 of it (its sounds.json volume,
+ * 0.40625 x {@link #VOLUME}; its attenuation 77 blocks keeps the reach it had).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class AlignmentSounds {

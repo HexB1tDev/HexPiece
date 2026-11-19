@@ -28,6 +28,7 @@ public final class LightningTests {
         stunFall();
         stunView();
         conquerorStun();
+        conquerorMix();
         culled();
         Check.done("LightningTests");
     }
@@ -540,25 +541,142 @@ public final class LightningTests {
         Check.that(core.points == points && core.seed == 1L, "the bolt itself is unchanged");
     }
 
+    /**
+     * 2.6.0 (the owner: "Conqueror sounds reduced by 35% but the line evil voice line increased by a ton ... after the key is let go, add a
+     * proper explosion sound (FROM THE WEB)" and "cut the voice line (evil) so that as soon as the voice ends, the sound ends"): the
+     * mix's numbers, the explosion's and the roar's sounds.json entries, the voice lines' length.
+     */
+    static void conquerorMix() {
+        Check.near(com.hexhaki.piece.haki.ConquerorMix.QUIETER, 0.65, 1e-6, "the original's Conqueror sounds 35 % quieter");
+        Check.near(com.hexhaki.piece.haki.ConquerorMix.loudness(1F, false), 1.0, 1e-6, "a full release explodes at full loudness");
+        Check.near(com.hexhaki.piece.haki.ConquerorMix.volume(1F, false), 4.0, 1e-6, "sent at 4: heard 64 blocks away");
+        float last = 0F;
+        for (int charge = 4; charge < 100; charge++) {
+            float loud = com.hexhaki.piece.haki.ConquerorMix.loudness(charge / 100F, false);
+            Check.that(loud >= last && loud < 1F, "a partial release explodes louder the more it was charged (" + charge + ")");
+            Check.that(com.hexhaki.piece.haki.ConquerorMix.volume(charge / 100F, false) > 1F, "and is heard past 16 blocks (" + charge + ")");
+            last = loud;
+        }
+        Check.that(com.hexhaki.piece.haki.ConquerorMix.loudness(1F, true) < com.hexhaki.piece.haki.ConquerorMix.loudness(0.04F, false),
+            "a tap's explosion is the smallest");
+        Check.that(com.hexhaki.piece.haki.ConquerorMix.pitch(1F, false) < com.hexhaki.piece.haki.ConquerorMix.pitch(0.5F, false)
+            && com.hexhaki.piece.haki.ConquerorMix.pitch(0.5F, false) < com.hexhaki.piece.haki.ConquerorMix.pitch(0F, true),
+            "the bigger the release, the deeper its explosion");
+        String sounds = read("src/main/resources/assets/hexhaki/sounds.json");
+        String explosion = entry(sounds, "\"" + com.hexhaki.piece.haki.ConquerorMix.EXPLOSION + "\"");
+        Check.that(explosion.contains("\"hexhaki:piece/conqueror/explosion\""), "the explosion's sound event plays its file");
+        Check.that(explosion.contains("\"volume\": " + (1.0 / com.hexhaki.piece.haki.ConquerorMix.SCALE)),
+            "its sounds.json volume is 1 / SCALE (sent at SCALE x its loudness: reach, never louder)");
+        for (String gender : new String[] {"male", "female"}) {
+            String roar = entry(sounds, "\"piece.conqueror.evil_release_" + gender + "\"");
+            Check.that(roar.contains("\"volume\": 0.40625"), "the evil roar (sent at 1.6) plays at 0.65 (" + gender + ")");
+            Check.that(roar.contains("\"attenuation_distance\": 77"), "and fades over the same 77 blocks as before (" + gender + ")");
+            Check.that(!entry(sounds, "\"piece.conqueror.evil_voice_" + gender + "\"").contains("\"volume\""),
+                "the voice line is not lowered (" + gender + ")");
+        }
+        java.io.File dir = new java.io.File("src/main/resources/assets/hexhaki/sounds/piece/conqueror");
+        Check.that(new java.io.File(dir, "explosion.ogg").length() > 10_000, "the explosion's file is there");
+        for (String gender : new String[] {"male", "female"}) {
+            double seconds = oggSeconds(new java.io.File(dir, "evil_voice_" + gender + ".ogg"));
+            Check.that(seconds > 1.1 && seconds < 1.3, "the voice line ends with the voice (" + gender + ": " + seconds + " s)");
+        }
+        double boom = oggSeconds(new java.io.File(dir, "explosion.ogg"));
+        Check.that(boom > 2.5 && boom < 4.5, "the explosion rolls away for a few seconds (" + boom + " s)");
+    }
+
+    static String read(String path) {
+        try {
+            return new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(path)), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (java.io.IOException failure) {
+            Check.that(false, path + " unreadable");
+            return "";
+        }
+    }
+
+    /** The JSON object after {@code key} in {@code text} (to its closing brace at the same depth). */
+    static String entry(String text, String key) {
+        int at = text.indexOf(key);
+        Check.that(at >= 0, key + " is in sounds.json");
+        if (at < 0) {
+            return "";
+        }
+        int open = text.indexOf('{', at);
+        int depth = 0;
+        for (int i = open; i < text.length(); i++) {
+            char c = text.charAt(i);
+            depth += c == '{' ? 1 : c == '}' ? -1 : 0;
+            if (depth == 0) {
+                return text.substring(open, i + 1);
+            }
+        }
+        return text.substring(open);
+    }
+
+    /** An Ogg Vorbis file's length in seconds: its last page's granule position over the identification header's sample rate. */
+    static double oggSeconds(java.io.File file) {
+        try {
+            byte[] b = java.nio.file.Files.readAllBytes(file.toPath());
+            int vorbis = indexOf(b, new byte[] {1, 'v', 'o', 'r', 'b', 'i', 's'}, 0);
+            long rate = (b[vorbis + 12] & 0xFFL) | (b[vorbis + 13] & 0xFFL) << 8 | (b[vorbis + 14] & 0xFFL) << 16 | (b[vorbis + 15] & 0xFFL) << 24;
+            int last = -1;
+            for (int i = indexOf(b, new byte[] {'O', 'g', 'g', 'S'}, 0); i >= 0; i = indexOf(b, new byte[] {'O', 'g', 'g', 'S'}, i + 1)) {
+                last = i;
+            }
+            long granule = 0;
+            for (int k = 7; k >= 0; k--) {
+                granule = granule << 8 | (b[last + 6 + k] & 0xFFL);
+            }
+            return granule / (double) rate;
+        } catch (java.io.IOException | RuntimeException failure) {
+            Check.that(false, file + " unreadable: " + failure);
+            return -1;
+        }
+    }
+
+    static int indexOf(byte[] data, byte[] what, int from) {
+        outer:
+        for (int i = from; i <= data.length - what.length; i++) {
+            for (int j = 0; j < what.length; j++) {
+                if (data[i + j] != what[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
     /** 2.4.4 (the owner: a Haki stun makes any entity "actually fall down ... and stay stunned"): every body falls, lies, gets up. */
-    /** 2.4.9: the Conqueror's release by alignment: who it fells, for how long (by the hold at full), whom it hurts; the storm's strikes. */
+    /** 2.4.9: the Conqueror's release by alignment: who it fells, for how long (2.6.0: by the hold), whom it hurts; the storm's strikes. */
     static void conquerorStun() {
         com.hexhaki.piece.haki.ConquerorStun.class.getName();
         int good = 100;
         int evil = -100;
         int neutral = 0;
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(good, 100) == 300, "good: 15 seconds at the most");
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(evil, 100) == 180, "evil: 9 seconds at the most");
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(neutral, 100) == 200, "neutral: 10 seconds at the most");
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(good, 400) == 300, "never past the most, however long it is held");
+        // 2.6.0 (the owner: "tap G = 5 seconds stun, hold G (min) = 10 seconds, max hold G = 20 seconds, Max hold G good alignment = 30
+        // seconds")
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.TAP == 100, "a tap: 5 seconds");
+        int shortest = Math.max(4, (int) Math.floor((com.hexhaki.piece.haki.ConquerorStun.TAP_TICKS + 1) * 0.625)); // the original's charge
+        for (int alignment : new int[] {good, evil, neutral}) {
+            Check.that(com.hexhaki.piece.haki.ConquerorStun.held(alignment, shortest / 100F, 0) == 200,
+                "the shortest hold: 10 seconds (alignment " + alignment + ")");
+            Check.that(com.hexhaki.piece.haki.ConquerorStun.held(alignment, 0.04F, 0) == 200, "never under 10 seconds");
+        }
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.held(evil, 1F, 100) == 400, "evil: 20 seconds at the longest hold");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.held(neutral, 1F, 100) == 400, "neutral: 20 seconds at the longest hold");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.held(good, 1F, 100) == 600, "good: 30 seconds at the longest hold");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.held(good, 1F, 4000) == 600, "never past the most, however long it is held");
+        Check.that(com.hexhaki.piece.haki.ConquerorStun.held(evil, 0.6F, 400) == com.hexhaki.piece.haki.ConquerorStun.held(evil, 0.6F, 0),
+            "time held counts at full charge only");
         int last = -1;
-        for (int held = 0; held <= 120; held += 5) {
-            int stun = com.hexhaki.piece.haki.ConquerorStun.full(evil, held);
-            Check.that(stun >= last, "the longer G is held at full, the longer the stun (" + held + ")");
+        // every tick of the hold, from just past a tap to the charge held full RAMP ticks: never shorter, never a jump over 3 ticks
+        for (int ticks = com.hexhaki.piece.haki.ConquerorStun.TAP_TICKS + 1; ticks <= 160 + 120; ticks++) {
+            int charge = Math.max(4, Math.min(100, (int) Math.floor(Math.min(ticks, 160) * 0.625)));
+            int stun = com.hexhaki.piece.haki.ConquerorStun.held(good, charge / 100F, Math.max(0, ticks - 160));
+            Check.that(stun >= last, "the longer G is held, the longer the stun (" + ticks + " ticks)");
+            Check.that(last < 0 || stun - last <= 3, "the stun grows evenly (" + ticks + " ticks: " + last + " -> " + stun + ")");
             last = stun;
         }
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.full(good, 0) == 90, "let go as it fills: 30 % of the most (good 4.5 s)");
-        Check.that(com.hexhaki.piece.haki.ConquerorStun.LIGHTNING == 40, "a partial release's lightning fells for 2 seconds");
         Check.that(com.hexhaki.piece.haki.ConquerorStun.fellsAll(evil, true), "an evil full charge fells everything in its radius");
         Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(evil, false), "an evil partial one does not");
         Check.that(!com.hexhaki.piece.haki.ConquerorStun.fellsAll(good, true) && !com.hexhaki.piece.haki.ConquerorStun.fellsAll(neutral, true),
