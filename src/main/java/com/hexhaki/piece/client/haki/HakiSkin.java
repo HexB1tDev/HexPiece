@@ -113,8 +113,13 @@ public final class HakiSkin {
             boolean gear = "hexhaki".equals(skin.m_135827_()) && skin.m_135815_().startsWith("dynamic/");
             long now = System.nanoTime();
             float progress = progress(id, coated(player) && !gear, now);
-            if (progress <= 0.0F || gear) {
+            if (gear) {
                 drop(id);
+                return skin;
+            }
+            if (progress <= 0.0F) {
+                // 2.6.7 (the owner: lag "every single time" Haki comes on): the blackened copy is kept while Haki is off, so turning it
+                // on again does not read the skin back from the graphics card again (slow on a phone's GLES, and rechecked 1, 2, 5 s on)
                 return skin;
             }
             boolean slim = "slim".equals(player.m_108564_());
