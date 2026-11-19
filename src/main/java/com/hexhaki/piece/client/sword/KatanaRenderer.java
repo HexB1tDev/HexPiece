@@ -135,6 +135,11 @@ public final class KatanaRenderer {
         pose.m_85849_();
     }
 
+    /** 2.6.4: the fully coated steel's multiplier (0..255): a very dark purple. */
+    static final int COAT_R = 62;
+    static final int COAT_G = 34;
+    static final int COAT_B = 88;
+
     /** 2.6.1: the steel's quads, each vertex as black as the coat has made it ({@link BladeCoat#at}: by how far up the blade it is). */
     static void coated(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int first, int count, int light, float coat, float tip) {
         Matrix4f matrix = pose.m_252922_();
@@ -145,8 +150,13 @@ public final class KatanaRenderer {
         float[] n = mesh.nrm;
         for (int i = first * 4, end = (first + count) * 4; i < end; i++) {
             int v = q[i];
-            int c = Math.round(255.0F * (1.0F - BladeCoat.at(p[v * 3 + 1] / tip, v, coat)));
-            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_6122_(c, c, c, 255).m_7421_(t[v * 2], t[v * 2 + 1])
+            // 2.6.4 (the owner: "the textures should blacken and turn very dark purple on the temper"): the steel multiplied toward a
+            // very dark purple, not black: the temper's bright hamon still shows through, deep purple on near black
+            float b = BladeCoat.at(p[v * 3 + 1] / tip, v, coat);
+            int r = Math.round(255.0F - (255.0F - COAT_R) * b);
+            int g = Math.round(255.0F - (255.0F - COAT_G) * b);
+            int bl = Math.round(255.0F - (255.0F - COAT_B) * b);
+            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_6122_(r, g, bl, 255).m_7421_(t[v * 2], t[v * 2 + 1])
                 .m_86008_(OverlayTexture.f_118083_).m_85969_(light).m_252939_(normal, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]).m_5752_();
         }
     }

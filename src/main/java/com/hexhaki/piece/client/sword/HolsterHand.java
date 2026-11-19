@@ -184,6 +184,17 @@ public final class HolsterHand {
      * Haki coat, Ryou's aura and the fist's glow, a Gear arm with its own), the plain arm if no one took it.
      */
     static void arm(PlayerRenderer renderer, PoseStack stack, MultiBufferSource buffers, int light, LocalPlayer player, boolean right) {
+        // 2.6.4 (the owner: "whenever haki is activated with a sword in hand in first person, it causes EXTREME lag, the blade animations
+        // flash in and out"): with Haki on, the arms are the game's own hand (the skin itself is blackened by HakiSkin), never the
+        // original's Armament arm hook, which failed here frame after frame
+        if (com.hexhaki.piece.client.haki.HakiSkin.coated(player)) {
+            if (right) {
+                renderer.m_117770_(stack, buffers, light, player);
+            } else {
+                renderer.m_117813_(stack, buffers, light, player);
+            }
+            return;
+        }
         try {
             if (ForgeHooksClient.renderSpecificFirstPersonArm(stack, buffers, light, player, right ? HumanoidArm.RIGHT : HumanoidArm.LEFT)) {
                 return;
