@@ -5,7 +5,7 @@ the arm under Haki, the first-person draw/sheathe DrawView + HolsterHand, the te
 fist aura: "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
 Branch `claude/nice-bell-gam7qf` (the newest branch: 2.5.9 was pushed there after the 2.4.7 handoff; `git fetch` it first).
-**2.6.2 is finished and released (check its runs). The next version is 2.6.3.** 2.6.0 and 2.6.1 are released (their runs were green). build.py's VERSION
+**2.6.3 is released (its runs not checked: stopped at the usage limit). The next version is 2.6.4.** 2.6.3: HolsterHand no longer turns itself off for good on one failure (with Haki on, the original's arm hook threw: the game's item, the saya in the hand, showed from then on): a failure costs its frame, three in a row a second's rest, the arm event guarded; KatanaItemRenderer never draws the saya in first person; the glint dimmed by the coat (it washed out the black tip). 2.6.0 and 2.6.1 are released (their runs were green). build.py's VERSION
 is still 2.6.1; 2.6.2's release notes wait in docs/handoff/release-notes-2.6.2-draft.md (NOT in .github, so nothing was released).
 
 ## Let through in 2.6.2 (fix next): build.py check_sword_poses skips three misses of the bigger blades: sword_draw (the saya's tip

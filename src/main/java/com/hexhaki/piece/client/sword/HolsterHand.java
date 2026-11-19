@@ -53,15 +53,20 @@ import org.joml.Quaternionf;
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class HolsterHand {
-    /** Something failed: the game's own hand from now on. */
-    private static boolean broken;
+    /**
+     * 2.6.3 (the owner: "the first person sometimes is putting the sheath on the katana", "haki on has no sheath animation"): until
+     * 2.6.2 one failure (with Haki on, the original's arm hook could throw) turned this off for the whole session, leaving the game's
+     * own item (the sword in its saya, no draw, no sheathing). Now a failure costs only its frame; after a few in a row, a second's rest.
+     */
+    private static int failures;
+    private static long restUntil;
 
     private HolsterHand() {
     }
 
     @SubscribeEvent
     public static void holsterHand(RenderHandEvent event) {
-        if (broken || event.getHand() != InteractionHand.MAIN_HAND) {
+        if (event.getHand() != InteractionHand.MAIN_HAND || failures >= 3 && System.nanoTime() < restUntil) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -167,8 +172,10 @@ public final class HolsterHand {
                     stack.m_85849_();
                 }
             }
+            failures = 0;
         } catch (RuntimeException | LinkageError failure) {
-            broken = true; // the game's own hand from the next frame
+            failures++;
+            restUntil = System.nanoTime() + 1_000_000_000L;
         }
     }
 
@@ -177,8 +184,12 @@ public final class HolsterHand {
      * Haki coat, Ryou's aura and the fist's glow, a Gear arm with its own), the plain arm if no one took it.
      */
     static void arm(PlayerRenderer renderer, PoseStack stack, MultiBufferSource buffers, int light, LocalPlayer player, boolean right) {
-        if (ForgeHooksClient.renderSpecificFirstPersonArm(stack, buffers, light, player, right ? HumanoidArm.RIGHT : HumanoidArm.LEFT)) {
-            return;
+        try {
+            if (ForgeHooksClient.renderSpecificFirstPersonArm(stack, buffers, light, player, right ? HumanoidArm.RIGHT : HumanoidArm.LEFT)) {
+                return;
+            }
+        } catch (RuntimeException failure) {
+            // 2.6.3: another mod's (the original's Haki) arm failed: the plain arm, and the sword goes on
         }
         if (right) {
             renderer.m_117770_(stack, buffers, light, player);

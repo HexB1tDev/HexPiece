@@ -128,7 +128,8 @@ public final class KatanaRenderer {
             }
             if (shine > 0.0F && bladeMesh.bladeCount > 0) {
                 // 2.1.9: alpha blended (some setups draw additive geometry opaque: the owner saw the sword's light as dark)
-                highlight(last, buffers.m_6299_(RenderType.m_269166_()), bladeMesh, shine);
+                // 2.6.3 (the owner: "the haki is not coating the very top of the blade well"): the white glint dimmed on coated steel
+                highlight(last, buffers.m_6299_(RenderType.m_269166_()), bladeMesh, shine * (1.0F - 0.75F * Math.max(0.0F, Math.min(1.0F, coat))));
             }
         }
         pose.m_85849_();

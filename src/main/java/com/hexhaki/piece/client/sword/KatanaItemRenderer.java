@@ -107,6 +107,12 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         // sword is out (the guard, the idle, a draw once the blade has left the saya) the hand holds the bare blade, glinting as it does
         // in third person; the saya is drawn only while the blade is in it. Every blade the same.
         boolean bare = drawnNow(katana);
+        if (!bare) {
+            // 2.6.3 (the owner: "the first person sometimes is putting the sheath on the katana, it should NEVER DO that"): a sheathed
+            // sword is at the hip (HolsterHand), never in the hand in its saya
+            pose.m_85849_();
+            return;
+        }
         // 2.2.7: Yoru is never blackened either. 2.6.1 (the owner: "Haki coating is ONLY on the blade of the swords, never on the handle
         // or saya", "progressive not instant"): the original's black buffers are not used; the steel alone takes the coat, running up it
         // as the hands blacken (BladeCoatClient: this hand is always the local player's)
