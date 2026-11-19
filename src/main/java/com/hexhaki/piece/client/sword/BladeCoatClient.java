@@ -23,6 +23,14 @@ public final class BladeCoatClient {
 
     /** {@code player}'s blade coat now (0: bare steel, 1: black to the point). */
     public static float progress(AbstractClientPlayer player) {
+        try {
+            return timed(player);
+        } catch (RuntimeException | LinkageError failure) {
+            return 0.0F; // 2.6.5: the coat never stops the sword being drawn
+        }
+    }
+
+    static float timed(AbstractClientPlayer player) {
         if (player == null) {
             return 0.0F;
         }

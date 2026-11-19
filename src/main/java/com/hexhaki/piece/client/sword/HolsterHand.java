@@ -175,7 +175,7 @@ public final class HolsterHand {
             failures = 0;
         } catch (RuntimeException | LinkageError failure) {
             failures++;
-            restUntil = System.nanoTime() + 1_000_000_000L;
+            restUntil = System.nanoTime() + 10_000_000_000L; // 2.6.5: never strobing between this and the game's hand
         }
     }
 

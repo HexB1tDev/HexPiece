@@ -124,7 +124,11 @@ public final class KatanaRenderer {
                 int end = first + bladeMesh.bladeCount;
                 quads(last, solid, bladeMesh, 0, first, light);
                 quads(last, solid, bladeMesh, end, bladeMesh.quadCount() - end, light);
-                coated(last, solid, bladeMesh, first, bladeMesh.bladeCount, light, coat, Math.max(1.0F, katana.tip()));
+                try {
+                    coated(last, solid, bladeMesh, first, bladeMesh.bladeCount, light, coat, Math.max(1.0F, katana.tip()));
+                } catch (RuntimeException | LinkageError failure) {
+                    quads(last, solid, bladeMesh, first, bladeMesh.bladeCount, light); // 2.6.5: the bare steel, never a hole
+                }
             }
             if (shine > 0.0F && bladeMesh.bladeCount > 0) {
                 // 2.1.9: alpha blended (some setups draw additive geometry opaque: the owner saw the sword's light as dark)

@@ -5,7 +5,7 @@ SwordTests.drawSmooth; the right-click charge in first person; the Haki coat on 
 quieter Ryou sound; and 2.6.0's Conqueror sounds and stun), then next-ai-2.5.9.md (the first-person draw and sheathing: sword/DrawView +
 client/sword/HolsterHand, tools/draw_preview.py; the blades' temper), next-ai-2.5.3.md (Ryou's fist aura, which the owner calls
 "beautiful and perfect": keep it) and next-ai-2.5.1.md (the owner's device: Android, OpenGL ES through MobileGlues). The next version
-is 2.6.5 (2.6.4 released; check its runs first). Check the branch's last "Build HexPiece" and "Release HexPiece" runs first.
+is 2.6.6 (2.6.5 released; check its runs first; the Haki flicker in first person is OPEN, ask for latest.log). Check the branch's last "Build HexPiece" and "Release HexPiece" runs first.
 
 Then act on the owner's report of 2.6.2 (the size), 2.6.1 and 2.6.0 (render with tools/draw_preview.py, judge every frame yourself, fix and render
 again).
