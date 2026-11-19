@@ -24,6 +24,18 @@ import numpy as np
 PX = 1.0 / 16.0
 # KatanaRenderer: model pixels -> blocks, the grip on the handle (model pixels; the guard at 0)
 SCALE = 1.0 / 16.0
+# 2.6.2 (the owner: "increase the overall size of the katanas, and gryphon I find them too small. even on the hand they're small"):
+# every blade but Yoru is drawn SIZE times its mesh (Katana.size(), KatanaRenderer); Yoru (2.75 blocks already) as it is
+SIZE = 1.25
+
+
+def scale(key=None):
+    """Blocks per model px of the sword {key} (the one being posed by default): SCALE, times SIZE for every blade but Yoru."""
+    k = SWORD_KEY if key is None else key
+    return SCALE * (1.0 if k == "yoru" else SIZE)
+
+
+HIP_SCALE = SCALE * SIZE
 GRIP = -2.4
 # the blade's base (habaki) and tip (model pixels): what a cut sweeps
 BLADE_BASE = 1.0
@@ -131,7 +143,7 @@ def wrist(pose, item="rightItem"):
 def grip(slide=0.0):
     """Katana model px -> the fist's frame (px): the grip point on the fist's centre; slide (model px, the animation's rightItem y)
     holds the handle further down, towards the pommel (a draw takes the handle low, where the hand can reach it)."""
-    return GRIP_ROT @ sc(SCALE / PX) @ tr(0, -(GRIP - slide), 0)
+    return GRIP_ROT @ sc(scale() / PX) @ tr(0, -(GRIP - slide), 0)
 
 
 def slide_of(pose):
@@ -171,7 +183,7 @@ def hip(pose=None):
     it = (pose or {}).get("leftItem", {})
     move = tr(it.get("x", 0.0), it.get("y", 0.0), it.get("z", 0.0)) @ zyx(rad(it.get("pitch", 0.0)), rad(it.get("yaw", 0.0)),
                                                                           rad(it.get("roll", 0.0)))
-    return tr(*HIP_MOUTH) @ move @ frame_from(HIP_AXIS, HIP_EDGE) @ sc(SCALE / PX)
+    return tr(*HIP_MOUTH) @ move @ frame_from(HIP_AXIS, HIP_EDGE) @ sc(HIP_SCALE / PX)
 
 
 def saya_matrix(pose):
@@ -912,7 +924,7 @@ BACK_AXIS = (math.sin(math.radians(BACK_TILT)) * math.cos(math.radians(BACK_LEAN
 def back(pose=None):
     """Katana model px -> the layer's frame (px): Yoru on the back (the upper body's own turn and bend carry it)."""
     return (part_matrix(pose or {}, "torso", (0.0, 0.0, 0.0)) @ tr(*BACK_GUARD) @ rz(-math.radians(BACK_TILT))
-            @ rx(-math.radians(BACK_LEAN)) @ sc(SCALE / PX))
+            @ rx(-math.radians(BACK_LEAN)) @ sc(scale("yoru") / PX))
 
 
 def back_matrix(pose):
@@ -1045,7 +1057,7 @@ def saya_to_hold(pose, blade_e, out=0.0):
     drawn out of it by {out} model px: the saya follows the hand's sword, exactly."""
     base = body_to_entity(pose) @ part_matrix(pose, "torso", (0.0, 0.0, 0.0)) @ tr(*HIP_MOUTH)
     want = blade_e @ tr(0, out, 0)
-    move = np.linalg.inv(base) @ want @ np.linalg.inv(sc(SCALE / PX)) @ np.linalg.inv(frame_from(HIP_AXIS, HIP_EDGE))
+    move = np.linalg.inv(base) @ want @ np.linalg.inv(sc(HIP_SCALE / PX)) @ np.linalg.inv(frame_from(HIP_AXIS, HIP_EDGE))
     pitch, yaw, roll = euler_zyx(move)
     x, y, z = move[:3, 3]
     return {"x": round(float(x), 3), "y": round(float(y), 3), "z": round(float(z), 3), "pitch": round(pitch, 2), "yaw": round(yaw, 2),

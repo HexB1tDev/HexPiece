@@ -41,6 +41,11 @@ import net.minecraft.client.renderer.MultiBufferSource;
 public final class HakiDraw {
     /** The blade, guard to tip, in blocks. */
     static final double BLADE = 20.5 * KatanaRenderer.SCALE;
+
+    /** 2.6.2: the bare blade's length (blocks) for {@code player}'s sword as it is drawn ({@link KatanaRenderer#px}). */
+    static double blade(AbstractClientPlayer player) {
+        return 20.5 * KatanaRenderer.px(SwordClient.katana(player.m_19879_()));
+    }
     private static final java.util.Map<Integer, Long> HEARD = new java.util.HashMap<>();
 
     private HakiDraw() {
@@ -66,9 +71,9 @@ public final class HakiDraw {
         if (haki == 0) {
             return;
         }
-        double bared = out * KatanaRenderer.SCALE;
+        double bared = out * KatanaRenderer.px(SwordClient.katana(player.m_19879_()));
         boolean drawing = anim != SwordAnims.SHEATHE;
-        double strength = (drawing ? 0.6 + 0.6 * Math.min(1.0, bared / BLADE) : 0.5) * (haki == 2 ? 1.25 : 1.0);
+        double strength = (drawing ? 0.6 + 0.6 * Math.min(1.0, bared / blade(player)) : 0.5) * (haki == 2 ? 1.25 : 1.0);
         crackle(pose, buffers, player, ticks, 0.0, bared, bared, strength, color(player, haki), partial);
     }
 
@@ -99,7 +104,7 @@ public final class HakiDraw {
             strength = Math.max(strength, 0.3) * 1.15;
         }
         if (strength > 0.0) {
-            crackle(pose, buffers, player, ticks, 0.0, BLADE, Double.NaN, strength, color(player, haki), partial);
+            crackle(pose, buffers, player, ticks, 0.0, blade(player), Double.NaN, strength, color(player, haki), partial);
         }
     }
 

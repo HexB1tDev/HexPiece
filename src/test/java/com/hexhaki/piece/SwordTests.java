@@ -644,7 +644,7 @@ public final class SwordTests {
     static void holster() {
         double[][] k = com.hexhaki.piece.sword.HolsterView.matrix(com.hexhaki.piece.sword.HolsterView.katana(0.0F, 0.0F));
         double[] guard = apply(k, 0, 0, 0);
-        double[] pommel = apply(k, 0, -6.5 / 16.0, 0);
+        double[] pommel = apply(k, 0, -6.5 * Katana.SIZE / 16.0, 0); // 2.6.2: drawn Katana.SIZE times its mesh
         double[] edge = sub3(apply(k, -1.0 / 16.0, 0, 0), guard);
         for (double aspect : new double[] {16.0 / 9.0, 20.0 / 9.0}) {
             Check.that(onScreen(guard, aspect, 0.98) && onScreen(pommel, aspect, 0.9), "the guard and the pommel in view (" + aspect + ")");
@@ -664,7 +664,7 @@ public final class SwordTests {
             double[] fist = apply(part, (slim ? 0.5 : 1.0) / 16.0, 8.5 / 16.0, 0);
             double[] shoulder = apply(part, (slim ? 0.5 : 1.0) / 16.0, -2.0 / 16.0, 0);
             double off = distanceToSegment(fist, guard, pommel) * 16.0;
-            Check.that(off > 0.8 && off < 2.4, "the fist rests on the handle (" + off + " px over it)");
+            Check.that(off > 0.8 * Katana.SIZE && off < 2.4 * Katana.SIZE, "the fist rests on the handle (" + off + " px over it)");
             double along = dot3(sub3(fist, guard), sub3(pommel, guard)) / dot3(sub3(pommel, guard), sub3(pommel, guard));
             Check.that(along > 0.55 && along < 1.0, "on its end, the guard and the saya's mouth left in sight");
             Check.that(onScreen(fist, 16.0 / 9.0, 0.95), "the fist in view");
@@ -746,8 +746,8 @@ public final class SwordTests {
                             : com.hexhaki.piece.sword.DrawView.sheathe(katana, slim, t, length, sheathTick, 0.0F, 0.0F);
                         double[][] m = com.hexhaki.piece.sword.HolsterView.matrix(p.blade());
                         double[] guard = apply(m, 0, 0, 0);
-                        double[] tip = apply(m, 0, katana.tip() / 16.0, 0);
-                        double[] grip = apply(m, 0, -2.4 / 16.0, 0);
+                        double[] tip = apply(m, 0, katana.tip() * katana.size() / 16.0, 0);
+                        double[] grip = apply(m, 0, -2.4 * katana.size() / 16.0, 0);
                         Check.that(guard[2] < -0.3 && tip[2] < -0.05, "in front of the eye (" + katana + " t" + t + ")");
                         if (lastGuard != null) {
                             Check.that(distance(guard, lastGuard) < 0.4 && distance(tip, lastTip) < 1.0, "no jump at t" + t + " (" + katana + ")");

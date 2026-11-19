@@ -76,7 +76,8 @@ public final class HolsterView {
         double[][] k = katanaFrame();
         double[] handle = norm(HANDLE);
         double[] edgeUp = new double[] {-k[0][0], -k[1][0], -k[2][0]};
-        return add(add(GUARD, scale(handle, REST / 16.0)), scale(edgeUp, OVER / 16.0));
+        // 2.6.2: on the handle of a sword drawn Katana.SIZE times its mesh (the same place on it, the handle thicker)
+        return add(add(GUARD, scale(handle, REST * Katana.SIZE / 16.0)), scale(edgeUp, OVER * Katana.SIZE / 16.0));
     }
 
     /**

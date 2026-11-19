@@ -88,7 +88,7 @@ def view(w, h, data, key, slim=False, black=True, arm=True):
     # the ground's horizon band below, for a sense of the view
     canvas.rgb[int(h * 0.52):, :] = np.array((96, 140, 72)) / 255.0
     cam = sv.EyeCamera(w, h, pitch=0.0, fov=70.0, eye=0.0)
-    k = matrix(data["katana"]) @ np.diag([1 / 16, 1 / 16, 1 / 16, 1])
+    k = matrix(data["katana"]) @ np.diag([1.25 / 16, 1.25 / 16, 1.25 / 16, 1])  # 2.6.2: Katana.SIZE
     sv.draw_katana(canvas, cam, key, k, saya=True, blade=True, shine=0.0)
     if arm:
         arm_box(canvas, cam, matrix(data["slim" if slim else "wide"]), slim, black)

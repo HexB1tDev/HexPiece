@@ -127,7 +127,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         }
         if (drawn && !sliding) {
             pose.m_85836_();
-            hand(pose, player, model, layer, partial);
+            hand(pose, player, model, layer, partial, katana);
             // its black steel only glints (the owner's unsheath reference: white glints running along a black blade)
             KatanaRenderer.draw(pose, buffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F, coat);
             SwordFx.record(player, pose, ticks);
@@ -161,7 +161,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
                 pose.m_252781_(Axis.f_252403_.m_252977_((float) -BackCarry.TILT));
                 pose.m_252781_(Axis.f_252529_.m_252977_((float) -BackCarry.LEAN));
                 if (lifting) {
-                    pose.m_252880_(0.0F, -lift * KatanaRenderer.SCALE, 0.0F);
+                    pose.m_252880_(0.0F, -lift * KatanaRenderer.px(katana), 0.0F);
                 }
                 KatanaRenderer.draw(pose, buffers, katana, true, false, light, 0.0F, coat);
             }
@@ -169,10 +169,11 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         }
         if (drawn && !lifting || glide != null) {
             pose.m_85836_();
-            hand(pose, player, model, layer, partial);
+            hand(pose, player, model, layer, partial, katana);
             if (glide != null) {
                 // the glide's frame from the hand's: shifted (model px) and turned (z, y, x degrees)
-                pose.m_252880_(glide[0] * KatanaRenderer.SCALE, glide[1] * KatanaRenderer.SCALE, glide[2] * KatanaRenderer.SCALE);
+                float px = KatanaRenderer.px(katana);
+                pose.m_252880_(glide[0] * px, glide[1] * px, glide[2] * px);
                 pose.m_252781_(Axis.f_252403_.m_252977_(glide[3]));
                 pose.m_252781_(Axis.f_252436_.m_252977_(glide[4]));
                 pose.m_252781_(Axis.f_252529_.m_252977_(glide[5]));
@@ -191,7 +192,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
      */
     static void slide(PoseStack pose, Katana katana, float out) {
         float[] r = SayaSlide.at(katana, out);
-        float s = KatanaRenderer.SCALE;
+        float s = KatanaRenderer.px(katana);
         pose.m_252880_(r[1] * s, r[2] * s, 0.0F);
         pose.m_252781_(Axis.f_252403_.m_252977_(r[0]));
     }
@@ -370,7 +371,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
 
     /** The drawn blade's frame in the right hand. */
     static void hand(PoseStack pose, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model, ModifierLayer<IAnimation> layer,
-                     float partial) {
+                     float partial, Katana katana) {
         ModelPart arm = model.f_102811_;
         arm.m_104299_(pose);
         float[] forearm = bend(player, "rightArm");
@@ -384,7 +385,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         // the grip: the blade (model +y) along the fist's -z, the edge (model -x) down the fist, the handle's grip point in the fist
         pose.m_252781_(Axis.f_252403_.m_252977_(-90.0F));
         pose.m_252781_(Axis.f_252529_.m_252977_(-90.0F));
-        pose.m_252880_(0.0F, -(KatanaRenderer.GRIP - slide) * KatanaRenderer.SCALE, 0.0F);
+        pose.m_252880_(0.0F, -(KatanaRenderer.GRIP - slide) * KatanaRenderer.px(katana), 0.0F); // 2.6.2: the blade's own size
     }
 
     /** The layer on both player renderers (wide and slim arms), as they are built. */

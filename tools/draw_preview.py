@@ -92,7 +92,10 @@ def frame(pose, key, w, h, slim):
     canvas = sv.Canvas(w, h, bg=(150, 190, 235))
     canvas.rgb[int(h * 0.52):, :] = np.array((96, 140, 72)) / 255.0
     cam = sv.EyeCamera(w, h, pitch=0.0, fov=70.0, eye=0.0)
-    px = np.diag([1 / 16, 1 / 16, 1 / 16, 1])
+    # 2.6.2: every blade but Yoru drawn sword_rig.SIZE times its mesh (Katana.size(), KatanaRenderer.px)
+    import sword_rig
+    size = 1.0 if key == "yoru" else sword_rig.SIZE
+    px = np.diag([size / 16, size / 16, size / 16, 1])
     if pose["saya"] is not None:
         sv.draw_katana(canvas, cam, key, matrix(pose["saya"]) @ px, saya=True, blade=False, shine=0.0)
     if pose["blade"] is not None:

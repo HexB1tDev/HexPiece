@@ -135,8 +135,9 @@ public final class SwordFx {
             return;
         }
         Matrix4f matrix = pose.m_85850_().m_252922_();
-        double[] a = world(matrix, 0.0F, 9.0F * KatanaRenderer.SCALE, 0.0F);
-        double[] b = world(matrix, 0.0F, 21.0F * KatanaRenderer.SCALE, 0.0F);
+        float px = KatanaRenderer.px(SwordClient.katana(player.m_19879_())); // 2.6.2: the blade's own size
+        double[] a = world(matrix, 0.0F, 9.0F * px, 0.0F);
+        double[] b = world(matrix, 0.0F, 21.0F * px, 0.0F);
         ArrayDeque<double[]> trail = TRAILS.computeIfAbsent(player.m_19879_(), id -> new ArrayDeque<>());
         trail.add(new double[] {System.nanoTime() / 1.0E9, a[0], a[1], a[2], b[0], b[1], b[2]});
         while (trail.size() > 48) {

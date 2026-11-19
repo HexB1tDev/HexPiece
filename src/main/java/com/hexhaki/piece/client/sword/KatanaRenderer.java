@@ -34,6 +34,11 @@ public final class KatanaRenderer {
     /** Model pixels to blocks: the owner's meshes are drawn in Minecraft pixels, so one of theirs is one of the game's (the whole
      * katana about 1.75 blocks, its blade about 1.3; the owner, on 0.62: "the sword is wayyyy too small"). */
     public static final float SCALE = 1.0F / 16.0F;
+
+    /** 2.6.2: blocks per model px of {@code katana} as it is drawn ({@link Katana#size}: every blade but Yoru 1.25 times its mesh). */
+    public static float px(Katana katana) {
+        return SCALE * (katana == null ? 1.0F : katana.size());
+    }
     /** Model pixels: about how long a katana is from pommel to tip, the middle of a sheathed one, and where the right fist's centre
      * grips the handle (the guard at 0, the fist's top just under it; tools/sword_anims.py uses the same). */
     public static final float LENGTH = 28.0F;
@@ -101,7 +106,8 @@ public final class KatanaRenderer {
     public static void draw(PoseStack pose, MultiBufferSource buffers, Katana katana, boolean blade, boolean saya, int light, float shine,
                             float coat) {
         pose.m_85836_();
-        pose.m_85841_(SCALE, SCALE, SCALE);
+        float px = px(katana);
+        pose.m_85841_(px, px, px);
         PoseStack.Pose last = pose.m_85850_();
         VertexConsumer solid = buffers.m_6299_(RenderType.m_110458_(texture(katana)));
         String lod = lod(last);

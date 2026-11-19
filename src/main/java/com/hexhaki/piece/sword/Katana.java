@@ -120,7 +120,19 @@ public enum Katana {
      * then Gryphon (0.84), then the supreme, great and skillful grades; a short plain blade a little less than the path's own.
      */
     public double reach() {
-        return this.reach + this.grade.reach() + (this.tip() - SwordRules.PATH_TIP) * SwordRules.PX;
+        return this.reach + this.grade.reach() + (this.tip() * this.size() - SwordRules.PATH_TIP * SIZE) * SwordRules.PX;
+    }
+
+    /**
+     * 2.6.2 (the owner: "increase the overall size of the katanas, and gryphon I find them too small. even on the hand they're small"):
+     * every blade but Yoru is drawn SIZE times its mesh, in the hand, at the hip and in first person (the animations and the cuts' paths
+     * solved for it: tools/sword_rig.py SIZE); Yoru, 2.75 blocks already, as it is.
+     */
+    public static final float SIZE = 1.25F;
+
+    /** 2.6.2: how many times its mesh this blade is drawn ({@link #SIZE}; Yoru 1). */
+    public float size() {
+        return this.carry == Carry.BACK ? 1.0F : SIZE;
     }
 
     /** 2.4.5: model px from the guard to the point, measured from the owner's mesh of this blade (build.py checks them). */

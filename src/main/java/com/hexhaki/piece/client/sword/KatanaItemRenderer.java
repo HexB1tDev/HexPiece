@@ -80,9 +80,9 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         pose.m_252880_(0.5F, 0.5F + lift, 0.5F);
         pose.m_252781_(Axis.f_252403_.m_252977_(-45.0F));
         float length = katana.carry() == Katana.Carry.BACK ? KatanaRenderer.YORU_LENGTH : KatanaRenderer.LENGTH;
-        float scale = fill * 1.41F / (length * KatanaRenderer.SCALE);
+        float scale = fill * 1.41F / (length * KatanaRenderer.px(katana));
         pose.m_85841_(scale, scale, scale);
-        pose.m_252880_(0.0F, -KatanaRenderer.MIDDLE * KatanaRenderer.SCALE, 0.0F);
+        pose.m_252880_(0.0F, -KatanaRenderer.MIDDLE * KatanaRenderer.px(katana), 0.0F);
         KatanaRenderer.draw(pose, buffers, katana, true, true, light, 0.0F);
         pose.m_85849_();
     }
@@ -98,7 +98,7 @@ public final class KatanaItemRenderer extends BlockEntityWithoutLevelRenderer {
         // the sprite's diagonal: the handle in the fist at the lower corner, the saya up and away
         pose.m_252781_(Axis.f_252403_.m_252977_(-45.0F));
         pose.m_252880_(0.0F, -0.36F, 0.0F);
-        pose.m_252880_(0.0F, -KatanaRenderer.GRIP * KatanaRenderer.SCALE, 0.0F);
+        pose.m_252880_(0.0F, -KatanaRenderer.GRIP * KatanaRenderer.px(katana), 0.0F);
         // 2.2.6 (the owner: "the sheath of the blade is never to be black when haki is on, it's just the sword itself"): the original
         // blackens whatever an Armament user holds by handing this renderer black buffers (its ItemInHandRendererMixin); the sword takes
         // them, the saya is drawn into the game's own buffers (the ones the first-person hand is drawn with), in its own colours

@@ -1,11 +1,22 @@
-# HexPiece: handoff after 2.6.1 (2.6.1: the first-person draw and sheathing without flips, the right-click charge in first person, the Haki coat on the blade only and spreading, the Ryou sound quieter; 2.6.0: the Conqueror's sounds and stun)
+# HexPiece: handoff after 2.6.2 (2.6.2: the katanas and Gryphon 1.25 times bigger everywhere, the sword animations re-solved; 2.6.1: the first-person draw and sheathing without flips, the right-click charge in first person, the Haki coat on the blade only and spreading, the Ryou sound quieter; 2.6.0: the Conqueror's sounds and stun)
 
 Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.5.9.md (the Water Bullet crash, first person with an empty hand,
 the arm under Haki, the first-person draw/sheathe DrawView + HolsterHand, the temper), next-ai-2.5.5.md, next-ai-2.5.3.md (Ryou's
 fist aura: "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
 Branch `claude/nice-bell-gam7qf` (the newest branch: 2.5.9 was pushed there after the 2.4.7 handoff; `git fetch` it first).
-**The next version is 2.6.2.** 2.6.0 is released (its runs were green). Nothing has ever been tested in game except by the owner.
+**2.6.2 IS NOT FINISHED (stopped at 98 % weekly usage).** 2.6.0 and 2.6.1 are released (their runs were green). build.py's VERSION
+is still 2.6.1; 2.6.2's release notes wait in docs/handoff/release-notes-2.6.2-draft.md (NOT in .github, so nothing was released).
+
+## FIRST, to finish 2.6.2 (the bigger katanas)
+1. The Java and rig changes below are committed but NOT built or tested. The animation re-solve (`python3 tools/sword_anims.py`,
+   about 5 minutes) was interrupted: some sword_*.json are re-solved for the bigger blade, the rest (and BladePaths.java) are not.
+   Run the whole solve again, then `python3 build.py` (check_sword_poses: the bigger blade clear of the body; SwordTests: drawView,
+   drawSmooth, holster with Katana.SIZE). Fix what fails.
+2. Render and judge: tools/draw_preview.py (first person at the size), tools/sword_view/sword_gif (third person: the draw and
+   sheathing, the blade staying in the hand and the saya). If 1.25 looks wrong, change Katana.SIZE and sword_rig.SIZE together.
+3. `python3 tools/next_version.py --write` (2.6.2), move the draft back to .github/release-notes-2.6.2.md, commit, push, check the
+   "Build HexPiece" and "Release HexPiece" runs. Nothing has ever been tested in game except by the owner.
 
 ## The owner (session 9, after 2.5.9, verbatim)
 1. "Conqueror sounds reduced by 35% but the line evil voice line increased by a ton, its barely audible, after the key is let go,
@@ -20,6 +31,21 @@ Branch `claude/nice-bell-gam7qf` (the newest branch: 2.5.9 was pushed there afte
 6. "Haki coating is ONLY on the blade of the swords, never on the handle or saya"
 7. "also the haki coating (ryou sound) is too high, too loud." and "the swords man right click has no first person animation"
 8. "please make sure the haki coating on the blade is also progressive not instant (like the arms slowly turning black)."
+9. (after 2.6.1) "and increase the overall size of the katanas, and gryphon I find them too small. even on the hand they're small"
+
+## Done (2.6.2): the katanas and Gryphon bigger
+- `Katana.SIZE` 1.25, `Katana.size()` (Yoru 1.0: not asked, 2.75 blocks already). One factor everywhere a sword's model px become
+  blocks: `KatanaRenderer.px(katana)` (the draw's scale, the grip offsets in SwordLayer.hand, the saya slide, Yoru's lift and glide,
+  KatanaItemRenderer, SeaFighterRenderer, SwordFx's trail, HakiDraw's bare blade), DrawView (the grip `KatanaGrip.GRIP * sz` in
+  byIntent/gripped/lean/settled/trembled, the slide `r * size`, the saya pull and the left fist at the mouth `* Katana.SIZE`) and
+  HolsterView.fist (`REST`, `OVER` `* Katana.SIZE`).
+- The third-person animations depend on the blade's length (the hand's pull out of the saya, the point clearing the mouth on the
+  draw tick, the clearance from the body): `tools/sword_rig.py` `SIZE` 1.25 and `scale(key)` (grip, hip `HIP_SCALE`, back for Yoru,
+  saya_to_hold, sword_anims' glide), and `python3 tools/sword_anims.py` re-solved every sword animation, BladePaths.java (the cuts'
+  paths, so the hit sweep follows the longer blade) and SayaSlide.java (unchanged: mesh px). `Katana.reach()` counts its own length
+  against the paths' at their sizes (`tip * size - PATH_TIP * SIZE`): Yoru's total reach unchanged, the others about 0.3 block more
+  (the path).
+- tools/draw_preview.py and tools/holster_preview.py draw the meshes at the size.
 
 ## Done (2.6.1): the first-person draw and sheathing (sword/DrawView)
 - The causes, measured (a scratch analyser: the blade's way in the view per frame, its share across the view, the turn per tick of

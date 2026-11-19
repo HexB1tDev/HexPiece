@@ -633,7 +633,7 @@ def back_glide(move):
             ang = slerp_zyx(eb, eh, w)
             hand = _hand_layer(a.pose(t))
             want = (rig.tr(*(hand[:3, 3] + (1.0 - w) * miss)) @ rig.rz(math.radians(ang[0])) @ rig.ry(math.radians(ang[1]))
-                    @ rig.rx(math.radians(ang[2])) @ rig.sc(rig.SCALE / rig.PX))
+                    @ rig.rx(math.radians(ang[2])) @ rig.sc(rig.scale() / rig.PX))
             samples.append(_frame(np.linalg.inv(hand) @ want))
         out = (tb, th, samples)
     GLIDES[move.name] = out

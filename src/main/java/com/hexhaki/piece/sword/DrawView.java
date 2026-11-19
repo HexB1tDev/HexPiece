@@ -104,8 +104,9 @@ public final class DrawView {
 
     /** The drawn blade held between cuts, the right hand on its handle. */
     public static Pose held(Katana katana, boolean slim, float equip, float age) {
-        Frame blade = lifted(heldBlade(), equip, age);
-        return new Pose(null, steps(blade), rightArm(gripped(blade), slim), null, katana.blackens() ? 1.0F : 0.45F);
+        double sz = katana.size();
+        Frame blade = lifted(heldBlade(sz), equip, age);
+        return new Pose(null, steps(blade), rightArm(gripped(blade, sz), slim), null, katana.blackens() ? 1.0F : 0.45F);
     }
 
     /**
@@ -113,6 +114,7 @@ public final class DrawView {
      * (BladePaths.drawTick): the slide ends, the point at the mouth, exactly then.
      */
     public static Pose draw(Katana katana, boolean slim, float t, float length, float free, float equip, float age) {
+        double sz = katana.size();
         float k = warp(t, length, free, CLEAR_AT, DRAW_END);
         Frame saya = saya(sayaBiki(k));
         Frame blade;
@@ -124,12 +126,12 @@ public final class DrawView {
             // 2.6.1: the point free, the blade springs out to the left and rises in one arc into the hand, fastest as it leaves the
             // mouth and settling slowly (the exit taken with the saya as it was at the mouth: the start never moves)
             Frame exit = slid(katana, saya(sayaBiki(CLEAR_AT)), clear(katana));
-            blade = curve(ease("outquart", (k - CLEAR_AT) / (DRAW_END - CLEAR_AT)), exit, spring(), heldBlade());
+            blade = curve(ease("outquart", (k - CLEAR_AT) / (DRAW_END - CLEAR_AT)), exit, spring(sz), heldBlade(sz));
             shine = 1.0F;
         }
         blade = lifted(blade, equip, age);
         // the right hand: up from below to the handle, then on it
-        Frame grip = gripped(blade);
+        Frame grip = gripped(blade, sz);
         Frame right = k < GRIP_AT ? between(away(RIGHT_AWAY, grip), grip, ease("outcubic", k / GRIP_AT)) : grip;
         // the left hand: from the end of the handle to the mouth; away once the point has left
         Frame rest = restLeft();
@@ -151,6 +153,7 @@ public final class DrawView {
 
     /** The sheathing, {@code t} ticks in, of one {@code length} ticks long, the guard home at {@code home} (BladePaths.sheathTick). */
     public static Pose sheathe(Katana katana, boolean slim, float t, float length, float home, float equip, float age) {
+        double sz = katana.size();
         float k = warp(t, length, home, HOME_AT, SHEATHE_END);
         Frame saya = saya(k < REST_AT ? SAYA_BIKI : k < HOME_AT ? SAYA_BIKI * (1.0 - ease("inoutsine", (k - REST_AT) / (HOME_AT - REST_AT)))
             : 0.0);
@@ -158,17 +161,17 @@ public final class DrawView {
         if (k < LAY_AT) {
             // 2.6.1: the blade snapped down to the left (its point one way only) edge up, held a beat with its flat to the eye, then
             // carried to the mouth (until 2.6.0: flicked right, then swung back up and over to the left, the fist twisting)
-            Frame laid = lean(slid(katana, saya(SAYA_BIKI), clear(katana)), 0.35);
+            Frame laid = lean(slid(katana, saya(SAYA_BIKI), clear(katana)), 0.35, sz);
             blade = keyed(k, new float[] {0.0F, FLICK_AT, FLICK_HOLD, LAY_AT},
-                new Frame[] {heldBlade(), flick(), settled(flick()), laid},
+                new Frame[] {heldBlade(sz), flick(sz), settled(flick(sz), sz), laid},
                 new String[] {"outquad", "inoutsine", "inoutsine"});
         } else if (k < REST_AT) {
-            blade = between(lean(slid(katana, saya, clear(katana)), 0.35), slid(katana, saya, clear(katana)), ease("outsine", (k - LAY_AT) / (REST_AT - LAY_AT)));
+            blade = between(lean(slid(katana, saya, clear(katana)), 0.35, sz), slid(katana, saya, clear(katana)), ease("outsine", (k - LAY_AT) / (REST_AT - LAY_AT)));
         } else {
             blade = slid(katana, saya, sheatheOut(katana, k));
         }
         blade = lifted(blade, equip, age);
-        Frame grip = gripped(blade);
+        Frame grip = gripped(blade, sz);
         Frame right = k < HOME_AT ? grip : between(grip, away(RIGHT_AWAY, grip), ease("insine", Math.min(1.0F, (k - HOME_AT) / 3.0F)));
         Frame mouth = lifted(mouth(saya), equip, age);
         Frame rest = lifted(restLeft(), equip, age);
@@ -218,9 +221,10 @@ public final class DrawView {
 
     /** The charge from the blade held between cuts: drawn back over the shoulder, then held trembling ({@code t} ticks in). */
     public static Pose charge(Katana katana, boolean slim, float t, float equip, float age) {
-        Frame blade = t < CHARGE_RAISE ? between(heldBlade(), chargeBlade(), ease("inoutsine", t / CHARGE_RAISE)) : chargeBlade();
-        blade = lifted(trembled(blade, t - CHARGE_RAISE), equip, age);
-        return new Pose(null, steps(blade), rightArm(gripped(blade), slim), null, 1.0F);
+        double sz = katana.size();
+        Frame blade = t < CHARGE_RAISE ? between(heldBlade(sz), chargeBlade(sz), ease("inoutsine", t / CHARGE_RAISE)) : chargeBlade(sz);
+        blade = lifted(trembled(blade, t - CHARGE_RAISE, sz), equip, age);
+        return new Pose(null, steps(blade), rightArm(gripped(blade, sz), slim), null, 1.0F);
     }
 
     /**
@@ -228,6 +232,7 @@ public final class DrawView {
      * slid out fast and swept up and back over the shoulder in one arc, then held trembling; the empty saya sinks out of the view.
      */
     public static Pose chargeDraw(Katana katana, boolean slim, float t, float equip, float age) {
+        double sz = katana.size();
         Frame saya = saya(0.0);
         Frame blade;
         if (t < QUICK_CLEAR) {
@@ -235,11 +240,11 @@ public final class DrawView {
             blade = slid(katana, saya, out);
         } else {
             Frame exit = slid(katana, saya, clear(katana));
-            blade = curve(ease("outquad", (t - QUICK_CLEAR) / (QUICK_UP - QUICK_CLEAR)), exit, byIntent(QUICK_GRIP_AT, QUICK_BLADE, QUICK_EDGE),
-                chargeBlade());
+            blade = curve(ease("outquad", (t - QUICK_CLEAR) / (QUICK_UP - QUICK_CLEAR)), exit, byIntent(QUICK_GRIP_AT, QUICK_BLADE, QUICK_EDGE, sz),
+                chargeBlade(sz));
         }
-        blade = lifted(trembled(blade, t - QUICK_UP), equip, age);
-        Frame grip = gripped(blade);
+        blade = lifted(trembled(blade, t - QUICK_UP, sz), equip, age);
+        Frame grip = gripped(blade, sz);
         Frame right = t < QUICK_GRIP ? between(away(RIGHT_AWAY, grip), grip, ease("outcubic", t / QUICK_GRIP)) : grip;
         Frame mouth = lifted(mouth(saya), equip, age);
         Frame left;
@@ -257,24 +262,25 @@ public final class DrawView {
 
     /** Yoru's charge off its back ({@code t} ticks in, out of its ropes at {@code free}): down over the shoulder into the charge. */
     public static Pose backCharge(Katana katana, boolean slim, float t, float free, float equip, float age) {
+        double sz = katana.size();
         if (t < free) {
             return new Pose(null, null, null, null, 0.0F);
         }
-        Frame over = byIntent(OVER_GRIP, OVER_BLADE, OVER_EDGE);
-        Frame blade = keyed(t, new float[] {free, free + BACK_SWING}, new Frame[] {over, chargeBlade()}, new String[] {"inoutsine"});
-        blade = lifted(trembled(blade, t - free - BACK_SWING), equip, age);
-        return new Pose(null, steps(blade), rightArm(gripped(blade), slim), null, 1.0F);
+        Frame over = byIntent(OVER_GRIP, OVER_BLADE, OVER_EDGE, sz);
+        Frame blade = keyed(t, new float[] {free, free + BACK_SWING}, new Frame[] {over, chargeBlade(sz)}, new String[] {"inoutsine"});
+        blade = lifted(trembled(blade, t - free - BACK_SWING, sz), equip, age);
+        return new Pose(null, steps(blade), rightArm(gripped(blade, sz), slim), null, 1.0F);
     }
 
-    static Frame chargeBlade() {
-        return byIntent(CHARGE_GRIP, CHARGE_BLADE, CHARGE_EDGE);
+    static Frame chargeBlade(double sz) {
+        return byIntent(CHARGE_GRIP, CHARGE_BLADE, CHARGE_EDGE, sz);
     }
 
     /**
      * {@code f} trembling {@code held} ticks into the hold (nothing before): two slow, smooth swayings about the grip (never a jolt
      * from one frame to the next), growing from {@link #TREMBLE_LEAST} to {@link #TREMBLE_MOST} degrees as the charge builds.
      */
-    static Frame trembled(Frame f, float held) {
+    static Frame trembled(Frame f, float held, double sz) {
         if (held <= 0.0F) {
             return f;
         }
@@ -283,10 +289,10 @@ public final class DrawView {
         double amount = in * (TREMBLE_LEAST + (TREMBLE_MOST - TREMBLE_LEAST) * grow);
         double a = amount * (Math.sin(2 * Math.PI * TREMBLE_SLOW * held) + 0.5 * Math.sin(2 * Math.PI * TREMBLE_FAST * held + 1.3)) / 1.5;
         double b = amount * 0.7 * Math.sin(2 * Math.PI * TREMBLE_FAST * 0.83 * held + 0.4);
-        double[] grip = point(f, 0, KatanaGrip.GRIP, 0);
+        double[] grip = point(f, 0, KatanaGrip.GRIP * sz, 0);
         double[] q = mul(axisAngle(new double[] {0, 0, 1}, Math.toRadians(a)), mul(axisAngle(new double[] {1, 0, 0}, Math.toRadians(b)), f.q()));
         Frame turned = new Frame(f.p(), q);
-        double[] moved = point(turned, 0, KatanaGrip.GRIP, 0);
+        double[] moved = point(turned, 0, KatanaGrip.GRIP * sz, 0);
         return new Frame(HolsterView.add(f.p(), HolsterView.sub(grip, moved)), q);
     }
 
@@ -302,24 +308,26 @@ public final class DrawView {
      * shoulder (out of the view); then the great sword swung down over the right shoulder into the hand, settling with its weight.
      */
     public static Pose backDraw(Katana katana, boolean slim, float t, float free, float equip, float age) {
+        double sz = katana.size();
         if (t < free) {
             return new Pose(null, null, null, null, 0.0F);
         }
-        Frame over = byIntent(OVER_GRIP, OVER_BLADE, OVER_EDGE);
-        Frame blade = lifted(keyed(t, new float[] {free, free + BACK_SWING}, new Frame[] {over, heldBlade()}, new String[] {"outback"}),
+        Frame over = byIntent(OVER_GRIP, OVER_BLADE, OVER_EDGE, sz);
+        Frame blade = lifted(keyed(t, new float[] {free, free + BACK_SWING}, new Frame[] {over, heldBlade(sz)}, new String[] {"outback"}),
             equip, age);
-        return new Pose(null, steps(blade), rightArm(gripped(blade), slim), null, 1.0F);
+        return new Pose(null, steps(blade), rightArm(gripped(blade, sz), slim), null, 1.0F);
     }
 
     /** Yoru's sheathing: swung up and back over the right shoulder, out of the view by {@code home}; then the hands are empty. */
     public static Pose backSheathe(Katana katana, boolean slim, float t, float home, float equip, float age) {
+        double sz = katana.size();
         float from = Math.max(0.0F, home - BACK_SWING);
         if (t >= home) {
             return new Pose(null, null, null, null, 0.0F);
         }
-        Frame over = byIntent(OVER_GRIP, OVER_BLADE, OVER_EDGE);
-        Frame blade = lifted(keyed(t, new float[] {from, home}, new Frame[] {heldBlade(), over}, new String[] {"insine"}), equip, age);
-        return new Pose(null, steps(blade), rightArm(gripped(blade), slim), null, 0.45F);
+        Frame over = byIntent(OVER_GRIP, OVER_BLADE, OVER_EDGE, sz);
+        Frame blade = lifted(keyed(t, new float[] {from, home}, new Frame[] {heldBlade(sz), over}, new String[] {"insine"}), equip, age);
+        return new Pose(null, steps(blade), rightArm(gripped(blade, sz), slim), null, 0.45F);
     }
 
     /**
@@ -387,45 +395,45 @@ public final class DrawView {
         // drawn back along its line, and turned about the view's up-ish axis through the mouth: the handle swung left and back
         double[] axis = HolsterView.norm(new double[] {0.15, 1.0, 0.25});
         double[] q = mul(axisAngle(axis, Math.toRadians(-biki)), base.q());
-        double[] back = rotate(q, new double[] {0, SAYA_PULL * (biki / SAYA_BIKI) / 16.0, 0});
+        double[] back = rotate(q, new double[] {0, SAYA_PULL * Katana.SIZE * (biki / SAYA_BIKI) / 16.0, 0});
         return new Frame(HolsterView.add(base.p(), back), q);
     }
 
     /** The blade slid {@code out} model px out of the saya along its curve ({@link SayaSlide}). */
     static Frame slid(Katana katana, Frame saya, float out) {
         float[] r = SayaSlide.at(katana, out);
-        double[] local = {r[1] / 16.0, r[2] / 16.0, 0.0};
+        double[] local = {r[1] * katana.size() / 16.0, r[2] * katana.size() / 16.0, 0.0}; // 2.6.2: the blade's own size
         double[] q = mul(saya.q(), axisAngle(new double[] {0, 0, 1}, Math.toRadians(r[0])));
         return new Frame(HolsterView.add(saya.p(), rotate(saya.q(), local)), q);
     }
 
     /** {@code f} turned about its grip a little outward ({@code k} of a quarter turn about the view's up): the point leaving the line. */
-    static Frame lean(Frame f, double k) {
-        double[] grip = point(f, 0, KatanaGrip.GRIP, 0);
+    static Frame lean(Frame f, double k, double sz) {
+        double[] grip = point(f, 0, KatanaGrip.GRIP * sz, 0);
         double[] q = mul(axisAngle(new double[] {0, 1, 0}, -k * Math.PI / 4.0), f.q());
         Frame turned = new Frame(f.p(), q);
-        double[] moved = point(turned, 0, KatanaGrip.GRIP, 0);
+        double[] moved = point(turned, 0, KatanaGrip.GRIP * sz, 0);
         return new Frame(HolsterView.add(f.p(), HolsterView.sub(grip, moved)), q);
     }
 
-    static Frame heldBlade() {
-        return byIntent(HELD_GRIP, HELD_BLADE, HELD_EDGE);
+    static Frame heldBlade(double sz) {
+        return byIntent(HELD_GRIP, HELD_BLADE, HELD_EDGE, sz);
     }
 
-    static Frame spring() {
-        return byIntent(SPRING_GRIP, SPRING_BLADE, SPRING_EDGE);
+    static Frame spring(double sz) {
+        return byIntent(SPRING_GRIP, SPRING_BLADE, SPRING_EDGE, sz);
     }
 
-    static Frame flick() {
-        return byIntent(FLICK_GRIP, FLICK_BLADE, FLICK_EDGE);
+    static Frame flick(double sz) {
+        return byIntent(FLICK_GRIP, FLICK_BLADE, FLICK_EDGE, sz);
     }
 
     /** The snap's end held a beat: drifted a hair back toward the body and the point a hair lower (a held pose that still breathes). */
-    static Frame settled(Frame f) {
-        double[] grip = point(f, 0, KatanaGrip.GRIP, 0);
+    static Frame settled(Frame f, double sz) {
+        double[] grip = point(f, 0, KatanaGrip.GRIP * sz, 0);
         double[] q = mul(axisAngle(new double[] {0, 0, 1}, Math.toRadians(2.5)), f.q());
         Frame turned = new Frame(f.p(), q);
-        double[] moved = point(turned, 0, KatanaGrip.GRIP, 0);
+        double[] moved = point(turned, 0, KatanaGrip.GRIP * sz, 0);
         return new Frame(HolsterView.add(HolsterView.add(f.p(), HolsterView.sub(grip, moved)), new double[] {-0.02, -0.01, 0.03}), q);
     }
 
@@ -435,13 +443,13 @@ public final class DrawView {
     }
 
     /** A blade's frame with its grip (the fist's centre on the handle) at {@code grip}, pointing {@code blade}, its edge toward {@code edge}. */
-    static Frame byIntent(double[] grip, double[] blade, double[] edge) {
+    static Frame byIntent(double[] grip, double[] blade, double[] edge, double sz) {
         double[] y = HolsterView.norm(blade);
         double[] e = HolsterView.norm(HolsterView.sub(edge, HolsterView.scale(y, HolsterView.dot(edge, y))));
         double[] x = HolsterView.scale(e, -1);
         double[] z = HolsterView.cross(x, y);
         double[] q = quat(HolsterView.columns(x, y, z));
-        double[] origin = HolsterView.sub(grip, rotate(q, new double[] {0, KatanaGrip.GRIP / 16.0, 0}));
+        double[] origin = HolsterView.sub(grip, rotate(q, new double[] {0, KatanaGrip.GRIP * sz / 16.0, 0}));
         return new Frame(origin, q);
     }
 
@@ -451,7 +459,7 @@ public final class DrawView {
      * front as the game holds an item (the arm's -z), so the wrist turns with the blade and the arm never swings through the view.
      */
     static Frame gripped(Frame blade) {
-        double[] fist = point(blade, 0, KatanaGrip.GRIP, 0);
+        double[] fist = point(blade, 0, KatanaGrip.GRIP * sz, 0);
         double[] y = HolsterView.norm(HolsterView.sub(fist, R_SHOULDER));
         double[] b = rotate(blade.q(), new double[] {0, 1, 0});
         // 2.6.1: the roll from the blade's way across the arm, steadied by the view's up across it: when the blade nearly continues
@@ -471,9 +479,9 @@ public final class DrawView {
 
     /** The left fist at the saya's mouth: a little down the saya from the guard and over it, the forearm along the holster's. */
     static Frame mouth(Frame saya) {
-        double[] at = point(saya, 0, MOUTH_DOWN, 0);
+        double[] at = point(saya, 0, MOUTH_DOWN * Katana.SIZE, 0); // 2.6.2: the saya drawn Katana.SIZE times its mesh
         double[] up = rotate(saya.q(), new double[] {-1, 0, 0});
-        double[] fist = HolsterView.add(at, HolsterView.scale(up, MOUTH_OVER / 16.0));
+        double[] fist = HolsterView.add(at, HolsterView.scale(up, MOUTH_OVER * Katana.SIZE / 16.0));
         return new Frame(fist, restLeft().q());
     }
 

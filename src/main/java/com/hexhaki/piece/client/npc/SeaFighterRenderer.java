@@ -254,7 +254,7 @@ public final class SeaFighterRenderer extends HumanoidMobRenderer<SeaFighter, Pl
                     pose.m_252781_(Axis.f_252529_.m_252977_(wrist[3]));
                     pose.m_252781_(Axis.f_252403_.m_252977_(-90.0F));
                     pose.m_252781_(Axis.f_252529_.m_252977_(-90.0F));
-                    pose.m_252880_(0.0F, -(KatanaRenderer.GRIP - wrist[1]) * KatanaRenderer.SCALE, 0.0F);
+                    pose.m_252880_(0.0F, -(KatanaRenderer.GRIP - wrist[1]) * KatanaRenderer.px(katana), 0.0F);
                     KatanaRenderer.draw(pose, buffers, katana, true, false, light, 1.0F);
                     pose.m_85849_();
                 }
