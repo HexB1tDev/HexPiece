@@ -73,14 +73,48 @@ public final class RyouHands {
      */
     public static void coatingFirstPerson(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
                                           AbstractClientPlayer player, boolean right) {
+        if (DRAWING_ARM > 0) {
+            return; // 2.6.9: inside our own arm draw (see below): nothing more here
+        }
         if (Minecraft.m_91087_().m_91290_().m_114382_(player) instanceof PlayerRenderer renderer) {
-            if (right) {
-                renderer.m_117770_(pose, buffers, light, player);
-            } else {
-                renderer.m_117813_(pose, buffers, light, player);
+            DRAWING_ARM++;
+            try {
+                if (right) {
+                    renderer.m_117770_(pose, buffers, light, player);
+                } else {
+                    renderer.m_117813_(pose, buffers, light, player);
+                }
+            } finally {
+                DRAWING_ARM--;
             }
         }
         coating(pose, buffers, light, arm, player, right, new float[] {0.0F, 0.0F});
+    }
+
+    /**
+     * 2.6.9 (the owner's crash report: "loader constraint violation" in EventBus.handleException under
+     * ForgeHooksClient.renderSpecificFirstPersonArm from PlayerRenderer.renderRightHand; and "whenever haki is activated with a sword in
+     * hand in first person, it causes EXTREME lag, the blade animations flash in and out"): on the owner's setup the game's
+     * renderRightHand/renderLeftHand fire Forge's arm event themselves (another mod's mixin), so drawing the arm here, from inside the
+     * original's arm handler, fired the handler again: endless recursion every frame with Haki on (a stack overflow the event bus then
+     * failed to log). While this draws the arm, the original's handler neither cancels the event ({@link #cancelArm}) nor draws
+     * ({@link #firstPerson}): the game draws the plain arm (the skin already blackened) once.
+     */
+    static int DRAWING_ARM;
+
+    /** The original's {@code RenderArmEvent.setCanceled} in its arm handler: not while this draws the arm. */
+    public static void cancelArm(net.minecraftforge.client.event.RenderArmEvent event, boolean cancel) {
+        if (DRAWING_ARM == 0) {
+            event.setCanceled(cancel);
+        }
+    }
+
+    /** The original's {@code HakiHandLayer.renderFirstPerson} from its arm handler: not while this draws the arm. */
+    public static void firstPerson(PoseStack pose, MultiBufferSource buffers, int light, net.minecraft.client.model.PlayerModel<AbstractClientPlayer> model,
+                                   AbstractClientPlayer player, boolean right, boolean slim, float mastery, boolean acoc, float age) {
+        if (DRAWING_ARM == 0) {
+            com.hexhaki.client.render.HakiHandLayer.renderFirstPerson(pose, buffers, light, model, player, right, slim, mastery, acoc, age);
+        }
     }
 
     static void coating(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, AbstractClientPlayer player, boolean right,

@@ -211,6 +211,11 @@ public final class PiecePatch implements Opcodes {
         // clock, drawn full white over the HUD every frame): the flash goes through HexPiece, which draws it only while time runs
         // forward from its start and clears a stale one (client/fx/ImpactReset)
         {IMPACT, "hud", IMPACT, "drawFlash", "(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", IMPACT_RESET, "flash", 1},
+        // 2.6.9 (the owner's crash: endless recursion of the first-person arm with Haki on): the original's arm handler draws through
+        // HexPiece, which skips it while HexPiece itself draws the arm from inside it (RyouHands.DRAWING_ARM)
+        {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "arm", HAND, "renderFirstPerson",
+            "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/model/PlayerModel;Lnet/minecraft/client/player/AbstractClientPlayer;ZZFZF)V",
+            RYOU_HANDS, "firstPerson", 1},
         // 2.6.0 (the owner: "Conqueror sounds reduced by 35% but the line evil voice line increased by a ton"): the Haki sounds the
         // original plays a second late (its delayedSound) go through HexPiece, which plays its Conqueror sounds 35 % quieter
         // (server/ConquerorSounds; every other sound as it was)
@@ -230,9 +235,12 @@ public final class PiecePatch implements Opcodes {
         // back from its texture through HexPiece (HakiSkin.readBack), which throws when the readback is not a real skin (haki/SkinCheck),
         // so the original closes its copy and tries again later instead of drawing the player with an empty one
         {JACKET, "create", "com/mojang/blaze3d/platform/NativeImage", "m_85045_", "(IZ)V", HAKI_SKIN, "readBack", 1},
+        // 2.6.9: the original's arm handler cancels the arm event through HexPiece (not while HexPiece draws the arm from inside it)
+        {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "arm", "net/minecraftforge/client/event/RenderArmEvent", "setCanceled", "(Z)V",
+            RYOU_HANDS, "cancelArm", 1},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
-    static final String[][] WIDENED = {{HAND, "renderArmAura"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},
+    static final String[][] WIDENED = {{HAND, "renderArmAura", "renderFirstPerson"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},
         {CONTROLLER, "beginConvergence", "applyConqueror", "forceMaxConquerorStun", "isConquerorCombatTarget"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any

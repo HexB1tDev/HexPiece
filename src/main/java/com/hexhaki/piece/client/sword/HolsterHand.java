@@ -187,9 +187,7 @@ public final class HolsterHand {
             }
         } catch (RuntimeException | LinkageError failure) {
             failures++;
-            if (failures <= 5 || failures % 200 == 0) {
-                com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece first person failed (" + failures + " in a row)", failure);
-            }
+            // (2.6.9: no logging here: on the owner's setup logging an error from the render thread itself failed)
             restUntil = System.nanoTime() + 10_000_000_000L; // 2.6.5: never strobing between this and the game's hand
         }
     }
