@@ -458,7 +458,7 @@ public final class DrawView {
      * running to it from the shoulder below the lower right of the view ({@link #R_SHOULDER}), the blade standing out of the fist's
      * front as the game holds an item (the arm's -z), so the wrist turns with the blade and the arm never swings through the view.
      */
-    static Frame gripped(Frame blade) {
+    static Frame gripped(Frame blade, double sz) {
         double[] fist = point(blade, 0, KatanaGrip.GRIP * sz, 0);
         double[] y = HolsterView.norm(HolsterView.sub(fist, R_SHOULDER));
         double[] b = rotate(blade.q(), new double[] {0, 1, 0});

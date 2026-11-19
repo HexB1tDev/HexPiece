@@ -179,8 +179,9 @@ public final class SwordTests {
             Check.that(count > 0 && sum / count > previous, grade + ": its blades reach further on average than the grade below");
             previous = sum / count;
         }
-        Check.that(Math.abs(Katana.YORU.reach() - 1.86) < 0.02 && Math.abs(Katana.GRYPHON.reach() - 0.84) < 0.02,
-            "Yoru +1.86 and Gryphon +0.84 blocks, as the release notes say (" + Katana.YORU.reach() + ", " + Katana.GRYPHON.reach() + ")");
+        // 2.6.2: the paths are written with the 1.25 times bigger katana (5.25 px longer): Yoru's past them is less, its reach the same
+        Check.that(Math.abs(Katana.YORU.reach() - 1.55) < 0.02 && Math.abs(Katana.GRYPHON.reach() - 0.855) < 0.02,
+            "Yoru +1.55 and Gryphon +0.855 blocks past the 2.6.2 paths (" + Katana.YORU.reach() + ", " + Katana.GRYPHON.reach() + ")");
     }
 
     static void moves() {

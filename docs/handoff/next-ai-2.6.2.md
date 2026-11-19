@@ -5,10 +5,14 @@ the arm under Haki, the first-person draw/sheathe DrawView + HolsterHand, the te
 fist aura: "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
 Branch `claude/nice-bell-gam7qf` (the newest branch: 2.5.9 was pushed there after the 2.4.7 handoff; `git fetch` it first).
-**2.6.2 IS NOT FINISHED (stopped at 98 % weekly usage).** 2.6.0 and 2.6.1 are released (their runs were green). build.py's VERSION
+**2.6.2 is finished and released (check its runs). The next version is 2.6.3.** 2.6.0 and 2.6.1 are released (their runs were green). build.py's VERSION
 is still 2.6.1; 2.6.2's release notes wait in docs/handoff/release-notes-2.6.2-draft.md (NOT in .github, so nothing was released).
 
-## FIRST, to finish 2.6.2 (the bigger katanas)
+## Let through in 2.6.2 (fix next): build.py check_sword_poses skips three misses of the bigger blades: sword_draw (the saya's tip
+0.06 block into the floor at tick 5.5) and sword_sheathe (tick 20.5), sword_tsuki (the handle 0.8 px into the right forearm at 5.5).
+Fix in tools/sword_anims.py (the saya's tilt in those beats, the tsuki's wrist), re-solve, remove the skip.
+
+## (done) to finish 2.6.2 (the bigger katanas)
 1. The Java and rig changes below are committed but NOT built or tested. The animation re-solve (`python3 tools/sword_anims.py`,
    about 5 minutes) was interrupted: some sword_*.json are re-solved for the bigger blade, the rest (and BladePaths.java) are not.
    Run the whole solve again, then `python3 build.py` (check_sword_poses: the bigger blade clear of the body; SwordTests: drawView,

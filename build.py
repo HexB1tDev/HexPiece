@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.6.1"
+VERSION = "2.6.2"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -624,6 +624,11 @@ def check_sword_poses():
         problems = [p for p in problems if not any(a in p[1] for a in allowed)]
         if problems:
             broken.append(f"{name}: {problems[0][1]} at tick {problems[0][0]} (+{len(problems) - 1} more)")
+    # 2.6.2 (the owner, at 98 % weekly usage: "hurry and skip some tests"): three slight misses of the 1.25 times bigger blades let
+    # through for now, to be fixed (see the handoff): the saya's tip a pixel into the floor in the draw and the sheathing, the handle
+    # 0.8 px into the forearm in the tsuki
+    broken = [b for b in broken if not b.startswith(("sword_draw: point in the floor", "sword_sheathe: point in the floor",
+                                                     "sword_tsuki: sword through the right forearm"))]
     if broken:
         raise RuntimeError(f"Sword animations with poses no body makes ({len(broken)}): {broken}")
     print(f"Sword poses: {len(names)} animations, every half tick natural and clear")
