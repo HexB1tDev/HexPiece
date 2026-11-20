@@ -457,7 +457,7 @@
     "tick": 5,
     "easing": "outsine",
     "body": {
-     "pitch": 16.0
+     "pitch": 8.0
     }
    },
    {
@@ -590,7 +590,7 @@
     "tick": 5,
     "easing": "outsine",
     "rightLeg": {
-     "pitch": -150.0
+     "pitch": -124.0
     }
    },
    {
@@ -667,7 +667,7 @@
     "tick": 8,
     "easing": "inoutsine",
     "body": {
-     "pitch": 20.0
+     "pitch": 10.0
     }
    },
    {
@@ -800,7 +800,7 @@
     "tick": 8,
     "easing": "inoutsine",
     "rightLeg": {
-     "pitch": -168.0
+     "pitch": -136.0
     }
    },
    {

@@ -420,6 +420,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(FRUIT + ".class", transform(entries.get(FRUIT + ".class"), PiecePatch::uoFruit));
         entries.put(HAKI_KEYS + ".class", transform(entries.get(HAKI_KEYS + ".class"), PiecePatch::keyDefaults));
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
+        entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
         entries.put(CLIENT_KITS + ".class", transform(entries.get(CLIENT_KITS + ".class"), node -> {
             for (FieldNode field : node.fields) {
                 if (field.name.equals("KITS")) {
@@ -773,6 +774,32 @@ public final class PiecePatch implements Opcodes {
         }
         if (!left.isEmpty()) {
             throw new AssertionError("HakiKeys has no default for " + left.keySet());
+        }
+    }
+
+    /** 2.8.2: the original's animation player, and PlayerAnimator's first-person configuration. */
+    static final String HAKI_ANIMATIONS = "com/hexhaki/client/anim/HakiAnimations";
+    static final String FP_CONFIG = "dev/kosmx/playerAnim/api/firstPerson/FirstPersonConfiguration";
+
+    /**
+     * 2.8.2: in {@code HakiAnimations.playRemote(entity, name, fade)}, the first-person configuration (both arms hidden) goes through
+     * {@code PieceHooks.firstPersonArms(config, name)} before it is set: a style's blows show their arms in first person.
+     */
+    static void firstPersonArms(ClassNode node) {
+        MethodNode method = method(node, "playRemote", "(ILjava/lang/String;I)V");
+        int hooks = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.name.equals("setFirstPersonConfiguration")) {
+                InsnList hook = new InsnList();
+                hook.add(new VarInsnNode(ALOAD, 1));
+                hook.add(new MethodInsnNode(INVOKESTATIC, HOOKS, "firstPersonArms", "(L" + FP_CONFIG + ";Ljava/lang/String;)L" + FP_CONFIG + ";",
+                    false));
+                method.instructions.insertBefore(insn, hook);
+                hooks++;
+            }
+        }
+        if (hooks != 1) {
+            throw new AssertionError("expected one setFirstPersonConfiguration in HakiAnimations.playRemote, found " + hooks);
         }
     }
 

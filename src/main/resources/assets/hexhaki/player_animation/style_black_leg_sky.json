@@ -1297,7 +1297,7 @@
     "tick": 15,
     "easing": "inoutsine",
     "body": {
-     "pitch": 18.0
+     "pitch": 10.0
     }
    },
    {
@@ -1430,7 +1430,7 @@
     "tick": 15,
     "easing": "inoutsine",
     "rightLeg": {
-     "pitch": -172.0
+     "pitch": -138.0
     }
    },
    {

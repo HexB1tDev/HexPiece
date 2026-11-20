@@ -210,8 +210,9 @@ def black_leg():
     write(s + "mutton", 16, [
         (0, "linear", BL),
         (2, "inoutsine", p(BL, body={"y": -0.12}, rightLeg=leg(-10, 2, 40), leftLeg=leg(-8, -2, 40))),
-        (5, "outsine", p(BL, body={"y": 0.18, "pitch": 16}, rightLeg=leg(-150, 6, 10), leftLeg=leg(8, -2, 20), head={"pitch": -14})),
-        (8, "inoutsine", p(BL, body={"y": 0.22, "pitch": 20}, rightLeg=leg(-168, 4, 0), leftLeg=leg(10, -2, 24), head={"pitch": -16})),
+        # 2.8.2: the leg overhead stays a good way in front of the face (it went up through the head: in first person the whole view)
+        (5, "outsine", p(BL, body={"y": 0.18, "pitch": 8}, rightLeg=leg(-124, 6, 10), leftLeg=leg(8, -2, 20), head={"pitch": -14})),
+        (8, "inoutsine", p(BL, body={"y": 0.22, "pitch": 10}, rightLeg=leg(-136, 4, 0), leftLeg=leg(10, -2, 24), head={"pitch": -16})),
         (10, "outexpo", p(BL, body={"y": -0.04, "pitch": -6, "bend": 10}, rightLeg=leg(-38, 4, 0), leftLeg=leg(6, -2, 30),
                           head={"pitch": 8})),
         (11, "outback", p(BL, body={"y": -0.12, "pitch": -8, "bend": 14}, rightLeg=leg(-30, 4, 4), leftLeg=leg(6, -2, 44),
@@ -251,7 +252,7 @@ def black_leg():
         (6, "outsine", p(BL, body={"pitch": -4}, rightLeg=leg(-46, 4, 70), leftLeg=leg(22, -2, 20))),
         (9, "outsine", p(BL, body={"pitch": -4}, rightLeg=leg(20, 2, 20), leftLeg=leg(-46, -4, 70))),
         (12, "inoutsine", p(BL, body={"pitch": 10, "bend": 10}, rightLeg=leg(-70, 4, 100), leftLeg=leg(-66, -4, 104), head={"pitch": 8})),
-        (15, "inoutsine", p(BL, body={"pitch": 18}, rightLeg=leg(-172, 4, 0), leftLeg=leg(8, -2, 30), head={"pitch": -12})),
+        (15, "inoutsine", p(BL, body={"pitch": 10}, rightLeg=leg(-138, 4, 0), leftLeg=leg(8, -2, 30), head={"pitch": -12})),
         (19, "outexpo", p(BL, body={"pitch": -10, "bend": 16, "y": -0.12}, rightLeg=leg(-34, 4, 0), leftLeg=leg(6, -2, 60),
                           head={"pitch": 12})),
         (20, "outback", p(BL, body={"pitch": -12, "bend": 20, "y": -0.2}, rightLeg=leg(-26, 4, 6), leftLeg=leg(4, -2, 80),

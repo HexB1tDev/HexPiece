@@ -47,6 +47,10 @@ public final class StyleFx {
                     // 2.3.8: the Water Bullet's drops gather over the fist from the move's start
                     com.hexhaki.piece.client.fx.WaterFx.gather(message.entity(), level.m_46467_());
                 }
+                var self = Minecraft.m_91087_().f_91074_;
+                if (self != null && self.m_19879_() == message.entity()) {
+                    FirstPersonLegs.started(move, level.m_46467_()); // 2.8.2: the kicking legs in first person
+                }
                 started(level, move, message);
             }
             case 1 -> landed(move, new Vec3(message.x(), message.y(), message.z()), flat(message.dx(), message.dz()));

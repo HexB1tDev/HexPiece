@@ -26,4 +26,19 @@ public final class PieceHooks {
     public static boolean hakiKeysOff() {
         return false;
     }
+
+    /**
+     * 2.8.2 (the owner: "give the current M1s a first person (some are missing, like 6 powers, black leg, water kungfu and iron
+     * first)"): the original plays every animation in first person with both arms hidden ({@code HakiAnimations.playRemote}), so a
+     * style's blows, the Light fruit's and the Uo Uo no Mi's human moves showed nothing there. Those now show the arms as they move (as
+     * the Swordsman's swings do); the kicks' legs are drawn by client/FirstPersonLegs. Everything else keeps the original's choice.
+     */
+    public static dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration firstPersonArms(
+        dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration config, String name) {
+        if (name != null && (name.startsWith("style_") && !name.startsWith("style_swordsman") || name.startsWith("pika_")
+            || name.startsWith("uo_"))) {
+            return config.setShowRightArm(true).setShowLeftArm(true);
+        }
+        return config;
+    }
 }

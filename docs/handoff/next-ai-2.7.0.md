@@ -296,14 +296,40 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   (FxPreview `|blade:20`, `|blade:-50`). 2.8.1 (the owner: "the grip handle rod has to be longer"): the rod runs 0.8 blocks back past
   the fist (was 0.32).
 
-## Next (2.8.2)
-1. Check 2.8.1's runs. Ask the owner how the new Light fruit plays (every move, the animations, the sword in the hand, in third and
-   first person; nothing was tested in game), and how the Uo beams, their craters and repair, and the 10 s stun feel. The dragon
-   camera stays as it is (the owner's choice).
-2. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
+## Done (2.8.2, pushed): the fighting styles in first person, phase 1
+- The owner (verbatim): "after that, adapt the VFX of the other fighting styles, add more custom perfect moves (with first person) and
+  give the current M1s a first person (some are missing, like 6 powers, black leg, water kungfu and iron first). give each their show
+  accurate moves if they lack it, better VFX on the M1s (m1 vfx on water kungfu suck ass), add variatations with the haki on/off, do
+  not stop until every animation is completly perfected, bugless and astecticly pleasing to look at and play with." Then "Just make
+  sure you do not stop".
+- Arms: the original's HakiAnimations.playRemote plays every animation in first person (FirstPersonMode.THIRD_PERSON_MODEL) with both
+  arms hidden (only OWN_FIRST_PERSON_ARM names were spared), so a style's punches showed nothing. PiecePatch.firstPersonArms hooks
+  PieceHooks.firstPersonArms(config, name) before setFirstPersonConfiguration: `style_*` (not the Swordsman's, SwordClient has its
+  own), `pika_*` and `uo_*` show both arms. build.py PATCHED lists HakiAnimations.class.
+- Legs: PlayerAnimator never draws legs in first person. client/FirstPersonLegs (RenderLevelStageEvent AFTER_PARTICLES, the player's
+  own skin through RenderType.entityCutoutNoCull, legs and trousers) draws them while the local player's move kicks (a leg raised past
+  35 degrees at some moment; StyleFx stage 0 starts it). style/KickLeg (pure): the 4x12x4 leg split at the knee (bendy's bend turns
+  the shin back), ModelPart's Z-Y-X order, then the body's own move/lean/spin about 0.7 blocks (PlayerAnimator's order) in the
+  player's frame, turned by the body's yaw (yBodyRot).
+- The owner corrected the framing twice while it was being judged (verbatim): "hell no thats way too high up and too big, hell no",
+  then "legs are to remain attached to the body, not hanging infront of the screen bro". So the legs are where the body has them (no
+  lift, no framing eye): a kick shows as the leg rises into the lower view, the axe kicks come up in front of you, looking down shows
+  the whole kick. Never float them in front of the camera again.
+- Mutton Shot and Sky Walk raised the leg straight up through the face (third person too: the leg went 8-10 degrees behind vertical
+  with the body leaning back). tools/style_anims.py now peaks them at leg -136/-138 with the body pitch 10 (about 34 degrees in front
+  of vertical, clear of the head).
+- Preview: tools/preview/FirstPersonPreview.java (`javac -cp build/classes` KickLeg + the npc poses, then `java FirstPersonPreview
+  out.png skin.png [--pitch deg] [--frames n] [MOVE ...]`; the camera at the eye, a target 3 blocks ahead).
+
+## Next (2.8.3)
+1. Check 2.8.2's runs. Ask the owner how first person feels for the styles (the arms on every blow, the kicking legs).
+2. Phase 2 of the owner's request (still open): 3D effects for every style's blows (client/StyleFx is Photon particles; Fishman
+   Karate's water "sucks"), with Haki on/off variants (Armament: black and red), then show-accurate extra moves per style (C/V/B are
+   free in combat mode), with first person. Render every one and judge it.
+3. Earlier items still open: how 2.7.8's Light fruit and the Uo beams play; the lag pass (the owner's item 2).
+4. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
    -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java`, then `java -cp <dir>:build/preview:build/classes
    FxPreview build/dragon-cache/*/seiryu.sry build/dragon-cache/*/seiryu.png out.png [--night] [--size=WxH] shot...`; a shot is a
    DragonPreview shot (`g:...`, `v:...`) or `m:phase:sec:flight:look:bank:camYaw:camPitch:dist` (a close-up aimed at the mouth), then
    `|breath:on[:off]`, `|orb:age:charge`, `|blast:age[:charge]`, `|bolt:age`, `|boom:age:radius[:ahead]`, `|air:age`,
    `|airburst:age`, `|tornado:age[:strength]`, `|bite:t`, `|roar` (the open jaw alone) or `|none`.
-3. The lag pass (the owner's item 2) is still open beyond 2.7.4's first pass: ask where they see lag.
