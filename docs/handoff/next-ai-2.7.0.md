@@ -50,6 +50,13 @@ The next version is 2.7.2: the Uo Uo no Mi's moves.**
    defaults go through PiecePatch (their INTS/TEXTS) and HexPiece's PieceKeys; check Binds.slotOf's key regex and every place the HUD,
    the Ability Book text and the Captain's Log name a key.
 
+8. **AFTER the moves (verbatim):** "This is the next thing after the moves are done: Uo Uo, you cannot switch from fruit mode to any
+   mode or use any form of haki, ONLY use what the transformation abilities allow, nothing else, plus you gain a new universal effect
+   called Transformed, doubles your HP and you get resistance as well. This effect will also apply to Nika (the fruit)." (So: while
+   the dragon is out, R does nothing, no Haki key or Haki ability works (Armament, Observation, Conqueror and its quick abilities,
+   Ryou), only the dragon's moves; a new MobEffect "Transformed" (registered by HexPiece: max health x2 through an attribute modifier,
+   plus Resistance) while the dragon is out AND while Nika's Gear 5 is on (GearClientState.gearFive / the server's GearData).)
+
 ## Done (2.7.0): the Uo Uo no Mi
 - **The fruit** is a constant of the ORIGINAL's fruit enum: `PiecePatch.uoFruit` adds `Fruit.UO` (ordinal 4: id "uo", "Uo Uo no Mi",
   element "Dragon", colour 4FB7E8, lore) to `<clinit>` and `$values()`. So the original registers its item `hexhaki:uo_uo_no_mi`
