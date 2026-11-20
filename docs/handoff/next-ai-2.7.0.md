@@ -4,8 +4,8 @@ Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.6.2.md (the 
 sheathing, the Haki coat on blades, the Conqueror's sounds and stun), next-ai-2.5.9.md, next-ai-2.5.3.md (Ryou's fist aura:
 "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
-Branch `claude/nice-bell-gam7qf`. **2.7.3 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first; 2.7.0, 2.7.1 and 2.7.2's were green).
-The next version is 2.7.4: the lag and size pass (the owner's item 2, never started), and the owner's report on the dragon.**
+Branch `claude/nice-bell-gam7qf`. **2.7.4 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first; 2.7.0 - 2.7.2's were green, 2.7.3's running).
+The next version is 2.7.5: the owner's report on the dragon, its moves and colours; more of the lag pass if they still see lag.**
 
 ## The owner (session 10, verbatim)
 1. "Current bugs: Haki when holding a katana makes left hand invisible." (fixed, 2.7.0)
@@ -172,7 +172,20 @@ The next version is 2.7.4: the lag and size pass (the owner's item 2, never star
   Haki action dropped on the server; `CombatMode.keys` drains R and Ctrl + R doing nothing while DragonClient.selfOut(). Haki already
   ON when transforming is not switched off (only nothing new): if the owner wants it switched off, call the original's toggles.
 
-## Next (2.7.4)
+## Done (2.7.4, pushed): the owner's item 2 (size, lag), first pass
+- Jar 32.7 MB (2.7.2) -> 24.0 MB. The katana meshes in format 2 (HKM2, tools/katana_mesh.py encode/planes/decode, client/sword/
+  KatanaMesh.load reads 1 and 2): 15.1 -> 6.0 MB, proven identical in the game's loader for all 150 (a scratch harness loading both
+  formats through KatanaMesh.load by reflection; build.py caches katana-cache/...-lod3-hkm2, legend-cache/...-hkm2). build.py
+  `lean_png`: the blade atlases' all-opaque alpha dropped (pixel-identical), 0.64 MB. The original's sounds (3.8 MB) are theirs: not
+  re-encoded.
+- `client/render/Bulk`: the pose read once a mesh (transformPosition / transformDirection / Matrix3f.transform), each vertex one
+  VertexConsumer.m_5954_ (the buffer's fast path) instead of the seven-call chain: KatanaRenderer.quads and coated (every blade and saya,
+  every swordsman, every frame) and the dragon. The highlight (a POSITION_COLOR type) is still the chain.
+- Not done (no measurement possible here): other per-frame costs (RyouAura, SwordLayer, the original's Haki layers); HolsterHand's 2.6.8
+  diagnostic log line is still there (once a second during a draw with Haki on). Ask the owner where they see lag (which screen,
+  how many players or NPCs, Haki on or off) before guessing further.
+
+## Next (2.7.5)
 1. Check 2.7.0's runs. Ask the owner how the dragon handles (nothing was tested in game).
 2. **The moves** (item 5 above), in the ability HUD (AbilityHud.kit: ClientKits.get(fruit).moves()) and the Captain's Log
    (LogbookData.kit). Human-form animations: playerAnimator JSONs under src/main/resources/assets/hexhaki/player_animation/ (judge with

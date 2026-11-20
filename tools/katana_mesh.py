@@ -5,7 +5,7 @@
 The mesh is kept whole (the owner: "Preserve the detailed geometry rather than reducing the models to flat item sprites"): every
 vertex, face and named part (01_Blade_forged_shinogi, 04_Tsuba_..., 13_Tsukamaki_..., 21_Saya_..., ...). Format (gzip, little
 endian), read by client/sword/KatanaMesh.java:
-  b"HKM1", int32 version (1)
+  b"HKM2", int32 version (2) (2.7.4; b"HKM1" before: the vertices as 14-byte records, still read by decode)
   float32 offset[3], float32 scale[3]          position = offset + q / 32767 * scale (model pixels: 1 = 1/16 block; the guard at y 0,
                                                the blade up +y, its edge to +x, the handle down to -y)
   int32 vertices, int32 quads, int32 groups
@@ -84,6 +84,10 @@ def parse(text):
 
 
 def encode(vertices, quads, groups):
+    """2.7.4: format 2 (HKM2): the same header and groups, then the columns as byte planes (the owner: "reduce size"): each of x, y,
+    z, u, v as the zigzag of its difference from the vertex before, in three planes (low, middle, high byte), then the normals' x, y, z
+    (one byte each), then the quads' corners (flattened) as zigzag differences in three planes. Neighbouring vertices are near, so the
+    planes are mostly small numbers and zeros: 15.1 MB of meshes pack into about 6, exactly the same geometry."""
     lo = [min(v[i] for v in vertices) for i in range(3)]
     hi = [max(v[i] for v in vertices) for i in range(3)]
     offset = [(lo[i] + hi[i]) / 2.0 for i in range(3)]
@@ -91,28 +95,61 @@ def encode(vertices, quads, groups):
     if len(vertices) > 65535:
         raise ValueError(f"{len(vertices)} vertices: too many for 16-bit indices")
     out = io.BytesIO()
-    out.write(b"HKM1")
-    out.write(struct.pack("<i3f3f3i", 1, *offset, *scale, len(vertices), len(quads), len(groups)))
+    out.write(b"HKM2")
+    out.write(struct.pack("<i3f3f3i", 2, *offset, *scale, len(vertices), len(quads), len(groups)))
     for name, first, count in groups:
         raw = name.encode("utf-8")
         out.write(struct.pack("<H", len(raw)))
         out.write(raw)
         out.write(struct.pack("<ii", first, count))
     clamp = lambda value, a, b: max(a, min(b, value))
+    columns = [[], [], [], [], []]
+    normals = [[], [], []]
     for x, y, z, u, v, nx, ny, nz in vertices:
         q = [round((c - offset[i]) / scale[i] * 32767) for i, c in enumerate((x, y, z))]
-        out.write(struct.pack("<3h2H4b", *[clamp(c, -32767, 32767) for c in q], clamp(round(u * 65535), 0, 65535),
-                              clamp(round(v * 65535), 0, 65535), clamp(round(nx * 127), -127, 127), clamp(round(ny * 127), -127, 127),
-                              clamp(round(nz * 127), -127, 127), 0))
-    for quad in quads:
-        out.write(struct.pack("<4H", *quad))
+        for k, value in enumerate([clamp(c, -32767, 32767) for c in q] + [clamp(round(u * 65535), 0, 65535), clamp(round(v * 65535), 0, 65535)]):
+            columns[k].append(value)
+        for k, n in enumerate((nx, ny, nz)):
+            normals[k].append(clamp(round(n * 127), -127, 127) & 0xFF)
+    for column in columns:
+        out.write(planes(column))
+    for column in normals:
+        out.write(bytes(column))
+    out.write(planes([c for quad in quads for c in quad]))
     return gzip.compress(out.getvalue(), compresslevel=9, mtime=0)
 
 
+def planes(values):
+    """The zigzag of each value's difference from the one before, as three byte planes (low, middle, high)."""
+    lo, mid, hi = bytearray(), bytearray(), bytearray()
+    previous = 0
+    for value in values:
+        d = value - previous
+        previous = value
+        z = (d << 1) ^ (d >> 31)
+        z &= 0xFFFFFFFF
+        lo.append(z & 0xFF)
+        mid.append(z >> 8 & 0xFF)
+        hi.append(z >> 16 & 0xFF)
+    return bytes(lo + mid + hi)
+
+
+def unplanes(raw, at, count):
+    """{@link planes} undone: the values, and where the planes end."""
+    values = []
+    previous = 0
+    for i in range(count):
+        z = raw[at + i] | raw[at + count + i] << 8 | raw[at + 2 * count + i] << 16
+        d = (z >> 1) ^ -(z & 1)
+        previous += d
+        values.append(previous)
+    return values, at + 3 * count
+
+
 def decode(data):
-    """A packed mesh back as (vertices, quads, groups), for the off-game previews and the build's checks."""
+    """A packed mesh back as (vertices, quads, groups), for the off-game previews and the build's checks (format 1 or 2)."""
     raw = gzip.decompress(data)
-    assert raw[:4] == b"HKM1"
+    assert raw[:4] in (b"HKM1", b"HKM2")
     version, ox, oy, oz, sx, sy, sz, nv, nq, ng = struct.unpack_from("<i3f3f3i", raw, 4)
     at = 4 + struct.calcsize("<i3f3f3i")
     groups = []
@@ -124,6 +161,21 @@ def decode(data):
         first, count = struct.unpack_from("<ii", raw, at)
         at += 8
         groups.append((name, first, count))
+    if raw[:4] == b"HKM2":
+        columns = []
+        for _ in range(5):
+            column, at = unplanes(raw, at, nv)
+            columns.append(column)
+        normals = []
+        for _ in range(3):
+            normals.append([b - 256 if b > 127 else b for b in raw[at:at + nv]])
+            at += nv
+        flat, at = unplanes(raw, at, nq * 4)
+        vertices = [(ox + columns[0][i] / 32767 * sx, oy + columns[1][i] / 32767 * sy, oz + columns[2][i] / 32767 * sz,
+                     columns[3][i] / 65535, columns[4][i] / 65535, normals[0][i] / 127, normals[1][i] / 127, normals[2][i] / 127)
+                    for i in range(nv)]
+        quads = [tuple(flat[i * 4:i * 4 + 4]) for i in range(nq)]
+        return vertices, quads, groups
     vertices = []
     for _ in range(nv):
         x, y, z, u, v, nx, ny, nz, _pad = struct.unpack_from("<3h2H4b", raw, at)

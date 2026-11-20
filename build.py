@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.7.3"
+VERSION = "2.7.4"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -208,7 +208,7 @@ def katana_assets():
     if actual != EXPECTED_KATANA_SHA256:
         raise RuntimeError(f"The katana zip differs from the one inspected: {actual}")
     keys = katana_keys()
-    cache = BUILD / "katana-cache" / (actual[:16] + "-lod3")
+    cache = BUILD / "katana-cache" / (actual[:16] + "-lod3-hkm2")
     if not (cache / "done").exists():
         sys.path.insert(0, str(ROOT / "tools"))
         import katana_mesh
@@ -231,7 +231,7 @@ def katana_assets():
         texture = cache / "textures" / f"{key}.png"
         if not texture.exists():
             raise RuntimeError(f"The katana zip has no texture {key}.png")
-        entries[f"{KATANA_TEXTURES}{key}.png"] = tempered(key, texture.read_bytes())
+        entries[f"{KATANA_TEXTURES}{key}.png"] = lean_png(tempered(key, texture.read_bytes()))
         # 2.2.6 (the owner: "The current blades in game all show as missing texture icons"): since 1.19.3 only textures under
         # textures/item and textures/block (or ones an atlas file names) are stitched into the item atlas; the icons were under
         # textures/piece, so the inventory drew the missing texture. They live under textures/item now.
@@ -272,6 +272,24 @@ def dragon_assets():
     return {DRAGON_MODEL: (cache / "seiryu.sry").read_bytes(), DRAGON_TEXTURE: (cache / "seiryu.png").read_bytes()}
 
 
+def lean_png(data):
+    """2.7.4 (the owner: "reduce size"): a PNG with an alpha channel that is opaque everywhere saved without it (the game draws it the
+    same: every pixel identical), if that is smaller; otherwise as it was."""
+    from io import BytesIO
+    try:
+        from PIL import Image
+    except ImportError:
+        return data
+    image = Image.open(BytesIO(data))
+    image.load()
+    if image.mode != "RGBA" or image.getextrema()[3] != (255, 255):
+        return data
+    out = BytesIO()
+    image.convert("RGB").save(out, "PNG", optimize=True)
+    lean = out.getvalue()
+    return lean if len(lean) < len(data) else data
+
+
 def tempered(key, original):
     """2.5.6 (the owner: "improve the temper on all swords but yoru, the blade is too bland not good looking at all, simply improve the
     texture thats it, same for Gryphon"): the blade's atlas with its temper repainted (textures/tempered/, made from the owner's atlas
@@ -298,7 +316,7 @@ def legend_assets():
     sys.path.insert(0, str(ROOT / "tools"))
     import katana_mesh
     spec = hashlib.sha256(repr(sorted(katana_mesh.LEGENDS.items())).encode()).hexdigest()[:8]
-    cache = BUILD / "legend-cache" / (actual[:16] + "-" + spec)
+    cache = BUILD / "legend-cache" / (actual[:16] + "-" + spec + "-hkm2")
     if not (cache / "done").exists():
         if cache.exists():
             shutil.rmtree(cache)
@@ -315,7 +333,7 @@ def legend_assets():
             for lod in ("", "_mid", "_far"):
                 entries[f"{KATANA_MESHES}{base}{lod}.hkm"] = (cache / f"{base}{lod}.hkm").read_bytes()
         atlas = (cache / f"{key}.png").read_bytes()
-        entries[f"{KATANA_TEXTURES}{key}.png"] = atlas if key == "yoru" else tempered(key, atlas)
+        entries[f"{KATANA_TEXTURES}{key}.png"] = lean_png(atlas if key == "yoru" else tempered(key, atlas))
         icon = f"hexhaki:item/katana/{key}_icon"
         if not (ROOT / ICONS / f"{key}_icon.png").exists():
             raise RuntimeError(f"No inventory icon for {key} (tools/katana_render.py legend-icons)")

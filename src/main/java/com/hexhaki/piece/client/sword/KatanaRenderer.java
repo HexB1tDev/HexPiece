@@ -146,8 +146,10 @@ public final class KatanaRenderer {
 
     /** 2.6.1: the steel's quads, each vertex as black as the coat has made it ({@link BladeCoat#at}: by how far up the blade it is). */
     static void coated(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int first, int count, int light, float coat, float tip) {
-        Matrix4f matrix = pose.m_252922_();
-        Matrix3f normal = pose.m_252943_();
+        // 2.7.4: one call a vertex (client/render/Bulk), the pose multiplied in once
+        float[] m = new float[12];
+        float[] nm = new float[9];
+        com.hexhaki.piece.client.render.Bulk.read(pose, m, nm);
         int[] q = mesh.quads;
         float[] p = mesh.pos;
         float[] t = mesh.uv;
@@ -160,22 +162,27 @@ public final class KatanaRenderer {
             int r = Math.round(255.0F - (255.0F - COAT_R) * b);
             int g = Math.round(255.0F - (255.0F - COAT_G) * b);
             int bl = Math.round(255.0F - (255.0F - COAT_B) * b);
-            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_6122_(r, g, bl, 255).m_7421_(t[v * 2], t[v * 2 + 1])
-                .m_86008_(OverlayTexture.f_118083_).m_85969_(light).m_252939_(normal, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]).m_5752_();
+            com.hexhaki.piece.client.render.Bulk.vertex(buffer, m, nm, p[v * 3], p[v * 3 + 1], p[v * 3 + 2], r / 255.0F, g / 255.0F, bl / 255.0F,
+                1.0F, t[v * 2], t[v * 2 + 1], OverlayTexture.f_118083_, light, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]);
         }
     }
 
     static void quads(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int first, int count, int light) {
-        Matrix4f matrix = pose.m_252922_();
-        Matrix3f normal = pose.m_252943_();
+        if (count <= 0) {
+            return;
+        }
+        // 2.7.4 (the owner: "Smooth out the mod to avoid lag"): one call a vertex (client/render/Bulk), the pose multiplied in once
+        float[] m = new float[12];
+        float[] nm = new float[9];
+        com.hexhaki.piece.client.render.Bulk.read(pose, m, nm);
         int[] q = mesh.quads;
         float[] p = mesh.pos;
         float[] t = mesh.uv;
         float[] n = mesh.nrm;
         for (int i = first * 4, end = (first + count) * 4; i < end; i++) {
             int v = q[i];
-            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_6122_(255, 255, 255, 255).m_7421_(t[v * 2], t[v * 2 + 1])
-                .m_86008_(OverlayTexture.f_118083_).m_85969_(light).m_252939_(normal, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]).m_5752_();
+            com.hexhaki.piece.client.render.Bulk.vertex(buffer, m, nm, p[v * 3], p[v * 3 + 1], p[v * 3 + 2], 1.0F, 1.0F, 1.0F, 1.0F, t[v * 2],
+                t[v * 2 + 1], OverlayTexture.f_118083_, light, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]);
         }
     }
 

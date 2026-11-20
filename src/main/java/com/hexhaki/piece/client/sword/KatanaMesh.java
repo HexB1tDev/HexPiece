@@ -36,6 +36,21 @@ public final class KatanaMesh {
         return this.quads.length / 4;
     }
 
+    /** 2.7.4: {@code count} values from three byte planes (low, middle, high) of zigzag differences (tools/katana_mesh.py planes). */
+    static int[] planes(ByteBuffer b, int count) {
+        int at = b.position();
+        int[] out = new int[count];
+        int previous = 0;
+        for (int i = 0; i < count; i++) {
+            int z = Byte.toUnsignedInt(b.get(at + i)) | Byte.toUnsignedInt(b.get(at + count + i)) << 8
+                | Byte.toUnsignedInt(b.get(at + 2 * count + i)) << 16;
+            previous += (z >>> 1) ^ -(z & 1);
+            out[i] = previous;
+        }
+        b.position(at + 3 * count);
+        return out;
+    }
+
     static KatanaMesh load(String name) throws IOException {
         byte[] packed;
         try (InputStream in = KatanaMesh.class.getResourceAsStream("/assets/hexhaki/katana/" + name + ".hkm")) {
@@ -48,7 +63,13 @@ public final class KatanaMesh {
             }
         }
         ByteBuffer b = ByteBuffer.wrap(packed).order(ByteOrder.LITTLE_ENDIAN);
-        if (b.get() != 'H' || b.get() != 'K' || b.get() != 'M' || b.get() != '1' || b.getInt() != 1) {
+        // 2.7.4: format 2 (tools/katana_mesh.py: the columns as zigzag differences in byte planes, 60 % smaller); 1 still read
+        byte m0 = b.get();
+        byte m1 = b.get();
+        byte m2 = b.get();
+        byte m3 = b.get();
+        int version = b.getInt();
+        if (m0 != 'H' || m1 != 'K' || m2 != 'M' || !(m3 == '1' && version == 1 || m3 == '2' && version == 2)) {
             throw new IOException("not a katana mesh: " + name);
         }
         float[] offset = {b.getFloat(), b.getFloat(), b.getFloat()};
@@ -72,6 +93,27 @@ public final class KatanaMesh {
         float[] pos = new float[vertices * 3];
         float[] uv = new float[vertices * 2];
         float[] nrm = new float[vertices * 3];
+        int[] quads = new int[quadCount * 4];
+        if (version == 2) {
+            for (int k = 0; k < 5; k++) {
+                int[] column = planes(b, vertices);
+                for (int i = 0; i < vertices; i++) {
+                    if (k < 3) {
+                        pos[i * 3 + k] = offset[k] + column[i] / 32767.0F * scale[k];
+                    } else {
+                        uv[i * 2 + k - 3] = column[i] / 65535.0F;
+                    }
+                }
+            }
+            for (int k = 0; k < 3; k++) {
+                for (int i = 0; i < vertices; i++) {
+                    nrm[i * 3 + k] = b.get() / 127.0F;
+                }
+            }
+            int[] flat = planes(b, quads.length);
+            System.arraycopy(flat, 0, quads, 0, quads.length);
+            return new KatanaMesh(pos, uv, nrm, quads, bladeFirst, bladeCount);
+        }
         for (int i = 0; i < vertices; i++) {
             for (int k = 0; k < 3; k++) {
                 pos[i * 3 + k] = offset[k] + b.getShort() / 32767.0F * scale[k];
@@ -83,7 +125,6 @@ public final class KatanaMesh {
             }
             b.get();
         }
-        int[] quads = new int[quadCount * 4];
         for (int i = 0; i < quads.length; i++) {
             quads[i] = Short.toUnsignedInt(b.getShort());
         }
