@@ -321,11 +321,35 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
 - Preview: tools/preview/FirstPersonPreview.java (`javac -cp build/classes` KickLeg + the npc poses, then `java FirstPersonPreview
   out.png skin.png [--pitch deg] [--frames n] [MOVE ...]`; the camera at the eye, a target 3 blocks ahead).
 
-## Next (2.8.3)
-1. Check 2.8.2's runs. Ask the owner how first person feels for the styles (the arms on every blow, the kicking legs).
-2. Phase 2 of the owner's request (still open): 3D effects for every style's blows (client/StyleFx is Photon particles; Fishman
-   Karate's water "sucks"), with Haki on/off variants (Armament: black and red), then show-accurate extra moves per style (C/V/B are
-   free in combat mode), with first person. Render every one and judge it.
+## Done (2.8.3, pushed): the fighting styles' blows in 3D, Haki on and off
+- The owner (part of the request in "Done (2.8.2)"): "better VFX on the M1s (m1 vfx on water kungfu suck ass), add variatations
+  with the haki on/off". Render: docs/handoff/style-vfx-2.8.3.png (BL_SNAP, FK_PALM, FK_BRICK, IF_CROSS).
+- style/StyleRig (pure): the player's body as tools/anim.py and PlayerAnimator + bendy-lib pose it (every limb bent at its middle,
+  ModelPart Z-Y-X, the head and arms carried by the body's bend, then the body's move/lean/spin about 0.7 blocks, scale 0.9375), in
+  the player's frame. style/StyleArt (pure, FireMesh quads, cel bands laid inside one another): smear (the sheet a striking fist or
+  foot sweeps), thrust (rings of shocked air off a straight blow and speed lines), impact (the anime's impact star, a ring, a flash),
+  splash (Fishman Karate: a crown of water, two ripples, drops that arc and fall, WaterMesh bodies), helix (water wound round the
+  arm), crackle (Armament: black bolts edged red), its own finely cut ring. Looks: KICK (Black Leg, hot), AIR (Six Powers), WATER,
+  SHOCK (Iron Fist), FIRE (the Flame Leg), HAKI and HAKI_WATER (black, red edge).
+- style/StyleShow (pure): which limb strikes each blow (the fastest end into its tick; straight if driven along the limb and not
+  flung by the body's spin; the Rising Knee strikes with the knee), the smear while that end moves fast (nothing in a slow wind-up),
+  the thrust for straight blows (not Six Powers: AirFx keeps its rings), Fishman Karate's helix and hand splash, Haki's crackle; landed
+  blows: impact + splash + crackle. Fades everything within 1.15 blocks of the eye (NEAR/CLEAR); in one's own first person the pushes
+  and the hand's water are 0.55 as big. Not drawn for the moves with their own effects (Water Bullet, Prison, Brick Fist, Air Blade,
+  Iron Body, Shave, Shoulder Charge) or the Swordsman.
+- client/fx/StyleVfx: S2CStyleFx stage 0 starts a move on its user (stage 3 starts it for a user whose start never came, an NPC's),
+  stage 1 a landed burst; drawn at AFTER_PARTICLES through debugQuads, every quad of the frame laid far to near in 5 cm steps (the
+  bands of one look keep their order); Armament or Ryou on the user (RemoteHakiStates) turns them black and red. StyleFx keeps only the
+  dust and the Flame Leg's flames as particles for these moves.
+- Preview: tools/preview/StylePreview.java (`StylePreview out.png [--haki] [--fp] [--frames n] [--view deg] MOVE ...`; compile
+  StyleRig/StyleArt/StyleShow, FireMesh, WaterMesh and the npc poses against build/classes, then DragonPreview, FxPreview and
+  StylePreview). StyleTests.show checks the rig, every blow's limb and every moment's quads.
+
+## Next (2.8.4)
+1. Check 2.8.3's runs. Ask the owner how the styles feel in first person (2.8.2) and how the new blows look in game (2.8.3), Haki on
+   and off; nothing was tested in game.
+2. Still open from the owner's style request: show-accurate extra moves per style (C/V/B are free in combat mode), with first
+   person, their animations judged (tools/anim_preview.py) and their effects rendered (StylePreview).
 3. Earlier items still open: how 2.7.8's Light fruit and the Uo beams play; the lag pass (the owner's item 2).
 4. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
    -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java`, then `java -cp <dir>:build/preview:build/classes

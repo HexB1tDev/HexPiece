@@ -47,15 +47,23 @@ public final class StyleFx {
                     // 2.3.8: the Water Bullet's drops gather over the fist from the move's start
                     com.hexhaki.piece.client.fx.WaterFx.gather(message.entity(), level.m_46467_());
                 }
+                com.hexhaki.piece.client.fx.StyleVfx.started(message.entity(), move); // 2.8.3: the blows in 3D
                 var self = Minecraft.m_91087_().f_91074_;
                 if (self != null && self.m_19879_() == message.entity()) {
                     FirstPersonLegs.started(move, level.m_46467_()); // 2.8.2: the kicking legs in first person
                 }
                 started(level, move, message);
             }
-            case 1 -> landed(move, new Vec3(message.x(), message.y(), message.z()), flat(message.dx(), message.dz()));
+            case 1 -> {
+                Vec3 facing = flat(message.dx(), message.dz());
+                com.hexhaki.piece.client.fx.StyleVfx.landed(message.entity(), move, new Vec3(message.x(), message.y(), message.z()), facing);
+                landed(move, new Vec3(message.x(), message.y(), message.z()), facing);
+            }
             case 2 -> shot(move, new Vec3(message.dx(), message.dy(), message.dz()), new Vec3(message.x(), message.y(), message.z()));
-            case 3 -> swing(move, new Vec3(message.x(), message.y(), message.z()), flat(message.dx(), message.dz()), (int) Math.round(message.dy()));
+            case 3 -> {
+                com.hexhaki.piece.client.fx.StyleVfx.thrown(message.entity(), move);
+                swing(move, new Vec3(message.x(), message.y(), message.z()), flat(message.dx(), message.dz()), (int) Math.round(message.dy()));
+            }
             default -> {
             }
         }
@@ -103,7 +111,10 @@ public final class StyleFx {
             return;
         }
         Vec3 side = new Vec3(-facing.f_82481_, 0, facing.f_82479_);
-        if (round) {
+        boolean modern = com.hexhaki.piece.style.StyleShow.shown(move); // 2.8.3: its cuts are drawn in 3D (client/fx/StyleVfx)
+        if (modern) {
+            // only the ground's dust and the Flame Leg's flames stay particles
+        } else if (round) {
             int n = PieceFx.count(14 + weight * 4);
             for (int i = 0; i < n; i++) {
                 double a = Math.PI * 2 * i / n;
@@ -132,7 +143,7 @@ public final class StyleFx {
         if (weight >= 2 || move.effect() == StyleMove.Effect.QUAKE) {
             dust(feet, round ? null : facing, 8 + weight * 3);
         }
-        if (water(move)) {
+        if (water(move) && !modern) {
             Vec3 from = round ? feet.m_82520_(0, h, 0) : feet.m_82549_(facing.m_82490_(1.2)).m_82520_(0, h, 0);
             droplets(from, round ? null : facing, 8 + weight * 5, 0.45 + weight * 0.08);
         }
@@ -159,6 +170,13 @@ public final class StyleFx {
     // ------------------------------------------------------------------------------------------------------------- hits
 
     static void landed(StyleMove move, Vec3 at, Vec3 facing) {
+        if (com.hexhaki.piece.style.StyleShow.shown(move)) {
+            // 2.8.3: the impact is drawn in 3D (client/fx/StyleVfx); the Flame Leg's flames stay
+            if (move.effect() == StyleMove.Effect.FIRE) {
+                flames(at, 0.4, 12);
+            }
+            return;
+        }
         int weight = 0;
         for (var hit : move.hits()) {
             weight = Math.max(weight, hit.weight().ordinal());

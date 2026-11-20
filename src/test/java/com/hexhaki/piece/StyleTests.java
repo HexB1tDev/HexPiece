@@ -24,6 +24,7 @@ public final class StyleTests {
         brickFist();
         prison();
         air();
+        show();
         Check.done("StyleTests");
     }
 
@@ -298,5 +299,58 @@ public final class StyleTests {
             "air all but clear straight on, Haki black");
         Check.that(com.hexhaki.piece.client.fx.AirFx.BLADE_SPEED > 2.2 * 1.9, "the Air Blade at least twice as fast as it was");
         Check.that(com.hexhaki.piece.server.AirServer.RANGE >= 15 && com.hexhaki.piece.server.AirServer.SPEED >= 3, "the finger's Haki bullet flies far, fast");
+    }
+
+    /** 2.8.3: the styles' 3D blows (style/StyleRig, StyleArt, StyleShow): the rig stands as the game's model does, every blow is found
+     * a limb, and every moment of every move draws sound quads, few enough. */
+    static void show() {
+        float[][] rest = new float[8][8];
+        double[] hand = com.hexhaki.piece.style.StyleRig.limb(rest, com.hexhaki.piece.style.StyleRig.RIGHT_ARM, 0.0, 1.0, 0.0);
+        Check.that(Math.abs(hand[0] + 6.0 / 16.0 * 0.9375) < 1.0e-9, "the right hand hangs at the right side (x " + hand[0] + ")");
+        Check.that(Math.abs(hand[1] - (1.501 - 12.0 / 16.0) * 0.9375) < 1.0e-9, "the hand hangs at the hip's height");
+        double[] foot = com.hexhaki.piece.style.StyleRig.limb(rest, com.hexhaki.piece.style.StyleRig.LEFT_LEG, 0.0, 1.0, 0.0);
+        Check.that(Math.abs(foot[1]) < 0.01 && foot[0] > 0, "the left foot stands on the ground at the left");
+        com.hexhaki.piece.style.StyleShow.Poser poser = com.hexhaki.piece.client.npc.StylePoser::sample;
+        int[] quads = new int[1];
+        boolean[] sound = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            quads[0]++;
+            for (double v : xyz) {
+                sound[0] &= Double.isFinite(v) && Math.abs(v) < 64.0;
+            }
+        };
+        com.hexhaki.piece.style.StyleShow.Place place = new com.hexhaki.piece.style.StyleShow.Place(1.0, -1.6, 3.0, 0.7);
+        for (StyleMove move : StyleMove.values()) {
+            if (!com.hexhaki.piece.style.StyleShow.shown(move)) {
+                continue;
+            }
+            com.hexhaki.piece.style.StyleShow.Strike[] strikes = com.hexhaki.piece.style.StyleShow.strikes(move, poser);
+            Check.that(strikes.length == move.hits().length, move + ": every blow found");
+            for (com.hexhaki.piece.style.StyleShow.Strike strike : strikes) {
+                Check.that(strike.limb() >= 2 && strike.limb() <= 5, move + ": struck with a limb");
+                double l = Math.sqrt(strike.dir()[0] * strike.dir()[0] + strike.dir()[1] * strike.dir()[1] + strike.dir()[2] * strike.dir()[2]);
+                Check.that(Math.abs(l - 1.0) < 1.0e-6, move + ": its way is a unit vector");
+            }
+            Check.that(move.style() != FightingStyle.BLACK_LEG || strikes[0].limb() >= 4, move + ": Black Leg kicks");
+            for (boolean haki : new boolean[] {false, true}) {
+                for (float t = 0.0F; t <= move.duration() + 16; t += 0.5F) {
+                    quads[0] = 0;
+                    com.hexhaki.piece.style.StyleShow.attached(sink, move, haki, t, poser, place, 3);
+                    for (int i = 0; i < strikes.length; i++) {
+                        double age = t - strikes[i].tick();
+                        if (age >= 0) {
+                            com.hexhaki.piece.style.StyleShow.landed(sink, move, haki, age, new double[] {0.5, 0.0, 2.5}, new double[] {0, 0, 1},
+                                strikes[i].size(), i);
+                        }
+                    }
+                    Check.that(sound[0], move + (haki ? " +Haki" : "") + " at " + t + ": every corner finite and near");
+                    Check.that(quads[0] < 40000, move + " at " + t + ": " + quads[0] + " quads, few enough");
+                }
+            }
+        }
+        Check.that(com.hexhaki.piece.style.StyleArt.of(FightingStyle.FISHMAN_KARATE, true) != com.hexhaki.piece.style.StyleArt.WATER,
+            "Fishman Karate's water turns black with Haki");
+        Check.that(com.hexhaki.piece.style.StyleArt.of(FightingStyle.BRAWLER, true) == com.hexhaki.piece.style.StyleArt.HAKI,
+            "Iron Fist turns black with Haki");
     }
 }
