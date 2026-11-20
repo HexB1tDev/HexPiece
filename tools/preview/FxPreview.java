@@ -263,7 +263,7 @@ public final class FxPreview {
                     }
                     sink.quad(q, argb);
                 };
-                com.hexhaki.piece.pika.LightArt.blade(turned, 2.6, 0.06, 0.3);
+                com.hexhaki.piece.pika.LightArt.blade(turned, 1.9, 0.11, 0.5);
             }
             case "trail" -> {
                 double[] pts = new double[20 * 3];

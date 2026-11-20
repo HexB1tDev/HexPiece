@@ -78,11 +78,15 @@ final class PikaClient implements ClientKit {
         return false;
     }
 
+    /** Ama no Murakumo: a long sword (blocks from the fist to the point), its blade's half width. */
+    static final double BLADE_LENGTH = 1.9;
+    static final double BLADE_WIDTH = 0.11;
+
     static void draw(PoseStack pose, MultiBufferSource buffers, double shimmer) {
         PikaFx.Writer writer = new PikaFx.Writer();
         writer.buffer = buffers.m_6299_(RenderType.m_269166_());
         writer.matrix = pose.m_85850_().m_252922_();
-        LightArt.blade(writer, 2.6, 0.06, 0.4 + 0.4 * Math.sin(shimmer));
+        LightArt.blade(writer, BLADE_LENGTH, BLADE_WIDTH, 0.5 + 0.5 * Math.sin(shimmer));
         if (buffers instanceof MultiBufferSource.BufferSource source) {
             source.m_109912_(RenderType.m_269166_());
         }
