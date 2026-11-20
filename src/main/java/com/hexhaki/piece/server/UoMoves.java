@@ -6,6 +6,7 @@ import com.hexhaki.fruit.FruitUtil;
 import com.hexhaki.fx.Impact;
 import com.hexhaki.gameplay.HakiServerController;
 import com.hexhaki.piece.dragon.DragonForm;
+import com.hexhaki.piece.dragon.UoFire;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CUoFx;
 import java.util.ArrayList;
@@ -131,12 +132,10 @@ public final class UoMoves {
         }
         float charge = (float) Math.min(1.0, held / (double) BLAST_FULL);
         cool(player, UoKit.CHARGED_BLAST, BLAST_COOL);
-        Vec3 from2 = mouth(player);
-        double range = BLAST_MIN + (BLAST_MAX - BLAST_MIN) * charge;
-        Vec3 look = toward(player, from2, range);
-        double size = 1.6 + 2.6 * charge;
-        // 2.7.6 (the owner: "more aggressive more violent"): a wider, harder, hotter blast
-        launch(player, from2, look.m_82490_(3.6), range, size, 4.5 + 7.5 * charge, 16.0F + 30.0F * charge, 10, 1.8 + 2.4 * charge, S2CUoFx.BLAST);
+        // 2.7.8 (the owner: "both versions of blast breath are BEAMS ... the max charge of the beam should be ridiculously bigger"): the
+        // ball let go as a beam of fire, its width, length and life growing with the charge
+        beam(player, true, 2.5 + 11.5 * charge, 60.0 + 100.0 * charge, 30 + (int) (40 * charge), 4.0F + 8.0F * charge, 1.2 + 2.0 * charge,
+            charge);
         DragonServer.sound(player, "whoosh_heavy", 2.0F, 0.5F);
     }
 
@@ -204,9 +203,8 @@ public final class UoMoves {
             if (!player.m_6084_()) {
                 return;
             }
-            Vec3 look = player.m_20154_();
-            Vec3 mouth = player.m_146892_().m_82549_(look.m_82490_(0.5)).m_82520_(0.0, -0.12, 0.0);
-            launch(player, mouth, look.m_82490_(3.2), BREATH_RANGE, 0.7, 4.5, 11.0F, 6, 1.6, S2CUoFx.BOLT);
+            // 2.7.8 (the owner: "both versions of blast breath are BEAMS, not short blasts"): a beam of fire out of the mouth
+            beam(player, false, HUMAN_BEAM_WIDTH, HUMAN_BEAM_LENGTH, HUMAN_BEAM_LIFE, 3.0F, 1.0, 0.0F);
             DragonServer.sound(player, "flame", 1.4F, 0.9F);
         }));
     }
@@ -631,6 +629,197 @@ public final class UoMoves {
             explode(this.user, this.level, this.land.m_82520_(0.0, 0.5, 0.0), new Vec3(0, -1, 0), 3.2, 7.0F, 5, 1.0);
             Impact.quake(this.level, this.land, 12.0, 0.35F, 8);
             return true;
+        }
+    }
+
+    /** The human form's beam of fire (Blast Breath): its radius, length (blocks), life (ticks). */
+    static final double HUMAN_BEAM_WIDTH = 1.4;
+    static final double HUMAN_BEAM_LENGTH = 50.0;
+    static final int HUMAN_BEAM_LIFE = 30;
+
+    /** Where the human form's mouth is: just under the eye, out along the look. */
+    static Vec3 humanMouth(ServerPlayer player) {
+        return player.m_146892_().m_82549_(player.m_20154_().m_82490_(0.5)).m_82520_(0.0, -0.12, 0.0);
+    }
+
+    /** A beam of fire out of the mouth ({@code dragon}'s or the human's): sent to every client, burning on the server ({@link Beam}). */
+    static void beam(ServerPlayer player, boolean dragon, double width, double length, int life, float damage, double knock, float charge) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        LIVE.add(new Beam(player, level, dragon, width, length, life, damage, knock, charge));
+        PieceNetwork.around(player, new S2CUoFx(S2CUoFx.FIRE_BEAM, dragon ? 1 : 0, player.m_19879_(), 0, 0, 0, (float) length, 0, 0, 0, 0, 0,
+            (float) width, life));
+    }
+
+    /**
+     * A beam of fire held for {@code life} ticks, straight from the mouth onto what the player aims at (it sweeps as they turn), as far
+     * as the first block within {@code length}: every 4 ticks it burns everything within its width of that line (thin at the mouth,
+     * UoFire.taper); the moment it strikes a block it blows up there and tears a crater out (2.7.8, the owner: "as soon as it hits a
+     * block, it explodes", "it should also destroy blocks and self repair after 30 seconds": Craters), and goes on blowing up and
+     * tearing every 6 ticks while it burns there; when it ends, a last explosion and crater as big as the charge.
+     */
+    static final class Beam implements Live {
+        final ServerPlayer user;
+        final ServerLevel level;
+        final boolean dragon;
+        final double width;
+        final double length;
+        final int life;
+        final float damage;
+        final double knock;
+        final float charge;
+        int age;
+        boolean struck;
+        Vec3 last;
+
+        Beam(ServerPlayer user, ServerLevel level, boolean dragon, double width, double length, int life, float damage, double knock,
+             float charge) {
+            this.user = user;
+            this.level = level;
+            this.dragon = dragon;
+            this.width = width;
+            this.length = length;
+            this.life = life;
+            this.damage = damage;
+            this.knock = knock;
+            this.charge = charge;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        /** The last explosion, as big as the charge: where the beam last struck (or its end in the air). */
+        void last() {
+            if (this.last == null) {
+                return;
+            }
+            double radius = this.dragon ? 6.0 + 18.0 * this.charge : 4.0;
+            explode(this.user, this.level, this.last, new Vec3(0, 1, 0), radius, this.damage * 4.0F, 8, this.knock * 1.5);
+            blowAway(this.user, this.level, this.last, radius * 1.15, this.dragon ? 3.0 + 4.0 * this.charge : 2.2);
+            PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, 0, this.user.m_19879_(), this.last.f_82479_, this.last.f_82480_,
+                this.last.f_82481_, 0, 1, 0, 0, 0, S2CUoFx.BLAST, (float) radius, 0));
+            Impact.quake(this.level, this.last, radius * 4.0 + 10.0, (float) Math.min(1.0, 0.4 + radius / 16.0), 20);
+            if (this.struck) {
+                Craters.open(this.level, this.user, this.last, this.dragon ? 3.0 + 9.0 * this.charge : 2.0);
+            }
+            DragonServer.sound(this.user, "slam", 2.0F + this.charge, 0.6F);
+        }
+
+        @Override
+        public boolean tick(long now) {
+            this.age++;
+            boolean gone = !this.user.m_6084_() || this.user.m_9236_() != this.level
+                || this.dragon && DragonServer.phase(this.user) != DragonForm.DRAGON;
+            if (gone || this.age > this.life) {
+                if (gone) {
+                    PieceNetwork.around(this.user, S2CUoFx.of(S2CUoFx.FIRE_BEAM_OFF, 0, this.user.m_19879_()));
+                } else {
+                    this.last();
+                }
+                return true;
+            }
+            // the front races out (UoFire.BEAM_SPEED blocks a tick): nothing past it is reached yet
+            double front = this.age * UoFire.BEAM_SPEED + 2.0;
+            Vec3 from = this.dragon ? mouth(this.user) : humanMouth(this.user);
+            Vec3 way = toward(this.user, from, this.length);
+            double out = Math.min(this.length, front);
+            Vec3 end = from.m_82549_(way.m_82490_(out));
+            BlockHitResult wall = this.level.m_45547_(new ClipContext(from, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this.user));
+            boolean hit = wall.m_6662_() == HitResult.Type.BLOCK;
+            double reach = hit ? wall.m_82450_().m_82554_(from) : out;
+            Vec3 to = from.m_82549_(way.m_82490_(reach));
+            this.last = to;
+            if (hit && !this.struck) {
+                // the moment it strikes a block: it blows up there
+                this.struck = true;
+                double radius = this.width * 1.5 + 2.0;
+                explode(this.user, this.level, to, way, radius, this.damage * 2.0F, 8, this.knock);
+                blowAway(this.user, this.level, to, radius, this.dragon ? 2.4 + 3.0 * this.charge : 1.8);
+                PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, 0, this.user.m_19879_(), to.f_82479_, to.f_82480_, to.f_82481_,
+                    (float) way.f_82479_, (float) way.f_82480_, (float) way.f_82481_, 0, 0, S2CUoFx.BLAST, (float) radius, 0));
+                Craters.open(this.level, this.user, to, this.width * 0.8 + 1.2);
+                Impact.quake(this.level, to, radius * 4.0 + 10.0, (float) Math.min(1.0, 0.3 + this.width / 10.0), 12);
+            }
+            if (this.age % 4 != 0 && this.age % 6 != 0) {
+                return false;
+            }
+            if (this.age % 4 == 0) {
+                Predicate<LivingEntity> foe = other -> FruitUtil.foe(this.user, other);
+                DamageSource source = StyleCombat.of(this.user);
+                for (LivingEntity body : this.level.m_6443_(LivingEntity.class, box(from, to).m_82400_(this.width + 1.0),
+                    e -> e != this.user && e.m_6084_() && !e.m_5833_() && foe.test(e))) {
+                    Vec3 rel = StyleCombat.middle(body).m_82546_(from);
+                    double along = rel.m_82526_(way);
+                    if (along < 0.0 || along > reach + 1.0 || rel.m_82546_(way.m_82490_(along)).m_82553_()
+                        > this.width * UoFire.taper(along, this.width) * 0.9 + body.m_20205_() * 0.5) {
+                        continue;
+                    }
+                    body.f_19802_ = 0;
+                    if (body.m_6469_(source, this.damage)) {
+                        body.m_20254_(6);
+                        Impact.hit(this.user, body, StyleCombat.spec(com.hexhaki.piece.style.Hit.Weight.MEDIUM,
+                            way.m_82490_(0.5 * this.knock).m_82520_(0.0, 0.2, 0.0)));
+                    }
+                }
+            }
+            if (this.age % 6 == 0 && hit) {
+                explode(this.user, this.level, to, way, this.width * 1.3 + 1.5, this.damage * 1.2F, 6, this.knock);
+                Craters.open(this.level, this.user, to, this.width * 0.6 + 1.0);
+                if (this.age % 12 == 0) {
+                    Impact.quake(this.level, to, this.width * 5.0 + 10.0, (float) Math.min(1.0, 0.3 + this.width / 10.0), 12);
+                }
+            }
+            return false;
+        }
+    }
+
+    /** 2.7.8: how long a beam's explosion stuns (ticks): the owner's "stun for 10 seconds (ragdoll)". */
+    static final int BLOWN_STUN = 200;
+
+    /**
+     * 2.7.8 (the owner: "the explosion should also cause massive knockback, and stun for 10 seconds (ragdoll)"): every foe within
+     * {@code radius} of {@code at} is thrown hard away from it (a rag doll through the air: Impact's heavy throw), and as it comes
+     * down knocked over and kept down, stunned, for the rest of {@link #BLOWN_STUN} ticks (HakiFalls: it falls over, lies there, gets
+     * up).
+     */
+    static void blowAway(ServerPlayer user, ServerLevel level, Vec3 at, double radius, double speed) {
+        Predicate<LivingEntity> foe = other -> FruitUtil.foe(user, other);
+        long start = level.m_46467_();
+        for (LivingEntity body : level.m_6443_(LivingEntity.class, box(at, at).m_82400_(radius + 1.0),
+            e -> e != user && e.m_6084_() && !e.m_5833_() && foe.test(e))) {
+            Vec3 rel = StyleCombat.middle(body).m_82546_(at);
+            double d = rel.m_82553_();
+            if (d > radius + body.m_20205_() * 0.5) {
+                continue;
+            }
+            double share = Math.max(0.45, 1.0 - d / (radius + 1.0));
+            Vec3 away = new Vec3(rel.f_82479_, 0.0, rel.f_82481_);
+            away = away.m_82556_() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : away.m_82541_();
+            Vec3 thrown = away.m_82490_(speed * share).m_82520_(0.0, 0.6 + 0.35 * speed * share, 0.0);
+            Impact.hit(user, body, StyleCombat.spec(com.hexhaki.piece.style.Hit.Weight.HEAVY, thrown));
+            // knocked down where it lands (or after two seconds, if it never does), for the rest of the ten seconds
+            LIVE.add(new Live() {
+                int age;
+
+                @Override
+                public boolean tick(long now) {
+                    this.age++;
+                    if (!body.m_6084_()) {
+                        return true;
+                    }
+                    if (this.age > 4 && body.m_20096_() || this.age >= 40) {
+                        HakiFalls.knockDown(level, body, (int) Math.max(40L, BLOWN_STUN - (now - start)), false);
+                        return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public ServerLevel level() {
+                    return level;
+                }
+            });
         }
     }
 

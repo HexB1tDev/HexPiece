@@ -57,6 +57,11 @@ public final class UoFx {
     static final Map<Integer, Long> FLAMES = new HashMap<>();
     static final Map<Integer, Long> CHARGES = new HashMap<>();
     static final Map<Integer, Long> BITES = new HashMap<>();
+    /** 2.7.8: per player, their beam of fire (Blast Breath): when it began, its life, width, length, whether the dragon's. */
+    record FireBeam(long born, int life, double width, double length, boolean dragon) {
+    }
+
+    static final Map<Integer, FireBeam> BEAMS = new HashMap<>();
     /** Per player: their breath, kept after it stops until its last fire has flown out. */
     private static final Map<Integer, Breath> BREATHS = new HashMap<>();
     /** Per player: their dragon's last aims (for the breath's sweep). */
@@ -110,6 +115,10 @@ public final class UoFx {
     }
 
     public static void accept(S2CUoFx m) {
+        if (m.kind() >= 32) {
+            com.hexhaki.piece.client.pika.PikaFx.accept(m); // 2.7.8: the Light fruit's moves share this message
+            return;
+        }
         Vec3 at = new Vec3(m.x(), m.y(), m.z());
         Vec3 a = new Vec3(m.ax(), m.ay(), m.az());
         switch (m.kind()) {
@@ -155,6 +164,15 @@ public final class UoFx {
             case S2CUoFx.CHARGE_ON -> CHARGES.put(m.user(), clock);
             case S2CUoFx.CHARGE_OFF -> CHARGES.remove(m.user());
             case S2CUoFx.BITE -> BITES.put(m.user(), clock);
+            case S2CUoFx.FIRE_BEAM -> BEAMS.put(m.user(), new FireBeam(clock, m.ticks(), m.size(), m.ax(), m.id() == 1));
+            case S2CUoFx.FIRE_BEAM_OFF -> {
+                FireBeam beam = BEAMS.get(m.user());
+                if (beam != null) {
+                    // cut short: it thins away over its last 6 ticks from now
+                    BEAMS.put(m.user(), new FireBeam(beam.born, (int) Math.min(beam.life, clock - beam.born + 6), beam.width, beam.length,
+                        beam.dragon));
+                }
+            }
             default -> {
             }
         }
@@ -172,6 +190,10 @@ public final class UoFx {
         Breath breath = BREATHS.get(id);
         if (flame == null && breath != null && breath.stop >= 0) {
             open = Math.max(open, 1.0F - DragonForm.smooth((clock - breath.stop + partial) / 6.0F));
+        }
+        FireBeam beam = BEAMS.get(id);
+        if (beam != null && beam.dragon) {
+            open = Math.max(open, 1.0F - DragonForm.smooth((clock - beam.born + partial - beam.life + 4) / 6.0F));
         }
         Long charge = CHARGES.get(id);
         if (charge != null) {
@@ -223,6 +245,26 @@ public final class UoFx {
             }
         }
         BITES.entrySet().removeIf(e -> clock - e.getValue() > BITE_TICKS + 2);
+        BEAMS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().life + 1);
+        for (Map.Entry<Integer, FireBeam> e : BEAMS.entrySet()) {
+            if (level.m_6815_(e.getKey()) instanceof Player player) {
+                FireBeam beam = e.getValue();
+                if (beam.dragon) {
+                    record(player);
+                }
+                // embers off the beam all along it
+                double[] m = beam.dragon ? mouthWay(player, 1.0F) : humanMouth(player, 1.0F);
+                double[] aim = aimed(player, m, 1.0F, beam.length);
+                Vec3 from = new Vec3(m[0], m[1], m[2]);
+                Vec3 way = new Vec3(aim[0], aim[1], aim[2]);
+                for (int i = 0; i < PieceFx.count(beam.dragon ? 8 : 4); i++) {
+                    double d = RANDOM.nextDouble() * Math.min(beam.length, aim[3]);
+                    double spread = beam.width * 1.2;
+                    ember(from.m_82549_(way.m_82490_(d)).m_82520_(r(spread), r(spread), r(spread)),
+                        way.m_82490_(0.3).m_82520_(r(0.2), 0.12, r(0.2)), 16 + RANDOM.nextInt(12));
+                }
+            }
+        }
         BREATHS.entrySet().removeIf(e -> e.getValue().stop >= 0 && clock - e.getValue().stop > UoFire.BREATH_LIFE + 2);
         // the dragons' aims, and their breaths' reach
         for (Map.Entry<Integer, Breath> e : BREATHS.entrySet()) {
@@ -252,7 +294,7 @@ public final class UoFx {
                 record(player);
             }
         }
-        TRACKS.keySet().removeIf(id -> !BREATHS.containsKey(id) && !CHARGES.containsKey(id) && !BITES.containsKey(id));
+        TRACKS.keySet().removeIf(id -> !BREATHS.containsKey(id) && !CHARGES.containsKey(id) && !BITES.containsKey(id) && !BEAMS.containsKey(id));
     }
 
     /** This tick's aim of {@code player}'s dragon onto its track. */
@@ -392,6 +434,16 @@ public final class UoFx {
         return new double[] {wx / length, wy / length, wz / length, length, hit ? 1.0 : 0.0};
     }
 
+    /** The human form's mouth (UoMoves.humanMouth), in first person a little under the middle of the view. */
+    static double[] humanMouth(Player player, float partial) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        Vec3 eye = player.m_20299_(partial);
+        Vec3 look = player.m_20252_(partial);
+        boolean first = player == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == net.minecraft.client.CameraType.FIRST_PERSON;
+        Vec3 at = first ? eye.m_82549_(look.m_82490_(1.6)).m_82520_(0.0, -0.55, 0.0) : eye.m_82549_(look.m_82490_(0.5)).m_82520_(0.0, -0.12, 0.0);
+        return new double[] {at.f_82479_, at.f_82480_, at.f_82481_, look.f_82479_, look.f_82480_, look.f_82481_};
+    }
+
     static long clock() {
         return clock;
     }
@@ -401,7 +453,7 @@ public final class UoFx {
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || SHOTS.isEmpty() && BANGS.isEmpty() && TORNADOES.isEmpty()
-            && LINES.isEmpty()
+            && LINES.isEmpty() && BEAMS.isEmpty()
             && EMBERS.isEmpty() && BREATHS.isEmpty() && CHARGES.isEmpty() && BITES.isEmpty()) {
             return;
         }
@@ -545,6 +597,28 @@ public final class UoFx {
             double age = clock - e.getValue() + partial;
             UoFire.orb(SINK, AIM, age, Math.min(1.0, age / 60.0), e.getKey());
         }
+        for (Map.Entry<Integer, FireBeam> e : BEAMS.entrySet()) {
+            if (!(level.m_6815_(e.getKey()) instanceof Player player) || far(player.m_20182_(), cam)) {
+                continue;
+            }
+            FireBeam beam = e.getValue();
+            double age = clock - beam.born + partial;
+            if (beam.dragon) {
+                AIM.set(player, cam, partial);
+            } else {
+                AIM.human(player, cam, partial, beam.length);
+            }
+            // as far as the first block on its way (as the server burns it)
+            double reach = beam.length;
+            Vec3 from = new Vec3(AIM.now[0], AIM.now[1], AIM.now[2]);
+            Vec3 way = new Vec3(AIM.now[3], AIM.now[4], AIM.now[5]);
+            BlockHitResult wall = level.m_45547_(new ClipContext(from, from.m_82549_(way.m_82490_(beam.length)), ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, player));
+            if (wall.m_6662_() == HitResult.Type.BLOCK) {
+                reach = Math.max(2.0, wall.m_82450_().m_82554_(from));
+            }
+            UoFire.fireBeam(SINK, AIM, age, beam.life, beam.width, reach, e.getKey());
+        }
         for (Map.Entry<Integer, Long> e : BITES.entrySet()) {
             if (!(level.m_6815_(e.getKey()) instanceof Player player) || far(player.m_20182_(), cam)) {
                 continue;
@@ -627,6 +701,24 @@ public final class UoFx {
             normal(out, 6);
         }
 
+        /** The human form's beam: from its mouth (first person: under the middle of the view), onto the crosshair, straight. */
+        void human(Player player, Vec3 cam, float partial, double range) {
+            double[] m = humanMouth(player, partial);
+            double[] aim = aimed(player, m, partial, range);
+            System.arraycopy(m, 0, this.now, 0, 3);
+            this.now[3] = aim[0];
+            this.now[4] = aim[1];
+            this.now[5] = aim[2];
+            this.now[6] = aim[0];
+            this.now[7] = aim[1];
+            this.now[8] = aim[2];
+            this.track = null;
+            this.cx = cam.f_82479_;
+            this.cy = cam.f_82480_;
+            this.cz = cam.f_82481_;
+            this.partial = partial;
+        }
+
         static void normal(double[] v, int o) {
             double l = Math.sqrt(v[o] * v[o] + v[o + 1] * v[o + 1] + v[o + 2] * v[o + 2]);
             if (l > 1.0E-9) {
@@ -673,5 +765,6 @@ public final class UoFx {
         BREATHS.clear();
         TRACKS.clear();
         LINES.clear();
+        BEAMS.clear();
     }
 }

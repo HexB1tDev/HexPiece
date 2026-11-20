@@ -251,8 +251,8 @@ public final class DragonForm {
      * inside the mouth": "you can adjust the head/jaw to adapt the size, you have complete freedom"): a roar, the jaw thrown wide and the
      * upper jaw lifted, so the breath and the charged ball sit in a mouth big enough for them.
      */
-    static final float JAW_OPEN = 58.0F;
-    static final float FACE_LIFT = -9.0F;
+    static final float JAW_OPEN = 88.0F;
+    static final float FACE_LIFT = -26.0F;
     static final float BITE_REAR = -18.0F;
     static final float BITE_LUNGE = 14.0F;
 

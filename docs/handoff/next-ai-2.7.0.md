@@ -241,10 +241,56 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
 - FxPreview: `fp:pitch[:aimAhead]` renders first person (the own dragon hidden, the mouth as UoFx's, aimed onto the crosshair point);
   `|blast:age:charge:end` / `|bolt:age:size:end` draw the line after a burst at `end` blocks.
 
-## Next (2.7.8)
-1. Check 2.7.7's runs. Ask the owner how the 3D fire looks and runs on their phone, in first and third person (nothing was tested in
-   game). The dragon camera stays as it is (the owner's choice). If "wayyyy longer" meant more range than the owner's 35 blocks for
-   Blast Breath, raise UoMoves.BREATH_RANGE (the line follows it).
+## Done (2.7.8, pushed): the Light fruit rebuilt after Kizaru (the owner's item 10), and the Uo beams
+- The owner (verbatim): "Next better the Lightfruit in every way, make it cooler, more dramatic, better animations, fix broken areas
+  of it (its terrible in every single way). Do a deep research about Kizaru One piece, copy his moves and how he uses them exactly."
+  Earlier (2.7.1): "All keys of the mod (but haki) will now be the following Z, X, C, V, B, N, M".
+- Research (onepiece.fandom.com and its mirrors are blocked here; web search): Yata no Kagami (light formed between the hands,
+  reflected; he travels along it as light), Yasakani no Magatama (in the air, arms crossed, a torrent of light particles from both
+  hands that blow up whatever they touch; at Egghead the particles became light clones of him with light swords), Ama no Murakumo
+  (a sword of solid light; vs Rayleigh), the light-speed kick ("Have you ever been kicked at the speed of light?": Urouge, Luffy;
+  a kick that fires a beam from the leg, vs Zoro), finger lasers (Apoo, Drake, Whitebeard, Marco from behind with two, Ace's key),
+  the Logia body (reforms after Apoo blew him apart), lazy drawl, hands in pockets.
+- The original: com/hexhaki/fruit/pika/LightKit (server, 50 KB), LightMoves, client LightClient (ClientKit: stance, heldFor,
+  receive, tick, renderWorld, renderBody, firstPerson, hud), LightFx, LightBody, LightHands; animations light_*. Kit actions: kind 0
+  key down (ability = quick slot), 1 key up, 2 attack (repeats every 5 ticks held), 3 use down, 4 use up; flags 1 sneak, 2 sprint,
+  4 airborne (FruitKeys). FruitServer does the Logia pass-through itself (Fruit.logia; Armament stops it) and calls kit.dodged.
+- Built (this was the plan): a new kit replacing LightKit (Fruits.register(Fruit.PIKA, ...) after the original's; ClientKits.KITS.put(PIKA, ...)), keys Z
+  Yata no Kagami (tap: arrive where you look; hold: stream as light), X Yasakani no Magatama (rise, arms crossed, the torrent; sneak:
+  one target), C Ama no Murakumo (the sword: LMB cuts, RMB guards), V the light-speed kick (hold, let go: on the target, kicked across
+  the field), B Yasakani clones (Egghead); LMB kicks (5, sprint dash-kick, air heel drop), RMB finger laser (tap) / beam (hold).
+  Visuals as 3D light (FireMesh with a LIGHT palette), new animations (tools/pika_anims.py), previews (FxPreview).
+
+- Written: server/PikaKit (moves, dispatch, flight, Logia hooks) and server/PikaMoves (every move; S2CUoFx kinds 32 to 55, the
+  constants at its top), client/pika/PikaFx (state + drawing at AFTER_PARTICLES through debugQuads; puts PikaClient in ClientKits on its
+  first tick) and PikaClient (moves, stances pika_idle/walk/float/fly/sword_idle/sword_walk, the sword in the right hand through
+  model.f_102811_ and in first person), pika/LightArt (pure: laser, charge, beam, burst, impact, bullet, crossed, mirror, path, blade,
+  slash, trail, figure), FireMesh.LIGHT palette, tools/pika_anims.py (33 pika_*.json, all pass the build's lint), HexPiece.init registers
+  PikaKit over the original's. Previews: FxPreview `|laser:age:dist`, `|charge:age:c`, `|beam:age:dist`, `|lburst:age:r`, `|bullets:age`,
+  `|mirror:age`, `|path:age`, `|slash:age`, `|figure:t`, `|blade:tilt`, `|trail`, `|fbeam:age:charge`, `|hbeam:age`, `|roar`;
+  animations: tools/anim_preview.py.
+- The owner during it (verbatim): "About dragon, I want the jaw to open wider in every form, like way more both top jaw and lower jaw.",
+  "Lets get this straight both versions of blast breath are BEAMS, not short blasts, it's still too short, and I mean the max charge of
+  the beam should be ridiculously bigger, its overall too small.", "thinner close to the mouth. and bigger final explosion. also
+  proportional to the holding charge.", "it should also destroy blocks and self repair after 30 seconds.", (on a render of the beam
+  bending down out of the mouth) "dont let the beam bend, as soon as it hits a block, it explodes.", "the explosion should also cause
+  massive knockback, and stun for 10 seconds (ragdoll)".
+- Done for those: DragonForm JAW_OPEN 88, FACE_LIFT -26; UoFire.fireBeam (straight from the mouth onto the aim; UoFire.taper: 12% of
+  its width at the mouth, full 6 x width + 4 blocks out; front at BEAM_SPEED 30 blocks a tick) and UoMoves.Beam (both Blast Breaths:
+  human 1.4 wide, 50 long, 30 ticks; dragon 2.5-14 wide, 60-160 long, 30-70 ticks; burns every 4 ticks within the tapered width;
+  explodes and opens a crater the moment it strikes a block, again every 6 ticks there; a last explosion of 6-24 (human 4) and a
+  crater of 3-12 (human 2) when it ends); UoMoves.blowAway (the first strike's and the last explosion: Impact's heavy throw away from
+  the blast, then HakiFalls.knockDown as the body lands, for the rest of BLOWN_STUN 200 ticks); S2CUoFx FIRE_BEAM 12 / FIRE_BEAM_OFF 13;
+  server/Craters (a crater opened nearest-first through the existing Scars, within its budgets, every block back after Craters.REPAIR
+  600 ticks: Scars.tear gained a restoreIn overload; the existing callers keep 15 to 25 s). The orb in the jaws 0.4 + 1.5 x charge.
+- Careful: server/Scars.java is HexGhoul's self-repairing terrain (the Conqueror's fissures, the Haki slashes): extend it, never
+  replace it (it was overwritten by mistake once in this session and restored from git before anything was committed).
+- Not measured: a max-charge beam close up is about 17-22k quads (over the 16k the other moves keep); lower particle settings cut it.
+
+## Next (2.7.9)
+1. Check 2.7.8's runs. Ask the owner how the new Light fruit plays (every move, the animations, the sword in the hand, in third and
+   first person; nothing was tested in game), and how the Uo beams, their craters and repair, and the 10 s stun feel. The dragon
+   camera stays as it is (the owner's choice).
 2. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
    -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java`, then `java -cp <dir>:build/preview:build/classes
    FxPreview build/dragon-cache/*/seiryu.sry build/dragon-cache/*/seiryu.png out.png [--night] [--size=WxH] shot...`; a shot is a

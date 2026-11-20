@@ -31,6 +31,8 @@ public final class FireMesh {
     public static final int[] SMOKE = {0x2A2220, 0x3A302C, 0x4B403B, 0x5E534D, 0x726760, 0x887D75, 0x9F948C, 0xB6ABA2};
     public static final int[] WIND = {0x1F6B45, 0x2E8A57, 0x48A86A, 0x6CC584, 0x95DCA2, 0xBDEEC4, 0xDDF8E0, 0xF4FFF4};
     public static final int[] AIR = {0x8FA3B8, 0xA8BACB, 0xBFCEDB, 0xD3DFE8, 0xE2EBF2, 0xEEF4F8, 0xF7FAFC, 0xFFFFFF};
+    /** 2.7.8: Kizaru's light (the Pika Pika no Mi): deep amber to gold to white. */
+    public static final int[] LIGHT = {0x8A5A06, 0xB57A10, 0xE0A41C, 0xF7C935, 0xFFE05E, 0xFFEF9A, 0xFFF9D6, 0xFFFFFF};
     /** The palette the next puffs are cut from ({@link #BAND} unless a caller sets another for its own puffs, then puts it back). */
     static int[] palette = BAND;
 
@@ -170,7 +172,7 @@ public final class FireMesh {
     static final double[] P = new double[162 * 3];
     static final int[] C = new int[162];
 
-    static void tri(Sink sink, double[] p, int[] c, int a, int b, int d) {
+    public static void tri(Sink sink, double[] p, int[] c, int a, int b, int d) {
         XYZ[0] = p[a * 3];
         XYZ[1] = p[a * 3 + 1];
         XYZ[2] = p[a * 3 + 2];
@@ -375,7 +377,7 @@ public final class FireMesh {
         }
         double dist = Math.sqrt(x * x + y * y + z * z);
         // a glow (clear at its rim) never shows its outline: 80 faces do; a shock shell (bright rim) needs the round outline
-        int level = rim > centre ? detail(radius, dist) : Math.min(1, detail(radius, dist));
+        int level = rim > centre || radius > 5.0 ? detail(radius, dist) : Math.min(1, detail(radius, dist));
         float[] dirs = DIRS[level];
         int[] faces = FACES[level];
         int n = dirs.length / 3;

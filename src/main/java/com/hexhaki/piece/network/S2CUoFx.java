@@ -34,6 +34,12 @@ public record S2CUoFx(int kind, int id, int user, double x, double y, double z, 
     public static final int CHARGE_OFF = 10;
     /** The dragon's bite (user). */
     public static final int BITE = 11;
+    /**
+     * 2.7.8: a beam of fire (Blast Breath, both forms) on: user, id 1 the dragon's (0 the human's), size its width (radius), ax its
+     * length, ticks its life; and cut short (user).
+     */
+    public static final int FIRE_BEAM = 12;
+    public static final int FIRE_BEAM_OFF = 13;
 
     /** A kind with no place (the user's own dragon). */
     public static S2CUoFx of(int kind, int id, int user) {

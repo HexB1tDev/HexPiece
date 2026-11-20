@@ -186,7 +186,7 @@ public final class UoFire {
     public static void orb(FireMesh.Sink sink, Aim aim, double age, double charge, int seed) {
         aim.at(0.0, AIM);
         double c = clamp(charge);
-        double r = 0.3 + 0.75 * c;
+        double r = 0.4 + 1.5 * c; // 2.7.8: the gape is far wider now, the ball far bigger
         double pulse = 1.0 + 0.07 * Math.sin(age * 1.9);
         double sit = 0.2 + r * 0.6;
         double x = AIM[0] + AIM[6] * sit;
@@ -292,6 +292,120 @@ public final class UoFire {
                     0.3 + 0.2 * size, age * 0.5 + k * Math.PI, 3.4, -size * t, 0xFFFFFF, 0.85 * (1.0 - t));
             }
         }
+    }
+
+    // ------------------------------------------------------------------------------------------------------ the beams (Blast Breath)
+
+    /** How fast a beam's front races out (blocks a tick). */
+    public static final double BEAM_SPEED = 30.0;
+
+    /**
+     * 2.7.8 (the owner: "both versions of blast breath are BEAMS, not short blasts, it's still too short, and I mean the max charge of
+     * the beam should be ridiculously bigger"): a beam of fire out of the mouth ({@code aim}: the inside of the mouth, the aim, the
+     * mouth's own way), {@code width} its radius, {@code reach} how far it goes (to the first block), {@code age} ticks into its
+     * {@code life}: its front races out at {@link #BEAM_SPEED}, it swells in 4 ticks and thins away over the last 6; a white-hot core
+     * the whole way, a sheath of fire flowing out along it (white at the mouth, yellow, orange licks at its skin), shock crescents
+     * racing along it, its light, and fire billowing where it strikes.
+     */
+    public static void fireBeam(FireMesh.Sink sink, Aim aim, double age, double life, double width, double reach, int seed) {
+        if (age < 0.0 || age > life) {
+            return;
+        }
+        aim.at(0.0, AIM);
+        double env = ease(age / 4.0) * clamp((life - age) / 6.0);
+        double w = width * env;
+        if (w < 0.03) {
+            return;
+        }
+        // 2.7.8 (the owner: "dont let the beam bend"): one straight line from the mouth onto the aim
+        double mx = AIM[0];
+        double my = AIM[1];
+        double mz = AIM[2];
+        double ux = AIM[3];
+        double uy = AIM[4];
+        double uz = AIM[5];
+        double front = Math.min(reach, age * BEAM_SPEED + 2.0);
+        // the core and the beam's body, thin out of the mouth and widening ("thinner close to the mouth")
+        double[] cut = {0.0, 1.5, 3.5, 7.0, 12.0, 20.0, 32.0, 50.0, 75.0, 110.0, 160.0, 240.0};
+        for (int i = 1; i < cut.length && cut[i - 1] < front; i++) {
+            double d0 = cut[i - 1];
+            double d1 = Math.min(cut[i], front);
+            double r0 = w * taper(d0, width);
+            double r1 = w * taper(d1, width);
+            FireMesh.tube(sink, mx + ux * d0, my + uy * d0, mz + uz * d0, mx + ux * d1, my + uy * d1, mz + uz * d1, r0 * 0.36, r1 * 0.36,
+                0xFFFDF2, 0xFFF29A, 0xFFD52B, 0.3, 1.0, 0.1, age, seed + i);
+            FireMesh.tube(sink, mx + ux * d0, my + uy * d0, mz + uz * d0, mx + ux * d1, my + uy * d1, mz + uz * d1, r0 * 0.72, r1 * 0.72,
+                0xFFF29A, 0xFFD52B, 0xFFA215, 0.35, 1.0, 0.16, age * 1.3, seed + 20 + i);
+        }
+        // the sheath: puffs flowing out along the beam
+        int n = (int) Math.max(6, Math.min(w > 6.0 ? 26 : 44, front / (w * 0.5 + 0.4)));
+        double spacing = front / n;
+        double flow = (age * 1.6) % 1.0;
+        FireMesh.basis(ux, uy, uz, BB);
+        for (int j = 0; j < n; j++) {
+            double d = (j + flow) * spacing;
+            if (d > front) {
+                continue;
+            }
+            int s = seed * 41 + j + (int) Math.floor(age * 1.6) * 7;
+            double u = d / Math.max(1.0, front);
+            double t = taper(d, width);
+            double jx = (FireMesh.rand(s, 1) * 2.0 - 1.0) * w * t * 0.1;
+            double jy = (FireMesh.rand(s, 2) * 2.0 - 1.0) * w * t * 0.1;
+            double px = mx + ux * d + BB[0] * jx + BB[3] * jy;
+            double py = my + uy * d + BB[1] * jx + BB[4] * jy;
+            double pz = mz + uz * d + BB[2] * jx + BB[5] * jy;
+            double radius = w * (0.8 + 0.25 * FireMesh.rand(s, 3)) * t;
+            double heat = 0.98 - 0.32 * u + 0.08 * FireMesh.rand(s, 4);
+            FireMesh.puff(sink, px, py, pz, radius, ux, uy, uz, 0.6, 0.22, heat, 0.75, u > 0.5, 1.0, age * 2.0 + j, s);
+            if (FireMesh.rand(s, 5) < (w > 6.0 ? 0.25 : 0.45)) {
+                double a = FireMesh.rand(s, 6) * Math.PI * 2.0;
+                double out = radius * 0.95;
+                FireMesh.puff(sink, px + (BB[0] * Math.cos(a) + BB[3] * Math.sin(a)) * out, py + (BB[1] * Math.cos(a) + BB[4] * Math.sin(a)) * out,
+                    pz + (BB[2] * Math.cos(a) + BB[5] * Math.sin(a)) * out, radius * 0.45, -ux, -uy, -uz, 1.2, 0.2, 0.62 - 0.2 * u, 0.6, true, 1.0,
+                    age * 2.0 + j * 3, s + 9);
+            }
+        }
+        // shock crescents racing along it
+        for (int k = 0; k < 4; k++) {
+            double d = ((age * BEAM_SPEED * 0.5 + k * front / 4.0) % Math.max(1.0, front));
+            double fade = Math.sin(Math.PI * d / Math.max(1.0, front));
+            double rr = w * taper(d, width);
+            FireMesh.arc(sink, mx + ux * d, my + uy * d, mz + uz * d, ux, uy, uz, rr * (1.5 + 0.4 * FireMesh.rand(seed, 60 + k)), rr * 0.18 + 0.1,
+                FireMesh.rand(seed + (int) (age / 3.0), 70 + k) * Math.PI * 2.0, 3.6, -rr * 0.6, 0xFFFFFF, 0.85 * fade * env);
+        }
+        // its light
+        for (int k = 0; k < 5; k++) {
+            double d = front * (k + 0.5) / 5.0;
+            glow(sink, mx + ux * d, my + uy * d, mz + uz * d, w * taper(d, width) * 2.0, k < 2 ? 0xFFE27A : 0xFFB84A, 0.28 * env);
+        }
+        glow(sink, mx, my, mz, Math.min(w * 0.5, 4.0) + 0.6, 0xFFF6C8, 0.6 * env);
+        // where it strikes: fire billowing out of the end, over and over
+        if (front >= reach - 0.5) {
+            double ex = mx + ux * reach;
+            double ey = my + uy * reach;
+            double ez = mz + uz * reach;
+            double we = w * taper(reach, width);
+            glow(sink, ex, ey, ez, we * 4.0, 0xFFD470, 0.55 * env);
+            for (int k = 0; k < 6; k++) {
+                double cycle = 8.0;
+                double t = ((age + k * cycle / 6.0) % cycle) / cycle;
+                int s = seed * 97 + k + (int) ((age + k * cycle / 6.0) / cycle) * 6;
+                direction(s, 0, 0.5, DIR);
+                double out = we * (0.6 + 1.6 * t);
+                FireMesh.puff(sink, ex + DIR[0] * out, ey + DIR[1] * out + t * we, ez + DIR[2] * out, we * (0.9 + 0.5 * t) * (1.0 - t * t) * env, DIR[0],
+                    DIR[1], DIR[2], 0.5, 0.2, 1.0 - 0.7 * t, 0.65, t > 0.4, 1.0, age * 1.5 + k, s);
+            }
+        }
+    }
+
+    /**
+     * How wide a beam of {@code width} is {@code d} blocks out of the mouth, of its full width: thin where it leaves the mouth, full
+     * {@code 6 x width + 4} blocks out (the owner: "thinner close to the mouth").
+     */
+    public static double taper(double d, double width) {
+        double u = Math.min(1.0, Math.max(0.0, d) / (width * 6.0 + 4.0));
+        return 0.12 + 0.88 * Math.pow(u, 0.8);
     }
 
     // ------------------------------------------------------------------------------------------------------ the line of fire

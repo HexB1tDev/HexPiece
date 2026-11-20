@@ -19,4 +19,5 @@ public class AABB {
     /** expandTowards(v) */ public AABB m_82369_(Vec3 v) { throw new UnsupportedOperationException(); }
     /** move(pos) */ public AABB m_82338_(net.minecraft.core.BlockPos pos) { throw new UnsupportedOperationException(); }
     /** intersects(other) */ public boolean m_82381_(AABB other) { throw new UnsupportedOperationException(); }
+    /** move(Vec3) (2.7.8) */ public AABB m_82383_(Vec3 by) { throw new UnsupportedOperationException(); }
 }

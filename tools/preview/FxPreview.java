@@ -68,7 +68,7 @@ public final class FxPreview {
         String[] halves = shot.split("\\|");
         String[] p = halves[0].split(":");
         String[] move = halves.length > 1 ? halves[1].split(":") : new String[] {"none"};
-        DragonPreview.mouth = move[0].equals("breath") || move[0].equals("orb") || move[0].equals("roar") ? 1.0F : 0.0F;
+        DragonPreview.mouth = move[0].equals("breath") || move[0].equals("orb") || move[0].equals("roar") || move[0].equals("fbeam") ? 1.0F : 0.0F;
         DragonPreview.bite = move[0].equals("bite") ? Float.parseFloat(move[1]) : -1.0F;
         if (p[0].equals("m")) {
             // a close-up of the mouth: m:phase:seconds:flight:look:bank:camYaw:camPitch:dist (the camera aimed at the mouth)
@@ -159,6 +159,12 @@ public final class FxPreview {
                 }
             }
             case "orb" -> UoFire.orb(sink, aim, Double.parseDouble(move[1]), Double.parseDouble(move[2]), 7);
+            // 2.7.8: the beams: fbeam:age:charge (the dragon's, UoFx's numbers), hbeam:age (the human's)
+            case "fbeam" -> {
+                double c = Double.parseDouble(move[2]);
+                UoFire.fireBeam(sink, aim, Double.parseDouble(move[1]), 30 + 40 * c, 2.5 + 11.5 * c, 60 + 100 * c, 7);
+            }
+            case "hbeam" -> UoFire.fireBeam(sink, aim, Double.parseDouble(move[1]), 30, 1.4, 50, 7);
             case "blast", "bolt" -> {
                 // a fireball out of the mouth along the look, {age} ticks after it left (3.6 / 3.2 blocks a tick, as UoMoves throws them)
                 boolean big = move[0].equals("blast");
@@ -190,6 +196,84 @@ public final class FxPreview {
             case "tornado" -> UoFire.tornado(sink, -eye[0], -eye[1], 14.0 - eye[2], Double.parseDouble(move[1]),
                 move.length > 2 ? Double.parseDouble(move[2]) : 1.0, 9);
             case "bite" -> UoFire.bite(sink, aim, Double.parseDouble(move[1]), 4);
+            // 2.7.8: the Light fruit (pika/LightArt), the player at the origin facing +z, the right hand at about (-0.35, 1.4, 0.5)
+            case "laser" -> com.hexhaki.piece.pika.LightArt.laser(sink, -0.35 - eye[0], 1.45 - eye[1], 0.6 - eye[2], -eye[0] + 1.0, 1.0 - eye[1],
+                Double.parseDouble(move[2]) - eye[2], 0.25, Double.parseDouble(move[1]), 3);
+            case "charge" -> com.hexhaki.piece.pika.LightArt.charge(sink, -0.35 - eye[0], 1.45 - eye[1], 0.6 - eye[2], Double.parseDouble(move[1]),
+                Double.parseDouble(move[2]), 3);
+            case "beam" -> com.hexhaki.piece.pika.LightArt.beam(sink, -0.35 - eye[0], 1.45 - eye[1], 0.6 - eye[2], -eye[0], 1.0 - eye[1],
+                Double.parseDouble(move[2]) - eye[2], 1.2, Double.parseDouble(move[1]), 3);
+            case "lburst" -> com.hexhaki.piece.pika.LightArt.burst(sink, -eye[0], 1.0 - eye[1], 16.0 - eye[2], Double.parseDouble(move[2]),
+                Double.parseDouble(move[1]), 3);
+            case "bullets" -> {
+                // a volley: beads from the crossed hands up in the air (y 6) raining onto the ground ahead
+                double age = Double.parseDouble(move[1]);
+                com.hexhaki.piece.pika.LightArt.crossed(sink, -eye[0], 6.4 - eye[1], 0.6 - eye[2], age, 3);
+                for (int i = 0; i < 40; i++) {
+                    double born = i * 0.5;
+                    double a = age - born;
+                    if (a < 0 || a > 6) {
+                        continue;
+                    }
+                    double tx = (FireMesh.rand(5, i) - 0.5) * 22.0;
+                    double tz = 8.0 + FireMesh.rand(6, i) * 18.0;
+                    double f = a / 6.0;
+                    double x = tx * f;
+                    double y = 6.4 + (0.0 - 6.4) * f;
+                    double z = 0.6 + (tz - 0.6) * f;
+                    com.hexhaki.piece.pika.LightArt.bullet(sink, x - eye[0], y - eye[1], z - eye[2], tx / 6.0, -6.4 / 6.0, (tz - 0.6) / 6.0, 0.5, a, i);
+                }
+                for (int i = 0; i < 40; i++) {
+                    double hit = i * 0.5 + 6.0;
+                    double a = age - hit;
+                    if (a >= 0 && a < 22) {
+                        com.hexhaki.piece.pika.LightArt.burst(sink, (FireMesh.rand(5, i) - 0.5) * 22.0 - eye[0], 0.4 - eye[1],
+                            8.0 + FireMesh.rand(6, i) * 18.0 - eye[2], 1.6, a, i);
+                    }
+                }
+            }
+            case "mirror" -> com.hexhaki.piece.pika.LightArt.mirror(sink, -eye[0], 1.3 - eye[1], 0.55 - eye[2], 0, 0, 1, Double.parseDouble(move[1]), 3);
+            case "path" -> com.hexhaki.piece.pika.LightArt.path(sink, -eye[0], 1.3 - eye[1], 0.5 - eye[2], 4.0 - eye[0], 1.0 - eye[1], 24.0 - eye[2],
+                Double.parseDouble(move[1]), 3);
+            case "slash" -> com.hexhaki.piece.pika.LightArt.slash(sink, -eye[0], 1.2 - eye[1], 0.4 - eye[2], 0.3, 0.9, -0.3, 2.4, -2.2, 3.2,
+                Double.parseDouble(move[1]));
+            case "figure" -> {
+                double t = Double.parseDouble(move[1]);
+                for (int i = 0; i < 5; i++) {
+                    com.hexhaki.piece.pika.LightArt.figure(sink, (i - 2) * 2.5 - eye[0], -eye[1], 6.0 + i % 2 * 2.0 - eye[2], Math.PI * (0.1 * (i - 2)),
+                        t + i * 0.2, Math.sin(t * 3.0 + i), 1.0, i);
+                }
+            }
+            case "blade" -> {
+                // the sword held out: the hand's frame turned so the blade points ahead and up (as the arm holds it)
+                double tilt = Math.toRadians(Double.parseDouble(move[1]));
+                FireMesh.Sink turned = (xyz, argb) -> {
+                    double[] q = new double[12];
+                    for (int k = 0; k < 4; k++) {
+                        double lx = xyz[k * 3];
+                        double ly = xyz[k * 3 + 1];
+                        double lz = xyz[k * 3 + 2];
+                        // -Y (the blade) onto +z tilted up by tilt
+                        double fy = -ly;
+                        double wy = fy * Math.sin(tilt) + lz * Math.cos(tilt);
+                        double wz = fy * Math.cos(tilt) - lz * Math.sin(tilt);
+                        q[k * 3] = lx - 0.35 - eye[0];
+                        q[k * 3 + 1] = wy + 1.1 - eye[1];
+                        q[k * 3 + 2] = wz + 0.5 - eye[2];
+                    }
+                    sink.quad(q, argb);
+                };
+                com.hexhaki.piece.pika.LightArt.blade(turned, 2.6, 0.06, 0.3);
+            }
+            case "trail" -> {
+                double[] pts = new double[20 * 3];
+                for (int i = 0; i < 20; i++) {
+                    pts[i * 3] = Math.sin(i * 0.3) * 2.0 - eye[0];
+                    pts[i * 3 + 1] = 2.0 + i * 0.15 - eye[1];
+                    pts[i * 3 + 2] = 14.0 - i * 1.2 - eye[2];
+                }
+                com.hexhaki.piece.pika.LightArt.trail(sink, pts, 20, 0.5, 1.0);
+            }
             default -> {
             }
         }

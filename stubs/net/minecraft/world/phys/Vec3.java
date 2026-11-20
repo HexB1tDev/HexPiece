@@ -21,4 +21,5 @@ public class Vec3 {
     /** distanceToSqr */ public double m_82557_(Vec3 other) { throw new UnsupportedOperationException(); }
     /** horizontalDistanceSqr */ public double m_165925_() { throw new UnsupportedOperationException(); }
     /** lerp */ public Vec3 m_165921_(Vec3 to, double delta) { throw new UnsupportedOperationException(); }
+    /** horizontalDistance (2.7.8) */ public double m_165924_() { throw new UnsupportedOperationException(); }
 }

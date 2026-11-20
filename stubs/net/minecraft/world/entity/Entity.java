@@ -78,4 +78,6 @@ public abstract class Entity {
     /** turn(yaw, pitch) in mouse units (x0.15 degrees) */ public void m_19884_(double yaw, double pitch) { throw new UnsupportedOperationException(); }
     /** setInvulnerable (6.2.0) */ public void m_20331_(boolean invulnerable) { throw new UnsupportedOperationException(); }
     /** isInvulnerable (6.2.0) */ public boolean m_20147_() { throw new UnsupportedOperationException(); }
+    /** getEyeHeight (2.7.8, the Light fruit) */ public float m_20192_() { throw new UnsupportedOperationException(); }
+    /** setYHeadRot (2.7.8) */ public void m_5616_(float yaw) { throw new UnsupportedOperationException(); }
 }

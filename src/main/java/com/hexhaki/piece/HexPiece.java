@@ -25,6 +25,8 @@ public final class HexPiece {
         PieceEffects.register(bus);
         // 2.7.0: the Uo Uo no Mi (the original's fruit enum's UO, PiecePatch.uoFruit) and its kit, the dragon form
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.UO, com.hexhaki.piece.server.UoKit::new);
+        // 2.7.8: the Pika Pika no Mi rebuilt after Kizaru, in place of the original's LightKit (registered just before this)
+        com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.PIKA, com.hexhaki.piece.server.PikaKit::new);
         LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, the katanas, pirates and marines, the Uo Uo no Mi");
     }
 }

@@ -128,6 +128,15 @@ public final class Scars {
      * world), which stops a slash's row there (nothing behind it is cut), {@link #LEFT} for one it passes.
      */
     int tear(LivingEntity owner, BlockPos pos, List<double[]> supports) {
+        return this.tear(owner, pos, supports, -1L);
+    }
+
+    /**
+     * 2.7.8 (the owner, on the Blast Breath beam: "it should also destroy blocks and self repair after 30 seconds"): {@link #tear},
+     * the block grown back {@code restoreIn} ticks later (and a few more, so a crater heals as a ripple), or 15 to 25 seconds when
+     * negative.
+     */
+    int tear(LivingEntity owner, BlockPos pos, List<double[]> supports, long restoreIn) {
         this.refreshBudget();
         long key = pos.m_121878_();
         if (this.ledger.contains(key)) {
@@ -165,7 +174,8 @@ public final class Scars {
             }
         }
         long now = this.level.m_46467_();
-        long restoreAt = now + RESTORE_MIN + Math.floorMod(key * 0x9E3779B97F4A7C15L, RESTORE_JITTER);
+        long restoreAt = restoreIn >= 0L ? now + restoreIn + Math.floorMod(key * 0x9E3779B97F4A7C15L, 40L)
+            : now + RESTORE_MIN + Math.floorMod(key * 0x9E3779B97F4A7C15L, RESTORE_JITTER);
         if (!this.ledger.record(key, state, restoreAt)) {
             return LEFT;
         }

@@ -6,4 +6,5 @@ public class DamageSource {
     /** getDirectEntity (the projectile itself) */ public net.minecraft.world.entity.Entity m_7640_() { throw new UnsupportedOperationException(); }
     /** getMsgId (the damage type's message id: "arrow", "fall", "explosion" ...) */ public String m_19385_() { throw new UnsupportedOperationException(); }
     /** getSourcePosition (where an explosion went off, or the direct entity's position) */ public net.minecraft.world.phys.Vec3 m_7270_() { throw new UnsupportedOperationException(); }
+    /** is(ResourceKey) (2.7.8) */ public boolean m_276093_(net.minecraft.resources.ResourceKey<?> type) { throw new UnsupportedOperationException(); }
 }

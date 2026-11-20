@@ -22,8 +22,8 @@ public final class UoKit extends FruitKit {
         "The right hand driven out three times: a blast of compressed air from each, striking and throwing whatever it meets up to 25"
             + " blocks away.");
     public static final FruitMove BLAST_BREATH = new FruitMove("Blast Breath", "[C]", 0, "uo_breath",
-        "A breath drawn in and thrown out as a line of fire that races 35 blocks and bursts at the end: burning, throwing, hurting all"
-            + " around it.");
+        "A breath drawn in and thrown out as a beam of fire, 50 blocks long and held for a second and a half: it follows your aim, burns"
+            + " everything along it and blows up where it strikes.");
     public static final FruitMove WIND_FORCE = new FruitMove("Wind Force", "[V]", 0, "uo_wind",
         "The arm swept forward hard enough to raise a green tornado that runs 25 blocks, dragging everything it catches round and up"
             + " along with it, and flinging it at the end.");
@@ -32,8 +32,9 @@ public final class UoKit extends FruitKit {
     public static final FruitMove FIRE_BREATH = new FruitMove("Dragon: Fire Breath", "[LMB] hold", 0, "uo_flame",
         "In dragon form: the massive jaw opened, a breath of fire 35 blocks long for as long as M1 is held.");
     public static final FruitMove CHARGED_BLAST = new FruitMove("Dragon: Blast Breath", "[X] hold", 0, "uo_blast",
-        "In dragon form: a fireball gathering in the mouth, bigger the longer X is held, then let go as a massive blast (45 to 100"
-            + " blocks).");
+        "In dragon form: a ball of fire gathering in the wide-open jaws, bigger the longer X is held, then let go as a beam of fire: wider,"
+            + " longer and longer-lasting with the charge (up to 28 blocks across and 160 long, for three and a half seconds), sweeping where"
+            + " you aim and blowing up whatever it strikes.");
     public static final FruitMove GIGANTIC_BITE = new FruitMove("Dragon: Gigantic Bite", "[C]", 0, "uo_bite",
         "In dragon form: a lunge forward and the jaws snapped shut on whatever is in front of them.");
     public static final List<FruitMove> HUMAN = List.of(DRAGON_FORM, AIR_PRESSURE, BLAST_BREATH, WIND_FORCE, DRAGON_EMBERS);
