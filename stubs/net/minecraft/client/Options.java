@@ -12,5 +12,6 @@ public class Options {
     /** fovEffectScale */ public OptionInstance<Double> m_231925_() { throw new UnsupportedOperationException(); }
     /** particles (ParticleStatus: ALL, DECREASED, MINIMAL) */ public OptionInstance<?> m_231929_() { throw new UnsupportedOperationException(); }
     /** getCameraType */ public CameraType m_92176_() { throw new UnsupportedOperationException(); }
+    /** save: options.txt written (2.7.1: the key layout's migration) */ public void m_92169_() { throw new UnsupportedOperationException(); }
     /** setCameraType (2.7.0: the dragon's view) */ public void m_92157_(CameraType type) { throw new UnsupportedOperationException(); }
 }

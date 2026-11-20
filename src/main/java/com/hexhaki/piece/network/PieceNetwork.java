@@ -18,8 +18,9 @@ public final class PieceNetwork {
      * blows meeting. 6 (2.3.8): S2CWater (14), Fishman Karate's water. 7 (2.4.4): S2CFall (15), the Haki stun fall. 8 (2.4.5): no
      * new message; the Conqueror's release storm is drawn from its seed on both sides (the server opens fissures under the strands
      * every client draws) and its shape changed, so the two sides must be the same version. 9 (2.4.6): S2CProfile carries the
-     * player's alignment. 10 (2.7.0): S2CDragon (16), the Uo Uo no Mi's dragon form. */
-    private static final String PROTOCOL = "10";
+     * player's alignment. 10 (2.7.0): S2CDragon (16), the Uo Uo no Mi's dragon form. 11 (2.7.1):
+     * S2CDragon carries the dragon's colour. */
+    private static final String PROTOCOL = "11";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;

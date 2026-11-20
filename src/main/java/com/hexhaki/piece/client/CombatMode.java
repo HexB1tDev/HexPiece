@@ -154,7 +154,7 @@ public final class CombatMode {
         }
         FightingStyle style = PieceClient.self().style();
         Font font = minecraft.f_91062_;
-        String text = style.display() + "  [Y] [U]";
+        String text = style.display() + "  [" + AbilityHud.name(PieceKeys.SPECIAL_A) + "] [" + AbilityHud.name(PieceKeys.SPECIAL_B) + "]";
         int w = font.m_92895_(text) + 18;
         int x = width / 2 - 91 - w - 6;
         int y = height - 22;

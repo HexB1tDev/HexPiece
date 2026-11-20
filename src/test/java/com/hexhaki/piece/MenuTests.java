@@ -107,7 +107,7 @@ public final class MenuTests {
         Check.that(rows.size() == headings + entries, "every entry is one row under its heading");
         LogbookView.Section style = LogbookView.style(data.profile());
         Check.that(style.entries().size() == 7, "Six Powers lists its four string hits, the signature and both specials");
-        Check.that(style.entries().get(4).key().equals("RMB") && style.entries().get(5).key().equals("Y"), "with their keys");
+        Check.that(style.entries().get(4).key().equals("RMB") && style.entries().get(5).key().equals("Z"), "with their keys (2.7.1: the specials on Z and X)");
     }
 
     static void scrolling() {

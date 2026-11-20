@@ -8,14 +8,16 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * 2.1.1: the fighting style's special keys (Y and U by default, free in the original's layout: R V G H J K L M P X B Z C are its own).
+ * 2.1.1: the fighting style's special keys. 2.7.1 (the owner: "All keys of the mod (but haki) will now be the following Z, X, C, V, B,
+ * N, M. R For switching modes / Haki"): Z and X (were Y and U), the specials in combat mode; in fruit mode the same keys are the fruit's
+ * quick slots (PiecePatch.keyDefaults), which only answer in fruit mode (PieceHooks.fruitKeysActive), so one press is never both.
  * M1 and the right click with an empty hand are the string and the signature ({@link StyleInput}).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class PieceKeys {
     public static final String CATEGORY = "key.categories.hexpiece";
-    public static final KeyMapping SPECIAL_A = new KeyMapping("key.hexpiece.special_a", InputConstants.Type.KEYSYM, 89, CATEGORY);
-    public static final KeyMapping SPECIAL_B = new KeyMapping("key.hexpiece.special_b", InputConstants.Type.KEYSYM, 85, CATEGORY);
+    public static final KeyMapping SPECIAL_A = new KeyMapping("key.hexpiece.special_a", InputConstants.Type.KEYSYM, 90, CATEGORY);
+    public static final KeyMapping SPECIAL_B = new KeyMapping("key.hexpiece.special_b", InputConstants.Type.KEYSYM, 88, CATEGORY);
 
     private PieceKeys() {
     }

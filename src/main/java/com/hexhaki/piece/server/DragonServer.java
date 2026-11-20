@@ -4,6 +4,7 @@ import com.hexhaki.fruit.Fruit;
 import com.hexhaki.fruit.FruitData;
 import com.hexhaki.fruit.FruitServer;
 import com.hexhaki.fruit.Fruits;
+import com.hexhaki.piece.dragon.DragonColours;
 import com.hexhaki.piece.dragon.DragonForm;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CDragon;
@@ -51,6 +52,8 @@ public final class DragonServer {
         long start;
         boolean hadMayfly;
         float oldSpeed = 0.05F;
+        /** 2.7.1 (the owner: "Dragons can come in different colors, other than blue. (always random)"): this dragon's palette. */
+        int colour;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -76,6 +79,7 @@ public final class DragonServer {
                 return;
             }
             State fresh = new State();
+            fresh.colour = java.util.concurrent.ThreadLocalRandom.current().nextInt(DragonColours.PALETTES.length);
             Abilities abilities = player.m_150110_();
             fresh.hadMayfly = abilities.f_35936_;
             fresh.oldSpeed = abilities.m_35942_();
@@ -103,7 +107,7 @@ public final class DragonServer {
         State state = STATES.remove(player.m_20148_());
         if (state != null) {
             giveBack(player, state);
-            PieceNetwork.around(player, new S2CDragon(player.m_19879_(), DragonForm.HUMAN, 0));
+            PieceNetwork.around(player, new S2CDragon(player.m_19879_(), DragonForm.HUMAN, 0, 0));
         } else if (player.getPersistentData().m_128471_(MARK)) {
             giveBack(player, new State());
         }
@@ -112,7 +116,7 @@ public final class DragonServer {
     static void enter(ServerPlayer player, State state, int phase, long now) {
         state.phase = phase;
         state.start = now;
-        PieceNetwork.around(player, new S2CDragon(player.m_19879_(), phase, 0));
+        PieceNetwork.around(player, new S2CDragon(player.m_19879_(), phase, 0, state.colour));
     }
 
     /** The dragon's flight: allowed, on, at its speed. */
@@ -190,7 +194,7 @@ public final class DragonServer {
             if (ticks >= DragonForm.UNFORM_TICKS) {
                 STATES.remove(player.m_20148_());
                 giveBack(player, state);
-                PieceNetwork.around(player, new S2CDragon(player.m_19879_(), DragonForm.HUMAN, 0));
+                PieceNetwork.around(player, new S2CDragon(player.m_19879_(), DragonForm.HUMAN, 0, 0));
             }
         }
     }
@@ -247,7 +251,7 @@ public final class DragonServer {
             State state = STATES.get(target.m_20148_());
             if (state != null) {
                 int ticks = (int) Math.min(Integer.MAX_VALUE, target.m_9236_().m_46467_() - state.start);
-                PieceNetwork.sendTo(viewer, new S2CDragon(target.m_19879_(), state.phase, ticks));
+                PieceNetwork.sendTo(viewer, new S2CDragon(target.m_19879_(), state.phase, ticks, state.colour));
             }
         }
     }

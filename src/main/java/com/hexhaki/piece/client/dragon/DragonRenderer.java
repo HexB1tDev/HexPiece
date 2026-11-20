@@ -81,7 +81,8 @@ final class DragonRenderer {
      * One dragon: {@code dx, dy, dz} the player's feet from the camera, the form {@code seconds} into {@code phase}, the hover's clock,
      * the flight (0 to 1), the clock for its wave, its facing, pitch and bank, its light and overlay.
      */
-    static void draw(int id, PoseStack stack, MultiBufferSource.BufferSource buffers, double dx, double dy, double dz, int phase, float seconds,
+    static void draw(int id, ResourceLocation texture, PoseStack stack, MultiBufferSource.BufferSource buffers, double dx, double dy, double dz,
+                     int phase, float seconds,
                      float hover, float flight, float age, float yaw, float pitch, float bank, int light, int overlay) {
         DragonModel m = model();
         if (m == null) {
@@ -114,7 +115,7 @@ final class DragonRenderer {
                 nm[r * 3 + c] = (n[r * 3] * p[c] + n[r * 3 + 1] * p[4 + c] + n[r * 3 + 2] * p[8 + c]) / g;
             }
         }
-        RenderType body = RenderType.m_110458_(TEXTURE);
+        RenderType body = RenderType.m_110458_(texture);
         VertexConsumer out = buffers.m_6299_(body);
         for (int i = 0; i < m.parts.length; i++) {
             DragonModel.Part part = m.parts[i];
@@ -124,7 +125,7 @@ final class DragonRenderer {
             }
         }
         buffers.m_109912_(body);
-        RenderType fire = RenderType.m_110488_(TEXTURE);
+        RenderType fire = RenderType.m_110488_(texture);
         VertexConsumer glow = buffers.m_6299_(fire);
         for (int i = 0; i < m.parts.length; i++) {
             if (m.parts[i].kind == DragonModel.GLOW) {

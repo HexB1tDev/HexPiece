@@ -66,6 +66,7 @@ public final class DragonClient {
         double y;
         double z;
         boolean placed;
+        int colour;
     }
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
@@ -95,6 +96,7 @@ public final class DragonClient {
         }
         entry.phase = message.phase();
         entry.start = clock - message.ticks();
+        entry.colour = message.colour();
         if (message.phase() == DragonForm.DRAGON) {
             entry.hoverStart = entry.start;
         }
@@ -336,8 +338,8 @@ public final class DragonClient {
             float age = (clock + partial) / 20.0F + (e.getKey() % 13) * 0.37F;
             int light = LevelRenderer.m_109541_(level, BlockPos.m_274561_(x, y + DragonForm.HEAD_HEIGHT, z));
             int overlay = OverlayTexture.f_118083_;
-            DragonRenderer.draw(e.getKey(), stack, buffers, x - camera.f_82479_, y - camera.f_82480_, z - camera.f_82481_, entry.phase, s,
-                hover, flight, age, yaw, pitch, bank, light, overlay);
+            DragonRenderer.draw(e.getKey(), DragonTextures.of(entry.colour), stack, buffers, x - camera.f_82479_, y - camera.f_82480_,
+                z - camera.f_82481_, entry.phase, s, hover, flight, age, yaw, pitch, bank, light, overlay);
         }
     }
 

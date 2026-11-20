@@ -4,8 +4,8 @@ Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.6.2.md (the 
 sheathing, the Haki coat on blades, the Conqueror's sounds and stun), next-ai-2.5.9.md, next-ai-2.5.3.md (Ryou's fist aura:
 "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
-Branch `claude/nice-bell-gam7qf`. **2.7.0 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first). The next version
-is 2.7.1.** 2.6.9's runs were green.
+Branch `claude/nice-bell-gam7qf`. **2.7.1 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first; 2.7.0's were green).
+The next version is 2.7.2: the Uo Uo no Mi's moves.**
 
 ## The owner (session 10, verbatim)
 1. "Current bugs: Haki when holding a katana makes left hand invisible." (fixed, 2.7.0)
@@ -111,7 +111,26 @@ is 2.7.1.** 2.6.9's runs were green.
   view). `RyouHands.right(player, arm)`: the arm is the renderer model's leftArm or not. Third person's coat had the left side's centre
   and bend for both arms too (only drawn where HakiSkin could not blacken the skin).
 
-## Next (2.7.1)
+## Done (2.7.1, pushed: check its runs)
+- **Done: random colours** (the owner's items 5 and 6): `dragon/DragonColours` (pure): 10 palettes (Azure = the owner's, Crimson,
+  Emerald, Gold, Violet, Obsidian, Pearl, Inferno, Jade, Rose), each recolouring the owner's texture per pixel: the blues (scales,
+  198 deg) by hue band x saturation x chroma, the purples (cape and fur, 268), the golds of the upper half (belly, horns, 45), each to
+  the palette's hue / saturation x / value x; the black mane, eyes, teeth, claws and fire untouched. The server picks one at random at
+  each transformation (S2CDragon now carries it, PROTOCOL 11); `client/dragon/DragonTextures` reads the owner's PNG once
+  (NativeImage.m_85058_, allowlisted), recolours on a daemon worker, uploads on the render thread as `hexhaki:dragon/colour_<n>`, the
+  owner's texture until ready. Judged on close renders (`DragonPreview --colour=N`); `DragonColourTests`.
+
+- **Done: the key layout** (the owner's item 7): `PiecePatch.keyDefaults` (HakiKeys.<clinit>: observation 74 J, acoc unbound,
+  convergence (slot 4) 72 H, mode (slot 9) 88 X, loadout 79 O, slot8 86 V), `slotLetters` (Binds.DEFAULT_KEYS G K L H B Z C V X,
+  HAKI_KEYS G K L H), Pika's "[M] hold" -> "[H] hold", the Haki Projection text "[H HOLD...", QuickKeys.press's fruit abilities only in
+  fruit mode (PieceHooks.fruitKeysActive), PieceKeys specials Z (90) / X (88), the logbook / creation / combat banner letters.
+  `client/KeyLayout`: once (a mark `hexpiece-keys-2.7.1.txt` in the game folder), every key still on its old default moves to the new
+  one (KeyMapping.setKey, resetMapping, Options.save: allowlisted). Forge 1.20.1's KeyMappingLookup.getAll hands a key to EVERY mapping
+  on it, so Z/X (special and fruit slot) both get the press; the mode gates decide. **N and M are not slots** (the original has 9:
+  Binds.SLOTS, layouts of 9): to give them moves, add HexPiece's own KeyMappings that send `FruitKeys.send(0/1, ability, flags)` for
+  a kit's move, or widen the slots (invasive).
+
+## Next (2.7.2)
 1. Check 2.7.0's runs. Ask the owner how the dragon handles (nothing was tested in game).
 2. **The moves** (item 5 above), in the ability HUD (AbilityHud.kit: ClientKits.get(fruit).moves()) and the Captain's Log
    (LogbookData.kit). Human-form animations: playerAnimator JSONs under src/main/resources/assets/hexhaki/player_animation/ (judge with

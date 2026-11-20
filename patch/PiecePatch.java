@@ -128,6 +128,11 @@ public final class PiecePatch implements Opcodes {
     static final String HOOKS = "com/hexhaki/piece/client/PieceHooks";
     /** 2.7.0: the original's fruit enum, the new fruit (id, name, element, colour, lore) and the client kits' map. */
     static final String FRUIT = "com/hexhaki/fruit/Fruit";
+    /** 2.7.1: the original's keys and quick slots, and the new default key codes (GLFW: J 74, H 72, X 88, O 79, V 86; -1 unbound). */
+    static final String HAKI_KEYS = "com/hexhaki/client/HakiKeys";
+    static final String BINDS = "com/hexhaki/binds/Binds";
+    static final Map<String, Integer> KEY_CODES = Map.of("key.hexhaki.observation", 74, "key.hexhaki.acoc", -1,
+        "key.hexhaki.convergence", 72, "key.hexhaki.mode", 88, "key.hexhaki.loadout", 79, "key.hexhaki.slot8", 86);
     static final String CLIENT_KITS = "com/hexhaki/fruit/client/ClientKits";
     static final String[] UO = {"uo", "Uo Uo no Mi", "Dragon", "4FB7E8",
         "A Mythical Zoan that makes its eater an Azure Dragon: Seiryu, a serpent of the sky as long as an island, who flies on clouds of"
@@ -151,6 +156,9 @@ public final class PiecePatch implements Opcodes {
     static final Object[][] CALL_REDIRECTS = {
         {"com/hexhaki/fruit/client/FruitKeys", "tick", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
         {"com/hexhaki/fruit/client/FruitKeys", "interact", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
+        // 2.7.1 (the owner's new keys: "All keys of the mod (but haki) will now be the following Z, X, C, V, B, N, M. R For switching
+        // modes"): the quick keys' fruit abilities only in fruit mode (combat mode has the style's specials on Z and X); Haki's in both
+        {"com/hexhaki/binds/client/QuickKeys", "press", "com/hexhaki/fruit/client/FruitClient", "active", "()Z", HOOKS, "fruitKeysActive", 1},
         // 2.2.4 (the owner: "The keys should be usable just like that in any form"): the fruit's "powers off" switch no longer
         // silences Haki: its keys, the Haki leap and the server's Haki actions stop asking it
         {"com/hexhaki/client/HakiKeys$ForgeBus", "tick", "com/hexhaki/binds/client/BindsClient", "off", "()Z", HOOKS, "hakiKeysOff", 1},
@@ -311,6 +319,8 @@ public final class PiecePatch implements Opcodes {
      * two Advanced Haki messages of HakiServerController were in toggleAcoc, which is RyouServer.acocKey now (J is empty).
      */
     static final Object[][] TEXTS = {
+        // 2.7.1: the fourth quick slot is H now (was M): the Pika fruit's move declared on it stays on it
+        {"com/hexhaki/fruit/pika/LightMoves", "[M] hold", "[H] hold", 1},
         {"com/hexhaki/data/HakiTechnique", "Advanced Haki", "Ryou", 1},
         {"com/hexhaki/data/HakiTechnique", "[J] Late-game multiplier. Requires ARM 850 + HAO 850 and active Armament; upgrades nearly every major technique.",
             "Late-game multiplier. Requires ARM 850 + HAO 850. Once unlocked it replaces your Armament (Ctrl + R): blackened hands outlined in your own glow colour, and nearly every major technique upgraded.", 1},
@@ -322,7 +332,7 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/data/HakiTechnique", "Passive milestone: emitted Armament techniques reach a 16% total mastery-step bonus and prepare the path to Advanced Haki.",
             "Passive milestone: emitted Armament techniques reach a 16% total mastery-step bonus and prepare the path to Ryou.", 1},
         {"com/hexhaki/data/HakiTechnique", "[M HOLD, RELEASE TO FIRE] Wind a Haki punch and let go. A tap throws a short close-range burst; a full hold throws a long, wide pressure cylinder that detonates where it lands. Length, width, damage, cost and cooldown all scale continuously with how long you held it, with Armament mastery, and with whether you are bare, coated, or under Advanced Haki.",
-            "[M HOLD, RELEASE TO FIRE] Wind a Haki punch and let go. A tap throws a short close-range burst; a full hold throws a long, wide pressure cylinder that detonates where it lands. Length, width, damage, cost and cooldown all scale continuously with how long you held it, with Armament mastery, and with whether you are bare, coated, or under Ryou.", 1},
+            "[H HOLD, RELEASE TO FIRE] Wind a Haki punch and let go. A tap throws a short close-range burst; a full hold throws a long, wide pressure cylinder that detonates where it lands. Length, width, damage, cost and cooldown all scale continuously with how long you held it, with Armament mastery, and with whether you are bare, coated, or under Ryou.", 1},
         {"com/hexhaki/data/HakiTechnique", "[K] Midgame cinematic finisher. Hold K on a target in your sights: the wind hauls them in onto a chambered fist, an uppercut launches them straight up, you appear above them mid-flight and hammer them back into the floor with both arms. Most of the damage is in the landing, not the launch, and the crater throws everything else clear. Physical/Haki/Advanced tiers raise the launch height, the damage and the size of the blast.",
             "[K] Midgame cinematic finisher. Hold K on a target in your sights: the wind hauls them in onto a chambered fist, an uppercut launches them straight up, you appear above them mid-flight and hammer them back into the floor with both arms. Most of the damage is in the landing, not the launch, and the crater throws everything else clear. Physical/Haki/Ryou tiers raise the launch height, the damage and the size of the blast.", 1},
         {"com/hexhaki/data/HakiTechnique", "Passive milestone for Haki Projection. A full charge reaches roughly 30% further and wider, and past 85% under Advanced Haki its landing scatters grounded Haki strikes around the impact.",
@@ -408,6 +418,8 @@ public final class PiecePatch implements Opcodes {
             entries.put(hud[0] + ".class", transform(entries.get(hud[0] + ".class"), node -> replacedHud(method(node, hud[1], hud[2]))));
         }
         entries.put(FRUIT + ".class", transform(entries.get(FRUIT + ".class"), PiecePatch::uoFruit));
+        entries.put(HAKI_KEYS + ".class", transform(entries.get(HAKI_KEYS + ".class"), PiecePatch::keyDefaults));
+        entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
         entries.put(CLIENT_KITS + ".class", transform(entries.get(CLIENT_KITS + ".class"), node -> {
             for (FieldNode field : node.fields) {
                 if (field.name.equals("KITS")) {
@@ -736,6 +748,48 @@ public final class PiecePatch implements Opcodes {
         add.add(new FieldInsnNode(GETSTATIC, FRUIT, "UO", type));
         add.add(new InsnNode(AASTORE));
         list.instructions.insertBefore(end, add);
+    }
+
+    /**
+     * 2.7.1 (the owner: "All keys of the mod (but haki) will now be the following Z, X, C, V, B, N, M. R For switching modes / Haki",
+     * then: Conqueror stays G, Observation V -> J, the Conqueror's quick abilities on K, L, H (M -> H), the Ability Book X -> O): the
+     * original's key defaults ({@code HakiKeys.<clinit>}: each KeyMapping's name, then its key code). The nine quick slots are
+     * G K L H (Haki) and B Z C V X (the fruit's moves); J's old "acoc" key (empty: Ryou comes with Armament) is unbound. A player's
+     * saved keys move once (client/KeyLayout).
+     */
+    static void keyDefaults(ClassNode node) {
+        MethodNode clinit = method(node, "<clinit>", "()V");
+        Map<String, Integer> left = new java.util.HashMap<>(KEY_CODES);
+        String name = null;
+        for (AbstractInsnNode insn = clinit.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof LdcInsnNode ldc && ldc.cst instanceof String text) {
+                name = text;
+            } else if (insn instanceof IntInsnNode code && code.getOpcode() == BIPUSH && name != null && left.containsKey(name)) {
+                int to = left.remove(name);
+                clinit.instructions.set(code, to == -1 ? new InsnNode(ICONST_M1) : new IntInsnNode(BIPUSH, to));
+                name = null;
+                insn = clinit.instructions.getFirst(); // the list changed: start over (the done ones are gone from left)
+            }
+        }
+        if (!left.isEmpty()) {
+            throw new AssertionError("HakiKeys has no default for " + left.keySet());
+        }
+    }
+
+    /** 2.7.1: the quick slots' letters ({@code Binds.DEFAULT_KEYS}, {@code HAKI_KEYS}) as keyDefaults sets the keys: M -> H, N -> V, H -> X. */
+    static void slotLetters(ClassNode node) {
+        MethodNode clinit = method(node, "<clinit>", "()V");
+        Map<String, String> to = Map.of("M", "H", "N", "V", "H", "X");
+        Map<String, Integer> found = new java.util.HashMap<>();
+        for (AbstractInsnNode insn = clinit.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof LdcInsnNode ldc && ldc.cst instanceof String text && to.containsKey(text)) {
+                ldc.cst = to.get(text);
+                found.merge(text, 1, Integer::sum);
+            }
+        }
+        if (!found.equals(Map.of("M", 2, "N", 1, "H", 1))) {
+            throw new AssertionError("Binds' slot letters are not the ones inspected: " + found);
+        }
     }
 
     /** RyouServer.afterArmament(player) before every return of HakiServerController.toggleArmament. */

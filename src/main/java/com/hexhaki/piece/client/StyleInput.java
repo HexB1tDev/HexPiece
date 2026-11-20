@@ -21,7 +21,7 @@ import net.minecraftforge.fml.common.Mod;
 /**
  * 2.1.1: a fighting style's inputs. 2.1.2: only in combat mode (R, {@link CombatMode}), with an empty main hand, outside Devil Fruit
  * mode (2.1.3: a kit fruit's M1 steps aside in combat mode, {@link PieceHooks#fruitKeysActive}): M1 throws the string (at a block too: to mine, leave combat
- * mode), the right click the signature (not at a block: doors and chests still open), Y and U the specials. The server decides what each press does.
+ * mode), the right click the signature (not at a block: doors and chests still open), Z and X the specials (2.7.1; Y and U before). The server decides what each press does.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class StyleInput {

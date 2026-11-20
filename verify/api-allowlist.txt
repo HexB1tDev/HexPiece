@@ -156,3 +156,10 @@ M net/minecraft/world/entity/player/Abilities m_35942_ ()F                      
 M com/mojang/blaze3d/vertex/VertexConsumer m_5954_ (FFFFFFFFFIIFFF)V                  # [srg] vertex(x, y, z, r, g, b, a, u, v, overlay, light, nx, ny, nz): joined.tsrg ein a (FFFFFFFFFIIFFF)V m_5954_ (ein = VertexConsumer: m_252986_, m_85969_ as used); BufferBuilder eie overrides it (its fast path)
 C net/minecraftforge/event/entity/living/LivingFallEvent                              # [forge] 1.20.1 event/entity/living/LivingFallEvent.java (@Cancelable, extends LivingEvent)
 M net/minecraftforge/event/entity/living/LivingFallEvent setCanceled (Z)V             # [forge] eventbus Event.setCanceled, the event is @Cancelable
+M com/mojang/blaze3d/platform/NativeImage m_85058_ (Ljava/io/InputStream;)Lcom/mojang/blaze3d/platform/NativeImage;   # [srg] read(InputStream): joined.tsrg ehk a (Ljava/io/InputStream;)Lehk; m_85058_ (ehk = NativeImage: m_84982_ getWidth, m_84985_ getPixelRGBA as used by the original); 2.7.1: the dragon's texture read once and recoloured (client/dragon/DragonTextures)
+# 2.7.1: the owner's key layout, moved once in a player's options (client/KeyLayout)
+M net/minecraft/client/KeyMapping m_90848_ (Lcom/mojang/blaze3d/platform/InputConstants$Key;)V   # [srg] setKey: joined.tsrg enl b (Lehe$a;)V m_90848_ (enl = KeyMapping: g ()Z m_90859_ consumeClick, m ()Ljava/lang/String; m_90865_ saveString as used)
+M net/minecraft/client/KeyMapping m_90854_ ()V                                       # [srg] resetMapping (static, the key map rebuilt): joined.tsrg enl d ()V m_90854_
+M net/minecraft/client/Options m_92169_ ()V                                          # [srg] save: joined.tsrg enr aq ()V m_92169_ (enr = Options: m_92176_ getCameraType as used)
+M com/mojang/blaze3d/platform/InputConstants$Type m_84895_ (I)Lcom/mojang/blaze3d/platform/InputConstants$Key;   # [srg] getOrCreate: joined.tsrg ehe$b a (I)Lehe$a; m_84895_ (ehe$b = InputConstants.Type, KEYSYM as used)
+C com/mojang/blaze3d/platform/InputConstants$Key                                    # [srg] joined.tsrg ehe$a (InputConstants.Key: b ()I m_84873_ getValue)

@@ -245,8 +245,8 @@ public final class CreationView {
                 }
                 String key = switch (slot) {
                     case HEAVY -> "RMB";
-                    case SPECIAL_A -> "Y";
-                    case SPECIAL_B -> "U";
+                    case SPECIAL_A -> "Z";
+                    case SPECIAL_B -> "X";
                     default -> "M1";
                 };
                 c.fill(b[0] + 4, y - 1, b[0] + 22, y + 8, 0x30603818);

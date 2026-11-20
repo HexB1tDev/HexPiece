@@ -7,16 +7,20 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 
-/** 2.7.0: a player's dragon form (dragon/DragonForm's phase) and how many ticks into it, to everyone who sees them. */
-public record S2CDragon(int id, int phase, int ticks) {
+/**
+ * 2.7.0: a player's dragon form (dragon/DragonForm's phase) and how many ticks into it, to everyone who sees them; 2.7.1: and its
+ * colour (dragon/DragonColours' palette, random at each transformation).
+ */
+public record S2CDragon(int id, int phase, int ticks, int colour) {
     public static void encode(S2CDragon message, FriendlyByteBuf buffer) {
         buffer.writeInt(message.id);
         buffer.writeByte(message.phase);
         buffer.writeInt(message.ticks);
+        buffer.writeByte(message.colour);
     }
 
     public static S2CDragon decode(FriendlyByteBuf buffer) {
-        return new S2CDragon(buffer.readInt(), buffer.readByte(), buffer.readInt());
+        return new S2CDragon(buffer.readInt(), buffer.readByte(), buffer.readInt(), buffer.readByte());
     }
 
     public static void handle(S2CDragon message, Supplier<NetworkEvent.Context> supplier) {

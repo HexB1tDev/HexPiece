@@ -38,7 +38,18 @@ public final class DragonPreview {
         texture = ImageIO.read(new File(args[1]));
         List<String> shots = new ArrayList<>();
         for (int i = 3; i < args.length; i++) {
-            if (args[i].startsWith("--scale=")) {
+            if (args[i].startsWith("--colour=")) {
+                // 2.7.1: the texture recoloured to a palette, as the game recolours it (dragon/DragonColours)
+                com.hexhaki.piece.dragon.DragonColours.Palette palette = com.hexhaki.piece.dragon.DragonColours.palette(
+                    Integer.parseInt(args[i].substring(9)));
+                int tw = texture.getWidth();
+                int th = texture.getHeight();
+                int[] argb = texture.getRGB(0, 0, tw, th, null, 0, tw);
+                com.hexhaki.piece.dragon.DragonColours.recolour(argb, tw, th, palette);
+                BufferedImage recoloured = new BufferedImage(tw, th, BufferedImage.TYPE_INT_ARGB);
+                recoloured.setRGB(0, 0, tw, th, argb, 0, tw);
+                texture = recoloured;
+            } else if (args[i].startsWith("--scale=")) {
                 scale = Float.parseFloat(args[i].substring(8));
             } else if (args[i].startsWith("--size=")) {
                 String[] wh = args[i].substring(7).split("x");
