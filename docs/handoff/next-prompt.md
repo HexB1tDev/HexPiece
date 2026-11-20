@@ -5,7 +5,7 @@ next-ai-2.5.3.md (Ryou's fist aura: "beautiful and perfect": keep it) and next-a
 through MobileGlues). The next version is 2.7.7 (2.7.6 pushed: every Uo attack rebuilt as 3D cel-banded fire out of the roaring mouth, harder hits; 2.7.5 the fruit HUD's "no slot" keys fixed, the dragon's colour rolled once per fruit; 2.7.4 the jar 24 MB, the swords drawn faster; 2.7.3 the dragon's locks and the Transformed effect; 2.7.2 the seven moves; 2.7.1 the colours and the key layout; check the runs first).
 
 First ask the owner how 2.7.6's 3D fire looks and runs in game (next-ai-2.7.0.md "Done (2.7.6)" and "Next (2.7.7)"; the anime
-references are docs/handoff/uo-fire-target-1.jpg and -2.jpg), and whether the dragon camera should move over a shoulder. Then ask how the dragon, its moves and colours look and feel in game, and where they still see lag (next-ai-2.7.0.md
+references are docs/handoff/uo-fire-target-1.jpg and -2.jpg) (the dragon camera stays as it is: the owner's choice). Then ask how the dragon, its moves and colours look and feel in game, and where they still see lag (next-ai-2.7.0.md
 "Done (2.7.4)" lists what the first pass did and did not do). Render every animation and effect you change (tools/dragon_gif.py, tools/preview/DragonPreview,
 tools/anim_preview.py), judge every frame yourself, fix and render again.
 

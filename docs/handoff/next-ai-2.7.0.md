@@ -221,12 +221,13 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
 - Server (UoMoves): blast radius 4.5-12, damage 16-46, knock 1.8-4.2, fire 10; Blast Breath 4.5 / 11 / 1.6; Air Pressure 2.0 / 8 /
   1.8; embers 3.2 / 7 / 1.0 with a small quake; the shots' quake radius x5, stronger, 14 ticks.
 - Budget: a full breath about 10-13k quads near, an explosion of radius 8 under 11k (DragonTests: every move under 16k).
-- Open: from the dragon's own camera (DragonCamera: straight behind and over the eye) the head and mane hide the breath and the orb
-  (the camera looks down the line of fire). Asked the owner whether to move the camera over a shoulder; not changed unasked.
+- From the dragon's own camera (DragonCamera: straight behind and over the eye) the head and mane hide much of the breath and the orb
+  (the camera looks down the line of fire). Asked the owner whether to move it over a shoulder; the owner (verbatim): "I think its
+  fine as it is". The camera stays: do not move it.
 
 ## Next (2.7.7)
-1. Check 2.7.6's runs. Ask the owner how the 3D fire looks and runs on their phone (nothing was tested in game), and whether the
-   dragon camera should sit over a shoulder so the breath and the charged ball are not hidden behind the head.
+1. 2.7.6's runs are green. Ask the owner how the 3D fire looks and runs on their phone (nothing was tested in game). The dragon
+   camera stays as it is (the owner's choice).
 2. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
    -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java`, then `java -cp <dir>:build/preview:build/classes
    FxPreview build/dragon-cache/*/seiryu.sry build/dragon-cache/*/seiryu.png out.png [--night] [--size=WxH] shot...`; a shot is a
