@@ -64,6 +64,12 @@ public final class UoKit extends FruitKit {
         }
     }
 
+    /** The fruit eaten (or its kit given back on joining): its dragon's colour chosen if it has none yet (DragonServer.colour). */
+    @Override
+    public void granted(ServerPlayer player) {
+        DragonServer.colour(player);
+    }
+
     @Override
     public void cancel(ServerPlayer player) {
         UoMoves.forget(player);

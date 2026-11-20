@@ -79,7 +79,7 @@ public final class DragonServer {
                 return;
             }
             State fresh = new State();
-            fresh.colour = java.util.concurrent.ThreadLocalRandom.current().nextInt(DragonColours.PALETTES.length);
+            fresh.colour = colour(player);
             Abilities abilities = player.m_150110_();
             fresh.hadMayfly = abilities.f_35936_;
             fresh.oldSpeed = abilities.m_35942_();
@@ -92,6 +92,23 @@ public final class DragonServer {
             enter(player, state, DragonForm.UNFORMING, now);
             sound(player, "whoosh_heavy", 1.4F, 0.65F);
         }
+    }
+
+    /** The fruit's data's key for its dragon's colour. */
+    static final String COLOUR = "uo_colour";
+
+    /**
+     * 2.7.5 (the owner: "Dragon keeps changing color, the color should be attributed one time only when eating the fruit"): the dragon's
+     * colour lives with the fruit (the original's fruit data, which goes when the fruit goes and is kept through death and leaving):
+     * chosen at random when it is eaten ({@link UoKit#granted}), the same for every transformation after; a fruit eaten before 2.7.5
+     * gets its colour at its first transformation and keeps it.
+     */
+    public static int colour(ServerPlayer player) {
+        net.minecraft.nbt.CompoundTag data = com.hexhaki.fruit.FruitData.get(player);
+        if (!data.m_128441_(COLOUR)) {
+            data.m_128405_(COLOUR, java.util.concurrent.ThreadLocalRandom.current().nextInt(DragonColours.PALETTES.length));
+        }
+        return Math.floorMod(data.m_128451_(COLOUR), DragonColours.PALETTES.length);
     }
 
     /** The sea (or the fruit taken away while the dragon is out): the dragon goes back as it does on Z. */

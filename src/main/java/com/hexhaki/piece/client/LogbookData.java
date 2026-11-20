@@ -108,6 +108,18 @@ final class LogbookData {
         return slot < 0 ? "-" : slotKey(slot);
     }
 
+    /**
+     * The key a kit fruit's move is on now: its quick slot's key (the move's ability is its default slot, {@code FruitMove.slot}, as the
+     * original's FruitHud.onKey reads it), "-" if that ability is on no slot, or its own key ("LMB hold") if it has no slot.
+     */
+    static String moveKey(com.hexhaki.fruit.FruitMove move) {
+        int slot = move.slot();
+        if (slot >= 0) {
+            return keyOf(slot);
+        }
+        return "passive".equals(move.key()) ? "-" : live(move.key()).replace("[", "").replace("]", "");
+    }
+
     /** The Conqueror's (and Armament's) four quick powers, as the original Ability Book numbers them (100 + n). */
     static int quick(HakiTechnique t) {
         if (t == HakiTechnique.CONQ_AWAKENING) {
@@ -231,7 +243,7 @@ final class LogbookData {
             boolean open = mastery >= move.mastery();
             int slot = move.slot();
             boolean passive = "passive".equals(move.key());
-            String key = slot >= 0 ? keyOf(slot) : passive ? "-" : live(move.key()).replace("[", "").replace("]", "");
+            String key = moveKey(move);
             String info = slot >= 0 ? (move.hold() ? "hold" : "tap") + " its quick slot" + (move.cooldown() != null ? ", then it recharges" : "")
                 : passive ? "passive: always on" : "its own key";
             Entry entry = Entry.of(move.name(), key, info, live(move.description()), open, "Needs fruit mastery " + move.mastery());

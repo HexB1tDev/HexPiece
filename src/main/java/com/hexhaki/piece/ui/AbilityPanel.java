@@ -74,7 +74,9 @@ public final class AbilityPanel {
             for (Move move : in.fruitMoves()) {
                 rows.add(move(move, in.fruitColour()));
             }
-            rows.add(Row.of(key(in, "toggle"), "Back to " + in.style() + " and Haki", DIM));
+            if (in.keys().containsKey("toggle")) { // 2.7.5: no way back while a dragon (the mode switch is locked: no key for it)
+                rows.add(Row.of(key(in, "toggle"), "Back to " + in.style() + " and Haki", DIM));
+            }
             rows.add(Row.of(key(in, "menu"), "Captain's Log", DIM));
             return new Panel(in.fruit().toUpperCase(java.util.Locale.ROOT), "devil fruit", in.fruitColour(), -1.0, rows);
         }

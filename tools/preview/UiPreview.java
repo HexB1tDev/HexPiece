@@ -200,6 +200,8 @@ public class UiPreview {
         // 2.2.2: the one abilities panel on the left (HexGhoul's), in each mode, at the game's scale over a scene and a chat
         java.util.Map<String, String> keys = java.util.Map.of("attack", "LMB", "use", "RMB", "special_a", "Y", "special_b", "U", "toggle", "R",
             "armament", "Ctrl+R", "observation", "V", "menu", "P");
+        java.util.Map<String, String> locked = new java.util.HashMap<>(keys);
+        locked.remove("toggle");
         java.util.List<com.hexhaki.piece.ui.AbilityPanel.Move> haki = java.util.List.of(
             new com.hexhaki.piece.ui.AbilityPanel.Move("G", "King's Awakening (tap / hold)", "", 0, 0),
             new com.hexhaki.piece.ui.AbilityPanel.Move("K", "Haki Grip", "", 0, 0), new com.hexhaki.piece.ui.AbilityPanel.Move("L", "WiFi Haki", "", 0, 0));
@@ -215,7 +217,22 @@ public class UiPreview {
                 java.util.List.of("Combo", "Collier Shoot", "Diable Jambe", "Sky Walk"), null, null, 0, false, java.util.List.of(), true, false, true, false,
                 java.util.List.of(), 100, 100)},
             {"Pika Pika, its own mode", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
-                java.util.List.of(), null, "Pika Pika", 0xFFFFE070, true, pika, true, false, false, false, haki, 64, 100)}};
+                java.util.List.of(), null, "Pika Pika", 0xFFFFE070, true, pika, true, false, false, false, haki, 64, 100)},
+            // 2.7.5: the Uo moves on their keys (each by its ability, AbilityHud.kit via LogbookData.moveKey), human and dragon
+            {"Uo Uo, human form", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
+                java.util.List.of(), null, "Uo Uo no Mi", 0xFF4FB7E8, true, java.util.List.of(
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("Z", "Dragon Form", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("X", "Air Pressure", "", 20, 60),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("C", "Blast Breath", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("V", "Wind Force", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("B", "Dragon Embers", "", 0, 0)), true, false, false, false, haki, 64, 100)},
+            {"Uo Uo, dragon form", new com.hexhaki.piece.ui.AbilityPanel.Input(locked, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
+                java.util.List.of(), null, "Uo Uo no Mi", 0xFF4FB7E8, true, java.util.List.of(
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("Z", "Dragon Form", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("LMB", "Dragon: Fire Breath", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("X", "Dragon: Blast Breath", "", 40, 100),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("C", "Dragon: Gigantic Bite", "", 0, 0)), false, false, false, false,
+                java.util.List.of(), 64, 100)}};
         for (int i = 0; i < huds.length; i++) {
             com.hexhaki.piece.ui.AbilityPanel.Input input = (com.hexhaki.piece.ui.AbilityPanel.Input)huds[i][1];
             String label = (String)huds[i][0];

@@ -50,6 +50,8 @@ public final class AbilityHud {
     public static final float SCALE = 0.6F;
     private static final long KEY_NANOS = 500_000_000L;
     private static Map<String, String> keys = Map.of();
+    /** 2.7.5: the same keys without the mode switch, for a transformed dragon (R is locked: DragonClient's dragon locks). */
+    private static Map<String, String> lockedKeys = Map.of();
     private static long keysAt = Long.MIN_VALUE;
     private static AbilityPanel.Input shown;
     private static AbilityHudView.Layout layout;
@@ -73,6 +75,9 @@ public final class AbilityHud {
         long now = System.nanoTime();
         if (now - keysAt > KEY_NANOS || keysAt == Long.MIN_VALUE) {
             keys = keys(minecraft);
+            Map<String, String> locked = new HashMap<>(keys);
+            locked.remove("toggle");
+            lockedKeys = locked;
             keysAt = now;
         }
         AbilityPanel.Input input;
@@ -147,7 +152,7 @@ public final class AbilityHud {
                 }
             }
         }
-        return new AbilityPanel.Input(keys, style.display(), style.colour(), combat, moves, sword, fruit, fruitColour, fruitMode, fruitMoves, haki,
+        return new AbilityPanel.Input(com.hexhaki.piece.client.dragon.DragonClient.selfOut() ? lockedKeys : keys, style.display(), style.colour(), combat, moves, sword, fruit, fruitColour, fruitMode, fruitMoves, haki,
             HakiClientState.armamentOn, HakiClientState.observationOn, HakiClientState.acocOn, slots, HakiClientState.energy,
             HakiClientState.maxEnergy);
     }
@@ -170,8 +175,12 @@ public final class AbilityHud {
         int mastery = FruitClient.mastery();
         for (int i = 0; i < moves.size(); i++) {
             FruitMove move = moves.get(i);
-            String bound = BindsClient.keyFor(i);
-            String key = bound == null || bound.isEmpty() || bound.equals("-") ? move.key() : bound;
+            // 2.7.5 (the owner: "the keys HUD a ton of them say No slot"): a move's ability is its default slot, not its place in the
+            // list (BindsClient.keyFor(i) asked for ability i: the Uo moves, out of slot order, were all "no slot")
+            String key = LogbookData.moveKey(move);
+            if (move.slot() < 0 && key.indexOf(' ') > 0) {
+                key = key.substring(0, key.indexOf(' ')); // "LMB hold": the cap names the key alone, as every other row's does
+            }
             long wait = move.cooldown() == null || move.cooldown().isEmpty() ? 0 : Math.max(0, FruitClient.cooldown(move.cooldown()));
             long of = Math.max(wait, LONGEST.getOrDefault(move.name(), 0L));
             LONGEST.put(move.name(), wait > 0 ? of : 0L);

@@ -19,6 +19,33 @@ public final class DragonTests {
     static DragonModel model;
     static DragonForm.Shape shape;
 
+    /**
+     * 2.7.5 (the owner: "the keys HUD a ton of them say No slot"): the panel and the log ask for a move's key by its ability, which is
+     * its default slot ({@code FruitMove.slot}, as the original's FruitHud reads it), never its place in the list. Every Uo move with a
+     * quick slot sits on it in the original's default layout (in each form), the form's moves on slots of their own; M1 has none.
+     */
+    static void keys() {
+        java.util.List<java.util.List<com.hexhaki.fruit.FruitMove>> forms = java.util.List.of(com.hexhaki.piece.server.UoKit.HUMAN,
+            com.hexhaki.piece.server.UoKit.DRAGON);
+        boolean outOfOrder = false;
+        for (java.util.List<com.hexhaki.fruit.FruitMove> moves : forms) {
+            int[] layout = com.hexhaki.binds.Binds.defaults(com.hexhaki.fruit.Fruit.UO, moves);
+            java.util.Set<Integer> taken = new java.util.HashSet<>();
+            for (int i = 0; i < moves.size(); i++) {
+                com.hexhaki.fruit.FruitMove move = moves.get(i);
+                int slot = move.slot();
+                if (move.key().startsWith("[LMB")) {
+                    Check.that(slot < 0, move.name() + " is on M1, no quick slot");
+                    continue;
+                }
+                Check.that(slot >= 0 && slot < 9 && layout[slot] == slot, move.name() + " is on its quick slot " + move.key());
+                Check.that(taken.add(slot), move.name() + " has a slot of its own");
+                outOfOrder |= slot != i;
+            }
+        }
+        Check.that(outOfOrder, "the moves are listed out of slot order (the case the HUD got wrong)");
+    }
+
     public static void main(String[] args) throws Exception {
         Path jar;
         try (var files = Files.list(Path.of("build"))) {
@@ -34,6 +61,7 @@ public final class DragonTests {
             }
         }
         shape = new DragonForm.Shape(model);
+        keys();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

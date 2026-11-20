@@ -57,6 +57,13 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
    Ryou), only the dragon's moves; a new MobEffect "Transformed" (registered by HexPiece: max health x2 through an attribute modifier,
    plus Resistance) while the dragon is out AND while Nika's Gear 5 is on (GearClientState.gearFive / the server's GearData).)
 
+9. **(after 2.7.4, verbatim) "its amazing, but the attacks have to be more aggressive more violent, perhaps time to switch over to
+   Photon, go crazy with it (the attack particles), sparks, explosions, GO CRAZY all of it must be 3d." BUG: "Dragon keeps changing
+   color, the color should be attributed one time only when eating the fruit." Then, with two anime frames of Kaido's Bolo Breath
+   (docs/handoff/uo-fire-target-1.jpg: the charged orb in the mouth, glowing yellow core, red corona, light rays; uo-fire-target-2.jpg:
+   the breath: white-hot at the mouth, bold cel bands of yellow, orange and red licks with dark red edges, white shock arcs, embers
+   everywhere): "the fire has to be beautiful I mean look at the reference".**
+
 ## Done (2.7.0): the Uo Uo no Mi
 - **The fruit** is a constant of the ORIGINAL's fruit enum: `PiecePatch.uoFruit` adds `Fruit.UO` (ordinal 4: id "uo", "Uo Uo no Mi",
   element "Dragon", colour 4FB7E8, lore) to `<clinit>` and `$values()`. So the original registers its item `hexhaki:uo_uo_no_mi`
@@ -185,17 +192,25 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   diagnostic log line is still there (once a second during a draw with Haki on). Ask the owner where they see lag (which screen,
   how many players or NPCs, Haki on or off) before guessing further.
 
-## Next (2.7.5)
-1. Check 2.7.0's runs. Ask the owner how the dragon handles (nothing was tested in game).
-2. **The moves** (item 5 above), in the ability HUD (AbilityHud.kit: ClientKits.get(fruit).moves()) and the Captain's Log
-   (LogbookData.kit). Human-form animations: playerAnimator JSONs under src/main/resources/assets/hexhaki/player_animation/ (judge with
-   tools/anim_preview.py). Six Powers' air blasts: style/ (the Air Blade, AirMesh, client/fx/AirFx). Fire as coloured CLOUD + smoke
-   particles (vanilla), Photon only for sparks. Dragon-form moves: the jaw bone ("jaw") for the breath and bite, posed in DragonForm
-   (add a mouth-open bend); the breath's origin = the Head_Face/jaw bone placed by DragonForm.placement (both pure: tests can check it).
-3. **Random dragon colours:** a hue per player (random at each transformation, sent in S2CDragon), applied as a vertex colour multiply
-   in DragonRenderer.emit (r, g, b now 1) or by a recoloured texture (DragonForm is pure: keep the colour maths there).
-4. **The lag and size pass (the owner's item 2, not started):** jar 30.7 MB in 2.6.9 (32.5 with the dragon): katana meshes 14.2 MB
-   (assets/hexhaki/katana/*.hkm, already gzip: a delta encoding of positions and quad indices would shrink them a lot; tools/
-   katana_mesh.py + client/sword/KatanaMesh), katana atlases 7.6 MB (PNG, lossless recompression), the original's sounds 3.8 MB
-   (theirs: do not re-encode). Lag: nothing measured; look for per-frame allocation and work in render paths (HolsterHand's 2.6.8
-   diagnostic log line once a second during a draw with Haki on: remove once the owner confirms the Haki lag is gone).
+## Done (2.7.5, pushed): two of the owner's bugs
+- **"the keys HUD a ton of them say No slot":** AbilityHud.kit asked BindsClient.keyFor(i) with the move's place in the list; a kit
+  move's ability is its default slot (FruitMove.slot(), the letter's index in Binds.DEFAULT_KEYS, as the original's FruitHud.onKey
+  reads it). The Uo lists are out of slot order, so most rows were "no slot" (old bug since 2.3.x; Pika's list happened to fit).
+  Now LogbookData.moveKey(move) for the HUD and the log alike (slot -> the key it is on, "-" when unbound; no slot -> its own key,
+  the HUD's cap shortened to "LMB"). DragonTests.keys() checks every Uo move sits on its slot in Binds.defaults for both forms. In
+  dragon form the panel drops "Back to ... and Haki" (AbilityHud passes the keys without "toggle" while DragonClient.selfOut()).
+  UiPreview renders both Uo panels (hud-4, hud-5).
+- **"Dragon keeps changing color, the color should be attributed one time only when eating the fruit":** DragonServer.colour(player)
+  keeps it in the original's fruit data ("uo_colour" in the "hexhaki_fruit" tag: FruitData.give makes a fresh tag on eating, FruitServer
+  .clone copies it through death), rolled in UoKit.granted (eating, and login for an old fruit) or at the first transformation.
+
+## Next (2.7.6): the owner's item 9 (violent, 3D, beautiful fire)
+1. Check 2.7.5's runs.
+2. Plan (nothing written yet): a pure geometry module for the effects (testable, previewable off-game like DragonPreview): cel-banded
+   fire shells (an opaque white-yellow core through RenderType.m_269058_ textBackground, then orange, red and dark-red shells with a
+   fresnel alpha through m_269166_ debugQuads, drawn inner to outer since debugQuads writes depth), noise-displaced icospheres for the
+   puffs, the breath as a stream of puffs along its path, the charged orb (uo-fire-target-1.jpg: glowing core, red corona, light
+   rays), explosions as expanding shells + a shock sphere + a ground ring + debris + 3D streak sparks + smoke, Wind Force as helical
+   ribbons, Air Pressure as shock rings. Drawn at RenderLevelStageEvent AFTER_PARTICLES as HakiBolts does (camera-relative). Photon
+   (PieceFx Motes, bloom) for embers and sparks. Render each off-game, compare with docs/handoff/uo-fire-target-*.jpg, fix, render
+   again. Then make the server side more violent (UoMoves: bigger blasts, more knockback, Impact.quake).
