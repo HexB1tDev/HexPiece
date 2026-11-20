@@ -3,6 +3,8 @@ package com.hexhaki.piece.client.dragon;
 import com.hexhaki.fruit.Fruit;
 import com.hexhaki.fruit.client.ClientKits;
 import com.hexhaki.piece.dragon.DragonForm;
+import com.hexhaki.piece.network.C2SDragon;
+import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CDragon;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.HashMap;
@@ -22,6 +24,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderHandEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
@@ -67,6 +70,10 @@ public final class DragonClient {
         double z;
         boolean placed;
         int colour;
+        /** 2.7.2: where the renderer last drew its mouth (world), and when (UoFx's clock; -1 never). */
+        final double[] mouth = new double[3];
+        long mouthAge = -1;
+        final float[] mouthOut = new float[3];
     }
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
@@ -209,6 +216,7 @@ public final class DragonClient {
         if (level == null) {
             return;
         }
+        breath(minecraft);
         Iterator<Map.Entry<Integer, Entry>> it = ENTRIES.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<Integer, Entry> e = it.next();
@@ -288,6 +296,38 @@ public final class DragonClient {
         }
     }
 
+    /** 2.7.2: whether the local player's breath is on (as last sent). */
+    private static boolean flameSent;
+
+    /** The local player a dragon now (out, not coming or going). */
+    static boolean selfDragon() {
+        Minecraft minecraft = Minecraft.m_91087_();
+        Entry entry = minecraft.f_91074_ == null ? null : ENTRIES.get(minecraft.f_91074_.m_19879_());
+        return entry != null && entry.phase == DragonForm.DRAGON;
+    }
+
+    /**
+     * 2.7.2 (the owner: "M1 (Held): Open your massive jaw and unleash a fire breath as long as M1 is held"): a dragon's M1 is its breath,
+     * never a punch or a block broken under it: while it is out the game's attack is taken here, and the breath follows the key's state.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void dragonAttack(InputEvent.InteractionKeyMappingTriggered event) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        Entry entry = minecraft.f_91074_ == null ? null : ENTRIES.get(minecraft.f_91074_.m_19879_());
+        if (entry != null && event.isAttack()) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+        }
+    }
+
+    static void breath(Minecraft minecraft) {
+        boolean want = selfDragon() && minecraft.f_91080_ == null && minecraft.f_91066_.f_92096_.m_90857_();
+        if (want != flameSent) {
+            flameSent = want;
+            PieceNetwork.toServer(new C2SDragon(want));
+        }
+    }
+
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void hideHuman(RenderPlayerEvent.Pre event) {
         if (!ENTRIES.isEmpty() && hidden(event.getEntity().m_19879_(), event.getPartialTick())) {
@@ -339,7 +379,12 @@ public final class DragonClient {
             int light = LevelRenderer.m_109541_(level, BlockPos.m_274561_(x, y + DragonForm.HEAD_HEIGHT, z));
             int overlay = OverlayTexture.f_118083_;
             DragonRenderer.draw(e.getKey(), DragonTextures.of(entry.colour), stack, buffers, x - camera.f_82479_, y - camera.f_82480_,
-                z - camera.f_82481_, entry.phase, s, hover, flight, age, yaw, pitch, bank, light, overlay);
+                z - camera.f_82481_, entry.phase, s, hover, flight, age, yaw, pitch, bank, light, overlay, UoFx.mouth(e.getKey(), partial),
+                UoFx.bite(e.getKey(), partial), entry.mouthOut);
+            entry.mouth[0] = x + entry.mouthOut[0];
+            entry.mouth[1] = y + entry.mouthOut[1];
+            entry.mouth[2] = z + entry.mouthOut[2];
+            entry.mouthAge = UoFx.clock();
         }
     }
 
@@ -348,6 +393,7 @@ public final class DragonClient {
         ENTRIES.clear();
         DragonRenderer.clear();
         fromFirstPerson = false;
+        flameSent = false;
     }
 
     /** For DragonCamera: the entity's dragon, if it has one. */

@@ -141,6 +141,17 @@ public final class DragonTests {
             }
         }
 
+        // 2.7.2: the jaw and the bite: the jaw opens (the mouth moves), the bite never jumps and ends back on the hover exactly
+        Check.that(gap(posed(0.0F, -1.0F), posed(1.0F, -1.0F)) > 0.5F, "the jaw opens");
+        Check.that(gap(posed(0.0F, -1.0F), posed(0.0F, 1.0F)) < 0.01F, "the bite ends where the hover is");
+        float[][] was = posed(0.0F, 0.0F);
+        Check.that(gap(posed(0.0F, -1.0F), was) < 0.01F, "the bite starts where the hover is");
+        for (float b = 0.025F; b <= 1.0001F; b += 0.025F) {
+            float[][] now = posed(0.0F, b);
+            Check.that(gap(was, now) < 2.5F, "the bite moves smoothly at " + b);
+            was = now;
+        }
+
         // out of the chest and back into it
         float[] chest = {0.0F, 1.0F, 0.0F};
         Check.that(far(placed(DragonForm.FORMING, 0.0F, 0.0F, 0.0F, 0.0F), chest) < 1.6F, "the dragon starts inside the player");
@@ -161,6 +172,18 @@ public final class DragonTests {
         Check.near(DragonForm.flightTarget(0.0), 0.0, 1e-6, "no flight standing still");
         Check.near(DragonForm.flightTarget(0.55), 1.0, 1e-6, "all of it at creative flight's pace");
         Check.done("DragonTests");
+    }
+
+    /** The hovering dragon (model units) with its jaw {@code mouth} open and {@code bite} into its bite. */
+    static float[][] posed(float mouth, float bite) {
+        DragonPose pose = new DragonPose(model);
+        DragonForm.pose(model, shape, pose, DragonForm.DRAGON, 0.0F, 1.0F, 0.0F, 1.0F, mouth, bite, new float[3]);
+        float[][] out = new float[model.parts.length][];
+        for (int i = 0; i < model.parts.length; i++) {
+            out[i] = new float[model.parts[i].vertices() * 3];
+            pose.skin(model.parts[i], out[i], new float[out[i].length]);
+        }
+        return out;
     }
 
     /** The dragon's points placed at the player's feet (blocks), facing yaw 0. */

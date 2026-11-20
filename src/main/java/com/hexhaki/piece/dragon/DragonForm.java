@@ -75,6 +75,7 @@ public final class DragonForm {
         final int[] neck = new int[NECK.length];
         final int[] mantle;
         final int[] coatChain;
+        public final int jaw;
         /** The head in the hover (the idle's average) and in straight flight (model units). */
         public final float[] hoverHead = new float[3];
         public final float[] flightHead = new float[3];
@@ -91,6 +92,7 @@ public final class DragonForm {
             for (int i = 0; i < NECK.length; i++) {
                 this.neck[i] = model.bone(NECK[i]);
             }
+            this.jaw = model.bone("jaw");
             this.coatChain = new int[] {model.bone("c_coat02"), model.bone("c_coat03"), model.bone("l_coat02"), model.bone("r_coat02")};
             // the mantle: coat_root and every bone under it
             int root = model.bone("coat_root");
@@ -160,6 +162,21 @@ public final class DragonForm {
      */
     public static void pose(DragonModel model, Shape shape, DragonPose pose, int phase, float seconds, float hover, float flight, float age,
                             float[] anchor) {
+        pose(model, shape, pose, phase, seconds, hover, flight, age, 0.0F, -1.0F, anchor);
+    }
+
+    /**
+     * 2.7.2: as above, with the moves' jaw and head: {@code mouth} how far the jaw is open (0 to 1: the breath, the charge), {@code bite}
+     * how far into the Gigantic Bite (0 to 1, or below 0 for none: the jaws thrown wide and the head reared, then snapped shut and
+     * driven forward).
+     */
+    public static void pose(DragonModel model, Shape shape, DragonPose pose, int phase, float seconds, float hover, float flight, float age,
+                            float mouth, float bite, float[] anchor) {
+        pose(model, shape, pose, phase, seconds, hover, flight, age, anchor, mouth, bite);
+    }
+
+    static void pose(DragonModel model, Shape shape, DragonPose pose, int phase, float seconds, float hover, float flight, float age,
+                     float[] anchor, float mouth, float bite) {
         pose.rest();
         DragonModel.Clip idle = model.clips.get("idle");
         float fly = Math.max(0.0F, Math.min(1.0F, flight));
@@ -180,6 +197,9 @@ public final class DragonForm {
             if (phase == UNFORMING) {
                 pose.clip(model.clips.get("unform"), seconds, false, smooth(seconds / UNFORM_BLEND));
             }
+        }
+        if (phase == DRAGON) {
+            jaws(shape, pose, mouth, bite);
         }
         pose.solve();
         for (int k = 0; k < 3; k++) {
@@ -223,6 +243,43 @@ public final class DragonForm {
             euler(up, 0.0F, q);
             set(pose, shape.neck[i], q[0], q[1], q[2], q[3], weight);
             lerpRest(pose, shape.neck[i], weight);
+        }
+    }
+
+    /** How far the jaw opens at most (degrees), and the head's rear and lunge in the bite. */
+    static final float JAW_OPEN = 38.0F;
+    static final float BITE_REAR = -18.0F;
+    static final float BITE_LUNGE = 14.0F;
+
+    /**
+     * The jaw opened (about the hinge's side axis: the jaw's front swings down) and, in the bite, the head reared back with the jaws wide
+     * (to 0.45), then snapped shut and driven forward and down (0.45 to 0.6), easing back to the hover after.
+     */
+    static void jaws(Shape shape, DragonPose pose, float mouth, float bite) {
+        float open = Math.max(0.0F, Math.min(1.0F, mouth));
+        float head = 0.0F;
+        if (bite >= 0.0F) {
+            float b = Math.min(1.0F, bite);
+            if (b < 0.45F) {
+                float t = smooth(b / 0.45F);
+                open = Math.max(open, t);
+                head = BITE_REAR * t;
+            } else if (b < 0.6F) {
+                float t = smooth((b - 0.45F) / 0.15F);
+                open = Math.max(open, 1.0F - t);
+                head = BITE_REAR + (BITE_LUNGE - BITE_REAR) * t;
+            } else {
+                head = BITE_LUNGE * (1.0F - smooth((b - 0.6F) / 0.4F));
+            }
+        }
+        if (shape.jaw >= 0 && open > 0.0F) {
+            pose.bend(shape.jaw, JAW_OPEN * open, 1.0F, 0.0F, 0.0F);
+        }
+        if (head != 0.0F) {
+            pose.bend(shape.face, head, 1.0F, 0.0F, 0.0F);
+            for (int i = 3; i < shape.neck.length - 1; i++) {
+                pose.bend(shape.neck[i], head * 0.35F, 1.0F, 0.0F, 0.0F);
+            }
         }
     }
 

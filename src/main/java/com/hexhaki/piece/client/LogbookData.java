@@ -224,7 +224,10 @@ final class LogbookData {
 
     static Section kit(Fruit fruit, int mastery) {
         List<Entry> entries = new ArrayList<>();
-        for (FruitMove move : ClientKits.get(fruit).moves()) {
+        // 2.7.2 (the owner: "Add the moves to the Fruit ability hud and to the fruit progression menu"): the Uo Uo no Mi's log lists
+        // every move, its human form's and its dragon's (the panel only the form's own)
+        List<FruitMove> moves = fruit == Fruit.UO ? com.hexhaki.piece.server.UoKit.MOVES : ClientKits.get(fruit).moves();
+        for (FruitMove move : moves) {
             boolean open = mastery >= move.mastery();
             int slot = move.slot();
             boolean passive = "passive".equals(move.key());

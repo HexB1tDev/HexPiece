@@ -24,6 +24,8 @@ import org.joml.Vector3f;
  */
 final class DragonRenderer {
     static final ResourceLocation TEXTURE = ResourceLocation.m_214293_("hexhaki", "textures/piece/dragon/seiryu.png");
+    /** The mouth: this far (model units) from the jaw's hinge toward its tip. */
+    static final float MOUTH_OUT = 1.6F;
     private static DragonModel model;
     private static DragonForm.Shape shape;
     private static boolean failed;
@@ -83,15 +85,28 @@ final class DragonRenderer {
      */
     static void draw(int id, ResourceLocation texture, PoseStack stack, MultiBufferSource.BufferSource buffers, double dx, double dy, double dz,
                      int phase, float seconds,
-                     float hover, float flight, float age, float yaw, float pitch, float bank, int light, int overlay) {
+                     float hover, float flight, float age, float yaw, float pitch, float bank, int light, int overlay, float mouth, float bite,
+                     float[] mouthOut) {
         DragonModel m = model();
         if (m == null) {
             return;
         }
         Skin skin = SKINS.computeIfAbsent(id, k -> new Skin(m));
-        DragonForm.pose(m, shape, skin.pose, phase, seconds, hover, flight, age, skin.anchor);
+        DragonForm.pose(m, shape, skin.pose, phase, seconds, hover, flight, age, mouth, bite, skin.anchor);
         DragonForm.shift(shape, phase, seconds, skin.shift);
         DragonForm.placement(skin.anchor, skin.shift, DragonForm.grow(phase, seconds), yaw, pitch, bank, skin.place);
+        // 2.7.2: the mouth (the jaw's hinge, out along the jaw toward its tip), placed: where the breath and the blast come from
+        if (mouthOut != null && shape.jaw >= 0) {
+            float[] g = skin.pose.global;
+            int o = shape.jaw * 12;
+            float mx = g[o + 3] + g[o + 2] * MOUTH_OUT;
+            float my = g[o + 7] + g[o + 6] * MOUTH_OUT;
+            float mz = g[o + 11] + g[o + 10] * MOUTH_OUT;
+            float[] pl = skin.place;
+            for (int r = 0; r < 3; r++) {
+                mouthOut[r] = pl[r * 4] * mx + pl[r * 4 + 1] * my + pl[r * 4 + 2] * mz + pl[r * 4 + 3];
+            }
+        }
         // the view times the player's place times the dragon's: one 3 x 4 for the points, its rotation for the normals
         Matrix4f view = stack.m_85850_().m_252922_();
         Matrix3f turn = stack.m_85850_().m_252943_();

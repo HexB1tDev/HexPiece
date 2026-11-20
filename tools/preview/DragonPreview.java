@@ -38,7 +38,11 @@ public final class DragonPreview {
         texture = ImageIO.read(new File(args[1]));
         List<String> shots = new ArrayList<>();
         for (int i = 3; i < args.length; i++) {
-            if (args[i].startsWith("--colour=")) {
+            if (args[i].startsWith("--mouth=")) {
+                mouth = Float.parseFloat(args[i].substring(8));
+            } else if (args[i].startsWith("--bite=")) {
+                bite = Float.parseFloat(args[i].substring(7));
+            } else if (args[i].startsWith("--colour=")) {
                 // 2.7.1: the texture recoloured to a palette, as the game recolours it (dragon/DragonColours)
                 com.hexhaki.piece.dragon.DragonColours.Palette palette = com.hexhaki.piece.dragon.DragonColours.palette(
                     Integer.parseInt(args[i].substring(9)));
@@ -123,7 +127,7 @@ public final class DragonPreview {
         DragonPose pose = new DragonPose(model);
         float[] anchor = new float[3];
         float hover = phase == DragonForm.UNFORMING ? 1.0F : seconds;
-        DragonForm.pose(model, shape, pose, phase, seconds, hover, flight, seconds, anchor);
+        DragonForm.pose(model, shape, pose, phase, seconds, hover, flight, seconds, mouth, bite, anchor);
         float[] place = new float[12];
         float[] shift = new float[3];
         DragonForm.shift(shape, phase, seconds, shift);
@@ -213,6 +217,9 @@ public final class DragonPreview {
     }
 
     static double[] fixedEye;
+    /** 2.7.2: the jaw and the bite for the next shots (--mouth=, --bite=). */
+    static float mouth;
+    static float bite = -1.0F;
     static double fov = 50;
 
     static BufferedImage render(String shot) {

@@ -4,8 +4,8 @@ Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.6.2.md (the 
 sheathing, the Haki coat on blades, the Conqueror's sounds and stun), next-ai-2.5.9.md, next-ai-2.5.3.md (Ryou's fist aura:
 "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
-Branch `claude/nice-bell-gam7qf`. **2.7.1 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first; 2.7.0's were green).
-The next version is 2.7.2: the Uo Uo no Mi's moves.**
+Branch `claude/nice-bell-gam7qf`. **2.7.2 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first; 2.7.0's were green, 2.7.1's were
+running). The next version is 2.7.3: the dragon's locks and the Transformed effect (the owner's item 8), then the lag and size pass.**
 
 ## The owner (session 10, verbatim)
 1. "Current bugs: Haki when holding a katana makes left hand invisible." (fixed, 2.7.0)
@@ -137,7 +137,32 @@ The next version is 2.7.2: the Uo Uo no Mi's moves.**
   Binds.SLOTS, layouts of 9): to give them moves, add HexPiece's own KeyMappings that send `FruitKeys.send(0/1, ability, flags)` for
   a kit's move, or widen the slots (invasive).
 
-## Next (2.7.2)
+## Done (2.7.2, pushed): the moves (the owner's item 5)
+- `server/UoKit`: FruitMoves HUMAN (Z Dragon Form, X Air Pressure, C Blast Breath, V Wind Force, B Dragon Embers), DRAGON (Z, "[LMB]
+  hold" Fire Breath, "[X] hold" Blast Breath, C Gigantic Bite), MOVES all (the server's list; Binds lays them by their key's slot: X
+  slot 8, C 6, V 7, B 4, Z 5; a key shared by a human and a dragon move is dispatched by the form). Cooldown keys uo_air, uo_breath,
+  uo_wind, uo_embers, uo_flame, uo_blast, uo_bite (FruitData.ready / cooldown + FruitServer.sync: the panel's recharge).
+  `client/dragon/UoClient.moves()` is the form's list (the panel); LogbookData lists UoKit.MOVES for the Uo fruit.
+- `server/UoMoves`: everything simulated server-side in a ticked list (`Live`): Shot (AIR / BOLT / BLAST: flies at its speed, strikes
+  the first foe within its size or the first block or its range's end, then `explode` (damage falling off, fire, Impact.hit throw,
+  Impact.quake for fire)), Tornado (0.55 b/t for 25 blocks: entities inside the funnel (radius 2.2 -> 4.2 over 9 high) spun round
+  (0.55), pulled to a ring, lifted 0.22, carried, 2 damage / 10 ticks, flung at the end), Ember (lands at its tick, explodes 2.6), the
+  held breath (FLAMING: a 9 deg cone from the approximate mouth, stopped by blocks, 4 damage + 5 s fire / 5 ticks, at most 100 ticks,
+  then 80 ticks' cooldown), the charge (CHARGING: X down -> up; range 45 + 55 x charge, full at 60 ticks), the bite (a 2.2 b/t lunge,
+  the jaws shut at tick 7: 20 damage within 5.5 of the jaws, a heavy throw). Human-form beats equal tools/uo_anims.py's (AIR 4/7/10,
+  BREATH 7, SWIPE 6, EMBERS 8); the animations uo_air_pressure / uo_blast_breath / uo_wind_force / uo_embers (rendered and linted).
+- Packets: S2CUoFx (17: kinds AIR BOLT BLAST BURST TORNADO EMBER FLAME_ON/OFF CHARGE_ON/OFF BITE), C2SDragon (18: M1 held), PROTOCOL
+  12. `client/dragon/UoFx` draws them from what was sent (shots advanced each tick, embers on two Bezier halves, the tornado from its
+  start and step): fire = CLOUD particles via ParticleEngine.createParticle + Particle.setColor (the original's own calls) coloured by
+  heat, SMOKE / LARGE_SMOKE / SMALL_FLAME, Photon only for sparks (PieceFx.SPARK); counts through PieceFx.count. The breath and the
+  charge leave the mouth the renderer last drew (DragonRenderer.draw writes the jaw's placed point into the client entry). The jaw and
+  the bite are posed by DragonForm.jaws (JAW_OPEN 38 deg, the head reared -18 then lunged 14 in the bite: 14 ticks, shut at 0.45-0.6);
+  DragonTests check they never jump. **The particle effects were NOT rendered** (no particle preview exists): judge in game, or
+  write a preview of UoFx's emission.
+- Fixed in passing: `StyleCombat.sound` asked Fruits.sound for "fx.<name>" (the map's keys are plain names): every combat sound through
+  it (sword impacts, water and finger-pistol whooshes) was silent; it strips the prefix now.
+
+## Next (2.7.3)
 1. Check 2.7.0's runs. Ask the owner how the dragon handles (nothing was tested in game).
 2. **The moves** (item 5 above), in the ability HUD (AbilityHud.kit: ClientKits.get(fruit).moves()) and the Captain's Log
    (LogbookData.kit). Human-form animations: playerAnimator JSONs under src/main/resources/assets/hexhaki/player_animation/ (judge with

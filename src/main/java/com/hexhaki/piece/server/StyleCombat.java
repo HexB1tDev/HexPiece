@@ -219,9 +219,13 @@ public final class StyleCombat {
         };
     }
 
-    /** One of the original's combat sounds (its fx pack) at the user. */
+    /**
+     * One of the original's combat sounds (its fx pack) at the user. 2.7.2: the original keys them by their plain name ("whoosh_light";
+     * "fx." is only their registry id's prefix), and every caller here asked for "fx.whoosh_light", "fx.impact_heavy", ...: none was
+     * found, so the sword's impacts, the water's and the finger pistol's whooshes were silent until now. The prefix is taken off.
+     */
     public static void sound(LivingEntity user, String name, float volume) {
-        SoundEvent event = Fruits.sound(name);
+        SoundEvent event = Fruits.sound(name.startsWith("fx.") ? name.substring(3) : name);
         if (event != null) {
             user.m_9236_().m_6263_(null, user.m_20185_(), user.m_20186_(), user.m_20189_(), event, SoundSource.PLAYERS, volume,
                 0.92F + user.m_217043_().m_188501_() * 0.16F);
