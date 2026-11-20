@@ -164,8 +164,12 @@ public final class UoFx {
             case S2CUoFx.CHARGE_ON -> CHARGES.put(m.user(), clock);
             case S2CUoFx.CHARGE_OFF -> CHARGES.remove(m.user());
             case S2CUoFx.BITE -> BITES.put(m.user(), clock);
-            case S2CUoFx.FIRE_BEAM -> BEAMS.put(m.user(), new FireBeam(clock, m.ticks(), m.size(), m.ax(), m.id() == 1));
+            case S2CUoFx.FIRE_BEAM -> {
+                BEAMS.put(m.user(), new FireBeam(clock, m.ticks(), m.size(), m.ax(), m.id() == 1));
+                AimLock.beam(m.user(), (float) m.x(), (float) m.y(), m.ticks()); // 2.8.5: one's own aim held until it ends
+            }
             case S2CUoFx.FIRE_BEAM_OFF -> {
+                AimLock.off(m.user());
                 FireBeam beam = BEAMS.get(m.user());
                 if (beam != null) {
                     // cut short: it thins away over its last 6 ticks from now

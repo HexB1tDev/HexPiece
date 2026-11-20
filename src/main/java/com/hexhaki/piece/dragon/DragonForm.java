@@ -50,8 +50,25 @@ public final class DragonForm {
     /** How long the way back takes over the hover or the flight (seconds). */
     static final float UNFORM_BLEND = 0.3F;
     /** The flight wave: its period (seconds at a hover's pace) and its length (segments of the spine). */
-    static final float WAVE_PERIOD = 1.6F;
-    static final float WAVE_SEGMENTS = 11.0F;
+    public static final float WAVE_PERIOD = 1.6F;
+    public static final float WAVE_SEGMENTS = 11.0F;
+    /**
+     * 2.8.5 (the owner: "make them higher, like, you know, like up and down more. Yeah, make it up and down more, like more angular
+     * whenever it moves and flies", "I don't mean like increase the amount of wobbles"): the wave's rise and fall per segment (degrees)
+     * at the hips and the more toward the tail's tip (2.5 and 4 before), the neck's (1.5 before), and how angular it is (0 a smooth sine,
+     * 1 a zig-zag: straight runs, sharp turns); the same period and length as before.
+     */
+    public static final float WAVE_UP = 5.5F;
+    public static final float WAVE_UP_TAIL = 9.5F;
+    public static final float NECK_UP = 3.4F;
+    static final float ANGULAR = 0.6F;
+
+    /** The wave's shape at {@code x} (radians): a sine sharpened toward a zig-zag by {@link #ANGULAR}, -1 to 1. */
+    public static float shape(double x) {
+        double s = Math.sin(x);
+        double zig = Math.asin(Math.max(-1.0, Math.min(1.0, s))) * 2.0 / Math.PI;
+        return (float) (s * (1.0 - ANGULAR) + zig * ANGULAR);
+    }
 
     /** The mantle's tails fluttering in flight (degrees). */
     static final float COAT_FLUTTER = 3.0F;
@@ -220,7 +237,7 @@ public final class DragonForm {
         float step = (float) (Math.PI * 2.0 / WAVE_SEGMENTS);
         for (int i = 0; i < shape.tail.length; i++) {
             float along = i / (float) (shape.tail.length - 1);
-            float up = (2.5F + 4.0F * along) * wave * (float) Math.sin(phase - i * step);
+            float up = (WAVE_UP + WAVE_UP_TAIL * along) * wave * shape(phase - i * step);
             float side = (1.2F + 2.3F * along) * wave * (float) Math.sin(phase * 0.71F - i * step * 0.8F + 1.3F);
             euler(up, side, q);
             set(pose, shape.tail[i], q[0], q[1], q[2], q[3], weight);
@@ -239,7 +256,7 @@ public final class DragonForm {
         }
         for (int i = 0; i < shape.neck.length; i++) {
             // the neck carries the wave forward a little, the head held level
-            float up = i == shape.neck.length - 1 ? 0.0F : 1.5F * wave * (float) Math.sin(phase + (i + 1) * step);
+            float up = i == shape.neck.length - 1 ? 0.0F : NECK_UP * wave * shape(phase + (i + 1) * step);
             euler(up, 0.0F, q);
             set(pose, shape.neck[i], q[0], q[1], q[2], q[3], weight);
             lerpRest(pose, shape.neck[i], weight);

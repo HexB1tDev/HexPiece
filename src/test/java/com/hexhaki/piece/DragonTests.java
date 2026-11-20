@@ -200,6 +200,7 @@ public final class DragonTests {
         Check.that(place[1 * 4 + 2] < -0.49F * DragonForm.SCALE, "looking down pitches the front down");
         Check.near(DragonForm.flightTarget(0.0), 0.0, 1e-6, "no flight standing still");
         Check.near(DragonForm.flightTarget(0.55), 1.0, 1e-6, "all of it at creative flight's pace");
+        wave();
         Check.done("DragonTests");
     }
 
@@ -390,5 +391,25 @@ public final class DragonTests {
             }
         }
         return most;
+    }
+
+    /**
+     * 2.8.5 (the owner: "make them higher ... up and down more, like more angular", "I don't mean like increase the amount of
+     * wobbles"): the flight wave rises and falls about twice as far as 2.8.4's (2.5 + 4 degrees a segment, the neck 1.5), sharper than a
+     * sine (straighter runs, sharper turns), its period and length unchanged.
+     */
+    static void wave() {
+        Check.that(DragonForm.WAVE_UP >= 2.0F * 2.5F && DragonForm.WAVE_UP + DragonForm.WAVE_UP_TAIL >= 2.0F * 6.5F, "the wave twice as high");
+        Check.that(DragonForm.NECK_UP >= 2.0F * 1.5F, "and the neck's");
+        Check.near(DragonForm.WAVE_PERIOD, 1.6, 1e-6, "as many waves a second as before");
+        Check.near(DragonForm.WAVE_SEGMENTS, 11.0, 1e-6, "and as long");
+        for (int i = 0; i <= 64; i++) {
+            double x = i * Math.PI * 2.0 / 64.0;
+            float v = DragonForm.shape(x);
+            Check.that(Math.abs(v) <= 1.0F + 1e-6F, "the wave's shape stays within its height");
+            Check.that(Math.signum(v) == Math.signum((float) Math.sin(x)) || Math.abs(v) < 1e-6F, "and rises and falls with the sine");
+        }
+        // angular: halfway up a rise it is straighter (closer to a line) than the sine, so the turns at the top are sharper
+        Check.that(DragonForm.shape(Math.PI / 6.0) < Math.sin(Math.PI / 6.0) + 0.06 && DragonForm.shape(Math.PI / 6.0) > 0.3, "straighter runs");
     }
 }

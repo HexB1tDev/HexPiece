@@ -380,10 +380,19 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   Love StyleArt.wave), StyleShow.shot/shotKind (StyleArt.shot: spear, drill, ball, tunnel) drawn by client/fx/StyleVfx from stage 2
   (StyleFx keeps its Photon shot only for the others). FirstPersonLegs skips moves that turn the body over (a handstand).
 
-## Next (2.8.5)
-1. Check 2.8.4's runs. Then the owner's queued requests above, in order: the dragon's body wobble higher up and down, more angular, in
-   flight; Blast Breath's aim locked from release until the beam ends (free while charging); then every dragon move's sounds from the
-   web (epic, free to use, credited), none made by hand.
-2. Ask the owner how the styles feel in first person (2.8.2), the new blows (2.8.3) and the new moves (2.8.4); nothing was tested in
-   game.
+## Done (2.8.5, pushed): the owner's first two queued dragon requests
+- The flight wave (DragonForm.straighten): the rise and fall per spine segment WAVE_UP 5.5 + WAVE_UP_TAIL 9.5 toward the tail (was
+  2.5 + 4), the neck NECK_UP 3.4 (was 1.5), shaped by DragonForm.shape: a sine blended 0.6 toward a zig-zag (straighter runs, sharper
+  turns); the same WAVE_PERIOD and WAVE_SEGMENTS (the owner: not more wobbles). Render, before and after: docs/handoff/dragon-wave-2.8.5.png.
+  DragonTests.wave pins it; the cape-clearance check still passes.
+- Blast Breath (both forms): server/UoMoves.Beam keeps the aim it had when it was let go (Beam.aim; it used to follow the look every
+  tick) and S2CUoFx FIRE_BEAM carries that yaw and pitch; client/dragon/AimLock holds one's own view on it every tick and before every
+  frame (RenderTickEvent START undoes the mouse's turn) until the beam's life ends, FIRE_BEAM_OFF, death or logout. Charging is free
+  to aim, as before. Only the aim is held (the player can still move); if the owner meant movement too, hold the position as well.
+
+## Next (2.8.6)
+1. Check 2.8.5's runs. Then the owner's third queued request: every dragon move's sounds from the web (epic, free to use, credited
+   in the jar's notes), none made by hand (see "The owner's queued requests").
+2. Ask the owner how the styles feel in first person (2.8.2), the new blows (2.8.3), the new moves (2.8.4), and the dragon's new
+   wave and the Blast Breath lock (2.8.5); nothing was tested in game.
 3. Earlier items still open: how 2.7.8's Light fruit and the Uo beams play; the lag pass (the owner's item 2).

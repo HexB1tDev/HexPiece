@@ -646,12 +646,16 @@ public final class UoMoves {
     static void beam(ServerPlayer player, boolean dragon, double width, double length, int life, float damage, double knock, float charge) {
         ServerLevel level = (ServerLevel) player.m_9236_();
         LIVE.add(new Beam(player, level, dragon, width, length, life, damage, knock, charge));
-        PieceNetwork.around(player, new S2CUoFx(S2CUoFx.FIRE_BEAM, dragon ? 1 : 0, player.m_19879_(), 0, 0, 0, (float) length, 0, 0, 0, 0, 0,
-            (float) width, life));
+        // 2.8.5: the aim the beam keeps (the look at release), sent with it: the user's own view is held on it until the beam ends
+        PieceNetwork.around(player, new S2CUoFx(S2CUoFx.FIRE_BEAM, dragon ? 1 : 0, player.m_19879_(), player.m_146908_(), player.m_146909_(), 0,
+            (float) length, 0, 0, 0, 0, 0, (float) width, life));
     }
 
     /**
-     * A beam of fire held for {@code life} ticks, straight from the mouth onto what the player aims at (it sweeps as they turn), as far
+     * A beam of fire held for {@code life} ticks, straight from the mouth onto what the player aimed at when they let go (2.8.5, the
+     * owner: "whenever the blast breath is being charged, you can freely aim it, but when you let go, your aim is instantly locked into
+     * that position without being able to move until it's over. It's the drawback of that move": the beam keeps that aim, and the
+     * user's view is held on it, client/dragon/AimLock), as far
      * as the first block within {@code length}: every 4 ticks it burns everything within its width of that line (thin at the mouth,
      * UoFire.taper); the moment it strikes a block it blows up there and tears a crater out (2.7.8, the owner: "as soon as it hits a
      * block, it explodes", "it should also destroy blocks and self repair after 30 seconds": Craters), and goes on blowing up and
@@ -670,9 +674,12 @@ public final class UoMoves {
         int age;
         boolean struck;
         Vec3 last;
+        /** The way it burns, fixed when it was let go. */
+        final Vec3 aim;
 
         Beam(ServerPlayer user, ServerLevel level, boolean dragon, double width, double length, int life, float damage, double knock,
              float charge) {
+            this.aim = toward(user, dragon ? mouth(user) : humanMouth(user), length);
             this.user = user;
             this.level = level;
             this.dragon = dragon;
@@ -722,7 +729,7 @@ public final class UoMoves {
             // the front races out (UoFire.BEAM_SPEED blocks a tick): nothing past it is reached yet
             double front = this.age * UoFire.BEAM_SPEED + 2.0;
             Vec3 from = this.dragon ? mouth(this.user) : humanMouth(this.user);
-            Vec3 way = toward(this.user, from, this.length);
+            Vec3 way = this.aim;
             double out = Math.min(this.length, front);
             Vec3 end = from.m_82549_(way.m_82490_(out));
             BlockHitResult wall = this.level.m_45547_(new ClipContext(from, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this.user));
