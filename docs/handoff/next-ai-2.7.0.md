@@ -345,6 +345,21 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   StyleRig/StyleArt/StyleShow, FireMesh, WaterMesh and the npc poses against build/classes, then DragonPreview, FxPreview and
   StylePreview). StyleTests.show checks the rig, every blow's limb and every moment's quads.
 
+## The owner's queued requests (verbatim; TOP PRIORITY once the style extras below are out)
+- "I want the dragon, whenever he moves and flies up and all, to like wobble his body a little, like more. And by more, I don't mean
+  like increase the amount of wobbles of the body. I mean like make them higher, like, you know, like up and down more. Yeah, make it
+  up and down more, like more angular whenever it moves and flies and shit, you know what I mean?" (bigger up-and-down amplitude of the
+  flying dragon's body undulation, sharper angles; NOT more waves.)
+- "And also, whenever the blast breath is being charged, you can freely aim it, but when you let go, your aim is instantly locked into
+  that position without being able to move until it's over. It's the drawback of that move. So you have to actually think where you're
+  gonna aim it." (Blast Breath, both forms: free aim while charging; on release the aim (camera/look and the beam) is frozen until the
+  beam ends.) "This is like your top priority after you finish whatever you're doing right now."
+- Then: "the next top priority thing is giving every move of the dragon custom sounds from the web. And I mean, don't make any sound
+  yourself. They all have to be from the web, and they have to be the best versions they can be. So pick something epic for
+  everything. Wind sound effects, fire sound effects, fire like blasts, fire explosions, charging, everything comes from the web."
+  (Free-to-use sounds only, credited; every Uo move: breath, fireball, blast breath charge/beam/explosion, wind moves, tornado, roar,
+  bite, transformation, flight.)
+
 ## Next (2.8.4)
 1. Check 2.8.3's runs. Ask the owner how the styles feel in first person (2.8.2) and how the new blows look in game (2.8.3), Haki on
    and off; nothing was tested in game.
