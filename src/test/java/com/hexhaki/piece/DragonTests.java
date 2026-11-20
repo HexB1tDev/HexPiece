@@ -62,6 +62,7 @@ public final class DragonTests {
         }
         shape = new DragonForm.Shape(model);
         keys();
+        fire();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);
@@ -200,6 +201,101 @@ public final class DragonTests {
         Check.near(DragonForm.flightTarget(0.0), 0.0, 1e-6, "no flight standing still");
         Check.near(DragonForm.flightTarget(0.55), 1.0, 1e-6, "all of it at creative flight's pace");
         Check.done("DragonTests");
+    }
+
+    /**
+     * 2.7.6 (the owner: the fire "coming from inside the mouth not from anywhere else", "bright and glowy", "all of it must be 3d"):
+     * the roar opens the jaw wide and the inside of the gape lies between the jaws behind the closed mouth's tip; the breath's first
+     * fire is born there, small enough for the gape, and its far end is out along the aim; every move's quads are finite, the same
+     * each time for the same moment, and within a budget a phone can draw; the bands are hot to cold in order.
+     */
+    static void fire() {
+        Check.that(DragonForm.jawAngle(0.0F, -1.0F) == 0.0F && DragonForm.jawAngle(1.0F, -1.0F) >= 55.0F, "the roar throws the jaw wide");
+        DragonPose pose = new DragonPose(model);
+        float[] anchor = new float[3];
+        DragonForm.pose(model, shape, pose, DragonForm.DRAGON, 0.0F, 1.0F, 0.0F, 1.0F, 1.0F, -1.0F, anchor);
+        float[] in = new float[6];
+        Check.that(DragonForm.mouth(shape, pose, DragonForm.jawAngle(1.0F, -1.0F), in), "the dragon has a mouth");
+        Check.near(Math.sqrt(in[3] * in[3] + in[4] * in[4] + in[5] * in[5]), 1.0, 1.0E-4, "the mouth's way is a direction");
+        int jaw = model.bone("jaw");
+        float[] g = pose.global;
+        double hinge = Math.sqrt(Math.pow(in[0] - g[jaw * 12 + 3], 2) + Math.pow(in[1] - g[jaw * 12 + 7], 2) + Math.pow(in[2] - g[jaw * 12 + 11], 2));
+        Check.near(hinge, DragonForm.MOUTH_DEEP, 1.0E-3, "the fire starts inside the gape, behind the jaw's tip");
+        // the open jaw's way and the mouth's way are half the opening apart (the mouth's middle)
+        double jx = g[jaw * 12 + 2];
+        double jy = g[jaw * 12 + 6];
+        double jz = g[jaw * 12 + 10];
+        double jl = Math.sqrt(jx * jx + jy * jy + jz * jz);
+        double apart = Math.toDegrees(Math.acos(Math.max(-1.0, Math.min(1.0, (jx * in[3] + jy * in[4] + jz * in[5]) / jl))));
+        Check.near(apart, DragonForm.jawAngle(1.0F, -1.0F) / 2.0, 1.0, "the fire leaves between the jaws");
+
+        // the breath, the mouth 30 blocks ahead of the eye looking along +z
+        double[] mouth = {0.0, -2.0, 30.0};
+        double[] way = {0.0, -0.6, 0.8};
+        com.hexhaki.piece.dragon.UoFire.Aim aim = (ago, out) -> {
+            out[0] = mouth[0];
+            out[1] = mouth[1];
+            out[2] = mouth[2];
+            out[3] = 0.0;
+            out[4] = 0.0;
+            out[5] = 1.0;
+            out[6] = way[0];
+            out[7] = way[1];
+            out[8] = way[2];
+        };
+        double[] box = {1e9, 1e9, 1e9, -1e9, -1e9, -1e9};
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (int k = 0; k < 12; k++) {
+                finite[0] &= Double.isFinite(xyz[k]);
+                box[k % 3] = Math.min(box[k % 3], xyz[k]);
+                box[3 + k % 3] = Math.max(box[3 + k % 3], xyz[k]);
+            }
+        };
+        // a moment after it starts: all of it is still at the mouth (within the gape and the first blocks out of it)
+        com.hexhaki.piece.dragon.UoFire.breath(sink, aim, 0.4, -1.0, 35.0, 3);
+        Check.that(count[0] > 0 && finite[0], "the breath starts at once");
+        double far = Math.max(Math.abs(box[3] - mouth[0]), Math.abs(box[0] - mouth[0]));
+        Check.that(far < 2.5 && box[1] > mouth[1] - 2.5 && box[5] < mouth[2] + 3.0 && box[2] > mouth[2] - 2.5,
+            "the breath's first fire is at the mouth, nowhere else (" + java.util.Arrays.toString(box) + ")");
+        // in full: out to the aim's end, within the budget
+        java.util.Arrays.fill(box, 0, 3, 1e9);
+        java.util.Arrays.fill(box, 3, 6, -1e9);
+        count[0] = 0;
+        com.hexhaki.piece.dragon.UoFire.breath(sink, aim, 20.0, -1.0, 35.0, 3);
+        Check.that(finite[0] && box[5] > mouth[2] + 30.0, "the breath reaches out along the aim (" + box[5] + ")");
+        Check.that(count[0] < 16000, "the breath fits a phone's budget (" + count[0] + " quads)");
+        int full = count[0];
+        count[0] = 0;
+        com.hexhaki.piece.dragon.UoFire.breath(sink, aim, 20.0, -1.0, 35.0, 3);
+        Check.that(count[0] == full, "the same moment draws the same fire");
+        // the rest: finite, within budget
+        String[] moves = {"orb", "blast", "explosion", "air", "airBurst", "tornado", "bite"};
+        for (String move : moves) {
+            for (double age = 0.0; age <= 30.0; age += 2.5) {
+                count[0] = 0;
+                switch (move) {
+                    case "orb" -> com.hexhaki.piece.dragon.UoFire.orb(sink, aim, age * 2.0, Math.min(1.0, age / 30.0), 5);
+                    case "blast" -> com.hexhaki.piece.dragon.UoFire.fireball(sink, 0, 0, 20 + age, 0, 0, 3.6, 2.4, age, age * 3.6, true, 5);
+                    case "explosion" -> com.hexhaki.piece.dragon.UoFire.explosion(sink, 0, -3, 25, 8.0, age, 5);
+                    case "air" -> com.hexhaki.piece.dragon.UoFire.airShot(sink, 0, 0, 10 + age, 0, 0, 4.2, 1.3, age, age * 4.2, 5);
+                    case "airBurst" -> com.hexhaki.piece.dragon.UoFire.airBurst(sink, 0, 0, 12, 0, 0, 1, 1.6, age / 3.0, 5);
+                    case "tornado" -> com.hexhaki.piece.dragon.UoFire.tornado(sink, 0, -3, 20, age, Math.min(1.0, age / 6.0), 5);
+                    default -> com.hexhaki.piece.dragon.UoFire.bite(sink, aim, age / 30.0, 5);
+                }
+                Check.that(finite[0], move + " is finite at " + age);
+                Check.that(count[0] < 16000, move + " fits a phone's budget at " + age + " (" + count[0] + " quads)");
+            }
+        }
+        int[] bands = com.hexhaki.piece.dragon.FireMesh.BAND;
+        for (int i = 1; i < bands.length; i++) {
+            int a = bands[i - 1];
+            int b = bands[i];
+            Check.that(((a >> 16) & 255) + ((a >> 8) & 255) + (a & 255) < ((b >> 16) & 255) + ((b >> 8) & 255) + (b & 255),
+                "the fire's bands brighten from cold to hot");
+        }
     }
 
     /** The hovering dragon (model units) with its jaw {@code mouth} open and {@code bite} into its bite. */

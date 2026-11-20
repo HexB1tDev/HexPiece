@@ -116,6 +116,23 @@ public final class DragonPreview {
      * player's feet at the origin facing +z, the dragon posed by DragonForm.pose and placed by DragonForm.placement.
      */
     static BufferedImage game(String[] p) {
+        Raster r = scene(p);
+        BufferedImage img = r.image(W, H);
+        Graphics2D g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        g.setColor(Color.BLACK);
+        g.drawString(label, 6, 15);
+        g.dispose();
+        return img;
+    }
+
+    /** 2.7.6: the last scene's label and its dragon's mouth (placed as DragonRenderer places it), for FxPreview. */
+    static String label;
+    static double[] lastMouth;
+
+    /** The shot {@link #game} draws, as its raster (supersampled, its depth kept): FxPreview draws the moves over it. */
+    static Raster scene(String[] p) {
         if (shape == null) {
             shape = new DragonForm.Shape(model);
         }
@@ -132,6 +149,20 @@ public final class DragonPreview {
         float[] shift = new float[3];
         DragonForm.shift(shape, phase, seconds, shift);
         DragonForm.placement(anchor, shift, DragonForm.grow(phase, seconds), 0.0F, look * flight, bank, place);
+        lastMouth = null;
+        float[] in = new float[6];
+        if (DragonForm.mouth(shape, pose, DragonForm.jawAngle(mouth, bite), in)) {
+            // as DragonRenderer places it: the point through the place, the way through its turn
+            lastMouth = new double[6];
+            for (int k = 0; k < 3; k++) {
+                lastMouth[k] = place[k * 4] * in[0] + place[k * 4 + 1] * in[1] + place[k * 4 + 2] * in[2] + place[k * 4 + 3];
+                lastMouth[3 + k] = place[k * 4] * in[3] + place[k * 4 + 1] * in[4] + place[k * 4 + 2] * in[5];
+            }
+            double l = Math.sqrt(lastMouth[3] * lastMouth[3] + lastMouth[4] * lastMouth[4] + lastMouth[5] * lastMouth[5]);
+            for (int k = 3; k < 6; k++) {
+                lastMouth[k] /= l;
+            }
+        }
         List<float[]> skinned = new ArrayList<>();
         for (DragonModel.Part part : model.parts) {
             float[] pos = new float[part.vertices() * 3];
@@ -179,15 +210,9 @@ public final class DragonPreview {
                 r.mesh(model.parts[i], skinned.get(i * 2), skinned.get(i * 2 + 1));
             }
         }
-        BufferedImage img = r.image(W, H);
-        Graphics2D g = img.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-        g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        g.setColor(Color.BLACK);
         String[] names = {"human", "forming", "dragon", "unforming"};
-        g.drawString(String.format("%s %.2fs fly %.2f%s", names[phase], seconds, flight, human ? " (human shown)" : ""), 6, 15);
-        g.dispose();
-        return img;
+        label = String.format("%s %.2fs fly %.2f%s", names[phase], seconds, flight, human ? " (human shown)" : "");
+        return r;
     }
 
     /** client/dragon/DragonCamera's place behind and over the eye (kept the same by hand). */
@@ -210,6 +235,25 @@ public final class DragonPreview {
         fov = 70;
         try {
             return game(g);
+        } finally {
+            fixedEye = null;
+            fov = 50;
+        }
+    }
+
+    /** {@link #view}'s raster (FxPreview). */
+    static Raster viewScene(String[] p) {
+        double pitch = Math.toRadians(Double.parseDouble(p[4]));
+        double[] look = {0, -Math.sin(pitch), Math.cos(pitch)};
+        double[] eye = {0, 1.62 + CAM_UP, 0};
+        double[] cam = {eye[0] - look[0] * CAM_BACK, eye[1] - look[1] * CAM_BACK, eye[2] - look[2] * CAM_BACK};
+        String ground = p.length > 6 ? p[6] : "0";
+        String[] g = {"g", p[1], p[2], p[3], p[4], p[5], "0", "0", "1", String.valueOf(cam[0] + look[0]), String.valueOf(cam[1] + look[1]),
+            String.valueOf(cam[2] + look[2]), ground};
+        fixedEye = cam;
+        fov = 70;
+        try {
+            return scene(g);
         } finally {
             fixedEye = null;
             fov = 50;

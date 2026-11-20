@@ -135,7 +135,8 @@ public final class UoMoves {
         Vec3 from2 = mouth(player);
         double range = BLAST_MIN + (BLAST_MAX - BLAST_MIN) * charge;
         double size = 1.6 + 2.6 * charge;
-        launch(player, from2, look.m_82490_(3.6), range, size, 3.5 + 6.5 * charge, 14.0F + 26.0F * charge, 8, 1.4 + 1.6 * charge, S2CUoFx.BLAST);
+        // 2.7.6 (the owner: "more aggressive more violent"): a wider, harder, hotter blast
+        launch(player, from2, look.m_82490_(3.6), range, size, 4.5 + 7.5 * charge, 16.0F + 30.0F * charge, 10, 1.8 + 2.4 * charge, S2CUoFx.BLAST);
         DragonServer.sound(player, "whoosh_heavy", 2.0F, 0.5F);
     }
 
@@ -186,7 +187,7 @@ public final class UoMoves {
                 }
                 Vec3 look = player.m_20154_();
                 Vec3 hand = player.m_146892_().m_82549_(look.m_82490_(0.9)).m_82549_(right(player).m_82490_(0.35)).m_82520_(0.0, -0.35, 0.0);
-                launch(player, hand, look.m_82490_(4.2), AIR_RANGE, 0.9, 1.6, 7.0F, 0, 1.3, S2CUoFx.AIR);
+                launch(player, hand, look.m_82490_(4.2), AIR_RANGE, 0.9, 2.0, 8.0F, 0, 1.8, S2CUoFx.AIR);
                 StyleCombat.sound(player, "fx.whoosh_heavy", 1.0F);
             }));
         }
@@ -205,7 +206,7 @@ public final class UoMoves {
             }
             Vec3 look = player.m_20154_();
             Vec3 mouth = player.m_146892_().m_82549_(look.m_82490_(0.5)).m_82520_(0.0, -0.12, 0.0);
-            launch(player, mouth, look.m_82490_(3.2), BREATH_RANGE, 0.7, 3.5, 9.0F, 5, 1.1, S2CUoFx.BOLT);
+            launch(player, mouth, look.m_82490_(3.2), BREATH_RANGE, 0.7, 4.5, 11.0F, 6, 1.6, S2CUoFx.BOLT);
             DragonServer.sound(player, "flame", 1.4F, 0.9F);
         }));
     }
@@ -457,7 +458,7 @@ public final class UoMoves {
             PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, this.id, this.user.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_,
                 (float) dir.f_82479_, (float) dir.f_82480_, (float) dir.f_82481_, 0, 0, this.kind, (float) this.radius, 0));
             if (this.kind != S2CUoFx.AIR) {
-                Impact.quake(this.level, at, this.radius * 4.0, (float) Math.min(1.0, this.radius / 8.0), 10);
+                Impact.quake(this.level, at, this.radius * 5.0, (float) Math.min(1.0, this.radius / 6.0), 14);
             }
             DragonServer.sound(this.user, this.kind == S2CUoFx.AIR ? "impact_heavy" : "slam", this.kind == S2CUoFx.BLAST ? 2.4F : 1.2F,
                 this.kind == S2CUoFx.BLAST ? 0.55F : 0.9F);
@@ -591,7 +592,8 @@ public final class UoMoves {
             if (now < this.when) {
                 return false;
             }
-            explode(this.user, this.level, this.land.m_82520_(0.0, 0.5, 0.0), new Vec3(0, -1, 0), 2.6, 6.0F, 4, 0.7);
+            explode(this.user, this.level, this.land.m_82520_(0.0, 0.5, 0.0), new Vec3(0, -1, 0), 3.2, 7.0F, 5, 1.0);
+            Impact.quake(this.level, this.land, 12.0, 0.35F, 8);
             return true;
         }
     }

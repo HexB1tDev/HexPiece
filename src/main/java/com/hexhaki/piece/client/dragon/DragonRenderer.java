@@ -24,8 +24,6 @@ import org.joml.Vector3f;
  */
 final class DragonRenderer {
     static final ResourceLocation TEXTURE = ResourceLocation.m_214293_("hexhaki", "textures/piece/dragon/seiryu.png");
-    /** The mouth: this far (model units) from the jaw's hinge toward its tip. */
-    static final float MOUTH_OUT = 1.6F;
     private static DragonModel model;
     private static DragonForm.Shape shape;
     private static boolean failed;
@@ -38,6 +36,8 @@ final class DragonRenderer {
         final float[][] nrm;
         final float[] anchor = new float[3];
         final float[] shift = new float[3];
+        /** 2.7.6: the inside of the mouth and its way out (model units), DragonForm.mouth's. */
+        final float[] mouth = new float[6];
         final float[] place = new float[12];
 
         Skin(DragonModel model) {
@@ -95,16 +95,20 @@ final class DragonRenderer {
         DragonForm.pose(m, shape, skin.pose, phase, seconds, hover, flight, age, mouth, bite, skin.anchor);
         DragonForm.shift(shape, phase, seconds, skin.shift);
         DragonForm.placement(skin.anchor, skin.shift, DragonForm.grow(phase, seconds), yaw, pitch, bank, skin.place);
-        // 2.7.2: the mouth (the jaw's hinge, out along the jaw toward its tip), placed: where the breath and the blast come from
-        if (mouthOut != null && shape.jaw >= 0) {
-            float[] g = skin.pose.global;
-            int o = shape.jaw * 12;
-            float mx = g[o + 3] + g[o + 2] * MOUTH_OUT;
-            float my = g[o + 7] + g[o + 6] * MOUTH_OUT;
-            float mz = g[o + 11] + g[o + 10] * MOUTH_OUT;
+        // 2.7.6 (the owner: the fire "coming from inside the mouth not from anywhere else"): the inside of the gape and the mouth's own
+        // way out (DragonForm.mouth), placed: where the breath, the charged ball and the blast come from
+        if (mouthOut != null && DragonForm.mouth(shape, skin.pose, DragonForm.jawAngle(mouth, bite), skin.mouth)) {
+            float[] in = skin.mouth;
             float[] pl = skin.place;
+            float wl = 0.0F;
             for (int r = 0; r < 3; r++) {
-                mouthOut[r] = pl[r * 4] * mx + pl[r * 4 + 1] * my + pl[r * 4 + 2] * mz + pl[r * 4 + 3];
+                mouthOut[r] = pl[r * 4] * in[0] + pl[r * 4 + 1] * in[1] + pl[r * 4 + 2] * in[2] + pl[r * 4 + 3];
+                mouthOut[3 + r] = pl[r * 4] * in[3] + pl[r * 4 + 1] * in[4] + pl[r * 4 + 2] * in[5];
+                wl += mouthOut[3 + r] * mouthOut[3 + r];
+            }
+            wl = (float) Math.sqrt(Math.max(1.0E-12F, wl));
+            for (int r = 3; r < 6; r++) {
+                mouthOut[r] /= wl;
             }
         }
         // the view times the player's place times the dragon's: one 3 x 4 for the points, its rotation for the normals

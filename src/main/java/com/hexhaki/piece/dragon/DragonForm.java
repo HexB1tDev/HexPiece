@@ -246,8 +246,13 @@ public final class DragonForm {
         }
     }
 
-    /** How far the jaw opens at most (degrees), and the head's rear and lunge in the bite. */
-    static final float JAW_OPEN = 38.0F;
+    /**
+     * How far the jaw opens at most (degrees), and the head's rear and lunge in the bite. 2.7.6 (the owner, on the fire coming "from
+     * inside the mouth": "you can adjust the head/jaw to adapt the size, you have complete freedom"): a roar, the jaw thrown wide and the
+     * upper jaw lifted, so the breath and the charged ball sit in a mouth big enough for them.
+     */
+    static final float JAW_OPEN = 58.0F;
+    static final float FACE_LIFT = -9.0F;
     static final float BITE_REAR = -18.0F;
     static final float BITE_LUNGE = 14.0F;
 
@@ -275,12 +280,77 @@ public final class DragonForm {
         if (shape.jaw >= 0 && open > 0.0F) {
             pose.bend(shape.jaw, JAW_OPEN * open, 1.0F, 0.0F, 0.0F);
         }
+        head += FACE_LIFT * Math.max(0.0F, Math.min(1.0F, mouth));
         if (head != 0.0F) {
             pose.bend(shape.face, head, 1.0F, 0.0F, 0.0F);
             for (int i = 3; i < shape.neck.length - 1; i++) {
                 pose.bend(shape.neck[i], head * 0.35F, 1.0F, 0.0F, 0.0F);
             }
         }
+    }
+
+    /** How far the jaw is open (degrees) for {@code mouth} and {@code bite}, as {@link #jaws} opens it. */
+    public static float jawAngle(float mouth, float bite) {
+        float open = Math.max(0.0F, Math.min(1.0F, mouth));
+        if (bite >= 0.0F) {
+            float b = Math.min(1.0F, bite);
+            if (b < 0.45F) {
+                open = Math.max(open, smooth(b / 0.45F));
+            } else if (b < 0.6F) {
+                open = Math.max(open, 1.0F - smooth((b - 0.45F) / 0.15F));
+            }
+        }
+        return JAW_OPEN * open;
+    }
+
+    /** How deep in the mouth the fire starts: this far (model units) from the jaw's hinge along the mouth's middle. */
+    public static final float MOUTH_DEEP = 1.1F;
+
+    /**
+     * 2.7.6: the inside of the mouth of a solved pose (model units, before placement), into {@code out}: a point between the jaws
+     * {@link #MOUTH_DEEP} from the hinge, then the mouth's own way out (unit): the jaw's way turned back up by half its opening about
+     * the face's side axis (the jaw opens about it: {@code bend} turns a bone about its parent's axis), so halfway between the jaws.
+     * Returns false without a jaw.
+     */
+    public static boolean mouth(Shape shape, DragonPose pose, float jawDegrees, float[] out) {
+        if (shape.jaw < 0) {
+            return false;
+        }
+        float[] g = pose.global;
+        int o = shape.jaw * 12;
+        double zx = g[o + 2];
+        double zy = g[o + 6];
+        double zz = g[o + 10];
+        double zl = Math.sqrt(zx * zx + zy * zy + zz * zz);
+        zx /= zl;
+        zy /= zl;
+        zz /= zl;
+        int parent = shape.face >= 0 ? shape.face : shape.jaw;
+        int f = parent * 12;
+        double kx = g[f];
+        double ky = g[f + 4];
+        double kz = g[f + 8];
+        double kl = Math.sqrt(kx * kx + ky * ky + kz * kz);
+        kx /= kl;
+        ky /= kl;
+        kz /= kl;
+        double a = -Math.toRadians(jawDegrees) * 0.5;
+        double c = Math.cos(a);
+        double sn = Math.sin(a);
+        double kv = kx * zx + ky * zy + kz * zz;
+        double cx = ky * zz - kz * zy;
+        double cy = kz * zx - kx * zz;
+        double cz = kx * zy - ky * zx;
+        double mx = zx * c + cx * sn + kx * kv * (1 - c);
+        double my = zy * c + cy * sn + ky * kv * (1 - c);
+        double mz = zz * c + cz * sn + kz * kv * (1 - c);
+        out[0] = g[o + 3] + (float) (mx * MOUTH_DEEP);
+        out[1] = g[o + 7] + (float) (my * MOUTH_DEEP);
+        out[2] = g[o + 11] + (float) (mz * MOUTH_DEEP);
+        out[3] = (float) mx;
+        out[4] = (float) my;
+        out[5] = (float) mz;
+        return true;
     }
 
     /** A rotation of {@code up} degrees about x, then {@code side} about y, as (x, y, z, w). */

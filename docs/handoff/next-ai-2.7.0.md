@@ -204,13 +204,33 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   keeps it in the original's fruit data ("uo_colour" in the "hexhaki_fruit" tag: FruitData.give makes a fresh tag on eating, FruitServer
   .clone copies it through death), rolled in UoKit.granted (eating, and login for an old fruit) or at the first transformation.
 
-## Next (2.7.6): the owner's item 9 (violent, 3D, beautiful fire)
-1. Check 2.7.5's runs.
-2. Plan (nothing written yet): a pure geometry module for the effects (testable, previewable off-game like DragonPreview): cel-banded
-   fire shells (an opaque white-yellow core through RenderType.m_269058_ textBackground, then orange, red and dark-red shells with a
-   fresnel alpha through m_269166_ debugQuads, drawn inner to outer since debugQuads writes depth), noise-displaced icospheres for the
-   puffs, the breath as a stream of puffs along its path, the charged orb (uo-fire-target-1.jpg: glowing core, red corona, light
-   rays), explosions as expanding shells + a shock sphere + a ground ring + debris + 3D streak sparks + smoke, Wind Force as helical
-   ribbons, Air Pressure as shock rings. Drawn at RenderLevelStageEvent AFTER_PARTICLES as HakiBolts does (camera-relative). Photon
-   (PieceFx Motes, bloom) for embers and sparks. Render each off-game, compare with docs/handoff/uo-fire-target-*.jpg, fix, render
-   again. Then make the server side more violent (UoMoves: bigger blasts, more knockback, Impact.quake).
+## Done (2.7.6, pushed): the owner's item 9 (violent, 3D, beautiful fire)
+- The owner during it (verbatim): "it is very very good, just make sure it's bright and glowy, and it's coming from inside the mouth
+  not from anywhere else", then "you can adjust the head/jaw to adapt the size, you have complete freedom".
+- Pure (no game class, tested in DragonTests.fire, rendered by tools/preview/FxPreview): dragon/FireMesh (cel-banded puffs: each
+  triangle cut along the band edges so every band is flat and sharp; palettes BAND fire, SMOKE, WIND, AIR; glows (soft shells), shock
+  shells, crescents, rings, dashed rays, 3D streaks, rock shards, tubes; `quality` from the particle setting) and dragon/UoFire
+  (breath, orb, fireball, explosion, airShot, airBurst, tornado, bite). DragonForm: the roar (JAW_OPEN 38 -> 58, FACE_LIFT -9),
+  jawAngle, mouth (the inside of the gape MOUTH_DEEP from the hinge, and the mouth's own way: the jaw's turned back by half the
+  opening about the face's x axis).
+- Client: client/dragon/UoFx rewritten: everything drawn at RenderLevelStageEvent AFTER_PARTICLES through RenderType debugQuads
+  (m_269166_, written straight into the buffer, eye-centred, the batch ended at once); no vanilla particles any more, Photon embers
+  and sparks with bloom; shots placed analytically (start + velocity x age); a dragon's BLAST starts at the real mouth and blends onto
+  the server's path in 5 ticks; the breath keeps the last 24 aims (a sweep, not a rigid beam) and stops at a wall (client ray);
+  DragonRenderer gives the mouth's inside and way (6 floats). The jaw opens for the breath in 4 ticks and closes over 6 after it.
+- Server (UoMoves): blast radius 4.5-12, damage 16-46, knock 1.8-4.2, fire 10; Blast Breath 4.5 / 11 / 1.6; Air Pressure 2.0 / 8 /
+  1.8; embers 3.2 / 7 / 1.0 with a small quake; the shots' quake radius x5, stronger, 14 ticks.
+- Budget: a full breath about 10-13k quads near, an explosion of radius 8 under 11k (DragonTests: every move under 16k).
+- Open: from the dragon's own camera (DragonCamera: straight behind and over the eye) the head and mane hide the breath and the orb
+  (the camera looks down the line of fire). Asked the owner whether to move the camera over a shoulder; not changed unasked.
+
+## Next (2.7.7)
+1. Check 2.7.6's runs. Ask the owner how the 3D fire looks and runs on their phone (nothing was tested in game), and whether the
+   dragon camera should sit over a shoulder so the breath and the charged ball are not hidden behind the head.
+2. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
+   -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java`, then `java -cp <dir>:build/preview:build/classes
+   FxPreview build/dragon-cache/*/seiryu.sry build/dragon-cache/*/seiryu.png out.png [--night] [--size=WxH] shot...`; a shot is a
+   DragonPreview shot (`g:...`, `v:...`) or `m:phase:sec:flight:look:bank:camYaw:camPitch:dist` (a close-up aimed at the mouth), then
+   `|breath:on[:off]`, `|orb:age:charge`, `|blast:age[:charge]`, `|bolt:age`, `|boom:age:radius[:ahead]`, `|air:age`,
+   `|airburst:age`, `|tornado:age[:strength]`, `|bite:t`, `|roar` (the open jaw alone) or `|none`.
+3. The lag pass (the owner's item 2) is still open beyond 2.7.4's first pass: ask where they see lag.

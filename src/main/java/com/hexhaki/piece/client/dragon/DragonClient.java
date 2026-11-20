@@ -70,10 +70,13 @@ public final class DragonClient {
         double z;
         boolean placed;
         int colour;
-        /** 2.7.2: where the renderer last drew its mouth (world), and when (UoFx's clock; -1 never). */
-        final double[] mouth = new double[3];
+        /**
+         * 2.7.2: where the renderer last drew its mouth (world), and when (UoFx's clock; -1 never). 2.7.6: the inside of the gape, then
+         * the mouth's own way out (unit).
+         */
+        final double[] mouth = new double[6];
         long mouthAge = -1;
-        final float[] mouthOut = new float[3];
+        final float[] mouthOut = new float[6];
     }
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
@@ -390,6 +393,9 @@ public final class DragonClient {
             entry.mouth[0] = x + entry.mouthOut[0];
             entry.mouth[1] = y + entry.mouthOut[1];
             entry.mouth[2] = z + entry.mouthOut[2];
+            entry.mouth[3] = entry.mouthOut[3];
+            entry.mouth[4] = entry.mouthOut[4];
+            entry.mouth[5] = entry.mouthOut[5];
             entry.mouthAge = UoFx.clock();
         }
     }
