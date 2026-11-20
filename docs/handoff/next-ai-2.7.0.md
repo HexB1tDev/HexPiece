@@ -38,6 +38,18 @@ is 2.7.1.** 2.6.9's runs were green.
    particles).
    NOTE: Add the moves to the Fruit ability hud and to the fruit progression menu."
 
+6. (after 2.7.0's renders) "In the next version make sure the cape also changes colors, the fur as well (as long as it matches and
+   blends well to look beautiful with the scales color), from the render I gotta say Im impressed, good job."
+7. **The new key layout (the owner, asked about X = Ability Book and V = Observation clashing with the moves):** "All keys of the mod
+   (but haki) will now be the following Z, X, C, V, B, N, M. R For switching modes / Haki." Then chose: **Conqueror stays G;
+   Observation V -> J; the Conqueror's quick abilities on K, L, H (M -> H); the Ability Book X -> O; the style specials Y/U -> Z/X in
+   combat mode; Z X C V B N M are the fruit's moves in fruit mode** (R switches modes, Ctrl + R Armament as now). So the Uo moves: X Air
+   Pressure, C Blast Breath, V Wind Force, B Dragon Embers (human), Z Dragon Form, and in dragon form M1, X, C. The original's quick
+   slots are 9 KeyMappings (BindsClient.keys(), defaults G K L M B Z C N H, Binds.DEFAULT_KEYS / HAKI_KEYS G K L M) and HakiKeys
+   (observation V 86, conqueror G 71, mode H 72, acoc J 74, dominion K, strike L, convergence M, mastery P, loadout X 88): the new
+   defaults go through PiecePatch (their INTS/TEXTS) and HexPiece's PieceKeys; check Binds.slotOf's key regex and every place the HUD,
+   the Ability Book text and the Captain's Log name a key.
+
 ## Done (2.7.0): the Uo Uo no Mi
 - **The fruit** is a constant of the ORIGINAL's fruit enum: `PiecePatch.uoFruit` adds `Fruit.UO` (ordinal 4: id "uo", "Uo Uo no Mi",
   element "Dragon", colour 4FB7E8, lore) to `<clinit>` and `$values()`. So the original registers its item `hexhaki:uo_uo_no_mi`
