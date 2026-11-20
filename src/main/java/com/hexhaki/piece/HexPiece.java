@@ -22,6 +22,7 @@ public final class HexPiece {
         PieceItems.register(bus);
         PieceSounds.register(bus);
         PieceConfig.register();
+        PieceEffects.register(bus);
         // 2.7.0: the Uo Uo no Mi (the original's fruit enum's UO, PiecePatch.uoFruit) and its kit, the dragon form
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.UO, com.hexhaki.piece.server.UoKit::new);
         LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, the katanas, pirates and marines, the Uo Uo no Mi");

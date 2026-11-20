@@ -105,6 +105,9 @@ public final class CombatMode {
             return; // the original drains R under a screen
         }
         while (HakiKeys.ARMAMENT.m_90859_()) {
+            if (com.hexhaki.piece.client.dragon.DragonClient.selfOut()) {
+                continue; // 2.7.3: the dragon keeps fruit mode and has no Haki (R and Ctrl + R do nothing)
+            }
             if (Screen.m_96637_()) {
                 power();
             } else {

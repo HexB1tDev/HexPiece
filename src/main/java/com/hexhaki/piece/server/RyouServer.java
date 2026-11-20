@@ -135,6 +135,8 @@ public final class RyouServer {
      * switch ({@code Binds.off}) and dropped every Haki action while it was on. Haki answers whatever the fruit's switch says.
      */
     public static boolean hakiOff(Player player) {
-        return false;
+        // 2.7.3 (the owner: "Uo Uo, you cannot switch from fruit mode to any mode or use any form of haki, ONLY use what the
+        // transformation abilities allow"): no Haki at all while the dragon is out (or coming or going)
+        return DragonServer.phase(player) != com.hexhaki.piece.dragon.DragonForm.HUMAN;
     }
 }

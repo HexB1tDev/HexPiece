@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.7.2"
+VERSION = "2.7.3"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -121,6 +121,7 @@ NEW_PREFIXES = (
     "assets/hexhaki/lang/",
     "data/hexhaki/",
     "assets/hexhaki/dragon/",
+    "assets/hexhaki/textures/mob_effect/transformed.png",
     "assets/hexhaki/models/item/uo_uo_no_mi.json",
     "assets/hexhaki/textures/item/uo_uo_no_mi.png",
     KATANA_MESHES,

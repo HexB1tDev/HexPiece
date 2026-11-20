@@ -163,3 +163,8 @@ M net/minecraft/client/KeyMapping m_90854_ ()V                                  
 M net/minecraft/client/Options m_92169_ ()V                                          # [srg] save: joined.tsrg enr aq ()V m_92169_ (enr = Options: m_92176_ getCameraType as used)
 M com/mojang/blaze3d/platform/InputConstants$Type m_84895_ (I)Lcom/mojang/blaze3d/platform/InputConstants$Key;   # [srg] getOrCreate: joined.tsrg ehe$b a (I)Lehe$a; m_84895_ (ehe$b = InputConstants.Type, KEYSYM as used)
 C com/mojang/blaze3d/platform/InputConstants$Key                                    # [srg] joined.tsrg ehe$a (InputConstants.Key: b ()I m_84873_ getValue)
+# 2.7.3: the Transformed effect (PieceEffects)
+M net/minecraft/world/effect/MobEffect m_19472_ (Lnet/minecraft/world/entity/ai/attributes/Attribute;Ljava/lang/String;DLnet/minecraft/world/entity/ai/attributes/AttributeModifier$Operation;)Lnet/minecraft/world/effect/MobEffect;   # [srg] addAttributeModifier: joined.tsrg bey a (Lbhb;Ljava/lang/String;DLbhe$a;)Lbey; m_19472_ (bey = MobEffect, bhb = Attribute, bhe$a = AttributeModifier.Operation, as the allowlisted MULTIPLY_BASE)
+C net/minecraft/world/effect/MobEffectCategory                                      # [srg] joined.tsrg bez (C_497_: a BENEFICIAL, b HARMFUL, c NEUTRAL: enum constants keep their names)
+F net/minecraft/world/effect/MobEffectCategory BENEFICIAL Lnet/minecraft/world/effect/MobEffectCategory;   # [srg] joined.tsrg bez a BENEFICIAL
+M net/minecraft/world/effect/MobEffect <init> (Lnet/minecraft/world/effect/MobEffectCategory;I)V   # [srg] joined.tsrg bey <init> (Lbez;I)V 19450 (protected: a subclass's super call)

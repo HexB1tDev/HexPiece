@@ -2,11 +2,10 @@ Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetc
 docs/handoff/next-ai-2.7.0.md (the newest: the Uo Uo no Mi with the owner's dragon model: Z transforms (the model's own takes, grown
 out of the player), flies as creative flight, transforms back; the left hand under Haki fixed), then next-ai-2.6.2.md, next-ai-2.5.9.md,
 next-ai-2.5.3.md (Ryou's fist aura: "beautiful and perfect": keep it) and next-ai-2.5.1.md (the owner's device: Android, OpenGL ES
-through MobileGlues). The next version is 2.7.3 (2.7.2 pushed: the Uo Uo no Mi's seven moves; 2.7.1 the colours and the key layout; check the runs first).
+through MobileGlues). The next version is 2.7.4 (2.7.3 pushed: the dragon's locks and the Transformed effect; 2.7.2 the seven moves; 2.7.1 the colours and the key layout; check the runs first).
 
-Then the owner's item 8 in next-ai-2.7.0.md (in dragon form: no mode switch, no Haki at all, only the dragon's moves; a new
-"Transformed" effect, double HP and Resistance, for the dragon and Nika's Gear 5), ask the owner how the moves look and feel, then
-the lag and size pass the owner asked for in session 10 (not started). Render every animation and effect you change (tools/dragon_gif.py, tools/preview/DragonPreview,
+Then ask the owner how the dragon, its moves and colours look and feel in game, and do the lag and size pass the owner asked for
+in session 10 (not started: next-ai-2.7.0.md "Next"). Render every animation and effect you change (tools/dragon_gif.py, tools/preview/DragonPreview,
 tools/anim_preview.py), judge every frame yourself, fix and render again.
 
 House rules (CLAUDE.md): versions roll over at 9, keep only 5 releases, a push is done only when GitHub's runs are green, never claim

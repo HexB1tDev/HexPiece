@@ -4,8 +4,8 @@ Read CLAUDE.md first. This note is the newest. Before it: next-ai-2.6.2.md (the 
 sheathing, the Haki coat on blades, the Conqueror's sounds and stun), next-ai-2.5.9.md, next-ai-2.5.3.md (Ryou's fist aura:
 "beautiful and perfect": keep it), next-ai-2.5.1.md (**the owner's device: Android phone**, Amethyst, MobileGlues).
 
-Branch `claude/nice-bell-gam7qf`. **2.7.2 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first; 2.7.0's were green, 2.7.1's were
-running). The next version is 2.7.3: the dragon's locks and the Transformed effect (the owner's item 8), then the lag and size pass.**
+Branch `claude/nice-bell-gam7qf`. **2.7.3 is pushed (check its "Build HexPiece" and "Release HexPiece" runs first; 2.7.0, 2.7.1 and 2.7.2's were green).
+The next version is 2.7.4: the lag and size pass (the owner's item 2, never started), and the owner's report on the dragon.**
 
 ## The owner (session 10, verbatim)
 1. "Current bugs: Haki when holding a katana makes left hand invisible." (fixed, 2.7.0)
@@ -162,7 +162,17 @@ running). The next version is 2.7.3: the dragon's locks and the Transformed effe
 - Fixed in passing: `StyleCombat.sound` asked Fruits.sound for "fx.<name>" (the map's keys are plain names): every combat sound through
   it (sword impacts, water and finger-pistol whooshes) was silent; it strips the prefix now.
 
-## Next (2.7.3)
+## Done (2.7.3, pushed): the owner's item 8
+- `PieceEffects` (DeferredRegister MOB_EFFECTS): `hexhaki:transformed`, a MobEffect whose own modifier (fixed uuid HEALTH_ID,
+  MULTIPLY_BASE 1 on MAX_HEALTH) doubles the maximum health; icon textures/mob_effect/transformed.png (an azure dragon's eye), lang
+  "effect.hexhaki.transformed". `server/Transformed` (every 10 ticks): on while the dragon is out (DragonServer.phase != HUMAN) or
+  Gear 5 is on (GearData.hasFruit && GearData.flag(player, "gear5")): added infinite (-1), the health scaled to the same share of the
+  doubled maximum; Resistance II 40 ticks renewed each time (never removing one from elsewhere); off: removed, the health clamped.
+- Locks: `RyouServer.hakiOff` (the original's HakiServerController.onAction asks it, PiecePatch) is true while the dragon is out: every
+  Haki action dropped on the server; `CombatMode.keys` drains R and Ctrl + R doing nothing while DragonClient.selfOut(). Haki already
+  ON when transforming is not switched off (only nothing new): if the owner wants it switched off, call the original's toggles.
+
+## Next (2.7.4)
 1. Check 2.7.0's runs. Ask the owner how the dragon handles (nothing was tested in game).
 2. **The moves** (item 5 above), in the ability HUD (AbilityHud.kit: ClientKits.get(fruit).moves()) and the Captain's Log
    (LogbookData.kit). Human-form animations: playerAnimator JSONs under src/main/resources/assets/hexhaki/player_animation/ (judge with

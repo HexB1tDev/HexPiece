@@ -299,6 +299,12 @@ public final class DragonClient {
     /** 2.7.2: whether the local player's breath is on (as last sent). */
     private static boolean flameSent;
 
+    /** 2.7.3: the local player transformed at all (the dragon coming, out or going). */
+    public static boolean selfOut() {
+        Minecraft minecraft = Minecraft.m_91087_();
+        return minecraft.f_91074_ != null && ENTRIES.containsKey(minecraft.f_91074_.m_19879_());
+    }
+
     /** The local player a dragon now (out, not coming or going). */
     static boolean selfDragon() {
         Minecraft minecraft = Minecraft.m_91087_();
