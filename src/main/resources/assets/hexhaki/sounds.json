@@ -171,5 +171,196 @@
         "attenuation_distance": 64
       }
     ]
+  },
+  "piece.uo.roar": {
+    "subtitle": "subtitles.hexhaki.piece.uo.roar",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/roar1",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "hexhaki:piece/uo/roar2",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "hexhaki:piece/uo/roar3",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "piece.uo.form": {
+    "subtitle": "subtitles.hexhaki.piece.uo.form",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/form_boom",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.uo.whoosh": {
+    "subtitle": "subtitles.hexhaki.piece.uo.whoosh",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/whoosh1"
+      },
+      {
+        "name": "hexhaki:piece/uo/whoosh2"
+      },
+      {
+        "name": "hexhaki:piece/uo/whoosh3"
+      }
+    ]
+  },
+  "piece.uo.unform": {
+    "subtitle": "subtitles.hexhaki.piece.uo.unform",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/unform"
+      }
+    ]
+  },
+  "piece.uo.gust": {
+    "subtitle": "subtitles.hexhaki.piece.uo.gust",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/gust1"
+      },
+      {
+        "name": "hexhaki:piece/uo/gust2"
+      },
+      {
+        "name": "hexhaki:piece/uo/gust3"
+      }
+    ]
+  },
+  "piece.uo.air": {
+    "subtitle": "subtitles.hexhaki.piece.uo.air",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/air1"
+      },
+      {
+        "name": "hexhaki:piece/uo/air2"
+      }
+    ]
+  },
+  "piece.uo.air_hit": {
+    "subtitle": "subtitles.hexhaki.piece.uo.air_hit",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/air_hit"
+      }
+    ]
+  },
+  "piece.uo.tornado": {
+    "subtitle": "subtitles.hexhaki.piece.uo.tornado",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/tornado1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "hexhaki:piece/uo/tornado2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.uo.flame_start": {
+    "subtitle": "subtitles.hexhaki.piece.uo.flame_start",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/flame_start"
+      }
+    ]
+  },
+  "piece.uo.flame_loop": {
+    "subtitle": "subtitles.hexhaki.piece.uo.flame_loop",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/flame_loop1"
+      },
+      {
+        "name": "hexhaki:piece/uo/flame_loop2"
+      }
+    ]
+  },
+  "piece.uo.charge": {
+    "subtitle": "subtitles.hexhaki.piece.uo.charge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/charge"
+      }
+    ]
+  },
+  "piece.uo.beam": {
+    "subtitle": "subtitles.hexhaki.piece.uo.beam",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/beam1",
+        "attenuation_distance": 80
+      },
+      {
+        "name": "hexhaki:piece/uo/beam2",
+        "attenuation_distance": 80
+      }
+    ]
+  },
+  "piece.uo.fireball": {
+    "subtitle": "subtitles.hexhaki.piece.uo.fireball",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/fireball1"
+      }
+    ]
+  },
+  "piece.uo.ember_hit": {
+    "subtitle": "subtitles.hexhaki.piece.uo.ember_hit",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/ember_hit1"
+      },
+      {
+        "name": "hexhaki:piece/uo/ember_hit2"
+      }
+    ]
+  },
+  "piece.uo.explode": {
+    "subtitle": "subtitles.hexhaki.piece.uo.explode",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/explode1",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "hexhaki:piece/uo/explode2",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "piece.uo.blast": {
+    "subtitle": "subtitles.hexhaki.piece.uo.blast",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/blast1",
+        "attenuation_distance": 128
+      }
+    ]
+  },
+  "piece.uo.lunge": {
+    "subtitle": "subtitles.hexhaki.piece.uo.lunge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/lunge"
+      }
+    ]
+  },
+  "piece.uo.bite": {
+    "subtitle": "subtitles.hexhaki.piece.uo.bite",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/uo/bite1"
+      }
+    ]
   }
 }

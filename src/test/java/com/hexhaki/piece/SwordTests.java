@@ -34,6 +34,7 @@ public final class SwordTests {
         bigSlash();
         wave();
         sounds();
+        dragonSounds();
         holster();
         drawView();
         Check.done("SwordTests");
@@ -577,7 +578,9 @@ public final class SwordTests {
         while (event.find()) {
             Check.that(all.contains(event.group(1)) || event.group(1).equals(com.hexhaki.piece.clash.ClashRules.SOUND)
                 || java.util.Arrays.asList(com.hexhaki.piece.Alignment.SOUNDS).contains(event.group(1))
-                || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION), event.group(1) + ": registered");
+                || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION)
+                || java.util.Arrays.stream(com.hexhaki.piece.dragon.UoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
         Matcher clip = Pattern.compile("\"hexhaki:piece/sword/([a-z0-9_]+)\"").matcher(json);
@@ -621,6 +624,46 @@ public final class SwordTests {
                 file + ".ogg: mono Ogg Vorbis");
             Check.that(credits.contains(file + ".ogg: "), file + ".ogg: credited in SOURCES.txt (the owner's own clip)");
         }
+    }
+
+    /**
+     * 2.8.6 (the owner: "giving every move of the dragon custom sounds from the web ... don't make any sound yourself"): the Uo Uo no
+     * Mi's sounds: every event defined with its subtitle, every clip there and played, each a mono 44.1 kHz Ogg Vorbis file credited in
+     * SOURCES.txt as a CC0 recording on Freesound.org with its author and page.
+     */
+    static void dragonSounds() throws Exception {
+        Path dir = Path.of("src/main/resources/assets/hexhaki/sounds/piece/uo");
+        String json = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
+        String lang = Files.readString(Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
+        String sources = Files.readString(dir.resolve("SOURCES.txt"));
+        Set<String> played = new HashSet<>();
+        for (String[] event : com.hexhaki.piece.dragon.UoSounds.EVENTS) {
+            Check.that(json.contains("\"" + event[0] + "\": {"), event[0] + ": defined in sounds.json");
+            Check.that(lang.contains("\"subtitles.hexhaki." + event[0] + "\""), event[0] + ": its subtitle");
+            for (int i = 1; i < event.length; i++) {
+                Check.that(json.contains("\"hexhaki:piece/uo/" + event[i] + "\""), event[0] + ": plays " + event[i]);
+                played.add(event[i]);
+            }
+        }
+        int files = 0;
+        try (java.util.stream.Stream<Path> list = Files.list(dir)) {
+            for (Path file : (Iterable<Path>) list::iterator) {
+                String name = file.getFileName().toString();
+                if (!name.endsWith(".ogg")) {
+                    continue;
+                }
+                files++;
+                Check.that(played.contains(name.substring(0, name.length() - 4)), name + ": played by some event");
+                Matcher credit = Pattern.compile("(?m)^" + Pattern.quote(name)
+                    + ": \".+\" by \\S+, https://freesound\\.org/people/\\S+/sounds/\\d+/ \\(CC0 1\\.0\\)").matcher(sources);
+                Check.that(credit.find(), name + ": credited in SOURCES.txt (its title, author, page and CC0 licence)");
+                byte[] data = Files.readAllBytes(file);
+                int at = indexOf(data, "\u0001vorbis".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+                Check.that(data[0] == 'O' && data[1] == 'g' && data[2] == 'g' && data[3] == 'S' && at >= 0 && data[at + 11] == 1,
+                    name + ": mono Ogg Vorbis");
+            }
+        }
+        Check.that(files == played.size() && files >= 25, "every dragon clip is played (" + files + " clips)");
     }
 
     static int indexOf(byte[] data, byte[] what) {

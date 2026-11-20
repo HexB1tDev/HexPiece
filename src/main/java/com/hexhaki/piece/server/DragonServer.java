@@ -6,6 +6,7 @@ import com.hexhaki.fruit.FruitServer;
 import com.hexhaki.fruit.Fruits;
 import com.hexhaki.piece.dragon.DragonColours;
 import com.hexhaki.piece.dragon.DragonForm;
+import com.hexhaki.piece.dragon.UoSounds;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CDragon;
 import java.util.HashMap;
@@ -54,7 +55,13 @@ public final class DragonServer {
         float oldSpeed = 0.05F;
         /** 2.7.1 (the owner: "Dragons can come in different colors, other than blue. (always random)"): this dragon's palette. */
         int colour;
+        /** 2.8.6: when the flying dragon's next gust of wind may sound (game ticks). */
+        long nextGust;
     }
+
+    /** 2.8.6: how fast the dragon must fly for its wind to howl (blocks a tick), and how long between gusts (ticks). */
+    static final double GUST_SPEED = 0.55;
+    static final int GUST_EVERY = 70;
 
     private static final Map<UUID, State> STATES = new HashMap<>();
     private static final Map<UUID, Long> RESTING = new HashMap<>();
@@ -87,10 +94,11 @@ public final class DragonServer {
             player.getPersistentData().m_128379_(MARK, true);
             enter(player, fresh, DragonForm.FORMING, now);
             fly(player);
-            sound(player, "whoosh_heavy", 1.6F, 0.55F);
+            sound(player, UoSounds.FORM, 2.5F, 1.0F);
+            sound(player, UoSounds.WHOOSH, 2.0F, 0.85F);
         } else if (phase == DragonForm.DRAGON) {
             enter(player, state, DragonForm.UNFORMING, now);
-            sound(player, "whoosh_heavy", 1.4F, 0.65F);
+            sound(player, UoSounds.UNFORM, 2.0F, 1.0F);
         }
     }
 
@@ -170,7 +178,8 @@ public final class DragonServer {
     private static final Map<UUID, Long> SOFT = new HashMap<>();
 
     static void sound(ServerPlayer player, String name, float volume, float pitch) {
-        SoundEvent event = Fruits.sound(name);
+        // 2.8.6: the dragon's own sounds (dragon/UoSounds) first, the original's by their plain names otherwise
+        SoundEvent event = name.startsWith("piece.") ? com.hexhaki.piece.PieceSounds.event(name) : Fruits.sound(name);
         if (event != null) {
             player.m_9236_().m_6263_(null, player.m_20185_(), player.m_20186_() + DragonForm.HEAD_HEIGHT, player.m_20189_(), event,
                 SoundSource.PLAYERS, volume, pitch);
@@ -202,11 +211,23 @@ public final class DragonServer {
         }
         if (state.phase == DragonForm.FORMING && ticks >= DragonForm.FORM_TICKS) {
             enter(player, state, DragonForm.DRAGON, now);
-        } else if (state.phase == DragonForm.DRAGON && FruitServer.inSea(player)) {
+            sound(player, UoSounds.ROAR, 3.5F, 1.0F); // 2.8.6: fully formed, it roars
+        } else if (state.phase == DragonForm.DRAGON && now >= state.nextGust) {
+            // 2.8.6: flying fast, the wind howls round the body, gust after gust, louder the faster it goes
+            double dx = player.m_20185_() - player.f_19790_;
+            double dy = player.m_20186_() - player.f_19791_;
+            double dz = player.m_20189_() - player.f_19792_;
+            double speed = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (speed > GUST_SPEED) {
+                sound(player, UoSounds.GUST, (float) Math.min(2.5, 0.8 + speed), 0.9F + (float) Math.min(0.2, speed * 0.1));
+                state.nextGust = now + GUST_EVERY;
+            }
+        }
+        if (state.phase == DragonForm.DRAGON && FruitServer.inSea(player)) {
             enter(player, state, DragonForm.UNFORMING, now);
         } else if (state.phase == DragonForm.UNFORMING) {
             if (ticks == DragonForm.UNFORM_TICKS - 8) {
-                sound(player, "slam", 0.9F, 0.8F);
+                sound(player, UoSounds.AIR_HIT, 1.2F, 1.1F);
             }
             if (ticks >= DragonForm.UNFORM_TICKS) {
                 STATES.remove(player.m_20148_());

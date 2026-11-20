@@ -35,6 +35,17 @@ public final class PieceSounds {
         // 2.6.0: the Conqueror's release explosion (CC0 recordings from the web, haki/ConquerorMix)
         String explosion = com.hexhaki.piece.haki.ConquerorMix.EXPLOSION;
         BY_NAME.put(explosion, SOUNDS.register(explosion, () -> SoundEvent.m_262824_(HexHaki.id(explosion))));
+        // 2.8.6: the Uo Uo no Mi's sounds (CC0 recordings from Freesound.org, dragon/UoSounds)
+        for (String[] event : com.hexhaki.piece.dragon.UoSounds.EVENTS) {
+            String name = event[0];
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
+    }
+
+    /** 2.8.6: one of HexPiece's own sound events by name, or null (not one of ours, or not registered yet). */
+    public static SoundEvent event(String name) {
+        RegistryObject<SoundEvent> sound = BY_NAME.get(name);
+        return sound == null ? null : sound.get();
     }
 
     private PieceSounds() {

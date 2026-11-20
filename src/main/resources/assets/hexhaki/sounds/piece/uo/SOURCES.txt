@@ -1,0 +1,33 @@
+The Uo Uo no Mi's sounds (tools/dragon_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded. Thanks to every author named.
+
+roar1.ogg: "Dragon Roar.wav" by Dreeme, https://freesound.org/people/Dreeme/sounds/546391/ (CC0 1.0), from 0.0 s, 4.40 s long
+roar2.ogg: "Dragon Roar.wav" by Dreeme, https://freesound.org/people/Dreeme/sounds/546391/ (CC0 1.0), from 5.9 s, 3.60 s long
+roar3.ogg: "DRAGON_ROAR.wav" by JoelAudio, https://freesound.org/people/JoelAudio/sounds/85568/ (CC0 1.0), from 0.0 s, 2.47 s long
+form_boom.ogg: "Trailer Vortex Boom" by modusmogulus, https://freesound.org/people/modusmogulus/sounds/785947/ (CC0 1.0), from 0.0 s, 3.70 s long
+whoosh1.ogg: "Heavy Whoosh" by SoundBiterSFX, https://freesound.org/people/SoundBiterSFX/sounds/730959/ (CC0 1.0), from 11.3 s, 3.18 s long
+whoosh2.ogg: "Heavy Whoosh" by SoundBiterSFX, https://freesound.org/people/SoundBiterSFX/sounds/730959/ (CC0 1.0), from 16.9 s, 3.00 s long
+whoosh3.ogg: "Heavy Whoosh" by SoundBiterSFX, https://freesound.org/people/SoundBiterSFX/sounds/730959/ (CC0 1.0), from 0.9 s, 2.60 s long
+unform.ogg: "Heavy Whoosh, Swoosh, Low, sfx, effect" by FALL-E, https://freesound.org/people/FALL-E/sounds/697432/ (CC0 1.0), from 47.0 s, 4.30 s long
+lunge.ogg: "Heavy Whoosh, Swoosh, Low, sfx, effect" by FALL-E, https://freesound.org/people/FALL-E/sounds/697432/ (CC0 1.0), from 25.6 s, 3.20 s long
+gust1.ogg: "Heavy gusts of wind" by SamsterBirdies, https://freesound.org/people/SamsterBirdies/sounds/565140/ (CC0 1.0), from 44.0 s, 4.50 s long
+gust2.ogg: "Heavy gusts of wind" by SamsterBirdies, https://freesound.org/people/SamsterBirdies/sounds/565140/ (CC0 1.0), from 11.0 s, 4.00 s long
+gust3.ogg: "Wind - Hurricane Typhoon Storm" by Vrymaa, https://freesound.org/people/Vrymaa/sounds/735350/ (CC0 1.0), from 41.0 s, 4.00 s long
+air1.ogg: "Instant Wind" by Raclure, https://freesound.org/people/Raclure/sounds/483599/ (CC0 1.0), from 1.0 s, 2.80 s long
+air2.ogg: "Whoosh Swirl Spinning" by Qvantor, https://freesound.org/people/Qvantor/sounds/877983/ (CC0 1.0), from 0.4 s, 1.58 s long
+air_hit.ogg: "Deep Boom" by Za-Games, https://freesound.org/people/Za-Games/sounds/539968/ (CC0 1.0), from 0.0 s, 2.20 s long
+tornado1.ogg: "wooshing vortex.mp3" by ShlockFest, https://freesound.org/people/ShlockFest/sounds/489396/ (CC0 1.0), from 50.0 s, 4.50 s long
+tornado2.ogg: "Wind - Hurricane Typhoon Storm" by Vrymaa, https://freesound.org/people/Vrymaa/sounds/735350/ (CC0 1.0), from 60.0 s, 4.50 s long
+flame_start.ogg: "Flamethrower_Weapon_Long_Bursts.wav" by AslakHostaker, https://freesound.org/people/AslakHostaker/sounds/395039/ (CC0 1.0), from 2.0 s, 2.60 s long
+flame_loop1.ogg: "Flamethrower_Weapon_Long_Bursts.wav" by AslakHostaker, https://freesound.org/people/AslakHostaker/sounds/395039/ (CC0 1.0), from 5.0 s, 3.00 s long
+flame_loop2.ogg: "Flamethrower_Weapon_Long_Bursts.wav" by AslakHostaker, https://freesound.org/people/AslakHostaker/sounds/395039/ (CC0 1.0), from 16.0 s, 3.00 s long
+beam1.ogg: "dragon breathe ire" by soundmast123, https://freesound.org/people/soundmast123/sounds/532156/ (CC0 1.0), from 0.0 s, 5.00 s long
+beam2.ogg: "Fire Breath.wav" by bspiller5, https://freesound.org/people/bspiller5/sounds/157616/ (CC0 1.0), from 1.2 s, 4.00 s long
+charge.ogg: "Power Charge" by Sojan, https://freesound.org/people/Sojan/sounds/407052/ (CC0 1.0), from 0.3 s, 3.20 s long
+fireball1.ogg: "Fireball, Woosh, Pass, fast" by julianmateo_, https://freesound.org/people/julianmateo_/sounds/522705/ (CC0 1.0), from 0.9 s, 2.10 s long
+ember_hit1.ogg: "Fireball Explosion.wav" by Blankened, https://freesound.org/people/Blankened/sounds/431174/ (CC0 1.0), from 0.0 s, 1.08 s long
+ember_hit2.ogg: "Flame Burst" by magnuswaker, https://freesound.org/people/magnuswaker/sounds/592572/ (CC0 1.0), from 0.0 s, 1.60 s long
+explode1.ogg: "fire_explosion.wav" by ReadeOnly, https://freesound.org/people/ReadeOnly/sounds/186932/ (CC0 1.0), from 1.2 s, 3.07 s long
+explode2.ogg: "large explosion 1" by V-ktor, https://freesound.org/people/V-ktor/sounds/482993/ (CC0 1.0), from 0.0 s, 3.87 s long
+blast1.ogg: "massive explosion" by Hugofski, https://freesound.org/people/Hugofski/sounds/177556/ (CC0 1.0), from 7.3 s, 6.20 s long
+bite1.ogg: "monster bite" by LucasDuff, https://freesound.org/people/LucasDuff/sounds/467701/ (CC0 1.0), from 0.3 s, 1.73 s long

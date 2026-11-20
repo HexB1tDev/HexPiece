@@ -354,7 +354,7 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   that position without being able to move until it's over. It's the drawback of that move. So you have to actually think where you're
   gonna aim it." (Blast Breath, both forms: free aim while charging; on release the aim (camera/look and the beam) is frozen until the
   beam ends.) "This is like your top priority after you finish whatever you're doing right now."
-- Then: "the next top priority thing is giving every move of the dragon custom sounds from the web. And I mean, don't make any sound
+- (Done in 2.8.5 and 2.8.6.) Then: "the next top priority thing is giving every move of the dragon custom sounds from the web. And I mean, don't make any sound
   yourself. They all have to be from the web, and they have to be the best versions they can be. So pick something epic for
   everything. Wind sound effects, fire sound effects, fire like blasts, fire explosions, charging, everything comes from the web."
   (Free-to-use sounds only, credited; every Uo move: breath, fireball, blast breath charge/beam/explosion, wind moves, tornado, roar,
@@ -390,9 +390,24 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   frame (RenderTickEvent START undoes the mouse's turn) until the beam's life ends, FIRE_BEAM_OFF, death or logout. Charging is free
   to aim, as before. Only the aim is held (the player can still move); if the owner meant movement too, hold the position as well.
 
-## Next (2.8.6)
-1. Check 2.8.5's runs. Then the owner's third queued request: every dragon move's sounds from the web (epic, free to use, credited
-   in the jar's notes), none made by hand (see "The owner's queued requests").
-2. Ask the owner how the styles feel in first person (2.8.2), the new blows (2.8.3), the new moves (2.8.4), and the dragon's new
-   wave and the Blast Breath lock (2.8.5); nothing was tested in game.
-3. Earlier items still open: how 2.7.8's Light fruit and the Uo beams play; the lag pass (the owner's item 2).
+## Done (2.8.6, pushed): the dragon's sounds, all from the web (the owner's third queued request)
+- opengameart.org was refused by the session's network; a personal environment "HexPiece" (env_01DEzkwiWiBUXF6hnQ29v2S5) was made
+  with the owner's approval: opengameart.org, freesound.org and cdn.freesound.org allowed, saved for this repository.
+- tools/dragon_sounds.py fetches 22 CC0 recordings from Freesound.org (chosen by rating and downloads; each page checked for CC0 before
+  use; its high-quality preview), cuts 31 clips (start, length, fades), mono 44.1 kHz Ogg Vorbis, peak -1 dBFS, into
+  assets/hexhaki/sounds/piece/uo/ with SOURCES.txt crediting each (title, author, page, CC0). 1.2 MB.
+- dragon/UoSounds (pure): 18 events (roar, form, whoosh, unform, gust, air, air_hit, tornado, flame_start, flame_loop, charge, beam,
+  fireball, ember_hit, explode, blast, lunge, bite) and their clips; PieceSounds registers them (PieceSounds.event); sounds.json and the
+  subtitles were added by script (big ones heard far: attenuation_distance 64-128).
+- Wired: Z forming: form boom + whoosh, the roar once fully formed; going back: unform, a deep boom as it lands; flying fast (over 0.55
+  blocks a tick): a gust every 70 ticks, louder with speed (DragonServer); Air Pressure: air, air_hit where it strikes; human Blast
+  Breath: beam; Wind Force: tornado (again every 80 ticks while it travels); Dragon Embers: fireball, ember_hit at each landing; Fire
+  Breath: flame_start, flame_loop every 50 ticks while it burns; the dragon's Blast Breath: charge on press, roar + beam on release,
+  explode where it strikes, the blast (as big as the charge) at its end; Gigantic Bite: lunge + roar, bite. No hand-made sound.
+- SwordTests.dragonSounds checks every event, clip, credit and file format.
+
+## Next (2.8.7)
+1. Check 2.8.6's runs. Ask the owner how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the
+   dragon's wave, the Blast Breath lock, the dragon's sounds); nothing was tested in game. Their sound picks are open to change: every
+   clip is listed in assets/hexhaki/sounds/piece/uo/SOURCES.txt, and tools/dragon_sounds.py re-cuts them.
+2. Earlier items still open: how 2.7.8's Light fruit and the Uo beams play; the lag pass (the owner's item 2).

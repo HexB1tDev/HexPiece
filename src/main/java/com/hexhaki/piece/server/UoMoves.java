@@ -6,6 +6,7 @@ import com.hexhaki.fruit.FruitUtil;
 import com.hexhaki.fx.Impact;
 import com.hexhaki.gameplay.HakiServerController;
 import com.hexhaki.piece.dragon.DragonForm;
+import com.hexhaki.piece.dragon.UoSounds;
 import com.hexhaki.piece.dragon.UoFire;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CUoFx;
@@ -109,7 +110,7 @@ public final class UoMoves {
             if (slot == UoKit.CHARGED_BLAST.slot() && ready(player, UoKit.CHARGED_BLAST) && !CHARGING.containsKey(player.m_20148_())) {
                 CHARGING.put(player.m_20148_(), now);
                 PieceNetwork.around(player, S2CUoFx.of(S2CUoFx.CHARGE_ON, 0, player.m_19879_()));
-                DragonServer.sound(player, "stream", 1.2F, 0.6F);
+                DragonServer.sound(player, UoSounds.CHARGE, 2.2F, 1.0F);
             } else if (slot == UoKit.GIGANTIC_BITE.slot()) {
                 bite(player, now);
             }
@@ -136,7 +137,8 @@ public final class UoMoves {
         // ball let go as a beam of fire, its width, length and life growing with the charge
         beam(player, true, 2.5 + 11.5 * charge, 60.0 + 100.0 * charge, 30 + (int) (40 * charge), 4.0F + 8.0F * charge, 1.2 + 2.0 * charge,
             charge);
-        DragonServer.sound(player, "whoosh_heavy", 2.0F, 0.5F);
+        DragonServer.sound(player, UoSounds.ROAR, 3.0F, 0.9F);
+        DragonServer.sound(player, UoSounds.BEAM, 3.0F + charge, 0.85F);
     }
 
     /** M1 held in dragon form (client/dragon/DragonInput, C2SDragon): the fire breath on and off. */
@@ -149,7 +151,7 @@ public final class UoMoves {
             }
             FLAMING.put(id, new Flame(player, now));
             PieceNetwork.around(player, S2CUoFx.of(S2CUoFx.FLAME_ON, 0, player.m_19879_()));
-            DragonServer.sound(player, "flame", 1.6F, 0.7F);
+            DragonServer.sound(player, UoSounds.FLAME_START, 2.2F, 0.9F);
         } else if (FLAMING.remove(id) != null) {
             stopFlame(player);
         }
@@ -187,7 +189,7 @@ public final class UoMoves {
                 Vec3 look = player.m_20154_();
                 Vec3 hand = player.m_146892_().m_82549_(look.m_82490_(0.9)).m_82549_(right(player).m_82490_(0.35)).m_82520_(0.0, -0.35, 0.0);
                 launch(player, hand, look.m_82490_(4.2), AIR_RANGE, 0.9, 2.0, 8.0F, 0, 1.8, S2CUoFx.AIR);
-                StyleCombat.sound(player, "fx.whoosh_heavy", 1.0F);
+                DragonServer.sound(player, UoSounds.AIR, 1.8F, 1.0F);
             }));
         }
     }
@@ -205,7 +207,7 @@ public final class UoMoves {
             }
             // 2.7.8 (the owner: "both versions of blast breath are BEAMS, not short blasts"): a beam of fire out of the mouth
             beam(player, false, HUMAN_BEAM_WIDTH, HUMAN_BEAM_LENGTH, HUMAN_BEAM_LIFE, 3.0F, 1.0, 0.0F);
-            DragonServer.sound(player, "flame", 1.4F, 0.9F);
+            DragonServer.sound(player, UoSounds.BEAM, 2.2F, 1.15F);
         }));
     }
 
@@ -228,7 +230,7 @@ public final class UoMoves {
             LIVE.add(tornado);
             PieceNetwork.around(player, new S2CUoFx(S2CUoFx.TORNADO, tornado.id, player.m_19879_(), base.f_82479_, base.f_82480_, base.f_82481_,
                 (float) tornado.step.f_82479_, (float) tornado.step.f_82480_, (float) tornado.step.f_82481_, 0, 0, 0, 1.0F, tornado.life));
-            StyleCombat.sound(player, "fx.whoosh_heavy", 1.4F);
+            DragonServer.sound(player, UoSounds.TORNADO, 2.2F, 1.0F);
         }));
     }
 
@@ -270,7 +272,7 @@ public final class UoMoves {
                     (float) apex.f_82479_, (float) apex.f_82480_, (float) apex.f_82481_, (float) land.f_82479_, (float) land.f_82480_,
                     (float) land.f_82481_, 0.55F, delay << 16 | rise << 8 | fall));
             }
-            DragonServer.sound(player, "flame", 1.5F, 1.2F);
+            DragonServer.sound(player, UoSounds.FIREBALL, 2.0F, 0.95F);
         }));
     }
 
@@ -334,7 +336,8 @@ public final class UoMoves {
         player.m_20334_(look.f_82479_ * 2.2, look.f_82480_ * 2.2 + 0.1, look.f_82481_ * 2.2);
         player.f_19864_ = true;
         PieceNetwork.around(player, S2CUoFx.of(S2CUoFx.BITE, 0, player.m_19879_()));
-        DragonServer.sound(player, "whoosh_heavy", 1.8F, 0.7F);
+        DragonServer.sound(player, UoSounds.LUNGE, 2.2F, 0.9F);
+        DragonServer.sound(player, UoSounds.ROAR, 2.4F, 1.15F);
         ServerLevel level = (ServerLevel) player.m_9236_();
         LIVE.add(new Later(level, now + 7, () -> {
             if (!player.m_6084_() || DragonServer.phase(player) != DragonForm.DRAGON) {
@@ -353,7 +356,7 @@ public final class UoMoves {
                     }
                 }
             }
-            DragonServer.sound(player, "slam", 1.6F, 0.6F);
+            DragonServer.sound(player, UoSounds.BITE, 2.6F, 0.75F);
         }));
     }
 
@@ -494,8 +497,9 @@ public final class UoMoves {
             if (this.kind != S2CUoFx.AIR) {
                 Impact.quake(this.level, at, this.radius * 5.0, (float) Math.min(1.0, this.radius / 6.0), 14);
             }
-            DragonServer.sound(this.user, this.kind == S2CUoFx.AIR ? "impact_heavy" : "slam", this.kind == S2CUoFx.BLAST ? 2.4F : 1.2F,
-                this.kind == S2CUoFx.BLAST ? 0.55F : 0.9F);
+            com.hexhaki.piece.PieceSounds.playAt(this.user, at.f_82479_, at.f_82480_, at.f_82481_,
+                this.kind == S2CUoFx.AIR ? UoSounds.AIR_HIT : this.kind == S2CUoFx.BLAST ? UoSounds.BLAST : UoSounds.EXPLODE,
+                this.kind == S2CUoFx.BLAST ? 3.0F : 1.8F, this.kind == S2CUoFx.BLAST ? 0.9F : 1.0F);
         }
     }
 
@@ -554,6 +558,11 @@ public final class UoMoves {
         public boolean tick(long now) {
             this.age++;
             this.base = this.base.m_82549_(this.step);
+            if (this.age % 80 == 0 && this.age + 20 < this.life) {
+                // 2.8.6: a long-travelling tornado howls again where it is (each clip 4.5 s)
+                com.hexhaki.piece.PieceSounds.playAt(this.user, this.base.f_82479_, this.base.f_82480_ + 2.0, this.base.f_82481_, UoSounds.TORNADO,
+                    2.0F, 1.0F);
+            }
             Predicate<LivingEntity> foe = other -> FruitUtil.foe(this.user, other);
             AABB funnel = box(this.base.m_82520_(-WIND_HIGH, -1.0, -WIND_HIGH), this.base.m_82520_(WIND_HIGH, WIND_TALL, WIND_HIGH));
             DamageSource source = StyleCombat.of(this.user);
@@ -628,6 +637,8 @@ public final class UoMoves {
             }
             explode(this.user, this.level, this.land.m_82520_(0.0, 0.5, 0.0), new Vec3(0, -1, 0), 3.2, 7.0F, 5, 1.0);
             Impact.quake(this.level, this.land, 12.0, 0.35F, 8);
+            com.hexhaki.piece.PieceSounds.playAt(this.user, this.land.f_82479_, this.land.f_82480_ + 0.5, this.land.f_82481_, UoSounds.EMBER_HIT,
+                1.8F, 0.9F + 0.2F * (this.id % 3) / 2.0F);
             return true;
         }
     }
@@ -710,7 +721,8 @@ public final class UoMoves {
             if (this.struck) {
                 Craters.open(this.level, this.user, this.last, this.dragon ? 3.0 + 9.0 * this.charge : 2.0);
             }
-            DragonServer.sound(this.user, "slam", 2.0F + this.charge, 0.6F);
+            com.hexhaki.piece.PieceSounds.playAt(this.user, this.last.f_82479_, this.last.f_82480_, this.last.f_82481_, UoSounds.BLAST,
+                3.0F + 3.0F * this.charge, 0.95F - 0.15F * this.charge);
         }
 
         @Override
@@ -747,6 +759,8 @@ public final class UoMoves {
                     (float) way.f_82479_, (float) way.f_82480_, (float) way.f_82481_, 0, 0, S2CUoFx.BLAST, (float) radius, 0));
                 Craters.open(this.level, this.user, to, this.width * 0.8 + 1.2);
                 Impact.quake(this.level, to, radius * 4.0 + 10.0, (float) Math.min(1.0, 0.3 + this.width / 10.0), 12);
+                com.hexhaki.piece.PieceSounds.playAt(this.user, to.f_82479_, to.f_82480_, to.f_82481_, UoSounds.EXPLODE, 2.5F + this.charge,
+                    0.85F);
             }
             if (this.age % 4 != 0 && this.age % 6 != 0) {
                 return false;
@@ -898,6 +912,9 @@ public final class UoMoves {
                     continue;
                 }
                 breathe(player, held);
+                if (held >= 40 && (held - 40) % 50 == 0) {
+                    DragonServer.sound(player, UoSounds.FLAME_LOOP, 2.0F, 0.9F); // 2.8.6: its roar held while it burns
+                }
             }
         }
     }
