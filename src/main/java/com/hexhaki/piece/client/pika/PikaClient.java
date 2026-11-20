@@ -78,9 +78,9 @@ final class PikaClient implements ClientKit {
         return false;
     }
 
-    /** Ama no Murakumo: a long sword (blocks from the fist to the point), its blade's half width. */
-    static final double BLADE_LENGTH = 1.9;
-    static final double BLADE_WIDTH = 0.11;
+    /** Ama no Murakumo: a long rod of light (blocks from the fist to the point), its radius. */
+    static final double BLADE_LENGTH = 2.6;
+    static final double BLADE_WIDTH = 0.032;
 
     static void draw(PoseStack pose, MultiBufferSource buffers, double shimmer) {
         PikaFx.Writer writer = new PikaFx.Writer();

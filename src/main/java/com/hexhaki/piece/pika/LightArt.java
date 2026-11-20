@@ -290,55 +290,97 @@ public final class LightArt {
     // ------------------------------------------------------------------------------------------------------ Ama no Murakumo
 
     /**
-     * Ama no Murakumo, the sword of solid light, in the hand's own frame (the fist at the origin, the blade out along -Y as an item is
-     * held, its edges along Z, its flats facing X). 2.7.8 (the owner, on a thin line of light: "this is not a sword at all"): a real
-     * sword's shape, all of it light: a pommel and a grip, a cross-guard, a broad straight blade {@code width} wide (half, edge to
-     * middle) and {@code length} long with a raised middle (white-hot down its ridge, pale gold across its flats, gold at its edges)
-     * and a sharp point, and a soft gold glow round the blade that breathes with {@code shimmer}. Independent of the eye, so it is drawn
-     * through the arm's own pose.
+     * Ama no Murakumo in the hand's own frame (the fist at the origin, the sword out along -Y as an item is held). 2.7.9 (the owner,
+     * with two anime frames, docs/handoff/murakumo-ref-*.png: "its meant to be a full light sword no handle"): no hilt at all, the
+     * sword is light from end to end: a long, very thin rod, white-hot down its core in a pale-gold sheath and a soft gold glow,
+     * pointed at its tip and short behind the fist; at the fist a ring of light with a cross through it (the first frame) and a
+     * starburst of rays (the second), that breathe with {@code shimmer} (0 to 1). {@code length} from the fist to the point,
+     * {@code width} the rod's radius. Independent of the eye, so it is drawn through the arm's own pose.
      */
     public static void blade(FireMesh.Sink sink, double length, double width, double shimmer) {
-        int white = FireMesh.argb(1.0, 0xFFFFFF);
-        int pale = FireMesh.argb(1.0, 0xFFF29A);
-        int gold = FireMesh.argb(1.0, 0xFFD52B);
-        int amber = FireMesh.argb(1.0, 0xF0A818);
-        // the grip, the pommel and the guard: boxes of light
-        box(sink, 0.0, 0.03, 0.0, 0.032, 0.11, 0.032, amber, gold);
-        box(sink, 0.0, 0.17, 0.0, 0.05, 0.035, 0.05, pale, gold);
-        box(sink, 0.0, -0.105, 0.0, 0.05, 0.03, width * 2.1, pale, gold);
-        // the blade: a ring of eight round its middle at each station (edge, flat, ridge, flat, edge, ...), out to a point
-        double th = width * 0.2;
-        double hilt = -0.135;
-        double[][] stations = {{hilt, 0.82}, {hilt - 0.18, 1.0}, {-length * 0.55, 0.97}, {-length + width * 3.2, 0.9}};
-        double[] ringX = {0.0, 0.7, 1.0, 0.7, 0.0, -0.7, -1.0, -0.7};
-        double[] ringZ = {1.0, 0.45, 0.0, -0.45, -1.0, -0.45, 0.0, 0.45};
-        int[] ringC = {gold, pale, white, pale, gold, pale, white, pale};
-        for (int st = 0; st + 1 < stations.length; st++) {
-            double y0 = stations[st][0];
-            double y1 = stations[st + 1][0];
-            double w0 = width * stations[st][1];
-            double w1 = width * stations[st + 1][1];
-            for (int k = 0; k < 8; k++) {
-                int k1 = (k + 1) % 8;
-                FireMesh.quad(sink, ringX[k] * th, y0, ringZ[k] * w0, ringC[k], ringX[k1] * th, y0, ringZ[k1] * w0, ringC[k1], ringX[k1] * th, y1,
-                    ringZ[k1] * w1, ringC[k1], ringX[k] * th, y1, ringZ[k] * w1, ringC[k]);
+        double back = 0.32;
+        double tipAt = -length + width * 14.0;
+        // the rod: a white core in a pale-gold sheath, eight-sided, pointed at both ends
+        rod(sink, back, tipAt, -length, width, 0xFFFFFF, 0xFFF6C0);
+        rod(sink, back + 0.02, tipAt - width * 2.0, -length - width * 3.0, width * 1.9, 0xFFF29A, 0xFFE05E);
+        // its glow: two crossed sheets along it, bright at the rod, clear at their rims
+        double g = width * (5.0 + 1.5 * shimmer);
+        int on = FireMesh.argb(0.55, 0xFFE070);
+        int off = FireMesh.argb(0.0, 0xFFE070);
+        FireMesh.quad(sink, 0, back, 0, on, 0, -length, 0, on, 0, -length, g * 0.4, off, 0, back, g, off);
+        FireMesh.quad(sink, 0, back, 0, on, 0, back, -g, off, 0, -length, -g * 0.4, off, 0, -length, 0, on);
+        FireMesh.quad(sink, 0, back, 0, on, 0, -length, 0, on, g * 0.4, -length, 0, off, g, back, 0, off);
+        FireMesh.quad(sink, 0, back, 0, on, -g, back, 0, off, -g * 0.4, -length, 0, off, 0, -length, 0, on);
+        // at the fist: a ring of light round the rod in its own plane, a bar across it (the cross), the starburst
+        double ring = 0.2 + 0.02 * shimmer;
+        FireMesh.ring(sink, 0, 0, 0, 1, 0, 0, ring, width * 1.6, 0.0, 0xFFFFFF, 1.0);
+        FireMesh.ring(sink, 0, 0, 0, 1, 0, 0, ring, width * 4.0, 0.0, 0xFFE070, 0.45);
+        rodZ(sink, ring * 1.45, width * 0.9);
+        double[][] rays = {{0, 0, 1, 0.55}, {0, 0, -1, 0.55}, {0, 1, 0, 0.35}, {0.6, 0.6, 0.5, 0.42}, {-0.6, 0.5, -0.6, 0.38},
+            {0.5, -0.4, -0.75, 0.46}, {-0.55, -0.45, 0.7, 0.4}, {0.9, 0.0, -0.3, 0.3}, {-0.9, 0.1, 0.35, 0.33}};
+        for (int i = 0; i < rays.length; i++) {
+            double[] r = rays[i];
+            double l = Math.sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+            double reach = r[3] * (0.8 + 0.4 * Math.abs(Math.sin(shimmer * 3.0 + i * 1.7)));
+            FireMesh.ray(sink, 0, 0, 0, r[0] / l, r[1] / l, r[2] / l, reach, width * 1.4, 0, 0.0, 0xFFFDE8, 0.95);
+        }
+        glowLocal(sink, 0.0, 0.0, 0.0, 0.32 + 0.06 * shimmer, 0xFFF0A0, 0.65);
+    }
+
+    /** A rod of light along Y from {@code top} to {@code from} at full {@code radius}, then to a point at {@code tip}. */
+    static void rod(FireMesh.Sink sink, double top, double from, double tip, double radius, int core, int edge) {
+        int c = FireMesh.argb(1.0, core);
+        int e = FireMesh.argb(1.0, edge);
+        for (int k = 0; k < 8; k++) {
+            double a0 = k * Math.PI / 4.0;
+            double a1 = (k + 1) * Math.PI / 4.0;
+            double x0 = Math.cos(a0) * radius;
+            double z0 = Math.sin(a0) * radius;
+            double x1 = Math.cos(a1) * radius;
+            double z1 = Math.sin(a1) * radius;
+            int c0 = k % 2 == 0 ? c : e;
+            int c1 = k % 2 == 0 ? e : c;
+            // the short point behind the fist, the long body, the point at the tip
+            FireMesh.quad(sink, 0, top, 0, c, 0, top, 0, c, x1, top - radius * 4.0, z1, c1, x0, top - radius * 4.0, z0, c0);
+            FireMesh.quad(sink, x0, top - radius * 4.0, z0, c0, x1, top - radius * 4.0, z1, c1, x1, from, z1, c1, x0, from, z0, c0);
+            FireMesh.quad(sink, x0, from, z0, c0, x1, from, z1, c1, 0, tip, 0, c, 0, tip, 0, c);
+        }
+    }
+
+    /** The cross's bar: a thin rod of light along Z through the fist, {@code half} out each way. */
+    static void rodZ(FireMesh.Sink sink, double half, double radius) {
+        int c = FireMesh.argb(1.0, 0xFFFFFF);
+        int e = FireMesh.argb(1.0, 0xFFE05E);
+        for (int k = 0; k < 6; k++) {
+            double a0 = k * Math.PI / 3.0;
+            double a1 = (k + 1) * Math.PI / 3.0;
+            double x0 = Math.cos(a0) * radius;
+            double y0 = Math.sin(a0) * radius;
+            double x1 = Math.cos(a1) * radius;
+            double y1 = Math.sin(a1) * radius;
+            FireMesh.quad(sink, 0, 0, half, c, x0, y0, half * 0.8, e, x1, y1, half * 0.8, e, 0, 0, half, c);
+            FireMesh.quad(sink, x0, y0, half * 0.8, e, x0, y0, -half * 0.8, e, x1, y1, -half * 0.8, e, x1, y1, half * 0.8, e);
+            FireMesh.quad(sink, 0, 0, -half, c, x1, y1, -half * 0.8, e, x0, y0, -half * 0.8, e, 0, 0, -half, c);
+        }
+    }
+
+    /** A ball of light in a local frame (no eye to keep it from): two crossed discs of light and a third across them. */
+    static void glowLocal(FireMesh.Sink sink, double x, double y, double z, double radius, int rgb, double alpha) {
+        int on = FireMesh.argb(alpha, rgb);
+        int off = FireMesh.argb(0.0, rgb);
+        for (int axis = 0; axis < 3; axis++) {
+            for (int k = 0; k < 12; k++) {
+                double a0 = k * Math.PI / 6.0;
+                double a1 = (k + 1) * Math.PI / 6.0;
+                double c0 = Math.cos(a0) * radius;
+                double s0 = Math.sin(a0) * radius;
+                double c1 = Math.cos(a1) * radius;
+                double s1 = Math.sin(a1) * radius;
+                double[] p0 = axis == 0 ? new double[] {0, c0, s0} : axis == 1 ? new double[] {c0, 0, s0} : new double[] {c0, s0, 0};
+                double[] p1 = axis == 0 ? new double[] {0, c1, s1} : axis == 1 ? new double[] {c1, 0, s1} : new double[] {c1, s1, 0};
+                FireMesh.quad(sink, x, y, z, on, x + p0[0], y + p0[1], z + p0[2], off, x + p1[0], y + p1[1], z + p1[2], off, x, y, z, on);
             }
         }
-        double yt = stations[stations.length - 1][0];
-        double wt = width * stations[stations.length - 1][1];
-        for (int k = 0; k < 8; k++) {
-            int k1 = (k + 1) % 8;
-            FireMesh.quad(sink, ringX[k] * th, yt, ringZ[k] * wt, ringC[k], ringX[k1] * th, yt, ringZ[k1] * wt, ringC[k1], 0.0, -length, 0.0, white,
-                0.0, -length, 0.0, white);
-        }
-        // the glow: a soft sheet round the blade in the plane of its flats and a narrower one across them, bright at the blade
-        double g = width * (2.6 + 0.6 * shimmer);
-        int on = FireMesh.argb(0.5, 0xFFE070);
-        int off = FireMesh.argb(0.0, 0xFFE070);
-        FireMesh.quad(sink, 0, hilt, width, on, 0, -length, 0, on, 0, -length * 1.04, g * 0.6, off, 0, hilt, width + g, off);
-        FireMesh.quad(sink, 0, hilt, -width, on, 0, hilt, -width - g, off, 0, -length * 1.04, -g * 0.6, off, 0, -length, 0, on);
-        FireMesh.quad(sink, th, hilt, 0, on, th, -length, 0, on, th + g * 0.5, -length * 1.02, 0, off, th + g * 0.7, hilt, 0, off);
-        FireMesh.quad(sink, -th, hilt, 0, on, -th - g * 0.7, hilt, 0, off, -th - g * 0.5, -length * 1.02, 0, off, -th, -length, 0, on);
     }
 
     /** A box of light (centre, half sizes): its sides {@code side}, its ends {@code end}. */
