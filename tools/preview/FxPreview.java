@@ -81,7 +81,25 @@ public final class FxPreview {
             System.out.printf("mouth %.2f %.2f %.2f way %.2f %.2f %.2f (jaw's parent %s)%n", m[0], m[1], m[2], m[3], m[4], m[5],
                 md.names[md.parent[jaw]]);
         }
+        // fp:pitch[:aimAhead]: first person, as the game draws it: the eye at 1.62 over the feet looking along +z, the own dragon not
+        // drawn, the fire from under the middle of the view (UoFx.mouthWay) aimed onto the crosshair's point aimAhead blocks out
+        boolean fp = p[0].equals("fp");
+        double fpAhead = fp && p.length > 2 ? Double.parseDouble(p[2]) : 30.0;
+        if (fp) {
+            double pitchFp = Double.parseDouble(p[1]);
+            double pr = Math.toRadians(pitchFp);
+            p = new String[] {"g", "2", "1.0", "0", p[1], "0", "180", p[1], "1", "0", String.valueOf(1.62 - Math.sin(pr)), String.valueOf(Math.cos(pr))};
+            DragonPreview.hideDragon = true;
+        }
         DragonPreview.Raster r = p[0].equals("v") ? DragonPreview.viewScene(p) : DragonPreview.scene(p);
+        DragonPreview.hideDragon = false;
+        if (fp) {
+            double pr = Math.toRadians(Double.parseDouble(p[4]));
+            double[] lk = {0, -Math.sin(pr), Math.cos(pr)};
+            double[] up = {0, Math.cos(pr), Math.sin(pr)};
+            DragonPreview.lastMouth = new double[] {lk[0] * 4.0 - up[0] * 1.5, 1.62 + lk[1] * 4.0 - up[1] * 1.5, lk[2] * 4.0 - up[2] * 1.5,
+                lk[0], lk[1], lk[2]};
+        }
         if (night) {
             for (int i = 0; i < r.rgb.length; i++) {
                 if (r.depth[i] == Float.MAX_VALUE) {
@@ -92,6 +110,16 @@ public final class FxPreview {
         }
         double pitch = Math.toRadians(Double.parseDouble(p[4]));
         double[] look = {0, -Math.sin(pitch), Math.cos(pitch)};
+        if (fp) {
+            // the fire aimed from the mouth onto the crosshair's point (UoFx.aimed)
+            double[] m0 = DragonPreview.lastMouth;
+            double[] target = {r.eye[0] + look[0] * fpAhead, r.eye[1] + look[1] * fpAhead, r.eye[2] + look[2] * fpAhead};
+            double[] w = {target[0] - m0[0], target[1] - m0[1], target[2] - m0[2]};
+            double wl = Math.sqrt(w[0] * w[0] + w[1] * w[1] + w[2] * w[2]);
+            look[0] = w[0] / wl;
+            look[1] = w[1] / wl;
+            look[2] = w[2] / wl;
+        }
         double[] mouth = DragonPreview.lastMouth != null ? DragonPreview.lastMouth : new double[] {0, 6, 4};
         double[] eye = r.eye;
         List<Quad> list = new ArrayList<>();
@@ -137,9 +165,14 @@ public final class FxPreview {
                 double speed = big ? 3.6 : 3.2;
                 double age = Double.parseDouble(move[1]);
                 double size = big ? 1.6 + 2.6 * (move.length > 2 ? Double.parseDouble(move[2]) : 1.0) : 0.7;
-                double d = speed * age;
-                UoFire.fireball(sink, mx + look[0] * d, my + look[1] * d, mz + look[2] * d, look[0] * speed, look[1] * speed, look[2] * speed,
-                    big ? size * 0.55 : size, age, d, big, 11);
+                double end = move.length > 3 ? Double.parseDouble(move[3]) : Double.MAX_VALUE; // where it burst (blocks), for the line after
+                double d = Math.min(speed * age, end);
+                // 2.7.7: the line of fire along its way (UoFx: size x0.42 for the blast, x1 for Blast Breath; burns 12 / 14 ticks)
+                UoFire.line(sink, mx, my, mz, look[0], look[1], look[2], speed, age, end, big ? size * 0.42 : size * 1.5, big ? 12.0 : 14.0, 0, 0, 0, 11);
+                if (speed * age < end) {
+                    UoFire.fireball(sink, mx + look[0] * d, my + look[1] * d, mz + look[2] * d, look[0] * speed, look[1] * speed, look[2] * speed,
+                        big ? size * 0.55 : size * 1.25, age, d, big, 11);
+                }
             }
             case "boom" -> {
                 // an explosion {radius} on the ground {at} blocks ahead of the dragon, {age} ticks old

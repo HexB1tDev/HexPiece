@@ -294,6 +294,43 @@ public final class UoFire {
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------ the line of fire
+
+    /**
+     * 2.7.7 (the owner: "the Blast Breath Move should be a longer line of fire, like wayyyy longer"): the fire a shot leaves all along
+     * its way, from where it left ({@code sx}, {@code sy}, {@code sz}) along ({@code ux}, {@code uy}, {@code uz}) (unit) at
+     * {@code speed} blocks a tick, {@code age} ticks after it left, as far as {@code end} blocks (where it burst; the head's place
+     * while it flies). Each piece flares up as the head passes it and burns down over {@code burn} ticks, so the whole way is a
+     * line of fire at once. A dragon's shot left its mouth: ({@code ox}, {@code oy}, {@code oz}), gone over the first 5 ticks, is
+     * how far the mouth was off the server's line.
+     */
+    public static void line(FireMesh.Sink sink, double sx, double sy, double sz, double ux, double uy, double uz, double speed, double age,
+                            double end, double size, double burn, double ox, double oy, double oz, int seed) {
+        double head = Math.min(end, speed * age);
+        double spacing = size * 1.25;
+        int count = (int) Math.floor(head / spacing);
+        FireMesh.basis(ux, uy, uz, BB);
+        for (int j = 0; j <= count; j++) {
+            double d = j * spacing;
+            double a = age - d / speed;
+            if (a < 0.0 || a > burn) {
+                continue;
+            }
+            int s = seed * 29 + j;
+            double u = a / burn;
+            double fade = Math.max(0.0, 1.0 - d / speed / 5.0);
+            double side = (FireMesh.rand(s, 0) * 2.0 - 1.0) * size * 0.3;
+            double lift = (FireMesh.rand(s, 1) * 2.0 - 1.0) * size * 0.3 + u * u * size * 1.6;
+            double px = sx + ux * d + ox * fade + BB[0] * side + BB[3] * lift * 0.3;
+            double py = sy + uy * d + oy * fade + BB[1] * side + lift;
+            double pz = sz + uz * d + oz * fade + BB[2] * side + BB[5] * lift * 0.3;
+            double flare = Math.min(1.0, a / 1.5);
+            double radius = size * (0.7 + 0.45 * FireMesh.rand(s, 2)) * (0.55 + 0.45 * flare) * (1.0 - u * u);
+            double heat = 1.0 - 0.75 * u + 0.06 * FireMesh.rand(s, 3);
+            FireMesh.puff(sink, px, py, pz, radius, ux, uy + 0.25 * u, uz, 1.1 - 0.5 * u, 0.16, heat, 0.7, u > 0.35, 1.0, age * 1.4 + j, s);
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ an explosion
 
     /** How long an explosion lasts (ticks). */
@@ -543,7 +580,9 @@ public final class UoFire {
 
     /** A ball of light: warm, densest in its middle, gone at its edge (alpha blended: the owner's device). */
     public static void glow(FireMesh.Sink sink, double x, double y, double z, double radius, int rgb, double alpha) {
-        FireMesh.shell(sink, x, y, z, radius, rgb, alpha, 0.0);
+        // never round the eye (a glow the eye is in would tint the whole view): at most just short of it
+        double eye = Math.sqrt(x * x + y * y + z * z);
+        FireMesh.shell(sink, x, y, z, Math.min(radius, eye * 0.9), rgb, alpha, 0.0);
     }
 
     private static double clamp(double v) {

@@ -289,6 +289,17 @@ public final class DragonTests {
                 Check.that(count[0] < 16000, move + " fits a phone's budget at " + age + " (" + count[0] + " quads)");
             }
         }
+        // 2.7.7 (the owner: Blast Breath "a longer line of fire, like wayyyy longer"): as it bursts 35 blocks out, its whole way burns
+        java.util.Arrays.fill(box, 0, 3, 1e9);
+        java.util.Arrays.fill(box, 3, 6, -1e9);
+        count[0] = 0;
+        com.hexhaki.piece.dragon.UoFire.line(sink, 0, 0, 5, 0, 0, 1, 3.2, 35.0 / 3.2, 35.0, 1.05, 14.0, 0, 0, 0, 9);
+        Check.that(finite[0] && box[2] < 5.0 + 3.0 && box[5] > 5.0 + 32.0, "Blast Breath's line of fire runs its whole way (" + box[2] + " to "
+            + box[5] + ")");
+        Check.that(count[0] < 16000, "the line fits a phone's budget (" + count[0] + " quads)");
+        count[0] = 0;
+        com.hexhaki.piece.dragon.UoFire.line(sink, 0, 0, 5, 0, 0, 1, 3.2, 35.0 / 3.2 + 15.0, 35.0, 1.05, 14.0, 0, 0, 0, 9);
+        Check.that(count[0] == 0, "and burns out after");
         int[] bands = com.hexhaki.piece.dragon.FireMesh.BAND;
         for (int i = 1; i < bands.length; i++) {
             int a = bands[i - 1];

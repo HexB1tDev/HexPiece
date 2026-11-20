@@ -131,9 +131,9 @@ public final class UoMoves {
         }
         float charge = (float) Math.min(1.0, held / (double) BLAST_FULL);
         cool(player, UoKit.CHARGED_BLAST, BLAST_COOL);
-        Vec3 look = player.m_20154_();
         Vec3 from2 = mouth(player);
         double range = BLAST_MIN + (BLAST_MAX - BLAST_MIN) * charge;
+        Vec3 look = toward(player, from2, range);
         double size = 1.6 + 2.6 * charge;
         // 2.7.6 (the owner: "more aggressive more violent"): a wider, harder, hotter blast
         launch(player, from2, look.m_82490_(3.6), range, size, 4.5 + 7.5 * charge, 16.0F + 30.0F * charge, 10, 1.8 + 2.4 * charge, S2CUoFx.BLAST);
@@ -291,6 +291,42 @@ public final class UoMoves {
         return player.m_20182_().m_82520_(0.0, DragonForm.HEAD_HEIGHT - 0.6, 0.0).m_82549_(look.m_82490_(2.6));
     }
 
+    /**
+     * 2.7.7 (the owner, in first person: "the fire and projectiles are coming from above"): what the player aims at, the first foe or
+     * block on the eye's line (the crosshair), or that line's end {@code range} out. The dragon's mouth is well over the eye, so its
+     * fire is aimed from the mouth onto this point ({@link #toward}), never along a line parallel to the look and over the crosshair.
+     */
+    static Vec3 aimed(ServerPlayer player, double range) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        Vec3 eye = player.m_20299_(1.0F);
+        Vec3 end = eye.m_82549_(player.m_20154_().m_82490_(range));
+        BlockHitResult wall = level.m_45547_(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        Vec3 to = wall.m_6662_() == HitResult.Type.BLOCK ? wall.m_82450_() : end;
+        Predicate<LivingEntity> foe = other -> FruitUtil.foe(player, other);
+        double best = 1.0;
+        for (LivingEntity body : level.m_6443_(LivingEntity.class, box(eye, to).m_82400_(1.0),
+            e -> e != player && e.m_6084_() && !e.m_5833_() && foe.test(e))) {
+            double along = WaterServer.closest(eye, to, StyleCombat.middle(body));
+            Vec3 point = eye.m_82549_(to.m_82546_(eye).m_82490_(along));
+            if (along < best && body.m_20191_().m_82400_(0.6).m_82390_(point)) {
+                best = along;
+            }
+        }
+        return eye.m_82549_(to.m_82546_(eye).m_82490_(best));
+    }
+
+    /** The way (unit) from {@code from} (the mouth) onto what the player aims at; the look when that is too near or behind to turn to. */
+    static Vec3 toward(ServerPlayer player, Vec3 from, double range) {
+        Vec3 look = player.m_20154_();
+        Vec3 way = aimed(player, range).m_82546_(from);
+        double length = way.m_82553_();
+        if (length < 6.0) {
+            return look;
+        }
+        Vec3 unit = way.m_82490_(1.0 / length);
+        return unit.m_82526_(look) < 0.5 ? look : unit;
+    }
+
     static void bite(ServerPlayer player, long now) {
         if (!ready(player, UoKit.GIGANTIC_BITE)) {
             return;
@@ -306,7 +342,7 @@ public final class UoMoves {
             if (!player.m_6084_() || DragonServer.phase(player) != DragonForm.DRAGON) {
                 return;
             }
-            Vec3 jaws = mouth(player).m_82549_(player.m_20154_().m_82490_(3.0));
+            Vec3 jaws = mouth(player).m_82549_(toward(player, mouth(player), 12.0).m_82490_(3.0));
             Predicate<LivingEntity> foe = other -> FruitUtil.foe(player, other);
             DamageSource source = StyleCombat.of(player);
             for (LivingEntity body : level.m_6443_(LivingEntity.class, box(jaws, jaws).m_82400_(5.0),
@@ -336,15 +372,15 @@ public final class UoMoves {
 
     /** One tick of a held breath: a cone of fire from the mouth along the look, stopped by the first block. */
     static void breathe(ServerPlayer player, long ticks) {
+        if (ticks % 5 != 0) {
+            return; // it burns every fifth tick: nothing to work out between
+        }
         ServerLevel level = (ServerLevel) player.m_9236_();
         Vec3 from = mouth(player);
-        Vec3 look = player.m_20154_();
+        Vec3 look = toward(player, from, FLAME_RANGE);
         Vec3 to = from.m_82549_(look.m_82490_(FLAME_RANGE));
         BlockHitResult wall = level.m_45547_(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
         double reach = wall.m_6662_() == HitResult.Type.BLOCK ? wall.m_82450_().m_82554_(from) : FLAME_RANGE;
-        if (ticks % 5 != 0) {
-            return;
-        }
         Predicate<LivingEntity> foe = other -> FruitUtil.foe(player, other);
         DamageSource source = StyleCombat.of(player);
         double tan = Math.tan(Math.toRadians(FLAME_CONE));

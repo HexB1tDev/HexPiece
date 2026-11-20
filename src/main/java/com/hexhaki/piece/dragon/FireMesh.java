@@ -238,6 +238,12 @@ public final class FireMesh {
             return;
         }
         double dist = Math.sqrt(x * x + y * y + z * z);
+        if (dist < radius * 1.1) {
+            return; // the eye in the fire: drawn, it would fill the view with one flat colour
+        }
+        // 2.7.7: right by the eye (first person, a shot just out of the mouth) a puff is never wider than a sixth of its distance (20
+        // degrees of the view), so the fire never buries the crosshair
+        radius = Math.min(radius, dist / 6.0);
         int level = detail(radius, dist);
         float[] dirs = DIRS[level];
         int[] faces = FACES[level];

@@ -225,9 +225,26 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   (the camera looks down the line of fire). Asked the owner whether to move it over a shoulder; the owner (verbatim): "I think its
   fine as it is". The camera stays: do not move it.
 
-## Next (2.7.7)
-1. 2.7.6's runs are green. Ask the owner how the 3D fire looks and runs on their phone (nothing was tested in game). The dragon
-   camera stays as it is (the owner's choice).
+## Done (2.7.7, pushed): two of the owner's reports on 2.7.6
+- The owner (verbatim): "bug found, in first person the height does not match the head height, means the fire and projectiles are
+  coming from above  (top of the screen)", then "also the Blast Breath Move should be a longer line of fire, like wayyyy longer".
+- First person: the own dragon is not drawn there, so UoFx.mouthWay(player, partial) puts the mouth FIRST_AHEAD 4 blocks out and
+  FIRST_UNDER 1.5 under the view's line, at the interpolated eye and look (held to the camera). FireMesh.puff never draws a puff
+  the eye is in and caps a puff at a sixth of its distance from the eye; UoFire.glow never wraps the eye.
+- Aim: server UoMoves.aimed/toward (the first foe or block on the eye's line within the range, else its end; the look when that is
+  under 6 blocks from the mouth or turned more than 60 degrees from it): the charged blast's velocity, the breath's cone (worked out
+  only on its damage ticks now) and the bite's jaws go from the mouth onto it. Client UoFx.aimed is the same (blocks only) for the
+  breath's way, its reach and its embers, and the blast's visual starts at mouthWay (first person included).
+- UoFire.line: every piece of a shot's way flares as the head passes and burns down (Blast Breath 14 ticks, size x1.5; the dragon's
+  blast 12 ticks, size x0.42), drawn from the shot while it flies and from UoFx.LINES after it bursts. DragonTests checks the line runs
+  its whole 35 blocks at the burst, fits the budget and burns out.
+- FxPreview: `fp:pitch[:aimAhead]` renders first person (the own dragon hidden, the mouth as UoFx's, aimed onto the crosshair point);
+  `|blast:age:charge:end` / `|bolt:age:size:end` draw the line after a burst at `end` blocks.
+
+## Next (2.7.8)
+1. Check 2.7.7's runs. Ask the owner how the 3D fire looks and runs on their phone, in first and third person (nothing was tested in
+   game). The dragon camera stays as it is (the owner's choice). If "wayyyy longer" meant more range than the owner's 35 blocks for
+   Blast Breath, raise UoMoves.BREATH_RANGE (the line follows it).
 2. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
    -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java`, then `java -cp <dir>:build/preview:build/classes
    FxPreview build/dragon-cache/*/seiryu.sry build/dragon-cache/*/seiryu.png out.png [--night] [--size=WxH] shot...`; a shot is a

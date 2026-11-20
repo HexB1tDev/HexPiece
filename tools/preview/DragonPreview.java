@@ -205,7 +205,7 @@ public final class DragonPreview {
         if (human) {
             r.figure(0, 0, 0);
         }
-        if (DragonForm.shown(phase, seconds)) {
+        if (DragonForm.shown(phase, seconds) && !hideDragon) {
             for (int i = 0; i < model.parts.length; i++) {
                 r.mesh(model.parts[i], skinned.get(i * 2), skinned.get(i * 2 + 1));
             }
@@ -261,6 +261,8 @@ public final class DragonPreview {
     }
 
     static double[] fixedEye;
+    /** 2.7.7: the player's own dragon is not drawn in first person (FxPreview's fp: shots). */
+    static boolean hideDragon;
     /** 2.7.2: the jaw and the bite for the next shots (--mouth=, --bite=). */
     static float mouth;
     static float bite = -1.0F;

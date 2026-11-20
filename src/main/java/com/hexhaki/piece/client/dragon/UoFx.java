@@ -48,6 +48,11 @@ public final class UoFx {
     private static final List<Tornado> TORNADOES = new ArrayList<>();
     private static final List<Ember> EMBERS = new ArrayList<>();
     private static final List<Bang> BANGS = new ArrayList<>();
+    /** 2.7.7: the lines of fire Blast Breath and the charged blast leave along their way, burning on after they burst. */
+    private static final List<Line> LINES = new ArrayList<>();
+    /** How long a piece of a line of fire burns (ticks): the human's Blast Breath, the dragon's blast. */
+    static final double LINE_BURN = 14.0;
+    static final double BLAST_LINE_BURN = 12.0;
     /** Per player: their dragon's breath (since when), its charge (since when), its bite (since when). */
     static final Map<Integer, Long> FLAMES = new HashMap<>();
     static final Map<Integer, Long> CHARGES = new HashMap<>();
@@ -75,6 +80,10 @@ public final class UoFx {
 
     /** A burst going off. */
     record Bang(Vec3 at, Vec3 dir, double radius, int kind, long born) {
+    }
+
+    /** A shot's line of fire after it burst: its way, its speed, how far it flew ({@code end}, blocks), its look. */
+    record Line(int id, int kind, Vec3 start, Vec3 velocity, double size, long born, double end, Vec3 offset) {
     }
 
     /** A breath: when it began and stopped (-1 still on), and how far it reaches before a wall. */
@@ -106,14 +115,14 @@ public final class UoFx {
         switch (m.kind()) {
             case S2CUoFx.AIR, S2CUoFx.BOLT, S2CUoFx.BLAST -> {
                 Vec3 offset = null;
-                if (m.kind() == S2CUoFx.BLAST) {
-                    // a dragon's blast leaves its mouth (the server only knows near enough where that is)
-                    DragonClient.Entry entry = DragonClient.ENTRIES.get(m.user());
-                    if (entry != null && entry.mouthAge >= 0 && clock - entry.mouthAge < 4) {
-                        offset = new Vec3(entry.mouth[0], entry.mouth[1], entry.mouth[2]).m_82546_(at);
-                        if (offset.m_82556_() > 100.0) {
-                            offset = null;
-                        }
+                ClientLevel level = Minecraft.m_91087_().f_91073_;
+                if (m.kind() == S2CUoFx.BLAST && level != null && level.m_6815_(m.user()) instanceof Player user) {
+                    // a dragon's blast leaves its mouth, as drawn (in first person: under the middle of the view); the server only
+                    // knows near enough where that is
+                    double[] mouth = mouthWay(user, 1.0F);
+                    offset = new Vec3(mouth[0], mouth[1], mouth[2]).m_82546_(at);
+                    if (offset.m_82556_() > 100.0) {
+                        offset = null;
                     }
                 }
                 SHOTS.put(m.id(), new Shot(m.kind(), at, a, m.size(), m.ticks(), clock, offset));
@@ -121,6 +130,11 @@ public final class UoFx {
             case S2CUoFx.BURST -> {
                 Shot shot = SHOTS.remove(m.id());
                 int kind = (int) m.bz();
+                if (shot != null && shot.kind != S2CUoFx.AIR) {
+                    double speed = Math.max(1.0E-6, shot.velocity.m_82553_());
+                    double end = Math.max(0.0, at.m_82546_(shot.start).m_82526_(shot.velocity) / speed);
+                    LINES.add(new Line(m.id(), shot.kind, shot.start, shot.velocity, shot.size, shot.born, end, shot.offset));
+                }
                 BANGS.add(new Bang(at, new Vec3(m.ax(), m.ay(), m.az()), m.size(), shot == null ? kind : shot.kind(), clock));
                 sparks(at, m.size(), shot == null ? kind : shot.kind());
             }
@@ -195,6 +209,7 @@ public final class UoFx {
         SHOTS.values().removeIf(shot -> clock - shot.born > shot.life + 3);
         BANGS.removeIf(bang -> clock - bang.born > (bang.kind == S2CUoFx.AIR ? 11 : UoFire.BURST_LIFE + 1));
         TORNADOES.removeIf(t -> clock - t.born > t.life);
+        LINES.removeIf(l -> clock - l.born > l.end / Math.max(1.0E-6, l.velocity.m_82553_()) + LINE_BURN + 1);
         for (Iterator<Ember> it = EMBERS.iterator(); it.hasNext(); ) {
             Ember e = it.next();
             long age = clock - e.born - e.delay;
@@ -215,11 +230,9 @@ public final class UoFx {
                 record(player);
                 Breath breath = e.getValue();
                 if (breath.stop < 0) {
-                    Vec3 mouth = mouthOf(player);
-                    Vec3 look = player.m_20252_(1.0F);
-                    BlockHitResult wall = level.m_45547_(new ClipContext(mouth, mouth.m_82549_(look.m_82490_(35.0)), ClipContext.Block.COLLIDER,
-                        ClipContext.Fluid.NONE, player));
-                    double reach = wall.m_6662_() == HitResult.Type.BLOCK ? Math.max(4.0, wall.m_82450_().m_82554_(mouth) + 2.0) : 35.0;
+                    double[] mouth = mouthWay(player, 1.0F);
+                    double[] aim = aimed(player, mouth, 1.0F, 35.0);
+                    double reach = aim[4] > 0.0 ? Math.max(4.0, aim[3] + 2.0) : 35.0;
                     breath.range += (reach - breath.range) * 0.5;
                     embers(player, breath);
                 }
@@ -245,8 +258,9 @@ public final class UoFx {
     /** This tick's aim of {@code player}'s dragon onto its track. */
     static void record(Player player) {
         Track track = TRACKS.computeIfAbsent(player.m_19879_(), k -> new Track());
-        Vec3 look = player.m_20252_(1.0F);
-        double[] m = mouthWay(player);
+        double[] m = mouthWay(player, 1.0F);
+        double[] aim = aimed(player, m, 1.0F, 35.0);
+        Vec3 look = new Vec3(aim[0], aim[1], aim[2]);
         int o = Math.floorMod(clock, TRACK) * 9;
         track.at[o] = m[0];
         track.at[o + 1] = m[1];
@@ -265,8 +279,10 @@ public final class UoFx {
 
     /** Glowing embers thrown off a breath (Photon, with bloom), all along it. */
     static void embers(Player player, Breath breath) {
-        Vec3 mouth = mouthOf(player);
-        Vec3 look = player.m_20252_(1.0F);
+        double[] m = mouthWay(player, 1.0F);
+        Vec3 mouth = new Vec3(m[0], m[1], m[2]);
+        double[] aim = aimed(player, m, 1.0F, 35.0);
+        Vec3 look = new Vec3(aim[0], aim[1], aim[2]);
         int n = PieceFx.count(5);
         for (int i = 0; i < n; i++) {
             double d = 3.0 + RANDOM.nextDouble() * Math.min(breath.range, UoFire.reach(clock - breath.start, breath.range));
@@ -316,12 +332,35 @@ public final class UoFx {
 
     /** A dragon's mouth: the inside of its gape where the renderer last drew it, or near enough before it has been drawn. */
     static Vec3 mouthOf(Player player) {
-        double[] m = mouthWay(player);
+        double[] m = mouthWay(player, 1.0F);
         return new Vec3(m[0], m[1], m[2]);
     }
 
-    /** The inside of a dragon's mouth and the mouth's way out (6 numbers). */
-    static double[] mouthWay(Player player) {
+    /** In first person the fire leaves from under the middle of the view: this far ahead of the eye and below its line (blocks). */
+    static final double FIRST_AHEAD = 4.0;
+    static final double FIRST_UNDER = 1.5;
+
+    /**
+     * The inside of a dragon's mouth and the mouth's way out (6 numbers). 2.7.7 (the owner: "in first person the height does not match
+     * the head height, means the fire and projectiles are coming from above"): the player's own dragon seen in first person is not
+     * drawn (the eye is inside it), so its fire leaves from just under the middle of the view, held to the eye as it moves.
+     */
+    static double[] mouthWay(Player player, float partial) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (player == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == net.minecraft.client.CameraType.FIRST_PERSON) {
+            Vec3 eye = player.m_20299_(partial);
+            double pitch = Math.toRadians(player.f_19860_ + (player.m_146909_() - player.f_19860_) * partial);
+            double yaw = Math.toRadians(player.f_19859_ + (player.m_146908_() - player.f_19859_) * partial);
+            double lx = -Math.sin(yaw) * Math.cos(pitch);
+            double ly = -Math.sin(pitch);
+            double lz = Math.cos(yaw) * Math.cos(pitch);
+            // the view's up: the look turned a quarter up
+            double ux = -Math.sin(yaw) * Math.sin(pitch);
+            double uy = Math.cos(pitch);
+            double uz = Math.cos(yaw) * Math.sin(pitch);
+            return new double[] {eye.f_82479_ + lx * FIRST_AHEAD - ux * FIRST_UNDER, eye.f_82480_ + ly * FIRST_AHEAD - uy * FIRST_UNDER,
+                eye.f_82481_ + lz * FIRST_AHEAD - uz * FIRST_UNDER, lx, ly, lz};
+        }
         DragonClient.Entry entry = DragonClient.ENTRIES.get(player.m_19879_());
         if (entry != null && entry.mouthAge >= 0 && clock - entry.mouthAge < 4) {
             return entry.mouth.clone();
@@ -329,6 +368,28 @@ public final class UoFx {
         Vec3 look = player.m_20252_(1.0F);
         Vec3 at = player.m_20182_().m_82520_(0.0, DragonForm.HEAD_HEIGHT - 0.6, 0.0).m_82549_(look.m_82490_(2.6));
         return new double[] {at.f_82479_, at.f_82480_, at.f_82481_, look.f_82479_, look.f_82480_, look.f_82481_};
+    }
+
+    /**
+     * 2.7.7: where a dragon's fire goes, as the server aims it (UoMoves.toward): from the mouth onto the first block on the eye's line
+     * (the crosshair) within {@code range}, or that line's end; the look when that point is too near or behind to turn to. Returns the
+     * way (unit), how far that point is from the mouth, and 1 if a block stops the line (else 0).
+     */
+    static double[] aimed(Player player, double[] mouth, float partial, double range) {
+        Vec3 eye = player.m_20299_(partial);
+        Vec3 look = player.m_20252_(partial);
+        Vec3 end = eye.m_82549_(look.m_82490_(range));
+        BlockHitResult wall = player.m_9236_().m_45547_(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        boolean hit = wall.m_6662_() == HitResult.Type.BLOCK;
+        Vec3 to = hit ? wall.m_82450_() : end;
+        double wx = to.f_82479_ - mouth[0];
+        double wy = to.f_82480_ - mouth[1];
+        double wz = to.f_82481_ - mouth[2];
+        double length = Math.sqrt(wx * wx + wy * wy + wz * wz);
+        if (length < 6.0 || (wx * look.f_82479_ + wy * look.f_82480_ + wz * look.f_82481_) / length < 0.5) {
+            return new double[] {look.f_82479_, look.f_82480_, look.f_82481_, length, hit ? 1.0 : 0.0};
+        }
+        return new double[] {wx / length, wy / length, wz / length, length, hit ? 1.0 : 0.0};
     }
 
     static long clock() {
@@ -340,6 +401,7 @@ public final class UoFx {
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || SHOTS.isEmpty() && BANGS.isEmpty() && TORNADOES.isEmpty()
+            && LINES.isEmpty()
             && EMBERS.isEmpty() && BREATHS.isEmpty() && CHARGES.isEmpty() && BITES.isEmpty()) {
             return;
         }
@@ -364,6 +426,7 @@ public final class UoFx {
             TORNADOES.clear();
             EMBERS.clear();
             BREATHS.clear();
+            LINES.clear();
         }
         buffers.m_109912_(type);
         SINK.buffer = null;
@@ -406,6 +469,9 @@ public final class UoFx {
                 continue;
             }
             double travelled = v.m_82553_() * age;
+            if (shot.kind != S2CUoFx.AIR) {
+                line(shot.kind, shot.start, v, shot.size, clock - shot.born + partial, Double.MAX_VALUE, shot.offset, cam, e.getKey());
+            }
             switch (shot.kind) {
                 case S2CUoFx.AIR -> UoFire.airShot(SINK, x - cx, y - cy, z - cz, v.f_82479_, v.f_82480_, v.f_82481_, shot.size * 1.4, age, travelled,
                     e.getKey());
@@ -414,6 +480,9 @@ public final class UoFx {
                 default -> UoFire.fireball(SINK, x - cx, y - cy, z - cz, v.f_82479_, v.f_82480_, v.f_82481_, shot.size * 0.55, age, travelled, true,
                     e.getKey());
             }
+        }
+        for (Line l : LINES) {
+            line(l.kind, l.start, l.velocity, l.size, clock - l.born + partial, l.end, l.offset, cam, l.id);
         }
         int n = 0;
         for (Bang bang : BANGS) {
@@ -485,6 +554,19 @@ public final class UoFx {
         }
     }
 
+    /** A shot's line of fire (UoFire.line), {@code age} ticks after it left, as far as {@code end} blocks. */
+    static void line(int kind, Vec3 start, Vec3 velocity, double size, double age, double end, Vec3 offset, Vec3 cam, int seed) {
+        if (far(start, cam) && far(start.m_82549_(velocity.m_82490_(age)), cam)) {
+            return;
+        }
+        double speed = Math.max(1.0E-6, velocity.m_82553_());
+        boolean blast = kind == S2CUoFx.BLAST;
+        UoFire.line(SINK, start.f_82479_ - cam.f_82479_, start.f_82480_ - cam.f_82480_, start.f_82481_ - cam.f_82481_, velocity.f_82479_ / speed,
+            velocity.f_82480_ / speed, velocity.f_82481_ / speed, speed, age, end, blast ? size * 0.42 : size * 1.5,
+            blast ? BLAST_LINE_BURN : LINE_BURN, offset == null ? 0.0 : offset.f_82479_, offset == null ? 0.0 : offset.f_82480_,
+            offset == null ? 0.0 : offset.f_82481_, seed);
+    }
+
     /** A dragon's aim for UoFire, eye-centred: now (as the renderer last drew the mouth), or off its track for a while ago. */
     static final class Aimer implements UoFire.Aim {
         double[] now = new double[9];
@@ -495,14 +577,14 @@ public final class UoFx {
         float partial;
 
         void set(Player player, Vec3 cam, float partial) {
-            double[] m = mouthWay(player);
-            Vec3 look = player.m_20252_(partial);
+            double[] m = mouthWay(player, partial);
+            double[] aim = aimed(player, m, partial, 35.0);
             this.now[0] = m[0];
             this.now[1] = m[1];
             this.now[2] = m[2];
-            this.now[3] = look.f_82479_;
-            this.now[4] = look.f_82480_;
-            this.now[5] = look.f_82481_;
+            this.now[3] = aim[0];
+            this.now[4] = aim[1];
+            this.now[5] = aim[2];
             this.now[6] = m[3];
             this.now[7] = m[4];
             this.now[8] = m[5];
@@ -590,5 +672,6 @@ public final class UoFx {
         BITES.clear();
         BREATHS.clear();
         TRACKS.clear();
+        LINES.clear();
     }
 }
