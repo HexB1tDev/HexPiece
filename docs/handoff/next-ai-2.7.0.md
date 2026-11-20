@@ -287,16 +287,17 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   replace it (it was overwritten by mistake once in this session and restored from git before anything was committed).
 - Not measured: a max-charge beam close up is about 17-22k quads (over the 16k the other moves keep); lower particle settings cut it.
 
-## Done (2.7.9 and 2.8.0, pushed): the light sword
+## Done (2.7.9, 2.8.0, 2.8.1, pushed): the light sword
 - The owner (verbatim, on FxPreview's blade render): "this is not a sword at all". 2.7.9 gave it a hilt and a broad blade; then
   (2.8.0, with two anime frames, docs/handoff/murakumo-ref-1.png and -2.png) "its meant to be a full light sword no handle".
   LightArt.blade now: no hilt, a thin rod of light (PikaClient.BLADE_LENGTH 2.6, BLADE_WIDTH 0.032 radius) white core in a pale-gold
   sheath (LightArt.rod), two glow sheets, and at the fist a ring of light in the rod's plane with a cross bar through it
   (LightArt.rodZ) and a starburst of nine rays, a small local glow (LightArt.glowLocal). Render: docs/handoff/pika-sword-2.8.0.png
-  (FxPreview `|blade:20`, `|blade:-50`).
+  (FxPreview `|blade:20`, `|blade:-50`). 2.8.1 (the owner: "the grip handle rod has to be longer"): the rod runs 0.8 blocks back past
+  the fist (was 0.32).
 
-## Next (2.8.1)
-1. Check 2.8.0's runs. Ask the owner how the new Light fruit plays (every move, the animations, the sword in the hand, in third and
+## Next (2.8.2)
+1. Check 2.8.1's runs. Ask the owner how the new Light fruit plays (every move, the animations, the sword in the hand, in third and
    first person; nothing was tested in game), and how the Uo beams, their craters and repair, and the 10 s stun feel. The dragon
    camera stays as it is (the owner's choice).
 2. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes

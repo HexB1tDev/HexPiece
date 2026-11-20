@@ -298,7 +298,7 @@ public final class LightArt {
      * {@code width} the rod's radius. Independent of the eye, so it is drawn through the arm's own pose.
      */
     public static void blade(FireMesh.Sink sink, double length, double width, double shimmer) {
-        double back = 0.32;
+        double back = 0.8; // the grip: the rod runs well back past the fist (the owner: "the grip handle rod has to be longer")
         double tipAt = -length + width * 14.0;
         // the rod: a white core in a pale-gold sheath, eight-sided, pointed at both ends
         rod(sink, back, tipAt, -length, width, 0xFFFFFF, 0xFFF6C0);
