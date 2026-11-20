@@ -49,6 +49,24 @@ public final class StyleVfx {
         }
     }
 
+    /** 2.8.4: a line move's shot in flight (a spear of water, a drill, a cannonball, a punch's shock). */
+    record Shot(int entity, StyleMove move, Vec3 from, Vec3 to, long start, int seed) {
+    }
+
+    private static final List<Shot> SHOTS = new ArrayList<>();
+
+    /** A line move's shot thrown from {@code from} to {@code to} (stage 2): drawn here if it has a 3D shot (StyleShow.shotKind). */
+    public static boolean shot(int entity, StyleMove move, Vec3 from, Vec3 to) {
+        if (StyleShow.shotKind(move) == null) {
+            return false;
+        }
+        if (SHOTS.size() >= MOST) {
+            SHOTS.remove(0);
+        }
+        SHOTS.add(new Shot(entity, move, from, to, now(), entity * 7 + (int) now()));
+        return true;
+    }
+
     /** A blow that landed. */
     record Landed(int entity, StyleMove move, Vec3 at, double[] dir, double size, long start, int seed) {
     }
@@ -113,7 +131,7 @@ public final class StyleVfx {
 
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ACTIVE.isEmpty() && LANDED.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ACTIVE.isEmpty() && LANDED.isEmpty() && SHOTS.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -135,6 +153,7 @@ public final class StyleVfx {
             com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: a style move's effect could not be drawn", failure);
             ACTIVE.clear();
             LANDED.clear();
+            SHOTS.clear();
         }
         buffers.m_109912_(type);
         SINK.buffer = null;
@@ -175,6 +194,24 @@ public final class StyleVfx {
             }
             double[] at = {l.at().f_82479_ - cam.f_82479_, l.at().f_82480_ - cam.f_82480_, l.at().f_82481_ - cam.f_82481_};
             StyleShow.landed(COLLECT, l.move(), haki(l.entity()), age, at, l.dir(), l.size(), l.seed());
+        }
+        shots(cam, t, partial);
+    }
+
+    static void shots(Vec3 cam, long t, float partial) {
+        for (Iterator<Shot> it = SHOTS.iterator(); it.hasNext(); ) {
+            Shot s = it.next();
+            double age = t - s.start() + partial;
+            if (age > StyleShow.shotLife(s.move(), s.from().m_82554_(s.to()))) {
+                it.remove();
+                continue;
+            }
+            if (s.from().m_82557_(cam) > FAR * FAR && s.to().m_82557_(cam) > FAR * FAR) {
+                continue;
+            }
+            double[] from = {s.from().f_82479_ - cam.f_82479_, s.from().f_82480_ - cam.f_82480_, s.from().f_82481_ - cam.f_82481_};
+            double[] to = {s.to().f_82479_ - cam.f_82479_, s.to().f_82480_ - cam.f_82480_, s.to().f_82481_ - cam.f_82481_};
+            StyleShow.shot(COLLECT, s.move(), haki(s.entity()), age, from, to, s.seed());
         }
     }
 
@@ -255,5 +292,6 @@ public final class StyleVfx {
     public static void loggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
         ACTIVE.clear();
         LANDED.clear();
+        SHOTS.clear();
     }
 }

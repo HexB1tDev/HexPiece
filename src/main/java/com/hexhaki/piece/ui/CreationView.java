@@ -238,7 +238,7 @@ public final class CreationView {
                     y += 11;
                 }
             }
-            for (Slot slot : new Slot[] {Slot.M1_4, Slot.HEAVY, Slot.SPECIAL_A, Slot.SPECIAL_B}) {
+            for (Slot slot : new Slot[] {Slot.M1_4, Slot.HEAVY, Slot.SPECIAL_A, Slot.SPECIAL_B, Slot.EXTRA_C, Slot.EXTRA_V, Slot.EXTRA_B}) {
                 StyleMove move = StyleMove.of(style, slot);
                 if (move == null) {
                     continue;
@@ -247,6 +247,9 @@ public final class CreationView {
                     case HEAVY -> "RMB";
                     case SPECIAL_A -> "Z";
                     case SPECIAL_B -> "X";
+                    case EXTRA_C -> "C";
+                    case EXTRA_V -> "V";
+                    case EXTRA_B -> "B";
                     default -> "M1";
                 };
                 c.fill(b[0] + 4, y - 1, b[0] + 22, y + 8, 0x30603818);

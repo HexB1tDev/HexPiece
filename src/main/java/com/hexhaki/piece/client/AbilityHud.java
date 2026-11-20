@@ -111,7 +111,7 @@ public final class AbilityHud {
         FightingStyle style = PieceClient.self().style();
         boolean combat = CombatMode.on();
         List<String> moves = new ArrayList<>();
-        for (Slot slot : new Slot[] {Slot.M1_1, Slot.HEAVY, Slot.SPECIAL_A, Slot.SPECIAL_B}) {
+        for (Slot slot : new Slot[] {Slot.M1_1, Slot.HEAVY, Slot.SPECIAL_A, Slot.SPECIAL_B, Slot.EXTRA_C, Slot.EXTRA_V, Slot.EXTRA_B}) {
             StyleMove move = StyleMove.of(style, slot);
             moves.add(move == null ? "" : slot == Slot.M1_1 ? "Combo" : move.display());
         }
@@ -213,6 +213,9 @@ public final class AbilityHud {
         out.put("use", name(minecraft.f_91066_.f_92095_));
         out.put("special_a", name(PieceKeys.SPECIAL_A));
         out.put("special_b", name(PieceKeys.SPECIAL_B));
+        out.put("extra_c", name(PieceKeys.EXTRA_C));
+        out.put("extra_v", name(PieceKeys.EXTRA_V));
+        out.put("extra_b", name(PieceKeys.EXTRA_B));
         out.put("toggle", name(HakiKeys.ARMAMENT));
         out.put("armament", "Ctrl+" + name(HakiKeys.ARMAMENT));
         out.put("observation", name(HakiKeys.OBSERVATION));

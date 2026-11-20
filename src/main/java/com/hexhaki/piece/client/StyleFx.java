@@ -59,7 +59,14 @@ public final class StyleFx {
                 com.hexhaki.piece.client.fx.StyleVfx.landed(message.entity(), move, new Vec3(message.x(), message.y(), message.z()), facing);
                 landed(move, new Vec3(message.x(), message.y(), message.z()), facing);
             }
-            case 2 -> shot(move, new Vec3(message.dx(), message.dy(), message.dz()), new Vec3(message.x(), message.y(), message.z()));
+            case 2 -> {
+                Vec3 from = new Vec3(message.dx(), message.dy(), message.dz());
+                Vec3 to = new Vec3(message.x(), message.y(), message.z());
+                // 2.8.4: the extras' shots (a spear of water, a drill, a cannonball, a punch's shock) are drawn in 3D
+                if (!com.hexhaki.piece.client.fx.StyleVfx.shot(message.entity(), move, from, to)) {
+                    shot(move, from, to);
+                }
+            }
             case 3 -> {
                 com.hexhaki.piece.client.fx.StyleVfx.thrown(message.entity(), move);
                 swing(move, new Vec3(message.x(), message.y(), message.z()), flat(message.dx(), message.dz()), (int) Math.round(message.dy()));

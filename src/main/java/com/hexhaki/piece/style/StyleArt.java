@@ -495,4 +495,284 @@ public final class StyleArt {
                 c[0] + sx * w1, c[1] + sy * w1, c[2] + sz * w1, col, c[0] - sx * w1, c[1] - sy * w1, c[2] - sz * w1, col);
         }
     }
+
+    // ------------------------------------------------------------------------------------------------------------------ 2.8.4
+
+    /**
+     * Paper Art: sheets of paper drifting round the body at {@code at} (eye-relative feet), {@code ticks} into it, {@code life} long:
+     * each turning on its own as it flutters, faded in and out.
+     */
+    public static void papers(FireMesh.Sink sink, double[] at, double ticks, double life, boolean haki, int seed) {
+        double fade = smooth(ticks / 4.0) * (1.0 - smooth((ticks - life + 6.0) / 6.0));
+        if (fade < 0.01) {
+            return;
+        }
+        int sheets = 7;
+        for (int i = 0; i < sheets; i++) {
+            double r0 = FireMesh.rand(seed, i);
+            double angle = i * Math.PI * 2.0 / sheets + ticks * (0.06 + 0.04 * r0) * (i % 2 == 0 ? 1 : -1);
+            double radius = 0.55 + 0.3 * FireMesh.rand(seed, i + 7);
+            double height = 0.35 + 1.3 * FireMesh.rand(seed, i + 13) + 0.12 * Math.sin(ticks * 0.3 + i);
+            double cx = at[0] + Math.cos(angle) * radius;
+            double cy = at[1] + height;
+            double cz = at[2] + Math.sin(angle) * radius;
+            double spin = ticks * (0.25 + 0.2 * r0) + i;
+            double tilt = Math.sin(ticks * 0.2 + i * 1.7) * 0.9;
+            // the sheet's two edges: one round the vertical by its spin, the other tipped by its flutter
+            double ux = Math.cos(spin) * 0.11;
+            double uz = Math.sin(spin) * 0.11;
+            double vx = -Math.sin(spin) * Math.sin(tilt) * 0.14;
+            double vy = Math.cos(tilt) * 0.14;
+            double vz = Math.cos(spin) * Math.sin(tilt) * 0.14;
+            double light = 0.75 + 0.25 * Math.abs(Math.cos(spin));
+            int rgb = haki ? FireMesh.mix(0x101014, 0x3A1018, 1.0 - light) : FireMesh.mix(0xD8D4C8, 0xFFFFFF, light);
+            int c = FireMesh.argb(0.92 * fade, rgb);
+            FireMesh.quad(sink, cx - ux - vx, cy - vy, cz - uz - vz, c, cx + ux - vx, cy - vy, cz + uz - vz, c, cx + ux + vx, cy + vy, cz + uz + vz,
+                c, cx - ux + vx, cy + vy, cz - uz + vz, c);
+        }
+    }
+
+    /**
+     * Moon Walk: the air kicked at {@code at} (the foot, eye-relative), {@code age} ticks on: two flat rings of air opening out level
+     * round the foot, one after the other, and streaks shed downward from the kick.
+     */
+    public static void step(FireMesh.Sink sink, double[] at, double age, Look look, int seed) {
+        double[] up = {0.0, 1.0, 0.0};
+        for (int r = 0; r < 2; r++) {
+            double t = (age - r * 1.5) / 6.0;
+            if (t <= 0.0 || t >= 1.0) {
+                continue;
+            }
+            double e = out(t);
+            double fade = 1.0 - smooth((t - 0.3) / 0.7);
+            ring(sink, at[0], at[1] - 0.15 * e, at[2], up, 0.2 + 1.1 * e, 0.3 * (1.0 - 0.5 * t), -0.12, look.band(1),
+                Math.min(1.0, look.alpha[1] * 1.4) * fade);
+            ring(sink, at[0], at[1] - 0.15 * e, at[2], up, (0.2 + 1.1 * e) * 0.98, 0.09, -0.1, look.band(3), look.alpha[3] * fade);
+        }
+        double life = age / 5.0;
+        if (life > 0.0 && life < 1.0) {
+            for (int i = 0; i < 6; i++) {
+                double a = (i + FireMesh.rand(seed, i)) * Math.PI / 3.0;
+                double r = 0.15 + 0.3 * FireMesh.rand(seed, i + 5);
+                FireMesh.streak(sink, at[0] + Math.cos(a) * r, at[1] - 0.2 - life * 0.9, at[2] + Math.sin(a) * r, 0.0, -1.0, 0.0, 0.6, 0.035,
+                    look.band(2), 1.0 - life);
+            }
+        }
+    }
+
+    /** How long a ground wave lasts (ticks). */
+    public static final double WAVE_LIFE = 12.0;
+
+    /**
+     * A wave along the ground from {@code at} (eye-relative, on the ground), {@code age} ticks on, out to {@code reach}: a low wall
+     * rushing out (a cone of water or shocked dust, its crest white), a band behind it, a second, weaker one after.
+     */
+    public static void wave(FireMesh.Sink sink, double[] at, double age, double reach, Look look) {
+        double[] up = {0.0, 1.0, 0.0};
+        for (int w = 0; w < 2; w++) {
+            double t = (age - w * 2.5) / (WAVE_LIFE - w * 2.5);
+            if (t <= 0.0 || t >= 1.0) {
+                continue;
+            }
+            double e = out(t);
+            double radius = 0.3 + reach * e;
+            double fade = (1.0 - smooth((t - 0.45) / 0.55)) * (w == 0 ? 1.0 : 0.6);
+            double wall = (0.55 - 0.25 * t) * (w == 0 ? 1.0 : 0.6);
+            ring(sink, at[0], at[1] + 0.05, at[2], up, radius, 0.9 * (1.0 - 0.4 * t), wall, look.band(1), look.alpha[1] * fade);
+            ring(sink, at[0], at[1] + 0.05, at[2], up, radius * 1.03, 0.3, wall * 1.2, look.band(3), look.alpha[3] * fade);
+            ring(sink, at[0], at[1] + 0.03, at[2], up, radius * 0.7, 0.8, 0.05, look.band(0), look.alpha[0] * 0.6 * fade);
+        }
+    }
+
+    /** A shock sphere blown out of {@code at}: a shell bright at its rim, {@code age} ticks on, out to {@code radius}. */
+    public static void sphere(FireMesh.Sink sink, double[] at, double age, double radius, Look look) {
+        double t = age / 7.0;
+        if (t <= 0.0 || t >= 1.0) {
+            return;
+        }
+        double e = out(t);
+        FireMesh.shell(sink, at[0], at[1], at[2], 0.3 + radius * e, look.band(2), 0.0, 0.85 * (1.0 - t));
+        FireMesh.shell(sink, at[0], at[1], at[2], (0.3 + radius * e) * 0.92, look.band(3), 0.0, 0.5 * (1.0 - t));
+    }
+
+    /** How fast a thrown shot flies (blocks a tick): the spear of water, the cannonball, the drill and the punch's shock. */
+    public static double speed(String kind) {
+        return switch (kind) {
+            case "spear" -> 2.2;
+            case "ball" -> 2.6;
+            case "drill" -> 2.2;
+            default -> 3.0;
+        };
+    }
+
+    /**
+     * A shot thrown from {@code from} to {@code to} (eye-relative), {@code age} ticks on: {@code kind} "spear" (a long body of water
+     * flying head first, drops shed behind it), "ball" (a black iron cannonball, smoke streaming off it), "drill" (a whirlpool bored
+     * along the line), "tunnel" (a punch's shock: rings racing down the line, opening as they go).
+     */
+    public static void shot(FireMesh.Sink sink, String kind, double[] from, double[] to, double age, Look look, int seed) {
+        double dx = to[0] - from[0];
+        double dy = to[1] - from[1];
+        double dz = to[2] - from[2];
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (length < 0.1) {
+            return;
+        }
+        double[] dir = {dx / length, dy / length, dz / length};
+        double speed = speed(kind);
+        double flight = length / speed;
+        double travelled = Math.min(length, age * speed);
+        double[] head = {from[0] + dir[0] * travelled, from[1] + dir[1] * travelled, from[2] + dir[2] * travelled};
+        switch (kind) {
+            case "spear" -> {
+                if (age <= flight) {
+                    WaterMesh.Look water = look == WATER ? WaterMesh.WATER : WaterMesh.HAKI;
+                    // the spear: a long body of water, head first, a thin point (WaterMesh drawn out to seven times its width)
+                    double[] mid = {head[0] - dir[0] * 0.8, head[1] - dir[1] * 0.8, head[2] - dir[2] * 0.8};
+                    WaterMesh.Body spear = new WaterMesh.Body(mid[0], mid[1], mid[2], 0.15, dir, 6.0, 0.08, age, seed, 1.0);
+                    int[] res = WaterMesh.resolution(0.4, Math.sqrt(mid[0] * mid[0] + mid[1] * mid[1] + mid[2] * mid[2]));
+                    WaterMesh.body(spear, res[0], res[1], water, (xyz, argb) -> sink.quad(new double[] {xyz[0], xyz[1], xyz[2], xyz[3], xyz[4],
+                        xyz[5], xyz[6], xyz[7], xyz[8], xyz[6], xyz[7], xyz[8]}, new int[] {argb[0], argb[1], argb[2], argb[2]}));
+                    double[] b = new double[6];
+                    FireMesh.basis(dir[0], dir[1], dir[2], b);
+                    for (int i = 0; i < 6; i++) {
+                        double back = 1.0 + i * 0.45 + FireMesh.rand(seed, i) * 0.3;
+                        if (back > travelled) {
+                            continue;
+                        }
+                        double a = FireMesh.rand(seed, i + 9) * Math.PI * 2;
+                        double r = 0.12 + 0.1 * FireMesh.rand(seed, i + 19);
+                        drop(sink, head[0] - dir[0] * back + (b[0] * Math.cos(a) + b[3] * Math.sin(a)) * r,
+                            head[1] - dir[1] * back + (b[1] * Math.cos(a) + b[4] * Math.sin(a)) * r - 0.02 * i,
+                            head[2] - dir[2] * back + (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * r, 0.045, new double[] {0, -0.1, 0}, water, age,
+                            seed + i, 1.0 - i / 7.0);
+                    }
+                    ring(sink, head[0] - dir[0] * 1.4, head[1] - dir[1] * 1.4, head[2] - dir[2] * 1.4, dir, 0.32, 0.08, -0.2, look.band(3),
+                        look.alpha[3] * 0.8);
+                } else {
+                    splash(sink, to, dir, age - flight, 1.0, look, seed + 3);
+                }
+            }
+            case "ball" -> {
+                if (age <= flight) {
+                    WaterMesh.Body ball = new WaterMesh.Body(head[0], head[1], head[2], 0.3, dir, 0.0, 0.0, age, seed, 1.0);
+                    int[] res = WaterMesh.resolution(0.3, Math.sqrt(head[0] * head[0] + head[1] * head[1] + head[2] * head[2]));
+                    WaterMesh.body(ball, res[0], res[1], WaterMesh.HAKI, (xyz, argb) -> sink.quad(new double[] {xyz[0], xyz[1], xyz[2], xyz[3],
+                        xyz[4], xyz[5], xyz[6], xyz[7], xyz[8], xyz[6], xyz[7], xyz[8]}, new int[] {argb[0], argb[1], argb[2], argb[2]}));
+                    FireMesh.palette(FireMesh.SMOKE);
+                    for (int i = 1; i <= 7; i++) {
+                        double back = i * 0.55;
+                        if (back > travelled) {
+                            break;
+                        }
+                        double fade = 1.0 - i / 8.0;
+                        FireMesh.puff(sink, head[0] - dir[0] * back, head[1] - dir[1] * back + 0.03 * i, head[2] - dir[2] * back, 0.16 + 0.05 * i,
+                            -dir[0], -dir[1], -dir[2], 0.6, 0.4, 0.5 + 0.3 * fade, 0.3, false, 0.75 * fade, age + i, seed + i);
+                    }
+                    FireMesh.palette(FireMesh.BAND);
+                    if (look == HAKI) {
+                        crackle(sink, head, dir, (int) Math.floor(age), 2, 0.5, 1.0, seed);
+                    }
+                } else {
+                    impact(sink, to, dir, age - flight, 1.4, look == HAKI ? HAKI : SHOCK, seed + 5);
+                }
+            }
+            case "drill" -> {
+                double grow = smooth(age / 3.0);
+                double fade = 1.0 - smooth((age - flight - 3.0) / 5.0);
+                if (fade <= 0.0) {
+                    return;
+                }
+                double reach = travelled * grow;
+                double[] end = {from[0] + dir[0] * reach, from[1] + dir[1] * reach, from[2] + dir[2] * reach};
+                vortex(sink, from, end, age, fade, look);
+                if (age > flight) {
+                    splash(sink, to, dir, age - flight, 1.2, look, seed + 3);
+                }
+            }
+            default -> {
+                // the tunnel: rings racing down the line, each a little behind the one before
+                for (int r = 0; r < 6; r++) {
+                    double t = age - r * 0.8;
+                    if (t <= 0.0) {
+                        continue;
+                    }
+                    double d = Math.min(length, t * speed);
+                    double life = t / (flight + 4.0);
+                    if (life >= 1.0) {
+                        continue;
+                    }
+                    double radius = 0.4 + 0.9 * (d / length) + 0.25 * r * 0.2;
+                    double fade = 1.0 - smooth((life - 0.4) / 0.6);
+                    double cx = from[0] + dir[0] * d;
+                    double cy = from[1] + dir[1] * d;
+                    double cz = from[2] + dir[2] * d;
+                    ring(sink, cx, cy, cz, dir, radius, 0.3, -0.5, look.band(1), Math.min(1.0, look.alpha[1] * 1.2) * fade);
+                    ring(sink, cx, cy, cz, dir, radius * 0.97, 0.1, -0.45, look.band(3), look.alpha[3] * fade);
+                }
+                double[] b = new double[6];
+                FireMesh.basis(dir[0], dir[1], dir[2], b);
+                for (int i = 0; i < 10; i++) {
+                    double a = (i + FireMesh.rand(seed, i)) * Math.PI * 2 / 10;
+                    double r = 0.4 + 0.6 * FireMesh.rand(seed, i + 3);
+                    double lead = Math.min(length, age * speed * (0.8 + 0.3 * FireMesh.rand(seed, i + 7)));
+                    double fade = 1.0 - smooth((age - flight) / 4.0);
+                    FireMesh.streak(sink, from[0] + dir[0] * lead + (b[0] * Math.cos(a) + b[3] * Math.sin(a)) * r,
+                        from[1] + dir[1] * lead + (b[1] * Math.cos(a) + b[4] * Math.sin(a)) * r,
+                        from[2] + dir[2] * lead + (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * r, dir[0], dir[1], dir[2], 1.4, 0.05, look.band(2),
+                        fade);
+                }
+            }
+        }
+    }
+
+    /** A whirlpool bored from {@code from} to {@code to}: three strands spiralling fast, wide at the hands, narrowing to its point. */
+    static void vortex(FireMesh.Sink sink, double[] from, double[] to, double age, double fade, Look look) {
+        double ax = to[0] - from[0];
+        double ay = to[1] - from[1];
+        double az = to[2] - from[2];
+        double length = Math.sqrt(ax * ax + ay * ay + az * az);
+        if (length < 0.05) {
+            return;
+        }
+        ax /= length;
+        ay /= length;
+        az /= length;
+        double[] b = new double[6];
+        FireMesh.basis(ax, ay, az, b);
+        int steps = Math.max(8, Math.min(48, (int) (length * 4)));
+        for (int strand = 0; strand < 3; strand++) {
+            for (int layer = 0; layer < 2; layer++) {
+                int rgb = layer == 0 ? look.band(1) : look.band(3);
+                double alpha = (layer == 0 ? look.alpha[1] : look.alpha[3]) * fade;
+                double width = layer == 0 ? 0.13 : 0.05;
+                double[] last = null;
+                double lastW = 0;
+                for (int i = 0; i <= steps; i++) {
+                    double t = i / (double) steps;
+                    double radius = 0.55 * (1.0 - t) + 0.08;
+                    double turn = strand * Math.PI * 2.0 / 3.0 + age * 1.4 + t * length * 2.2;
+                    double ox = (b[0] * Math.cos(turn) + b[3] * Math.sin(turn)) * radius;
+                    double oy = (b[1] * Math.cos(turn) + b[4] * Math.sin(turn)) * radius;
+                    double oz = (b[2] * Math.cos(turn) + b[5] * Math.sin(turn)) * radius;
+                    double[] p = {from[0] + ax * length * t + ox, from[1] + ay * length * t + oy, from[2] + az * length * t + oz};
+                    double w = width * (1.0 - 0.6 * t);
+                    if (last != null) {
+                        double sx = ox / radius;
+                        double sy = oy / radius;
+                        double sz = oz / radius;
+                        double nx = ay * sz - az * sy;
+                        double ny = az * sx - ax * sz;
+                        double nz = ax * sy - ay * sx;
+                        int c = FireMesh.argb(alpha * (0.4 + 0.6 * (1.0 - t)), rgb);
+                        FireMesh.quad(sink, last[0] - nx * lastW, last[1] - ny * lastW, last[2] - nz * lastW, c, last[0] + nx * lastW,
+                            last[1] + ny * lastW, last[2] + nz * lastW, c, p[0] + nx * w, p[1] + ny * w, p[2] + nz * w, c, p[0] - nx * w,
+                            p[1] - ny * w, p[2] - nz * w, c);
+                    }
+                    last = p;
+                    lastW = w;
+                }
+            }
+        }
+    }
 }

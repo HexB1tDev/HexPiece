@@ -121,9 +121,9 @@ public final class AbilityPanel {
         rows.add(Row.of("Ctrl+" + attack, "Quick draw", colour));
     }
 
-    /** A fighting style's lines: its string, its heavy, its two specials. */
+    /** A fighting style's lines: its string, its heavy, its two specials, its three extras (2.8.4). */
     static void style(Input in, List<Row> rows) {
-        String[] slots = {"attack", "use", "special_a", "special_b"};
+        String[] slots = {"attack", "use", "special_a", "special_b", "extra_c", "extra_v", "extra_b"};
         for (int i = 0; i < Math.min(slots.length, in.styleMoves().size()); i++) {
             String name = in.styleMoves().get(i);
             if (name != null && !name.isEmpty()) {

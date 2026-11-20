@@ -21,7 +21,8 @@ import net.minecraftforge.fml.common.Mod;
 /**
  * 2.1.1: a fighting style's inputs. 2.1.2: only in combat mode (R, {@link CombatMode}), with an empty main hand, outside Devil Fruit
  * mode (2.1.3: a kit fruit's M1 steps aside in combat mode, {@link PieceHooks#fruitKeysActive}): M1 throws the string (at a block too: to mine, leave combat
- * mode), the right click the signature (not at a block: doors and chests still open), Z and X the specials (2.7.1; Y and U before). The server decides what each press does.
+ * mode), the right click the signature (not at a block: doors and chests still open), Z and X the specials (2.7.1; Y and U before), C, V and
+ * B the show's own moves (2.8.4). The server decides what each press does.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class StyleInput {
@@ -114,6 +115,23 @@ public final class StyleInput {
         while (PieceKeys.SPECIAL_B.m_90859_()) {
             if (ready) {
                 PieceNetwork.toServer(new C2SStyleAction(Slot.SPECIAL_B.ordinal()));
+            }
+        }
+        // 2.8.4: the show's own moves of each style on C, V and B (the Swordsman's keys stay the sword's)
+        boolean extras = ready && !swordsman();
+        while (PieceKeys.EXTRA_C.m_90859_()) {
+            if (extras) {
+                PieceNetwork.toServer(new C2SStyleAction(Slot.EXTRA_C.ordinal()));
+            }
+        }
+        while (PieceKeys.EXTRA_V.m_90859_()) {
+            if (extras) {
+                PieceNetwork.toServer(new C2SStyleAction(Slot.EXTRA_V.ordinal()));
+            }
+        }
+        while (PieceKeys.EXTRA_B.m_90859_()) {
+            if (extras) {
+                PieceNetwork.toServer(new C2SStyleAction(Slot.EXTRA_B.ordinal()));
             }
         }
     }

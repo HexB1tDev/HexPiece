@@ -32,6 +32,18 @@ public enum StyleMove {
         Hit.heavy(16, 3.8, 5.0F).wide(180).throwing(0.8, 0.3)),
     BL_SKY(FightingStyle.BLACK_LEG, Slot.SPECIAL_B, "Sky Walk Drop", "Kick off the air itself, high, then drop a heel into the ground.", 26,
         26, 220, 200, Motion.leap(2, 15, 0.5, 1.05), Effect.QUAKE, Hit.finisher(19, 4.5, 12.0F).wide(180).throwing(1.0, 0.6)),
+    // 2.8.4: the show's own (C, V, B in combat mode)
+    BL_PARTY(FightingStyle.BLACK_LEG, Slot.EXTRA_C, "Party Table Kick Course", "Down onto your hands, the legs split and spun like a "
+        + "propeller: everything round you kicked again and again.", 24, 24, 120, 20, Motion.NONE, Effect.NONE,
+        Hit.medium(7, 3.4, 3.5F).wide(180).throwing(0.4, 0.15), Hit.medium(10, 3.4, 3.5F).wide(180).throwing(0.4, 0.15),
+        Hit.medium(13, 3.4, 3.5F).wide(180).throwing(0.4, 0.15), Hit.medium(16, 3.4, 3.5F).wide(180).throwing(0.4, 0.15),
+        Hit.heavy(18, 3.6, 5.0F).wide(180).throwing(0.9, 0.35)),
+    BL_ANTI(FightingStyle.BLACK_LEG, Slot.EXTRA_V, "Anti-Manner Kick Course", "Dropped onto your hands under their guard, both legs driven "
+        + "up into them: kicked into the sky.", 18, 18, 160, 100, Motion.lunge(2, 0.25), Effect.NONE,
+        Hit.finisher(9, 3.2, 9.0F).wide(50).throwing(0.15, 1.35)),
+    BL_HACHIS(FightingStyle.BLACK_LEG, Slot.EXTRA_B, "Diable Jambe: Premier Hachis", "The leg spun until it burns, then a storm of blazing "
+        + "kicks into them, the last sending them flying.", 32, 32, 260, 250, Motion.NONE, Effect.FIRE, hachis()),
+
 
     // --- Six Powers: finger pistols, air blades, the vanishing step, the iron body ----------------------------------------------
     SP_FINGER_R(FightingStyle.SIX_POWERS, Slot.M1_1, "Finger Pistol", "A finger driven in like a bullet.", 8, 5, 0, 0,
@@ -48,6 +60,14 @@ public enum StyleMove {
         Motion.NONE, Effect.NONE, Hit.line(7, 22.0, 1.2, 10.0F, Weight.HEAVY).throwing(0.6, 0.2)),
     SP_IRON(FightingStyle.SIX_POWERS, Slot.SPECIAL_B, "Iron Body", "Every muscle locked: blows barely land, and those who strike are thrown "
         + "back.", 40, 40, 240, 200, Motion.NONE, Effect.GUARD),
+    SP_MOON(FightingStyle.SIX_POWERS, Slot.EXTRA_C, "Moon Walk", "Kick off the air itself: up into the sky, again and again before you "
+        + "land.", 8, 8, 10, 20, Motion.hop(1, 0.35, 0.95), Effect.AIR_STEP),
+    SP_PAPER(FightingStyle.SIX_POWERS, Slot.EXTRA_V, "Paper Art", "The body goes as limp as paper: for two seconds every blow aimed at you "
+        + "flutters past.", 40, 40, 200, 100, Motion.NONE, Effect.DODGE),
+    SP_KING(FightingStyle.SIX_POWERS, Slot.EXTRA_B, "Six King Gun", "Both fists pressed against them and the whole body's force let go "
+        + "at once: a shockwave through them.", 24, 24, 300, 250, Motion.lunge(8, 0.45), Effect.QUAKE,
+        Hit.finisher(14, 3.2, 14.0F).wide(35).throwing(2.2, 0.35).stunning(40)),
+
 
     // --- Fishman Karate: open hands, water and shock --------------------------------------------------------------------------
     FK_PALM(FightingStyle.FISHMAN_KARATE, Slot.M1_1, "Shark Palm", "An open palm thrust from the hip.", 9, 6, 0, 0,
@@ -75,6 +95,16 @@ public enum StyleMove {
     FK_PRISON(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B, "Water Prison", "Both hands to the sky: the one in your sights is sealed in a "
         + "ball of water and held floating off the ground for 5 seconds, free only to look around. Enough damage, or their Conqueror's "
         + "Haki, bursts it.", 22, 22, 400, 200, Motion.NONE, Effect.PRISON),
+    FK_SPEAR(FightingStyle.FISHMAN_KARATE, Slot.EXTRA_C, "Spear Wave", "The water in the air gathered in the hand and thrown as a spear: "
+        + "it runs straight through everything in its line.", 20, 20, 120, 20, Motion.NONE, Effect.NONE,
+        Hit.line(11, 20.0, 0.9, 8.0F, Weight.HEAVY).throwing(0.7, 0.15)),
+    FK_DRILL(FightingStyle.FISHMAN_KARATE, Slot.EXTRA_V, "Vagabond Drill", "A whirlpool spun up between the hands and thrust out: a drill "
+        + "of water that drives them back.", 22, 22, 180, 100, Motion.lunge(10, 0.2), Effect.NONE,
+        Hit.line(12, 11.0, 1.4, 10.0F, Weight.FINISHER).throwing(1.4, 0.2).stunning(30)),
+    FK_FIVE(FightingStyle.FISHMAN_KARATE, Slot.EXTRA_B, "Five-Thousand Brick Fist", "A fist driven into the ground: its shock runs out "
+        + "through the water in everything round you, throwing them all.", 26, 26, 280, 250, Motion.hop(4, 0.0, 0.45), Effect.QUAKE,
+        Hit.finisher(14, 6.5, 12.0F).wide(180).throwing(1.2, 0.7)),
+
 
     // --- Iron Fist: pirate boxing ---------------------------------------------------------------------------------------------
     IF_JAB(FightingStyle.BRAWLER, Slot.M1_1, "Jab", "A quick lead-hand jab.", 7, 4, 0, 0,
@@ -93,7 +123,16 @@ public enum StyleMove {
         Motion.dash(3, 12, 1.15), Effect.ONCE,
         Hit.heavy(4, 2.2, 5.0F).wide(75).throwing(1.0, 0.3), Hit.heavy(6, 2.2, 5.0F).wide(75).throwing(1.0, 0.3),
         Hit.heavy(8, 2.2, 5.0F).wide(75).throwing(1.0, 0.3), Hit.heavy(10, 2.2, 5.0F).wide(75).throwing(1.0, 0.3),
-        Hit.heavy(12, 2.2, 5.0F).wide(75).throwing(1.0, 0.3));
+        Hit.heavy(12, 2.2, 5.0F).wide(75).throwing(1.0, 0.3)),
+    IF_LOVE(FightingStyle.BRAWLER, Slot.EXTRA_C, "Fist of Love", "A fist brought down on their head like a scolding: it drives them "
+        + "into the ground.", 16, 16, 120, 20, Motion.lunge(4, 0.25), Effect.QUAKE,
+        Hit.heavy(9, 3.2, 8.0F).wide(40).throwing(0.1, -0.6).stunning(40)),
+    IF_METEOR(FightingStyle.BRAWLER, Slot.EXTRA_V, "Fist Meteor", "A cannonball pitched overhand, hard enough to hole a ship: it flies "
+        + "straight and bursts on what it meets.", 20, 20, 160, 100, Motion.NONE, Effect.NONE,
+        Hit.line(10, 24.0, 0.8, 10.0F, Weight.HEAVY).throwing(1.2, 0.3)),
+    IF_HONESTY(FightingStyle.BRAWLER, Slot.EXTRA_B, "Honesty Impact", "Everything in one straight punch: its shock blows a tunnel through "
+        + "the air ahead, throwing all in its path.", 26, 26, 300, 250, Motion.lunge(12, 0.4), Effect.QUAKE,
+        Hit.line(14, 10.0, 1.8, 13.0F, Weight.FINISHER).throwing(2.0, 0.4).stunning(30));
 
     /** What else a move does besides its blows. */
     public enum Effect {
@@ -115,7 +154,11 @@ public enum StyleMove {
         /** 2.3.9: its blow is a shockwave of water along the look: all it strikes are knocked off their feet (server/Knockdowns). */
         SHOCKWAVE,
         /** 2.4.0: no blow: the one in the user's sights is sealed in a ball of water and held (server/WaterPrisons). */
-        PRISON
+        PRISON,
+        /** 2.8.4: no blow: Moon Walk, a step off the air (its hop works in the air too; the fall forgotten). */
+        AIR_STEP,
+        /** 2.8.4: no blow: Paper Art, every blow aimed at the user while it holds flutters past (server/StyleServer.dodge). */
+        DODGE
     }
 
     private final FightingStyle style;
@@ -153,6 +196,16 @@ public enum StyleMove {
                 com.hexhaki.piece.water.WaterBullet.RADIUS, 3.5F, Weight.LIGHT);
         }
         return hits;
+    }
+
+    /** 2.8.4: Premier Hachis: eight blazing kicks two ticks apart once the leg is heated, a roundhouse to end it. */
+    private static Hit[] hachis() {
+        List<Hit> hits = new ArrayList<>();
+        for (int tick = 9; tick <= 23; tick += 2) {
+            hits.add(Hit.light(tick, 3.3, 1.8F).wide(45).throwing(0.08, 0.03).stunning(6));
+        }
+        hits.add(Hit.finisher(28, 3.6, 7.0F).wide(70).throwing(1.4, 0.3));
+        return hits.toArray(new Hit[0]);
     }
 
     private static Hit[] gatling() {

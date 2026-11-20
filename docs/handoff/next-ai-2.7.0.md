@@ -360,15 +360,30 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   (Free-to-use sounds only, credited; every Uo move: breath, fireball, blast breath charge/beam/explosion, wind moves, tornado, roar,
   bite, transformation, flight.)
 
-## Next (2.8.4)
-1. Check 2.8.3's runs. Ask the owner how the styles feel in first person (2.8.2) and how the new blows look in game (2.8.3), Haki on
-   and off; nothing was tested in game.
-2. Still open from the owner's style request: show-accurate extra moves per style (C/V/B are free in combat mode), with first
-   person, their animations judged (tools/anim_preview.py) and their effects rendered (StylePreview).
+## Done (2.8.4, pushed): the show's own moves, three per style on C, V and B
+- The owner (part of "Done (2.8.2)"'s request): "add more custom perfect moves (with first person) ... give each their show accurate
+  moves if they lack it". Render: docs/handoff/style-extras-2.8.4.jpg.
+- Slot EXTRA_C, EXTRA_V, EXTRA_B (PieceKeys EXTRA_C/V/B on C, V, B; StyleInput sends them in combat mode, not for the Swordsman);
+  mastery C 20, V 100, B 250 (StyleTests: C 1-50, V 51-200, B 201-400, each recharges). The HUD, the panel, the logbook (keys C/V/B)
+  and the creation screen list them; MenuTests expects 10 entries.
+- The moves (StyleMove, animations in tools/style_anims.py `extras()`, judged with tools/anim_preview.py and anim.lint):
+  Black Leg: Party Table Kick Course (handstand, legs split and spun, 4 hits round + a heavy), Anti-Manner Kick Course (handstand, both
+  legs driven up, launches 1.35), Diable Jambe Premier Hachis (leg heated by a spin, 8 burning kicks + a roundhouse; FIRE look);
+  Six Powers: Moon Walk (Effect.AIR_STEP: a hop of 0.95 that works in the air, fall forgotten, 10-tick recharge), Paper Art
+  (Effect.DODGE: StyleServer.dodge cancels every blow or shot from someone for 2 s and drifts the body aside), Six King Gun (both fists,
+  14 damage, a sphere of shock); Fishman Karate: Spear Wave (line 20, a long body of water), Vagabond Drill (line 11, a whirlpool
+  drill), Five-Thousand Brick Fist (a hop and a fist into the ground, all round 6.5, a wave of water along the ground); Iron Fist: Fist
+  of Love (overhead, drives them down, a shock ring on the ground), Fist Meteor (line 24, a black cannonball trailing smoke), Honesty
+  Impact (line 10, rings racing down a tunnel of shock). Throws cock the arm behind the head (positive elbow bend: the lint's "arm
+  through the head" otherwise). Fishman Karate's and Iron Fist's extras ease in (no tick-0 pose) and keep their legs (StyleTests).
+- Effects: StyleShow.special (Moon Walk StyleArt.step, Paper Art StyleArt.papers, Six King Gun StyleArt.sphere, Five-Thousand and Fist of
+  Love StyleArt.wave), StyleShow.shot/shotKind (StyleArt.shot: spear, drill, ball, tunnel) drawn by client/fx/StyleVfx from stage 2
+  (StyleFx keeps its Photon shot only for the others). FirstPersonLegs skips moves that turn the body over (a handstand).
+
+## Next (2.8.5)
+1. Check 2.8.4's runs. Then the owner's queued requests above, in order: the dragon's body wobble higher up and down, more angular, in
+   flight; Blast Breath's aim locked from release until the beam ends (free while charging); then every dragon move's sounds from the
+   web (epic, free to use, credited), none made by hand.
+2. Ask the owner how the styles feel in first person (2.8.2), the new blows (2.8.3) and the new moves (2.8.4); nothing was tested in
+   game.
 3. Earlier items still open: how 2.7.8's Light fruit and the Uo beams play; the lag pass (the owner's item 2).
-4. Previews of the moves: `javac -nowarn -d <dir> src/main/java/com/hexhaki/piece/dragon/*.java`, then `javac -cp <dir>:build/classes
-   -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java`, then `java -cp <dir>:build/preview:build/classes
-   FxPreview build/dragon-cache/*/seiryu.sry build/dragon-cache/*/seiryu.png out.png [--night] [--size=WxH] shot...`; a shot is a
-   DragonPreview shot (`g:...`, `v:...`) or `m:phase:sec:flight:look:bank:camYaw:camPitch:dist` (a close-up aimed at the mouth), then
-   `|breath:on[:off]`, `|orb:age:charge`, `|blast:age[:charge]`, `|bolt:age`, `|boom:age:radius[:ahead]`, `|air:age`,
-   `|airburst:age`, `|tornado:age[:strength]`, `|bite:t`, `|roar` (the open jaw alone) or `|none`.

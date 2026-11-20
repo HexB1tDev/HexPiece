@@ -18,6 +18,10 @@ public final class PieceKeys {
     public static final String CATEGORY = "key.categories.hexpiece";
     public static final KeyMapping SPECIAL_A = new KeyMapping("key.hexpiece.special_a", InputConstants.Type.KEYSYM, 90, CATEGORY);
     public static final KeyMapping SPECIAL_B = new KeyMapping("key.hexpiece.special_b", InputConstants.Type.KEYSYM, 88, CATEGORY);
+    /** 2.8.4: the three extra style moves (the show's own), C, V and B in combat mode. */
+    public static final KeyMapping EXTRA_C = new KeyMapping("key.hexpiece.extra_c", InputConstants.Type.KEYSYM, 67, CATEGORY);
+    public static final KeyMapping EXTRA_V = new KeyMapping("key.hexpiece.extra_v", InputConstants.Type.KEYSYM, 86, CATEGORY);
+    public static final KeyMapping EXTRA_B = new KeyMapping("key.hexpiece.extra_b", InputConstants.Type.KEYSYM, 66, CATEGORY);
 
     private PieceKeys() {
     }
@@ -26,5 +30,8 @@ public final class PieceKeys {
     public static void register(RegisterKeyMappingsEvent event) {
         event.register(SPECIAL_A);
         event.register(SPECIAL_B);
+        event.register(EXTRA_C);
+        event.register(EXTRA_V);
+        event.register(EXTRA_B);
     }
 }

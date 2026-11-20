@@ -109,6 +109,17 @@ public final class StylePreview {
                 StyleShow.landed(sink, move, haki, age, at, new double[] {0, 0, 1}, strikes[i].size(), 11 + i);
             }
         }
+        // a line move's shot from the eye along the look (the server's line), 8 blocks of it
+        if (StyleShow.shotKind(move) != null) {
+            for (StyleShow.Strike st : strikes) {
+                double age = t - st.tick();
+                if (age >= 0) {
+                    double[] from = {0 - eye[0], 1.45 - eye[1], 0.4 - eye[2]};
+                    double[] to = {0 - eye[0], 1.2 - eye[1], 8.0 - eye[2]};
+                    StyleShow.shot(sink, move, haki, age, from, to, 5);
+                }
+            }
+        }
         // as the game lays them (client/fx/StyleVfx.Collector): far to near in 5 cm steps, each step in the order made
         List<Quad> ordered = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {

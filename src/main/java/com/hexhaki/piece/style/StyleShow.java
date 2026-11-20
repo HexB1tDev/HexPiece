@@ -98,13 +98,14 @@ public final class StyleShow {
     public static boolean shown(StyleMove move) {
         return switch (move) {
             case FK_BULLET, FK_PRISON, FK_BRICK_FIST, SP_BLADE, SP_IRON, SP_SHAVE, IF_CHARGE -> false;
+            case SP_MOON, SP_PAPER -> true; // 2.8.4: no blows, their own show (special)
             default -> move.style() != FightingStyle.SWORDSMAN && move.style() != FightingStyle.NONE && move.hits().length > 0;
         };
     }
 
     /** A move's look (the Flame Leg's fire is its own). */
     public static StyleArt.Look look(StyleMove move, boolean haki) {
-        if (move == StyleMove.BL_FLAME && !haki) {
+        if ((move == StyleMove.BL_FLAME || move == StyleMove.BL_HACHIS) && !haki) {
             return StyleArt.FIRE;
         }
         return StyleArt.of(move.style(), haki);
@@ -208,8 +209,8 @@ public final class StyleShow {
             float[][] hitPose = poser.sample(name, s.tick());
             place.put(StyleRig.limb(hitPose, s.limb(), 0.0, s.along(), 0.0), at);
             place.turn(s.dir(), dir);
-            // Six Powers' pushes are its own rings of air (client/fx/AirFx)
-            if (s.straight() && age >= 0.0 && move.style() != FightingStyle.SIX_POWERS) {
+            // Six Powers' pushes are its own rings of air (client/fx/AirFx), but for the Six King Gun's
+            if (s.straight() && age >= 0.0 && (move.style() != FightingStyle.SIX_POWERS || move == StyleMove.SP_KING)) {
                 StyleArt.thrust(sink, at, dir, age, s.size() * (own ? OWN : 1.0), look, seed * 17 + i);
             }
             if (water) {
@@ -234,6 +235,73 @@ public final class StyleShow {
                 double fade = age < 0.0 ? (age + 2.0) / 2.0 : 1.0 - age / 4.0;
                 StyleArt.crackle(sink, end, dir, (int) Math.floor(ticks), 3, 0.42 * s.size(), fade, seed + i);
             }
+        }
+        special(sink, move, haki, ticks, poser, place, seed, look);
+    }
+
+    /**
+     * 2.8.4: the extras' own: Moon Walk's air stamped down under the feet, Paper Art's sheets drifting round the body, the Six King
+     * Gun's sphere of shock out of both fists, the Five-Thousand Brick Fist's wave of water and the Fist of Love's of shocked dust along
+     * the ground from where the fist came down.
+     */
+    static void special(FireMesh.Sink sink, StyleMove move, boolean haki, float ticks, Poser poser, Place place, int seed, StyleArt.Look look) {
+        double[] at = new double[3];
+        switch (move) {
+            case SP_MOON -> {
+                float[][] kick = poser.sample(move.animation(), 1.0F);
+                double[] foot = tip(kick, StyleRig.RIGHT_LEG);
+                place.put(foot, at);
+                StyleArt.step(sink, at, ticks - 1.0, look, seed + 41);
+            }
+            case SP_PAPER -> {
+                place.put(new double[] {0.0, 0.0, 0.0}, at);
+                StyleArt.papers(sink, at, ticks, move.duration(), haki, seed);
+            }
+            case SP_KING -> {
+                int hit = move.hits()[0].tick();
+                if (ticks >= hit) {
+                    float[][] pose = poser.sample(move.animation(), hit);
+                    double[] r = tip(pose, StyleRig.RIGHT_ARM);
+                    double[] l = tip(pose, StyleRig.LEFT_ARM);
+                    place.put(new double[] {(r[0] + l[0]) * 0.5, (r[1] + l[1]) * 0.5, (r[2] + l[2]) * 0.5 + 0.2}, at);
+                    StyleArt.sphere(sink, at, ticks - hit, 2.6, look);
+                }
+            }
+            case FK_FIVE, IF_LOVE -> {
+                Strike s = strikes(move, poser)[0];
+                if (ticks >= s.tick()) {
+                    double[] fist = tip(poser.sample(move.animation(), s.tick()), s.limb());
+                    place.put(new double[] {fist[0], 0.02, fist[2]}, at);
+                    StyleArt.wave(sink, at, ticks - s.tick(), move == StyleMove.FK_FIVE ? 6.5 : 3.0, look);
+                }
+            }
+            default -> {
+            }
+        }
+    }
+
+    /** 2.8.4: what a line move throws (StyleArt.shot): "spear", "drill", "ball", "tunnel"; null: its shot is drawn elsewhere. */
+    public static String shotKind(StyleMove move) {
+        return switch (move) {
+            case FK_SPEAR -> "spear";
+            case FK_DRILL -> "drill";
+            case IF_METEOR -> "ball";
+            case IF_HONESTY -> "tunnel";
+            default -> null;
+        };
+    }
+
+    /** How long a thrown shot shows ({@code length} blocks out), ticks. */
+    public static double shotLife(StyleMove move, double length) {
+        String kind = shotKind(move);
+        return kind == null ? 0.0 : length / StyleArt.speed(kind) + StyleArt.SPLASH_LIFE;
+    }
+
+    /** A line move's shot from {@code from} to {@code to} (eye-relative), {@code age} ticks on, in its user's look. */
+    public static void shot(FireMesh.Sink out, StyleMove move, boolean haki, double age, double[] from, double[] to, int seed) {
+        String kind = shotKind(move);
+        if (kind != null) {
+            StyleArt.shot(faded(out), kind, from, to, age, look(move, haki), seed);
         }
     }
 

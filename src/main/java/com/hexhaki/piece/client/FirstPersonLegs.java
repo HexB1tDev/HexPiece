@@ -53,6 +53,9 @@ public final class FirstPersonLegs {
         return KICKS.computeIfAbsent(m, k -> {
             for (float t = 0.0F; t <= 30.0F; t += 0.5F) {
                 float[][] pose = StylePoser.sample(k.animation(), t);
+                if (Math.abs(pose[0][3] * pose[0][StylePoser.WEIGHT]) > 90.0F) {
+                    return false; // 2.8.4: a move that turns the body over (a handstand) would swing the legs through the eye
+                }
                 for (int part = 4; part <= 5; part++) {
                     if (pose[part][StylePoser.WEIGHT] > 0.5F && (Math.abs(pose[part][3]) > 35.0F || Math.abs(pose[part][5]) > 35.0F)) {
                         return true;

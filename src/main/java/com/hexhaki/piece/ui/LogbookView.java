@@ -684,6 +684,9 @@ public final class LogbookView {
                     case HEAVY -> "RMB";
                     case SPECIAL_A -> "Z";
                     case SPECIAL_B -> "X";
+                    case EXTRA_C -> "C";
+                    case EXTRA_V -> "V";
+                    case EXTRA_B -> "B";
                 };
                 boolean open = mastery >= move.mastery();
                 String info = move.cooldown() > 0 ? String.format(java.util.Locale.ROOT, "recharges in %.1fs", move.cooldown() / 20.0) : "in the string";
@@ -692,7 +695,8 @@ public final class LogbookView {
         }
         return new Section(style.display(), mastery + "/" + PieceRules.MAX_MASTERY, style.colour(), mastery / (float) PieceRules.MAX_MASTERY,
             List.of("Mastery " + mastery + "/" + PieceRules.MAX_MASTERY + ": " + damage + ".",
-                "Combat mode (R) puts the style on your hands: M1 the string, the right button the signature, Z and X the specials.",
+                "Combat mode (R) puts the style on your hands: M1 the string, the right button the signature, Z and X the specials, C, V "
+                    + "and B the show's own moves.",
                 "Landing blows trains it; heavier moves train it faster."), entries);
     }
 

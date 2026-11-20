@@ -42,6 +42,11 @@ public final class StyleTests {
                 Check.that(slot != Slot.HEAVY || move.mastery() == 0, move + ": the signature is open from the start");
                 Check.that(slot != Slot.SPECIAL_A || move.mastery() > 0 && move.mastery() < 150, move + ": the first special opens early");
                 Check.that(slot != Slot.SPECIAL_B || move.mastery() >= 150 && move.mastery() <= 400, move + ": the second special opens later");
+                // 2.8.4: the show's own moves on C, V and B: one early, one midway, one late
+                Check.that(slot != Slot.EXTRA_C || move.mastery() > 0 && move.mastery() <= 50, move + ": C opens early");
+                Check.that(slot != Slot.EXTRA_V || move.mastery() > 50 && move.mastery() <= 200, move + ": V opens midway");
+                Check.that(slot != Slot.EXTRA_B || move.mastery() > 200 && move.mastery() <= 400, move + ": B opens late");
+                Check.that(!slot.extra() || move.cooldown() > 0, move + ": an extra recharges");
                 int last = -1;
                 for (Hit hit : move.hits()) {
                     Check.that(hit.tick() > 0 && hit.tick() < move.duration(), move + ": every blow lands inside the move");
@@ -50,7 +55,8 @@ public final class StyleTests {
                     Check.that(hit.damage() > 0 && hit.damage() <= 14, move + ": damage in range");
                     Check.that(hit.reach() > 0 && hit.reach() <= 25, move + ": reach in range");
                 }
-                boolean defensive = move.effect() == StyleMove.Effect.GUARD || move.effect() == StyleMove.Effect.PRISON;
+                boolean defensive = move.effect() == StyleMove.Effect.GUARD || move.effect() == StyleMove.Effect.PRISON
+                    || move.effect() == StyleMove.Effect.AIR_STEP || move.effect() == StyleMove.Effect.DODGE;
                 Check.that(defensive || move.hits().length > 0, move + ": an attack has blows");
                 Check.that(move.animation().startsWith("style_" + style.id() + "_"), move + ": its animation is named for its style");
             }
@@ -103,7 +109,8 @@ public final class StyleTests {
             String json = Files.readString(ANIMATIONS.resolve(move.animation() + ".json"));
             Check.that(!json.contains("\"tick\": 0,"), move + ": no pose forced on tick 0, the arms rise from where they are");
             // 2.4.4: the Brick Fist is planted and stepped into (the owner: "it doesn't look very strong")
-            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.IF_CHARGE || move == StyleMove.FK_BRICK_FIST;
+            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.IF_CHARGE || move == StyleMove.FK_BRICK_FIST
+                || move.slot().extra(); // 2.8.4: the extras are whole-body moves (a throw's stride, a hop into the ground)
             Check.that(legged == legs.matcher(json).find(), move + (legged ? ": its legs are part of the blow" : ": the legs stay the game's"));
         }
     }

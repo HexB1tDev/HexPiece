@@ -30,6 +30,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -367,6 +368,34 @@ public final class StyleServer {
             Impact.hit(player, attacker, Impact.Spec.medium(new Vec3(away.f_82479_ / length * 0.9, 0.25, away.f_82481_ / length * 0.9)));
             StyleCombat.sound(player, "fx.parry", 0.9F);
         }
+    }
+
+    /**
+     * 2.8.4: Paper Art: while it holds, every blow aimed at the user (struck or shot by someone) flutters past: nothing lands, nothing
+     * throws them, and the body drifts aside from the one who struck. A fall or a fire still finds them.
+     */
+    @SubscribeEvent
+    public static void dodge(LivingAttackEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) {
+            return;
+        }
+        State state = STATES.get(player.m_20148_());
+        if (state == null || state.move == null || state.move.effect() != StyleMove.Effect.DODGE) {
+            return;
+        }
+        net.minecraft.world.entity.Entity attacker = event.getSource().m_7639_();
+        if (attacker == null || attacker == player) {
+            return;
+        }
+        event.setCanceled(true);
+        Vec3 away = player.m_20182_().m_82546_(attacker.m_20182_());
+        double length = Math.max(0.01, Math.sqrt(away.f_82479_ * away.f_82479_ + away.f_82481_ * away.f_82481_));
+        double ax = away.f_82479_ / length;
+        double az = away.f_82481_ / length;
+        // aside, a little away: as paper drifts off the air a hand pushes ahead of it
+        double side = (player.m_217043_().m_188499_() ? 1.0 : -1.0) * 0.32;
+        StyleCombat.push(player, new Vec3(-az * side + ax * 0.12, 0.04, ax * side + az * 0.12));
+        StyleCombat.sound(player, "fx.whoosh_light", 0.6F);
     }
 
     /** A pirate who beats a marine (or the reverse) earns renown: a player counts as a captain. */
