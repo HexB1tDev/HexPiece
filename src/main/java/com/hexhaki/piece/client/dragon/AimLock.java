@@ -3,7 +3,9 @@ package com.hexhaki.piece.client.dragon;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraft.client.player.Input;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
+import net.minecraftforge.client.event.MovementInputUpdateEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -14,7 +16,9 @@ import net.minecraftforge.fml.common.Mod;
  * where you're gonna aim it"): while one's own Blast Breath burns (either form), the view is held where it was let go (the server's
  * S2CUoFx FIRE_BEAM carries that aim, the beam keeps it: server/UoMoves.Beam): every tick and every frame the player's turn and tilt
  * are put back on it (before the frame is drawn: the mouse's turn of that frame undone), so the camera, the dragon's head and the beam
- * stay on it. Freed when the beam ends (its life, or the server's FIRE_BEAM_OFF), on leaving the world, or if the player dies.
+ * stay on it. 2.8.7 (the owner, asked whether the dragon should be held still too: "it should yes"): the body is held where it was as
+ * well: no walking, flying up or down, or drifting (every movement key's input dropped, the motion stopped each tick). Freed when the
+ * beam ends (its life, or the server's FIRE_BEAM_OFF), on leaving the world, or if the player dies.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class AimLock {
@@ -53,6 +57,7 @@ public final class AimLock {
     }
 
     static void hold(LocalPlayer player) {
+        player.m_20334_(0.0, 0.0, 0.0);
         player.m_146922_(yaw);
         player.m_146926_(pitch);
         player.f_19859_ = yaw;
@@ -87,6 +92,19 @@ public final class AimLock {
         if (player != null) {
             hold(player);
         }
+    }
+
+    /** 2.8.7: no movement key moves the body while the beam burns (walking, strafing, flying up or down). */
+    @SubscribeEvent
+    public static void movement(MovementInputUpdateEvent event) {
+        if (!locked || event.getEntity() != Minecraft.m_91087_().f_91074_) {
+            return;
+        }
+        Input input = event.getInput();
+        input.f_108566_ = 0.0F;
+        input.f_108567_ = 0.0F;
+        input.f_108572_ = false;
+        input.f_108573_ = false;
     }
 
     @SubscribeEvent

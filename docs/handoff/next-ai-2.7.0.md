@@ -406,8 +406,13 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   explode where it strikes, the blast (as big as the charge) at its end; Gigantic Bite: lunge + roar, bite. No hand-made sound.
 - SwordTests.dragonSounds checks every event, clip, credit and file format.
 
-## Next (2.8.7)
-1. Check 2.8.6's runs. Ask the owner how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the
+## Done (2.8.7, pushed): Blast Breath holds the body still too
+- Asked whether the aim lock should also hold the dragon in place, the owner: "it should yes". client/dragon/AimLock now also drops
+  every movement key's input while the beam burns (MovementInputUpdateEvent: walking, strafing, flying up and down) and stops the
+  motion every tick; server/UoMoves.beam stops the user's velocity as it starts. Both forms.
+
+## Next (2.8.8)
+1. Check 2.8.7's runs. Ask the owner how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the
    dragon's wave, the Blast Breath lock, the dragon's sounds); nothing was tested in game. Their sound picks are open to change: every
    clip is listed in assets/hexhaki/sounds/piece/uo/SOURCES.txt, and tools/dragon_sounds.py re-cuts them.
 2. Earlier items still open: how 2.7.8's Light fruit and the Uo beams play; the lag pass (the owner's item 2).

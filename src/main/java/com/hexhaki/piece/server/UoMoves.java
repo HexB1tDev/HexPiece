@@ -657,6 +657,9 @@ public final class UoMoves {
     static void beam(ServerPlayer player, boolean dragon, double width, double length, int life, float damage, double knock, float charge) {
         ServerLevel level = (ServerLevel) player.m_9236_();
         LIVE.add(new Beam(player, level, dragon, width, length, life, damage, knock, charge));
+        // 2.8.7 (the owner: the dragon held still while it burns, "it should yes"): stopped where it is (its client holds it there)
+        player.m_20334_(0.0, 0.0, 0.0);
+        player.f_19864_ = true;
         // 2.8.5: the aim the beam keeps (the look at release), sent with it: the user's own view is held on it until the beam ends
         PieceNetwork.around(player, new S2CUoFx(S2CUoFx.FIRE_BEAM, dragon ? 1 : 0, player.m_19879_(), player.m_146908_(), player.m_146909_(), 0,
             (float) length, 0, 0, 0, 0, 0, (float) width, life));
