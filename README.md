@@ -47,6 +47,10 @@ the start menu and the Captain's Log:
   spawn in the Marine outfit.
 - Sword sounds (2.2.9), every clip CC0 from OpenGameArt.org and credited in `sounds/piece/sword/SOURCES.txt`: the draw's click,
   slide and ring, the sheathe, a swing on every cut, the Haki slash's rush; Yoru deeper, Gryphon higher; NPC swordsmen too.
+- The Uo Uo no Mi (2.7.0, the owner's dragon model, input/kaido_dragon_form.zip): Z turns the eater into the Azure Dragon, 14 blocks
+  tall hovering, which bursts out of them, coils over them, flies as creative flight does (uncoiling into a travelling wave, pitching
+  and banking) and dives back into them (dragon/DragonForm, client/dragon, server/DragonServer). Previews: `python3 tools/dragon_gif.py
+  out.gif` and `java -cp build/preview DragonPreview ...` (tools/preview/DragonPreview.java: the game's own posing, rasterised).
 - Pirate and Marine NPC patrols (pirates also with katanas) that fight each other and the players of the other flag with the same moves; bounty and merit ranks.
 - The Captain's Log (2.2.4: the one menu, the original's Ability Book, Haki Techniques and Gear mastery screens gone into it):
   overview, Style & Haki (moves, techniques, quick slots), Devil Fruit (moves, quick slots, the Nika fruit's upgrades).

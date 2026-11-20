@@ -11,4 +11,7 @@ public interface VertexConsumer {
     /** normal(matrix, x, y, z) */ VertexConsumer m_252939_(org.joml.Matrix3f normal, float x, float y, float z);
     /** vertex(x, y, z) */ VertexConsumer m_5483_(double x, double y, double z);
     /** endVertex */ void m_5752_();
+    /** vertex(x, y, z, r, g, b, a, u, v, overlay, light, nx, ny, nz): the whole vertex at once (2.7.0: the dragon) */
+    void m_5954_(float x, float y, float z, float red, float green, float blue, float alpha, float u, float v, int overlay, int light,
+                 float nx, float ny, float nz);
 }

@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.6.9"
+VERSION = "2.7.0"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -41,6 +41,12 @@ ARMOR_JAVA = ["OnePieceArmorModel", "OnePieceArmorExtensions"]
 ARMOR_TEXTURES = "assets/hexhaki/textures/models/armor/"
 ARMOR_KEYS = ["marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat"]
 ARMOR_ICONS = "assets/hexhaki/textures/item/armor/"
+# 2.7.0: the owner's dragon for the Uo Uo no Mi (one FBX, its rig and takes, and its colour map), never altered: packed at build time
+# by tools/dragon_mesh.py (the file's own units, a block each in game) and cached under build/ by the zip's SHA-256.
+DRAGON_ZIP = ROOT / "input" / "kaido_dragon_form.zip"
+EXPECTED_DRAGON_SHA256 = "dff98bd5271eb11a0494b01d9e37a87338560b7c737fb4a39a514e5ba1d4f6d0"
+DRAGON_MODEL = "assets/hexhaki/dragon/seiryu.sry"
+DRAGON_TEXTURE = "assets/hexhaki/textures/piece/dragon/seiryu.png"
 # 2.1.4: the owner's katana collection ("Hex Katana Atelier": 25 katanas, 25 saya, 25 atlases), never altered.
 KATANA_ZIP = ROOT / "input" / "Hex_Katana_Atelier_1.20.1.zip"
 EXPECTED_KATANA_SHA256 = "fece809eb8699a7f5a562b3975da753bb929089d1a93b75896d25b734e6d9d28"
@@ -92,6 +98,10 @@ PATCHED = {
     "com/hexhaki/client/render/HakiPhysiqueLayer.class",
     "com/hexhaki/client/render/HakiChestLayer.class",
     "com/hexhaki/gameplay/HakiServerController.class",
+    # 2.7.0: the Uo Uo no Mi joins the fruit enum (PiecePatch.uoFruit), its client kit the original's map, its dragon the camera hook
+    "com/hexhaki/fruit/Fruit.class",
+    "com/hexhaki/fruit/client/ClientKits.class",
+    "com/hexhaki/mixin/CameraMixin.class",
     "com/hexhaki/data/HakiTechnique.class",
     "com/hexhaki/binds/client/AbilityBook.class",
     "META-INF/mods.toml",
@@ -105,6 +115,9 @@ NEW_PREFIXES = (
     "assets/hexhaki/sounds/piece/",
     "assets/hexhaki/lang/",
     "data/hexhaki/",
+    "assets/hexhaki/dragon/",
+    "assets/hexhaki/models/item/uo_uo_no_mi.json",
+    "assets/hexhaki/textures/item/uo_uo_no_mi.png",
     KATANA_MESHES,
     KATANA_TEXTURES,
     KATANA_MODELS,
@@ -231,6 +244,26 @@ def katana_assets():
         entries[f"{KATANA_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
     entries.update(legend_assets())
     return entries
+
+
+def dragon_assets():
+    """2.7.0: {jar entry: bytes} for the Uo Uo no Mi's dragon: the owner's model whole (tools/dragon_mesh.py: every mesh, the rig, the
+    takes it uses) and its colour map. Packing takes a few seconds; cached under build/ by the zip's SHA-256."""
+    actual = hashlib.sha256(DRAGON_ZIP.read_bytes()).hexdigest()
+    if actual != EXPECTED_DRAGON_SHA256:
+        raise RuntimeError(f"The dragon zip differs from the one inspected: {actual}")
+    tool = hashlib.sha256((ROOT / "tools" / "dragon_mesh.py").read_bytes()).hexdigest()[:12]
+    cache = BUILD / "dragon-cache" / (actual[:16] + "-" + tool)
+    if not (cache / "done").exists():
+        sys.path.insert(0, str(ROOT / "tools"))
+        import dragon_mesh
+        if cache.exists():
+            shutil.rmtree(cache)
+        cache.mkdir(parents=True)
+        for name, data in dragon_mesh.pack(DRAGON_ZIP).items():
+            (cache / name).write_bytes(data)
+        (cache / "done").write_text(actual, encoding="utf-8")
+    return {DRAGON_MODEL: (cache / "seiryu.sry").read_bytes(), DRAGON_TEXTURE: (cache / "seiryu.png").read_bytes()}
 
 
 def tempered(key, original):
@@ -418,6 +451,10 @@ def assemble():
         if name in entries:
             raise RuntimeError(f"An armor texture would overwrite an entry: {name}")
         entries[name] = data
+    for name, data in dragon_assets().items():
+        if name in entries:
+            raise RuntimeError(f"A dragon asset would overwrite an entry: {name}")
+        entries[name] = data
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(OUTPUT, "w", zipfile.ZIP_DEFLATED) as out:
         for name, data in entries.items():
@@ -458,7 +495,7 @@ def check_imu():
         for name in names:
             if IMU.search(name.encode("utf-8")):
                 found.append(f"{name} (its name)")
-            if name.endswith((".png", ".ogg", ".hkm")):
+            if name.endswith((".png", ".ogg", ".hkm", ".sry")):
                 continue  # binary (2.1.4: the katana meshes are gzip, whose bytes can spell anything)
             hit = IMU.search(jar.read(name))
             if hit:

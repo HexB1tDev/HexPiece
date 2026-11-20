@@ -57,8 +57,25 @@ public final class RyouHands {
      * top fading out up the wrist so it never ends in a hard line; bent with the elbow as the arm is.
      */
     public static void coating(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
-                               AbstractClientPlayer player, boolean right) {
+                               AbstractClientPlayer player, boolean firstPerson) {
+        boolean right = right(player, arm);
         coating(pose, buffers, light, arm, player, right, bend(player, right));
+    }
+
+    /**
+     * 2.7.0 (the owner: "Haki when holding a katana makes left hand invisible"): the last flag of the original's
+     * {@code GearJacketHaki.renderCoating} is "first person" (0 from its third-person layer for both arms, 1 from its first-person
+     * hand), never the side, but until 2.6.9 it was read as "right": every first-person LEFT arm under Armament (the hand on the
+     * holstered sword, at the saya's mouth in the draw and the sheathing, client/sword/HolsterHand) drew the RIGHT arm instead, 10 px
+     * aside and out of view, and the third-person coat took the left arm's side and bend for both. The side is the arm's own: the
+     * player model's left arm or not.
+     */
+    static boolean right(AbstractClientPlayer player, ModelPart arm) {
+        if (Minecraft.m_91087_().m_91290_().m_114382_(player) instanceof PlayerRenderer renderer
+            && renderer.m_7200_() instanceof net.minecraft.client.model.HumanoidModel<?> model) {
+            return arm != model.f_102812_;
+        }
+        return true;
     }
 
     /**
@@ -72,10 +89,11 @@ public final class RyouHands {
      * not be blackened, then the original's aura and glow over it.
      */
     public static void coatingFirstPerson(PoseStack pose, MultiBufferSource buffers, int light, ModelPart arm, float mastery, boolean acoc,
-                                          AbstractClientPlayer player, boolean right) {
+                                          AbstractClientPlayer player, boolean firstPerson) {
         if (DRAWING_ARM > 0) {
             return; // 2.6.9: inside our own arm draw (see below): nothing more here
         }
+        boolean right = right(player, arm); // 2.7.0: the arm's own side (the flag is "first person", always 1 here)
         if (Minecraft.m_91087_().m_91290_().m_114382_(player) instanceof PlayerRenderer renderer) {
             DRAWING_ARM++;
             try {

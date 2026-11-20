@@ -1,0 +1,236 @@
+package com.hexhaki.piece;
+
+import com.hexhaki.piece.dragon.DragonForm;
+import com.hexhaki.piece.dragon.DragonModel;
+import com.hexhaki.piece.dragon.DragonPose;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+/**
+ * 2.7.0: the Uo Uo no Mi's dragon, as the built jar carries it (the owner's model, tools/dragon_mesh.py) and dragon/DragonForm poses and
+ * places it: the owner's "at least 6 times bigger than the player", the claws never under the player's feet in the hover, and no jump
+ * anywhere (the transformation into the hover, the hover's loop, the flight blend, the hover into the way back), the dragon growing
+ * out of the player's chest and shrinking back into it, and facing Minecraft's way.
+ */
+public final class DragonTests {
+    static DragonModel model;
+    static DragonForm.Shape shape;
+
+    public static void main(String[] args) throws Exception {
+        Path jar;
+        try (var files = Files.list(Path.of("build"))) {
+            jar = files.filter(p -> p.getFileName().toString().matches("hexpiece-.*\\.jar")).findFirst().orElseThrow();
+        }
+        try (ZipFile zip = new ZipFile(jar.toFile())) {
+            ZipEntry entry = zip.getEntry("assets/hexhaki/dragon/seiryu.sry");
+            Check.that(entry != null, "the jar carries the dragon");
+            Check.that(zip.getEntry("assets/hexhaki/textures/piece/dragon/seiryu.png") != null, "and its texture");
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/uo_uo_no_mi.png") != null, "and the fruit's icon");
+            try (InputStream in = zip.getInputStream(entry)) {
+                model = DragonModel.read(in);
+            }
+        }
+        shape = new DragonForm.Shape(model);
+        Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
+        for (String clip : new String[] {"idle", "form", "unform"}) {
+            Check.that(model.clips.get(clip) != null, "the take " + clip);
+        }
+        Check.near(model.clips.get("form").seconds(), DragonForm.FORM_TICKS / 20.0, 0.051, "the transformation is its take's length");
+        Check.near(model.clips.get("unform").seconds(), DragonForm.UNFORM_TICKS / 20.0, 0.051, "the way back is its take's length");
+        int glow = 0;
+        for (DragonModel.Part part : model.parts) {
+            glow += part.kind == DragonModel.GLOW ? 1 : 0;
+        }
+        Check.that(glow == 2, "the two flames are drawn as fire");
+
+        // the hover over the player: at least six players tall, the claws at the feet, the head over the player's
+        float[] lo = {1e9F, 1e9F, 1e9F};
+        float[] hi = {-1e9F, -1e9F, -1e9F};
+        for (float t = 0.0F; t < model.clips.get("idle").seconds(); t += 0.25F) {
+            float[][] p = placed(DragonForm.DRAGON, 0.0F, t, 0.0F, 0.0F);
+            for (float[] part : p) {
+                for (int v = 0; v < part.length; v += 3) {
+                    for (int k = 0; k < 3; k++) {
+                        lo[k] = Math.min(lo[k], part[v + k]);
+                        hi[k] = Math.max(hi[k], part[v + k]);
+                    }
+                }
+            }
+        }
+        Check.that(hi[1] - lo[1] >= 6.0F * 1.8F, "the hover is at least six players tall (" + (hi[1] - lo[1]) + " blocks)");
+        Check.that(lo[1] >= -0.35F, "the claws never hang under the player's feet (" + lo[1] + ")");
+        Check.that(hi[2] - lo[2] >= 20.0F, "and long (" + (hi[2] - lo[2]) + " blocks)");
+
+        // no jumps: the transformation's end is the hover's start; the hover's start is the way back's
+        Check.that(gap(placed(DragonForm.FORMING, model.clips.get("form").seconds(), 0.0F, 0.0F, 0.0F),
+            placed(DragonForm.DRAGON, 0.0F, 0.0F, 0.0F, 0.0F)) < 0.6F, "the transformation lands in the hover");
+        for (float hover : new float[] {0.0F, 0.7F, 1.9F}) {
+            for (float fly : new float[] {0.0F, 0.6F, 1.0F}) {
+                Check.that(gap(placed(DragonForm.DRAGON, 0.0F, hover, fly, hover), placed(DragonForm.UNFORMING, 0.0F, hover, fly, hover)) < 0.02F,
+                    "the way back starts where the dragon is (hover " + hover + ", flight " + fly + ")");
+            }
+        }
+        float loop = model.clips.get("idle").seconds();
+        Check.that(gap(placed(DragonForm.DRAGON, 0.0F, 0.0F, 0.0F, 0.0F), placed(DragonForm.DRAGON, 0.0F, loop, 0.0F, 0.0F)) < 0.05F,
+            "the hover loops without a seam");
+        // smooth in time and in the flight's blend (at 40 frames a second: no vertex further than the takes' own fastest)
+        for (int phase : new int[] {DragonForm.FORMING, DragonForm.UNFORMING}) {
+            float length = DragonForm.length(phase) / 20.0F;
+            float[][] before = placed(phase, 0.0F, 1.0F, 0.0F, 0.0F);
+            for (float t = 0.025F; t <= length; t += 0.025F) {
+                float[][] now = placed(phase, t, 1.0F, 0.0F, 0.0F);
+                Check.that(gap(before, now) < 4.5F, "phase " + phase + " moves smoothly at " + t + " s");
+                before = now;
+            }
+        }
+        // the flight uncoils the 65-block body: its tail's tip sweeps about 60 blocks over the whole blend, a few each twentieth, and
+        // never jumps (a step far out of line with the one before would be a rotation taking the long way round)
+        float[][] before = placed(DragonForm.DRAGON, 0.0F, 1.0F, 0.0F, 1.0F);
+        float last = -1.0F;
+        for (float fly = 0.05F; fly <= 1.0001F; fly += 0.05F) {
+            float[][] now = placed(DragonForm.DRAGON, 0.0F, 1.0F, fly, 1.0F);
+            float step = gap(before, now);
+            Check.that(step < 5.0F, "the flight blends in smoothly at " + fly + " (" + step + ")");
+            Check.that(last < 0.0F || step < last * 1.6F + 0.3F, "and evenly at " + fly + " (" + step + " after " + last + ")");
+            last = step;
+            before = now;
+        }
+
+        // 2.7.0 (the owner: "careful with the cape, the body cant clip through"): in flight the mantle never enters the body's tube
+        // (its radius the body mesh's half height about the straight bind's spine), at any moment of the wave, blended in or full
+        int coat = -1;
+        int bodyPart = -1;
+        for (int i = 0; i < model.parts.length; i++) {
+            coat = model.parts[i].name.equals("coat") ? i : coat;
+            bodyPart = model.parts[i].name.equals("body") ? i : bodyPart;
+        }
+        DragonModel.Part body = model.parts[bodyPart];
+        float radius = 0.0F;
+        for (int v = 0; v < body.vertices(); v++) {
+            if (Math.abs(body.pos[v * 3]) < 1.2F) {
+                radius = Math.max(radius, Math.abs(body.pos[v * 3 + 1]));
+            }
+        }
+        String[] spine = new String[25];
+        spine[0] = "Body_Chest";
+        spine[1] = "Body_Pelvis";
+        for (int i = 1; i <= 23; i++) {
+            spine[i + 1] = String.format("Body_%02d", i);
+        }
+        for (float fly : new float[] {0.5F, 0.75F, 1.0F}) {
+            for (float age = 0.0F; age < 1.6F; age += 0.1F) {
+                DragonPose pose = new DragonPose(model);
+                DragonForm.pose(model, shape, pose, DragonForm.DRAGON, 0.0F, 1.0F, fly, age, new float[3]);
+                float[][] points = new float[spine.length][3];
+                for (int i = 0; i < spine.length; i++) {
+                    pose.origin(model.bone(spine[i]), points[i]);
+                }
+                DragonModel.Part mantle = model.parts[coat];
+                float[] pos = new float[mantle.vertices() * 3];
+                pose.skin(mantle, pos, new float[pos.length]);
+                float nearest = Float.MAX_VALUE;
+                for (int v = 0; v < pos.length; v += 3) {
+                    for (int i = 0; i + 1 < spine.length; i++) {
+                        nearest = Math.min(nearest, segment(pos, v, points[i], points[i + 1]));
+                    }
+                }
+                Check.that(nearest >= radius, "the mantle stays out of the body (flight " + fly + ", " + age + " s: " + nearest + " < " + radius + ")");
+            }
+        }
+
+        // out of the chest and back into it
+        float[] chest = {0.0F, 1.0F, 0.0F};
+        Check.that(far(placed(DragonForm.FORMING, 0.0F, 0.0F, 0.0F, 0.0F), chest) < 1.6F, "the dragon starts inside the player");
+        Check.that(far(placed(DragonForm.UNFORMING, DragonForm.UNFORM_TICKS / 20.0F, 1.0F, 0.0F, 0.0F), chest) < 1.6F,
+            "and ends inside the player");
+        Check.that(!DragonForm.humanHidden(DragonForm.FORMING, 0.0F) && DragonForm.humanHidden(DragonForm.DRAGON, 0.0F)
+            && !DragonForm.humanHidden(DragonForm.UNFORMING, DragonForm.UNFORM_TICKS / 20.0F), "the human until it comes out, after it goes in");
+        Check.that(DragonForm.grow(DragonForm.FORMING, DragonForm.HUMAN_GONE_AT) > 0.1F, "the human goes once the dragon outgrows it");
+
+        // Minecraft's facing: yaw 0 looks to +z, 90 to -x (the model's front is its +z: the third column)
+        float[] place = new float[12];
+        DragonForm.placement(shape.hoverHead, new float[3], 1.0F, 0.0F, 0.0F, 0.0F, place);
+        Check.that(place[2 * 4 + 2] > 0.99F * DragonForm.SCALE, "yaw 0: the front to +z");
+        DragonForm.placement(shape.hoverHead, new float[3], 1.0F, 90.0F, 0.0F, 0.0F, place);
+        Check.that(place[0 * 4 + 2] < -0.99F * DragonForm.SCALE && Math.abs(place[2 * 4 + 2]) < 1e-4, "yaw 90: the front to -x");
+        DragonForm.placement(shape.hoverHead, new float[3], 1.0F, 0.0F, 30.0F, 0.0F, place);
+        Check.that(place[1 * 4 + 2] < -0.49F * DragonForm.SCALE, "looking down pitches the front down");
+        Check.near(DragonForm.flightTarget(0.0), 0.0, 1e-6, "no flight standing still");
+        Check.near(DragonForm.flightTarget(0.55), 1.0, 1e-6, "all of it at creative flight's pace");
+        Check.done("DragonTests");
+    }
+
+    /** The dragon's points placed at the player's feet (blocks), facing yaw 0. */
+    static float[][] placed(int phase, float seconds, float hover, float flight, float age) {
+        DragonPose pose = new DragonPose(model);
+        float[] anchor = new float[3];
+        DragonForm.pose(model, shape, pose, phase, seconds, hover, flight, age, anchor);
+        float[] shift = new float[3];
+        DragonForm.shift(shape, phase, seconds, shift);
+        float[] place = new float[12];
+        DragonForm.placement(anchor, shift, DragonForm.grow(phase, seconds), 0.0F, 0.0F, 0.0F, place);
+        float[][] out = new float[model.parts.length][];
+        for (int i = 0; i < model.parts.length; i++) {
+            DragonModel.Part part = model.parts[i];
+            float[] pos = new float[part.vertices() * 3];
+            float[] nrm = new float[part.vertices() * 3];
+            pose.skin(part, pos, nrm);
+            for (int v = 0; v < pos.length; v += 3) {
+                float x = pos[v];
+                float y = pos[v + 1];
+                float z = pos[v + 2];
+                for (int k = 0; k < 3; k++) {
+                    pos[v + k] = place[k * 4] * x + place[k * 4 + 1] * y + place[k * 4 + 2] * z + place[k * 4 + 3];
+                }
+            }
+            out[i] = pos;
+        }
+        return out;
+    }
+
+    /** The distance from point {@code o} of {@code p} to the segment a-b. */
+    static float segment(float[] p, int o, float[] a, float[] b) {
+        float abx = b[0] - a[0];
+        float aby = b[1] - a[1];
+        float abz = b[2] - a[2];
+        float apx = p[o] - a[0];
+        float apy = p[o + 1] - a[1];
+        float apz = p[o + 2] - a[2];
+        float t = Math.max(0.0F, Math.min(1.0F, (apx * abx + apy * aby + apz * abz) / Math.max(1e-9F, abx * abx + aby * aby + abz * abz)));
+        float dx = apx - abx * t;
+        float dy = apy - aby * t;
+        float dz = apz - abz * t;
+        return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    /** The furthest any point moved between two posings (blocks). */
+    static float gap(float[][] a, float[][] b) {
+        float most = 0.0F;
+        for (int i = 0; i < a.length; i++) {
+            for (int v = 0; v < a[i].length; v += 3) {
+                float dx = a[i][v] - b[i][v];
+                float dy = a[i][v + 1] - b[i][v + 1];
+                float dz = a[i][v + 2] - b[i][v + 2];
+                most = Math.max(most, (float) Math.sqrt(dx * dx + dy * dy + dz * dz));
+            }
+        }
+        return most;
+    }
+
+    /** The furthest point from {@code c}. */
+    static float far(float[][] a, float[] c) {
+        float most = 0.0F;
+        for (float[] part : a) {
+            for (int v = 0; v < part.length; v += 3) {
+                float dx = part[v] - c[0];
+                float dy = part[v + 1] - c[1];
+                float dz = part[v + 2] - c[2];
+                most = Math.max(most, (float) Math.sqrt(dx * dx + dy * dy + dz * dz));
+            }
+        }
+        return most;
+    }
+}

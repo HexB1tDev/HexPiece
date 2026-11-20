@@ -12,5 +12,6 @@ public class ParticleTypes {
     /** HAPPY_VILLAGER (1.3.29: a table wiped clean, a chest put in order) */ public static final SimpleParticleType f_123748_ = null;
     /** SPLASH (1.3.29: the flowers watered) */ public static final SimpleParticleType f_123769_ = null;
     /** FALLING_WATER (1.3.29: the bucket tipped over them) */ public static final SimpleParticleType f_123804_ = null;
+    /** CLOUD (the original uses it; 2.7.0: the dragon coming out and going in) */ public static final SimpleParticleType f_123796_ = null;
     /** the impact burst the original slam/rapid strike use */ public static final SimpleParticleType f_123797_ = null;
 }

@@ -23,7 +23,9 @@ import jdk.internal.org.objectweb.asm.tree.IntInsnNode;
 import jdk.internal.org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import jdk.internal.org.objectweb.asm.tree.LdcInsnNode;
 import jdk.internal.org.objectweb.asm.tree.MethodInsnNode;
+import jdk.internal.org.objectweb.asm.tree.FieldInsnNode;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
+import jdk.internal.org.objectweb.asm.tree.TypeInsnNode;
 import jdk.internal.org.objectweb.asm.tree.VarInsnNode;
 
 /**
@@ -124,6 +126,12 @@ public final class PiecePatch implements Opcodes {
      * </ul>
      */
     static final String HOOKS = "com/hexhaki/piece/client/PieceHooks";
+    /** 2.7.0: the original's fruit enum, the new fruit (id, name, element, colour, lore) and the client kits' map. */
+    static final String FRUIT = "com/hexhaki/fruit/Fruit";
+    static final String CLIENT_KITS = "com/hexhaki/fruit/client/ClientKits";
+    static final String[] UO = {"uo", "Uo Uo no Mi", "Dragon", "4FB7E8",
+        "A Mythical Zoan that makes its eater an Azure Dragon: Seiryu, a serpent of the sky as long as an island, who flies on clouds of"
+            + " its own making. Kaido's fruit."};
     static final String HAND = "com/hexhaki/client/render/HakiHandLayer";
     static final String RYOU_HANDS = "com/hexhaki/piece/client/haki/RyouHands";
     static final String RYOU_FX = "com/hexhaki/piece/client/haki/RyouFx";
@@ -211,6 +219,12 @@ public final class PiecePatch implements Opcodes {
         // clock, drawn full white over the HUD every frame): the flash goes through HexPiece, which draws it only while time runs
         // forward from its start and clears a stale one (client/fx/ImpactReset)
         {IMPACT, "hud", IMPACT, "drawFlash", "(Lnet/minecraft/client/gui/GuiGraphics;IIF)V", IMPACT_RESET, "flash", 1},
+        // 2.7.0 (the Uo Uo no Mi's dragon, 14 blocks tall): the original's camera hook (CameraMixin, at the end of Camera.setup) takes
+        // its fixed camera place from HexPiece, which hands back the original's own (King's Grip) or, in dragon form, a place far
+        // enough behind and above to see the dragon (client/dragon/DragonCamera)
+        {"com/hexhaki/mixin/CameraMixin", "hexhaki$cinematicOffset", "com/hexhaki/client/cinematic/CinematicController",
+            "kingsGripCameraPosition", "(Lnet/minecraft/world/entity/Entity;F)Lnet/minecraft/world/phys/Vec3;",
+            "com/hexhaki/piece/client/dragon/DragonCamera", "position", 1},
         // 2.6.9 (the owner's crash: endless recursion of the first-person arm with Haki on): the original's arm handler draws through
         // HexPiece, which skips it while HexPiece itself draws the arm from inside it (RyouHands.DRAWING_ARM)
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "arm", HAND, "renderFirstPerson",
@@ -393,6 +407,16 @@ public final class PiecePatch implements Opcodes {
         for (String[] hud : HUDS_REPLACED) {
             entries.put(hud[0] + ".class", transform(entries.get(hud[0] + ".class"), node -> replacedHud(method(node, hud[1], hud[2]))));
         }
+        entries.put(FRUIT + ".class", transform(entries.get(FRUIT + ".class"), PiecePatch::uoFruit));
+        entries.put(CLIENT_KITS + ".class", transform(entries.get(CLIENT_KITS + ".class"), node -> {
+            for (FieldNode field : node.fields) {
+                if (field.name.equals("KITS")) {
+                    field.access = (field.access & ~(ACC_PRIVATE | ACC_PROTECTED)) | ACC_PUBLIC;
+                    return;
+                }
+            }
+            throw new AssertionError("missing ClientKits.KITS");
+        }));
         entries.put("META-INF/mods.toml", modsToml(entries.get("META-INF/mods.toml"), version));
         entries.put("META-INF/MANIFEST.MF", manifest(entries.get("META-INF/MANIFEST.MF"), version));
         Files.createDirectories(output.toAbsolutePath().getParent());
@@ -657,6 +681,61 @@ public final class PiecePatch implements Opcodes {
             throw new AssertionError("expected " + redirect[7] + " calls of " + redirect[2] + "." + redirect[3] + " in " + node.name + "."
                 + redirect[1] + ", found " + count);
         }
+    }
+
+    /**
+     * 2.7.0 (the owner: "Add a new fruit called Uo Uo No Mi"): the original's fruits are an enum ({@code Fruit}: NONE, PIKA, MAGU,
+     * GURA); UO joins it last (ordinal 4: every saved fruit keeps its number), so the original registers its item
+     * ({@code uo_uo_no_mi}, in the fruits' creative tab), eats it, saves it, binds its moves and shows it as its own. Its kit is
+     * HexPiece's (server/UoKit, client/dragon/UoClient).
+     */
+    static void uoFruit(ClassNode node) {
+        String type = "L" + FRUIT + ";";
+        node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, "UO", type, null, null));
+        MethodNode clinit = method(node, "<clinit>", "()V");
+        MethodInsnNode values = null;
+        for (AbstractInsnNode insn = clinit.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.owner.equals(FRUIT) && call.name.equals("$values")) {
+                values = call;
+            }
+        }
+        if (values == null) {
+            throw new AssertionError("Fruit.<clinit> has no $values call");
+        }
+        InsnList make = new InsnList();
+        make.add(new TypeInsnNode(NEW, FRUIT));
+        make.add(new InsnNode(DUP));
+        make.add(new LdcInsnNode("UO"));
+        make.add(new InsnNode(ICONST_4));
+        make.add(new LdcInsnNode(UO[0]));
+        make.add(new LdcInsnNode(UO[1]));
+        make.add(new LdcInsnNode(UO[2]));
+        make.add(new InsnNode(ICONST_0));
+        make.add(new LdcInsnNode(Integer.parseInt(UO[3], 16)));
+        make.add(new LdcInsnNode(UO[4]));
+        make.add(new MethodInsnNode(INVOKESPECIAL, FRUIT, "<init>",
+            "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/String;)V", false));
+        make.add(new FieldInsnNode(PUTSTATIC, FRUIT, "UO", type));
+        clinit.instructions.insertBefore(values, make);
+        MethodNode list = method(node, "$values", "()[" + type);
+        AbstractInsnNode first = list.instructions.getFirst();
+        while (first.getOpcode() < 0) {
+            first = first.getNext();
+        }
+        if (first.getOpcode() != ICONST_4) {
+            throw new AssertionError("Fruit.$values does not start with 4 values");
+        }
+        list.instructions.set(first, new InsnNode(ICONST_5));
+        AbstractInsnNode end = list.instructions.getLast();
+        while (end.getOpcode() != ARETURN) {
+            end = end.getPrevious();
+        }
+        InsnList add = new InsnList();
+        add.add(new InsnNode(DUP));
+        add.add(new InsnNode(ICONST_4));
+        add.add(new FieldInsnNode(GETSTATIC, FRUIT, "UO", type));
+        add.add(new InsnNode(AASTORE));
+        list.instructions.insertBefore(end, add);
     }
 
     /** RyouServer.afterArmament(player) before every return of HakiServerController.toggleArmament. */
