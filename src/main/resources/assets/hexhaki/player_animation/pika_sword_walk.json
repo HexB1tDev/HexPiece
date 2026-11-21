@@ -2,7 +2,7 @@
  "version": 3,
  "name": "pika_sword_walk",
  "author": "HexPiece 2.9.0",
- "description": "Pika Pika: walking with Ama no Murakumo held low.",
+ "description": "Pika Pika: walking with Ama no Murakumo hanging at his side.",
  "emote": {
   "beginTick": 0,
   "endTick": 20,
@@ -16,21 +16,21 @@
     "tick": 0,
     "easing": "linear",
     "rightArm": {
-     "pitch": -40.0
+     "pitch": -6.0
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "rightArm": {
-     "yaw": 10.0
+     "yaw": 0.0
     }
    },
    {
     "tick": 0,
     "easing": "linear",
     "rightArm": {
-     "roll": 8.0
+     "roll": 12.0
     }
    },
    {
@@ -44,21 +44,21 @@
     "tick": 10,
     "easing": "linear",
     "rightArm": {
-     "pitch": -46.0
+     "pitch": -14.0
     }
    },
    {
     "tick": 10,
     "easing": "linear",
     "rightArm": {
-     "yaw": 10.0
+     "yaw": 0.0
     }
    },
    {
     "tick": 10,
     "easing": "linear",
     "rightArm": {
-     "roll": 8.0
+     "roll": 12.0
     }
    },
    {
@@ -72,21 +72,21 @@
     "tick": 20,
     "easing": "linear",
     "rightArm": {
-     "pitch": -40.0
+     "pitch": -6.0
     }
    },
    {
     "tick": 20,
     "easing": "linear",
     "rightArm": {
-     "yaw": 10.0
+     "yaw": 0.0
     }
    },
    {
     "tick": 20,
     "easing": "linear",
     "rightArm": {
-     "roll": 8.0
+     "roll": 12.0
     }
    },
    {

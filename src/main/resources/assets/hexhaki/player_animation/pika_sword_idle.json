@@ -2,7 +2,7 @@
  "version": 3,
  "name": "pika_sword_idle",
  "author": "HexPiece 2.9.0",
- "description": "Pika Pika: Ama no Murakumo held low at his side, pointed ahead, the right hand easy on the end of its grip.",
+ "description": "Pika Pika: Ama no Murakumo hanging easy at his side, pointed down past his legs, the ring at his hand.",
  "emote": {
   "beginTick": 0,
   "endTick": 40,
@@ -93,21 +93,21 @@
     "tick": 0,
     "easing": "inoutsine",
     "rightArm": {
-     "pitch": -40.0
+     "pitch": -6.0
     }
    },
    {
     "tick": 0,
     "easing": "inoutsine",
     "rightArm": {
-     "yaw": 10.0
+     "yaw": 0.0
     }
    },
    {
     "tick": 0,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 8.0
+     "roll": 12.0
     }
    },
    {
@@ -198,21 +198,21 @@
     "tick": 20,
     "easing": "inoutsine",
     "rightArm": {
-     "pitch": -43.0
+     "pitch": -12.0
     }
    },
    {
     "tick": 20,
     "easing": "inoutsine",
     "rightArm": {
-     "yaw": 10.0
+     "yaw": 0.0
     }
    },
    {
     "tick": 20,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 8.0
+     "roll": 12.0
     }
    },
    {
@@ -303,21 +303,21 @@
     "tick": 40,
     "easing": "inoutsine",
     "rightArm": {
-     "pitch": -40.0
+     "pitch": -6.0
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "rightArm": {
-     "yaw": 10.0
+     "yaw": 0.0
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 8.0
+     "roll": 12.0
     }
    },
    {

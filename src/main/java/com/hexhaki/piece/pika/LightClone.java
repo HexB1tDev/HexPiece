@@ -120,7 +120,9 @@ public final class LightClone {
      * you're grabbing it way too up"): the hand closes at the bottom of the grip, just over its end (0.24 before: the hand under the
      * guard and most of the grip sticking out below it); LightArt.blade's grip runs 0.8 back from the guard.
      */
-    public static final double GUARD = 0.66;
+    // 2.9.8 (the owner: "its held wrong, and looks bad"; their reference, docs/handoff/murakumo-ref-1.png: the ring right under the
+    // hand): the fist on the short grip (LightArt.GRIP), the ring just past it, nothing of the grip sticking out past the hand
+    public static final double GUARD = 0.14;
 
     /** Ama no Murakumo in the right hand: the blade out of the front of the fist, the grip through it, the guard just ahead of it. */
     public static void sword(FireMesh.Sink glow, float[][] pose, StyleShow.Place place, double alpha, double shimmer) {

@@ -1,16 +1,17 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
-Read CLAUDE.md, then docs/handoff/next-ai-2.9.7.md whole: it holds every standing rule in one place (talking to the owner, the house
+Read CLAUDE.md, then docs/handoff/next-ai-2.9.8.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b and 8c of next-ai-2.9.7.md (2.9.6, 2.9.7); open the older next-ai-*.md only for a
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8d of next-ai-2.9.8.md (2.9.6 to 2.9.8); open the older next-ai-*.md only for a
 feature's detail.
 
-2.9.7 is pushed: the Light fruit after Kizaru at Egghead (no M1s at all; Z: the body becomes light, reflected off every block and
+2.9.8 is pushed: the light sword held by a short grip with the ring at the fist and redrawn after the owner's reference; before it
+2.9.7, the Light fruit after Kizaru at Egghead (no M1s at all; Z: the body becomes light, reflected off every block and
 the water; C: Ama no Murakumo's lunge; X: Yasakani as at Egghead, flying about while it pours; V: the speed-of-light kick as a dash
-of light; B: clones flying in; the flight pose with the arms out). The next version is 2.9.8. First check the branch's last "Build
-HexPiece" and "Release HexPiece" runs, then ask the owner how the Light fruit plays now, and how 2.9.5's Conqueror sounds and 2.9.4's
-Haki play (both still untested), and fix whatever they report first. Then follow section 9 of next-ai-2.9.7.md.
+of light; B: clones flying in; the flight pose with the arms out). The next version is 2.9.9 (then 3.0.0). First check the branch's last "Build
+HexPiece" and "Release HexPiece" runs, then ask the owner how the sword and the Light fruit play now, and how 2.9.5's Conqueror sounds and 2.9.4's
+Haki play (both still untested), and fix whatever they report first. Then follow section 9 of next-ai-2.9.8.md.
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;
 render and judge every animation and effect yourself, third and first person; never key the head or unused limbs; keep every effect

@@ -204,6 +204,7 @@ def yasakani():
 # pitch goes (the blade flat at the shoulder), roll -45 down a diagonal, roll 0 up and down the middle. Only the right arm and the body
 # (and the legs where he lunges) are keyed: the left arm and the head are the player's own.
 HOLD_R = arm(-40, 10, 8, 0)
+SWORD_REST = arm(-6, 0, 12, 0)
 # 2.9.7: the lunge's arm: thrust straight out ahead along the laid-out body (the blade, leaning off the fist toward the arm's line,
 # points on along the way he flies)
 LUNGE_R = arm(-122, 4, 0, 0)
@@ -221,14 +222,16 @@ def murakumo():
         (6, "outback", p(drawn, rightArm={"yaw": 36})),
         (10, "inoutsine", p(LAZY, rightArm=HOLD_R)),
     ], "Pika Pika: Ama no Murakumo, the joined hands drawn apart and a sword of solid light between them.", ARMS)
-    ready = p(rightArm=HOLD_R)
+    # 2.9.8 (the owner: "its held wrong, and looks bad"; their reference docs/handoff/murakumo-ref-1.png): at rest the arm hangs easy at
+    # his side, a little out, and the blade points down and ahead past his legs, the ring at his hand
+    ready = p(rightArm=SWORD_REST)
     write_loop("pika_sword_idle", 40, [(0, "inoutsine", p(ready, body={"bend": 3})),
-                                       (20, "inoutsine", p(ready, rightArm={"pitch": -43}, body={"bend": 4})),
+                                       (20, "inoutsine", p(ready, rightArm={"pitch": -12}, body={"bend": 4})),
                                        (40, "inoutsine", p(ready, body={"bend": 3}))],
-               "Pika Pika: Ama no Murakumo held low at his side, pointed ahead, the right hand easy on the end of its grip.",
+               "Pika Pika: Ama no Murakumo hanging easy at his side, pointed down past his legs, the ring at his hand.",
                parts=SWORD)
-    write_loop("pika_sword_walk", 20, [(0, "linear", ready), (10, "linear", p(ready, rightArm={"pitch": -46})), (20, "linear", ready)],
-               "Pika Pika: walking with Ama no Murakumo held low.", parts=("rightArm",))
+    write_loop("pika_sword_walk", 20, [(0, "linear", ready), (10, "linear", p(ready, rightArm={"pitch": -14})), (20, "linear", ready)],
+               "Pika Pika: walking with Ama no Murakumo hanging at his side.", parts=("rightArm",))
     # each cut: (wind-up arm, through arm, body yaw from, to, bend from, to). 2.9.7: the two the clones and the lunge's last cut use
     # (the cuts on the attack button are gone with every M1)
     cuts = [

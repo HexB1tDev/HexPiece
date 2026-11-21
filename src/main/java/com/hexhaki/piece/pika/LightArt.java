@@ -371,8 +371,13 @@ public final class LightArt {
      * {@code width} the rod's radius. Independent of the eye, so it is drawn through the arm's own pose.
      */
     /** Ama no Murakumo: a long rod of light (blocks from the guard to the point), its radius (2.8.8: here, for the clones too). */
-    public static final double BLADE_LENGTH = 2.6;
-    public static final double BLADE_WIDTH = 0.032;
+    public static final double BLADE_LENGTH = 1.9;
+    public static final double BLADE_WIDTH = 0.05;
+    /**
+     * 2.9.8 (the owner: "its held wrong, and looks bad"): the grip behind the ring (blocks): short, as in the owner's reference
+     * (docs/handoff/murakumo-ref-1.png): the hand closes on it right over the ring, nothing of it sticking out past the fist.
+     */
+    public static final double GRIP = 0.26;
 
     /**
      * 2.8.8 (the owner: "the sword isnt being grabbed by the handle"): from the game's first-person view to the right hand's grip, as
@@ -405,14 +410,16 @@ public final class LightArt {
     }
 
     public static void blade(FireMesh.Sink sink, double length, double width, double shimmer) {
-        double back = 0.8; // the grip: the rod runs well back past the fist (the owner: "the grip handle rod has to be longer")
-        double tipAt = -length + width * 14.0;
-        // the rod: a white core in a pale-gold sheath, eight-sided, pointed at both ends
-        rod(sink, back, tipAt, -length, width, 0xFFFFFF, 0xFFF6C0);
-        rod(sink, back + 0.02, tipAt - width * 2.0, -length - width * 3.0, width * 1.9, 0xFFF29A, 0xFFE05E);
+        // 2.9.8 (the owner: "its held wrong, and looks bad"): after the owner's reference, a blade of light that reads at a distance: a
+        // short grip in the hand (GRIP), the ring and its cross right at the hand, a white-hot core in a gold sheath in a soft glow
+        double back = GRIP;
+        double tipAt = -length + width * 9.0;
+        // the rod: a white core in a gold sheath, eight-sided, pointed at the tip
+        rod(sink, back, tipAt, -length, width, 0xFFFFFF, 0xFFFBE0);
+        rod(sink, back + 0.01, tipAt - width * 1.5, -length - width * 2.0, width * 2.1, 0xFFF0A0, 0xFFD040);
         // its glow: two crossed sheets along it, bright at the rod, clear at their rims
-        double g = width * (5.0 + 1.5 * shimmer);
-        int on = FireMesh.argb(0.55, 0xFFE070);
+        double g = width * (6.5 + 1.5 * shimmer);
+        int on = FireMesh.argb(0.6, 0xFFE070);
         int off = FireMesh.argb(0.0, 0xFFE070);
         FireMesh.quad(sink, 0, back, 0, on, 0, -length, 0, on, 0, -length, g * 0.4, off, 0, back, g, off);
         FireMesh.quad(sink, 0, back, 0, on, 0, back, -g, off, 0, -length, -g * 0.4, off, 0, -length, 0, on);
@@ -420,18 +427,25 @@ public final class LightArt {
         FireMesh.quad(sink, 0, back, 0, on, -g, back, 0, off, -g * 0.4, -length, 0, off, 0, -length, 0, on);
         // at the fist: a ring of light round the rod in its own plane, a bar across it (the cross), the starburst
         double ring = 0.2 + 0.02 * shimmer;
-        FireMesh.ring(sink, 0, 0, 0, 1, 0, 0, ring, width * 1.6, 0.0, 0xFFFFFF, 1.0);
-        FireMesh.ring(sink, 0, 0, 0, 1, 0, 0, ring, width * 4.0, 0.0, 0xFFE070, 0.45);
-        rodZ(sink, ring * 1.45, width * 0.9);
+        // 2.9.8: the ring and its cross twice, square to each other (both through the rod), so the crosshair reads from every side
+        for (int side = 0; side < 2; side++) {
+            double nx = side == 0 ? 1 : 0;
+            double nz = side == 0 ? 0 : 1;
+            FireMesh.ring(sink, 0, 0, 0, nx, 0, nz, ring, width * 1.5, 0.0, 0xFFFFFF, 1.0);
+            FireMesh.ring(sink, 0, 0, 0, nx, 0, nz, ring, width * 3.6, 0.0, 0xFFE070, 0.5);
+        }
+        rodZ(sink, ring * 1.45, width * 0.75, false);
+        rodZ(sink, ring * 1.45, width * 0.75, true);
         double[][] rays = {{0, 0, 1, 0.55}, {0, 0, -1, 0.55}, {0, 1, 0, 0.35}, {0.6, 0.6, 0.5, 0.42}, {-0.6, 0.5, -0.6, 0.38},
             {0.5, -0.4, -0.75, 0.46}, {-0.55, -0.45, 0.7, 0.4}, {0.9, 0.0, -0.3, 0.3}, {-0.9, 0.1, 0.35, 0.33}};
         for (int i = 0; i < rays.length; i++) {
             double[] r = rays[i];
             double l = Math.sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
-            double reach = r[3] * (0.8 + 0.4 * Math.abs(Math.sin(shimmer * 3.0 + i * 1.7)));
-            FireMesh.ray(sink, 0, 0, 0, r[0] / l, r[1] / l, r[2] / l, reach, width * 1.4, 0, 0.0, 0xFFFDE8, 0.95);
+            double reach = r[3] * 1.2 * (0.8 + 0.4 * Math.abs(Math.sin(shimmer * 3.0 + i * 1.7)));
+            FireMesh.ray(sink, 0, 0, 0, r[0] / l, r[1] / l, r[2] / l, reach, width * 1.2, 0, 0.0, 0xFFFDE8, 0.95);
         }
-        glowLocal(sink, 0.0, 0.0, 0.0, 0.32 + 0.06 * shimmer, 0xFFF0A0, 0.65);
+        glowLocal(sink, 0.0, 0.0, 0.0, 0.36 + 0.06 * shimmer, 0xFFF0A0, 0.65);
+        glowLocal(sink, 0.0, -length * 0.98, 0.0, 0.12 + 0.03 * shimmer, 0xFFFBE0, 0.7); // the point glints
     }
 
     /** A rod of light along Y from {@code top} to {@code from} at full {@code radius}, then to a point at {@code tip}. */
@@ -455,7 +469,20 @@ public final class LightArt {
     }
 
     /** The cross's bar: a thin rod of light along Z through the fist, {@code half} out each way. */
-    static void rodZ(FireMesh.Sink sink, double half, double radius) {
+    static void rodZ(FireMesh.Sink sink, double half, double radius, boolean alongX) {
+        if (alongX) {
+            // the same bar along X (the second cross, square to the first): drawn through a sink that swaps x and z
+            FireMesh.Sink swapped = (xyz, argb) -> {
+                double[] q = xyz.clone();
+                for (int k = 0; k < 4; k++) {
+                    q[k * 3] = xyz[k * 3 + 2];
+                    q[k * 3 + 2] = xyz[k * 3];
+                }
+                sink.quad(q, argb);
+            };
+            rodZ(swapped, half, radius, false);
+            return;
+        }
         int c = FireMesh.argb(1.0, 0xFFFFFF);
         int e = FireMesh.argb(1.0, 0xFFE05E);
         for (int k = 0; k < 6; k++) {
