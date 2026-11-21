@@ -711,5 +711,23 @@
   },
   "acoc_off": {
     "sounds": []
+  },
+  "piece.pika.light_travel": {
+    "subtitle": "subtitles.hexhaki.piece.pika.light_travel",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/pika/light_travel",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.pika.reflect": {
+    "subtitle": "subtitles.hexhaki.piece.pika.reflect",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/pika/reflect1",
+        "attenuation_distance": 48
+      }
+    ]
   }
 }

@@ -46,6 +46,40 @@ public final class DragonTests {
         Check.that(outOfOrder, "the moves are listed out of slot order (the case the HUD got wrong)");
     }
 
+    /**
+     * 2.9.6: the Light fruit's Z (the body gone as light): its head, its ribbon, a reflection, its flashes and the streaks seen from inside
+     * it are finite and, all at once with two reflections showing, well within a phone's budget, every tick of their lives.
+     */
+    static void lightTravel() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double[] pts = new double[16 * 3];
+        for (int i = 0; i < 16; i++) {
+            pts[i * 3] = 2.0 - i * 3.0;
+            pts[i * 3 + 1] = i < 6 ? 1.0 + i * 0.6 : 4.6 - (i - 6) * 0.6;
+            pts[i * 3 + 2] = 8.0 + i * 0.5;
+        }
+        for (int age = 0; age <= 12; age++) {
+            count[0] = 0;
+            com.hexhaki.piece.pika.LightArt.ribbon(sink, pts, 16, 0.8, 1.0);
+            com.hexhaki.piece.pika.LightArt.head(sink, pts[0], pts[1], pts[2], 1, 0, 0, age, 3);
+            com.hexhaki.piece.pika.LightArt.reflect(sink, -4.0, 0.1, 9.0, 0, 1, 0, 1.0, age, 5);
+            com.hexhaki.piece.pika.LightArt.reflect(sink, -20.0, 5.0, 16.0, 1, 0, 0, 1.0, age * 0.5, 6);
+            com.hexhaki.piece.pika.LightArt.flare(sink, -40.0, 1.0, 20.0, 1.6, age, 7);
+            com.hexhaki.piece.pika.LightArt.rush(sink, 0, 0, 1, age, 8);
+            com.hexhaki.piece.pika.LightArt.star(sink, 0, 0, 0.1, 2.0, 0, 1.0); // at the eye: nothing (never round the eye)
+            Check.that(finite[0], "the light's travel is finite at " + age);
+            Check.that(count[0] > 200 && count[0] < 8000, "the light's travel fits a phone's budget at " + age + " (" + count[0] + " quads)");
+        }
+        Check.that(com.hexhaki.piece.server.PikaMoves.LIGHT_SPEED < 10.0, "the light goes under the server's movement check (10 blocks a tick)");
+    }
+
     public static void main(String[] args) throws Exception {
         Path jar;
         try (var files = Files.list(Path.of("build"))) {
@@ -63,6 +97,7 @@ public final class DragonTests {
         shape = new DragonForm.Shape(model);
         keys();
         fire();
+        lightTravel();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

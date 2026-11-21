@@ -78,19 +78,37 @@ public final class PikaMoves {
     public static final int DODGE = 52;
     /** Falling on them as light: x, y, z where it lands, a from, size its radius. */
     public static final int DIVE = 53;
-    /** Streaming as light (user) on and off. */
-    public static final int STREAM_ON = 54;
-    public static final int STREAM_OFF = 55;
+    /**
+     * 2.9.6: the body gone as light (Z held): on (user; x, y, z the body's middle, a the way it goes, size blocks a tick, ticks the most it
+     * lasts) and reformed (x, y, z where, a the way it was going).
+     */
+    public static final int LIGHT_ON = 54;
+    public static final int LIGHT_OFF = 55;
+    /** 2.9.6: the light reflected: x, y, z where, a the surface's normal (the way it was thrown back). */
+    public static final int REFLECT = 56;
+    /**
+     * 2.9.6: a dash as light (the sprinting kick, the fall, the speed-of-light kick): user; x, y, z where the feet arrive, a where they
+     * left, id whom it follows (-1 none), ticks how long it takes, bx how long the body hangs there after.
+     */
+    public static final int DASH = 57;
 
     // ---- numbers
     static final String YATA_KEY = "pika_yata";
     static final String YATA_TIME = "pika_yata_t";
     static final int YATA_MAX = 3;
     static final int YATA_RECHARGE = 80;
-    static final double YATA_RANGE = 60.0;
-    /** 2.9.0: how many times Yata no Kagami's light may be reflected, and how glancing it must meet a surface to be (|cos| under). */
-    static final int YATA_BOUNCES = 3;
-    static final double YATA_GLANCE = 0.9;
+    /**
+     * 2.9.6 (the owner: "1 Ability (Z) has to turn you into light itself, and travel in a beam where you're looking at and reflect
+     * against any object/water"; asked, "Hold Z" and "Hit and pass through"): how fast the light goes (blocks a tick; the client moves
+     * itself, the server's movement check allows under 10), the least and the most it lasts (ticks), how much of its speed the body
+     * keeps when it reforms, the blow it deals in passing, and how fast a dash as light goes.
+     */
+    public static final double LIGHT_SPEED = 3.0;
+    static final int LIGHT_MIN = 6;
+    static final int LIGHT_MAX = 60;
+    public static final double LIGHT_CARRY = 0.9;
+    static final float LIGHT_HIT = 3.5F;
+    static final double DASH_SPEED = 6.0;
     static final double LASER_RANGE = 70.0;
     static final double BEAM_RANGE = 90.0;
     static final int BEAM_FULL = 40;
@@ -103,7 +121,6 @@ public final class PikaMoves {
     static final int KICK_FULL = 40;
     static final double KICK_RANGE = 45.0;
     static final int CLONE_COUNT = 7;
-    static final int STREAM_MAX = 60;
     static final int COMBO_GAP = 14;
 
     /** Each player's state of the kit. */
@@ -121,8 +138,21 @@ public final class PikaMoves {
         long volleySince = -1;
         boolean volleyFocus;
         int volleyBeads;
-        long streamSince = -1;
         int seed;
+        /** 2.9.6: gone as light since (-1 not), let go and to reform at (0 not yet), where the body was last tick, the way it went. */
+        long lightSince = -1;
+        long lightStop;
+        Vec3 lightLast;
+        Vec3 lightWay;
+        long reflectAt = -100;
+        final java.util.Set<Integer> lightHit = new java.util.HashSet<>();
+        /** 2.9.6: dashing as light (and hanging where it arrived) until. */
+        long dashUntil;
+    }
+
+    /** 2.9.6: whether the body is light now (Z held, or a dash): no other move until it is a body again. */
+    static boolean moving(State s, long now) {
+        return s.lightSince >= 0 || now < s.dashUntil;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -294,8 +324,11 @@ public final class PikaMoves {
     // ------------------------------------------------------------------------------------------------------ the keys
 
     static void press(ServerPlayer player, int slot, int flags) {
+        if (moving(state(player), now(player))) {
+            return; // 2.9.6: light has no hands: nothing else until it is a body again
+        }
         if (slot == PikaKit.YATA.slot()) {
-            yata(player, sneak(flags)); // 2.9.0: sneaking, straight where he looks (the stream is the light flight's now)
+            light(player); // 2.9.6: held, the body goes as light where it looks, reflected off whatever it meets
         } else if (slot == PikaKit.YASAKANI.slot()) {
             volley(player, sneak(flags));
         } else if (slot == PikaKit.MURAKUMO.slot()) {
@@ -313,8 +346,14 @@ public final class PikaMoves {
             stopVolley(player);
         } else if (slot == PikaKit.LIGHT_KICK.slot() && s.kickChargeSince >= 0) {
             lightKick(player);
-        } else if (slot == PikaKit.YATA.slot() && s.streamSince >= 0) {
-            stopStream(player);
+        } else if (slot == PikaKit.YATA.slot() && s.lightSince >= 0) {
+            // 2.9.6: let go: it reforms (a tap still goes LIGHT_MIN ticks)
+            long at = s.lightSince + LIGHT_MIN;
+            if (now(player) >= at) {
+                lightOff(player);
+            } else {
+                s.lightStop = at;
+            }
         }
     }
 
@@ -323,7 +362,7 @@ public final class PikaMoves {
     static void attack(ServerPlayer player, int flags) {
         State s = state(player);
         long now = now(player);
-        if (now < s.busyUntil || s.volleySince >= 0 || s.kickChargeSince >= 0 || s.chargeSince >= 0) {
+        if (now < s.busyUntil || s.volleySince >= 0 || s.kickChargeSince >= 0 || s.chargeSince >= 0 || moving(s, now)) {
             return;
         }
         if (sword(player)) {
@@ -383,16 +422,21 @@ public final class PikaMoves {
         } else {
             to = room(player, from, point(player, 12.0).m_82546_(player.m_20154_().m_82490_(0.8)));
         }
-        s.busyUntil = now + 8;
+        // 2.9.6: across as light over a few ticks (no snap), the kick as it arrives
+        int ticks = dash(player, to, target, 3);
+        s.busyUntil = now + ticks + 6;
         s.kick = 0;
-        animate(player, "pika_dash_kick");
-        travel(player, to, target);
-        fx(player, YATA_PATH, 0, from, to, 0, 0, 0, 0, 0);
-        sound(player, to, PikaSounds.ZIP, 1.0F, 1.0F);
-        later(player, 2, () -> {
-            int n = cone(player, 4.0, 55, 5.0F, player.m_20154_().m_82490_(2.0).m_82520_(0, 0.5, 0), true);
-            Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(1.8)).m_82520_(0, -0.4, 0);
-            fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, n > 0 ? 2 : 0, 7);
+        sound(player, from, PikaSounds.ZIP, 1.0F, 1.0F);
+        later(player, ticks - 1, () -> animate(player, "pika_dash_kick"));
+        later(player, ticks + 1, () -> {
+            Vec3 way = target != null && target.m_6084_() ? StyleCombat.middle(target).m_82546_(player.m_146892_()).m_82541_() : player.m_20154_();
+            Vec3 thrown = way.m_82490_(2.0).m_82520_(0, 0.5, 0);
+            int n = target != null && target.m_6084_() && target.m_20280_(player) < 4.5 * 4.5 && hit(player, target, 5.0F, thrown, true) ? 1 : 0;
+            if (n == 0) {
+                n = cone(player, 4.0, 55, 5.0F, thrown, true);
+            }
+            Vec3 at = player.m_146892_().m_82549_(way.m_82490_(1.8)).m_82520_(0, -0.4, 0);
+            fx(player, KICK, 0, at, way, 0, 0, 0, n > 0 ? 2 : 0, 7);
             sound(player, at, n > 0 ? PikaSounds.HIT_HEAVY : PikaSounds.WHOOSH, 1.1F, 1.0F);
         });
     }
@@ -407,13 +451,14 @@ public final class PikaMoves {
         }
         Vec3 from = player.m_20182_();
         Vec3 land = room(player, from, ground.m_82450_().m_82520_(0, 0.1, 0));
-        s.busyUntil = now + 10;
+        // 2.9.6: down as light over a few ticks (no snap), bursting as it lands
+        int ticks = dash(player, land, null, 4);
+        s.busyUntil = now + ticks + 8;
         animate(player, "pika_dive");
-        travel(player, land, null);
-        player.f_19789_ = 0.0F;
-        fx(player, DIVE, 0, land, from, 0, 0, 0, 4.5, 0);
-        later(player, 1, () -> {
+        sound(player, from, PikaSounds.ZIP, 1.0F, 0.9F);
+        later(player, ticks, () -> {
             UoMoves.explode(player, (ServerLevel) player.m_9236_(), land, new Vec3(0, 1, 0), 4.5, 6.0F, 0, 1.6);
+            fx(player, BURST, 0, land, Vec3.f_82478_, 0, 0, 0, 4.5, 0);
             Impact.quake((ServerLevel) player.m_9236_(), land, 18.0, 0.6F, 10);
             sound(player, land, PikaSounds.EXPLODE, 1.3F, 1.15F);
         });
@@ -448,22 +493,6 @@ public final class PikaMoves {
             at = at.m_82520_(0, 1.0, 0);
         }
         return from;
-    }
-
-    /** Moved as light to {@code to} (facing {@code target} if there is one), no fall taken. */
-    static void travel(ServerPlayer player, Vec3 to, LivingEntity target) {
-        float yaw = player.m_146908_();
-        float pitch = player.m_146909_();
-        if (target != null) {
-            Vec3 d = StyleCombat.middle(target).m_82546_(to.m_82520_(0, player.m_20192_(), 0));
-            yaw = (float) Math.toDegrees(Math.atan2(-d.f_82479_, d.f_82481_));
-            pitch = (float) -Math.toDegrees(Math.atan2(d.f_82480_, Math.sqrt(d.f_82479_ * d.f_82479_ + d.f_82481_ * d.f_82481_)));
-        }
-        player.m_8999_((ServerLevel) player.m_9236_(), to.f_82479_, to.f_82480_, to.f_82481_, yaw, pitch);
-        player.m_5616_(yaw);
-        player.m_20334_(0, 0, 0);
-        player.f_19864_ = true;
-        player.f_19789_ = 0.0F;
     }
 
     // ------------------------------------------------------------------------------------------------------ Ama no Murakumo's cuts
@@ -536,7 +565,7 @@ public final class PikaMoves {
             animate(player, "pika_sword_guard");
             return;
         }
-        if (s.chargeSince >= 0 || s.volleySince >= 0 || s.kickChargeSince >= 0 || now < s.busyUntil) {
+        if (s.chargeSince >= 0 || s.volleySince >= 0 || s.kickChargeSince >= 0 || now < s.busyUntil || moving(s, now)) {
             return;
         }
         s.chargeSince = now;
@@ -627,10 +656,26 @@ public final class PikaMoves {
         return data.m_128441_(YATA_KEY) ? data.m_128451_(YATA_KEY) : YATA_MAX;
     }
 
-    static void yata(ServerPlayer player, boolean straight) {
+    /** The middle of the body (where the light is drawn while it is light). */
+    static Vec3 centre(ServerPlayer player) {
+        return player.m_20182_().m_82520_(0.0, 0.9, 0.0);
+    }
+
+    /**
+     * 2.9.6 (the owner: "1 Ability (Z) has to turn you into light itself, and travel in a beam where you're looking at and reflect against
+     * any object/water"; asked, they chose to hold Z and for the light to strike whoever it meets and go on through): Z pressed, the body
+     * is light at once, the way the player looks, {@link #LIGHT_SPEED} blocks a tick. As at Egghead it is reflected off whatever it meets,
+     * every block at any angle and the sea, so light thrown at the water comes back up off it. The player's own client moves the body
+     * (client/pika/PikaFx.Glide: the game's own movement and collisions, so it is smooth on screen and the server's movement check agrees),
+     * the server follows where it went: whoever the light passes through is struck once, every reflection seen and heard by everyone.
+     * Let go of Z (a tap still lasts {@link #LIGHT_MIN} ticks) or after {@link #LIGHT_MAX} ticks it is a body again where the light is,
+     * keeping {@link #LIGHT_CARRY} of its speed. Three uses that come back on their own (Yata no Kagami's).
+     */
+    static void light(ServerPlayer player) {
         State s = state(player);
         long now = now(player);
-        if (now < s.busyUntil || s.volleySince >= 0 || yataLeft(player) <= 0) {
+        if (now < s.busyUntil || s.volleySince >= 0 || s.chargeSince >= 0 || s.kickChargeSince >= 0 || moving(s, now) || yataLeft(player) <= 0
+            || player.m_20159_()) {
             return;
         }
         CompoundTag data = FruitData.get(player);
@@ -639,126 +684,102 @@ public final class PikaMoves {
             data.m_128356_(YATA_TIME, now + YATA_RECHARGE);
         }
         FruitServer.sync(player);
-        s.busyUntil = now + 6;
-        animate(player, "pika_yata");
-        fx(player, YATA_FORM);
-        sound(player, player.m_20182_(), PikaSounds.SPARKLE, 0.8F, 1.1F);
-        later(player, 4, () -> mirror(player, straight));
+        Vec3 look = player.m_20154_();
+        s.lightSince = now;
+        s.lightStop = 0;
+        s.lightLast = centre(player);
+        s.lightWay = look;
+        s.reflectAt = -100; // never Long.MIN_VALUE: now - it would overflow
+        s.lightHit.clear();
+        s.guard = false;
+        player.f_19789_ = 0.0F;
+        fx(player, LIGHT_ON, 0, s.lightLast, look, 0, 0, 0, LIGHT_SPEED, LIGHT_MAX);
+        sound(player, s.lightLast, PikaSounds.ZIP, 1.0F, 1.0F);
     }
 
-    /**
-     * 2.9.0 (the owner: "use a mirror to like reflect his own body, turns into light, reflects against objects, can reflect against
-     * water to like projectile him up while he's made of light"): Yata no Kagami's light leaves the joined hands along the look and is
-     * reflected (as a mirror reflects it) off what it meets glancingly, up to {@link #YATA_BOUNCES} times within {@link #YATA_RANGE}
-     * blocks: off the ground, a wall, and off water at almost any angle, so light skimmed off the sea throws him up into the air. Met
-     * square on, a surface stops it (he is there); a foe on its way stops it beside them. He goes the whole way as light at once.
-     * Sneaking, it goes straight (no reflection: where he looks).
-     */
-    static void mirror(ServerPlayer player, boolean straight) {
-        ServerLevel level = (ServerLevel) player.m_9236_();
-        Vec3 at = player.m_20182_().m_82520_(0, 1.0, 0);
-        Vec3 way = player.m_20154_();
-        double left = YATA_RANGE;
-        List<Vec3> points = new ArrayList<>();
-        points.add(at);
-        LivingEntity met = null;
-        Vec3 stand = null;
-        for (int bounce = 0; ; bounce++) {
-            Vec3 end = at.m_82549_(way.m_82490_(left));
-            BlockHitResult hit = level.m_45547_(new ClipContext(at, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
-            Vec3 stop = hit.m_6662_() == HitResult.Type.BLOCK ? hit.m_82450_() : end;
-            met = along(player, at, stop);
-            if (met != null) {
-                stand = beside(player, met, 1.4);
-                points.add(stand.m_82520_(0, 1.0, 0));
-                break;
+    /** A tick of the body as light: whoever it went through struck, a reflection seen and heard, reformed when its time is up. */
+    static void lightTick(ServerPlayer player, State s, long now) {
+        player.f_19789_ = 0.0F;
+        Vec3 c = centre(player);
+        Vec3 d = c.m_82546_(s.lightLast);
+        double length = d.m_82553_();
+        if (length > 0.05) {
+            Vec3 way = d.m_82490_(1.0 / length);
+            for (LivingEntity body : crossed(player, s.lightLast, c, 1.2)) {
+                if (s.lightHit.add(body.m_19879_())) {
+                    hit(player, body, LIGHT_HIT, way.m_82490_(0.9).m_82520_(0, 0.3, 0), false);
+                    Vec3 at = StyleCombat.middle(body);
+                    fx(player, KICK, 0, at, way, 0, 0, 0, 1, 9);
+                    sound(player, at, PikaSounds.HIT, 1.0F, 1.1F);
+                }
             }
-            if (hit.m_6662_() != HitResult.Type.BLOCK) {
-                points.add(end);
-                stand = end.m_82520_(0, -1.0, 0);
-                break;
+            // light goes straight: a turn of more than a few degrees between two ticks is a reflection, at the corner
+            if (length > 0.4) {
+                if (s.lightWay != null && way.m_82526_(s.lightWay) < 0.985 && now - s.reflectAt > 1) {
+                    Vec3 n = way.m_82546_(s.lightWay);
+                    n = n.m_82556_() < 1.0E-6 ? new Vec3(0, 1, 0) : n.m_82541_();
+                    fx(player, REFLECT, 0, s.lightLast, n, 0, 0, 0, 1.0, 0);
+                    sound(player, s.lightLast, PikaSounds.REFLECT, 0.8F, 0.9F + player.m_9236_().m_213780_().m_188501_() * 0.25F);
+                    s.reflectAt = now;
+                }
+                s.lightWay = way;
             }
-            net.minecraft.core.Direction face = hit.m_82434_();
-            Vec3 n = new Vec3(face.m_122429_(), face.m_122430_(), face.m_122431_());
-            boolean water = !((net.minecraft.world.level.Level) level).m_6425_(hit.m_82425_()).m_76178_();
-            double dn = way.m_82526_(n);
-            left -= stop.m_82554_(at);
-            boolean reflect = !straight && bounce < YATA_BOUNCES && left > 4.0 && Math.abs(dn) < (water ? 0.97 : YATA_GLANCE);
-            points.add(stop);
-            if (!reflect) {
-                stand = stop.m_82549_(n.m_82490_(0.6)).m_82520_(0, -1.0, 0);
-                break;
-            }
-            fx(player, DODGE, 0, stop, Vec3.f_82478_, 0, 0, 0, 0, 0);
-            sound(player, stop, water ? PikaSounds.ZIP : PikaSounds.SPARKLE, 0.8F, 1.3F);
-            way = way.m_82546_(n.m_82490_(2.0 * dn)).m_82541_();
-            at = stop.m_82549_(n.m_82490_(0.05));
         }
-        Vec3 from = player.m_20182_();
-        Vec3 to = room(player, points.get(points.size() - 2).m_82520_(0, -1.0, 0), stand);
-        for (int i = 0; i + 1 < points.size(); i++) {
-            Vec3 a = points.get(i).m_82520_(0, -1.0, 0);
-            Vec3 b = i + 2 == points.size() ? to : points.get(i + 1).m_82520_(0, -1.0, 0);
-            fx(player, YATA_PATH, 0, a, b, 0, 0, 0, 0, 0);
+        s.lightLast = c;
+        if (now - s.lightSince >= LIGHT_MAX || s.lightStop > 0 && now >= s.lightStop) {
+            lightOff(player);
         }
-        travel(player, to, met);
-        if (points.size() > 2 && met == null && to.f_82480_ > from.f_82480_ + 2.0) {
-            // thrown up off the light's last bounce: on up, as light goes
-            Vec3 last = points.get(points.size() - 1).m_82546_(points.get(points.size() - 2)).m_82541_();
-            player.m_20334_(last.f_82479_ * 0.6, Math.max(0.4, last.f_82480_ * 1.2), last.f_82481_ * 0.6);
-            player.f_19864_ = true;
-        }
-        sound(player, to, PikaSounds.TRAVEL, 1.0F, 1.0F);
     }
 
-    /** The first foe within a block or so of the light's way from {@code a} to {@code b}, or null. */
-    static LivingEntity along(ServerPlayer player, Vec3 a, Vec3 b) {
+    /** The light a body again, where it is. */
+    static void lightOff(ServerPlayer player) {
+        State s = state(player);
+        if (s.lightSince < 0) {
+            return;
+        }
+        s.lightSince = -1;
+        s.lightStop = 0;
+        Vec3 way = s.lightWay != null ? s.lightWay : player.m_20154_();
+        Vec3 at = centre(player);
+        fx(player, LIGHT_OFF, 0, at, way, 0, 0, 0, 0, 0);
+        sound(player, at, PikaSounds.ZIP, 0.8F, 1.3F);
+        s.busyUntil = Math.max(s.busyUntil, now(player) + 3);
+    }
+
+    /** Every foe within {@code reach} of the light's way from {@code a} to {@code b}. */
+    static List<LivingEntity> crossed(ServerPlayer player, Vec3 a, Vec3 b, double reach) {
+        List<LivingEntity> out = new ArrayList<>();
         Vec3 way = b.m_82546_(a);
         double length = way.m_82553_();
         if (length < 1.0E-6) {
-            return null;
+            return out;
         }
         Vec3 unit = way.m_82490_(1.0 / length);
-        LivingEntity best = null;
-        double bestAlong = Double.MAX_VALUE;
-        for (LivingEntity body : player.m_9236_().m_6443_(LivingEntity.class, UoMoves.box(a, b).m_82400_(2.0),
+        for (LivingEntity body : player.m_9236_().m_6443_(LivingEntity.class, UoMoves.box(a, b).m_82400_(reach + 1.0),
             e -> e != player && e.m_6084_() && !e.m_5833_() && FruitUtil.foe(player, e))) {
             Vec3 rel = StyleCombat.middle(body).m_82546_(a);
-            double d = rel.m_82526_(unit);
-            if (d < 0.5 || d > length + 0.5 || rel.m_82546_(unit.m_82490_(d)).m_82553_() > body.m_20205_() * 0.5 + 1.0) {
-                continue;
-            }
-            if (d < bestAlong) {
-                bestAlong = d;
-                best = body;
+            double along = Math.max(0.0, Math.min(length, rel.m_82526_(unit)));
+            if (rel.m_82546_(unit.m_82490_(along)).m_82553_() <= body.m_20205_() * 0.5 + reach) {
+                out.add(body);
             }
         }
-        return best;
+        return out;
     }
 
-    /** Sneak + Z: stream along the look as light while it is held (up to 3 s), striking what you pass. */
-    static void stream(ServerPlayer player) {
+    /**
+     * 2.9.6 (the owner: "rework all of his abilities to be smooth"): across to {@code to} as light, no longer in one jump (a teleport
+     * snapped the view): the player's own client carries the body there over a few ticks ({@link #DASH_SPEED} blocks a tick, following
+     * {@code target} if it moves) and holds it there {@code hold} ticks; the body is light on the way. Returns the ticks it takes.
+     */
+    static int dash(ServerPlayer player, Vec3 to, LivingEntity target, int hold) {
         State s = state(player);
-        if (s.streamSince >= 0 || now(player) < s.busyUntil || !ready(player, PikaKit.YATA)) {
-            return;
-        }
-        s.streamSince = now(player);
-        animate(player, "pika_stream");
-        fx(player, STREAM_ON);
-        sound(player, player.m_20182_(), PikaSounds.TRAVEL, 1.0F, 1.1F);
-    }
-
-    static void stopStream(ServerPlayer player) {
-        State s = state(player);
-        if (s.streamSince < 0) {
-            return;
-        }
-        s.streamSince = -1;
-        cool(player, PikaKit.YATA, 40);
-        fx(player, STREAM_OFF);
-        player.m_20334_(player.m_20184_().f_82479_ * 0.2, 0.1, player.m_20184_().f_82481_ * 0.2);
-        player.f_19864_ = true;
-        animate(player, "pika_stream_end");
+        Vec3 from = player.m_20182_();
+        int ticks = Math.max(2, (int) Math.ceil(to.m_82554_(from) / DASH_SPEED));
+        s.dashUntil = now(player) + ticks + hold;
+        s.guard = false;
+        player.f_19789_ = 0.0F;
+        fx(player, DASH, target != null ? target.m_19879_() : -1, to, from, hold, 0, 0, 0, ticks);
+        return ticks;
     }
 
     // ------------------------------------------------------------------------------------------------------ X: Yasakani no Magatama
@@ -937,12 +958,12 @@ public final class PikaMoves {
         s.busyUntil = now(player) + 10;
         LivingEntity target = aimed(player, KICK_RANGE, 0.06);
         Vec3 from = player.m_20182_();
-        animate(player, "pika_light_kick");
         if (target != null) {
             // 2.9.0 (the owner: "kick from the side, like comes from the back and then rotates and it hits on the left side of the mob
             // ... around the head area"): gone as light and out of it behind them, over their left shoulder at the height of their
             // head, turned away; he spins round (the animation) and the kick lands in the left side of the head on tick 3, throwing them
-            // away to their right
+            // away to their right. 2.9.6 (the owner: "smooth"): there as light over a few ticks (a dash, following them if they move,
+            // no snap of the view), the spin begun as he arrives, the body hanging there until the kick has landed
             float yaw = target.f_20883_;
             Vec3 face = new Vec3(-Math.sin(Math.toRadians(yaw)), 0, Math.cos(Math.toRadians(yaw)));
             Vec3 left = new Vec3(Math.cos(Math.toRadians(yaw)), 0, Math.sin(Math.toRadians(yaw)));
@@ -950,24 +971,28 @@ public final class PikaMoves {
             double lift = Math.max(0.0, target.m_20192_() - LIGHT_KICK_FOOT);
             Vec3 t = target.m_20182_();
             Vec3 to = room(player, t, t.m_82549_(face.m_82490_(-reach * 0.55)).m_82549_(left.m_82490_(reach)).m_82520_(0, lift, 0));
-            travel(player, to, target);
+            int ticks = dash(player, to, target, LIGHT_KICK_HOLD);
+            int lands = ticks + LIGHT_KICK_LANDS - 1;
+            s.busyUntil = now(player) + lands + 6;
             Vec3 thrown = left.m_82490_(-(2.8 + 2.6 * charge)).m_82549_(face.m_82490_(0.6)).m_82520_(0, 0.6 + 0.35 * charge, 0);
-            fx(player, LIGHT_KICK, target.m_19879_(), from, to, thrown.f_82479_, thrown.f_82480_, thrown.f_82481_, charge, 0);
             sound(player, from, PikaSounds.ZIP, 1.2F, 1.0F);
-            sound(player, to, PikaSounds.TRAVEL, 1.2F, 1.1F);
-            hold(player, to, LIGHT_KICK_HOLD);
-            later(player, LIGHT_KICK_LANDS, () -> {
+            later(player, ticks - 1, () -> animate(player, "pika_light_kick"));
+            later(player, ticks, () -> sound(player, player.m_20182_(), PikaSounds.TRAVEL, 1.2F, 1.1F));
+            later(player, lands, () -> {
                 if (!target.m_6084_()) {
                     return;
                 }
                 hit(player, target, 7.0F + 9.0F * charge, thrown, true);
                 Vec3 head = new Vec3(target.m_20185_(), target.m_20186_() + target.m_20192_(), target.m_20189_()).m_82549_(left.m_82490_(target.m_20205_() * 0.5));
+                fx(player, LIGHT_KICK, target.m_19879_(), from, player.m_20182_(), thrown.f_82479_, thrown.f_82480_, thrown.f_82481_, charge, 0);
                 fx(player, KICK, 0, head, left.m_82490_(-1.0), 0, 0, 0, 3, 8);
                 Impact.quake((ServerLevel) player.m_9236_(), head, 20.0 + 20.0 * charge, 0.5F + 0.5F * charge, 14);
                 sound(player, head, PikaSounds.KICK_BLAST, 1.8F, 0.9F);
                 sound(player, head, PikaSounds.HIT_HEAVY, 1.6F, 0.85F);
-            });        } else {
+            });
+        } else {
             // no one there: the kick fires a beam out of the leg (as at Zoro)
+            animate(player, "pika_light_kick");
             later(player, 2, () -> {
                 Vec3 foot = player.m_20182_().m_82520_(0, 0.9, 0).m_82549_(player.m_20154_().m_82490_(0.8));
                 Vec3 to = point(player, 40.0);
@@ -984,32 +1009,6 @@ public final class PikaMoves {
     static final double LIGHT_KICK_FOOT = 1.45;
     static final int LIGHT_KICK_HOLD = 8;
     static final int LIGHT_KICK_LANDS = 3;
-
-    /** 2.9.0: held where he is (in the air if he is) for {@code ticks}, no fall taken: a kick in mid-air hangs until it lands. */
-    static void hold(ServerPlayer player, Vec3 at, int ticks) {
-        ServerLevel level = (ServerLevel) player.m_9236_();
-        long until = now(player) + ticks;
-        LIVE.add(new UoMoves.Live() {
-            @Override
-            public boolean tick(long now) {
-                if (!player.m_6084_() || player.m_9236_() != level) {
-                    return true;
-                }
-                player.m_20334_(0.0, 0.0, 0.0);
-                player.f_19864_ = true;
-                player.f_19789_ = 0.0F;
-                if (player.m_20182_().m_82557_(at) > 0.04) {
-                    player.m_6021_(at.f_82479_, at.f_82480_, at.f_82481_);
-                }
-                return now >= until;
-            }
-
-            @Override
-            public ServerLevel level() {
-                return level;
-            }
-        });
-    }
 
     // ------------------------------------------------------------------------------------------------------ B: the clones
 
@@ -1095,20 +1094,8 @@ public final class PikaMoves {
         if (s.chargeSince >= 0 && now - s.chargeSince > BEAM_FULL + 40) {
             useUp(player);
         }
-        if (s.streamSince >= 0) {
-            long held = now - s.streamSince;
-            if (held > STREAM_MAX) {
-                stopStream(player);
-            } else {
-                Vec3 look = player.m_20154_();
-                player.m_20334_(look.f_82479_ * 2.2, look.f_82480_ * 2.2, look.f_82481_ * 2.2);
-                player.f_19864_ = true;
-                if (held % 6 == 0) {
-                    for (LivingEntity body : foes(player, player.m_20182_().m_82520_(0, 1.0, 0), 2.2)) {
-                        hit(player, body, 3.0F, look.m_82490_(1.0).m_82520_(0, 0.4, 0), false);
-                    }
-                }
-            }
+        if (s.lightSince >= 0) {
+            lightTick(player, s, now);
         }
         if (s.swordUntil > 0 && now >= s.swordUntil) {
             s.swordUntil = 0;
@@ -1133,8 +1120,8 @@ public final class PikaMoves {
         if (s.kickChargeSince >= 0) {
             fx(player, KICK_CHARGE_OFF);
         }
-        if (s.streamSince >= 0) {
-            fx(player, STREAM_OFF);
+        if (s.lightSince >= 0) {
+            fx(player, LIGHT_OFF, 0, centre(player), player.m_20154_(), 0, 0, 0, 0, 0);
         }
         if (s.swordUntil > now(player)) {
             fx(player, SWORD_OFF);

@@ -1,15 +1,16 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
-Read CLAUDE.md, then docs/handoff/next-ai-2.9.5.md whole: it holds every standing rule in one place (talking to the owner, the house
+Read CLAUDE.md, then docs/handoff/next-ai-2.9.6.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5); open the older next-ai-*.md only for a
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and section 8b of next-ai-2.9.6.md (2.9.6); open the older next-ai-*.md only for a
 feature's detail.
 
-2.9.5 is pushed and green: the Conqueror's charge is one held sound that fades out the moment G is let go, and the release's lightning
-crackles are gone. The next version is 2.9.6. First check the branch's last "Build HexPiece" and "Release HexPiece" runs, then ask
-the owner how the Conqueror's charge and release sound now and how 2.9.4 plays (sparks in the Ryou colour, Gear 5's 3D lightning,
-thin fissures, bodies thrown back), and fix whatever they report first. Then follow section 9 of next-ai-2.9.5.md.
+2.9.6 is pushed: the Light fruit after Kizaru at Egghead (hold Z: the body becomes light, goes where you look and is reflected off
+every block and the water, striking whoever it passes through; the sprint kick, the dive and V dash there as light instead of
+teleporting; Egghead's star of light on his light). The next version is 2.9.7. First check the branch's last "Build HexPiece" and
+"Release HexPiece" runs, then ask the owner how the new Z and the dashes play, and how 2.9.5's Conqueror sounds and 2.9.4's Haki play
+(both still untested), and fix whatever they report first. Then follow section 9 of next-ai-2.9.6.md.
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;
 render and judge every animation and effect yourself, third and first person; never key the head or unused limbs; keep every effect

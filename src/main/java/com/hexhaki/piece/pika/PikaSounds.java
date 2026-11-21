@@ -36,6 +36,9 @@ public final class PikaSounds {
     public static final String PARRY = "piece.pika.parry";
     /** The clones of light, a blow passing through the body of light, the mirror forming. */
     public static final String SPARKLE = "piece.pika.sparkle";
+    /** 2.9.6: the body gone as light (Z held: a loop, faded out the moment it reforms), and the light reflected off a block or the water. */
+    public static final String LIGHT_TRAVEL = "piece.pika.light_travel";
+    public static final String REFLECT = "piece.pika.reflect";
 
     /** Every event and its clips (assets/hexhaki/sounds/piece/pika/{clip}.ogg). */
     public static final String[][] EVENTS = {
@@ -44,6 +47,6 @@ public final class PikaSounds {
         {WHOOSH, "whoosh1", "whoosh2"}, {HIT, "hit1", "hit2", "hit3", "hit4"}, {HIT_HEAVY, "hit_heavy1", "hit_heavy2"},
         {KICK_BLAST, "kick_blast"}, {SWORD_ON, "sword_on"}, {HUM, "hum"},
         {SWING, "swing1", "swing2", "swing3", "swing4", "swing5"}, {SWORD_OFF, "sword_off"}, {PARRY, "parry1"},
-        {SPARKLE, "sparkle1", "sparkle2"},
+        {SPARKLE, "sparkle1", "sparkle2"}, {LIGHT_TRAVEL, "light_travel"}, {REFLECT, "reflect1"},
     };
 }

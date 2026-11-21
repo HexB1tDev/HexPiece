@@ -93,7 +93,8 @@ public final class PikaFx {
     static final Map<Integer, Long> KICK_CHARGES = new HashMap<>();
     static final Map<Integer, Long> VOLLEYS = new HashMap<>();
     static final Map<Integer, Long> FORMS = new HashMap<>();
-    static final Map<Integer, Long> STREAMS = new HashMap<>();
+    /** 2.9.6: per player gone as light (Z held, or a dash): {since, until} (clock ticks). */
+    static final Map<Integer, long[]> LIGHTS = new HashMap<>();
     static final Map<Integer, Long> SWORDS = new HashMap<>();
     private static final Map<Integer, Trail> TRAILS = new HashMap<>();
     static final double FAR = 160.0;
@@ -150,7 +151,7 @@ public final class PikaFx {
             }
             case PikaMoves.KICK_CHARGE_OFF -> KICK_CHARGES.remove(m.user());
             case PikaMoves.LIGHT_KICK -> {
-                LINES.add(new Line(at, a, 1.4, clock, PikaMoves.YATA_PATH, -1));
+                // 2.9.6: sent as the kick lands (he came as light, a dash): the kicked one's trail and the blow's flash
                 if (m.id() >= 0) {
                     KICKED.add(new Kicked(m.id(), clock));
                     SPOTS.add(new Spot(a.m_82520_(0, 1.0, 0), new Vec3(m.bx(), m.by(), m.bz()), 2.5 + 2.0 * m.size(), 8, clock + 1,
@@ -163,8 +164,42 @@ public final class PikaFx {
                 LINES.add(new Line(a, at, 1.2, clock, PikaMoves.YATA_PATH, -1));
                 SPOTS.add(new Spot(at, Vec3.f_82478_, m.size(), 0, clock + 1, PikaMoves.BURST));
             }
-            case PikaMoves.STREAM_ON -> STREAMS.put(m.user(), clock);
-            case PikaMoves.STREAM_OFF -> STREAMS.remove(m.user());
+            case PikaMoves.LIGHT_ON -> {
+                // 2.9.6: the body gone as light (Z held): its flash, its sound for as long as it lasts, and one's own body moved as light
+                LIGHTS.put(m.user(), new long[] {clock, clock + m.ticks() + 10});
+                SPOTS.add(new Spot(at, a, 1.6, 0, clock, PikaMoves.LIGHT_ON));
+                motes(at, 10, 0.35);
+                int id = m.user();
+                com.hexhaki.piece.client.LoopSound.play(com.hexhaki.piece.pika.PikaSounds.LIGHT_TRAVEL, entity(id), 0.8F, 1.0F, true, true, 0.9,
+                    () -> LIGHTS.containsKey(id));
+                if (self(id)) {
+                    glide = Glide.free(a, m.size());
+                }
+            }
+            case PikaMoves.LIGHT_OFF -> {
+                LIGHTS.remove(m.user());
+                SPOTS.add(new Spot(at, a, 1.4, 0, clock, PikaMoves.LIGHT_OFF));
+                motes(at, 8, 0.3);
+                if (self(m.user()) && glide != null && glide.mode == Glide.FREE) {
+                    // a body again where the light is, still going with some of its speed (off the sea: up into the sky)
+                    Minecraft.m_91087_().f_91074_.m_20334_(glide.dx * PikaMoves.LIGHT_CARRY, glide.dy * PikaMoves.LIGHT_CARRY,
+                        glide.dz * PikaMoves.LIGHT_CARRY);
+                    glide = null;
+                }
+            }
+            case PikaMoves.REFLECT -> {
+                SPOTS.add(new Spot(at, a, m.size(), 0, clock, PikaMoves.REFLECT));
+                motes(at, 6, 0.3);
+            }
+            case PikaMoves.DASH -> {
+                // 2.9.6: across as light over a few ticks; one's own body carried there by the game's own movement
+                LIGHTS.put(m.user(), new long[] {clock, clock + m.ticks() + 1});
+                Vec3 from = a.m_82520_(0, 0.9, 0);
+                SPOTS.add(new Spot(from, at.m_82546_(a), 1.2, 0, clock, PikaMoves.LIGHT_ON));
+                if (self(m.user())) {
+                    glide = Glide.dash(at, m.id(), m.ticks(), (int) m.bx());
+                }
+            }
             default -> {
             }
         }
@@ -228,7 +263,9 @@ public final class PikaFx {
             return;
         }
         LINES.removeIf(l -> clock - l.born > (l.kind == PikaMoves.BEAM ? LightArt.BEAM_LIFE : LightArt.PATH_LIFE) + 2);
-        SPOTS.removeIf(s -> clock - s.born > (s.kind == PikaMoves.BURST ? LightArt.burstLife(s.size) : 9) + 1);
+        SPOTS.removeIf(s -> clock - s.born > (s.kind == PikaMoves.BURST ? LightArt.burstLife(s.size) : s.kind == PikaMoves.REFLECT
+            || s.kind == PikaMoves.LIGHT_ON || s.kind == PikaMoves.LIGHT_OFF ? LightArt.REFLECT_LIFE : 9) + 1);
+        LIGHTS.entrySet().removeIf(e -> e.getValue()[1] < clock);
         CUTS.removeIf(c -> clock - c.born > LightArt.SLASH_LIFE + 1);
         WAVES.removeIf(w -> clock - w.born > w.life + 2);
         CLONES.removeIf(c -> clock - c.born > CLONE_LIFE + 1);
@@ -260,14 +297,16 @@ public final class PikaFx {
         // 2.9.0 (the owner: "he can like fly like super fast ... turns into light"): flying and sprinting, the local player goes as light
         // where they look, LIGHT_FLIGHT blocks a tick (the body becomes a streak of light: lit, below)
         net.minecraft.client.player.LocalPlayer self = minecraft.f_91074_;
-        if (self != null && self.m_150110_().f_35935_ && self.m_20142_() && com.hexhaki.fruit.client.FruitClient.fruit(self.m_19879_()) == Fruit.PIKA
+        if (glide != null) {
+            glide(self, level);
+        } else if (self != null && self.m_150110_().f_35935_ && self.m_20142_() && com.hexhaki.fruit.client.FruitClient.fruit(self.m_19879_()) == Fruit.PIKA
             && minecraft.f_91080_ == null) {
             Vec3 look = self.m_20154_();
             self.m_20334_(look.f_82479_ * LIGHT_FLIGHT, look.f_82480_ * LIGHT_FLIGHT, look.f_82481_ * LIGHT_FLIGHT);
         }
         // trails: a player flying as light, or streaming
         for (Player player : level.m_6907_()) {
-            boolean streaming = STREAMS.containsKey(player.m_19879_()) || lit(player);
+            boolean streaming = lit(player);
             boolean flying = player.m_150110_().f_35935_ && com.hexhaki.fruit.client.FruitClient.fruit(player.m_19879_()) == Fruit.PIKA
                 && player.m_20184_().m_82553_() > 0.35;
             Trail trail = TRAILS.get(player.m_19879_());
@@ -303,6 +342,9 @@ public final class PikaFx {
 
     /** Whether {@code player} is going as light: flying with the Light fruit faster than {@link #LIT} blocks a tick. */
     static boolean lit(Player player) {
+        if (LIGHTS.containsKey(player.m_19879_())) {
+            return true; // 2.9.6: Z held, or a dash
+        }
         if (!player.m_150110_().f_35935_ || com.hexhaki.fruit.client.FruitClient.fruit(player.m_19879_()) != Fruit.PIKA) {
             return false;
         }
@@ -316,6 +358,165 @@ public final class PikaFx {
     @SubscribeEvent
     public static void asLight(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
         if (lit(event.getEntity())) {
+            event.setCanceled(true);
+        }
+    }
+
+    /** Whether {@code id} is the local player. */
+    static boolean self(int id) {
+        net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
+        return self != null && self.m_19879_() == id;
+    }
+
+    /**
+     * 2.9.6 (the owner: "turn you into light itself, and travel in a beam where you're looking at and reflect against any object/water";
+     * "smooth"): one's own body moved as light, by the game's own movement (its velocity set a tick ahead, every movement key ignored),
+     * so it glides on screen from frame to frame and meets blocks as the server's movement check does. FREE (Z held): straight on at its
+     * speed; where a block cut the last tick's step short along an axis, that axis is turned back (a block's faces are square to the
+     * axes, so that is the reflection off it), and water or lava met from above throws it back up. DASH: to a place in so many ticks
+     * (following whom it was sent after), then HOLD: hung there, facing them, a few ticks.
+     */
+    static final class Glide {
+        static final int FREE = 0;
+        static final int DASH = 1;
+        static final int HOLD = 2;
+        int mode;
+        double dx;
+        double dy;
+        double dz;
+        double speed;
+        Vec3 to;
+        int target;
+        Vec3 targetFrom;
+        int left;
+        int hold;
+        Vec3 last;
+        Vec3 step = Vec3.f_82478_;
+        boolean flipY;
+
+        static Glide free(Vec3 way, double speed) {
+            Glide g = new Glide();
+            Vec3 unit = way.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : way.m_82541_();
+            g.mode = FREE;
+            g.dx = unit.f_82479_;
+            g.dy = unit.f_82480_;
+            g.dz = unit.f_82481_;
+            g.speed = speed;
+            return g;
+        }
+
+        static Glide dash(Vec3 to, int target, int ticks, int hold) {
+            Glide g = new Glide();
+            g.mode = DASH;
+            g.to = to;
+            g.target = target;
+            Entity e = target >= 0 ? entity(target) : null;
+            g.targetFrom = e != null ? e.m_20182_() : null;
+            g.left = Math.max(1, ticks);
+            g.hold = hold;
+            return g;
+        }
+    }
+
+    static Glide glide;
+
+    /** A tick of one's own body as light (after the game has moved it): its next step. */
+    static void glide(net.minecraft.client.player.LocalPlayer self, ClientLevel level) {
+        Glide g = glide;
+        if (self == null || !self.m_6084_() || self.m_20159_() || g.mode == Glide.FREE && !LIGHTS.containsKey(self.m_19879_())) {
+            glide = null; // gone, riding, or its time up (should the server's word that it reformed never come)
+            return;
+        }
+        Vec3 pos = self.m_20182_();
+        Vec3 moved = g.last == null ? g.step : pos.m_82546_(g.last);
+        Vec3 step;
+        if (g.mode == Glide.FREE) {
+            if (g.flipY) {
+                g.dy = -g.dy;
+                g.flipY = false;
+            } else {
+                net.minecraft.world.entity.LivingEntity body = self; // the flags read as the original reads them (through LivingEntity)
+                if (body.f_19862_) {
+                    if (Math.abs(g.step.f_82479_) > 0.01 && Math.abs(moved.f_82479_) < Math.abs(g.step.f_82479_) - 0.001) {
+                        g.dx = -g.dx;
+                    }
+                    if (Math.abs(g.step.f_82481_) > 0.01 && Math.abs(moved.f_82481_) < Math.abs(g.step.f_82481_) - 0.001) {
+                        g.dz = -g.dz;
+                    }
+                }
+                if (body.f_19863_ && Math.abs(g.step.f_82480_) > 0.01 && Math.abs(moved.f_82480_) < Math.abs(g.step.f_82480_) - 0.001) {
+                    g.dy = -g.dy;
+                }
+            }
+            step = new Vec3(g.dx * g.speed, g.dy * g.speed, g.dz * g.speed);
+            if (g.dy < -0.01) {
+                // water (or lava) met from above: down onto its face this tick, back up off it the next
+                Vec3 feet = pos.m_82520_(0, 0.05, 0);
+                if (level.m_6425_(net.minecraft.core.BlockPos.m_274561_(feet.f_82479_, feet.f_82480_, feet.f_82481_)).m_76178_()) {
+                    net.minecraft.world.phys.BlockHitResult hit = level.m_45547_(new net.minecraft.world.level.ClipContext(feet, feet.m_82549_(step),
+                        net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.ANY, self));
+                    if (hit.m_6662_() == net.minecraft.world.phys.HitResult.Type.BLOCK && !level.m_6425_(hit.m_82425_()).m_76178_()) {
+                        step = step.m_82490_(Math.max(0.0, hit.m_82450_().m_82554_(feet) / g.speed));
+                        g.flipY = true;
+                    }
+                }
+            }
+        } else if (g.mode == Glide.DASH) {
+            Vec3 to = g.to;
+            Entity e = g.target >= 0 ? level.m_6815_(g.target) : null;
+            if (e != null && g.targetFrom != null) {
+                to = to.m_82549_(e.m_20182_().m_82546_(g.targetFrom));
+            }
+            step = to.m_82546_(pos).m_82490_(1.0 / Math.max(1, g.left));
+            if (--g.left <= 0) {
+                g.mode = Glide.HOLD;
+                if (e != null) {
+                    face(self, to, e);
+                }
+            }
+        } else {
+            step = Vec3.f_82478_;
+            if (--g.hold < 0) {
+                glide = null;
+            }
+        }
+        self.m_20334_(step.f_82479_, step.f_82480_, step.f_82481_);
+        self.f_19789_ = 0.0F;
+        g.last = pos;
+        g.step = step;
+    }
+
+    /** Turned (body, head and view) toward {@code e} from feet at {@code feet}. */
+    static void face(net.minecraft.client.player.LocalPlayer self, Vec3 feet, Entity e) {
+        Vec3 d = e.m_20182_().m_82520_(0, e.m_20206_() * 0.6, 0).m_82546_(feet.m_82520_(0, self.m_20192_(), 0));
+        float yaw = (float) Math.toDegrees(Math.atan2(-d.f_82479_, d.f_82481_));
+        float pitch = (float) -Math.toDegrees(Math.atan2(d.f_82480_, Math.sqrt(d.f_82479_ * d.f_82479_ + d.f_82481_ * d.f_82481_)));
+        self.m_146922_(yaw);
+        self.m_146926_(pitch);
+        self.f_19859_ = yaw;
+        self.f_19860_ = pitch;
+        self.f_20885_ = yaw;
+        self.f_20886_ = yaw;
+    }
+
+    /** 2.9.6: while one's own body is light, no movement key moves it (it goes as the light goes). */
+    @SubscribeEvent
+    public static void steady(net.minecraftforge.client.event.MovementInputUpdateEvent event) {
+        if (glide == null || event.getEntity() != Minecraft.m_91087_().f_91074_) {
+            return;
+        }
+        net.minecraft.client.player.Input input = event.getInput();
+        input.f_108566_ = 0.0F;
+        input.f_108567_ = 0.0F;
+        input.f_108572_ = false;
+        input.f_108573_ = false;
+    }
+
+    /** 2.9.6: light has no hands: in first person none is drawn while one's own body is light. */
+    @SubscribeEvent
+    public static void noHands(net.minecraftforge.client.event.RenderHandEvent event) {
+        net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
+        if (self != null && LIGHTS.containsKey(self.m_19879_())) {
             event.setCanceled(true);
         }
     }
@@ -557,6 +758,8 @@ public final class PikaFx {
             switch (s.kind) {
                 case PikaMoves.BURST -> LightArt.burst(SINK, x, y, z, s.size, age, (int) s.born);
                 case PikaMoves.DODGE -> LightArt.impact(SINK, x, y, z, s.size, age, (int) s.born);
+                case PikaMoves.REFLECT -> LightArt.reflect(SINK, x, y, z, s.dir.f_82479_, s.dir.f_82480_, s.dir.f_82481_, s.size, age, (int) s.born);
+                case PikaMoves.LIGHT_ON, PikaMoves.LIGHT_OFF -> LightArt.flare(SINK, x, y, z, s.size, age, (int) s.born);
                 default -> kick(s, x, y, z, age);
             }
         }
@@ -620,11 +823,35 @@ public final class PikaFx {
                 pts[i * 3 + 1] = t.points[i * 3 + 1] - cy;
                 pts[i * 3 + 2] = t.points[i * 3 + 2] - cz;
             }
-            boolean streaming = STREAMS.containsKey(e.getKey()) || lit(player);
-            LightArt.trail(SINK, pts, t.count, streaming ? 0.8 : 0.35, streaming ? 1.0 : 0.7);
-            if (streaming && (player != Minecraft.m_91087_().f_91074_ || !Minecraft.m_91087_().f_91066_.m_92176_().m_90612_())) {
-                LightArt.light(SINK, pts[0], pts[1], pts[2], 0.6, 0, 1, 0, 0.0, 1.0, 1.0, clock + partial, e.getKey());
-                LightArt.glow(SINK, pts[0], pts[1], pts[2], 2.0, 0xFFE070, 0.5);
+            boolean streaming = lit(player);
+            if (streaming) {
+                LightArt.ribbon(SINK, pts, t.count, 0.8, 1.0);
+            } else {
+                LightArt.trail(SINK, pts, t.count, 0.35, 0.7);
+            }
+            boolean inside = player == Minecraft.m_91087_().f_91074_ && Minecraft.m_91087_().f_91066_.m_92176_().m_90612_();
+            if (streaming && inside && LIGHTS.containsKey(player.m_19879_())) {
+                // 2.9.6: one's own body as light, seen from inside it: light rushing past round the view
+                Vec3 way = glide != null && glide.mode == Glide.FREE ? new Vec3(glide.dx, glide.dy, glide.dz)
+                    : new Vec3(pts[0] - pts[3], pts[1] - pts[4], pts[2] - pts[5]);
+                if (way.m_82556_() > 1.0E-6) {
+                    way = way.m_82541_();
+                    LightArt.rush(SINK, way.f_82479_, way.f_82480_, way.f_82481_, clock + partial, e.getKey());
+                }
+            }
+            if (streaming && !inside) {
+                // 2.9.6: the body as light: a white-hot head drawn out along its way, a star of light on it, rings thrown off behind
+                double wx = pts[0] - pts[3];
+                double wy = pts[1] - pts[4];
+                double wz = pts[2] - pts[5];
+                double wl = Math.sqrt(wx * wx + wy * wy + wz * wz);
+                if (wl < 1.0E-3) {
+                    wx = 0;
+                    wy = 1;
+                    wz = 0;
+                    wl = 1;
+                }
+                LightArt.head(SINK, pts[0], pts[1], pts[2], wx / wl, wy / wl, wz / wl, clock + partial, e.getKey());
             }
         }
         for (Map.Entry<Integer, Long> e : CHARGES.entrySet()) {
@@ -798,7 +1025,8 @@ public final class PikaFx {
         KICK_CHARGES.clear();
         VOLLEYS.clear();
         FORMS.clear();
-        STREAMS.clear();
+        LIGHTS.clear();
+        glide = null;
         SWORDS.clear();
         TRAILS.clear();
     }

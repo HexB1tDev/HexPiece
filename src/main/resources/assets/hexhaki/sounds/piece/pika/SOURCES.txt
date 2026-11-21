@@ -36,5 +36,7 @@ sword_off.ogg: "Laser Sword (Ignition/Waving/Putting Away)" by Za-Games, https:/
 parry1.ogg: "Metal_Sword_Parry_Impact_Hit_4" by chungkury, https://freesound.org/people/chungkury/sounds/760636/ (CC0 1.0), from 0.0 s, 1.84 s long
 sparkle1.ogg: "Whoosh Magic Sparkle" by Qvantor, https://freesound.org/people/Qvantor/sounds/877981/ (CC0 1.0), from 0.3 s, 2.20 s long
 sparkle2.ogg: "Cartoon Magic Transition" by qubodup, https://freesound.org/people/qubodup/sounds/856641/ (CC0 1.0), from 0.1 s, 1.60 s long
+reflect1.ogg: "UI Hover Glass Ping" by Qvantor, https://freesound.org/people/Qvantor/sounds/878247/ (CC0 1.0), from 0.0 s, 0.40 s long
 charge_hold.ogg: "Spell charge loop" by Bertsz, https://freesound.org/people/Bertsz/sounds/500910/ (CC0 1.0), a loop from 0.3 s, 4.00 s long
 hum.ogg: "Lightsaber Hum and Swings 2" by Sheyvan, https://freesound.org/people/Sheyvan/sounds/703384/ (CC0 1.0), a loop from 20.8 s, 2.40 s long
+light_travel.ogg: "Weapons Beam Loop" by unfa, https://freesound.org/people/unfa/sounds/584191/ (CC0 1.0), a loop from 0.0 s, 1.60 s long

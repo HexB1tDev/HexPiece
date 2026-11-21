@@ -70,6 +70,7 @@ public final class LightArt {
         FireMesh.tube(sink, ax, ay, az, bx, by, bz, width * 1.1 * thin, width * 1.0 * thin, 0xFFE05E, 0xFFD040, 0xFFC020, 0.0,
             0.35 * (1.0 - t), 0.0, age, seed + 1);
         glow(sink, ax, ay, az, width * 3.0 * (1.0 - t), 0xFFF0A0, 0.6 * (1.0 - t));
+        star(sink, ax, ay, az, 1.3 * (1.0 - t), 0.25, 1.0 - t); // 2.9.6: Egghead's glint on the fingertip as it fires
         // 2.9.0: where it struck, the server's burst (LightArt.burst: gathering, going off, its dust) does the rest
         glow(sink, bx, by, bz, width * 5.0 * (1.0 - t), 0xFFF6D0, 0.7 * (1.0 - t));
     }
@@ -83,6 +84,7 @@ public final class LightArt {
         light(sink, x, y, z, size * 0.4 * (1.0 - t) * (0.6 + 0.4 * ease(age / 1.5)), 0, 1, 0, 0.1, 1.0 - 0.3 * t, 1.0, age, seed);
         glow(sink, x, y, z, size * (0.8 + 0.8 * ease(t)), 0xFFE680, 0.7 * (1.0 - t));
         FireMesh.ring(sink, x, y, z, 0, 1, 0, size * (0.3 + 1.2 * ease(t)), size * 0.25 * (1.0 - t) + 0.05, 0.0, 0xFFFFFF, 0.8 * (1.0 - t));
+        star(sink, x, y, z, size * 1.1 * (1.0 - t) * (0.5 + 0.5 * ease(age / 1.2)), 0.4 + age * 0.05, 1.0 - t);
         for (int i = 0; i < 6; i++) {
             direction(seed, i, 0.0, D);
             FireMesh.ray(sink, x, y, z, D[0], D[1], D[2], size * (0.6 + 1.2 * ease(t)) * (0.6 + 0.4 * FireMesh.rand(seed, 30 + i)), size * 0.06, 0,
@@ -102,6 +104,7 @@ public final class LightArt {
         double pulse = 1.0 + 0.12 * Math.sin(age * 2.4);
         glow(sink, x, y, z, (0.6 + 1.8 * c) * pulse, 0xFFE070, 0.5 + 0.2 * c);
         light(sink, x, y, z, r * pulse, 0, 1, 0, 0.0, 1.0, 1.0, age * 2.0, seed);
+        star(sink, x, y, z, (0.35 + 1.1 * c) * pulse, age * 0.08, 0.9);
         for (int k = 0; k < 6; k++) {
             direction(seed + (int) (age / 4.0), k, 0.0, D);
             double flick = 0.7 + 0.3 * Math.sin(age * 3.1 + k);
@@ -144,6 +147,7 @@ public final class LightArt {
         FireMesh.tube(sink, ax, ay, az, bx, by, bz, width * 1.05 * thin, width * 0.95 * thin, 0xFFE05E, 0xFFC830, 0xFFB020, 0.0, 0.4, 0.18, age,
             seed + 1);
         glow(sink, ax, ay, az, width * 3.5 * thin, 0xFFF0A0, 0.7);
+        star(sink, ax, ay, az, (1.0 + width) * thin, 0.25 + age * 0.03, 1.0 - t);
         // rings racing out along it
         for (int k = 0; k < 6; k++) {
             double along = ((age * 6.0 + k * len / 6.0) % len);
@@ -290,6 +294,7 @@ public final class LightArt {
         double pulse = 1.0 + 0.1 * Math.sin(age * 2.0);
         glow(sink, x, y, z, (0.8 + 1.6 * g) * pulse, 0xFFE070, 0.65);
         light(sink, x, y, z, (0.15 + 0.3 * g) * pulse, 0, 1, 0, 0.0, 1.0, 1.0, age * 2.0, seed);
+        star(sink, x, y, z, (0.8 + 1.4 * g) * pulse, age * 0.06, 1.0);
         for (int k = 0; k < 8; k++) {
             direction(seed + (int) (age / 3.0), k, 0.0, D);
             FireMesh.ray(sink, x, y, z, D[0], D[1], D[2], (0.6 + 1.6 * g) * (0.7 + 0.3 * Math.sin(age * 2.7 + k)), 0.04, 0, 0.0, 0xFFF8D0, 0.85);
@@ -502,6 +507,149 @@ public final class LightArt {
             0.55 * (1.0 - t));
         FireMesh.arc(sink, x, y, z, ux, uy, uz, radius * (1.0 + 0.1 * t), radius * 0.22 * (1.0 - t), start, sweep * open, 0.0, 0xFFFFFF,
             0.95 * (1.0 - t));
+    }
+
+    // ------------------------------------------------------------------------------------------------------ 2.9.6: going as light (Z)
+
+    /**
+     * 2.9.6: Egghead's star of light, the four-pointed glint that sits on every point of Kizaru's light (on his fingertip, where his light
+     * is reflected, round his body as it turns to light): two long thin rays crossed square to the eye, two short ones between them,
+     * {@code size} the long rays' length, turned {@code spin} radians in the face of the eye.
+     */
+    public static void star(FireMesh.Sink sink, double x, double y, double z, double size, double spin, double alpha) {
+        double d = Math.sqrt(x * x + y * y + z * z);
+        size = Math.min(size, d * 0.45); // close to the eye (a fingertip in first person) it stays a glint, never fills the view
+        if (d < 0.4 || alpha < 0.01 || size < 0.02) {
+            return;
+        }
+        double vx = x / d;
+        double vy = y / d;
+        double vz = z / d;
+        // the eye's right and up at the star
+        double rx = -vz;
+        double rz = vx;
+        double rl = Math.sqrt(rx * rx + rz * rz);
+        if (rl < 1.0E-4) {
+            rx = 1.0;
+            rz = 0.0;
+            rl = 1.0;
+        }
+        rx /= rl;
+        rz /= rl;
+        double ux = -rz * vy;
+        double uy = rz * vx - rx * vz;
+        double uz = rx * vy;
+        double c = Math.cos(spin);
+        double s = Math.sin(spin);
+        glow(sink, x, y, z, size * 0.32, 0xFFF0A0, 0.55 * alpha);
+        for (int k = 0; k < 8; k++) {
+            double a = k * Math.PI / 4.0;
+            double ca = Math.cos(a) * c - Math.sin(a) * s;
+            double sa = Math.sin(a) * c + Math.cos(a) * s;
+            double ox = rx * ca + ux * sa;
+            double oy = uy * sa;
+            double oz = rz * ca + uz * sa;
+            double length = size * (k % 2 == 1 ? 0.24 : k % 4 == 0 ? 1.0 : 0.78);
+            double width = size * (k % 2 == 1 ? 0.04 : 0.075);
+            FireMesh.ray(sink, x, y, z, ox, oy, oz, length * 1.12, width * 2.6, 0, 0.0, 0xFFD040, 0.5 * alpha);
+            FireMesh.ray(sink, x, y, z, ox, oy, oz, length, width, 0, 0.0, 0xFFFFFF, alpha);
+        }
+    }
+
+    /**
+     * 2.9.6: the body as light, going along ({@code wx}, {@code wy}, {@code wz}) (unit), its middle at ({@code x}..): a white-hot head
+     * drawn out along its way in a gold glow, a star of light on it, and rings of light thrown off behind it one after another (as Kizaru
+     * flies at Egghead, rings bursting from his heels). {@code time} in ticks.
+     */
+    public static void head(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double time, int seed) {
+        light(sink, x, y, z, 0.3, wx, wy, wz, 0.6, 1.0, 1.0, time, seed);
+        glow(sink, x, y, z, 0.7, 0xFFFFF0, 0.8);
+        glow(sink, x, y, z, 1.9, 0xFFE070, 0.5);
+        star(sink, x, y, z, 2.3, time * 0.12, 1.0);
+        for (int k = 0; k < 3; k++) {
+            double age = (time + k * 3.0) % 9.0;
+            double t = age / 9.0;
+            double back = 0.6 + 3.4 * t;
+            FireMesh.ring(sink, x - wx * back, y - wy * back, z - wz * back, wx, wy, wz, 0.4 + 1.2 * t, 0.34 * (1.0 - t) + 0.06, -0.2, 0xFFFFFF,
+                0.95 * (1.0 - t));
+            FireMesh.ring(sink, x - wx * back, y - wy * back, z - wz * back, wx, wy, wz, 0.4 + 1.2 * t, 0.6 * (1.0 - t) + 0.1, -0.2, 0xFFD040,
+                0.35 * (1.0 - t));
+        }
+    }
+
+    /**
+     * 2.9.6: the way the body went as light through {@code points} (x, y, z each, newest first, eye-centred; the newest is the head):
+     * a white-hot core in a gold sheath, narrowing into the head (no blunt end at it) and thinning away to nothing at its oldest end.
+     */
+    public static void ribbon(FireMesh.Sink sink, double[] points, int count, double width, double alpha) {
+        for (int i = 0; i + 1 < count; i++) {
+            double t0 = i / (double) (count - 1);
+            double t1 = (i + 1) / (double) (count - 1);
+            double s0 = (1.0 - t0) * (i == 0 ? 0.15 : 1.0);
+            double s1 = 1.0 - t1;
+            double ax = points[i * 3];
+            double ay = points[i * 3 + 1];
+            double az = points[i * 3 + 2];
+            double bx = points[i * 3 + 3];
+            double by = points[i * 3 + 4];
+            double bz = points[i * 3 + 5];
+            if ((ax - bx) * (ax - bx) + (ay - by) * (ay - by) + (az - bz) * (az - bz) < 1.0E-6) {
+                continue;
+            }
+            FireMesh.tube(sink, ax, ay, az, bx, by, bz, width * 0.3 * s0, width * 0.3 * s1, 0xFFFFFF, 0xFFF9D6, 0xFFEF9A, 0.3,
+                alpha * (1.0 - t0 * 0.5), 0.0, 0.0, 7);
+            FireMesh.tube(sink, ax, ay, az, bx, by, bz, width * s0, width * s1, 0xFFE05E, 0xFFC830, 0xFFB020, 0.0, alpha * 0.4 * (1.0 - t0), 0.0,
+                0.0, 8);
+        }
+    }
+
+    /**
+     * 2.9.6: one's own body as light, seen from inside it (first person): streaks of light rushing past round the view, the way the
+     * body goes ({@code wx}, {@code wy}, {@code wz}, unit), eye-centred; {@code time} in ticks. Twelve thin streaks, cheap.
+     */
+    public static void rush(FireMesh.Sink sink, double wx, double wy, double wz, double time, int seed) {
+        FireMesh.basis(wx, wy, wz, B);
+        for (int k = 0; k < 16; k++) {
+            double life = 3.0;
+            double t = ((time + FireMesh.rand(seed, k) * life) % life) / life;
+            double a = FireMesh.rand(seed, 20 + k) * Math.PI * 2.0;
+            double r = 1.3 + 1.6 * FireMesh.rand(seed, 40 + k);
+            double ahead = 9.0 - 14.0 * t;
+            double ox = (B[0] * Math.cos(a) + B[3] * Math.sin(a)) * r;
+            double oy = (B[1] * Math.cos(a) + B[4] * Math.sin(a)) * r;
+            double oz = (B[2] * Math.cos(a) + B[5] * Math.sin(a)) * r;
+            FireMesh.streak(sink, wx * ahead + ox, wy * ahead + oy, wz * ahead + oz, -wx, -wy, -wz, 4.0, 0.035, 0xFFD040,
+                0.85 * Math.sin(Math.PI * t));
+        }
+    }
+
+    /** How long a reflection, or the body turning into light and back, shows (ticks). */
+    public static final double REFLECT_LIFE = 10.0;
+
+    /**
+     * 2.9.6: the light reflected at ({@code x}..) off a face turned toward ({@code nx}, {@code ny}, {@code nz}) (unit): as the light goes
+     * off Egghead's walls, a ring of light lying on the face and opening out, a gold ring inside it, a star and a flash; {@code age} ticks.
+     */
+    public static void reflect(FireMesh.Sink sink, double x, double y, double z, double nx, double ny, double nz, double size, double age, int seed) {
+        if (age < 0.0 || age > REFLECT_LIFE) {
+            return;
+        }
+        double t = age / REFLECT_LIFE;
+        double fade = 1.0 - t;
+        FireMesh.ring(sink, x, y, z, nx, ny, nz, size * (0.6 + 1.9 * ease(t * 1.4)), size * 0.32 * fade + 0.04, 0.0, 0xFFFFFF, 0.9 * fade);
+        FireMesh.ring(sink, x, y, z, nx, ny, nz, size * (0.3 + 1.0 * ease(t * 1.6)), size * 0.18 * fade + 0.03, 0.05, 0xFFD040, 0.75 * fade);
+        star(sink, x, y, z, size * 2.4 * (0.55 + 0.45 * ease(age / 1.5)) * (1.0 - 0.5 * t), age * 0.04, fade);
+        glow(sink, x, y, z, size * 1.5 * fade, 0xFFF0A0, 0.6 * fade);
+    }
+
+    /** 2.9.6: the body turning into light (Z, a dash) or back: the flash, a star over it. */
+    public static void flare(FireMesh.Sink sink, double x, double y, double z, double size, double age, int seed) {
+        if (age < 0.0 || age > REFLECT_LIFE) {
+            return;
+        }
+        double fade = 1.0 - age / REFLECT_LIFE;
+        impact(sink, x, y, z, size, age, seed);
+        star(sink, x, y, z, size * 1.8 * (0.5 + 0.5 * ease(age / 1.2)) * fade, 0.3 + age * 0.05, fade);
     }
 
     // ------------------------------------------------------------------------------------------------------ trails

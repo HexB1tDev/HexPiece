@@ -29,10 +29,10 @@ public final class PikaKit extends FruitKit {
     public static final FruitMove LASER = new FruitMove("Laser", "[RMB]", 0, "pika_laser",
         "As at Sabaody and Marineford: a finger pointed and a laser out of its tip that blows up where it strikes. Hold to gather the"
             + " light at the fingertip and let go a beam that burns through everything in its way.");
-    public static final FruitMove YATA = new FruitMove("Yata no Kagami", "[Z]", 0, "pika_yata",
-        "As at Egghead: light formed between the hands, and you go along it as light at once. It is reflected off whatever it meets"
-            + " glancingly, ground, walls and the sea (skimmed off water it throws you up into the air), up to three times, and stops"
-            + " beside whoever is on its way. Sneak to go straight where you look. Three uses that come back on their own.");
+    public static final FruitMove YATA = new FruitMove("Yata no Kagami", "[Z] hold", 0, "pika_yata",
+        "As at Egghead: you become light itself and go as a beam where you look, reflected off everything it meets, every block at any"
+            + " angle and the sea (thrown at the water, it comes back up off it), striking whoever it passes through. Let go and you are a"
+            + " body again where the light is, still going with some of its speed. Three uses that come back on their own.");
     public static final FruitMove YASAKANI = new FruitMove("Yasakani no Magatama", "[X] hold", 0, "pika_yasakani",
         "Up into the air, arms crossed, and both hands loose a torrent of light bullets that blow up whatever they touch, over the whole"
             + " ground where you look for as long as you hold it. Sneak to bring it all down on one.");

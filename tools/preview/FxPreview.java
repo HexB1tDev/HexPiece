@@ -64,6 +64,70 @@ public final class FxPreview {
     record Quad(double[] xyz, int[] argb, double far) {
     }
 
+    /**
+     * 2.9.6: Z held, {@code tt} ticks in: the light off where it began, down onto the ground (its middle 0.9 over it, as the body's),
+     * reflected up off it, at PikaMoves.LIGHT_SPEED blocks a tick; its ribbon (16 ticks, as PikaFx keeps it), its head, the flash where
+     * the body became light, the reflection where it met the ground.
+     */
+    static void zpath(FireMesh.Sink sink, double[] eye, double tt) {
+        double[][] corners = {{-9, 3.4, 2}, {-5, 0.9, 8}, {7, 8.4, 26}};
+        double speed = com.hexhaki.piece.server.PikaMoves.LIGHT_SPEED;
+        double[] pts = new double[16 * 3];
+        int count = 0;
+        for (int i = 0; i < 16 && tt - i >= 0; i++) {
+            double[] q = along(corners, (tt - i) * speed);
+            pts[i * 3] = q[0] - eye[0];
+            pts[i * 3 + 1] = q[1] - eye[1];
+            pts[i * 3 + 2] = q[2] - eye[2];
+            count++;
+        }
+        if (count >= 2) {
+            com.hexhaki.piece.pika.LightArt.ribbon(sink, pts, count, 0.8, 1.0);
+        }
+        double[] h = along(corners, tt * speed);
+        double[] h0 = along(corners, Math.max(0.0, tt * speed - 0.5));
+        double wx = h[0] - h0[0];
+        double wy = h[1] - h0[1];
+        double wz = h[2] - h0[2];
+        double wl = Math.max(1.0E-6, Math.sqrt(wx * wx + wy * wy + wz * wz));
+        com.hexhaki.piece.pika.LightArt.head(sink, h[0] - eye[0], h[1] - eye[1], h[2] - eye[2], wx / wl, wy / wl, wz / wl, tt, 3);
+        com.hexhaki.piece.pika.LightArt.flare(sink, corners[0][0] - eye[0], corners[0][1] - eye[1], corners[0][2] - eye[2], 1.6, tt, 4);
+        double travelled = 0.0;
+        for (int c = 1; c + 1 < corners.length; c++) {
+            travelled += dist(corners[c - 1], corners[c]);
+            double age = tt - travelled / speed;
+            double[] in = unit(corners[c - 1], corners[c]);
+            double[] out = unit(corners[c], corners[c + 1]);
+            double[] n = {out[0] - in[0], out[1] - in[1], out[2] - in[2]};
+            double nl = Math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+            // where the light met the ground: under the body's middle
+            com.hexhaki.piece.pika.LightArt.reflect(sink, corners[c][0] - eye[0], corners[c][1] - 0.88 - eye[1], corners[c][2] - eye[2], n[0] / nl,
+                n[1] / nl, n[2] / nl, 1.0, age, 5 + c);
+        }
+    }
+
+    static double dist(double[] a, double[] b) {
+        return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
+    }
+
+    static double[] unit(double[] a, double[] b) {
+        double d = dist(a, b);
+        return new double[] {(b[0] - a[0]) / d, (b[1] - a[1]) / d, (b[2] - a[2]) / d};
+    }
+
+    static double[] along(double[][] corners, double s) {
+        for (int c = 0; c + 1 < corners.length; c++) {
+            double d = dist(corners[c], corners[c + 1]);
+            if (s <= d || c + 2 == corners.length) {
+                double f = Math.min(1.0, s / d);
+                return new double[] {corners[c][0] + (corners[c + 1][0] - corners[c][0]) * f, corners[c][1] + (corners[c + 1][1] - corners[c][1]) * f,
+                    corners[c][2] + (corners[c + 1][2] - corners[c][2]) * f};
+            }
+            s -= d;
+        }
+        return corners[corners.length - 1];
+    }
+
     static BufferedImage render(String shot) {
         String[] halves = shot.split("\\|");
         String[] p = halves[0].split(":");
@@ -83,6 +147,12 @@ public final class FxPreview {
         }
         // fp:pitch[:aimAhead]: first person, as the game draws it: the eye at 1.62 over the feet looking along +z, the own dragon not
         // drawn, the fire from under the middle of the view (UoFx.mouthWay) aimed onto the crosshair's point aimAhead blocks out
+        // 2.9.6: e:yaw:pitch:dist:tx:ty:tz: the camera round a point, no dragon (the Light fruit's shots)
+        boolean bare = p[0].equals("e");
+        if (bare) {
+            p = new String[] {"g", "2", "1.0", "0", "0", "0", p[1], p[2], p[3], p[4], p[5], p[6]};
+            DragonPreview.hideDragon = true;
+        }
         boolean fp = p[0].equals("fp");
         double fpAhead = fp && p.length > 2 ? Double.parseDouble(p[2]) : 30.0;
         if (fp) {
@@ -271,6 +341,25 @@ public final class FxPreview {
                     sink.quad(q, argb);
                 };
                 com.hexhaki.piece.pika.LightArt.blade(turned, 2.6, 0.032, 0.5);
+            }
+            case "zpath" -> zpath(sink, eye, Double.parseDouble(move[1]));
+            case "rush" -> com.hexhaki.piece.pika.LightArt.rush(sink, look[0], look[1], look[2], Double.parseDouble(move[1]), 9);
+            case "star" -> com.hexhaki.piece.pika.LightArt.star(sink, -eye[0], 1.5 - eye[1], 6.0 - eye[2], Double.parseDouble(move[1]), 0.0, 1.0);
+            case "reflect" -> com.hexhaki.piece.pika.LightArt.reflect(sink, -eye[0], 0.02 - eye[1], 10.0 - eye[2], 0, 1, 0, 1.0,
+                Double.parseDouble(move[1]), 5);
+            case "wallreflect" -> com.hexhaki.piece.pika.LightArt.reflect(sink, -eye[0], 1.5 - eye[1], 10.0 - eye[2], 0, 0, -1, 1.0,
+                Double.parseDouble(move[1]), 5);
+            case "flare" -> com.hexhaki.piece.pika.LightArt.flare(sink, -eye[0], 1.0 - eye[1], 8.0 - eye[2], 1.6, Double.parseDouble(move[1]), 5);
+            case "head" -> {
+                double tt = Double.parseDouble(move[1]);
+                double[] pts = new double[16 * 3];
+                for (int i = 0; i < 16; i++) {
+                    pts[i * 3] = -3.0 + tt * 0.3 - i * 3.0 - eye[0];
+                    pts[i * 3 + 1] = 1.5 - eye[1];
+                    pts[i * 3 + 2] = 8.0 - eye[2];
+                }
+                com.hexhaki.piece.pika.LightArt.ribbon(sink, pts, 16, 0.8, 1.0);
+                com.hexhaki.piece.pika.LightArt.head(sink, pts[0], pts[1], pts[2], 1, 0, 0, tt, 3);
             }
             case "trail" -> {
                 double[] pts = new double[20 * 3];
