@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "pika_stream_end",
- "author": "HexPiece 2.1.1",
+ "author": "HexPiece 2.9.0",
  "description": "Pika Pika: out of the stream of light, upright again.",
  "emote": {
   "beginTick": 0,
@@ -87,27 +87,6 @@
     "easing": "constant",
     "torso": {
      "bend": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "pitch": -56.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "roll": 0.0
     }
    },
    {
@@ -297,27 +276,6 @@
     "easing": "inoutsine",
     "torso": {
      "bend": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
     }
    },
    {

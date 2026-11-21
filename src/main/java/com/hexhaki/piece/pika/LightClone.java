@@ -115,19 +115,35 @@ public final class LightClone {
         }
     }
 
-    /** How far ahead of the fist the guard sits (blocks): the hand closes on the middle of the grip. */
-    public static final double GUARD = 0.24;
+    /**
+     * How far ahead of the fist the guard sits (blocks). 2.9.0 (the owner: "The sword grabbing is still broken in third person because
+     * you're grabbing it way too up"): the hand closes at the bottom of the grip, just over its end (0.24 before: the hand under the
+     * guard and most of the grip sticking out below it); LightArt.blade's grip runs 0.8 back from the guard.
+     */
+    public static final double GUARD = 0.66;
 
     /** Ama no Murakumo in the right hand: the blade out of the front of the fist, the grip through it, the guard just ahead of it. */
-    static void sword(FireMesh.Sink glow, float[][] pose, StyleShow.Place place, double alpha, double shimmer) {
+    public static void sword(FireMesh.Sink glow, float[][] pose, StyleShow.Place place, double alpha, double shimmer) {
         double[] fist = new double[3];
         double[] front = new double[3];
         double[] elbow = new double[3];
         place.put(StyleRig.limb(pose, StyleRig.RIGHT_ARM, 0.0, 0.967, 0.0), fist);
         place.put(StyleRig.limb(pose, StyleRig.RIGHT_ARM, 0.0, 0.967, -2.0), front);
         place.put(StyleRig.limb(pose, StyleRig.RIGHT_ARM, 0.0, 0.55, 0.0), elbow);
-        double[] blade = unit(front[0] - fist[0], front[1] - fist[1], front[2] - fist[2]);
+        sword(glow, fist, front, elbow, alpha, shimmer);
+    }
+
+    /**
+     * 2.9.0: Ama no Murakumo held by a fist already placed: its middle, a point out of its front (pixels of the arm's frame: -2 in z) and
+     * the elbow, eye-relative (client/FirstPersonLight places them in the view).
+     */
+    public static void sword(FireMesh.Sink glow, double[] fist, double[] front, double[] elbow, double alpha, double shimmer) {
+        double[] out = unit(front[0] - fist[0], front[1] - fist[1], front[2] - fist[2]);
         double[] along = unit(fist[0] - elbow[0], fist[1] - elbow[1], fist[2] - elbow[2]);
+        // 2.9.0: out of the front of the fist, leaning LightArtGrip.TILT on toward the line of the forearm (as THIRD_PERSON_GRIP turns it)
+        double tilt = Math.toRadians(LightArt.LightArtGrip.TILT);
+        double[] blade = unit(out[0] * Math.cos(tilt) + along[0] * Math.sin(tilt), out[1] * Math.cos(tilt) + along[1] * Math.sin(tilt),
+            out[2] * Math.cos(tilt) + along[2] * Math.sin(tilt));
         held(glow, fist, blade, along, LightArt.BLADE_LENGTH, LightArt.BLADE_WIDTH, alpha, shimmer);
     }
 

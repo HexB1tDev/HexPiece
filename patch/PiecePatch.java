@@ -879,6 +879,13 @@ public final class PiecePatch implements Opcodes {
         if (hooks != 1) {
             throw new AssertionError("expected one setFirstPersonConfiguration in HakiAnimations.playRemote, found " + hooks);
         }
+        // 2.9.0: every clip a player is told to play goes past PieceHooks.played(id, name) first (no branch: no frame needed), so the
+        // client knows which of the Light fruit's moves each player is in and since when (its first person, its fingertip)
+        InsnList told = new InsnList();
+        told.add(new VarInsnNode(ILOAD, 0));
+        told.add(new VarInsnNode(ALOAD, 1));
+        told.add(new MethodInsnNode(INVOKESTATIC, HOOKS, "played", "(ILjava/lang/String;)V", false));
+        method.instructions.insert(told);
     }
 
     /** 2.7.1: the quick slots' letters ({@code Binds.DEFAULT_KEYS}, {@code HAKI_KEYS}) as keyDefaults sets the keys: M -> H, N -> V, H -> X. */

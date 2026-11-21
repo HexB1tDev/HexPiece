@@ -42,7 +42,8 @@ public final class PikaFx {
     private static long clock;
     private static boolean kitAdded;
 
-    record Line(Vec3 from, Vec3 to, double width, long born, int kind) {
+    /** 2.9.0: and whose (the laser's and the beam's leave from that player's fingertip as it is every frame). */
+    record Line(Vec3 from, Vec3 to, double width, long born, int kind, int user) {
     }
 
     record Spot(Vec3 at, Vec3 dir, double size, int step, long born, int kind) {
@@ -104,12 +105,15 @@ public final class PikaFx {
         Vec3 at = new Vec3(m.x(), m.y(), m.z());
         Vec3 a = new Vec3(m.ax(), m.ay(), m.az());
         switch (m.kind()) {
-            case PikaMoves.LASER -> LINES.add(new Line(at, a, m.size(), clock, PikaMoves.LASER));
+            case PikaMoves.LASER -> LINES.add(new Line(at, a, m.size(), clock, PikaMoves.LASER, m.user()));
             case PikaMoves.BEAM -> {
-                LINES.add(new Line(at, a, m.size(), clock, PikaMoves.BEAM));
+                LINES.add(new Line(at, a, m.size(), clock, PikaMoves.BEAM, m.id() == 1 ? -1 : m.user()));
                 motes(a, 18, 0.5);
             }
-            case PikaMoves.CHARGE_ON -> CHARGES.put(m.user(), clock);
+            case PikaMoves.CHARGE_ON -> {
+                CHARGES.put(m.user(), clock);
+                held(m.user(), CHARGES, 1.0F, 1.4);
+            }
             case PikaMoves.CHARGE_OFF -> CHARGES.remove(m.user());
             case PikaMoves.BURST -> {
                 SPOTS.add(new Spot(at, a, m.size(), 0, clock, PikaMoves.BURST));
@@ -123,21 +127,30 @@ public final class PikaFx {
             }
             case PikaMoves.YATA_FORM -> FORMS.put(m.user(), clock);
             case PikaMoves.YATA_PATH -> {
-                LINES.add(new Line(at, a, 1.0, clock, PikaMoves.YATA_PATH));
+                LINES.add(new Line(at, a, 1.0, clock, PikaMoves.YATA_PATH, -1));
                 FORMS.remove(m.user());
                 motes(a.m_82520_(0, 1.0, 0), 10, 0.3);
             }
             case PikaMoves.VOLLEY_ON -> VOLLEYS.put(m.user(), clock);
             case PikaMoves.VOLLEY_OFF -> VOLLEYS.remove(m.user());
             case PikaMoves.BEAD -> BEADS.add(new Bead(at, a, Math.max(1, m.ticks()), m.size(), clock, m.id()));
-            case PikaMoves.SWORD_ON -> SWORDS.put(m.user(), clock + m.ticks());
+            case PikaMoves.SWORD_ON -> {
+                SWORDS.put(m.user(), clock + m.ticks());
+                // 2.9.0: Ama no Murakumo hums while it is out (a web recording, round and round)
+                int id = m.user();
+                com.hexhaki.piece.client.LoopSound.play(com.hexhaki.piece.pika.PikaSounds.HUM, entity(id), 0.35F, 1.0F, true, true, 1.0,
+                    () -> sword(id));
+            }
             case PikaMoves.SWORD_OFF -> SWORDS.remove(m.user());
             case PikaMoves.SLASH -> CUTS.add(new Cut(at, a.m_82541_(), m.bx(), m.by(), m.bz(), clock));
             case PikaMoves.WAVE -> WAVES.add(new Wave(at, a, m.ticks(), m.size(), clock));
-            case PikaMoves.KICK_CHARGE_ON -> KICK_CHARGES.put(m.user(), clock);
+            case PikaMoves.KICK_CHARGE_ON -> {
+                KICK_CHARGES.put(m.user(), clock);
+                held(m.user(), KICK_CHARGES, 0.8F, 0.5);
+            }
             case PikaMoves.KICK_CHARGE_OFF -> KICK_CHARGES.remove(m.user());
             case PikaMoves.LIGHT_KICK -> {
-                LINES.add(new Line(at, a, 1.4, clock, PikaMoves.YATA_PATH));
+                LINES.add(new Line(at, a, 1.4, clock, PikaMoves.YATA_PATH, -1));
                 if (m.id() >= 0) {
                     KICKED.add(new Kicked(m.id(), clock));
                     SPOTS.add(new Spot(a.m_82520_(0, 1.0, 0), new Vec3(m.bx(), m.by(), m.bz()), 2.5 + 2.0 * m.size(), 8, clock + 1,
@@ -147,7 +160,7 @@ public final class PikaFx {
             case PikaMoves.CLONE -> CLONES.add(new Clone(at, a, m.id(), m.ticks(), clock, m.user()));
             case PikaMoves.DODGE -> SPOTS.add(new Spot(at, Vec3.f_82478_, 1.2, 0, clock, PikaMoves.DODGE));
             case PikaMoves.DIVE -> {
-                LINES.add(new Line(a, at, 1.2, clock, PikaMoves.YATA_PATH));
+                LINES.add(new Line(a, at, 1.2, clock, PikaMoves.YATA_PATH, -1));
                 SPOTS.add(new Spot(at, Vec3.f_82478_, m.size(), 0, clock + 1, PikaMoves.BURST));
             }
             case PikaMoves.STREAM_ON -> STREAMS.put(m.user(), clock);
@@ -157,8 +170,37 @@ public final class PikaFx {
         }
     }
 
+    static Entity entity(int id) {
+        ClientLevel level = Minecraft.m_91087_().f_91073_;
+        return level == null ? null : level.m_6815_(id);
+    }
+
+    /** 2.9.0: when the light held at the fingertip or in the leg goes from gathering to humming (ticks). */
+    static final int HOLD_AT = 30;
+
+    /**
+     * 2.9.0 (the owner: "The sounds are atrocious"): light gathering ({@code in}: CHARGES or KICK_CHARGES) is heard as it gathers (a web
+     * recording's rise), then held, humming, until it is let go (tick, HOLD_AT), fading out then, never cut off.
+     */
+    static void held(int id, Map<Integer, Long> in, float pitch, double up) {
+        Long since = in.get(id);
+        com.hexhaki.piece.client.LoopSound.play(com.hexhaki.piece.pika.PikaSounds.CHARGE, entity(id), 0.9F, pitch, false, false, up,
+            () -> since.equals(in.get(id)));
+    }
+
+    static void hum(Map<Integer, Long> in, float pitch, double up) {
+        for (Map.Entry<Integer, Long> e : in.entrySet()) {
+            if (clock - e.getValue() == HOLD_AT) {
+                int id = e.getKey();
+                Long since = e.getValue();
+                com.hexhaki.piece.client.LoopSound.play(com.hexhaki.piece.pika.PikaSounds.CHARGE_HOLD, entity(id), 0.7F, pitch, true, true,
+                    up, () -> since.equals(in.get(id)));
+            }
+        }
+    }
+
     /** Whether {@code id}'s sword of light is out (PikaClient draws it in the hand). */
-    static boolean sword(int id) {
+    public static boolean sword(int id) {
         Long until = SWORDS.get(id);
         return until != null && until > clock;
     }
@@ -186,7 +228,7 @@ public final class PikaFx {
             return;
         }
         LINES.removeIf(l -> clock - l.born > (l.kind == PikaMoves.BEAM ? LightArt.BEAM_LIFE : LightArt.PATH_LIFE) + 2);
-        SPOTS.removeIf(s -> clock - s.born > (s.kind == PikaMoves.BURST ? LightArt.BURST_LIFE : 9) + 1);
+        SPOTS.removeIf(s -> clock - s.born > (s.kind == PikaMoves.BURST ? LightArt.burstLife(s.size) : 9) + 1);
         CUTS.removeIf(c -> clock - c.born > LightArt.SLASH_LIFE + 1);
         WAVES.removeIf(w -> clock - w.born > w.life + 2);
         CLONES.removeIf(c -> clock - c.born > CLONE_LIFE + 1);
@@ -236,6 +278,8 @@ public final class PikaFx {
                 }
             }
         }
+        hum(CHARGES, 1.0F, 1.4);
+        hum(KICK_CHARGES, 0.8F, 0.5);
         // light gathering in a leg or at a fingertip throws motes
         for (Map.Entry<Integer, Long> e : KICK_CHARGES.entrySet()) {
             if (level.m_6815_(e.getKey()) instanceof Player player) {
@@ -254,8 +298,19 @@ public final class PikaFx {
 
     // ------------------------------------------------------------------------------------------------------ where things are on a body
 
-    /** The right fingertip (as the server places it), at {@code partial}. */
+    /**
+     * The right fingertip at {@code partial}: 2.9.0, where the pose of the laser's clip puts it this frame (client/FirstPersonLight: in
+     * first person the arm drawn in the view, in third person the model's), else where the server places it.
+     */
     static Vec3 fingertip(Player player, float partial) {
+        Vec3 posed = com.hexhaki.piece.client.FirstPersonLight.fingertip(player, partial);
+        if (posed != null) {
+            return posed;
+        }
+        return serverTip(player, partial);
+    }
+
+    static Vec3 serverTip(Player player, float partial) {
         Vec3 look = player.m_20252_(partial);
         Vec3 side = look.m_82537_(new Vec3(0, 1, 0));
         side = side.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : side.m_82541_();
@@ -299,21 +354,70 @@ public final class PikaFx {
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = minecraft.m_91269_().m_110104_();
         RenderType type = RenderType.m_269166_();
-        SINK.buffer = buffers.m_6299_(type);
         SINK.matrix = pose.m_85850_().m_252922_();
         FireMesh.quality = Math.max(0.35, PieceFx.density());
         SKIN.buffers = buffers;
         com.hexhaki.piece.client.render.Bulk.read(pose.m_85850_(), SKIN.m, SKIN.n);
+        Vec3 cam = event.getCamera().m_90583_();
+        float partial = event.getPartialTick();
         try {
-            draw(level, event.getCamera().m_90583_(), event.getPartialTick());
+            // 2.9.0 (the owner: "The clones are not showing"): the game's buffer source has one shared builder for every type it holds no
+            // buffer of its own for; asking it for a clone's skin type ended the light's (debugQuads) batch and turned the builder to
+            // the skin's vertex format under the light's writer, whose next quad threw (a vertex short of the format's elements) and
+            // cleared every Light effect. So the clones' skins go first, each type ended before the next is asked for, their light kept
+            // aside (CLONE_LIGHT) and written with everything else's once the light's own type is the only one open.
+            CLONE_LIGHT.clear();
+            for (Clone c : CLONES) {
+                clone(level, c, cam, partial);
+                SKIN.end();
+            }
+            SINK.buffer = buffers.m_6299_(type);
+            CLONE_LIGHT.replay(SINK);
+            draw(level, cam, partial);
         } catch (RuntimeException failure) {
             com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: a Light fruit move could not be drawn", failure);
             clear();
         }
         SKIN.end();
-        buffers.m_109912_(type);
+        if (SINK.buffer != null) {
+            buffers.m_109912_(type);
+        }
         SINK.buffer = null;
     }
+
+    /** 2.9.0: quads kept aside (a clone's light, drawn before the light's type is open) and written later in the order they came. */
+    static final class Deferred implements FireMesh.Sink {
+        double[] xyz = new double[12 * 256];
+        int[] argb = new int[4 * 256];
+        int quads;
+
+        @Override
+        public void quad(double[] q, int[] c) {
+            if ((this.quads + 1) * 12 > this.xyz.length) {
+                this.xyz = java.util.Arrays.copyOf(this.xyz, this.xyz.length * 2);
+                this.argb = java.util.Arrays.copyOf(this.argb, this.argb.length * 2);
+            }
+            System.arraycopy(q, 0, this.xyz, this.quads * 12, 12);
+            System.arraycopy(c, 0, this.argb, this.quads * 4, 4);
+            this.quads++;
+        }
+
+        void replay(FireMesh.Sink to) {
+            double[] q = new double[12];
+            int[] c = new int[4];
+            for (int i = 0; i < this.quads; i++) {
+                System.arraycopy(this.xyz, i * 12, q, 0, 12);
+                System.arraycopy(this.argb, i * 4, c, 0, 4);
+                to.quad(q, c);
+            }
+        }
+
+        void clear() {
+            this.quads = 0;
+        }
+    }
+
+    static final Deferred CLONE_LIGHT = new Deferred();
 
     /** FireMesh's quads straight into the game's buffer, through the view. */
     static final class Writer implements FireMesh.Sink {
@@ -392,6 +496,16 @@ public final class PikaFx {
                 continue;
             }
             double age = clock - l.born + partial;
+            Vec3 from = l.from;
+            if (l.user >= 0 && (l.kind == PikaMoves.LASER || l.kind == PikaMoves.BEAM) && level.m_6815_(l.user) instanceof Player shooter) {
+                // 2.9.0 (the owner: "It's not on the, in front of the fist. It's just moving around. Like as I move around"): out of the
+                // fingertip as it is this frame, not where the server last had it
+                Vec3 tip = fingertip(shooter, partial);
+                from = tip;
+            }
+            if (from != l.from) {
+                l = new Line(from, l.to, l.width, l.born, l.kind, l.user);
+            }
             switch (l.kind) {
                 case PikaMoves.LASER -> LightArt.laser(SINK, l.from.f_82479_ - cx, l.from.f_82480_ - cy, l.from.f_82481_ - cz, l.to.f_82479_ - cx,
                     l.to.f_82480_ - cy, l.to.f_82481_ - cz, l.width, age, (int) l.born);
@@ -446,9 +560,6 @@ public final class PikaFx {
                 w.width * 0.35 * fade + 0.1, yaw - 1.2, 2.4 + Math.PI * 0.0, -0.6, 0xFFD040, 0.6 * fade);
             FireMesh.arc(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, way.f_82479_, way.f_82480_, way.f_82481_, w.width,
                 w.width * 0.15 * fade + 0.05, yaw - 1.2, 2.4, -0.6, 0xFFFFFF, 0.95 * fade);
-        }
-        for (Clone c : CLONES) {
-            clone(level, c, cam, partial);
         }
         for (Kicked k : KICKED) {
             if (k.count < 2) {
@@ -563,7 +674,7 @@ public final class PikaFx {
             Vec3 p = from.m_82549_(rise.m_82520_(0, 1.0, 0).m_82546_(from).m_82490_(t));
             if (!far(p, cam)) {
                 Vec3 v = rise.m_82546_(from);
-                LightArt.bullet(SINK, p.f_82479_ - cam.f_82479_, p.f_82480_ - cam.f_82480_, p.f_82481_ - cam.f_82481_, v.f_82479_ * 0.3, v.f_82480_ * 0.3,
+                LightArt.bullet(CLONE_LIGHT, p.f_82479_ - cam.f_82479_, p.f_82480_ - cam.f_82480_, p.f_82481_ - cam.f_82481_, v.f_82479_ * 0.3, v.f_82480_ * 0.3,
                     v.f_82481_ * 0.3, 0.6, age, c.index);
             }
             return;
@@ -589,7 +700,7 @@ public final class PikaFx {
                 }
                 float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample("pika_sword_walk", (float) ((age - ghost * 0.8) * 2.5 % 20.0));
                 double alpha = Math.min(1.0, (age - 4.0) / 1.5) * (ghost == 0 ? 1.0 : ghost == 1 ? 0.35 : 0.15);
-                com.hexhaki.piece.pika.LightClone.body(SKIN, SINK, pose, place(feet, cam, yaw), alpha, ghost == 0, shimmer);
+                com.hexhaki.piece.pika.LightClone.body(SKIN, CLONE_LIGHT, pose, place(feet, cam, yaw), alpha, ghost == 0, shimmer);
             }
             return;
         }
@@ -606,16 +717,16 @@ public final class PikaFx {
                 // the cut's arc round the clone's side axis (square to where it faces), as 2.7.8 swept it
                 double fl = Math.max(1.0E-6, Math.sqrt(face.f_82479_ * face.f_82479_ + face.f_82481_ * face.f_82481_));
                 double turn = Math.atan2(face.f_82479_, face.f_82481_);
-                LightArt.slash(SINK, stand.f_82479_ - cam.f_82479_, stand.f_82480_ + 1.0 - cam.f_82480_, stand.f_82481_ - cam.f_82481_,
+                LightArt.slash(CLONE_LIGHT, stand.f_82479_ - cam.f_82479_, stand.f_82480_ + 1.0 - cam.f_82480_, stand.f_82481_ - cam.f_82481_,
                     face.f_82481_ / fl, 0.0, -face.f_82479_ / fl, 1.8, turn - 1.3, 2.6, u);
             }
         } else {
             pose = com.hexhaki.piece.client.npc.StylePoser.sample("pika_sword_2", 8.0F);
             alpha = Math.max(0.0, 1.0 - (age - 22.0) / 4.0);
-            LightArt.burst(SINK, stand.f_82479_ - cam.f_82479_, stand.f_82480_ + 1.0 - cam.f_82480_, stand.f_82481_ - cam.f_82481_, 1.6, age - 22.0,
+            LightArt.burst(CLONE_LIGHT, stand.f_82479_ - cam.f_82479_, stand.f_82480_ + 1.0 - cam.f_82480_, stand.f_82481_ - cam.f_82481_, 1.6, age - 22.0,
                 c.index * 7 + (int) c.born);
         }
-        com.hexhaki.piece.pika.LightClone.body(SKIN, SINK, pose, place(stand, cam, yaw), alpha, true, shimmer);
+        com.hexhaki.piece.pika.LightClone.body(SKIN, CLONE_LIGHT, pose, place(stand, cam, yaw), alpha, true, shimmer);
     }
 
     /** Feet at {@code feet}, facing {@code yaw} (radians, the game's way), eye-relative. */

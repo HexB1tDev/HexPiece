@@ -1,8 +1,8 @@
 {
  "version": 3,
  "name": "pika_sword_idle",
- "author": "HexPiece 2.7.8",
- "description": "Pika Pika: Ama no Murakumo held low and ahead in the right hand, the left in its pocket.",
+ "author": "HexPiece 2.9.0",
+ "description": "Pika Pika: Ama no Murakumo held low at his side, pointed ahead, the right hand easy on the end of its grip.",
  "emote": {
   "beginTick": 0,
   "endTick": 40,
@@ -15,15 +15,92 @@
    {
     "tick": 0,
     "easing": "inoutsine",
-    "rightArm": {
-     "pitch": -28.0
+    "body": {
+     "x": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "body": {
+     "y": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "body": {
+     "z": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "body": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "body": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "body": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "body": {
+     "bend": 3.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "torso": {
+     "bend": 0.0
     }
    },
    {
     "tick": 0,
     "easing": "inoutsine",
     "rightArm": {
-     "yaw": 0.0
+     "pitch": -40.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "rightArm": {
+     "yaw": 10.0
     }
    },
    {
@@ -37,49 +114,98 @@
     "tick": 0,
     "easing": "inoutsine",
     "rightArm": {
-     "bend": -30.0
+     "bend": 0.0
     }
    },
    {
-    "tick": 0,
+    "tick": 20,
     "easing": "inoutsine",
-    "leftArm": {
-     "pitch": 10.0
+    "body": {
+     "x": 0.0
     }
    },
    {
-    "tick": 0,
+    "tick": 20,
     "easing": "inoutsine",
-    "leftArm": {
+    "body": {
+     "y": 0.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "body": {
+     "z": 0.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "body": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "body": {
      "yaw": 0.0
     }
    },
    {
-    "tick": 0,
+    "tick": 20,
     "easing": "inoutsine",
-    "leftArm": {
-     "roll": -9.0
+    "body": {
+     "roll": 0.0
     }
    },
    {
-    "tick": 0,
+    "tick": 20,
     "easing": "inoutsine",
-    "leftArm": {
-     "bend": -34.0
+    "body": {
+     "bend": 4.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "torso": {
+     "bend": 0.0
     }
    },
    {
     "tick": 20,
     "easing": "inoutsine",
     "rightArm": {
-     "pitch": -31.0
+     "pitch": -43.0
     }
    },
    {
     "tick": 20,
     "easing": "inoutsine",
     "rightArm": {
-     "yaw": 0.0
+     "yaw": 10.0
     }
    },
    {
@@ -93,49 +219,98 @@
     "tick": 20,
     "easing": "inoutsine",
     "rightArm": {
-     "bend": -30.0
+     "bend": 0.0
     }
    },
    {
-    "tick": 20,
+    "tick": 40,
     "easing": "inoutsine",
-    "leftArm": {
-     "pitch": 10.0
+    "body": {
+     "x": 0.0
     }
    },
    {
-    "tick": 20,
+    "tick": 40,
     "easing": "inoutsine",
-    "leftArm": {
+    "body": {
+     "y": 0.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "body": {
+     "z": 0.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "body": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "body": {
      "yaw": 0.0
     }
    },
    {
-    "tick": 20,
+    "tick": 40,
     "easing": "inoutsine",
-    "leftArm": {
-     "roll": -9.0
+    "body": {
+     "roll": 0.0
     }
    },
    {
-    "tick": 20,
+    "tick": 40,
     "easing": "inoutsine",
-    "leftArm": {
-     "bend": -34.0
+    "body": {
+     "bend": 3.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 40,
+    "easing": "inoutsine",
+    "torso": {
+     "bend": 0.0
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "rightArm": {
-     "pitch": -28.0
+     "pitch": -40.0
     }
    },
    {
     "tick": 40,
     "easing": "inoutsine",
     "rightArm": {
-     "yaw": 0.0
+     "yaw": 10.0
     }
    },
    {
@@ -149,35 +324,7 @@
     "tick": 40,
     "easing": "inoutsine",
     "rightArm": {
-     "bend": -30.0
-    }
-   },
-   {
-    "tick": 40,
-    "easing": "inoutsine",
-    "leftArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 40,
-    "easing": "inoutsine",
-    "leftArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 40,
-    "easing": "inoutsine",
-    "leftArm": {
-     "roll": -9.0
-    }
-   },
-   {
-    "tick": 40,
-    "easing": "inoutsine",
-    "leftArm": {
-     "bend": -34.0
+     "bend": 0.0
     }
    }
   ]

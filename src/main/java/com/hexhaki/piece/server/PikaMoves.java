@@ -8,6 +8,7 @@ import com.hexhaki.fruit.Fruits;
 import com.hexhaki.gameplay.HakiServerController;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CUoFx;
+import com.hexhaki.piece.pika.PikaSounds;
 import com.hexhaki.fx.Impact;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,7 +92,8 @@ public final class PikaMoves {
     static final double BEAM_RANGE = 90.0;
     static final int BEAM_FULL = 40;
     static final int TAP = 6;
-    static final int VOLLEY_MAX = 70;
+    static final int VOLLEY_MAX = 56;
+    static final int VOLLEY_EVERY = 2;
     static final int VOLLEY_WINDUP = 6;
     static final double VOLLEY_SPREAD = 8.0;
     static final int SWORD_TICKS = 400;
@@ -145,7 +147,8 @@ public final class PikaMoves {
     }
 
     static void sound(ServerPlayer player, Vec3 at, String name, float volume, float pitch) {
-        SoundEvent event = Fruits.sound(name);
+        // 2.9.0: the Light fruit's own web recordings (pika/PikaSounds), the original's sounds by their plain names otherwise
+        SoundEvent event = name.startsWith("piece.") ? com.hexhaki.piece.PieceSounds.event(name) : Fruits.sound(name);
         if (event != null) {
             player.m_9236_().m_6263_(null, at.f_82479_, at.f_82480_, at.f_82481_, event, SoundSource.PLAYERS, volume, pitch);
         }
@@ -341,7 +344,7 @@ public final class PikaMoves {
         s.kickAt = now;
         s.busyUntil = now + (step == 5 ? 8 : 5);
         animate(player, "pika_kick_" + step);
-        sound(player, player.m_20182_(), "whoosh_light", 0.9F, 1.3F + 0.1F * step);
+        sound(player, player.m_20182_(), PikaSounds.WHOOSH, 0.8F, 0.95F + 0.06F * step);
         Vec3 look = player.m_20154_();
         if (step < 5) {
             later(player, 2, () -> kick(player, step, look));
@@ -353,9 +356,9 @@ public final class PikaMoves {
             }
             later(player, 6, () -> {
                 Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(2.2));
-                int n = cone(player, 4.2, 55, 9.0F, player.m_20154_().m_82490_(2.2).m_82520_(0, 0.45, 0), true);
+                int n = cone(player, 4.2, 55, 5.0F, player.m_20154_().m_82490_(2.2).m_82520_(0, 0.45, 0), true);
                 fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, n > 0 ? 2 : 0, 6);
-                sound(player, at, n > 0 ? "impact_heavy" : "whoosh_heavy", 1.1F, 1.2F);
+                sound(player, at, n > 0 ? PikaSounds.HIT_HEAVY : PikaSounds.WHOOSH, 1.1F, 1.0F);
             });
         }
     }
@@ -364,10 +367,10 @@ public final class PikaMoves {
     static void kick(ServerPlayer player, int step, Vec3 look) {
         Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(1.9)).m_82520_(0, step == 4 ? -0.3 : -0.5, 0);
         Vec3 thrown = step == 4 ? new Vec3(look.f_82479_ * 0.3, 1.25, look.f_82481_ * 0.3) : look.m_82490_(step == 5 ? 0.25 : 0.7).m_82520_(0, 0.12, 0);
-        int n = cone(player, 3.8, 50, step == 5 ? 3.5F : 5.5F + step, thrown, step == 4);
+        int n = cone(player, 3.8, 50, step == 5 ? 2.0F : 2.5F + 0.5F * step, thrown, step == 4);
         fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, n > 0 ? 1 : 0, step);
         if (n > 0) {
-            sound(player, at, "impact_light", 0.9F, 1.3F);
+            sound(player, at, PikaSounds.HIT, 1.0F, 1.0F);
         }
     }
 
@@ -386,12 +389,12 @@ public final class PikaMoves {
         animate(player, "pika_dash_kick");
         travel(player, to, target);
         fx(player, YATA_PATH, 0, from, to, 0, 0, 0, 0, 0);
-        sound(player, to, "whoosh_heavy", 1.0F, 1.6F);
+        sound(player, to, PikaSounds.ZIP, 1.0F, 1.0F);
         later(player, 2, () -> {
-            int n = cone(player, 4.0, 55, 11.0F, player.m_20154_().m_82490_(2.0).m_82520_(0, 0.5, 0), true);
+            int n = cone(player, 4.0, 55, 5.0F, player.m_20154_().m_82490_(2.0).m_82520_(0, 0.5, 0), true);
             Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(1.8)).m_82520_(0, -0.4, 0);
             fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, n > 0 ? 2 : 0, 7);
-            sound(player, at, n > 0 ? "impact_heavy" : "whoosh_light", 1.1F, 1.1F);
+            sound(player, at, n > 0 ? PikaSounds.HIT_HEAVY : PikaSounds.WHOOSH, 1.1F, 1.0F);
         });
     }
 
@@ -411,9 +414,9 @@ public final class PikaMoves {
         player.f_19789_ = 0.0F;
         fx(player, DIVE, 0, land, from, 0, 0, 0, 4.5, 0);
         later(player, 1, () -> {
-            UoMoves.explode(player, (ServerLevel) player.m_9236_(), land, new Vec3(0, 1, 0), 4.5, 12.0F, 0, 1.6);
+            UoMoves.explode(player, (ServerLevel) player.m_9236_(), land, new Vec3(0, 1, 0), 4.5, 6.0F, 0, 1.6);
             Impact.quake((ServerLevel) player.m_9236_(), land, 18.0, 0.6F, 10);
-            sound(player, land, "slam", 1.3F, 1.2F);
+            sound(player, land, PikaSounds.EXPLODE, 1.3F, 1.15F);
         });
     }
 
@@ -472,16 +475,16 @@ public final class PikaMoves {
         s.cutAt = now;
         s.busyUntil = now + 6;
         animate(player, "pika_sword_" + step);
-        sound(player, player.m_20182_(), "slash", 0.9F, 1.2F + 0.08F * step);
+        sound(player, player.m_20182_(), PikaSounds.SWING, 0.9F, 0.95F + 0.05F * step);
         later(player, 2, () -> {
             Vec3 look = player.m_20154_();
-            int n = cone(player, 5.0, 70, 8.0F + step, look.m_82490_(step == 5 ? 1.4 : 0.6).m_82520_(0, 0.15, 0), step == 5);
+            int n = cone(player, 5.0, 70, 3.5F + 0.5F * step, look.m_82490_(step == 5 ? 1.4 : 0.6).m_82520_(0, 0.15, 0), step == 5);
             // the cut's crescent: across (1, 3), back across (2, 4), down through (5)
             Vec3 hips = player.m_20182_().m_82520_(0, 1.1, 0).m_82549_(look.m_82490_(0.6));
             Vec3 axis = step == 5 ? look.m_82537_(new Vec3(0, 1, 0)).m_82541_() : new Vec3(0, step % 2 == 0 ? -1 : 1, 0).m_82549_(look.m_82490_(0.3));
             fx(player, SLASH, 0, hips, axis, -Math.PI * 0.2 + Math.toRadians(-player.m_146908_()), Math.PI * 1.1, 3.0, n, step);
             if (n > 0) {
-                sound(player, hips, "slash", 1.0F, 0.9F);
+                sound(player, hips, PikaSounds.HIT, 1.0F, 0.9F);
             }
             if (step == 5) {
                 wave(player);
@@ -510,7 +513,7 @@ public final class PikaMoves {
                 for (LivingEntity body : foes(player, at, 2.6)) {
                     if (!struck.contains(body)) {
                         struck.add(body);
-                        hit(player, body, 12.0F, flat.m_82490_(1.0).m_82520_(0, 0.3, 0), true);
+                        hit(player, body, 6.0F, flat.m_82490_(1.0).m_82520_(0, 0.3, 0), true);
                     }
                 }
                 return this.age >= life || now - born > life + 2;
@@ -576,12 +579,13 @@ public final class PikaMoves {
             LivingEntity target = aimed(player, LASER_RANGE, 0.02);
             Vec3 to = target != null ? StyleCombat.middle(target) : point(player, LASER_RANGE);
             fx(player, LASER, 0, from, to, 0, 0, 0, 0.22, 0);
-            sound(player, from, "beam", 0.8F, 1.6F);
+            sound(player, from, PikaSounds.LASER, 1.0F, 1.0F);
             if (target != null) {
-                hit(player, target, 7.0F, player.m_20154_().m_82490_(0.4).m_82520_(0, 0.25, 0), false);
+                hit(player, target, 4.0F, player.m_20154_().m_82490_(0.4).m_82520_(0, 0.25, 0), false);
             }
-            UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, player.m_20154_(), 1.8, 4.0F, 0, 0.6);
-            sound(player, to, "impact_light", 0.9F, 1.5F);
+            UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, player.m_20154_(), 1.8, 2.5F, 0, 0.6);
+            fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 2.4, 0); // 2.9.0: a real explosion where it strikes
+            sound(player, to, PikaSounds.EXPLODE, 1.0F, 1.3F);
         });
     }
 
@@ -599,7 +603,7 @@ public final class PikaMoves {
         Vec3 to = point(player, BEAM_RANGE);
         double width = 0.7 + 1.3 * charge;
         fx(player, BEAM, 0, from, to, 0, 0, 0, width, 0);
-        sound(player, from, "beam", 1.6F, 0.8F);
+        sound(player, from, PikaSounds.BEAM, 2.0F, 1.0F);
         double length = to.m_82554_(from);
         Vec3 way = to.m_82546_(from).m_82541_();
         for (LivingEntity body : player.m_9236_().m_6443_(LivingEntity.class, UoMoves.box(from, to).m_82400_(width + 1.0),
@@ -609,12 +613,12 @@ public final class PikaMoves {
             if (along < 0 || along > length || rel.m_82546_(way.m_82490_(along)).m_82553_() > width + body.m_20205_() * 0.5) {
                 continue;
             }
-            hit(player, body, 12.0F + 22.0F * charge, look.m_82490_(1.2 + charge).m_82520_(0, 0.4, 0), true);
+            hit(player, body, 6.0F + 8.0F * charge, look.m_82490_(1.2 + charge).m_82520_(0, 0.4, 0), true);
         }
         double radius = 3.0 + 4.0 * charge;
-        UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, look, radius, 10.0F + 16.0F * charge, 0, 1.4 + 1.6 * charge);
+        UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, look, radius, 5.0F + 7.0F * charge, 0, 1.4 + 1.6 * charge);
         Impact.quake((ServerLevel) player.m_9236_(), to, radius * 4.0, (float) Math.min(1.0, radius / 6.0), 12);
-        sound(player, to, "slam", 1.6F, 1.0F);
+        sound(player, to, PikaSounds.EXPLODE, 2.2F, 0.9F);
     }
 
     // ------------------------------------------------------------------------------------------------------ Z: Yata no Kagami
@@ -639,7 +643,7 @@ public final class PikaMoves {
         s.busyUntil = now + 6;
         animate(player, "pika_yata");
         fx(player, YATA_FORM);
-        sound(player, player.m_20182_(), "stream", 0.8F, 1.8F);
+        sound(player, player.m_20182_(), PikaSounds.SPARKLE, 0.8F, 1.1F);
         later(player, 4, () -> {
             LivingEntity target = aimed(player, YATA_RANGE, 0.03);
             Vec3 from = player.m_20182_();
@@ -652,7 +656,7 @@ public final class PikaMoves {
             }
             travel(player, to, target);
             fx(player, YATA_PATH, 0, from, to, 0, 0, 0, 0, 0);
-            sound(player, to, "whoosh_heavy", 1.0F, 1.8F);
+            sound(player, to, PikaSounds.TRAVEL, 1.0F, 1.0F);
         });
     }
 
@@ -665,7 +669,7 @@ public final class PikaMoves {
         s.streamSince = now(player);
         animate(player, "pika_stream");
         fx(player, STREAM_ON);
-        sound(player, player.m_20182_(), "stream", 1.0F, 1.5F);
+        sound(player, player.m_20182_(), PikaSounds.TRAVEL, 1.0F, 1.1F);
     }
 
     static void stopStream(ServerPlayer player) {
@@ -695,7 +699,7 @@ public final class PikaMoves {
         s.seed = ++next;
         animate(player, "pika_yasakani");
         fx(player, VOLLEY_ON);
-        sound(player, player.m_20182_(), "stream", 1.0F, 1.6F);
+        sound(player, player.m_20182_(), PikaSounds.SPARKLE, 1.0F, 0.9F);
         // up into the air, as over Marineford
         player.m_20334_(player.m_20184_().f_82479_ * 0.3, 0.75, player.m_20184_().f_82481_ * 0.3);
         player.f_19864_ = true;
@@ -733,7 +737,12 @@ public final class PikaMoves {
         Vec3 centre = target != null ? StyleCombat.middle(target) : point(player, 50.0);
         double spread = target != null ? 1.4 : VOLLEY_SPREAD;
         ServerLevel level = (ServerLevel) player.m_9236_();
-        for (int i = 0; i < 3; i++) {
+        // 2.9.0 (the owner: "The X move is shooting countless projectiles. It's way too many"): one bullet every other tick (three a
+        // tick before: 210 over the 3.5 s), some 25 in all
+        if ((held - VOLLEY_WINDUP) % VOLLEY_EVERY != 0) {
+            return;
+        }
+        for (int i = 0; i < 1; i++) {
             int k = s.volleyBeads++;
             double a = level.m_213780_().m_188500_() * Math.PI * 2.0;
             double r = spread * Math.sqrt(level.m_213780_().m_188500_());
@@ -742,6 +751,7 @@ public final class PikaMoves {
             double length = way.m_82553_();
             int flight = Math.max(2, (int) Math.ceil(length / 3.2));
             fx(player, BEAD, k, hands, land, 0, 0, 0, target != null ? 0.55 : 0.7, flight);
+            sound(player, hands, PikaSounds.ZAP, 0.7F, 0.9F + level.m_213780_().m_188501_() * 0.25F);
             Vec3 step = way.m_82490_(1.0 / flight);
             LIVE.add(new UoMoves.Live() {
                 int age;
@@ -761,7 +771,7 @@ public final class PikaMoves {
                     }
                     this.at = wall.m_6662_() == HitResult.Type.BLOCK ? wall.m_82450_() : to;
                     if (end) {
-                        UoMoves.explode(player, level, this.at, step.m_82541_(), target != null ? 1.6 : 2.4, target != null ? 3.5F : 4.5F, 0, 0.55);
+                        UoMoves.explode(player, level, this.at, step.m_82541_(), target != null ? 1.6 : 2.2, target != null ? 1.2F : 2.0F, 0, 0.55);
                     }
                     return end;
                 }
@@ -773,7 +783,7 @@ public final class PikaMoves {
             });
         }
         if (held % 4 == 0) {
-            sound(player, centre, "impact_light", 1.0F, 1.4F + level.m_213780_().m_188501_() * 0.3F);
+            sound(player, centre, PikaSounds.POP, 0.9F, 1.3F + level.m_213780_().m_188501_() * 0.3F);
         }
     }
 
@@ -786,6 +796,7 @@ public final class PikaMoves {
             s.swordUntil = 0;
             s.guard = false;
             fx(player, SWORD_OFF);
+            sound(player, player.m_20182_(), PikaSounds.SWORD_OFF, 0.9F, 1.0F);
             animate(player, "pika_sword_away");
             FruitServer.sync(player);
             return;
@@ -796,11 +807,11 @@ public final class PikaMoves {
         cool(player, PikaKit.MURAKUMO, 40);
         s.busyUntil = now + 8;
         animate(player, "pika_murakumo");
-        sound(player, player.m_20182_(), "stream", 0.9F, 1.4F);
+        sound(player, player.m_20182_(), PikaSounds.SPARKLE, 0.9F, 1.2F);
         later(player, 5, () -> {
             s.swordUntil = now(player) + SWORD_TICKS;
             fx(player, SWORD_ON, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0, SWORD_TICKS);
-            sound(player, player.m_20182_(), "slash", 1.0F, 1.6F);
+            sound(player, player.m_20182_(), PikaSounds.SWORD_ON, 1.0F, 1.0F);
             FruitServer.sync(player);
         });
     }
@@ -818,7 +829,7 @@ public final class PikaMoves {
         }
         Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(0.8));
         fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, 3, 9);
-        sound(player, at, "parry", 1.0F, 1.3F);
+        sound(player, at, PikaSounds.PARRY, 1.0F, 1.2F);
         return true;
     }
 
@@ -833,7 +844,7 @@ public final class PikaMoves {
         s.kickChargeSince = now;
         animate(player, "pika_light_kick_charge");
         fx(player, KICK_CHARGE_ON);
-        sound(player, player.m_20182_(), "stream", 0.9F, 1.8F);
+        sound(player, player.m_20182_(), PikaSounds.SPARKLE, 0.6F, 1.4F);
     }
 
     /**
@@ -852,36 +863,76 @@ public final class PikaMoves {
         Vec3 from = player.m_20182_();
         animate(player, "pika_light_kick");
         if (target != null) {
-            Vec3 to = beside(player, target, 1.2);
+            // 2.9.0 (the owner: "kick from the side, like comes from the back and then rotates and it hits on the left side of the mob
+            // ... around the head area"): gone as light and out of it behind them, over their left shoulder at the height of their
+            // head, turned away; he spins round (the animation) and the kick lands in the left side of the head on tick 3, throwing them
+            // away to their right
+            float yaw = target.f_20883_;
+            Vec3 face = new Vec3(-Math.sin(Math.toRadians(yaw)), 0, Math.cos(Math.toRadians(yaw)));
+            Vec3 left = new Vec3(Math.cos(Math.toRadians(yaw)), 0, Math.sin(Math.toRadians(yaw)));
+            double reach = target.m_20205_() * 0.5 + 0.85;
+            double lift = Math.max(0.0, target.m_20192_() - LIGHT_KICK_FOOT);
+            Vec3 t = target.m_20182_();
+            Vec3 to = room(player, t, t.m_82549_(face.m_82490_(-reach * 0.55)).m_82549_(left.m_82490_(reach)).m_82520_(0, lift, 0));
             travel(player, to, target);
-            Vec3 way = StyleCombat.middle(target).m_82546_(to.m_82520_(0, 1.0, 0));
-            way = new Vec3(way.f_82479_, 0, way.f_82481_);
-            way = way.m_82556_() < 1.0E-6 ? player.m_20154_() : way.m_82541_();
-            Vec3 thrown = way.m_82490_(3.2 + 3.0 * charge).m_82520_(0, 0.55 + 0.35 * charge, 0);
+            Vec3 thrown = left.m_82490_(-(2.8 + 2.6 * charge)).m_82549_(face.m_82490_(0.6)).m_82520_(0, 0.6 + 0.35 * charge, 0);
             fx(player, LIGHT_KICK, target.m_19879_(), from, to, thrown.f_82479_, thrown.f_82480_, thrown.f_82481_, charge, 0);
-            sound(player, to, "whoosh_heavy", 1.2F, 1.9F);
-            later(player, 1, () -> {
+            sound(player, from, PikaSounds.ZIP, 1.2F, 1.0F);
+            sound(player, to, PikaSounds.TRAVEL, 1.2F, 1.1F);
+            hold(player, to, LIGHT_KICK_HOLD);
+            later(player, LIGHT_KICK_LANDS, () -> {
                 if (!target.m_6084_()) {
                     return;
                 }
-                hit(player, target, 14.0F + 20.0F * charge, thrown, true);
-                Vec3 at = StyleCombat.middle(target);
-                Impact.quake((ServerLevel) player.m_9236_(), at, 20.0 + 20.0 * charge, 0.5F + 0.5F * charge, 14);
-                sound(player, at, "impact_heavy", 1.6F, 0.8F);
-                sound(player, at, "slam", 1.2F, 1.1F);
-            });
-        } else {
+                hit(player, target, 7.0F + 9.0F * charge, thrown, true);
+                Vec3 head = new Vec3(target.m_20185_(), target.m_20186_() + target.m_20192_(), target.m_20189_()).m_82549_(left.m_82490_(target.m_20205_() * 0.5));
+                fx(player, KICK, 0, head, left.m_82490_(-1.0), 0, 0, 0, 3, 8);
+                Impact.quake((ServerLevel) player.m_9236_(), head, 20.0 + 20.0 * charge, 0.5F + 0.5F * charge, 14);
+                sound(player, head, PikaSounds.KICK_BLAST, 1.8F, 0.9F);
+                sound(player, head, PikaSounds.HIT_HEAVY, 1.6F, 0.85F);
+            });        } else {
             // no one there: the kick fires a beam out of the leg (as at Zoro)
             later(player, 2, () -> {
                 Vec3 foot = player.m_20182_().m_82520_(0, 0.9, 0).m_82549_(player.m_20154_().m_82490_(0.8));
                 Vec3 to = point(player, 40.0);
                 fx(player, BEAM, 1, foot, to, 0, 0, 0, 0.8 + 0.8 * charge, 0);
-                sound(player, foot, "beam", 1.4F, 1.0F);
-                UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, player.m_20154_(), 3.0 + 3.0 * charge, 12.0F + 14.0F * charge, 0,
+                sound(player, foot, PikaSounds.BEAM, 1.6F, 1.1F);
+                UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, player.m_20154_(), 3.0 + 3.0 * charge, 5.0F + 6.0F * charge, 0,
                     1.4 + 1.4 * charge);
                 Impact.quake((ServerLevel) player.m_9236_(), to, 16.0, 0.5F, 10);
             });
         }
+    }
+
+    /** 2.9.0: the light kick: how high over his feet the kicking foot goes (blocks), how long he hangs there, the tick it lands. */
+    static final double LIGHT_KICK_FOOT = 1.45;
+    static final int LIGHT_KICK_HOLD = 8;
+    static final int LIGHT_KICK_LANDS = 3;
+
+    /** 2.9.0: held where he is (in the air if he is) for {@code ticks}, no fall taken: a kick in mid-air hangs until it lands. */
+    static void hold(ServerPlayer player, Vec3 at, int ticks) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        long until = now(player) + ticks;
+        LIVE.add(new UoMoves.Live() {
+            @Override
+            public boolean tick(long now) {
+                if (!player.m_6084_() || player.m_9236_() != level) {
+                    return true;
+                }
+                player.m_20334_(0.0, 0.0, 0.0);
+                player.f_19864_ = true;
+                player.f_19789_ = 0.0F;
+                if (player.m_20182_().m_82557_(at) > 0.04) {
+                    player.m_6021_(at.f_82479_, at.f_82480_, at.f_82481_);
+                }
+                return now >= until;
+            }
+
+            @Override
+            public ServerLevel level() {
+                return level;
+            }
+        });
     }
 
     // ------------------------------------------------------------------------------------------------------ B: the clones
@@ -896,7 +947,7 @@ public final class PikaMoves {
         cool(player, PikaKit.CLONES, 300);
         s.busyUntil = now + 10;
         animate(player, "pika_clones");
-        sound(player, player.m_20182_(), "whoosh_heavy", 1.2F, 1.6F);
+        sound(player, player.m_20182_(), PikaSounds.SPARKLE, 1.2F, 1.0F);
         List<LivingEntity> near = foes(player, player.m_20182_().m_82549_(player.m_20154_().m_82490_(8.0)), 22.0);
         Vec3 me = player.m_20182_();
         near.sort((a, b) -> Double.compare(a.m_20182_().m_82557_(me), b.m_20182_().m_82557_(me)));
@@ -913,7 +964,8 @@ public final class PikaMoves {
                 for (int cut = 0; cut < 2; cut++) {
                     LIVE.add(new UoMoves.Later(level, now + 10 + cut * 6 + index % 3, () -> {
                         if (target.m_6084_() && target.m_20182_().m_82557_(player.m_20182_()) < 40 * 40) {
-                            hit(player, target, 6.0F, target.m_20182_().m_82546_(player.m_20182_()).m_82541_().m_82490_(0.4).m_82520_(0, 0.2, 0), false);
+                            sound(player, target.m_20182_(), PikaSounds.SWING, 0.8F, 1.0F + 0.05F * (index % 4));
+                            hit(player, target, 2.5F, target.m_20182_().m_82546_(player.m_20182_()).m_82541_().m_82490_(0.4).m_82520_(0, 0.2, 0), false);
                         }
                     }));
                 }
@@ -927,7 +979,7 @@ public final class PikaMoves {
         Vec3 at = source.m_7270_() == null ? FruitUtil.chest(player)
             : FruitUtil.chest(player).m_82549_(FruitUtil.flat(source.m_7270_().m_82546_(player.m_20182_())).m_82490_(0.3));
         fx(player, DODGE, 0, at, Vec3.f_82478_, 0, 0, 0, 0, 0);
-        sound(player, at, "whoosh_light", 0.7F, 1.8F);
+        sound(player, at, PikaSounds.SPARKLE, 0.5F, 1.5F);
     }
 
     /** What the client needs to pose and draw the player. */
@@ -975,9 +1027,9 @@ public final class PikaMoves {
                 Vec3 look = player.m_20154_();
                 player.m_20334_(look.f_82479_ * 2.2, look.f_82480_ * 2.2, look.f_82481_ * 2.2);
                 player.f_19864_ = true;
-                if (held % 2 == 0) {
+                if (held % 6 == 0) {
                     for (LivingEntity body : foes(player, player.m_20182_().m_82520_(0, 1.0, 0), 2.2)) {
-                        hit(player, body, 7.0F, look.m_82490_(1.0).m_82520_(0, 0.4, 0), false);
+                        hit(player, body, 3.0F, look.m_82490_(1.0).m_82520_(0, 0.4, 0), false);
                     }
                 }
             }

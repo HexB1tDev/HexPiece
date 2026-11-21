@@ -110,6 +110,9 @@ public final class DragonPreview {
     }
 
     static DragonForm.Shape shape;
+    /** 2.9.0: the turn and the climb the dragon is in (degrees a block of its way; FxPreview's --turn= and --climb=). */
+    static float turn;
+    static float climb;
 
     /**
      * A shot as the game places it: {@code g:phase:seconds:flight:lookPitch:bank:camYaw:camPitch:dist[:tx:ty:tz[:groundY]]}: the
@@ -144,7 +147,16 @@ public final class DragonPreview {
         DragonPose pose = new DragonPose(model);
         float[] anchor = new float[3];
         float hover = phase == DragonForm.UNFORMING ? 1.0F : seconds;
-        DragonForm.pose(model, shape, pose, phase, seconds, hover, flight, seconds, mouth, bite, anchor);
+        // 2.9.0: the body following its way (DragonForm.Trail): a turn of TURN degrees and a climb of CLIMB degrees a block of the way
+        DragonForm.Trail trail = null;
+        if (turn != 0.0F || climb != 0.0F) {
+            trail = new DragonForm.Trail();
+            for (int i = 0; i < trail.yaw.length; i++) {
+                trail.yaw[i] = turn * shape.behind[i];
+                trail.pitch[i] = climb * shape.behind[i];
+            }
+        }
+        DragonForm.pose(model, shape, pose, phase, seconds, hover, flight, seconds, mouth, bite, anchor, trail);
         float[] place = new float[12];
         float[] shift = new float[3];
         DragonForm.shift(shape, phase, seconds, shift);

@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "pika_dive",
- "author": "HexPiece 2.1.1",
+ "author": "HexPiece 2.9.0",
  "description": "Pika Pika: fallen on them as light, the heel driven into the ground.",
  "emote": {
   "beginTick": 0,
@@ -87,83 +87,6 @@
     "easing": "constant",
     "torso": {
      "bend": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightArm": {
-     "roll": 9.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightArm": {
-     "bend": -34.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftArm": {
-     "roll": -9.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftArm": {
-     "bend": -34.0
     }
    },
    {
@@ -302,83 +225,6 @@
    {
     "tick": 1,
     "easing": "outexpo",
-    "head": {
-     "pitch": 16.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightArm": {
-     "roll": 9.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightArm": {
-     "bend": -34.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftArm": {
-     "roll": -9.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftArm": {
-     "bend": -34.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
     "rightLeg": {
      "pitch": -6.0
     }
@@ -512,83 +358,6 @@
    {
     "tick": 4,
     "easing": "outback",
-    "head": {
-     "pitch": 18.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "rightArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "rightArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "rightArm": {
-     "roll": 9.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "rightArm": {
-     "bend": -34.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftArm": {
-     "roll": -9.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftArm": {
-     "bend": -34.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
     "rightLeg": {
      "pitch": -10.0
     }
@@ -717,83 +486,6 @@
     "easing": "inoutsine",
     "torso": {
      "bend": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightArm": {
-     "roll": 9.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightArm": {
-     "bend": -34.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftArm": {
-     "pitch": 10.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftArm": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftArm": {
-     "roll": -9.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftArm": {
-     "bend": -34.0
     }
    },
    {

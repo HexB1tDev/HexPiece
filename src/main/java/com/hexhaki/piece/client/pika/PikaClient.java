@@ -34,17 +34,20 @@ final class PikaClient implements ClientKit {
     @Override
     public String stance(AbstractClientPlayer player, CompoundTag state, long now) {
         double speed = player.m_20184_().m_165924_();
-        if (player.m_150110_().f_35935_ || !player.m_20096_() && !player.m_20069_() && player.m_20184_().f_82480_ > -0.6) {
+        boolean sword = PikaFx.sword(player.m_19879_()) || state != null && state.m_128471_("sword");
+        // 2.9.0 (the owner: "Flying and jumping gives you a fuck ass animation"): only flight (as light) has its pose; a jump or a fall is
+        // the game's own, with the hands in the pockets (or the sword held)
+        if (player.m_150110_().f_35935_ && !player.m_20096_()) {
             return speed > 0.22 ? "pika_fly" : "pika_float";
         }
         boolean moving = speed > 0.02;
-        if (PikaFx.sword(player.m_19879_()) || state != null && state.m_128471_("sword")) {
-            return moving ? "pika_sword_walk" : "pika_sword_idle";
+        if (sword) {
+            return moving || !player.m_20096_() ? "pika_sword_walk" : "pika_sword_idle";
         }
         if (player.m_20142_()) {
             return null; // running: the game's own run
         }
-        return moving ? "pika_walk" : "pika_idle";
+        return moving || !player.m_20096_() ? "pika_walk" : "pika_idle";
     }
 
     /** The sword of light in the right hand (the model's own arm pose), the leg alight while it gathers the light. */
@@ -65,8 +68,8 @@ final class PikaClient implements ClientKit {
     /** First person with the sword out: the blade from the hand at the lower right, up and ahead; the hand itself the game's. */
     @Override
     public boolean firstPerson(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, float partial) {
-        if (!PikaFx.sword(player.m_19879_())) {
-            return false;
+        if (!PikaFx.sword(player.m_19879_()) || com.hexhaki.piece.client.FirstPersonLight.armDrawn(partial)) {
+            return false; // 2.9.0: while it cuts, the arm and the sword are drawn posed (client/FirstPersonLight)
         }
         pose.m_85836_();
         // 2.8.8 (the owner: "the sword isnt being grabbed by the handle"): in the game's own first-person right hand, held by the grip

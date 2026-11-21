@@ -77,7 +77,21 @@ public final class DragonClient {
         final double[] mouth = new double[6];
         long mouthAge = -1;
         final float[] mouthOut = new float[6];
+        /**
+         * 2.9.0: where the head has been: per tick (newest at {@code newest}, a ring of {@link #HISTORY}) how far it had gone (blocks,
+         * never less than {@link #CREEP} a tick) and its facing and pitch; the body is bent along it (DragonForm.Trail).
+         */
+        final double[] travel = new double[HISTORY];
+        final float[] yawAt = new float[HISTORY];
+        final float[] pitchAt = new float[HISTORY];
+        int newest = -1;
+        int count;
+        final DragonForm.Trail trail = new DragonForm.Trail();
     }
+
+    /** 2.9.0: how many ticks of the head's way are kept, and how far it is taken to creep a tick even when still (blocks). */
+    static final int HISTORY = 160;
+    static final double CREEP = 0.3;
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
 
@@ -271,10 +285,64 @@ public final class DragonClient {
             entry.turned = true;
         }
         float turn = wrap(look - entry.yaw);
-        entry.yaw += turn * 0.45F;
+        // 2.9.0 (the owner: "It just rotates on its own, like instantly as soon as the player turns"): the head comes round smoothly
+        // (a third of the way a tick in flight, slower hovering) and the body follows the way the head went (DragonForm.Trail)
+        float rate = 0.12F + 0.2F * entry.flight;
+        entry.yaw += turn * rate;
         entry.bankO = entry.bank;
-        float bankTarget = Math.max(-35.0F, Math.min(35.0F, -turn * 0.45F * 2.2F * entry.flight));
+        float bankTarget = Math.max(-35.0F, Math.min(35.0F, -turn * rate * 2.2F * entry.flight));
         entry.bank += (bankTarget - entry.bank) * 0.2F;
+        int at = (entry.newest + 1) % HISTORY;
+        double before = entry.count == 0 ? 0.0 : entry.travel[entry.newest];
+        entry.travel[at] = before + Math.max(CREEP, speed);
+        entry.yawAt[at] = entry.yaw;
+        entry.pitchAt[at] = player.m_146909_() * 0.85F * entry.flight;
+        entry.newest = at;
+        entry.count = Math.min(HISTORY, entry.count + 1);
+    }
+
+    /**
+     * 2.9.0: the body's trail at {@code partial}: for the pelvis and each tail bone ({@code behind} blocks behind the face, DragonForm's
+     * Shape), where the head was when it had gone that much less far, and how far its facing and pitch then lag the head's now.
+     */
+    static void trail(Entry entry, float partial, float yawNow, float pitchNow, float[] behind) {
+        DragonForm.Trail trail = entry.trail;
+        if (entry.count < 2 || behind == null) {
+            java.util.Arrays.fill(trail.yaw, 0.0F);
+            java.util.Arrays.fill(trail.pitch, 0.0F);
+            return;
+        }
+        int last = entry.newest;
+        int prev = (last - 1 + HISTORY) % HISTORY;
+        double now = entry.travel[prev] + (entry.travel[last] - entry.travel[prev]) * partial;
+        for (int i = 0; i < behind.length && i < trail.yaw.length; i++) {
+            double want = now - behind[i];
+            // walk back from the newest to the two ticks either side of that point
+            int k = last;
+            int steps = 0;
+            while (steps < entry.count - 1 && entry.travel[k] > want) {
+                k = (k - 1 + HISTORY) % HISTORY;
+                steps++;
+            }
+            float yawThen;
+            float pitchThen;
+            if (entry.travel[k] > want) {
+                yawThen = entry.yawAt[k]; // older than kept: the oldest
+                pitchThen = entry.pitchAt[k];
+            } else {
+                int n = (k + 1) % HISTORY;
+                double span = entry.travel[n] - entry.travel[k];
+                float t = span < 1.0E-6 ? 0.0F : (float) Math.min(1.0, (want - entry.travel[k]) / span);
+                if (k == last) {
+                    t = 0.0F;
+                    n = k;
+                }
+                yawThen = entry.yawAt[k] + wrap(entry.yawAt[n] - entry.yawAt[k]) * t;
+                pitchThen = entry.pitchAt[k] + (entry.pitchAt[n] - entry.pitchAt[k]) * t;
+            }
+            trail.yaw[i] = wrap(yawNow - yawThen);
+            trail.pitch[i] = pitchThen - pitchNow;
+        }
     }
 
     static float wrap(float degrees) {
@@ -387,9 +455,10 @@ public final class DragonClient {
             float age = (clock + partial) / 20.0F + (e.getKey() % 13) * 0.37F;
             int light = LevelRenderer.m_109541_(level, BlockPos.m_274561_(x, y + DragonForm.HEAD_HEIGHT, z));
             int overlay = OverlayTexture.f_118083_;
+            trail(entry, partial, yaw, pitch, DragonRenderer.behind());
             DragonRenderer.draw(e.getKey(), DragonTextures.of(entry.colour), stack, buffers, x - camera.f_82479_, y - camera.f_82480_,
                 z - camera.f_82481_, entry.phase, s, hover, flight, age, yaw, pitch, bank, light, overlay, UoFx.mouth(e.getKey(), partial),
-                UoFx.bite(e.getKey(), partial), entry.mouthOut);
+                UoFx.bite(e.getKey(), partial), entry.mouthOut, entry.trail);
             entry.mouth[0] = x + entry.mouthOut[0];
             entry.mouth[1] = y + entry.mouthOut[1];
             entry.mouth[2] = z + entry.mouthOut[2];

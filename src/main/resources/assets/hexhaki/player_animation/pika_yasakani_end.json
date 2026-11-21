@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "pika_yasakani_end",
- "author": "HexPiece 2.1.1",
+ "author": "HexPiece 2.9.0",
  "description": "Pika Pika: the torrent spent, the arms thrown open, coming down.",
  "emote": {
   "beginTick": 0,
@@ -87,27 +87,6 @@
     "easing": "constant",
     "torso": {
      "bend": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "pitch": 14.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "head": {
-     "roll": 0.0
     }
    },
    {
@@ -302,27 +281,6 @@
    {
     "tick": 3,
     "easing": "outexpo",
-    "head": {
-     "pitch": 4.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
     "rightArm": {
      "pitch": -60.0
     }
@@ -507,27 +465,6 @@
     "easing": "inoutsine",
     "torso": {
      "bend": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
     }
    },
    {

@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "pika_murakumo",
- "author": "HexPiece 2.1.1",
+ "author": "HexPiece 2.9.0",
  "description": "Pika Pika: Ama no Murakumo, the joined hands drawn apart and a sword of solid light between them.",
  "emote": {
   "beginTick": 0,
@@ -92,27 +92,6 @@
    {
     "tick": 0,
     "easing": "linear",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
     "rightArm": {
      "pitch": 10.0
     }
@@ -164,62 +143,6 @@
     "easing": "linear",
     "leftArm": {
      "bend": -34.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "leftLeg": {
-     "bend": 0.0
     }
    },
    {
@@ -302,27 +225,6 @@
    {
     "tick": 3,
     "easing": "outexpo",
-    "head": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
     "rightArm": {
      "pitch": -62.0
     }
@@ -377,62 +279,6 @@
     }
    },
    {
-    "tick": 3,
-    "easing": "outexpo",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outexpo",
-    "leftLeg": {
-     "bend": 0.0
-    }
-   },
-   {
     "tick": 5,
     "easing": "outexpo",
     "body": {
@@ -464,7 +310,7 @@
     "tick": 5,
     "easing": "outexpo",
     "body": {
-     "yaw": 20.0
+     "yaw": 16.0
     }
    },
    {
@@ -478,7 +324,7 @@
     "tick": 5,
     "easing": "outexpo",
     "body": {
-     "bend": 5.0
+     "bend": 0.0
     }
    },
    {
@@ -512,50 +358,29 @@
    {
     "tick": 5,
     "easing": "outexpo",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "head": {
-     "yaw": -10.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "head": {
-     "roll": 0.0
+    "rightArm": {
+     "pitch": -40.0
     }
    },
    {
     "tick": 5,
     "easing": "outexpo",
     "rightArm": {
-     "pitch": -70.0
+     "yaw": 30.0
     }
    },
    {
     "tick": 5,
     "easing": "outexpo",
     "rightArm": {
-     "yaw": 40.0
+     "roll": 30.0
     }
    },
    {
     "tick": 5,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 50.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "rightArm": {
-     "bend": -6.0
+     "bend": 0.0
     }
    },
    {
@@ -587,62 +412,6 @@
     }
    },
    {
-    "tick": 5,
-    "easing": "outexpo",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 5,
-    "easing": "outexpo",
-    "leftLeg": {
-     "bend": 0.0
-    }
-   },
-   {
     "tick": 6,
     "easing": "outback",
     "body": {
@@ -674,7 +443,7 @@
     "tick": 6,
     "easing": "outback",
     "body": {
-     "yaw": 20.0
+     "yaw": 16.0
     }
    },
    {
@@ -688,7 +457,7 @@
     "tick": 6,
     "easing": "outback",
     "body": {
-     "bend": 5.0
+     "bend": 0.0
     }
    },
    {
@@ -722,50 +491,29 @@
    {
     "tick": 6,
     "easing": "outback",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "head": {
-     "yaw": -10.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "head": {
-     "roll": 0.0
+    "rightArm": {
+     "pitch": -40.0
     }
    },
    {
     "tick": 6,
     "easing": "outback",
     "rightArm": {
-     "pitch": -70.0
+     "yaw": 36.0
     }
    },
    {
     "tick": 6,
     "easing": "outback",
     "rightArm": {
-     "yaw": 46.0
+     "roll": 30.0
     }
    },
    {
     "tick": 6,
     "easing": "outback",
     "rightArm": {
-     "roll": 50.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "rightArm": {
-     "bend": -6.0
+     "bend": 0.0
     }
    },
    {
@@ -797,62 +545,6 @@
     }
    },
    {
-    "tick": 6,
-    "easing": "outback",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outback",
-    "leftLeg": {
-     "bend": 0.0
-    }
-   },
-   {
     "tick": 10,
     "easing": "inoutsine",
     "body": {
@@ -932,36 +624,15 @@
    {
     "tick": 10,
     "easing": "inoutsine",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
+    "rightArm": {
+     "pitch": -40.0
     }
    },
    {
     "tick": 10,
     "easing": "inoutsine",
     "rightArm": {
-     "pitch": -28.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightArm": {
-     "yaw": 0.0
+     "yaw": 10.0
     }
    },
    {
@@ -975,7 +646,7 @@
     "tick": 10,
     "easing": "inoutsine",
     "rightArm": {
-     "bend": -30.0
+     "bend": 0.0
     }
    },
    {
@@ -1004,62 +675,6 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -34.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "bend": 0.0
     }
    }
   ]

@@ -22,6 +22,18 @@ public final class PieceHooks {
         return name != null && (name.startsWith("pika_") || name.startsWith("uo_"));
     }
 
+    /**
+     * 2.9.0: a player ({@code id}) was told to play the clip {@code name} (HakiAnimations.playRemote, before anything else): the Light
+     * fruit's first person and fingertip follow it (client/FirstPersonLight).
+     */
+    public static void played(int id, String name) {
+        try {
+            FirstPersonLight.played(id, name);
+        } catch (RuntimeException failure) {
+            com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: a clip could not be followed", failure);
+        }
+    }
+
     public static boolean fruitKeysActive() {
         return FruitClient.active() && !CombatMode.on();
     }

@@ -70,7 +70,8 @@ public final class LightArt {
         FireMesh.tube(sink, ax, ay, az, bx, by, bz, width * 1.1 * thin, width * 1.0 * thin, 0xFFE05E, 0xFFD040, 0xFFC020, 0.0,
             0.35 * (1.0 - t), 0.0, age, seed + 1);
         glow(sink, ax, ay, az, width * 3.0 * (1.0 - t), 0xFFF0A0, 0.6 * (1.0 - t));
-        impact(sink, bx, by, bz, width * 4.0, age, seed + 2);
+        // 2.9.0: where it struck, the server's burst (LightArt.burst: gathering, going off, its dust) does the rest
+        glow(sink, bx, by, bz, width * 5.0 * (1.0 - t), 0xFFF6D0, 0.7 * (1.0 - t));
     }
 
     /** A flash where light struck: a white-hot puff, its glow, a ring and short rays, gone in 7 ticks. */
@@ -157,62 +158,112 @@ public final class LightArt {
 
     /** How long a burst of light lasts (ticks). */
     public static final double BURST_LIFE = 22.0;
+    /** 2.9.0: the light gathering before it goes off (ticks). */
+    public static final double BURST_GATHER = 3.0;
+
+    /** 2.9.0: how long a burst of {@code radius} lasts (ticks): a bullet's 1.5 s, the laser's 2.5, the beam's 3.5. */
+    public static double burstLife(double radius) {
+        return radius < 2.2 ? 28.0 : Math.min(70.0, 24.0 + radius * 9.0);
+    }
 
     /**
-     * Light blowing up ({@code radius}, {@code age} ticks old), as his lasers and bullets do: a white dome of light, a gold ball
-     * of puffs, beams thrown out all round, a ring over the ground, sparks, then dust.
+     * Light blowing up ({@code radius}, {@code age} ticks old), as his lasers, beams and bullets do. 2.9.0 (the owner: "The explosion of
+     * the right click is bad. It's too fast. It vanishes without animation or anything"): it gathers first (a point of light swelling,
+     * rays drawn in to it, {@link #BURST_GATHER} ticks), then goes off: a blinding flash, a dome of light and a ring racing over the
+     * ground, rays thrown out all round, a ball of light that burns from white to gold to amber as it climbs, sparks on arcs; then the
+     * dust it raised, gold in its own light, climbing and spreading and thinning over seconds, motes of light drifting out of it.
      */
     public static void burst(FireMesh.Sink sink, double x, double y, double z, double radius, double age, int seed) {
-        if (age < 0.0 || age > BURST_LIFE) {
+        double rr = Math.max(0.5, radius);
+        double life = burstLife(rr);
+        if (age < 0.0 || age > life) {
             return;
         }
-        double rr = Math.max(0.5, radius);
-        double t = age / BURST_LIFE;
-        glow(sink, x, y, z, rr * 2.4 * (0.6 + 0.4 * ease(age / 3.0)), 0xFFE680, 0.8 * Math.max(0.0, 1.0 - age / 10.0));
-        if (age < 6.0) {
-            double f = Math.sin(Math.PI * Math.min(1.0, age / 6.0 + 0.1));
-            light(sink, x, y, z, rr * 0.8 * f, 0, 1, 0, 0.1, 1.05, 1.0, age, seed);
+        boolean small = rr < 2.2; // Yasakani's bullets: the same burst, fewer pieces (some 25 of them at once)
+        if (age < BURST_GATHER) {
+            double g = age / BURST_GATHER;
+            light(sink, x, y, z, rr * (0.12 + 0.3 * g * g), 0, 1, 0, 0.0, 1.05, 1.0, age * 3.0, seed);
+            glow(sink, x, y, z, rr * (0.6 + 1.2 * g), 0xFFF2B0, 0.4 + 0.4 * g);
+            for (int i = 0; i < (small ? 4 : 8); i++) {
+                direction(seed + 5, i, 0.4, D);
+                double from = rr * (2.6 - 2.2 * g);
+                FireMesh.ray(sink, x + D[0] * from, y + D[1] * from, z + D[2] * from, -D[0], -D[1], -D[2], rr * 0.9 * (1.0 - g) + 0.2,
+                    0.04 + 0.03 * rr, 0, 0.0, 0xFFFFF0, 0.5 + 0.5 * g);
+            }
+            return;
         }
-        int n = Math.min(12, 6 + (int) rr);
+        double a = age - BURST_GATHER; // since it went off
+        double span = life - BURST_GATHER;
+        double t = a / span;
+        // the flash, then the light it gives while it burns
+        glow(sink, x, y + rr * 0.3, z, rr * (2.6 + 1.6 * ease(a / 4.0)), 0xFFF0B8, 0.9 * clamp(1.0 - a / 14.0));
+        if (a < 5.0) {
+            double f = Math.sin(Math.PI * Math.min(1.0, a / 5.0 + 0.2));
+            light(sink, x, y, z, rr * 0.9 * f, 0, 1, 0, 0.1, 1.05, 1.0, a, seed);
+        }
+        // the ball of light: puffs thrown out and up, white to gold to amber, burning down at their own pace
+        int n = small ? 4 : Math.min(12, 6 + (int) rr);
         for (int i = 0; i < n; i++) {
             int s = seed * 11 + i;
-            direction(s, 0, 0.45, D);
-            double out = rr * (0.3 + 0.6 * FireMesh.rand(s, 5)) * ease(age / 5.0);
-            double size = rr * (0.35 + 0.2 * FireMesh.rand(s, 6)) * (1.0 - t * t) * (0.6 + 0.4 * ease(age / 3.0));
-            double heat = 1.0 - 0.6 * t;
-            light(sink, x + D[0] * out, y + D[1] * out + t * rr * 0.4, z + D[2] * out, size, D[0], D[1], D[2], 0.4, heat, 1.0, age, s);
-        }
-        if (age < 10.0) {
-            double u = age / 10.0;
-            FireMesh.shell(sink, x, y, z, rr * (0.6 + 1.8 * Math.sqrt(u)), 0xFFFBE0, 0.0, 0.85 * (1.0 - u));
-            FireMesh.ring(sink, x, y - rr * 0.25, z, 0, 1, 0, rr * (0.6 + 2.8 * Math.sqrt(u)), rr * 0.5 * (1.0 - u) + 0.2, rr * 0.2, 0xFFF4C0,
-                0.8 * (1.0 - u));
-            for (int i = 0; i < 10; i++) {
-                direction(seed + 20, i, 0.3, D);
-                FireMesh.ray(sink, x, y, z, D[0], D[1], D[2], rr * (1.2 + 3.0 * ease(u)) * (0.6 + 0.4 * FireMesh.rand(seed, 40 + i)),
-                    rr * 0.07 * (1.0 - u) + 0.03, 0, 0.0, 0xFFF8D0, 0.95 * (1.0 - u));
-            }
-        }
-        for (int i = 0; i < 14; i++) {
-            double life = 8.0 + 5.0 * FireMesh.rand(seed + 50, i);
-            if (age > life) {
+            direction(s, 0, 0.55, D);
+            double burn = (small ? 9.0 : 13.0) + 7.0 * FireMesh.rand(s, 7);
+            if (a > burn + 6.0) {
                 continue;
             }
-            direction(seed + 51, i, 0.5, D);
-            double speed = (0.5 + 0.8 * FireMesh.rand(seed + 52, i)) * Math.sqrt(rr) * 0.6;
-            FireMesh.streak(sink, x + D[0] * speed * age, y + D[1] * speed * age - 0.02 * age * age, z + D[2] * speed * age, D[0], D[1] - 0.04 * age,
-                D[2], 0.8 + rr * 0.2, 0.06 + 0.02 * rr, 0xFFC030, 1.0 - age / life);
+            double u = clamp(a / burn);
+            double out = rr * (0.3 + 0.6 * FireMesh.rand(s, 5)) * ease(a / 5.0) * (1.0 + 0.4 * u);
+            double rise = u * u * rr * 0.9;
+            double size = rr * (0.4 + 0.2 * FireMesh.rand(s, 6)) * (0.55 + 0.45 * ease(a / 3.0)) * (1.0 - 0.55 * u * u);
+            double fade = clamp((burn + 6.0 - a) / 10.0);
+            light(sink, x + D[0] * out, y + D[1] * out + rise, z + D[2] * out, size, D[0], D[1] + 0.4, D[2], 0.4, 1.02 - 0.75 * u, fade, a, s);
         }
-        if (age > 8.0) {
-            double u = (age - 8.0) / (BURST_LIFE - 8.0);
+        // the shock: a dome, a ring over the ground, rays all round
+        if (a < 12.0) {
+            double u = a / 12.0;
+            FireMesh.shell(sink, x, y, z, rr * (0.6 + 2.0 * Math.sqrt(u)), 0xFFFBE0, 0.0, 0.85 * (1.0 - u));
+            FireMesh.ring(sink, x, y - rr * 0.25, z, 0, 1, 0, rr * (0.6 + 3.4 * Math.sqrt(u)), rr * 0.6 * (1.0 - u) + 0.2, rr * 0.25,
+                0xFFF4C0, 0.85 * (1.0 - u));
+            for (int i = 0; i < (small ? 5 : 10); i++) {
+                direction(seed + 20, i, 0.3, D);
+                FireMesh.ray(sink, x, y, z, D[0], D[1], D[2], rr * (1.2 + 3.2 * ease(u)) * (0.6 + 0.4 * FireMesh.rand(seed, 40 + i)),
+                    rr * 0.08 * (1.0 - u) + 0.03, 0, 0.0, 0xFFF8D0, 0.95 * (1.0 - u));
+            }
+        }
+        // sparks on arcs
+        for (int i = 0; i < (small ? 6 : 16); i++) {
+            double l = 10.0 + 8.0 * FireMesh.rand(seed + 50, i);
+            if (a > l) {
+                continue;
+            }
+            direction(seed + 51, i, 0.55, D);
+            double speed = (0.5 + 0.8 * FireMesh.rand(seed + 52, i)) * Math.sqrt(rr) * 0.6;
+            FireMesh.streak(sink, x + D[0] * speed * a, y + D[1] * speed * a - 0.02 * a * a, z + D[2] * speed * a, D[0], D[1] - 0.04 * a, D[2],
+                0.8 + rr * 0.2, 0.06 + 0.02 * rr, 0xFFC030, 1.0 - a / l);
+        }
+        // the dust it raised, lit gold from inside at first, climbing, spreading and thinning
+        if (a > 5.0) {
+            double u = clamp((a - 5.0) / (span - 5.0));
             FireMesh.palette(FireMesh.SMOKE);
-            for (int i = 0; i < 5; i++) {
-                direction(seed + 60, i, 0.6, D);
-                double out = rr * (0.4 + 0.5 * FireMesh.rand(seed + 61, i)) * (1.0 + 0.5 * u);
-                FireMesh.puff(sink, x + D[0] * out, y + D[1] * out * 0.5 + u * rr * 0.8, z + D[2] * out, rr * 0.45 * (0.9 + 0.5 * u), 0, 1, 0, 0.3,
-                    0.1, 0.8, 0.3, false, 0.55 * (1.0 - u) * (1.0 - u), age, seed + 70 + i);
+            int puffs = small ? 2 : 6;
+            for (int i = 0; i < puffs; i++) {
+                direction(seed + 60, i, 0.65, D);
+                double out = rr * (0.45 + 0.55 * FireMesh.rand(seed + 61, i)) * (1.0 + 0.8 * u);
+                double rise = rr * (0.2 + 1.4 * u);
+                double size = rr * (0.42 + 0.12 * FireMesh.rand(seed + 62, i)) * (0.9 + 0.9 * u);
+                double lit = clamp(1.0 - (a - 5.0) / 18.0);
+                FireMesh.puff(sink, x + D[0] * out, y + D[1] * out * 0.4 + rise, z + D[2] * out, size, 0, 1, 0, 0.3, 0.1, 0.72 + 0.2 * lit, 0.3,
+                    false, 0.6 * (1.0 - u) * (1.0 - u * 0.5), a, seed + 70 + i);
             }
             FireMesh.palette(FireMesh.BAND);
+            // motes of light drifting out of it
+            for (int i = 0; i < (small ? 3 : 10); i++) {
+                double cycle = 18.0 + 10.0 * FireMesh.rand(seed + 80, i);
+                double m = ((a + FireMesh.rand(seed + 81, i) * cycle) % cycle) / cycle;
+                direction(seed + 82, i, 0.5, D);
+                double d = rr * (0.6 + 1.2 * m);
+                FireMesh.streak(sink, x + D[0] * d, y + rr * 0.3 + m * rr * 1.6, z + D[2] * d, 0, 0.05, 0, 0.25, 0.05, 0xFFE58A,
+                    (1.0 - u) * Math.sin(Math.PI * m));
+            }
         }
     }
 
@@ -310,11 +361,26 @@ public final class LightArt {
      */
     public static final double[][] FIRST_PERSON_GRIP = {
         {0, 0.64, -0.6, -0.72}, {2, 45.0}, {0, -1.0, 3.6, 3.5}, {3, 120.0}, {1, 200.0}, {2, -135.0}, {0, 5.6, 0.0, 0.0},
-        {0, -5.0 / 16.0, 2.0 / 16.0, 0.0}, {0, -1.0 / 16.0, 0.6, 0.0}, {1, 90.0}, {0, 0.0, -LightClone.GUARD, 0.0},
+        {0, -5.0 / 16.0, 2.0 / 16.0, 0.0}, {0, -1.0 / 16.0, 0.6, 0.0}, {1, 90.0 + LightArtGrip.TILT}, {0, 0.0, -LightClone.GUARD, 0.0},
     };
 
-    /** The same in third person, from the right arm's own pivot (the model's arm pose): to the fist, the blade turned out, the guard. */
-    public static final double[][] THIRD_PERSON_GRIP = {{0, -1.0 / 16.0, 0.6, 0.0}, {1, 90.0}, {0, 0.0, -LightClone.GUARD, 0.0}};
+    /**
+     * The same in third person, from the right arm's own pivot (the model's arm pose): to the fist, the blade turned out (and
+     * {@link LightArtGrip#TILT} on toward the line of the arm), the guard.
+     */
+    public static final double[][] THIRD_PERSON_GRIP = {{0, -1.0 / 16.0, 0.6, 0.0}, {1, 90.0 + LightArtGrip.TILT}, {0, 0.0, -LightClone.GUARD, 0.0}};
+
+    /**
+     * 2.9.0 (the owner: "the animations of the sword are fucking awful"): the blade no longer stands square out of the front of the fist
+     * (every swing of the arm stood it up straight); it leans this far (degrees) on toward the line of the forearm, as a sword is held,
+     * so every swing of the arm sweeps the blade through the cut.
+     */
+    public static final class LightArtGrip {
+        public static final double TILT = 50.0;
+
+        private LightArtGrip() {
+        }
+    }
 
     public static void blade(FireMesh.Sink sink, double length, double width, double shimmer) {
         double back = 0.8; // the grip: the rod runs well back past the fist (the owner: "the grip handle rod has to be longer")

@@ -34,6 +34,10 @@ public final class FxPreview {
         for (int i = 3; i < args.length; i++) {
             if (args[i].equals("--night")) {
                 night = true;
+            } else if (args[i].startsWith("--turn=")) {
+                DragonPreview.turn = Float.parseFloat(args[i].substring(7));
+            } else if (args[i].startsWith("--climb=")) {
+                DragonPreview.climb = Float.parseFloat(args[i].substring(8));
             } else if (args[i].startsWith("--size=")) {
                 String[] wh = args[i].substring(7).split("x");
                 DragonPreview.W = Integer.parseInt(wh[0]);

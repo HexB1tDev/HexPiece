@@ -5,7 +5,6 @@ import com.hexhaki.piece.client.render.Bulk;
 import com.hexhaki.piece.style.KickLeg;
 import com.hexhaki.piece.style.StyleMove;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.EnumMap;
 import java.util.Map;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -33,8 +32,9 @@ import net.minecraftforge.fml.common.Mod;
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class FirstPersonLegs {
-    private static final Map<StyleMove, Boolean> KICKS = new EnumMap<>(StyleMove.class);
-    private static StyleMove move;
+    private static final Map<String, Boolean> KICKS = new java.util.HashMap<>();
+    /** The kicking clip the local player is in (2.9.0: a style move's or the Light fruit's), or null. */
+    private static String move;
     private static long start;
     private static final float[] M = new float[12];
     private static final float[] N = new float[9];
@@ -44,15 +44,24 @@ public final class FirstPersonLegs {
 
     /** The local player began {@code started} on game tick {@code tick} (StyleFx, the server's stage 0). */
     static void started(StyleMove started, long tick) {
-        move = kicks(started) ? started : null;
+        clip(started.animation(), tick);
+    }
+
+    /** 2.9.0: the local player began the clip {@code name} on game tick {@code tick} (the Light fruit's kicks: FirstPersonLight). */
+    static void clip(String name, long tick) {
+        move = kicks(name) ? name : null;
         start = tick;
     }
 
     /** Whether a move's animation kicks: a leg raised or swung well away from standing at some moment of it. */
     static boolean kicks(StyleMove m) {
-        return KICKS.computeIfAbsent(m, k -> {
+        return kicks(m.animation());
+    }
+
+    static boolean kicks(String name) {
+        return KICKS.computeIfAbsent(name, k -> {
             for (float t = 0.0F; t <= 30.0F; t += 0.5F) {
-                float[][] pose = StylePoser.sample(k.animation(), t);
+                float[][] pose = StylePoser.sample(k, t);
                 if (Math.abs(pose[0][3] * pose[0][StylePoser.WEIGHT]) > 90.0F) {
                     return false; // 2.8.4: a move that turns the body over (a handstand) would swing the legs through the eye
                 }
@@ -83,7 +92,7 @@ public final class FirstPersonLegs {
             return;
         }
         try {
-            draw(event, player, StylePoser.sample(move.animation(), ticks), partial);
+            draw(event, player, StylePoser.sample(move, ticks), partial);
         } catch (RuntimeException failure) {
             move = null; // a leg never stops the game
         }

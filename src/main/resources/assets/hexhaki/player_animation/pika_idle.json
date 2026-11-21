@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "pika_idle",
- "author": "HexPiece 2.7.8",
+ "author": "HexPiece 2.9.0",
  "description": "Pika Pika: Borsalino standing, slouched, hands in his pockets.",
  "emote": {
   "beginTick": 0,
@@ -92,27 +92,6 @@
    {
     "tick": 0,
     "easing": "inoutsine",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
     "rightArm": {
      "pitch": 10.0
     }
@@ -164,62 +143,6 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -34.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "bend": 0.0
     }
    },
    {
@@ -302,27 +225,6 @@
    {
     "tick": 30,
     "easing": "inoutsine",
-    "head": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
     "rightArm": {
      "pitch": 10.0
     }
@@ -374,62 +276,6 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -34.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "bend": 0.0
     }
    },
    {
@@ -512,27 +358,6 @@
    {
     "tick": 60,
     "easing": "inoutsine",
-    "head": {
-     "pitch": -4.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
     "rightArm": {
      "pitch": 10.0
     }
@@ -584,62 +409,6 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -34.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "pitch": -2.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "pitch": 2.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 60,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "bend": 0.0
     }
    }
   ]
