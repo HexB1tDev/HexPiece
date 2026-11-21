@@ -533,6 +533,25 @@ actually goes up a little bit, while the others lower a little bit."
   2.8.6's cut some clips hotter than others) and LOUDER (blast1: web_sounds.punch, a compressor and limiter, +4.1 dB mean). Minecraft
   clamps a sound's gain at its file's loudness (a volume over 1 only adds range), so loudness lives in the files.
 
+## The owner's verdict after 2.9.3 (verbatim, two messages) -- TOP PRIORITY
+"Okay, this is a fucking joke. First of all, remove this fuck ass sound for the Rio sound. It sounds like shit, bro. I fucking hate
+it. Second of all, I told you to add lightning to the shit. Yeah, sure, you did it. But I don't understand why I keep using the same
+old hockey lightning over and over and over and over again. I keep telling you, don't do that, and you just go ahead and do it. Until
+you get rid of something and you keep it in the game without my permission. I told you to keep lightning around the player whenever
+Rio was activated. You just said, fuck it, added the old ugly lightning to it. And even when the hockey's not activated, it's showing
+up. Like, hockey's not activated yet, fucking lightning is shooting for me. Instead of using the proper lightning that we've been
+making all this time in Advanced Conquerors Hockey that adopts the Rio color, no, you just decided, you know what? Let's piss the user
+off. Let's give him the old version of the hockey."
+"Give Conqueror's Haiku release a new proper sound, like even on like all paths, good, bad, normal. Give it a better sound like you
+gave Dragon. Go search around the web. Don't you dare create one, you motherfucker. Go search around the web. Get proper sounds in. Get
+rid of this fucking old lighting from everywhere, including Gear 5, and replace it with the new one in Conqueror's Haiku type, the one
+that has the color of Rio. And, oh my god, just fucking do something good for once, dude."
+("hockey" / "Haiku" = Haki, "Rio" = Ryou: speech to text.)
+- To do: (1) Ryou's sound gone, every play of it (ours in RyouServer.afterArmament, the original's acoc_on/acoc_off); (2) the
+  Conqueror's release: new CC0 web sounds for every alignment (good, evil, normal); (3) every lightning in the Conqueror's style
+  (black body, rim in the owner's Ryou colour: HakiBolts tints with colorOf), never the original's red-black or flat beams, Gear 5
+  included; the 2.9.1 sparks tinted, and only while Ryou is on.
+
 ## Next (2.9.4)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
