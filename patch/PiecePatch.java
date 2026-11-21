@@ -422,6 +422,12 @@ public final class PiecePatch implements Opcodes {
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
         entries.put(CONTROLLER + ".class", transform(entries.get(CONTROLLER + ".class"), PiecePatch::conquerorHaki));
+        // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
+        // lightning themselves, past HakiBolts, and showed the original's flat beams
+        entries.put(GEAR_VFX + ".class", transform(entries.get(GEAR_VFX + ".class"), node -> playHook(method(node, "playAt",
+            "(DDDLcom/lowdragmc/photon/client/fx/FX;)V"), "playedGear", "(Lcom/lowdragmc/photon/client/fx/FX;DDD)Z")));
+        entries.put(THUNDERSTORM + ".class", transform(entries.get(THUNDERSTORM + ".class"), PiecePatch::thunderstormBolts));
+        entries.put(STORM_LANCE + ".class", transform(entries.get(STORM_LANCE + ".class"), PiecePatch::lanceBolts));
         entries.put(FRUIT_ANIMATIONS + ".class", transform(entries.get(FRUIT_ANIMATIONS + ".class"), PiecePatch::fruitClips));
         entries.put(CLIENT_KITS + ".class", transform(entries.get(CLIENT_KITS + ".class"), node -> {
             for (FieldNode field : node.fields) {
@@ -890,6 +896,74 @@ public final class PiecePatch implements Opcodes {
     }
 
     static final String CONQUEROR_AURA = "com/hexhaki/piece/server/ConquerorAura";
+    static final String GEAR_VFX = "com/hexhaki/client/devilfruit/GearVfx";
+    static final String THUNDERSTORM = "com/hexhaki/patch/ThunderstormImpact";
+    static final String STORM_LANCE = "com/hexhaki/client/devilfruit/StormLanceVfx";
+    static final String LANCE_LIGHTNING = "com/hexhaki/piece/client/haki/LanceLightning";
+
+    /**
+     * 2.9.4: {@code ThunderstormImpact.play} builds its composition (its lightning through HakiFx.bolt, so painted as 3D bolts too) and
+     * plays it itself (a BlockEffect at the point it hands {@code BlockPos.containing}): just before it makes that BlockEffect, the
+     * composition and the point go to {@code HakiBolts.playedAtPoint} (its bolts let go, its flat beams taken out). The answer is
+     * dropped: what is left (its flashes and smoke) plays as before. No branch: no frame.
+     */
+    static void thunderstormBolts(ClassNode node) {
+        MethodNode play = method(node, "play", "(Lnet/minecraft/world/phys/Vec3;FJ)V");
+        int hooks = 0;
+        for (AbstractInsnNode insn = play.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof TypeInsnNode type && type.getOpcode() == NEW && type.desc.equals("com/lowdragmc/photon/client/fx/BlockEffect")) {
+                AbstractInsnNode dup = nextReal(type);
+                AbstractInsnNode fxLoad = nextReal(dup);
+                if (!(fxLoad instanceof VarInsnNode fx) || fx.getOpcode() != ALOAD) {
+                    throw new AssertionError("ThunderstormImpact.play: the BlockEffect is not made from a local composition");
+                }
+                // the point: the Vec3 handed to BlockPos.containing just before
+                VarInsnNode point = null;
+                for (AbstractInsnNode back = type.getPrevious(); back != null; back = back.getPrevious()) {
+                    if (back instanceof MethodInsnNode call && call.name.equals("m_274446_")) {
+                        AbstractInsnNode arg = call.getPrevious();
+                        while (arg != null && arg.getOpcode() < 0) {
+                            arg = arg.getPrevious();
+                        }
+                        if (arg instanceof VarInsnNode v && v.getOpcode() == ALOAD) {
+                            point = v;
+                        }
+                        break;
+                    }
+                }
+                if (point == null) {
+                    throw new AssertionError("ThunderstormImpact.play: no point found for its BlockEffect");
+                }
+                InsnList hook = new InsnList();
+                hook.add(new VarInsnNode(ALOAD, fx.var));
+                hook.add(new VarInsnNode(ALOAD, point.var));
+                hook.add(new MethodInsnNode(INVOKESTATIC, BOLTS, "playedAtPoint",
+                    "(Lcom/lowdragmc/photon/client/fx/FX;Lnet/minecraft/world/phys/Vec3;)Z", false));
+                hook.add(new InsnNode(POP));
+                play.instructions.insertBefore(type, hook);
+                hooks++;
+            }
+        }
+        if (hooks != 1) {
+            throw new AssertionError("expected one BlockEffect in ThunderstormImpact.play, found " + hooks);
+        }
+    }
+
+    /**
+     * 2.9.4: Gear 5's storm lance: its own flat bolt strips ({@code StormLanceVfx.bolt}) go to {@code LanceLightning.bolt} instead (a
+     * trampoline), and its {@code draw(pose, camera)} first draws them as the Haki's 3D lightning ({@code LanceLightning.draw}). No branch
+     * added: no frame.
+     */
+    static void lanceBolts(ClassNode node) {
+        trampoline(method(node, "bolt", "(Lnet/minecraft/world/phys/Vec3;Lnet/minecraft/world/phys/Vec3;FFJID)V"), LANCE_LIGHTNING, "bolt");
+        MethodNode draw = method(node, "draw", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/world/phys/Vec3;)V");
+        InsnList first = new InsnList();
+        first.add(new VarInsnNode(ALOAD, 0));
+        first.add(new VarInsnNode(ALOAD, 1));
+        first.add(new MethodInsnNode(INVOKESTATIC, LANCE_LIGHTNING, "draw", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/world/phys/Vec3;)V",
+            false));
+        draw.instructions.insert(first);
+    }
 
     /**
      * 2.9.1 (the owner: "the higher your mastery on haki, like the faster the Conqueror release will be"; "even your Rio, every move,

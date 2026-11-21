@@ -1,0 +1,14 @@
+The Conqueror's Haki release's sounds (tools/conqueror_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+charge.ogg: "Power Charge" by crashoverride6, https://freesound.org/people/crashoverride6/sounds/193610/ (CC0 1.0), from 0.0 s, 8.98 s long
+thunder1.ogg: "Closeup Thunder Strike 01" by loganzsound, https://freesound.org/people/loganzsound/sounds/840628/ (CC0 1.0), from 0.5 s, 5.99 s long
+thunder2.ogg: "Close lightning strike 2018 07 07" by csengeri, https://freesound.org/people/csengeri/sounds/434359/ (CC0 1.0), from 2.9 s, 8.00 s long
+thunder3.ogg: "Extreme Thunder Impact - Munich Trudering (Raw Excerpt from Field Recording) - 250702_001" by TSP-Talk, https://freesound.org/people/TSP-Talk/sounds/844420/ (CC0 1.0), from 0.6 s, 7.50 s long
+crack.ogg: "Closeup Thunder Strike 01" by loganzsound, https://freesound.org/people/loganzsound/sounds/840628/ (CC0 1.0), from 0.5 s, 2.80 s long
+rumble.ogg: "16_Rolling_Thunder.wav" by lmbubec, https://freesound.org/people/lmbubec/sounds/118806/ (CC0 1.0), from 0.0 s, 13.55 s long
+world.ogg: "World Ender Explosion" by qubodup, https://freesound.org/people/qubodup/sounds/814057/ (CC0 1.0), from 0.0 s, 8.31 s long
+boom.ogg: "Bass Boom" by LordHannes, https://freesound.org/people/LordHannes/sounds/268084/ (CC0 1.0), from 0.0 s, 6.00 s long
+boom_good.ogg: "Dramatic Trailer Boom with Tension" by modusmogulus, https://freesound.org/people/modusmogulus/sounds/785948/ (CC0 1.0), from 0.0 s, 2.77 s long
+boom_evil.ogg: "Dark  Trailer Impact Sound Effect." by AudioPapkin, https://freesound.org/people/AudioPapkin/sounds/827561/ (CC0 1.0), from 10.6 s, 11.50 s long

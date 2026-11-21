@@ -201,12 +201,21 @@ public final class ConquerorRelease {
         }
         if (r.tap) {
             for (LivingEntity body : r.tapped) {
+                throwBack(player, level, body, THROW_TAP, r.stun);
                 hold(level, body, r.stun);
             }
             return;
         }
         boolean evil = com.hexhaki.piece.Alignment.evil(r.alignment);
         Vec3 at = player.m_20182_();
+        // 2.9.4 (the owner: "whenever an entity is in the radius, like close to the player, and gets like hit directly with Conqueror's
+        // release, I think they should be ragdoll and push far, like the explosion in the dragon blast breath. But even further ... they
+        // should be projected backwards and ragdolled instantly"): everything in the radius thrown straight back from the releaser and
+        // felled at once, in the air; further the fuller the charge (a full one further than Blast Breath's biggest blast throws)
+        for (LivingEntity body : taken(player, level, radius)) {
+            throwBack(player, level, body, r.full ? THROW_FULL : THROW_LEAST + (THROW_FULL - THROW_LEAST) * 0.7 * Math.max(0.0F, power),
+                r.stun);
+        }
         if (!r.full) {
             // 2.6.0: a held release fells for its hold's stun what it takes in its radius (the original only what its push overwhelmed,
             // for 3 to 4 seconds); a full charge does it in forceMax
@@ -227,6 +236,28 @@ public final class ConquerorRelease {
             } else if (evil && body.m_20182_().m_82554_(at) > radius) {
                 hold(level, body, r.stun);
             }
+        }
+    }
+
+    /** 2.9.4: how hard the release throws what is in its radius (Blast Breath's biggest blast: 7): a tap, the least held, a full charge. */
+    static final double THROW_TAP = 2.0;
+    static final double THROW_LEAST = 3.5;
+    static final double THROW_FULL = 9.0;
+
+    /** {@code body} thrown straight back from {@code player} ({@code speed}, a lift with it) and felled at once for {@code stun} ticks. */
+    static void throwBack(ServerPlayer player, ServerLevel level, LivingEntity body, double speed, int stun) {
+        try {
+            if (!body.m_6084_() || body == player) {
+                return;
+            }
+            Vec3 away = body.m_20182_().m_82546_(player.m_20182_());
+            away = new Vec3(away.f_82479_, 0.0, away.f_82481_);
+            away = away.m_82556_() < 1.0E-6 ? player.m_20154_() : away.m_82541_();
+            Vec3 thrown = away.m_82490_(speed).m_82520_(0.0, 0.55 + 0.12 * speed, 0.0);
+            com.hexhaki.fx.Impact.hit(player, body, StyleCombat.spec(com.hexhaki.piece.style.Hit.Weight.HEAVY, thrown));
+            HakiFalls.knockDown(level, body, Math.max(40, stun), false);
+        } catch (RuntimeException failure) {
+            // a throw never stops the release
         }
     }
 

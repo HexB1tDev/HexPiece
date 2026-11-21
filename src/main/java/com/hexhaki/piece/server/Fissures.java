@@ -43,21 +43,6 @@ public final class Fissures {
         int next;
         final Map<Long, Double> heights = new HashMap<>();
         final List<double[]> supports = new ArrayList<>();
-        /** 2.9.1: the blast craters torn where the strikes land (their radius; 0 under a young Conqueror). */
-        double crater;
-    }
-
-    /**
-     * 2.9.1 (the owner: "it's extremely destructive at max level. Like, I want it to be like fucking tearing the floor"): past half the
-     * Conqueror's mastery, every {@link #CRATER_EVERY}th cut of the storm also blows a crater out of the ground where it opens (up to
-     * {@link #CRATER_MOST} blocks of radius at mastery 1000), grown back as the fissures are (Craters, through Scars).
-     */
-    static final int CRATER_EVERY = 5;
-    static final double CRATER_MOST = 4.5;
-
-    static double crater(int mastery) {
-        double m = Math.max(0.0, Math.min(1.0, mastery / 1000.0));
-        return m <= 0.5 ? 0.0 : 2.0 + (CRATER_MOST - 2.0) * (m - 0.5) / 0.5;
     }
 
     private static final List<Opening> OPEN = new ArrayList<>();
@@ -79,7 +64,6 @@ public final class Fissures {
         opening.z = at.f_82481_;
         opening.start = level.m_46467_();
         opening.cuts = Fissure.cuts(ConquerorStorm.release(mastery, seed, true), seed);
-        opening.crater = crater(mastery);
         // paintings and item frames anywhere the fissures can reach: their walls stay
         double reach = ConquerorStorm.reach(mastery) + 4.0;
         for (HangingEntity hanging : level.m_6443_(HangingEntity.class, new AABB(at.f_82479_ - reach, at.f_82480_ - 20, at.f_82481_ - reach,
@@ -122,11 +106,6 @@ public final class Fissures {
                 return false;
             }
             cut(opening, scars, cut);
-            if (opening.crater > 0 && opening.next % CRATER_EVERY == 0) {
-                double wx = opening.x + cut.x();
-                double wz = opening.z + cut.z();
-                Craters.open(opening.level, opening.owner, new Vec3(wx, ground(opening, wx, wz) - 0.5, wz), opening.crater);
-            }
             opening.next++;
         }
         return true;

@@ -166,7 +166,27 @@
     "subtitle": "subtitles.hexhaki.piece.conqueror.explosion",
     "sounds": [
       {
-        "name": "hexhaki:piece/conqueror/explosion",
+        "name": "hexhaki:piece/conqueror/web/boom",
+        "volume": 0.25,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.conqueror.explosion_good": {
+    "subtitle": "subtitles.hexhaki.piece.conqueror.explosion",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/boom_good",
+        "volume": 0.25,
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.conqueror.explosion_evil": {
+    "subtitle": "subtitles.hexhaki.piece.conqueror.explosion",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/boom_evil",
         "volume": 0.25,
         "attenuation_distance": 64
       }
@@ -619,5 +639,64 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "conqueror_charge": {
+    "subtitle": "subtitles.hexhaki.conqueror_charge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/charge",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "conqueror_release": {
+    "subtitle": "subtitles.hexhaki.conqueror_release",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/thunder1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "hexhaki:piece/conqueror/web/thunder2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "hexhaki:piece/conqueror/web/thunder3",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "conqueror_supreme_blast": {
+    "subtitle": "subtitles.hexhaki.conqueror_supreme_blast",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/world",
+        "attenuation_distance": 72
+      }
+    ]
+  },
+  "conqueror_supreme_rumble": {
+    "subtitle": "subtitles.hexhaki.conqueror_supreme_rumble",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/rumble",
+        "attenuation_distance": 72
+      }
+    ]
+  },
+  "conqueror_supreme_snap": {
+    "subtitle": "subtitles.hexhaki.conqueror_supreme_snap",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/crack",
+        "attenuation_distance": 56
+      }
+    ]
+  },
+  "acoc_on": {
+    "sounds": []
+  },
+  "acoc_off": {
+    "sounds": []
   }
 }

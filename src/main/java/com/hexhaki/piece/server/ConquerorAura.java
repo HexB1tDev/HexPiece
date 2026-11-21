@@ -39,8 +39,8 @@ public final class ConquerorAura {
     static final int GAP = 8;
     static final double MOVE_CHANCE = 0.6;
     /** On its own: a look every this many ticks, and the chance it sparks then. */
-    static final int IDLE_EVERY = 40;
-    static final double IDLE_CHANCE = 0.35;
+    static final int IDLE_EVERY = 20;
+    static final double IDLE_CHANCE = 0.5;
     private static final Map<UUID, Long> NEXT = new HashMap<>();
 
     private ConquerorAura() {
@@ -61,9 +61,14 @@ public final class ConquerorAura {
         }
     }
 
+    /**
+     * Whether {@code player}'s Conqueror's lightning sparks off them now. 2.9.4 (the owner: "I told you to keep lightning around the
+     * player whenever Rio was activated ... hockey's not activated yet, fucking lightning is shooting for me"): only while their Ryou is
+     * on (Armament with Ryou: the {@code acocOn} flag), the Conqueror's Haki awakened.
+     */
     static boolean awakened(ServerPlayer player) {
         try {
-            return HakiProgression.conquerorAwakened(player);
+            return HakiData.flag(player, "armamentOn") && HakiData.flag(player, "acocOn") && HakiProgression.conquerorAwakened(player);
         } catch (RuntimeException failure) {
             return false;
         }

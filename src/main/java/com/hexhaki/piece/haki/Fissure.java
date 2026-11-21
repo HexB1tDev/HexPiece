@@ -22,7 +22,14 @@ public final class Fissure {
      * sections in under a second (700 a tick, each a light update and a chunk rebuild on every client near), and grew them all back
      * at once 15-25 s later; now about a third of that, spread thinner ({@code server/Scars}' budgets).
      */
-    public static final double HALF_WIDTH = 1.5;
+    /**
+     * 2.9.4 (the owner: "current Haki Conqueror's release is dealing a bit too much world destruction ... whenever they hits the floor,
+     * like lines of like little small fissures instead of like these massive gaping holes ... just 2 lines wide max, and just varying
+     * between 1 and 2 ... It just follows the lightning"): a crack is a line one to two blocks wide (half its width: 0.5 to 1; 1.5 and
+     * up to 2.25 before), wandering only a little off the bolt's line.
+     */
+    public static final double HALF_WIDTH = 1.0;
+    public static final double HALF_LEAST = 0.5;
     public static final double DEPTH = 3.5;
 
     /**
@@ -61,12 +68,12 @@ public final class Fissure {
                         double f = (k + 0.5) / samples;
                         double tear = ta + (tb - ta) * f;
                         // the crack's own jag: it wanders a little either side of the bolt's line, and pinches and gapes
-                        double wobble = (random.nextDouble() - 0.5) * 0.9;
-                        double gape = 0.75 + 0.5 * random.nextDouble();
+                        double wobble = (random.nextDouble() - 0.5) * 0.4;
+                        double gape = 0.85 + 0.15 * random.nextDouble();
                         double x = ax + dx * f + nx * wobble;
                         double z = az + dz * f + nz * wobble;
                         int tick = (int) Math.ceil(strand.delay() + (walked + length * f) / ConquerorStorm.SPEED);
-                        double half = (0.6 + (HALF_WIDTH - 0.6) * tear) * gape;
+                        double half = Math.min(HALF_WIDTH, Math.max(HALF_LEAST, (HALF_LEAST + (HALF_WIDTH - HALF_LEAST) * tear) * gape));
                         double depth = 1.0 + (DEPTH - 1.0) * tear * (0.8 + 0.4 * random.nextDouble());
                         out.add(new Cut(x, z, nx, nz, half, depth, tick));
                         if (tear > 0.25 && random.nextDouble() < 0.06) {
@@ -91,7 +98,7 @@ public final class Fissure {
         int samples = (int) Math.ceil(length / STEP);
         for (int k = 1; k <= samples; k++) {
             double f = k / (double) samples;
-            double half = (0.5 + 0.6 * tear) * (1.0 - 0.7 * f);
+            double half = (0.5 + 0.4 * tear) * (1.0 - 0.6 * f);
             double depth = (1.0 + 2.5 * tear) * (1.0 - 0.6 * f);
             out.add(new Cut(x + cx * length * f, z + cz * length * f, -cz, cx, half, depth, tick + 1 + (int) (f * 2)));
         }

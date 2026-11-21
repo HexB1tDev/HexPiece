@@ -29,7 +29,7 @@ public final class ConquerorSparksClient {
                         return;
                     }
                     Vec3 feet = user.m_20182_();
-                    HakiBolts.sparks(level, feet.f_82479_, feet.f_82480_, feet.f_82481_,
+                    HakiBolts.sparks(level, user, feet.f_82479_, feet.f_82480_, feet.f_82481_,
                         ConquerorSparks.body((int) m.size(), user.m_20206_(), user.m_20205_(), m.ticks()), 0.0, m.size() >= 5 ? 0.25F : 0.0F);
                 }
                 case ConquerorAura.BLADE -> {
@@ -38,7 +38,7 @@ public final class ConquerorSparksClient {
                     Vec3 feet = user != null ? user.m_20182_() : hand.m_82520_(0, -1.2, 0);
                     double[] base = {hand.f_82479_ - feet.f_82479_, hand.f_82480_ - feet.f_82480_, hand.f_82481_ - feet.f_82481_};
                     double[] tip = {base[0] + m.ax() * m.size(), base[1] + m.ay() * m.size(), base[2] + m.az() * m.size()};
-                    HakiBolts.sparks(level, feet.f_82479_, feet.f_82480_, feet.f_82481_, ConquerorSparks.blade(base, tip, 11, 0.0, m.ticks()), 1.1,
+                    HakiBolts.sparks(level, user, feet.f_82479_, feet.f_82480_, feet.f_82481_, ConquerorSparks.blade(base, tip, 11, 0.0, m.ticks()), 1.1,
                         0.9F);
                 }
                 default -> {

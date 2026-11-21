@@ -49,7 +49,8 @@ public final class ConquerorSounds {
     /** The release's explosion where {@code player} lets it out: by its charge ({@code power}, 0..1), a tap's small. */
     static void explode(ServerPlayer player, float power, boolean tap) {
         try {
-            PieceSounds.play(player, ConquerorMix.EXPLOSION, ConquerorMix.volume(power, tap), ConquerorMix.pitch(power, tap));
+            PieceSounds.play(player, ConquerorMix.explosion(ProfileServer.of(player).alignment()), ConquerorMix.volume(power, tap),
+                ConquerorMix.pitch(power, tap));
         } catch (RuntimeException failure) {
             // a sound never stops the release
         }

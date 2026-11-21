@@ -9,15 +9,27 @@ package com.hexhaki.piece.haki;
  *       awakening's snap and rumble), played through its {@code delayedSound}, at {@link #QUIETER} of their loudness
  *       ({@code server/ConquerorSounds.pos}); the evil roar too (its sounds.json volume, 0.65 of 2.4.8's, its reach kept).</li>
  *   <li>The evil voice line is not lowered: remade far louder and only the voice (tools/evil_conqueror_sounds.py).</li>
- *   <li>The explosion ({@link #EXPLOSION}, tools/conqueror_explosion.py from CC0 recordings) the moment G is let go: a full charge's at
+ *   <li>The explosion ({@link #EXPLOSION}: 2.9.4 tools/conqueror_sounds.py, CC0 web recordings) the moment G is let go: a full charge's at
  *       full loudness, a partial one's by its charge, a tap's small ({@link #loudness}, {@link #pitch}).</li>
  * </ul>
  */
 public final class ConquerorMix {
     /** The original's Conqueror sounds: 35 % quieter. */
     public static final float QUIETER = 0.65F;
-    /** The release's explosion (sounds.json: hexhaki:piece/conqueror/explosion). */
+    /**
+     * The release's boom, by the releaser's path. 2.9.4 (the owner: "Give Conqueror's Haiku release a new proper sound, like even on like
+     * all paths, good, bad, normal ... Go search around the web"): each a CC0 recording from Freesound.org (tools/conqueror_sounds.py,
+     * sounds/piece/conqueror/web): a neutral Conqueror's a deep bass boom, a good one's a dramatic trailer boom, an evil one's a dark
+     * trailer impact. The original's charge, release and full-release events play the same tool's thunder, charge and blast now.
+     */
     public static final String EXPLOSION = "piece.conqueror.explosion";
+    public static final String EXPLOSION_GOOD = "piece.conqueror.explosion_good";
+    public static final String EXPLOSION_EVIL = "piece.conqueror.explosion_evil";
+
+    /** The boom for an alignment (Alignment's: at or under -25 evil, at or over 25 good). */
+    public static String explosion(int alignment) {
+        return alignment <= -25 ? EXPLOSION_EVIL : alignment >= 25 ? EXPLOSION_GOOD : EXPLOSION;
+    }
     /**
      * The explosion's sounds.json volume is 1 / SCALE: it is sent at SCALE times its loudness, so the server sends it as far as a sound
      * that loud (16 blocks times the volume sent: 64 for a full release) while the game plays it at its loudness (a volume over 1 is

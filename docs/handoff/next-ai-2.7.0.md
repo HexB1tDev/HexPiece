@@ -552,7 +552,28 @@ that has the color of Rio. And, oh my god, just fucking do something good for on
   (black body, rim in the owner's Ryou colour: HakiBolts tints with colorOf), never the original's red-black or flat beams, Gear 5
   included; the 2.9.1 sparks tinted, and only while Ryou is on.
 
-## Next (2.9.4)
+## Done (2.9.4, pushed): the owner's verdict after 2.9.3 (above) and their fissure request
+The fissures, verbatim: "Also, current Haki Conqueror's release is dealing a bit too much world destruction. After all, it's too much.
+Can we just like make like whenever they hits the floor, like lines of like little small fissures instead of like these massive gaping
+holes? Like just 2 lines wide max, and just varying between 1 and 2, and just doesn't matter how deep it is. It just follows the
+lightning. It's a bit too much, too big for one lightning streak is like creating massive chunks of like damage, bro."
+- Ryou's sound: RyouServer no longer plays acoc_on; sounds.json acoc_on/acoc_off have no sounds (build.py RENAMED[SOUNDS] lets them
+  and the five conqueror_* events change).
+- tools/conqueror_sounds.py (Freesound CC0, sounds/piece/conqueror/web): conqueror_charge -> charge, conqueror_release -> thunder1-3,
+  conqueror_supreme_blast -> world, _rumble -> rumble, _snap -> crack; piece.conqueror.explosion/_good/_evil -> boom/boom_good/boom_evil
+  by ProfileServer alignment (ConquerorMix.explosion). explosion.ogg and tools/conqueror_explosion.py removed.
+- Lightning: HakiBolts.sparks tints with colorOf(owner) and BoltPainter.point; ConquerorAura only while armamentOn and acocOn (every
+  20 ticks a 50% chance, and on moves); PiecePatch: GearVfx.playAt asks HakiBolts.playedGear, ThunderstormImpact.play hands its
+  composition to HakiBolts.playedAtPoint before its BlockEffect, StormLanceVfx.bolt is a trampoline to client/haki/LanceLightning and
+  its draw first draws those as 3D bolts (Ryou colour of the nearest player).
+- Fissure.HALF_WIDTH 1.0, HALF_LEAST 0.5 (1 to 2 blocks wide), less wobble; Fissures' craters removed.
+- The owner, verbatim: "I also think that whenever an entity is in the radius, like close to the player, and gets like hit directly with
+  Conqueror's release, I think they should be ragdoll and push far, like the explosion in the dragon blast breath. But even further,
+  honestly, they should be projected backwards and ragdolled instantly if they're in the vicinity." -> ConquerorRelease.throwBack
+  (THROW_TAP 2, THROW_LEAST 3.5, THROW_FULL 9; Impact heavy throw, HakiFalls.knockDown at once for the release's stun).
+- Not rendered: Gear 5's and the storm lance's 3D bolts (the same HakiBolts path the release uses, proven by build and JVM verify).
+
+## Next (2.9.5)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
 2. Ask how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the dragon's wave, the Blast Breath

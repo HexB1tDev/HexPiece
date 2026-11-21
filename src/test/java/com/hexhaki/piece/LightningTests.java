@@ -565,7 +565,7 @@ public final class LightningTests {
             "the bigger the release, the deeper its explosion");
         String sounds = read("src/main/resources/assets/hexhaki/sounds.json");
         String explosion = entry(sounds, "\"" + com.hexhaki.piece.haki.ConquerorMix.EXPLOSION + "\"");
-        Check.that(explosion.contains("\"hexhaki:piece/conqueror/explosion\""), "the explosion's sound event plays its file");
+        Check.that(explosion.contains("\"hexhaki:piece/conqueror/web/boom\""), "the explosion's sound event plays its web recording");
         Check.that(explosion.contains("\"volume\": " + (1.0 / com.hexhaki.piece.haki.ConquerorMix.SCALE)),
             "its sounds.json volume is 1 / SCALE (sent at SCALE x its loudness: reach, never louder)");
         for (String gender : new String[] {"male", "female"}) {
@@ -576,13 +576,16 @@ public final class LightningTests {
                 "the voice line is not lowered (" + gender + ")");
         }
         java.io.File dir = new java.io.File("src/main/resources/assets/hexhaki/sounds/piece/conqueror");
-        Check.that(new java.io.File(dir, "explosion.ogg").length() > 10_000, "the explosion's file is there");
+        // 2.9.4: the booms are web recordings now (sounds/piece/conqueror/web), one a path
+        for (String boom : new String[] {"boom", "boom_good", "boom_evil"}) {
+            Check.that(new java.io.File(dir, "web/" + boom + ".ogg").length() > 10_000, "the " + boom + " file is there");
+        }
         for (String gender : new String[] {"male", "female"}) {
             double seconds = oggSeconds(new java.io.File(dir, "evil_voice_" + gender + ".ogg"));
             Check.that(seconds > 1.1 && seconds < 1.3, "the voice line ends with the voice (" + gender + ": " + seconds + " s)");
         }
-        double boom = oggSeconds(new java.io.File(dir, "explosion.ogg"));
-        Check.that(boom > 2.5 && boom < 4.5, "the explosion rolls away for a few seconds (" + boom + " s)");
+        double boom = oggSeconds(new java.io.File(dir, "web/boom.ogg"));
+        Check.that(boom > 2.5 && boom < 7.0, "the boom rolls away for a few seconds (" + boom + " s)");
     }
 
     static String read(String path) {

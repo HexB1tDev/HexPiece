@@ -579,6 +579,8 @@ public final class SwordTests {
             Check.that(all.contains(event.group(1)) || event.group(1).equals(com.hexhaki.piece.clash.ClashRules.SOUND)
                 || java.util.Arrays.asList(com.hexhaki.piece.Alignment.SOUNDS).contains(event.group(1))
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION)
+                || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION_GOOD)
+                || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION_EVIL)
                 || java.util.Arrays.stream(com.hexhaki.piece.dragon.UoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.pika.PikaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");

@@ -150,6 +150,20 @@ public final class HakiBolts {
         return launch(fx, null, null, level, x, y, z);
     }
 
+    /**
+     * 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): Gear 5's effects play through their
+     * own {@code GearVfx.playAt(x, y, z, fx)}, which never asked here, so their lightning showed as the original's flat beams and its
+     * 3D bolts were never let go. PiecePatch has it ask now: the bolts go, in the Ryou colour of the player nearest (the Gear 5 user).
+     */
+    public static boolean playedGear(FX fx, double x, double y, double z) {
+        return launch(fx, null, null, Minecraft.m_91087_().f_91073_, x, y, z);
+    }
+
+    /** 2.9.4: the same for the thunderstorm's impact ({@code ThunderstormImpact.play}), which plays its composition itself at {@code at}. */
+    public static boolean playedAtPoint(FX fx, Vec3 at) {
+        return at != null && launch(fx, null, null, Minecraft.m_91087_().f_91073_, at.f_82479_, at.f_82480_, at.f_82481_);
+    }
+
     /** {@code entity}: what the effect rides on (null: a fixed point); {@code owner}: whose it is (its colour), or null. */
     static boolean launch(FX fx, Entity entity, Entity owner, Level level, double x, double y, double z) {
         try {
@@ -536,16 +550,21 @@ public final class HakiBolts {
      * 2.9.1: the Conqueror's lightning sparking off its user (haki/ConquerorSparks): {@code bolts} (blocks from {@code x, y, z}) let go
      * at once, a flash of {@code flash} at the chest over that point if above 0, the zap heard when {@code loud}. Never past {@link #MOST}.
      */
-    public static void sparks(ClientLevel level, double x, double y, double z, List<Bolt> bolts, double flash, float loud) {
+    public static void sparks(ClientLevel level, Entity owner, double x, double y, double z, List<Bolt> bolts, double flash, float loud) {
         if (level == null || bolts.isEmpty() || alive + bolts.size() > MOST) {
             return;
         }
+        // 2.9.4 (the owner: "Instead of using the proper lightning ... that adopts the Rio color ... Let's give him the old version"): the
+        // Conqueror's own lightning, painted as the release's is, in its owner's Ryou colour (2.9.1 drew it in the original's red)
+        int color = colorOf(owner);
+        bolts = new ArrayList<>(bolts);
+        bolts.replaceAll(bolt -> bolt.tinted(color));
+        BoltPainter.point(bolts);
         float end = (float) BoltMesh.BURST;
         for (Bolt bolt : bolts) {
             end = Math.max(end, bolt.end());
         }
-        LIVE.add(new Live(bolts, null, x, y, z, level.m_46467_(), end, new ArrayList<>(), 0.0,
-            com.hexhaki.piece.haki.ConquerorSparks.RED | 0xFF000000, flash));
+        LIVE.add(new Live(bolts, null, x, y, z, level.m_46467_(), end, new ArrayList<>(), 0.0, color | 0xFF000000, flash));
         alive += bolts.size();
         if (loud > 0.0F) {
             zap(level, x, y + 1.0, z, loud);

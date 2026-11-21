@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.9.3"
+VERSION = "2.9.4"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -98,6 +98,10 @@ PATCHED = {
     "com/hexhaki/client/render/HakiPhysiqueLayer.class",
     "com/hexhaki/client/render/HakiChestLayer.class",
     "com/hexhaki/gameplay/HakiServerController.class",
+    # 2.9.4: Gear 5's and the thunderstorm's lightning through the 3D Haki lightning
+    "com/hexhaki/client/devilfruit/GearVfx.class",
+    "com/hexhaki/patch/ThunderstormImpact.class",
+    "com/hexhaki/client/devilfruit/StormLanceVfx.class",
     # 2.7.0: the Uo Uo no Mi joins the fruit enum (PiecePatch.uoFruit), its client kit the original's map, its dragon the camera hook
     "com/hexhaki/fruit/Fruit.class",
     "com/hexhaki/fruit/client/ClientKits.class",
@@ -137,7 +141,11 @@ NEW_PREFIXES = (
 ) + tuple(f"assets/hexhaki/models/item/{key}.json" for key in ARMOR_KEYS)
 # Original lang keys the expansion may change (renamed controls).
 RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament", "key.hexhaki.acoc",
-                  "subtitles.hexhaki.acoc_on", "subtitles.hexhaki.acoc_off"}, SOUNDS: set()}
+                  "subtitles.hexhaki.acoc_on", "subtitles.hexhaki.acoc_off"},
+           # 2.9.4 (the owner: "remove this fuck ass sound for the Rio sound"; "Give Conqueror's Haiku release a new proper sound ...
+           # Go search around the web"): Ryou's on and off sounds silenced, the Conqueror's events playing CC0 web recordings
+           SOUNDS: {"acoc_on", "acoc_off", "conqueror_charge", "conqueror_release", "conqueror_supreme_blast", "conqueror_supreme_rumble",
+                    "conqueror_supreme_snap"}}
 # 2.1.1 (the owner: "Get rid of the Imu fruit (Devil Devil fruit). Get rid of it ENTIRELY, but keep it's assets, for future use on other
 # things"): no code, text or file name of the jar may name it; its assets (the Black Soul texture, model and name) stay.
 IMU = re.compile(rb"(?<![A-Za-z])(imu|Imu|IMU)(?![A-Za-z])|Akuma Akuma|akuma_akuma|AKUMA_AKUMA|Devil Devil|devil_devil")
