@@ -532,6 +532,26 @@ public final class HakiBolts {
     }
 
     /** The bolts moved {@code up} blocks (their points are from the clash point; the anchor sits a chest under it). */
+    /**
+     * 2.9.1: the Conqueror's lightning sparking off its user (haki/ConquerorSparks): {@code bolts} (blocks from {@code x, y, z}) let go
+     * at once, a flash of {@code flash} at the chest over that point if above 0, the zap heard when {@code loud}. Never past {@link #MOST}.
+     */
+    public static void sparks(ClientLevel level, double x, double y, double z, List<Bolt> bolts, double flash, float loud) {
+        if (level == null || bolts.isEmpty() || alive + bolts.size() > MOST) {
+            return;
+        }
+        float end = (float) BoltMesh.BURST;
+        for (Bolt bolt : bolts) {
+            end = Math.max(end, bolt.end());
+        }
+        LIVE.add(new Live(bolts, null, x, y, z, level.m_46467_(), end, new ArrayList<>(), 0.0,
+            com.hexhaki.piece.haki.ConquerorSparks.RED | 0xFF000000, flash));
+        alive += bolts.size();
+        if (loud > 0.0F) {
+            zap(level, x, y + 1.0, z, loud);
+        }
+    }
+
     static List<Bolt> lift(List<Bolt> bolts, double up) {
         List<Bolt> out = new ArrayList<>(bolts.size());
         for (Bolt bolt : bolts) {

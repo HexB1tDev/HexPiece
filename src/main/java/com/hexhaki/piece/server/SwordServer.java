@@ -87,6 +87,8 @@ public final class SwordServer {
     static final float QUICK_DAMAGE = 9.0F;
 
     static final class State {
+        /** 2.9.1: whose (for the Conqueror's lightning off the blade as it is drawn). */
+        ServerPlayer owner;
         long swordId;
         Katana katana;
         boolean drawn;
@@ -138,7 +140,9 @@ public final class SwordServer {
     }
 
     static State state(ServerPlayer player) {
-        return STATES.computeIfAbsent(player.m_20148_(), id -> new State());
+        State state = STATES.computeIfAbsent(player.m_20148_(), id -> new State());
+        state.owner = player;
+        return state;
     }
 
     static long now(ServerPlayer player) {
@@ -358,6 +362,9 @@ public final class SwordServer {
             }
             return false;
         }
+        if (state.owner != null) {
+            ConquerorAura.drew(state.owner); // 2.9.1: a Conqueror's blade drawn bursts with lightning
+        }
         state.drawStart = now;
         state.drawCut = false;
         state.drawCharge = false;
@@ -490,6 +497,9 @@ public final class SwordServer {
         }
         // the quick draw never waits: from the saya (or half drawn), straight down the line
         state.quickDrew = sheathed(state, now) || state.drawStart >= 0 && !SwordAnims.drawn(SwordAnims.DRAW, now - state.drawStart, state.katana);
+        if (state.quickDrew) {
+            ConquerorAura.drew(player); // 2.9.1
+        }
         state.drawStart = -1;
         state.drawCut = false;
         state.drawCharge = false;

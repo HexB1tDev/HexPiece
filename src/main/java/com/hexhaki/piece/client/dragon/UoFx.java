@@ -119,6 +119,10 @@ public final class UoFx {
     }
 
     public static void accept(S2CUoFx m) {
+        if (m.kind() >= com.hexhaki.piece.server.ConquerorAura.SPARKS) {
+            com.hexhaki.piece.client.haki.ConquerorSparksClient.accept(m); // 2.9.1: the Conqueror's lightning off its user
+            return;
+        }
         if (m.kind() >= 32) {
             com.hexhaki.piece.client.pika.PikaFx.accept(m); // 2.7.8: the Light fruit's moves share this message
             return;

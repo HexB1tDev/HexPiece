@@ -506,7 +506,20 @@ obviously."
   Scars with growing back) and throws lightning everywhere, up and down; keep the cost low (pooled arcs, capped counts, LOD).
 - Still open: the lag pass (a per-tick/per-frame handler audit was started and cut off by a usage limit: re-run it).
 
-## Next (2.9.1)
+## Done (2.9.1, pushed): the Haki edition, part 1 (the owner's request above)
+- server/ConquerorAura: the release's charge rate (PiecePatch.conquerorHaki: tickConquerorCharge's 0.625 becomes ConquerorAura.rate,
+  0.625 x speed(mastery), 1 to 3.2); every HakiServerController.animate goes past ConquerorAura.moved (sparks off the body when the
+  Conqueror has awakened: 60% of moves, one burst per 8 ticks, 2 + mastery/220 arcs; and every 40 ticks a 35% chance on its own);
+  SwordServer calls ConquerorAura.drew on a draw (slow or quick from the saya): a burst off the blade. S2CUoFx kinds 80 (SPARKS) and
+  81 (BLADE) go to client/haki/ConquerorSparksClient (UoFx routes kinds >= 80), built by haki/ConquerorSparks (crackled arcs, black
+  body + red rim) and let go by HakiBolts.sparks. Render: tools/preview/SparkPreview.
+- ConquerorStorm.count(mastery): 7 + round(2m + 16m^3) (about 26 at 1000); Fissures.crater: past mastery 500, every 5th cut blows a
+  Craters crater of 2 to 4.5 blocks.
+- Still to do for the Haki edition: the max release "tearing the floor" could go further (a ring of fissures, a deeper centre crater),
+  lightning shooting up and down from the release's centre for its whole length, sounds for the sparks (they use the original's zap
+  on bursts of 5 or more); ask the owner how it plays.
+
+## Next (2.9.2)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
 2. Ask how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the dragon's wave, the Blast Breath

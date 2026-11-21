@@ -63,13 +63,22 @@ public final class ConquerorStorm {
         return 60.0 + 60.0 * Math.max(0.0, Math.min(1.0, mastery / 1000.0));
     }
 
+    /** 2.9.1: how many enormous bolts tear out of a full-power release at {@code mastery} (0 to 1000): 7 to 25. */
+    public static int count(int mastery) {
+        double m = Math.max(0.0, Math.min(1.0, mastery / 1000.0));
+        return 7 + (int) Math.round(2 * m + 16 * m * m * m);
+    }
+
     /** The whole storm of one full-power release. */
     public static List<Strand> release(int mastery, long seed, boolean supreme) {
         double m = Math.max(0.0, Math.min(1.0, mastery / 1000.0));
         double reach = reach(mastery);
         SplittableRandom random = new SplittableRandom(seed ^ 0x5354_4F52_4DL);
         List<Strand> out = new ArrayList<>();
-        int count = 7 + (int) Math.round(2 * m) + (supreme ? 1 : 0);
+        // 2.9.1 (the owner: "I want the Conqueror's release to be, it's extremely destructive at max level. Like, I want it to be like
+        // fucking tearing the floor. I want massive amounts of lightning shooting everywhere, up, down ... it's meant to be ridiculous"):
+        // seven to ten bolts a young Conqueror, then steeply more toward mastery 1000 (some 26): those that come down tear the ground
+        int count = count(mastery) + (supreme ? 1 : 0);
         double[] directions = Sphere.directions(count, random);
         for (int i = 0; i < count; i++) {
             double[] dir = {directions[i * 3], directions[i * 3 + 1], directions[i * 3 + 2]};

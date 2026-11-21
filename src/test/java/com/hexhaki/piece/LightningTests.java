@@ -357,7 +357,8 @@ public final class LightningTests {
                 }
                 double reach = ConquerorStorm.reach(mastery);
                 Check.that(far > reach * 0.65 && far < reach * 1.1, "the storm spreads out to its reach (" + far + " of " + reach + ")");
-                Check.that(roots >= 7 && roots <= 10, "seven to ten huge bolts out of the flash, over the whole sphere (" + roots + ")");
+                int most = ConquerorStorm.count(mastery) + (supreme ? 1 : 0);
+                Check.that(roots >= 7 && roots <= most, "seven to " + most + " huge bolts out of the flash, over the whole sphere (" + roots + ")");
             }
         }
         // 2.2.5: the fissures run under the strands that tear along the ground, open as the strike reaches them, and are a V

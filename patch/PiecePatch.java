@@ -421,6 +421,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(HAKI_KEYS + ".class", transform(entries.get(HAKI_KEYS + ".class"), PiecePatch::keyDefaults));
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
+        entries.put(CONTROLLER + ".class", transform(entries.get(CONTROLLER + ".class"), PiecePatch::conquerorHaki));
         entries.put(FRUIT_ANIMATIONS + ".class", transform(entries.get(FRUIT_ANIMATIONS + ".class"), PiecePatch::fruitClips));
         entries.put(CLIENT_KITS + ".class", transform(entries.get(CLIENT_KITS + ".class"), node -> {
             for (FieldNode field : node.fields) {
@@ -886,6 +887,40 @@ public final class PiecePatch implements Opcodes {
         told.add(new VarInsnNode(ALOAD, 1));
         told.add(new MethodInsnNode(INVOKESTATIC, HOOKS, "played", "(ILjava/lang/String;)V", false));
         method.instructions.insert(told);
+    }
+
+    static final String CONQUEROR_AURA = "com/hexhaki/piece/server/ConquerorAura";
+
+    /**
+     * 2.9.1 (the owner: "the higher your mastery on haki, like the faster the Conqueror release will be"; "even your Rio, every move,
+     * like, should be coating you with lightning"): in HakiServerController, the release's charge a tick ({@code tickConquerorCharge}'s
+     * 0.625) becomes {@code ConquerorAura.rate(player)}, and every clip set playing ({@code animate(player, name, fade)}) goes past
+     * {@code ConquerorAura.moved(player, name)} first. Neither adds a branch: no frame needed.
+     */
+    static void conquerorHaki(ClassNode node) {
+        MethodNode tick = method(node, "tickConquerorCharge", "(Lnet/minecraft/server/level/ServerPlayer;)V");
+        int rates = 0;
+        for (AbstractInsnNode insn = tick.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof LdcInsnNode ldc && ldc.cst instanceof Double d && d == 0.625) {
+                InsnList rate = new InsnList();
+                rate.add(new VarInsnNode(ALOAD, 0));
+                rate.add(new MethodInsnNode(INVOKESTATIC, CONQUEROR_AURA, "rate", "(Lnet/minecraft/server/level/ServerPlayer;)D", false));
+                tick.instructions.insertBefore(ldc, rate);
+                AbstractInsnNode after = ldc.getNext();
+                tick.instructions.remove(ldc);
+                insn = after.getPrevious();
+                rates++;
+            }
+        }
+        if (rates != 1) {
+            throw new AssertionError("expected one 0.625 in HakiServerController.tickConquerorCharge, found " + rates);
+        }
+        MethodNode animate = method(node, "animate", "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;I)V");
+        InsnList moved = new InsnList();
+        moved.add(new VarInsnNode(ALOAD, 0));
+        moved.add(new VarInsnNode(ALOAD, 1));
+        moved.add(new MethodInsnNode(INVOKESTATIC, CONQUEROR_AURA, "moved", "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;)V", false));
+        animate.instructions.insert(moved);
     }
 
     /** 2.7.1: the quick slots' letters ({@code Binds.DEFAULT_KEYS}, {@code HAKI_KEYS}) as keyDefaults sets the keys: M -> H, N -> V, H -> X. */
