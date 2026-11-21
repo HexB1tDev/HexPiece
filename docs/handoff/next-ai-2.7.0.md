@@ -440,6 +440,25 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   FormattedText, Position, IShape, Vector3fc added). Both reproduce the owner's exact error on the 2.8.8 jar.
 - RULE for every future patch: a new jump target needs `new FrameNode(F_SAME, 0, null, 0, null)` (or the right frame) after its label.
 
+## The owner's verdict on the Light fruit after 2.8.9 (verbatim, with four screenshots: the fly pose firing the laser, the sword held
+## across the body, a white lump of an explosion) -- THE TOP PRIORITY, fix every point
+"Flying and jumping gives you a fuck ass animation. ... The M1s are locking your head into place, so it looks horrible whenever you're
+hitting with them. Like, why is it like controlling your fucking arms if you're not using them? Why is it like not just using the legs?
+... Do you not learn from every single fucking problem we've had thus far? ... The X move is shooting countless projectiles. It's way too
+many. ... The sounds are atrocious. ... The explosion of the right click is bad. It's too fast. It vanishes without animation or
+anything. ... The clones are not showing. The sword grabbing is still broken in third person because you're grabbing it way too up, and
+the animations of the sword are fucking awful. Not to mention that they don't even work in first person. ... The fucking light kick,
+aka V, speed of light kick, is horrible. It is meant to be a really dramatic one, like kick from the side, like comes from the back and
+then rotates and it hits on the left side of the mob or whatever was hit, like on the around the head area. ... The clones don't work.
+The entire fruit does way too much damage. ... The sounds, I keep telling you to get the sounds from the web ... you cannot fucking
+create sounds. ... The right click is off. It's not on the, in front of the fist. It's just moving around. Like as I move around ... I
+told you to research Kizaru and his like lore accurate abilities. This does not feel like it ... Have you seen the latest fucking like
+anime like an egghead where he can like fly like super fast and like use a mirror to like reflect his own body, turns into light,
+reflects against objects, can reflect against water to like projectile him up while he's made of light? This is not it."
+- Lessons (never again): PlayerAnimator freezes every keyed part: never key the head, and never an arm or leg a move does not use
+  (2.3.2 and 2.5.4 learned it for the sword; 2.7.8 forgot it for the Light fruit). Render every move in first person too. Never put a
+  sound in that is not a web recording. Check each move as the owner plays it, not only that the build passes.
+
 ## Next (2.9.0)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
