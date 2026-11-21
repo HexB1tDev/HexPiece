@@ -429,9 +429,20 @@ The next version is 2.7.5: the owner's report on the dragon, its moves and colou
   sped up) with two afterimages, cut twice (pika_sword_1, pika_sword_2), burst. Render: docs/handoff/pika-clones-2.8.8.jpg
   (tools/preview/ClonePreview.java out.png skin.png).
 
-## Next (2.8.9)
-1. Check 2.8.8's runs. Ask the owner how the Light fruit plays now that its moves animate, how the clones and the sword look in game,
-   and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
+## Done (2.8.9, pushed): 2.8.8 crashed the game at load (fixed; never again)
+- The owner's crash report (verbatim, Forge 47.4.23, Java 17): "java.lang.VerifyError: Expecting a stackmap frame at branch target 9
+  ... com/hexhaki/fruit/client/FruitAnimations.handles(Ljava/lang/String;)Z @4: ifeq ... Expected stackmap frame at this location."
+  PiecePatch.fruitClips (2.8.8) jumped to a new label without a FrameNode (the patch writes COMPUTE_MAXS, not frames): the mod failed to
+  load. Fixed (FrameNode F_SAME after the label).
+- Two guards so it cannot ship again: PiecePatch.frames checks every patched class as it is written (every branch target, switch case,
+  handler and instruction after a jump, return or throw starts with a frame) and fails the build; patch/JvmVerify (a build step after
+  PieceVerify) links every patched class through the JVM's own verifier over the stubs (29 of 29; empty verification-only stubs
+  FormattedText, Position, IShape, Vector3fc added). Both reproduce the owner's exact error on the 2.8.8 jar.
+- RULE for every future patch: a new jump target needs `new FrameNode(F_SAME, 0, null, 0, null)` (or the right frame) after its label.
+
+## Next (2.9.0)
+1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
+   animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
 2. Ask how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the dragon's wave, the Blast Breath
    lock, the dragon's sounds); nothing was tested in game.
 3. Earlier items still open: the lag pass (the owner's item 2).

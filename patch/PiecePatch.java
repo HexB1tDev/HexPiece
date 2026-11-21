@@ -457,7 +457,61 @@ public final class PiecePatch implements Opcodes {
         change.apply(node);
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         node.accept(writer);
-        return writer.toByteArray();
+        byte[] out = writer.toByteArray();
+        frames(out);
+        return out;
+    }
+
+    /**
+     * 2.8.9 (the owner's crash on 2.8.8: "java.lang.VerifyError: Expecting a stackmap frame at branch target 9 ... FruitAnimations.handles"):
+     * the game verifies every class by its stack map frames (classes from Java 7 on must carry them), and a patch writes them only where
+     * it adds them itself (COMPUTE_MAXS). Every patched class is read back and each method checked as the JVM checks it: every branch
+     * target, switch case and exception handler, and every instruction after a jump, a return or a throw, must start with a frame.
+     */
+    static void frames(byte[] bytes) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, 0);
+        if ((node.version & 0xFFFF) < 50) {
+            return;
+        }
+        for (MethodNode method : node.methods) {
+            java.util.Set<LabelNode> targets = new java.util.HashSet<>();
+            for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+                if (insn instanceof JumpInsnNode jump) {
+                    targets.add(jump.label);
+                } else if (insn instanceof jdk.internal.org.objectweb.asm.tree.TableSwitchInsnNode table) {
+                    targets.add(table.dflt);
+                    targets.addAll(table.labels);
+                } else if (insn instanceof jdk.internal.org.objectweb.asm.tree.LookupSwitchInsnNode lookup) {
+                    targets.add(lookup.dflt);
+                    targets.addAll(lookup.labels);
+                }
+            }
+            for (jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode block : method.tryCatchBlocks) {
+                targets.add(block.handler);
+            }
+            for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+                boolean needs = insn instanceof LabelNode label && targets.contains(label);
+                int op = insn.getOpcode();
+                boolean ends = op == GOTO || op == ATHROW || op >= IRETURN && op <= RETURN
+                    || insn instanceof jdk.internal.org.objectweb.asm.tree.TableSwitchInsnNode
+                    || insn instanceof jdk.internal.org.objectweb.asm.tree.LookupSwitchInsnNode;
+                if (!needs && !ends) {
+                    continue;
+                }
+                // the next real instruction must be preceded (among labels and line numbers) by a frame
+                AbstractInsnNode next = ends ? insn.getNext() : insn;
+                boolean frame = false;
+                while (next != null && next.getOpcode() < 0) {
+                    frame |= next instanceof FrameNode;
+                    next = next.getNext();
+                }
+                if (next != null && !frame) {
+                    throw new AssertionError(node.name + "." + method.name + method.desc
+                        + ": no stack map frame where the JVM needs one (instruction " + method.instructions.indexOf(next) + ")");
+                }
+            }
+        }
     }
 
     static MethodNode method(ClassNode node, String name, String desc) {
@@ -799,6 +853,8 @@ public final class PiecePatch implements Opcodes {
         hook.add(new InsnNode(ICONST_1));
         hook.add(new InsnNode(IRETURN));
         hook.add(theirs);
+        // 2.8.9: the jump's target needs its stack map frame (2.8.8 shipped without one: the game refused the class at load)
+        hook.add(new FrameNode(F_SAME, 0, null, 0, null));
         method.instructions.insert(hook);
     }
     static final String FP_CONFIG = "dev/kosmx/playerAnim/api/firstPerson/FirstPersonConfiguration";

@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.8.8"
+VERSION = "2.8.9"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -708,7 +708,7 @@ def main():
         clean(directory)
 
     run("java", "-m", "jdk.compiler/com.sun.tools.javac.Main", *EXPORTS, "-nowarn", "-d", TOOLS,
-        "patch/PiecePatch.java", "patch/PieceVerify.java")
+        "patch/PiecePatch.java", "patch/PieceVerify.java", "patch/JvmVerify.java")
     run("java", *EXPORTS, "-cp", TOOLS, "PiecePatch", INPUT, BASE, VERSION)
 
     javac("--release", "17", "-d", STUBS, *sources("stubs"))
@@ -721,6 +721,8 @@ def main():
     CHANGED_LIST.write_text("\n".join(sorted(n for n in changed_entries() if n.endswith(".class"))) + "\n", encoding="utf-8")
     run("java", *EXPORTS, "-cp", TOOLS, "PieceVerify", OUTPUT, INPUT, STUBS, CHANGED_LIST,
         ROOT / "verify" / "api-allowlist.txt", ROOT / "verify" / "hexghoul-allowlist.txt")
+    # 2.8.9: the patched classes linked by the JVM's own verifier (2.8.8's missing stack map frame crashed the game at load)
+    run("java", "-cp", TOOLS, "JvmVerify", OUTPUT, STUBS, CHANGED_LIST)
     added, animations = check_archive_scope()
     check_srg_shapes()
     check_impact_fields()
