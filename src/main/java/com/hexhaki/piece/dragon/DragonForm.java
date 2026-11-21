@@ -99,8 +99,6 @@ public final class DragonForm {
         /** The head where the transformation's take starts and where the way back's ends (model units, after the alignment). */
         public final float[] formStart = new float[3];
         public final float[] unformEnd = new float[3];
-        /** 2.9.0: how far behind the face (model units, along the straight body) the pelvis ([0]) and each tail bone ([1 + i]) are. */
-        public final float[] behind = new float[TAIL.length + 1];
 
         public Shape(DragonModel model) {
             this.pelvis = model.bone("Body_Pelvis");
@@ -144,22 +142,9 @@ public final class DragonForm {
             }
             pose.rest();
             pose.clip(idle, 0.0F, true, 1.0F);
-            straighten(this, pose, 0.0F, 1.0F, 0.0F, null);
+            straighten(this, pose, 0.0F, 1.0F, 0.0F);
             pose.solve();
             pose.origin(this.face, this.flightHead);
-            float[] at = new float[3];
-            float[] last = this.flightHead.clone();
-            float run = 0.0F;
-            pose.origin(this.pelvis, at);
-            run += dist(last, at);
-            this.behind[0] = run;
-            System.arraycopy(at, 0, last, 0, 3);
-            for (int i = 0; i < TAIL.length; i++) {
-                pose.origin(this.tail[i], at);
-                run += dist(last, at);
-                this.behind[i + 1] = run;
-                System.arraycopy(at, 0, last, 0, 3);
-            }
             pose.rest();
             pose.clip(model.clips.get("form"), 0.0F, false, 1.0F);
             pose.solve();
@@ -171,38 +156,6 @@ public final class DragonForm {
             pose.origin(this.face, this.unformEnd);
         }
     }
-
-    static float dist(float[] a, float[] b) {
-        float dx = a[0] - b[0];
-        float dy = a[1] - b[1];
-        float dz = a[2] - b[2];
-        return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-    }
-
-    /**
-     * 2.9.0 (the owner: "the body's moving like a stick. Like as if you rotate it, it doesn't have an animation. It just rotates on its
-     * own, like instantly as soon as the player turns. Like his body does not adapt to the movement"): the body following its own way
-     * through the air. For the pelvis ([0]) and each tail bone ([1 + i]), how far (degrees) the way it points lags the head's: about the
-     * up axis ({@code yaw}: the head turned, the body still going the way the head went when it was there) and the side axis
-     * ({@code pitch}). Filled each frame from where the head has been (client/dragon/DragonClient); in flight only.
-     */
-    public static final class Trail {
-        public final float[] yaw = new float[TAIL.length + 1];
-        public final float[] pitch = new float[TAIL.length + 1];
-
-        /** Whether it bends at all. */
-        boolean any() {
-            for (int i = 0; i < this.yaw.length; i++) {
-                if (Math.abs(this.yaw[i]) > 0.05F || Math.abs(this.pitch[i]) > 0.05F) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    /** At most this far (degrees) the body bends from the head's way at any point of it. */
-    public static final float TRAIL_MOST = 150.0F;
 
     /** The phase's length in ticks (the hover and the human: none). */
     public static int length(int phase) {
@@ -236,17 +189,11 @@ public final class DragonForm {
      */
     public static void pose(DragonModel model, Shape shape, DragonPose pose, int phase, float seconds, float hover, float flight, float age,
                             float mouth, float bite, float[] anchor) {
-        pose(model, shape, pose, phase, seconds, hover, flight, age, anchor, mouth, bite, null);
-    }
-
-    /** 2.9.0: as above, the flying body following its own way ({@code trail}, null for none). */
-    public static void pose(DragonModel model, Shape shape, DragonPose pose, int phase, float seconds, float hover, float flight, float age,
-                            float mouth, float bite, float[] anchor, Trail trail) {
-        pose(model, shape, pose, phase, seconds, hover, flight, age, anchor, mouth, bite, trail);
+        pose(model, shape, pose, phase, seconds, hover, flight, age, anchor, mouth, bite);
     }
 
     static void pose(DragonModel model, Shape shape, DragonPose pose, int phase, float seconds, float hover, float flight, float age,
-                     float[] anchor, float mouth, float bite, Trail trail) {
+                     float[] anchor, float mouth, float bite) {
         pose.rest();
         DragonModel.Clip idle = model.clips.get("idle");
         float fly = Math.max(0.0F, Math.min(1.0F, flight));
@@ -262,28 +209,18 @@ public final class DragonForm {
                 fly *= 1.0F - smooth(seconds / UNFORM_BLEND);
             }
             if (fly > 0.0F) {
-                straighten(shape, pose, age, fly, fly, trail != null && trail.any() ? trail : null);
+                straighten(shape, pose, age, fly, fly);
             }
             if (phase == UNFORMING) {
                 pose.clip(model.clips.get("unform"), seconds, false, smooth(seconds / UNFORM_BLEND));
             }
-        }
-        boolean bent = fly > 0.0F && phase != FORMING && trail != null && trail.any();
-        float[] head = null;
-        if (bent) {
-            // the body bent behind the head: the head is where the player is (the bends move the body, never the head), read before
-            // the jaws (the bite's lunge still drives it forward)
-            pose.solve();
-            head = new float[3];
-            pose.origin(shape.face, head);
         }
         if (phase == DRAGON) {
             jaws(shape, pose, mouth, bite);
         }
         pose.solve();
         for (int k = 0; k < 3; k++) {
-            float flying = bent ? shape.flightHead[k] + (head[k] - shape.flightHead[k]) * fly : shape.flightHead[k];
-            anchor[k] = shape.hoverHead[k] + (flying - shape.hoverHead[k]) * fly;
+            anchor[k] = shape.hoverHead[k] + (shape.flightHead[k] - shape.hoverHead[k]) * fly;
         }
     }
 
@@ -292,15 +229,9 @@ public final class DragonForm {
      * its bind), a wave travelling down from the neck to the tail by {@code wave}: up and down most, a little to the sides, larger
      * toward the tail.
      */
-    static void straighten(Shape shape, DragonPose pose, float age, float weight, float wave, Trail trail) {
+    static void straighten(Shape shape, DragonPose pose, float age, float weight, float wave) {
         float[] q = new float[4];
-        if (trail != null) {
-            // 2.9.0: the pelvis points the way the body went there (the neck below turns the head back to the look)
-            euler(clampTrail(trail.pitch[0]) * weight, clampTrail(trail.yaw[0]) * weight, q);
-            set(pose, shape.pelvis, q[0], q[1], q[2], q[3], weight);
-        } else {
-            set(pose, shape.pelvis, 0.0F, 0.0F, 0.0F, 1.0F, weight);
-        }
+        set(pose, shape.pelvis, 0.0F, 0.0F, 0.0F, 1.0F, weight);
         lerpT(pose, shape.pelvis, 0.0F, 0.0F, 0.0F, weight);
         float phase = (float) (age / WAVE_PERIOD * Math.PI * 2.0);
         float step = (float) (Math.PI * 2.0 / WAVE_SEGMENTS);
@@ -308,11 +239,6 @@ public final class DragonForm {
             float along = i / (float) (shape.tail.length - 1);
             float up = (WAVE_UP + WAVE_UP_TAIL * along) * wave * shape(phase - i * step);
             float side = (1.2F + 2.3F * along) * wave * (float) Math.sin(phase * 0.71F - i * step * 0.8F + 1.3F);
-            if (trail != null) {
-                // each bone bent from the one before it by how much more its way lags the head's
-                side += (clampTrail(trail.yaw[i + 1]) - clampTrail(trail.yaw[i])) * weight;
-                up += (clampTrail(trail.pitch[i + 1]) - clampTrail(trail.pitch[i])) * weight;
-            }
             euler(up, side, q);
             set(pose, shape.tail[i], q[0], q[1], q[2], q[3], weight);
             lerpRest(pose, shape.tail[i], weight);
@@ -328,24 +254,13 @@ public final class DragonForm {
         for (int i = 0; i < shape.coatChain.length; i++) {
             pose.bend(shape.coatChain[i], COAT_FLUTTER * wave * (float) Math.sin(phase * 1.7F - i * 1.1F), 1.0F, 0.0F, 0.0F);
         }
-        int bends = shape.neck.length - 1;
         for (int i = 0; i < shape.neck.length; i++) {
             // the neck carries the wave forward a little, the head held level
             float up = i == shape.neck.length - 1 ? 0.0F : NECK_UP * wave * shape(phase + (i + 1) * step);
-            float side = 0.0F;
-            if (trail != null && i < bends) {
-                // 2.9.0: the neck curves the head back round from the way the pelvis points to the look
-                side = -clampTrail(trail.yaw[0]) * weight / bends;
-                up -= clampTrail(trail.pitch[0]) * weight / bends;
-            }
-            euler(up, side, q);
+            euler(up, 0.0F, q);
             set(pose, shape.neck[i], q[0], q[1], q[2], q[3], weight);
             lerpRest(pose, shape.neck[i], weight);
         }
-    }
-
-    static float clampTrail(float degrees) {
-        return Math.max(-TRAIL_MOST, Math.min(TRAIL_MOST, degrees));
     }
 
     /**

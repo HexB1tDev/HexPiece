@@ -54,11 +54,6 @@ final class DragonRenderer {
     private DragonRenderer() {
     }
 
-    /** 2.9.0: the shape's distances behind the face (DragonClient's trail), once the model is read. */
-    static float[] behind() {
-        return model() == null ? null : shape.behind;
-    }
-
     /** The model, read once from the mod's own jar (null if it could not be). */
     static DragonModel model() {
         if (model == null && !failed) {
@@ -91,13 +86,13 @@ final class DragonRenderer {
     static void draw(int id, ResourceLocation texture, PoseStack stack, MultiBufferSource.BufferSource buffers, double dx, double dy, double dz,
                      int phase, float seconds,
                      float hover, float flight, float age, float yaw, float pitch, float bank, int light, int overlay, float mouth, float bite,
-                     float[] mouthOut, DragonForm.Trail trail) {
+                     float[] mouthOut) {
         DragonModel m = model();
         if (m == null) {
             return;
         }
         Skin skin = SKINS.computeIfAbsent(id, k -> new Skin(m));
-        DragonForm.pose(m, shape, skin.pose, phase, seconds, hover, flight, age, mouth, bite, skin.anchor, trail);
+        DragonForm.pose(m, shape, skin.pose, phase, seconds, hover, flight, age, mouth, bite, skin.anchor);
         DragonForm.shift(shape, phase, seconds, skin.shift);
         DragonForm.placement(skin.anchor, skin.shift, DragonForm.grow(phase, seconds), yaw, pitch, bank, skin.place);
         // 2.7.6 (the owner: the fire "coming from inside the mouth not from anywhere else"): the inside of the gape and the mouth's own

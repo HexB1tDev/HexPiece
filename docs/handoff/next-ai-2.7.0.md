@@ -485,8 +485,7 @@ game in general is. Like, this mod is meant to be more optimized. It's super lag
   PikaMoves.hold); Yata no Kagami reflected off glancing surfaces and water (PikaMoves.mirror, 3 bounces, 60 blocks; sneak straight);
   light flight: sprinting while flying, 2 blocks a tick, the body hidden and drawn as light (PikaFx.lit); every sound a CC0 web
   recording (tools/pika_sounds.py, tools/web_sounds.py, pika/PikaSounds, client/LoopSound for held loops).
-- Dragon: DragonForm.Trail (the body bent along the head's past path, DragonClient keeps 160 ticks of it; the head pinned to the
-  player); FLY_SPEED 0.04; Blast Breath charge sound client-side (charge_build 8.5 s, then the charge_hold loop until released, faded);
+- Dragon: DragonForm.Trail (the body bent along the head's past path; REVERTED in 2.9.2 at the owner's word); FLY_SPEED 0.04; Blast Breath charge sound client-side (charge_build 8.5 s, then the charge_hold loop until released, faded);
   no breath or bite while charging or burning; craters: strike 1.6+w*0.1, burn 1.4 every 18 ticks, the bomb's 5+8*charge
   (UoMoves.BOMB_*); the bomb (UoFire.bomb, 9 s: flash, fireball, mushroom cloud, dust ring, burning rim, embers) and aftershocks round
   the rim for 3.5 s; FireMesh.detail thresholds raised (320 faces only above 0.16 of the view).
@@ -519,7 +518,15 @@ obviously."
   lightning shooting up and down from the release's centre for its whole length, sounds for the sparks (they use the original's zap
   on bursts of 5 or more); ask the owner how it plays.
 
-## Next (2.9.2)
+## Done (2.9.2, pushed): the dragon's movement reverted (the owner, verbatim)
+"The dragon is kind of lagging nonstop every time I turn while moving. Revert the entire dragon update in terms of movement. Keep the
+blast, keep everything, just reverse the movement to be as it was a few versions ago. Just keep it as it was. It was fine. I was being
+too picky. Revert that. It's too laggy right now. It's too buggy. I don't like it." Then: "However, keep the same movement speed we got
+right now."
+- DragonForm, DragonClient, DragonRenderer and DragonPreview are 2.8.9's again (no DragonForm.Trail, the head's turn 0.45 a tick);
+  DragonServer.FLY_SPEED stays 0.04 and GUST_SPEED 0.42. Never bring the body trail back unless the owner asks for it.
+
+## Next (2.9.3)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
 2. Ask how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the dragon's wave, the Blast Breath
