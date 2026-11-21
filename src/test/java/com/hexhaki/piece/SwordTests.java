@@ -579,7 +579,8 @@ public final class SwordTests {
             Check.that(all.contains(event.group(1)) || event.group(1).equals(com.hexhaki.piece.clash.ClashRules.SOUND)
                 || java.util.Arrays.asList(com.hexhaki.piece.Alignment.SOUNDS).contains(event.group(1))
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION)
-                || java.util.Arrays.stream(com.hexhaki.piece.dragon.UoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                || java.util.Arrays.stream(com.hexhaki.piece.dragon.UoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.pika.PikaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
@@ -632,16 +633,23 @@ public final class SwordTests {
      * SOURCES.txt as a CC0 recording on Freesound.org with its author and page.
      */
     static void dragonSounds() throws Exception {
-        Path dir = Path.of("src/main/resources/assets/hexhaki/sounds/piece/uo");
+        webSounds("uo", com.hexhaki.piece.dragon.UoSounds.EVENTS, 25);
+        // 2.9.0 (the owner: "The sounds are atrocious ... I keep telling you to get the sounds from the web"): the Light fruit's too
+        webSounds("pika", com.hexhaki.piece.pika.PikaSounds.EVENTS, 30);
+    }
+
+    /** One fruit's web sounds (sounds/piece/{folder}): as {@link #dragonSounds} checks them, at least {@code least} clips. */
+    static void webSounds(String folder, String[][] events, int least) throws Exception {
+        Path dir = Path.of("src/main/resources/assets/hexhaki/sounds/piece/" + folder);
         String json = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
         String lang = Files.readString(Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
         String sources = Files.readString(dir.resolve("SOURCES.txt"));
         Set<String> played = new HashSet<>();
-        for (String[] event : com.hexhaki.piece.dragon.UoSounds.EVENTS) {
+        for (String[] event : events) {
             Check.that(json.contains("\"" + event[0] + "\": {"), event[0] + ": defined in sounds.json");
             Check.that(lang.contains("\"subtitles.hexhaki." + event[0] + "\""), event[0] + ": its subtitle");
             for (int i = 1; i < event.length; i++) {
-                Check.that(json.contains("\"hexhaki:piece/uo/" + event[i] + "\""), event[0] + ": plays " + event[i]);
+                Check.that(json.contains("\"hexhaki:piece/" + folder + "/" + event[i] + "\""), event[0] + ": plays " + event[i]);
                 played.add(event[i]);
             }
         }
@@ -663,7 +671,7 @@ public final class SwordTests {
                     name + ": mono Ogg Vorbis");
             }
         }
-        Check.that(files == played.size() && files >= 25, "every dragon clip is played (" + files + " clips)");
+        Check.that(files == played.size() && files >= least, "every " + folder + " clip is played (" + files + " clips)");
     }
 
     static int indexOf(byte[] data, byte[] what) {

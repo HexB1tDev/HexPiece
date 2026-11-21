@@ -40,6 +40,11 @@ public record S2CUoFx(int kind, int id, int user, double x, double y, double z, 
      */
     public static final int FIRE_BEAM = 12;
     public static final int FIRE_BEAM_OFF = 13;
+    /**
+     * 2.9.0: a BURST's kind (bz) for Blast Breath's last explosion: the bomb (dragon/UoFire.bomb), its mushroom cloud and the burning
+     * ground it leaves for {@code UoFire.BOMB_LIFE} ticks; size its radius.
+     */
+    public static final int BOMB = 14;
 
     /** A kind with no place (the user's own dragon). */
     public static S2CUoFx of(int kind, int id, int user) {

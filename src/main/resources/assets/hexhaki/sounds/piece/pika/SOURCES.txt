@@ -1,0 +1,40 @@
+The Pika Pika no Mi's sounds (tools/pika_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+laser1.ogg: "Laser2" by Daleonfire, https://freesound.org/people/Daleonfire/sounds/505235/ (CC0 1.0), from 0.0 s, 0.62 s long
+laser2.ogg: "Soft Shot Gun Laser Blast" by Filmscore, https://freesound.org/people/Filmscore/sounds/515866/ (CC0 1.0), from 0.0 s, 1.31 s long
+charge.ogg: "laser-charge.wav" by StavSounds, https://freesound.org/people/StavSounds/sounds/701702/ (CC0 1.0), from 0.0 s, 1.78 s long
+beam1.ogg: "Devastating Laser Blasts" by SamsterBirdies, https://freesound.org/people/SamsterBirdies/sounds/731984/ (CC0 1.0), from 0.0 s, 4.80 s long
+beam2.ogg: "Devastating Laser Blasts" by SamsterBirdies, https://freesound.org/people/SamsterBirdies/sounds/731984/ (CC0 1.0), from 10.7 s, 4.80 s long
+beam3.ogg: "Ion Cannon" by qubodup, https://freesound.org/people/qubodup/sounds/814049/ (CC0 1.0), from 0.0 s, 6.46 s long
+explode1.ogg: "Creation Magic Blast" by qubodup, https://freesound.org/people/qubodup/sounds/814044/ (CC0 1.0), from 0.0 s, 5.00 s long
+explode2.ogg: "Space Explosion" by qubodup, https://freesound.org/people/qubodup/sounds/814054/ (CC0 1.0), from 0.0 s, 7.00 s long
+pop1.ogg: "Creation Magic Blast" by qubodup, https://freesound.org/people/qubodup/sounds/814044/ (CC0 1.0), from 0.0 s, 1.40 s long
+zap1.ogg: "Noise Laser Zaps.wav" by mju90, https://freesound.org/people/mju90/sounds/703337/ (CC0 1.0), from 0.1 s, 0.80 s long
+zap2.ogg: "Noise Laser Zaps.wav" by mju90, https://freesound.org/people/mju90/sounds/703337/ (CC0 1.0), from 2.1 s, 0.80 s long
+zap3.ogg: "Noise Laser Zaps.wav" by mju90, https://freesound.org/people/mju90/sounds/703337/ (CC0 1.0), from 4.1 s, 0.80 s long
+zap4.ogg: "Noise Laser Zaps.wav" by mju90, https://freesound.org/people/mju90/sounds/703337/ (CC0 1.0), from 6.1 s, 0.80 s long
+travel1.ogg: "Teleport activate" by SamsterBirdies, https://freesound.org/people/SamsterBirdies/sounds/639987/ (CC0 1.0), from 0.1 s, 2.60 s long
+travel2.ogg: "hi speed electronic whoosh 1.wav" by martian, https://freesound.org/people/martian/sounds/19307/ (CC0 1.0), from 0.0 s, 0.93 s long
+whoosh1.ogg: "quick woosh" by florianreichelt, https://freesound.org/people/florianreichelt/sounds/683101/ (CC0 1.0), from 0.1 s, 0.90 s long
+whoosh2.ogg: "whoosh_short_mid.wav" by DJT4NN3R, https://freesound.org/people/DJT4NN3R/sounds/449996/ (CC0 1.0), from 0.0 s, 1.00 s long
+hit1.ogg: "boxing mitt punches strike thud whack.wav" by rsellick, https://freesound.org/people/rsellick/sounds/545523/ (CC0 1.0), from 1.2 s, 0.35 s long
+hit2.ogg: "boxing mitt punches strike thud whack.wav" by rsellick, https://freesound.org/people/rsellick/sounds/545523/ (CC0 1.0), from 6.2 s, 0.35 s long
+hit3.ogg: "boxing mitt punches strike thud whack.wav" by rsellick, https://freesound.org/people/rsellick/sounds/545523/ (CC0 1.0), from 7.8 s, 0.35 s long
+hit4.ogg: "boxing mitt punches strike thud whack.wav" by rsellick, https://freesound.org/people/rsellick/sounds/545523/ (CC0 1.0), from 11.5 s, 0.41 s long
+hit_heavy1.ogg: "Hard impact hit.wav" by npeng, https://freesound.org/people/npeng/sounds/482267/ (CC0 1.0), from 1.7 s, 1.40 s long
+hit_heavy2.ogg: "Hard impact hit.wav" by npeng, https://freesound.org/people/npeng/sounds/482267/ (CC0 1.0), from 3.8 s, 1.40 s long
+kick_blast.ogg: "Low_Mid_End_Void_Energy_Blast_Punch_02" by The_Elementus, https://freesound.org/people/The_Elementus/sounds/873746/ (CC0 1.0), from 0.0 s, 0.86 s long
+sword_on.ogg: "Laser Sword (Ignition/Waving/Putting Away)" by Za-Games, https://freesound.org/people/Za-Games/sounds/540214/ (CC0 1.0), from 0.0 s, 0.62 s long
+swing1.ogg: "Laser Sword (Ignition/Waving/Putting Away)" by Za-Games, https://freesound.org/people/Za-Games/sounds/540214/ (CC0 1.0), from 1.1 s, 0.75 s long
+swing2.ogg: "Laser Sword (Ignition/Waving/Putting Away)" by Za-Games, https://freesound.org/people/Za-Games/sounds/540214/ (CC0 1.0), from 2.4 s, 0.75 s long
+swing3.ogg: "Lightsaber Hum and Swings 2" by Sheyvan, https://freesound.org/people/Sheyvan/sounds/703384/ (CC0 1.0), from 50.4 s, 0.75 s long
+swing4.ogg: "Lightsaber Hum and Swings 2" by Sheyvan, https://freesound.org/people/Sheyvan/sounds/703384/ (CC0 1.0), from 51.1 s, 0.70 s long
+swing5.ogg: "Lightsaber Hum and Swings 2" by Sheyvan, https://freesound.org/people/Sheyvan/sounds/703384/ (CC0 1.0), from 51.8 s, 0.75 s long
+sword_off.ogg: "Laser Sword (Ignition/Waving/Putting Away)" by Za-Games, https://freesound.org/people/Za-Games/sounds/540214/ (CC0 1.0), from 3.5 s, 1.19 s long
+parry1.ogg: "Metal_Sword_Parry_Impact_Hit_4" by chungkury, https://freesound.org/people/chungkury/sounds/760636/ (CC0 1.0), from 0.0 s, 1.84 s long
+sparkle1.ogg: "Whoosh Magic Sparkle" by Qvantor, https://freesound.org/people/Qvantor/sounds/877981/ (CC0 1.0), from 0.3 s, 2.20 s long
+sparkle2.ogg: "Cartoon Magic Transition" by qubodup, https://freesound.org/people/qubodup/sounds/856641/ (CC0 1.0), from 0.1 s, 1.60 s long
+charge_hold.ogg: "Spell charge loop" by Bertsz, https://freesound.org/people/Bertsz/sounds/500910/ (CC0 1.0), a loop from 0.3 s, 4.00 s long
+hum.ogg: "Lightsaber Hum and Swings 2" by Sheyvan, https://freesound.org/people/Sheyvan/sounds/703384/ (CC0 1.0), a loop from 20.8 s, 2.40 s long

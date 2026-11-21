@@ -10,13 +10,13 @@ sounds in the world), peak-normalises it to -1 dBFS, fades it in and out and wri
 src/main/resources/assets/hexhaki/sounds/piece/uo/, with SOURCES.txt naming every clip's origin. The build never downloads: the .ogg
 files are kept in the repository.
 
-Usage: python3 tools/dragon_sounds.py   (needs ffmpeg and access to freesound.org and cdn.freesound.org)
+Usage: python3 tools/dragon_sounds.py [--only name,name]   (needs ffmpeg and access to freesound.org and cdn.freesound.org; --only
+writes just those files, the rest are left as they are; tools/web_sounds.py does the work)
 """
 import os
-import re
-import subprocess
 import sys
-import tempfile
+
+import web_sounds
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "src/main/resources/assets/hexhaki/sounds/piece/uo")
@@ -76,6 +76,7 @@ CLIPS = {
     "beam1": ("dragon_fire", 0.0, 5.0, 0.0, 1.6),
     "beam2": ("fire_breath", 1.2, 4.0, 0.05, 1.4),
     "charge": ("charge", 0.3, 3.2, 0.05, 0.3),
+    "charge_build": ("charge", 0.3, 8.5, 0.05, 0.6),
     "fireball1": ("fireball", 0.9, 2.1, 0.02, 0.5),
     "ember_hit1": ("fireball_hit", 0.0, None, 0.0, 0.3),
     "ember_hit2": ("flame_burst", 0.0, 1.6, 0.0, 0.6),
@@ -88,59 +89,18 @@ CLIPS = {
 }
 
 
-def page(user, sid):
-    return f"https://freesound.org/people/{user}/sounds/{sid}/"
-
-
-def fetch(user, sid, into):
-    html = subprocess.run(["curl", "-s", "--max-time", "30", "-A", "Mozilla/5.0", page(user, sid)], capture_output=True, text=True,
-                          check=True).stdout
-    if "creativecommons.org/publicdomain/zero/1.0" not in html:
-        raise RuntimeError(f"{page(user, sid)} is not CC0: not used")
-    title = re.search(r'data-title="([^"]*)"', html).group(1)
-    preview = re.search(r'data-ogg="([^"]*)"', html).group(1).replace("-lq.ogg", "-hq.ogg")
-    subprocess.run(["curl", "-s", "--max-time", "180", "-o", into, preview], check=True)
-    return title, preview
-
-
-def convert(src, start, length, fade_in, fade_out, out):
-    cut = ["-ss", f"{start:.3f}"] + (["-t", f"{length:.3f}"] if length else [])
-    probe = subprocess.run(["ffmpeg", "-v", "info", "-hide_banner"] + cut + ["-i", src, "-ac", "1", "-af", "volumedetect", "-f", "null", "-"],
-                           capture_output=True, text=True).stderr
-    peak = 0.0
-    for line in probe.splitlines():
-        if "max_volume:" in line:
-            peak = float(line.split("max_volume:")[1].split("dB")[0])
-    raw = subprocess.run(["ffmpeg", "-v", "error", "-hide_banner"] + cut + ["-i", src, "-ac", "1", "-ar", "44100", "-f", "s16le", "-"],
-                         capture_output=True, check=True).stdout
-    seconds = len(raw) / (2 * 44100.0)
-    chain = [f"volume={-1.0 - peak:.2f}dB"]
-    if fade_in > 0:
-        chain.append(f"afade=t=in:d={fade_in:.3f}:curve=qsin")
-    chain.append(f"afade=t=out:st={max(0.0, seconds - fade_out):.3f}:d={max(0.015, fade_out):.3f}:curve=cub")
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-hide_banner"] + cut + ["-i", src, "-ac", "1", "-ar", "44100", "-af", ",".join(chain),
-                    "-c:a", "libvorbis", "-q:a", "6", out], check=True)
-    return seconds
+# 2.9.0 (the owner: "The charge fucking sound, the charging, the blast breath, the sound while it's charging ends all of a sudden"): the
+# charge's build-up (the recording rises for its whole 20 s) and a loop of its height held for as long as the key is (UoFx plays both)
+LOOPS = {
+    "charge_hold": ("charge", 14.5, 4.0, 0.9),
+}
 
 
 def main():
-    os.makedirs(OUT, exist_ok=True)
-    work = tempfile.mkdtemp()
-    got = {}
-    for key, (user, sid) in SOUNDS.items():
-        path = os.path.join(work, f"{sid}.ogg")
-        got[key] = (path,) + fetch(user, sid, path)
-        print(f"fetched {key}: {got[key][1]} ({page(user, sid)})")
-    lines = ["The Uo Uo no Mi's sounds (tools/dragon_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files",
-             "here are cut from its high-quality preview, made mono, peak-normalised and faded. Thanks to every author named.", ""]
-    for name, (key, start, length, fade_in, fade_out) in CLIPS.items():
-        user, sid = SOUNDS[key]
-        path, title, preview = got[key]
-        seconds = convert(path, start, length, fade_in, fade_out, os.path.join(OUT, name + ".ogg"))
-        lines.append(f"{name}.ogg: \"{title}\" by {user}, {page(user, sid)} (CC0 1.0), from {start:.1f} s, {seconds:.2f} s long")
-        print(f"wrote {name}.ogg ({seconds:.2f} s)")
-    with open(os.path.join(OUT, "SOURCES.txt"), "w", encoding="utf-8") as handle:
-        handle.write("\n".join(lines) + "\n")
+    only = None
+    if len(sys.argv) > 2 and sys.argv[1] == "--only":
+        only = set(sys.argv[2].split(","))
+    web_sounds.build(SOUNDS, CLIPS, LOOPS, OUT, "The Uo Uo no Mi's sounds (tools/dragon_sounds.py).", only)
 
 
 if __name__ == "__main__":

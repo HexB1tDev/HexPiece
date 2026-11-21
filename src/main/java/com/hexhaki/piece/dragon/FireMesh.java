@@ -218,8 +218,10 @@ public final class FireMesh {
 
     /** The detail a sphere of {@code radius} at {@code distance} from the eye needs (0: 20 faces, 1: 80, 2: 320). */
     static int detail(double radius, double distance) {
+        // 2.9.0 (the owner: "how laggy the game in general is"): 320 faces only for a puff filling a good part of the view, 80 for the
+        // rest (0.06 and 0.012 before): the fire's own cel bands hide the facets
         double size = radius / Math.max(0.5, distance) * quality;
-        return size > 0.06 ? 2 : size > 0.012 ? 1 : 0;
+        return size > 0.16 ? 2 : size > 0.02 ? 1 : 0;
     }
 
     // ------------------------------------------------------------------------------------------------------ the primitives

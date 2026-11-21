@@ -29,6 +29,12 @@ public final class UoSounds {
     public static final String FLAME_LOOP = "piece.uo.flame_loop";
     /** Blast Breath: the charge gathering, the beam of fire. */
     public static final String CHARGE = "piece.uo.charge";
+    /**
+     * 2.9.0 (the owner: "the sound while it's charging ends all of a sudden"): the charge's whole build-up, and its height held round
+     * and round (a loop) for as long as the key is: both played on the client while the blast gathers (client/dragon/UoFx).
+     */
+    public static final String CHARGE_BUILD = "piece.uo.charge_build";
+    public static final String CHARGE_HOLD = "piece.uo.charge_hold";
     public static final String BEAM = "piece.uo.beam";
     /** Dragon Embers: the fireballs thrown up, and each one landing. */
     public static final String FIREBALL = "piece.uo.fireball";
@@ -44,7 +50,8 @@ public final class UoSounds {
     public static final String[][] EVENTS = {
         {ROAR, "roar1", "roar2", "roar3"}, {FORM, "form_boom"}, {WHOOSH, "whoosh1", "whoosh2", "whoosh3"}, {UNFORM, "unform"},
         {GUST, "gust1", "gust2", "gust3"}, {AIR, "air1", "air2"}, {AIR_HIT, "air_hit"}, {TORNADO, "tornado1", "tornado2"},
-        {FLAME_START, "flame_start"}, {FLAME_LOOP, "flame_loop1", "flame_loop2"}, {CHARGE, "charge"}, {BEAM, "beam1", "beam2"},
+        {FLAME_START, "flame_start"}, {FLAME_LOOP, "flame_loop1", "flame_loop2"}, {CHARGE, "charge"}, {CHARGE_BUILD, "charge_build"},
+        {CHARGE_HOLD, "charge_hold"}, {BEAM, "beam1", "beam2"},
         {FIREBALL, "fireball1"}, {EMBER_HIT, "ember_hit1", "ember_hit2"}, {EXPLODE, "explode1", "explode2"}, {BLAST, "blast1"},
         {LUNGE, "lunge"}, {BITE, "bite1"},
     };

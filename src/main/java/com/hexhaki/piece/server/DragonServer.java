@@ -40,8 +40,11 @@ import net.minecraftforge.fml.common.Mod;
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class DragonServer {
-    /** Creative flight's speed is 0.05: the dragon a little faster (sprinting doubles it, as in creative). */
-    public static final float FLY_SPEED = 0.07F;
+    /**
+     * Creative flight's speed is 0.05 (sprinting doubles it, as in creative). 2.9.0 (the owner: "The dragon is way too fast. Like this
+     * flying speed is ridiculously fast"): 0.07 before, now a little under creative's own: a body this big glides.
+     */
+    public static final float FLY_SPEED = 0.04F;
     /** After the dragon goes, no new one for this long (ticks), and no fall damage for this long. */
     static final int REST = 10;
     static final int SOFT_LANDING = 200;
@@ -60,7 +63,7 @@ public final class DragonServer {
     }
 
     /** 2.8.6: how fast the dragon must fly for its wind to howl (blocks a tick), and how long between gusts (ticks). */
-    static final double GUST_SPEED = 0.55;
+    static final double GUST_SPEED = 0.42;
     static final int GUST_EVERY = 70;
 
     private static final Map<UUID, State> STATES = new HashMap<>();

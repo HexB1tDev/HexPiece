@@ -4,6 +4,7 @@ import com.hexhaki.piece.client.fx.PieceFx;
 import com.hexhaki.piece.dragon.DragonForm;
 import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.dragon.UoFire;
+import com.hexhaki.piece.dragon.UoSounds;
 import com.hexhaki.piece.network.S2CUoFx;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -17,6 +18,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
@@ -56,6 +58,8 @@ public final class UoFx {
     /** Per player: their dragon's breath (since when), its charge (since when), its bite (since when). */
     static final Map<Integer, Long> FLAMES = new HashMap<>();
     static final Map<Integer, Long> CHARGES = new HashMap<>();
+    /** 2.9.0: when the charge's held loop takes over from its build-up (ticks; the build-up is 8.5 s, fading over its last 0.6 s). */
+    static final int CHARGE_HOLD_AT = 156;
     static final Map<Integer, Long> BITES = new HashMap<>();
     /** 2.7.8: per player, their beam of fire (Blast Breath): when it began, its life, width, length, whether the dragon's. */
     record FireBeam(long born, int life, double width, double length, boolean dragon) {
@@ -161,7 +165,17 @@ public final class UoFx {
                     breath.stop = clock;
                 }
             }
-            case S2CUoFx.CHARGE_ON -> CHARGES.put(m.user(), clock);
+            case S2CUoFx.CHARGE_ON -> {
+                CHARGES.put(m.user(), clock);
+                // 2.9.0 (the owner: "the sound while it's charging ends all of a sudden"): the build-up, then (CHARGE_HOLD_AT) its
+                // height held round and round until the key comes up, each fading out then, never cut off
+                ClientLevel world = Minecraft.m_91087_().f_91073_;
+                Entity user = world == null ? null : world.m_6815_(m.user());
+                int id = m.user();
+                long since = clock;
+                com.hexhaki.piece.client.LoopSound.play(UoSounds.CHARGE_BUILD, user, 2.4F, 1.0F, false, false, DragonForm.HEAD_HEIGHT,
+                    () -> CHARGES.get(id) != null && CHARGES.get(id) == since);
+            }
             case S2CUoFx.CHARGE_OFF -> CHARGES.remove(m.user());
             case S2CUoFx.BITE -> BITES.put(m.user(), clock);
             case S2CUoFx.FIRE_BEAM -> {
@@ -233,7 +247,8 @@ public final class UoFx {
             return;
         }
         SHOTS.values().removeIf(shot -> clock - shot.born > shot.life + 3);
-        BANGS.removeIf(bang -> clock - bang.born > (bang.kind == S2CUoFx.AIR ? 11 : UoFire.BURST_LIFE + 1));
+        BANGS.removeIf(bang -> clock - bang.born > (bang.kind == S2CUoFx.AIR ? 11 : bang.kind == S2CUoFx.BOMB ? UoFire.BOMB_LIFE + 1
+            : UoFire.BURST_LIFE + 1));
         TORNADOES.removeIf(t -> clock - t.born > t.life);
         LINES.removeIf(l -> clock - l.born > l.end / Math.max(1.0E-6, l.velocity.m_82553_()) + LINE_BURN + 1);
         for (Iterator<Ember> it = EMBERS.iterator(); it.hasNext(); ) {
@@ -284,8 +299,14 @@ public final class UoFx {
                 }
             }
         }
-        for (Integer id : CHARGES.keySet()) {
+        for (Map.Entry<Integer, Long> charge : CHARGES.entrySet()) {
+            int id = charge.getKey();
             if (level.m_6815_(id) instanceof Player player) {
+                if (clock - charge.getValue() == CHARGE_HOLD_AT) {
+                    long since = charge.getValue();
+                    com.hexhaki.piece.client.LoopSound.play(UoSounds.CHARGE_HOLD, player, 2.4F, 1.0F, true, true, DragonForm.HEAD_HEIGHT,
+                        () -> CHARGES.get(id) != null && CHARGES.get(id) == since);
+                }
                 record(player);
                 if (clock % 2 == 0) {
                     Vec3 mouth = mouthOf(player);
@@ -543,14 +564,17 @@ public final class UoFx {
         int n = 0;
         for (Bang bang : BANGS) {
             n++;
-            if (far(bang.at, cam)) {
+            if (bang.kind == S2CUoFx.BOMB ? bang.at.m_82557_(cam) > 300.0 * 300.0 : far(bang.at, cam)) {
                 continue;
             }
             double age = clock - bang.born + partial;
             double x = bang.at.f_82479_ - cx;
             double y = bang.at.f_82480_ - cy;
             double z = bang.at.f_82481_ - cz;
-            if (bang.kind == S2CUoFx.AIR) {
+            if (bang.kind == S2CUoFx.BOMB) {
+                // 2.9.0: Blast Breath's end: the bomb, its cloud seen from far off (FAR is too short for it)
+                UoFire.bomb(SINK, x, y, z, bang.radius, age, (int) bang.born * 31 + n);
+            } else if (bang.kind == S2CUoFx.AIR) {
                 Vec3 d = bang.dir.m_82556_() < 1.0E-6 ? new Vec3(0, 1, 0) : bang.dir.m_82541_();
                 UoFire.airBurst(SINK, x, y, z, d.f_82479_, d.f_82480_, d.f_82481_, bang.radius * 0.8, age, (int) bang.born + n);
             } else {

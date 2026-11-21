@@ -536,6 +536,176 @@ public final class UoFire {
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------ the bomb (Blast Breath's end)
+
+    /** How long Blast Breath's last explosion and what it leaves behind last (ticks): 9 seconds. */
+    public static final double BOMB_LIFE = 180.0;
+
+    /**
+     * 2.9.0 (the owner: "The explosion at the end of the beam, which is meant to be the main deal of that beam, is fading way too fast.
+     * There's like no residue explosion"; "when it explodes, it should have a big explosion, like a fucking big bomb that just went
+     * off"): Blast Breath's last explosion of {@code radius} (its crater's) on the ground at ({@code x}, {@code y}, {@code z}),
+     * {@code age} ticks old. A blinding flash; a fireball that climbs on a column of fire and rolls out into a mushroom cloud, burning
+     * from white to red and going to smoke over seconds; a shock shell and a ring of dust racing far over the ground; rocks and sparks
+     * on arcs; then the ground round the crater left burning, embers rising out of it and the smoke drifting up and thinning till it
+     * is gone. Some 25 puffs at most at once (the owner's phone draws it).
+     */
+    public static void bomb(FireMesh.Sink sink, double x, double y, double z, double radius, double age, int seed) {
+        if (age < 0.0 || age > BOMB_LIFE) {
+            return;
+        }
+        double rr = Math.max(2.0, radius);
+        double fb = rr * 1.05; // the fireball's size
+        double k = Math.sqrt(rr);
+        double life = BOMB_LIFE;
+        // the flash and the fire's light (warm, long)
+        if (age < 7.0) {
+            double t = age / 7.0;
+            glow(sink, x, y + fb * 0.4, z, rr * (3.2 + 2.0 * t), 0xFFF6E0, 0.9 * (1.0 - t));
+            FireMesh.puff(sink, x, y + fb * 0.35, z, fb * (0.55 + 0.45 * ease(age / 2.5)), 0.0, 1.0, 0.0, 0.2, 0.1, 1.05, 0.0, false,
+                1.0 - 0.6 * t, age, seed + 1);
+        }
+        double top = fb * (0.7 + 2.0 * ease(age / 55.0)); // how high the cloud has climbed
+        glow(sink, x, y + top * 0.55, z, rr * 2.6, 0xFFB050, 0.55 * clamp(1.0 - age / 120.0));
+        // the stem: a column of fire, then of smoke, under the cloud
+        if (age > 4.0) {
+            int stem = 4;
+            for (int i = 0; i < stem; i++) {
+                double u = (i + 0.5) / stem;
+                double born = 4.0 + i * 1.5;
+                double a = age - born;
+                if (a < 0.0) {
+                    continue;
+                }
+                double h = top * u * 0.92;
+                double wob = 0.12 * fb * FireMesh.noise(i * 0.7, age * 0.03, 0.0, seed + 5);
+                double size = fb * (0.42 - 0.14 * u) * (0.6 + 0.4 * ease(a / 8.0)) * (1.0 + 0.25 * clamp((age - 60.0) / 100.0));
+                double heat = 1.05 - a / (55.0 + 35.0 * (1.0 - u));
+                double fade = clamp((life - age) / 50.0) * clamp(a / 3.0);
+                if (heat > 0.25) {
+                    FireMesh.puff(sink, x + wob, y + h, z - wob, size, 0.0, 1.0, 0.0, 0.8, 0.2, heat, 0.6, heat < 0.6, fade, age * 1.2 + i,
+                        seed * 7 + i);
+                } else {
+                    FireMesh.palette(FireMesh.SMOKE);
+                    double t = clamp((0.25 - heat) * 1.6);
+                    FireMesh.puff(sink, x + wob, y + h, z - wob, size * (1.0 + 0.3 * t), 0.0, 1.0, 0.0, 0.5, 0.12, 0.6 - 0.35 * t, 0.4, false,
+                        0.85 * fade, age, seed * 7 + i);
+                    FireMesh.palette(FireMesh.BAND);
+                }
+            }
+        }
+        // the cloud: a ball of fire that climbs and rolls out into the mushroom's head, then smoke
+        int n = 10;
+        for (int i = 0; i < n; i++) {
+            int s = seed * 13 + i;
+            double around = (i + FireMesh.rand(s, 1) * 0.6) / n * Math.PI * 2.0;
+            double spread = ease((age - 8.0) / 55.0); // 0 a ball, 1 the mushroom's ring
+            double ball = fb * (0.25 + 0.45 * FireMesh.rand(s, 2)) * ease(age / 5.0);
+            double ringR = fb * (0.55 + 0.75 * spread) * (1.0 + 0.2 * clamp((age - 60.0) / 110.0));
+            double roll = around + age * 0.004;
+            double dy = (FireMesh.rand(s, 3) - 0.4) * ball;
+            double out = ball + (ringR - ball) * spread;
+            double px = x + Math.cos(roll) * out;
+            double py = y + top + dy * (1.0 - 0.5 * spread) - fb * 0.15 * spread * FireMesh.rand(s, 4);
+            double pz = z + Math.sin(roll) * out;
+            double size = fb * (0.5 + 0.22 * FireMesh.rand(s, 5)) * (0.55 + 0.45 * ease(age / 4.0)) * (1.0 + 0.35 * spread);
+            double burn = 40.0 + 25.0 * FireMesh.rand(s, 6);
+            double heat = 1.1 - 0.8 * age / burn;
+            double fade = clamp((life - age) / 60.0);
+            if (age < burn) {
+                FireMesh.puff(sink, px, py, pz, size, Math.cos(roll), 0.6, Math.sin(roll), 0.5, 0.18, heat, 0.65, heat < 0.6, 1.0, age * 1.3, s);
+            } else {
+                double t = clamp((age - burn) / 40.0);
+                FireMesh.palette(FireMesh.SMOKE);
+                FireMesh.puff(sink, px, py, pz, size * (1.0 + 0.25 * t), 0.0, 1.0, 0.0, 0.35, 0.1, 0.7 - 0.4 * t, 0.45, false, 0.92 * fade, age,
+                    s);
+                FireMesh.palette(FireMesh.BAND);
+                // its underside still lit by the fire for a while: a smaller ball of embers inside it, going out
+                if (t < 1.0) {
+                    FireMesh.puff(sink, px, py - size * 0.35, pz, size * 0.72 * (1.0 - 0.4 * t), 0.0, 1.0, 0.0, 0.3, 0.15, 0.55 - 0.3 * t, 0.5,
+                        true, 1.0 - t, age * 1.3, s + 7);
+                }
+            }
+        }
+        // the shock: a shell, a ring of dust racing far out over the ground, crescents
+        if (age < 12.0) {
+            double t = age / 12.0;
+            FireMesh.shell(sink, x, y + rr * 0.2, z, rr * (0.6 + 3.6 * Math.sqrt(t)), 0xFFFFFF, 0.0, 0.85 * (1.0 - t));
+            for (int i = 0; i < 4; i++) {
+                direction(seed + 40, i, 0.3, DIR);
+                FireMesh.arc(sink, x, y + rr * 0.3, z, DIR[0], DIR[1], DIR[2], rr * (1.0 + 3.0 * Math.sqrt(t)), 0.3 + 0.3 * rr * (1.0 - t),
+                    FireMesh.rand(seed, 50 + i) * 6.28, 3.8, 0.0, 0xFFFFFF, 0.85 * (1.0 - t));
+            }
+        }
+        if (age < 30.0) {
+            double t = age / 30.0;
+            FireMesh.ring(sink, x, y + 0.2, z, 0.0, 1.0, 0.0, rr * (0.9 + 5.0 * Math.sqrt(t)), rr * 0.9 * (1.0 - t) + 0.6, rr * 0.35 * (1.0 - t),
+                0xE8D6BC, 0.7 * (1.0 - t));
+            FireMesh.ring(sink, x, y + 0.3, z, 0.0, 1.0, 0.0, rr * (0.7 + 3.2 * Math.sqrt(t)), rr * 0.5 * (1.0 - t) + 0.4, rr * 0.2,
+                0xFFE2A8, 0.8 * (1.0 - t));
+        }
+        // rocks and sparks on arcs
+        for (int i = 0; i < 26; i++) {
+            double l = 12.0 + 8.0 * FireMesh.rand(seed + 60, i);
+            if (age > l) {
+                continue;
+            }
+            direction(seed + 61, i, 0.7, DIR);
+            double speed = (0.6 + 1.0 * FireMesh.rand(seed + 62, i)) * k * 0.7;
+            FireMesh.streak(sink, x + DIR[0] * speed * age, y + DIR[1] * speed * age - 0.025 * age * age, z + DIR[2] * speed * age,
+                DIR[0] * speed, DIR[1] * speed - 0.05 * age, DIR[2] * speed, 1.6 + rr * 0.3, 0.12 + 0.04 * k, 0xFFA72E, 1.0 - age / l);
+        }
+        int rocks = 10 + (int) (rr * 1.2);
+        for (int i = 0; i < rocks; i++) {
+            double l = 24.0 + 10.0 * FireMesh.rand(seed + 70, i);
+            if (age > l) {
+                continue;
+            }
+            direction(seed + 71, i, 0.8, DIR);
+            double speed = (0.35 + 0.55 * FireMesh.rand(seed + 72, i)) * k * 0.55;
+            FireMesh.shard(sink, x + DIR[0] * speed * age, y + (DIR[1] * 1.6 + 0.5) * speed * age - 0.03 * age * age, z + DIR[2] * speed * age,
+                (0.35 + 0.5 * FireMesh.rand(seed + 73, i)) * Math.min(2.4, k) * clamp((l - age) / 4.0), age * 0.35, seed + i, 0x5A463A, 1.0);
+        }
+        // what it leaves: the ground round the crater burning, embers rising, for seconds
+        int fires = 9;
+        for (int i = 0; i < fires; i++) {
+            double start = 6.0 + 6.0 * FireMesh.rand(seed + 80, i);
+            double end = life - 10.0 - 40.0 * FireMesh.rand(seed + 81, i);
+            if (age < start || age > end) {
+                continue;
+            }
+            double a = (i + FireMesh.rand(seed + 82, i) * 0.7) / fires * Math.PI * 2.0;
+            double d = rr * (0.85 + 0.35 * FireMesh.rand(seed + 83, i));
+            double fx = x + Math.cos(a) * d;
+            double fz = z + Math.sin(a) * d;
+            double flick = 0.85 + 0.15 * Math.sin(age * 0.9 + i * 2.1) + 0.1 * FireMesh.noise(i, age * 0.2, 0.0, seed + 84);
+            double grow = clamp((age - start) / 6.0) * clamp((end - age) / 25.0);
+            double size = (1.0 + 0.35 * k) * flick * grow;
+            FireMesh.puff(sink, fx, y + size * 0.8, fz, size, 0.0, 1.0, 0.0, 2.2, 0.45, 0.95 - 0.1 * flick, 0.7, true, 1.0, age * 2.0 + i,
+                seed + 85 + i);
+            if (grow > 0.5) {
+                FireMesh.palette(FireMesh.SMOKE);
+                double rise = (age * 0.09 + i) % 3.0;
+                FireMesh.puff(sink, fx, y + size * 1.6 + rise * size, fz, size * (0.7 + 0.4 * rise), 0.0, 1.0, 0.0, 0.3, 0.1, 0.45, 0.4, false,
+                    0.5 * grow * (1.0 - rise / 3.0), age, seed + 90 + i);
+                FireMesh.palette(FireMesh.BAND);
+            }
+        }
+        if (age > 10.0) {
+            for (int i = 0; i < 18; i++) {
+                double cycle = 30.0 + 14.0 * FireMesh.rand(seed + 100, i);
+                double t = ((age + FireMesh.rand(seed + 101, i) * cycle) % cycle) / cycle;
+                double fade = clamp((life - 20.0 - age) / 40.0);
+                double a = FireMesh.rand(seed + 102, i) * Math.PI * 2.0;
+                double d = rr * 1.1 * Math.sqrt(FireMesh.rand(seed + 103, i));
+                double ex = x + Math.cos(a) * d + 0.6 * Math.sin(t * 6.0 + i);
+                double ey = y + 0.5 + t * (3.0 + rr * 0.4);
+                double ez = z + Math.sin(a) * d;
+                FireMesh.streak(sink, ex, ey, ez, 0.0, 0.08, 0.0, 0.35, 0.07, 0xFFC040, fade * Math.sin(Math.PI * t));
+            }
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ air (Air Pressure)
 
     /** A blast of compressed air in flight: a clear white tear, rings of shock left behind it, lines of wind along it. */

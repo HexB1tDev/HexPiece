@@ -26,7 +26,7 @@ public final class Craters {
     public static final long REPAIR = 600L;
     /** The biggest crater (blocks of radius), and at most this many blocks a crater looks at a tick. */
     static final double MOST = 13.0;
-    static final int LOOK_PER_TICK = 1500;
+    static final int LOOK_PER_TICK = 2500;
 
     /** One crater opening: its middle, its cells nearest first (packed x, y, z offsets), how far it has got. */
     static final class Crater {

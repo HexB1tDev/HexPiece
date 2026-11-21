@@ -107,14 +107,33 @@ public final class UoMoves {
                 embers(player, now);
             }
         } else if (phase == DragonForm.DRAGON) {
-            if (slot == UoKit.CHARGED_BLAST.slot() && ready(player, UoKit.CHARGED_BLAST) && !CHARGING.containsKey(player.m_20148_())) {
+            if (slot == UoKit.CHARGED_BLAST.slot() && ready(player, UoKit.CHARGED_BLAST) && !CHARGING.containsKey(player.m_20148_())
+                && !burning(player)) {
+                if (FLAMING.remove(player.m_20148_()) != null) {
+                    stopFlame(player); // the breath gives way to the blast gathering
+                }
                 CHARGING.put(player.m_20148_(), now);
+                // 2.9.0: its sound is every client's own now (client/dragon/UoFx: the build-up, then held while the key is)
                 PieceNetwork.around(player, S2CUoFx.of(S2CUoFx.CHARGE_ON, 0, player.m_19879_()));
-                DragonServer.sound(player, UoSounds.CHARGE, 2.2F, 1.0F);
             } else if (slot == UoKit.GIGANTIC_BITE.slot()) {
                 bite(player, now);
             }
         }
+    }
+
+    /** Whether {@code player}'s Blast Breath beam is burning now. */
+    static boolean burning(ServerPlayer player) {
+        for (Live live : LIVE) {
+            if (live instanceof Beam beam && beam.user == player) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether {@code player} is gathering the charged blast (no other move meanwhile). */
+    public static boolean charging(ServerPlayer player) {
+        return CHARGING.containsKey(player.m_20148_());
     }
 
     /** A key of the Uo kit coming up: the charged blast is let go. */
@@ -146,7 +165,10 @@ public final class UoMoves {
         UUID id = player.m_20148_();
         long now = player.m_9236_().m_46467_();
         if (on) {
-            if (DragonServer.phase(player) != DragonForm.DRAGON || FLAMING.containsKey(id) || !ready(player, UoKit.FIRE_BREATH)) {
+            // 2.9.0 (the owner: "For some reason, you can use M1s while you're charging the blast breath"): not while the blast
+            // gathers in the jaws, nor while its beam burns
+            if (DragonServer.phase(player) != DragonForm.DRAGON || FLAMING.containsKey(id) || CHARGING.containsKey(id) || burning(player)
+                || !ready(player, UoKit.FIRE_BREATH)) {
                 return;
             }
             FLAMING.put(id, new Flame(player, now));
@@ -328,7 +350,7 @@ public final class UoMoves {
     }
 
     static void bite(ServerPlayer player, long now) {
-        if (!ready(player, UoKit.GIGANTIC_BITE)) {
+        if (!ready(player, UoKit.GIGANTIC_BITE) || CHARGING.containsKey(player.m_20148_()) || burning(player)) {
             return;
         }
         cool(player, UoKit.GIGANTIC_BITE, BITE_COOL);
@@ -718,14 +740,21 @@ public final class UoMoves {
             double radius = this.dragon ? 6.0 + 18.0 * this.charge : 4.0;
             explode(this.user, this.level, this.last, new Vec3(0, 1, 0), radius, this.damage * 4.0F, 8, this.knock * 1.5);
             blowAway(this.user, this.level, this.last, radius * 1.15, this.dragon ? 3.0 + 4.0 * this.charge : 2.2);
+            // 2.9.0 (the owner: "when it explodes, it should have a big explosion, like a fucking big bomb that just went off", "the main
+            // block destruction should come from the explosion and residue"): the dragon's ends in the bomb (its cloud and burning
+            // ground last 9 s, UoFire.bomb), the crater the beam's own is torn out here, and the ground round it goes on blowing up
+            double crater = this.dragon ? BOMB_CRATER + BOMB_CRATER_CHARGE * this.charge : 2.0;
             PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, 0, this.user.m_19879_(), this.last.f_82479_, this.last.f_82480_,
-                this.last.f_82481_, 0, 1, 0, 0, 0, S2CUoFx.BLAST, (float) radius, 0));
-            Impact.quake(this.level, this.last, radius * 4.0 + 10.0, (float) Math.min(1.0, 0.4 + radius / 16.0), 20);
+                this.last.f_82481_, 0, 1, 0, 0, 0, this.dragon ? S2CUoFx.BOMB : S2CUoFx.BLAST, (float) (this.dragon ? crater : radius), 0));
+            Impact.quake(this.level, this.last, radius * 5.0 + 16.0, (float) Math.min(1.0, 0.5 + radius / 14.0), 30);
             if (this.struck) {
-                Craters.open(this.level, this.user, this.last, this.dragon ? 3.0 + 9.0 * this.charge : 2.0);
+                Craters.open(this.level, this.user, this.last, crater);
             }
             com.hexhaki.piece.PieceSounds.playAt(this.user, this.last.f_82479_, this.last.f_82480_, this.last.f_82481_, UoSounds.BLAST,
                 3.0F + 3.0F * this.charge, 0.95F - 0.15F * this.charge);
+            if (this.dragon) {
+                aftershocks(this.user, this.level, this.last, crater, this.damage, this.charge);
+            }
         }
 
         @Override
@@ -760,7 +789,7 @@ public final class UoMoves {
                 blowAway(this.user, this.level, to, radius, this.dragon ? 2.4 + 3.0 * this.charge : 1.8);
                 PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, 0, this.user.m_19879_(), to.f_82479_, to.f_82480_, to.f_82481_,
                     (float) way.f_82479_, (float) way.f_82480_, (float) way.f_82481_, 0, 0, S2CUoFx.BLAST, (float) radius, 0));
-                Craters.open(this.level, this.user, to, this.width * 0.8 + 1.2);
+                Craters.open(this.level, this.user, to, STRIKE_CRATER + this.width * 0.1);
                 Impact.quake(this.level, to, radius * 4.0 + 10.0, (float) Math.min(1.0, 0.3 + this.width / 10.0), 12);
                 com.hexhaki.piece.PieceSounds.playAt(this.user, to.f_82479_, to.f_82480_, to.f_82481_, UoSounds.EXPLODE, 2.5F + this.charge,
                     0.85F);
@@ -789,12 +818,48 @@ public final class UoMoves {
             }
             if (this.age % 6 == 0 && hit) {
                 explode(this.user, this.level, to, way, this.width * 1.3 + 1.5, this.damage * 1.2F, 6, this.knock);
-                Craters.open(this.level, this.user, to, this.width * 0.6 + 1.0);
+                // 2.9.0 (the owner: "the fucking blast breath beam is destroying blocks like way too much"): while it burns it only
+                // scorches a little deeper (a 12-block ball every 6 ticks before); the crater is the bomb's at its end
+                if (this.age % 18 == 0) {
+                    Craters.open(this.level, this.user, to, BURN_CRATER);
+                }
                 if (this.age % 12 == 0) {
                     Impact.quake(this.level, to, this.width * 5.0 + 10.0, (float) Math.min(1.0, 0.3 + this.width / 10.0), 12);
                 }
             }
             return false;
+        }
+    }
+
+    /** 2.9.0: the craters: where the beam first strikes, what it burns deeper while it holds, the bomb's at its end (and per charge). */
+    static final double STRIKE_CRATER = 1.6;
+    static final double BURN_CRATER = 1.4;
+    static final double BOMB_CRATER = 5.0;
+    static final double BOMB_CRATER_CHARGE = 8.0;
+    /** The ground round the bomb's crater going on blowing up: how many, over how long (ticks). */
+    static final int AFTERSHOCKS = 6;
+    static final int AFTERSHOCK_SPAN = 70;
+
+    /**
+     * 2.9.0 (the owner: "There's like no residue explosion"): after the bomb, the ground round its crater goes on blowing up, one blast
+     * after another for some 3.5 s: each a smaller explosion of fire (dragon/UoFire.explosion), a burn and a throw, its own boom.
+     */
+    static void aftershocks(ServerPlayer user, ServerLevel level, Vec3 at, double crater, float damage, float charge) {
+        long now = level.m_46467_();
+        int n = AFTERSHOCKS + (int) (4 * charge);
+        for (int i = 0; i < n; i++) {
+            long when = now + 10 + (long) ((i + level.m_213780_().m_188500_() * 0.8) * AFTERSHOCK_SPAN / n);
+            double a = level.m_213780_().m_188500_() * Math.PI * 2.0;
+            double d = crater * (0.5 + 0.6 * level.m_213780_().m_188500_());
+            Vec3 spot = at.m_82520_(Math.cos(a) * d, 0.5, Math.sin(a) * d);
+            double size = 2.2 + 2.6 * charge * (0.6 + 0.4 * level.m_213780_().m_188500_());
+            LIVE.add(new Later(level, when, () -> {
+                explode(user, level, spot, new Vec3(0, 1, 0), size * 1.3, damage * 0.8F, 6, 1.0);
+                PieceNetwork.around(user, new S2CUoFx(S2CUoFx.BURST, 0, user.m_19879_(), spot.f_82479_, spot.f_82480_, spot.f_82481_, 0, 1,
+                    0, 0, 0, S2CUoFx.BLAST, (float) size, 0));
+                com.hexhaki.piece.PieceSounds.playAt(user, spot.f_82479_, spot.f_82480_, spot.f_82481_, UoSounds.EXPLODE, 2.0F,
+                    0.9F + level.m_213780_().m_188501_() * 0.25F);
+            }));
         }
     }
 

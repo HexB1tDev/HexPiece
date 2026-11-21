@@ -187,6 +187,13 @@ public final class FxPreview {
                 double at = move.length > 3 ? Double.parseDouble(move[3]) : 22.0;
                 UoFire.explosion(sink, -eye[0], radius * 0.3 - eye[1], at - eye[2], radius, age, 5);
             }
+            case "bomb" -> {
+                // 2.9.0: Blast Breath's last explosion {radius} on the ground {at} blocks ahead, {age} ticks old
+                double age = Double.parseDouble(move[1]);
+                double radius = Double.parseDouble(move[2]);
+                double at = move.length > 3 ? Double.parseDouble(move[3]) : 40.0;
+                UoFire.bomb(sink, -eye[0], -eye[1], at - eye[2], radius, age, 5);
+            }
             case "air" -> {
                 double age = Double.parseDouble(move[1]);
                 double d = 4.2 * age;

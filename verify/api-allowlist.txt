@@ -168,3 +168,10 @@ M net/minecraft/world/effect/MobEffect m_19472_ (Lnet/minecraft/world/entity/ai/
 C net/minecraft/world/effect/MobEffectCategory                                      # [srg] joined.tsrg bez (C_497_: a BENEFICIAL, b HARMFUL, c NEUTRAL: enum constants keep their names)
 F net/minecraft/world/effect/MobEffectCategory BENEFICIAL Lnet/minecraft/world/effect/MobEffectCategory;   # [srg] joined.tsrg bez a BENEFICIAL
 M net/minecraft/world/effect/MobEffect <init> (Lnet/minecraft/world/effect/MobEffectCategory;I)V   # [srg] joined.tsrg bey <init> (Lbez;I)V 19450 (protected: a subclass's super call)
+
+# --- 2.9.0: a sound lasting as long as its move (client/LoopSound: the dragon's charge, the Light fruit's charges and sword hum) -----
+C net/minecraft/client/resources/sounds/AbstractTickableSoundInstance   # [srg] joined.tsrg fxh C_4548_: m m_7801_ isStopped and n m_119609_ stop, the members HexGhoul's verified list already names on it; intermediary class_1101 (yarn MovingSoundInstance)
+M net/minecraft/client/resources/sounds/AbstractTickableSoundInstance <init> (Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;Lnet/minecraft/util/RandomSource;)V   # [srg] joined.tsrg fxh <init> (Lamg;Lami;Lapf;)V 235075 (amg C_123_ SoundEvent, ami C_125_ SoundSource as HexGhoul's list identifies it, apf C_212974_ RandomSource)
+M net/minecraft/client/resources/sounds/SoundInstance m_235150_ ()Lnet/minecraft/util/RandomSource;   # [srg] createUnseededRandom: joined.tsrg fxy (SoundInstance: a m_7904_, h m_7772_ as HexGhoul's list) t ()Lapf; m_235150_ 235150, static
+C net/minecraft/client/resources/sounds/SoundInstance$Attenuation   # [srg] joined.tsrg fxy$a C_4566_$C_4567_ (a NONE, b LINEAR); HexGhoul's list types AbstractSoundInstance f_119580_ with it
+F net/minecraft/client/resources/sounds/SoundInstance$Attenuation LINEAR Lnet/minecraft/client/resources/sounds/SoundInstance$Attenuation;   # [srg] fxy$a b LINEAR 119843 (enum constants keep their names)

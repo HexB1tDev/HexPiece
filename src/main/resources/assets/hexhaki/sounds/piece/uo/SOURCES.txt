@@ -1,5 +1,6 @@
 The Uo Uo no Mi's sounds (tools/dragon_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
-here are cut from its high-quality preview, made mono, peak-normalised and faded. Thanks to every author named.
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
 
 roar1.ogg: "Dragon Roar.wav" by Dreeme, https://freesound.org/people/Dreeme/sounds/546391/ (CC0 1.0), from 0.0 s, 4.40 s long
 roar2.ogg: "Dragon Roar.wav" by Dreeme, https://freesound.org/people/Dreeme/sounds/546391/ (CC0 1.0), from 5.9 s, 3.60 s long
@@ -24,6 +25,7 @@ flame_loop2.ogg: "Flamethrower_Weapon_Long_Bursts.wav" by AslakHostaker, https:/
 beam1.ogg: "dragon breathe ire" by soundmast123, https://freesound.org/people/soundmast123/sounds/532156/ (CC0 1.0), from 0.0 s, 5.00 s long
 beam2.ogg: "Fire Breath.wav" by bspiller5, https://freesound.org/people/bspiller5/sounds/157616/ (CC0 1.0), from 1.2 s, 4.00 s long
 charge.ogg: "Power Charge" by Sojan, https://freesound.org/people/Sojan/sounds/407052/ (CC0 1.0), from 0.3 s, 3.20 s long
+charge_build.ogg: "Power Charge" by Sojan, https://freesound.org/people/Sojan/sounds/407052/ (CC0 1.0), from 0.3 s, 8.50 s long
 fireball1.ogg: "Fireball, Woosh, Pass, fast" by julianmateo_, https://freesound.org/people/julianmateo_/sounds/522705/ (CC0 1.0), from 0.9 s, 2.10 s long
 ember_hit1.ogg: "Fireball Explosion.wav" by Blankened, https://freesound.org/people/Blankened/sounds/431174/ (CC0 1.0), from 0.0 s, 1.08 s long
 ember_hit2.ogg: "Flame Burst" by magnuswaker, https://freesound.org/people/magnuswaker/sounds/592572/ (CC0 1.0), from 0.0 s, 1.60 s long
@@ -31,3 +33,4 @@ explode1.ogg: "fire_explosion.wav" by ReadeOnly, https://freesound.org/people/Re
 explode2.ogg: "large explosion 1" by V-ktor, https://freesound.org/people/V-ktor/sounds/482993/ (CC0 1.0), from 0.0 s, 3.87 s long
 blast1.ogg: "massive explosion" by Hugofski, https://freesound.org/people/Hugofski/sounds/177556/ (CC0 1.0), from 7.3 s, 6.20 s long
 bite1.ogg: "monster bite" by LucasDuff, https://freesound.org/people/LucasDuff/sounds/467701/ (CC0 1.0), from 0.3 s, 1.73 s long
+charge_hold.ogg: "Power Charge" by Sojan, https://freesound.org/people/Sojan/sounds/407052/ (CC0 1.0), a loop from 14.5 s, 4.00 s long
