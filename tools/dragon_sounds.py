@@ -96,11 +96,30 @@ LOOPS = {
 }
 
 
+# 2.9.3 (the owner: "Reduce all the ... dragon fruit sounds, except the final explosion a little bit. The final explosion sound of the
+# blast breath actually goes up a little bit, while the others lower a little bit"): every clip about 3 dB quieter than the one it
+# replaces (its gain under -1 dBFS here, measured against the file shipped before: 2.8.6's cut some clips hotter than others), the final
+# blast (blast1) compressed to sound louder instead (some 4 dB). Minecraft never plays a sound above its file's own loudness (a volume
+# over 1 only carries it further), so the files themselves carry it.
+QUIETER = {
+    "roar1": 0.0, "roar2": -1.6, "roar3": -3.0, "form_boom": -0.4, "whoosh1": -1.8, "whoosh2": -0.2, "whoosh3": -2.5,
+    "unform": -0.1, "lunge": 0.0, "gust1": -0.2, "gust2": -1.9, "gust3": -1.5, "air1": -0.1, "air2": -6.0, "air_hit": -3.0,
+    "tornado1": 0.0, "tornado2": -2.5, "flame_start": -2.9, "flame_loop1": -3.1, "flame_loop2": -3.1, "beam1": 0.0, "beam2": -1.7,
+    "charge": -0.6, "charge_build": -3.0, "fireball1": -3.1, "ember_hit1": -0.1, "ember_hit2": -4.3, "explode1": -0.1,
+    "explode2": -2.4, "bite1": 0.0, "charge_hold": -3.0,
+}
+LOUDER = ("blast1",)
+
+
+def level(name):
+    return (0.0, True) if name in LOUDER else (QUIETER.get(name, -3.0), False)
+
+
 def main():
     only = None
     if len(sys.argv) > 2 and sys.argv[1] == "--only":
         only = set(sys.argv[2].split(","))
-    web_sounds.build(SOUNDS, CLIPS, LOOPS, OUT, "The Uo Uo no Mi's sounds (tools/dragon_sounds.py).", only)
+    web_sounds.build(SOUNDS, CLIPS, LOOPS, OUT, "The Uo Uo no Mi's sounds (tools/dragon_sounds.py).", only, level)
 
 
 if __name__ == "__main__":

@@ -73,9 +73,28 @@ def normalise(a, peak_db=-1.0):
     return a
 
 
-def clip(src, start, length, fade_in, fade_out, out, gain_db=0.0):
-    """One clip of a recording (see the module); returns its length in seconds."""
+def punch(a):
+    """2.9.3: a recording made to sound louder without going past full scale: its quiet parts brought up under its peaks (a compressor,
+    then a limiter), as a mix engineer does; nothing is added to it."""
+    with tempfile.NamedTemporaryFile(suffix=".f32", delete=False) as handle:
+        handle.write(a.tobytes())
+        tmp = handle.name
+    try:
+        raw = subprocess.run(["ffmpeg", "-v", "error", "-hide_banner", "-f", "f32le", "-ar", "44100", "-ac", "1", "-i", tmp, "-af",
+                              "acompressor=threshold=-20dB:ratio=4:attack=8:release=250:makeup=8,alimiter=limit=0.95",
+                              "-f", "f32le", "-ar", "44100", "-ac", "1", "-"], capture_output=True, check=True).stdout
+    finally:
+        os.unlink(tmp)
+    b = array.array("f")
+    b.frombytes(raw[:len(raw) // 4 * 4])
+    return b
+
+
+def clip(src, start, length, fade_in, fade_out, out, gain_db=0.0, louder=False):
+    """One clip of a recording (see the module), {gain_db} under full scale less 1 dB, {louder} pushed (punch); returns its length."""
     a = pcm(src, start, length)
+    if louder:
+        a = punch(a)
     n = len(a)
     fi = int(fade_in * 44100)
     fo = max(int(0.015 * 44100), int(fade_out * 44100))
@@ -104,7 +123,7 @@ def loop(src, start, length, cross, out, gain_db=0.0):
     return n / 44100.0
 
 
-def build(sounds, clips, loops, out_dir, title, only=None):
+def build(sounds, clips, loops, out_dir, title, only=None, level=None):
     """Fetches every recording, writes every clip and loop (or {only} those named) into {out_dir} with its SOURCES.txt."""
     os.makedirs(out_dir, exist_ok=True)
     got = {}
@@ -123,14 +142,19 @@ def build(sounds, clips, loops, out_dir, title, only=None):
             scratch = os.path.join(tempfile.mkdtemp(), name + ".ogg")
         else:
             scratch = target
+        gain, louder = level(name) if level else (0.0, False)
         if name in loops:
             _, start, length, cross = spec[:4]
-            seconds = loop(path, start, length, cross, scratch, *spec[4:])
+            seconds = loop(path, start, length, cross, scratch, gain)
             what = f"a loop from {start:.1f} s, {seconds:.2f} s long"
         else:
             _, start, length, fade_in, fade_out = spec[:5]
-            seconds = clip(path, start, length, fade_in, fade_out, scratch, *spec[5:])
+            seconds = clip(path, start, length, fade_in, fade_out, scratch, gain, louder)
             what = f"from {start:.1f} s, {seconds:.2f} s long"
+        if gain:
+            what += f", {-gain:.1f} dB quieter"
+        if louder:
+            what += ", compressed to sound louder"
         lines.append(f"{name}.ogg: \"{rec_title}\" by {user}, {page(user, sid)} (CC0 1.0), {what}")
         if scratch == target:
             print(f"wrote {name}.ogg ({seconds:.2f} s)")

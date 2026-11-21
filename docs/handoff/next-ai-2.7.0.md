@@ -526,7 +526,14 @@ right now."
 - DragonForm, DragonClient, DragonRenderer and DragonPreview are 2.8.9's again (no DragonForm.Trail, the head's turn 0.45 a tick);
   DragonServer.FLY_SPEED stays 0.04 and GUST_SPEED 0.42. Never bring the body trail back unless the owner asks for it.
 
-## Next (2.9.3)
+## Done (2.9.3, pushed): the dragon's sounds (the owner, verbatim)
+"Reduce all the wonomi, the dragon fruit sounds, except the final explosion a little bit. The final explosion sound of the blast breath
+actually goes up a little bit, while the others lower a little bit."
+- tools/dragon_sounds.py: QUIETER (each clip's gain, measured so every file is 3.0 dB quieter in mean loudness than the one before it:
+  2.8.6's cut some clips hotter than others) and LOUDER (blast1: web_sounds.punch, a compressor and limiter, +4.1 dB mean). Minecraft
+  clamps a sound's gain at its file's loudness (a volume over 1 only adds range), so loudness lives in the files.
+
+## Next (2.9.4)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
 2. Ask how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the dragon's wave, the Blast Breath
