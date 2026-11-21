@@ -54,17 +54,15 @@ public final class FirstPersonLight {
     /** The laser's clips: the fingertip comes from their pose. */
     static final Set<String> POINTING = Set.of("pika_laser", "pika_laser_charge", "pika_laser_fire");
     /** The sword's clips: the sword is in the hand. */
-    static final Set<String> SWORD = Set.of("pika_sword_1", "pika_sword_2", "pika_sword_3", "pika_sword_4", "pika_sword_5",
-        "pika_sword_guard", "pika_murakumo");
+    static final Set<String> SWORD = Set.of("pika_sword_1", "pika_sword_2", "pika_murakumo");
     private static final float[] M = new float[12];
     private static final float[] N = new float[9];
 
     static {
-        for (int i = 1; i <= 4; i++) {
-            ARM.put("pika_sword_" + i, 10);
-        }
-        ARM.put("pika_sword_5", 12);
-        ARM.put("pika_sword_guard", 0);
+        // 2.9.7: the sword's cuts on the attack button are gone; the lunge (C) ends on the level cut (its flight is the game's own hand
+        // holding the sword: the lunge lays the body out flat, an arm hung from that would float below the view)
+        ARM.put("pika_sword_1", 10);
+        ARM.put("pika_sword_2", 10);
         ARM.put("pika_murakumo", 11);
         ARM.put("pika_laser", 9);
         ARM.put("pika_laser_charge", 0);

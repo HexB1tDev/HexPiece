@@ -22,10 +22,6 @@ import net.minecraft.world.damagesource.DamageTypes;
  * FruitServer's; this kit adds the flash, the light flight and the moves (server/PikaMoves).
  */
 public final class PikaKit extends FruitKit {
-    public static final FruitMove KICKS = new FruitMove("Light-Speed Kicks", "[LMB]", 0, null,
-        "Kicks at the speed of light, five that run into each other: a front kick, a roundhouse, a spinning back kick, a rising kick that"
-            + " throws them up, and a barrage too fast to see. Sprint into it to arrive as light and kick on arrival; in the air, look down"
-            + " and fall on them as light.");
     public static final FruitMove LASER = new FruitMove("Laser", "[RMB]", 0, "pika_laser",
         "As at Sabaody and Marineford: a finger pointed and a laser out of its tip that blows up where it strikes. Hold to gather the"
             + " light at the fingertip and let go a beam that burns through everything in its way.");
@@ -34,23 +30,26 @@ public final class PikaKit extends FruitKit {
             + " angle and the sea (thrown at the water, it comes back up off it), striking whoever it passes through. Let go and you are a"
             + " body again where the light is, still going with some of its speed. Three uses that come back on their own.");
     public static final FruitMove YASAKANI = new FruitMove("Yasakani no Magatama", "[X] hold", 0, "pika_yasakani",
-        "Up into the air, arms crossed, and both hands loose a torrent of light bullets that blow up whatever they touch, over the whole"
-            + " ground where you look for as long as you hold it. Sneak to bring it all down on one.");
-    public static final FruitMove MURAKUMO = new FruitMove("Ama no Murakumo", "[C]", 0, "pika_murakumo",
-        "The hands brought together and drawn apart: a long sword of solid light. While it lasts the attack button cuts (five, the last"
-            + " a wave of light) and the use button guards. C again puts it away.");
+        "As at Egghead: up into the air over them, both arms thrust out, and a torrent of slugs of light out of both palms that burst"
+            + " wherever they land, over the whole ground where you look for as long as you hold it; fly about over them while it pours. Sneak"
+            + " to bring it all down on one.");
+    public static final FruitMove MURAKUMO = new FruitMove("Ama no Murakumo", "[C]", 0, "pika_lunge",
+        "As at Egghead: a sword of solid light drawn out of the joined hands, and you fly at them with it thrust out ahead, through the one"
+            + " you look at and on past them, cutting everyone the blade passes. Where you arrive, one wide cut and a wave of light, and the"
+            + " sword is gone.");
     public static final FruitMove LIGHT_KICK = new FruitMove("Speed of Light Kick", "[V] hold", 0, "pika_light_kick",
         "\"Have you ever been kicked at the speed of light?\" The light gathered in the leg, let go: gone as light and out of it behind"
             + " the one you look at, over their shoulder, you spin round and kick them in the side of the head, across the field. Held"
             + " longer, it lands harder. With no one there, the kick fires a beam out of the leg.");
     public static final FruitMove CLONES = new FruitMove("Yasakani no Magatama: Clones", "[B]", 0, "pika_clones",
-        "As at Egghead: the light thrown out of the body and every bead of it a Borsalino of light, each running at someone near with a"
+        "As at Egghead: the light thrown out of the body and every bead of it a Borsalino of light, each flying at someone near with a"
             + " sword of light, cutting, and bursting.");
     public static final FruitMove BODY = new FruitMove("Body of Light", "passive", 0, null,
         "A Logia: blows and shots pass through you as light unless they come coated in Armament Haki. You fly (double-tap jump), and"
             + " sprinting while you fly you become light, some 40 blocks a second where you look. You never take a fall. The sea takes it"
             + " all away.");
-    public static final List<FruitMove> MOVES = List.of(KICKS, LASER, YATA, YASAKANI, MURAKUMO, LIGHT_KICK, CLONES, BODY);
+    /** 2.9.7 (the owner: "get rid of the M1s entirely, of the light fruit"): no kicks on the attack button any more. */
+    public static final List<FruitMove> MOVES = List.of(LASER, YATA, YASAKANI, MURAKUMO, LIGHT_KICK, CLONES, BODY);
 
     @Override
     public Fruit fruit() {
@@ -134,12 +133,6 @@ public final class PikaKit extends FruitKit {
     @Override
     public boolean immune(ServerPlayer player, DamageSource source) {
         return source.m_276093_(DamageTypes.f_268671_) || source.m_276093_(DamageTypes.f_268576_);
-    }
-
-    /** Ama no Murakumo guarding: a blow from in front, met with the blade. */
-    @Override
-    public boolean blocks(ServerPlayer player, DamageSource source) {
-        return PikaMoves.guards(player, source);
     }
 
     @Override

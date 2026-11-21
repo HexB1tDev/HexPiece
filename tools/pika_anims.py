@@ -23,6 +23,9 @@ POCKET_R = arm(10, 0, 9, -34)
 POCKET_L = mirror(POCKET_R)
 POCKETS = arms(right=POCKET_R, left=POCKET_L)
 REST = p(arms(right=arm(0, 0, 4, -4), left=arm(0, 0, -4, -4)), legs(0, 0))
+# 2.9.7: the arms held out from the sides, a little forward, the hands open (Kizaru in the air at Egghead)
+OPEN_R = arm(-14, 0, 36, -8)
+OPEN_ARMS = arms(right=OPEN_R, left=mirror(OPEN_R))
 SLOUCH = {"bend": 5}
 LAZY = p(POCKETS, legs(0, 0), body=SLOUCH, head={"pitch": -4})
 
@@ -93,85 +96,20 @@ def stances():
     # 2.9.0 (the owner: "Flying and jumping gives you a fuck ass animation"): only real flight has a pose (a jump is the game's own, the
     # hands in the pockets): upright as Kizaru hangs in the air, the legs easy, one knee a little up; going fast, leaning a little into
     # the way he goes (never laid flat: the look stays the player's), the legs together trailing
-    hang = p(POCKETS, rightLeg=leg(-6, 2, 16), leftLeg=leg(6, -2, 6), body={"bend": 3})
-    write_loop("pika_float", 40, [(0, "inoutsine", hang), (20, "inoutsine", p(hang, body={"y": 0.05}, rightLeg={"pitch": -9, "bend": 20})),
+    # 2.9.7 (the owner: "adapt the other abilities to your reference gifs"): as Kizaru hangs and flies over Egghead, the arms held out
+    # from his sides and a little forward, the hands open, the legs together and straight under him
+    hang = p(OPEN_ARMS, rightLeg=leg(-4, 2, 8), leftLeg=leg(4, -2, 4), body={"bend": 3})
+    write_loop("pika_float", 40, [(0, "inoutsine", hang), (20, "inoutsine", p(hang, body={"y": 0.05}, rightLeg={"pitch": -7, "bend": 12},
+                                                                               rightArm={"roll": 40}, leftArm={"roll": -40})),
                                   (40, "inoutsine", hang)],
-               "Pika Pika: hanging in the air as light, upright, hands in his pockets, the legs easy.", parts=ALL_BUT_HEAD)
-    fly = p(POCKETS, rightLeg=leg(10, 1, 6), leftLeg=leg(16, -1, 12), body={"pitch": 16, "bend": -4})
+               "Pika Pika: hanging in the air as light, upright, the arms held out from his sides, the legs together.", parts=ALL_BUT_HEAD)
+    fly = p(OPEN_ARMS, rightArm={"pitch": 8, "roll": 30}, leftArm={"pitch": 8, "roll": -30}, rightLeg=leg(10, 1, 4), leftLeg=leg(14, -1, 6),
+            body={"pitch": -16, "bend": -4})
     write_loop("pika_fly", 30, [(0, "inoutsine", fly), (15, "inoutsine", p(fly, leftLeg={"pitch": 13, "bend": 8}, rightLeg={"pitch": 13},
-                                                                             body={"pitch": 18})),
+                                                                             body={"pitch": -18})),
                                 (30, "inoutsine", fly)],
-               "Pika Pika: flying as light, leaning a little into the way he goes, hands in his pockets, the legs together.",
+               "Pika Pika: flying as light, leaning a little into the way he goes, the arms out from his sides, the legs together.",
                parts=ALL_BUT_HEAD)
-
-
-# ------------------------------------------------------------------------------------------------------ the kicks (LMB)
-
-PLANT = dict(leftLeg=leg(-4, -4, 14))
-
-
-def kicks():
-    # 1: a front kick straight out, his hands never leaving his pockets
-    write_parts("pika_kick_1", 8, [
-        (0, "linear", LAZY),
-        (1, "insine", p(LAZY, rightLeg=leg(-62, 4, 92), body={"bend": -4, "z": 0.02}, **PLANT)),
-        (2, "outexpo", p(LAZY, rightLeg=leg(-96, 2, 0), body={"bend": -12, "z": -0.06}, head={"pitch": 4}, **PLANT)),
-        (3, "outback", p(LAZY, rightLeg=leg(-88, 2, 6), body={"bend": -10, "z": -0.05}, **PLANT)),
-        (8, "inoutsine", LAZY),
-    ], "Pika Pika: a front kick at the speed of light, hands in his pockets.", KICK)
-    # 2: a roundhouse from the left leg, the body turning into it
-    write_parts("pika_kick_2", 8, [
-        (0, "linear", LAZY),
-        (1, "insine", p(LAZY, leftLeg=leg(-30, -46, 80), rightLeg=leg(4, 4, 16), body={"yaw": 30, "roll": 8})),
-        (2, "outexpo", p(LAZY, leftLeg=leg(-62, -82, 4), rightLeg=leg(6, 6, 20), body={"yaw": -48, "roll": 20, "bend": -6}, head={"yaw": 30})),
-        (3, "outback", p(LAZY, leftLeg=leg(-58, -76, 10), rightLeg=leg(6, 6, 20), body={"yaw": -54, "roll": 18, "bend": -5}, head={"yaw": 34})),
-        (8, "inoutsine", LAZY),
-    ], "Pika Pika: a roundhouse at the speed of light, the left leg swept across.", KICK)
-    # 3: a spinning back kick: turned round, the right leg driven back into them
-    write_parts("pika_kick_3", 8, [
-        (0, "linear", LAZY),
-        (1, "insine", p(LAZY, rightLeg=leg(-20, 6, 70), body={"yaw": -110, "bend": 6}, head={"yaw": 70}, **PLANT)),
-        (2, "outexpo", p(LAZY, rightLeg=leg(82, 4, 4), body={"yaw": -180, "bend": 22, "z": -0.05}, head={"yaw": 150, "pitch": -10}, **PLANT)),
-        (4, "outback", p(LAZY, rightLeg=leg(74, 4, 10), body={"yaw": -182, "bend": 20, "z": -0.05}, head={"yaw": 150, "pitch": -8}, **PLANT)),
-        (5, "constant", p(LAZY, rightLeg=leg(30, 4, 30), body={"yaw": -180, "bend": 10}, head={"yaw": 150})),
-        (6, "constant", p(LAZY, rightLeg=leg(30, 4, 30), body={"yaw": 0, "bend": 10}, head={"yaw": -30})),
-        (8, "inoutsine", LAZY),
-    ], "Pika Pika: a spinning back kick at the speed of light.", KICK)
-    # 4: a rising kick straight up that throws them into the air
-    write_parts("pika_kick_4", 8, [
-        (0, "linear", LAZY),
-        (1, "insine", p(LAZY, rightLeg=leg(-30, 4, 60), body={"bend": 8, "y": -0.06}, **PLANT)),
-        (2, "outexpo", p(LAZY, rightLeg=leg(-160, 2, 0), body={"bend": -22, "y": 0.04}, head={"pitch": -14}, **PLANT)),
-        (3, "outback", p(LAZY, rightLeg=leg(-150, 2, 4), body={"bend": -20, "y": 0.03}, head={"pitch": -12}, **PLANT)),
-        (8, "inoutsine", LAZY),
-    ], "Pika Pika: a rising kick at the speed of light that throws them up.", KICK)
-    # 5: the barrage: four kicks too fast to see (alternating legs), then the last that throws them (ticks 1, 2, 3, 4, then 6)
-    beats = [(0, "linear", LAZY)]
-    for i, t in enumerate((1, 2, 3, 4)):
-        right = i % 2 == 0
-        out = leg(-92 + 8 * (i % 2), 2, 4)
-        back = leg(-4, 4, 14)
-        beats.append((t, "outexpo", p(LAZY, rightLeg=out if right else back, leftLeg=back if right else mirror(out),
-                                      body={"bend": -8, "z": -0.04, "yaw": 10 if right else -10})))
-    beats += [(5, "insine", p(LAZY, rightLeg=leg(-40, 4, 90), body={"bend": 4}, **PLANT)),
-              (6, "outexpo", p(LAZY, rightLeg=leg(-100, 2, 0), body={"bend": -16, "z": -0.1}, head={"pitch": 6}, **PLANT)),
-              (7, "outback", p(LAZY, rightLeg=leg(-94, 2, 6), body={"bend": -14, "z": -0.09}, **PLANT)),
-              (12, "inoutsine", LAZY)]
-    write_parts("pika_kick_5", 12, beats, "Pika Pika: a barrage of kicks too fast to see, and the last that throws them.", KICK)
-    # sprinting: arrived as light, a flying kick
-    write_parts("pika_dash_kick", 10, [
-        (0, "constant", p(LAZY, rightLeg=leg(-60, 2, 80), leftLeg=leg(30, -2, 60), body={"bend": -10, "y": 0.2})),
-        (2, "outexpo", p(LAZY, rightLeg=leg(-98, 2, 0), leftLeg=leg(24, -2, 70), body={"bend": -16, "y": 0.18, "z": -0.1})),
-        (4, "outback", p(LAZY, rightLeg=leg(-92, 2, 6), leftLeg=leg(18, -2, 60), body={"bend": -14, "y": 0.1, "z": -0.08})),
-        (10, "inoutsine", LAZY),
-    ], "Pika Pika: across the distance as light and a flying kick on arrival.", KICK)
-    # in the air, looking down: fallen on them as light, the heel driven into the ground
-    write_parts("pika_dive", 10, [
-        (0, "constant", p(LAZY, rightLeg=leg(-120, 2, 10), leftLeg=leg(10, -2, 40), body={"bend": -10})),
-        (1, "outexpo", p(LAZY, rightLeg=leg(-6, 4, 30), leftLeg=leg(14, -4, 70), body={"bend": 20, "y": -0.32}, head={"pitch": 16})),
-        (4, "outback", p(LAZY, rightLeg=leg(-10, 4, 34), leftLeg=leg(14, -4, 74), body={"bend": 22, "y": -0.34}, head={"pitch": 18})),
-        (10, "inoutsine", LAZY),
-    ], "Pika Pika: fallen on them as light, the heel driven into the ground.", KICK)
 
 
 # ------------------------------------------------------------------------------------------------------ the laser and the beam (RMB)
@@ -234,19 +172,25 @@ CROSS_R = arm(-100, -30, -4, -18)
 CROSSED = arms(right=CROSS_R, left=mirror(CROSS_R))
 
 
+# 2.9.7 (the owner: "adapt the other abilities to your reference gifs"): as at Egghead, up in the air over them, both arms thrust out
+# toward the ground ahead, the hands open (the light pours from both palms), the legs together under him
+POUR_R = arm(-62, -14, 8, -6)
+POURING = arms(right=POUR_R, left=mirror(POUR_R))
+
+
 def yasakani():
-    rising = p(CROSSED, rightLeg=leg(-30, 4, 60), leftLeg=leg(-10, -4, 40), body={"bend": 10}, head={"pitch": 10})
-    crossed = p(CROSSED, rightLeg=leg(-12, 4, 30), leftLeg=leg(6, -4, 44), body={"bend": 8}, head={"pitch": 14})
-    beats = [(0, "linear", LAZY), (3, "outexpo", rising), (6, "outback", crossed)]
-    for t in range(10, 81, 4):
-        jolt = 3 if t % 8 else -3
-        beats.append((t, "inoutsine", p(crossed, rightArm={"pitch": -100 + jolt}, leftArm={"pitch": -100 - jolt})))
+    rising = p(OPEN_ARMS, rightLeg=leg(-30, 4, 50), leftLeg=leg(-10, -4, 34), body={"bend": 6})
+    pour = p(POURING, rightLeg=leg(-6, 3, 10), leftLeg=leg(8, -3, 16), body={"bend": 14})
+    beats = [(0, "linear", LAZY), (3, "outexpo", rising), (6, "outback", pour)]
+    for t in range(8, 81, 2):
+        jolt = 5 if t % 4 else -5
+        beats.append((t, "inoutsine", p(pour, rightArm={"pitch": -62 - jolt}, leftArm={"pitch": -62 + jolt})))
     write_parts("pika_yasakani", 80, beats,
-                "Pika Pika: Yasakani no Magatama, up in the air, arms crossed before the face, a torrent of light out of both hands.",
+                "Pika Pika: Yasakani no Magatama, up in the air over them, both arms thrust out, a torrent of light out of both palms.",
                 ALL_BUT_HEAD)
     open_ = p(arms(right=arm(-60, 0, 70, -10), left=arm(-60, 0, -70, -10)), rightLeg=leg(-8, 4, 20), leftLeg=leg(6, -4, 30),
               body={"bend": -4}, head={"pitch": 4})
-    write_parts("pika_yasakani_end", 12, [(0, "constant", crossed), (3, "outexpo", open_), (12, "inoutsine", LAZY)],
+    write_parts("pika_yasakani_end", 12, [(0, "constant", pour), (3, "outexpo", open_), (12, "inoutsine", LAZY)],
                 "Pika Pika: the torrent spent, the arms thrown open, coming down.", ALL_BUT_HEAD)
 
 
@@ -260,6 +204,9 @@ def yasakani():
 # pitch goes (the blade flat at the shoulder), roll -45 down a diagonal, roll 0 up and down the middle. Only the right arm and the body
 # (and the legs where he lunges) are keyed: the left arm and the head are the player's own.
 HOLD_R = arm(-40, 10, 8, 0)
+# 2.9.7: the lunge's arm: thrust straight out ahead along the laid-out body (the blade, leaning off the fist toward the arm's line,
+# points on along the way he flies)
+LUNGE_R = arm(-122, 4, 0, 0)
 SWORD = ("body", "torso", "rightArm")
 SWORD_LUNGE = ("body", "torso", "rightArm", "rightLeg", "leftLeg")
 
@@ -282,16 +229,13 @@ def murakumo():
                parts=SWORD)
     write_loop("pika_sword_walk", 20, [(0, "linear", ready), (10, "linear", p(ready, rightArm={"pitch": -46})), (20, "linear", ready)],
                "Pika Pika: walking with Ama no Murakumo held low.", parts=("rightArm",))
-    # each cut: (wind-up arm, through arm, body yaw from, to, bend from, to)
+    # each cut: (wind-up arm, through arm, body yaw from, to, bend from, to). 2.9.7: the two the clones and the lunge's last cut use
+    # (the cuts on the attack button are gone with every M1)
     cuts = [
         # 1: level, right to left across the shoulders
         (arm(-10, 0, 90, 0), arm(-160, 0, 90, 0), 34, -38, 2, 6),
         # 2: back, left to right, level
         (arm(-10, 0, -90, 0), arm(-160, 0, -90, 0), -36, 34, 4, 2),
-        # 3: down the diagonal, from high on the right to low on the left
-        (arm(-165, 0, -45, 0), arm(-40, 0, -45, 0), 26, -24, -4, 12),
-        # 4: rising up the same diagonal, low left to high right
-        (arm(-35, 0, -45, 0), arm(-170, 0, -45, 0), -22, 26, 10, -8),
     ]
     for i, (up, through, y0, y1, b0, b1) in enumerate(cuts, start=1):
         write_parts("pika_sword_" + str(i), 8, [
@@ -302,23 +246,15 @@ def murakumo():
                              body={"yaw": y1 * 1.08, "bend": b1, "z": -0.04})),
             (8, "inoutsine", ready),
         ], "Pika Pika: Ama no Murakumo, cut " + str(i) + ".", SWORD)
-    # 5: raised over the head and brought down through them with a lunge: the wave of light
-    raised = p(rightArm=arm(-175, 0, 0, 0), body={"bend": -10, "yaw": 6}, rightLeg=leg(4, 4, 10), leftLeg=leg(-4, -4, 12))
-    down = p(rightArm=arm(-50, 0, 0, 0), body={"bend": 16, "z": -0.16, "yaw": -4}, rightLeg=leg(-26, 4, 30), leftLeg=leg(18, -4, 22))
-    write_parts("pika_sword_5", 10, [
-        (0, "linear", ready),
-        (1, "insine", raised),
-        (3, "outexpo", down),
-        (5, "outback", p(down, rightArm={"pitch": -46})),
-        (10, "inoutsine", p(ready, rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0))),
-    ], "Pika Pika: Ama no Murakumo, the last cut: overhead and down through them, and the wave of light it throws.", SWORD_LUNGE)
-    guard = p(rightArm=arm(-100, 0, 90, 0), body={"bend": 4, "yaw": -8})
-    beats = [(0, "linear", ready), (2, "outexpo", guard)]
-    for t in range(6, 101, 6):
-        beats.append((t, "inoutsine", p(guard, rightArm={"pitch": -100 + (1.5 if t % 12 else -1.5)})))
-    write_parts("pika_sword_guard", 100, beats, "Pika Pika: Ama no Murakumo held level across before him, guarding.", SWORD)
-    write_parts("pika_sword_away", 6, [(0, "constant", ready), (6, "inoutsine", p(rightArm=POCKET_R))],
-                "Pika Pika: the sword of light let go, the hand back in its pocket.", ("rightArm",))
+    # 2.9.7 (the owner: "adapt the other abilities to your reference gifs ... scrap moves if you can make better moves"): as at Egghead,
+    # Ama no Murakumo drawn out of the joined hands and Kizaru flying at them with it, laid out along the way he goes, the sword thrust
+    # out ahead at the end of the straight right arm, the left arm swept back, the legs together trailing; held until he arrives (the
+    # server ends it with the level cut, pika_sword_1)
+    thrust = p(rightArm=LUNGE_R, leftArm=arm(30, 0, -24, -10), rightLeg=leg(8, 2, 4), leftLeg=leg(14, -2, 10), body={"pitch": -72, "bend": -6})
+    beats = [(0, "linear", LAZY), (2, "outexpo", joined), (3, "outexpo", drawn), (5, "outexpo", thrust)]
+    for t in range(9, 41, 4):
+        beats.append((t, "inoutsine", p(thrust, body={"pitch": -72 + (2 if t % 8 else -2), "roll": 3 if t % 8 else -3})))
+    write_parts("pika_lunge", 40, beats, "Pika Pika: Ama no Murakumo drawn, and flying at them with it thrust out ahead.", ALL_BUT_HEAD)
 
 
 # ------------------------------------------------------------------------------------------------------ the speed-of-light kick, the clones
@@ -364,7 +300,6 @@ def clones():
 
 def main():
     stances()
-    kicks()
     lasers()
     yata()
     yasakani()

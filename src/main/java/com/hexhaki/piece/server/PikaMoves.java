@@ -121,18 +121,15 @@ public final class PikaMoves {
     static final int KICK_FULL = 40;
     static final double KICK_RANGE = 45.0;
     static final int CLONE_COUNT = 7;
-    static final int COMBO_GAP = 14;
 
     /** Each player's state of the kit. */
     static final class State {
-        int kick;
-        long kickAt = Long.MIN_VALUE;
-        int cut;
-        long cutAt = Long.MIN_VALUE;
         long busyUntil;
         long swordUntil;
-        boolean guard;
-        long guardSince;
+        /** 2.9.7: Ama no Murakumo's lunge: cutting through whoever the body passes until, from where it was last tick, whom it cut. */
+        long lungeUntil;
+        Vec3 lungeLast;
+        final java.util.Set<Integer> lungeHit = new java.util.HashSet<>();
         long chargeSince = -1;
         long kickChargeSince = -1;
         long volleySince = -1;
@@ -211,14 +208,6 @@ public final class PikaMoves {
 
     static boolean sneak(int flags) {
         return (flags & 1) != 0;
-    }
-
-    static boolean sprint(int flags) {
-        return (flags & 2) != 0;
-    }
-
-    static boolean air(int flags) {
-        return (flags & 4) != 0;
     }
 
     static boolean sword(ServerPlayer player) {
@@ -332,7 +321,7 @@ public final class PikaMoves {
         } else if (slot == PikaKit.YASAKANI.slot()) {
             volley(player, sneak(flags));
         } else if (slot == PikaKit.MURAKUMO.slot()) {
-            murakumo(player);
+            lunge(player);
         } else if (slot == PikaKit.LIGHT_KICK.slot()) {
             kickCharge(player);
         } else if (slot == PikaKit.CLONES.slot()) {
@@ -357,111 +346,13 @@ public final class PikaMoves {
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------ LMB: kicks (or cuts)
+    // ------------------------------------------------------------------------------------------------------ LMB: nothing
 
+    /**
+     * 2.9.7 (the owner: "get rid of the M1s entirely, of the light fruit"): the attack button does nothing with the Light fruit: no kicks,
+     * no sprinting kick, no fall from the air, no cuts of the sword (Ama no Murakumo is a move of its own now, C).
+     */
     static void attack(ServerPlayer player, int flags) {
-        State s = state(player);
-        long now = now(player);
-        if (now < s.busyUntil || s.volleySince >= 0 || s.kickChargeSince >= 0 || s.chargeSince >= 0 || moving(s, now)) {
-            return;
-        }
-        if (sword(player)) {
-            cut(player, s, now);
-            return;
-        }
-        if (air(flags) && player.m_146909_() > 50.0F) {
-            dive(player, s, now);
-            return;
-        }
-        if (sprint(flags) && !air(flags)) {
-            dashKick(player, s, now);
-            return;
-        }
-        int step = now - s.kickAt <= COMBO_GAP ? s.kick % 5 + 1 : 1;
-        s.kick = step;
-        s.kickAt = now;
-        s.busyUntil = now + (step == 5 ? 8 : 5);
-        animate(player, "pika_kick_" + step);
-        sound(player, player.m_20182_(), PikaSounds.WHOOSH, 0.8F, 0.95F + 0.06F * step);
-        Vec3 look = player.m_20154_();
-        if (step < 5) {
-            later(player, 2, () -> kick(player, step, look));
-        } else {
-            // the barrage: four kicks too fast to see, then the last that throws them
-            for (int i = 0; i < 4; i++) {
-                int beat = 1 + i;
-                later(player, beat, () -> kick(player, 5, player.m_20154_()));
-            }
-            later(player, 6, () -> {
-                Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(2.2));
-                int n = cone(player, 4.2, 55, 5.0F, player.m_20154_().m_82490_(2.2).m_82520_(0, 0.45, 0), true);
-                fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, n > 0 ? 2 : 0, 6);
-                sound(player, at, n > 0 ? PikaSounds.HIT_HEAVY : PikaSounds.WHOOSH, 1.1F, 1.0F);
-            });
-        }
-    }
-
-    /** One kick of the five: the cone in front; the rising kick throws them up. */
-    static void kick(ServerPlayer player, int step, Vec3 look) {
-        Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(1.9)).m_82520_(0, step == 4 ? -0.3 : -0.5, 0);
-        Vec3 thrown = step == 4 ? new Vec3(look.f_82479_ * 0.3, 1.25, look.f_82481_ * 0.3) : look.m_82490_(step == 5 ? 0.25 : 0.7).m_82520_(0, 0.12, 0);
-        int n = cone(player, 3.8, 50, step == 5 ? 2.0F : 2.5F + 0.5F * step, thrown, step == 4);
-        fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, n > 0 ? 1 : 0, step);
-        if (n > 0) {
-            sound(player, at, PikaSounds.HIT, 1.0F, 1.0F);
-        }
-    }
-
-    /** Sprinting: across the distance as light and a kick on arrival. */
-    static void dashKick(ServerPlayer player, State s, long now) {
-        LivingEntity target = aimed(player, 16.0, 0.08);
-        Vec3 from = player.m_20182_();
-        Vec3 to;
-        if (target != null) {
-            to = beside(player, target, 1.6);
-        } else {
-            to = room(player, from, point(player, 12.0).m_82546_(player.m_20154_().m_82490_(0.8)));
-        }
-        // 2.9.6: across as light over a few ticks (no snap), the kick as it arrives
-        int ticks = dash(player, to, target, 3);
-        s.busyUntil = now + ticks + 6;
-        s.kick = 0;
-        sound(player, from, PikaSounds.ZIP, 1.0F, 1.0F);
-        later(player, ticks - 1, () -> animate(player, "pika_dash_kick"));
-        later(player, ticks + 1, () -> {
-            Vec3 way = target != null && target.m_6084_() ? StyleCombat.middle(target).m_82546_(player.m_146892_()).m_82541_() : player.m_20154_();
-            Vec3 thrown = way.m_82490_(2.0).m_82520_(0, 0.5, 0);
-            int n = target != null && target.m_6084_() && target.m_20280_(player) < 4.5 * 4.5 && hit(player, target, 5.0F, thrown, true) ? 1 : 0;
-            if (n == 0) {
-                n = cone(player, 4.0, 55, 5.0F, thrown, true);
-            }
-            Vec3 at = player.m_146892_().m_82549_(way.m_82490_(1.8)).m_82520_(0, -0.4, 0);
-            fx(player, KICK, 0, at, way, 0, 0, 0, n > 0 ? 2 : 0, 7);
-            sound(player, at, n > 0 ? PikaSounds.HIT_HEAVY : PikaSounds.WHOOSH, 1.1F, 1.0F);
-        });
-    }
-
-    /** In the air, looking down: fall on them as light, a burst where it lands. */
-    static void dive(ServerPlayer player, State s, long now) {
-        Vec3 eye = player.m_146892_();
-        BlockHitResult ground = player.m_9236_().m_45547_(new ClipContext(eye, eye.m_82549_(player.m_20154_().m_82490_(40.0)),
-            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-        if (ground.m_6662_() != HitResult.Type.BLOCK) {
-            return;
-        }
-        Vec3 from = player.m_20182_();
-        Vec3 land = room(player, from, ground.m_82450_().m_82520_(0, 0.1, 0));
-        // 2.9.6: down as light over a few ticks (no snap), bursting as it lands
-        int ticks = dash(player, land, null, 4);
-        s.busyUntil = now + ticks + 8;
-        animate(player, "pika_dive");
-        sound(player, from, PikaSounds.ZIP, 1.0F, 0.9F);
-        later(player, ticks, () -> {
-            UoMoves.explode(player, (ServerLevel) player.m_9236_(), land, new Vec3(0, 1, 0), 4.5, 6.0F, 0, 1.6);
-            fx(player, BURST, 0, land, Vec3.f_82478_, 0, 0, 0, 4.5, 0);
-            Impact.quake((ServerLevel) player.m_9236_(), land, 18.0, 0.6F, 10);
-            sound(player, land, PikaSounds.EXPLODE, 1.3F, 1.15F);
-        });
     }
 
     /** Beside {@code target}, on the side toward the player, {@code gap} blocks off, facing it. */
@@ -495,76 +386,11 @@ public final class PikaMoves {
         return from;
     }
 
-    // ------------------------------------------------------------------------------------------------------ Ama no Murakumo's cuts
-
-    static void cut(ServerPlayer player, State s, long now) {
-        int step = now - s.cutAt <= COMBO_GAP ? s.cut % 5 + 1 : 1;
-        s.cut = step;
-        s.cutAt = now;
-        s.busyUntil = now + 6;
-        animate(player, "pika_sword_" + step);
-        sound(player, player.m_20182_(), PikaSounds.SWING, 0.9F, 0.95F + 0.05F * step);
-        later(player, 2, () -> {
-            Vec3 look = player.m_20154_();
-            int n = cone(player, 5.0, 70, 3.5F + 0.5F * step, look.m_82490_(step == 5 ? 1.4 : 0.6).m_82520_(0, 0.15, 0), step == 5);
-            // the cut's crescent: across (1, 3), back across (2, 4), down through (5)
-            Vec3 hips = player.m_20182_().m_82520_(0, 1.1, 0).m_82549_(look.m_82490_(0.6));
-            Vec3 axis = step == 5 ? look.m_82537_(new Vec3(0, 1, 0)).m_82541_() : new Vec3(0, step % 2 == 0 ? -1 : 1, 0).m_82549_(look.m_82490_(0.3));
-            fx(player, SLASH, 0, hips, axis, -Math.PI * 0.2 + Math.toRadians(-player.m_146908_()), Math.PI * 1.1, 3.0, n, step);
-            if (n > 0) {
-                sound(player, hips, PikaSounds.HIT, 1.0F, 0.9F);
-            }
-            if (step == 5) {
-                wave(player);
-            }
-        });
-    }
-
-    /** The fifth cut's wave of light: forward 24 blocks, cutting whatever it passes. */
-    static void wave(ServerPlayer player) {
-        Vec3 look = player.m_20154_();
-        Vec3 flat = new Vec3(look.f_82479_, look.f_82480_ * 0.5, look.f_82481_).m_82541_();
-        Vec3 start = player.m_20182_().m_82520_(0, 1.0, 0).m_82549_(flat.m_82490_(1.2));
-        Vec3 step = flat.m_82490_(2.4);
-        int life = 10;
-        fx(player, WAVE, 0, start, step, 0, 0, 0, 3.0, life);
-        ServerLevel level = (ServerLevel) player.m_9236_();
-        long born = now(player);
-        List<LivingEntity> struck = new ArrayList<>();
-        LIVE.add(new UoMoves.Live() {
-            int age;
-
-            @Override
-            public boolean tick(long now) {
-                this.age++;
-                Vec3 at = start.m_82549_(step.m_82490_(this.age));
-                for (LivingEntity body : foes(player, at, 2.6)) {
-                    if (!struck.contains(body)) {
-                        struck.add(body);
-                        hit(player, body, 6.0F, flat.m_82490_(1.0).m_82520_(0, 0.3, 0), true);
-                    }
-                }
-                return this.age >= life || now - born > life + 2;
-            }
-
-            @Override
-            public ServerLevel level() {
-                return level;
-            }
-        });
-    }
-
-    // ------------------------------------------------------------------------------------------------------ RMB: the laser, the beam, the guard
+    // ------------------------------------------------------------------------------------------------------ RMB: the laser, the beam
 
     static void use(ServerPlayer player, int flags) {
         State s = state(player);
         long now = now(player);
-        if (sword(player)) {
-            s.guard = true;
-            s.guardSince = now;
-            animate(player, "pika_sword_guard");
-            return;
-        }
         if (s.chargeSince >= 0 || s.volleySince >= 0 || s.kickChargeSince >= 0 || now < s.busyUntil || moving(s, now)) {
             return;
         }
@@ -575,11 +401,6 @@ public final class PikaMoves {
 
     static void useUp(ServerPlayer player) {
         State s = state(player);
-        if (s.guard) {
-            s.guard = false;
-            animate(player, "pika_sword_idle");
-            return;
-        }
         if (s.chargeSince < 0) {
             return;
         }
@@ -691,7 +512,6 @@ public final class PikaMoves {
         s.lightWay = look;
         s.reflectAt = -100; // never Long.MIN_VALUE: now - it would overflow
         s.lightHit.clear();
-        s.guard = false;
         player.f_19789_ = 0.0F;
         fx(player, LIGHT_ON, 0, s.lightLast, look, 0, 0, 0, LIGHT_SPEED, LIGHT_MAX);
         sound(player, s.lightLast, PikaSounds.ZIP, 1.0F, 1.0F);
@@ -772,13 +592,17 @@ public final class PikaMoves {
      * {@code target} if it moves) and holds it there {@code hold} ticks; the body is light on the way. Returns the ticks it takes.
      */
     static int dash(ServerPlayer player, Vec3 to, LivingEntity target, int hold) {
+        return dash(player, to, target, hold, DASH_SPEED, false);
+    }
+
+    /** As {@link #dash(ServerPlayer, Vec3, LivingEntity, int)}, {@code speed} blocks a tick; {@code seen}: the body is not light on the way. */
+    static int dash(ServerPlayer player, Vec3 to, LivingEntity target, int hold, double speed, boolean seen) {
         State s = state(player);
         Vec3 from = player.m_20182_();
-        int ticks = Math.max(2, (int) Math.ceil(to.m_82554_(from) / DASH_SPEED));
+        int ticks = Math.max(2, (int) Math.ceil(to.m_82554_(from) / speed));
         s.dashUntil = now(player) + ticks + hold;
-        s.guard = false;
         player.f_19789_ = 0.0F;
-        fx(player, DASH, target != null ? target.m_19879_() : -1, to, from, hold, 0, 0, 0, ticks);
+        fx(player, DASH, target != null ? target.m_19879_() : -1, to, from, hold, seen ? 1 : 0, 0, 0, ticks);
         return ticks;
     }
 
@@ -797,9 +621,14 @@ public final class PikaMoves {
         animate(player, "pika_yasakani");
         fx(player, VOLLEY_ON);
         sound(player, player.m_20182_(), PikaSounds.SPARKLE, 1.0F, 0.9F);
-        // up into the air, as over Marineford
+        // up into the air, as over Marineford and Egghead; 2.9.7: flying, so the player steers over them while it pours
         player.m_20334_(player.m_20184_().f_82479_ * 0.3, 0.75, player.m_20184_().f_82481_ * 0.3);
         player.f_19864_ = true;
+        var abilities = player.m_150110_();
+        if (abilities.f_35936_ && !abilities.f_35935_) {
+            abilities.f_35935_ = true;
+            player.m_6885_();
+        }
     }
 
     static void stopVolley(ServerPlayer player) {
@@ -817,10 +646,8 @@ public final class PikaMoves {
     /** A tick of the torrent: three beads from the crossed hands onto the ground where the player looks (all onto one when focused). */
     static void volleyTick(ServerPlayer player, State s, long now) {
         long held = now - s.volleySince;
-        // held in the air while it pours
-        Vec3 v = player.m_20184_();
-        player.m_20334_(v.f_82479_ * 0.6, held < VOLLEY_WINDUP ? v.f_82480_ : Math.max(-0.02, v.f_82480_ * 0.3), v.f_82481_ * 0.6);
-        player.f_19864_ = true;
+        // 2.9.7 (the owner: "smooth, fun to use"): no longer held still: flying (volley turns it on), the player moves over them while it
+        // pours; only the fall is stopped
         player.f_19789_ = 0.0F;
         if (held > VOLLEY_MAX) {
             stopVolley(player);
@@ -886,48 +713,118 @@ public final class PikaMoves {
 
     // ------------------------------------------------------------------------------------------------------ C: Ama no Murakumo
 
-    static void murakumo(ServerPlayer player) {
+    /**
+     * 2.9.7 (the owner: "adapt the other abilities to your reference gifs ... scrap moves if you can make better moves"; the sword's cuts
+     * on the attack button went with every M1): as at Egghead, Ama no Murakumo drawn out of the joined hands and Kizaru flying at them
+     * with it thrust out ahead (pika_lunge), {@link #LUNGE_SPEED} blocks a tick, seen (not as light: the sword leads), through whoever he
+     * looks at and on {@link #LUNGE_PAST} blocks beyond them (or {@link #LUNGE_RANGE} where he looks), cutting everyone the blade passes;
+     * where he arrives, one wide level cut (pika_sword_1) and a wave of light, and the sword is gone.
+     */
+    static void lunge(ServerPlayer player) {
         State s = state(player);
         long now = now(player);
-        if (sword(player)) {
-            s.swordUntil = 0;
-            s.guard = false;
-            fx(player, SWORD_OFF);
-            sound(player, player.m_20182_(), PikaSounds.SWORD_OFF, 0.9F, 1.0F);
-            animate(player, "pika_sword_away");
-            FruitServer.sync(player);
+        if (now < s.busyUntil || moving(s, now) || !ready(player, PikaKit.MURAKUMO)) {
             return;
         }
-        if (now < s.busyUntil || !ready(player, PikaKit.MURAKUMO)) {
-            return;
+        cool(player, PikaKit.MURAKUMO, 80);
+        LivingEntity target = aimed(player, LUNGE_RANGE, 0.06);
+        Vec3 from = player.m_20182_();
+        Vec3 to;
+        if (target != null) {
+            Vec3 way = target.m_20182_().m_82546_(from);
+            Vec3 flat = new Vec3(way.f_82479_, 0, way.f_82481_);
+            flat = flat.m_82556_() < 1.0E-6 ? player.m_20154_() : flat.m_82541_();
+            to = room(player, from, target.m_20182_().m_82549_(flat.m_82490_(LUNGE_PAST + target.m_20205_() * 0.5)));
+        } else {
+            to = room(player, from, point(player, LUNGE_RANGE).m_82546_(player.m_20154_().m_82490_(0.8)).m_82520_(0, -0.9, 0));
         }
-        cool(player, PikaKit.MURAKUMO, 40);
-        s.busyUntil = now + 8;
-        animate(player, "pika_murakumo");
-        sound(player, player.m_20182_(), PikaSounds.SPARKLE, 0.9F, 1.2F);
-        later(player, 5, () -> {
-            s.swordUntil = now(player) + SWORD_TICKS;
-            fx(player, SWORD_ON, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0, SWORD_TICKS);
-            sound(player, player.m_20182_(), PikaSounds.SWORD_ON, 1.0F, 1.0F);
-            FruitServer.sync(player);
+        int ticks = Math.max(2, (int) Math.ceil(to.m_82554_(from) / LUNGE_SPEED));
+        s.busyUntil = now + LUNGE_DRAW + ticks + 10;
+        s.swordUntil = now + LUNGE_DRAW + ticks + 10;
+        fx(player, SWORD_ON, 0, from, Vec3.f_82478_, 0, 0, 0, 0, LUNGE_DRAW + ticks + 10);
+        animate(player, "pika_lunge");
+        sound(player, from, PikaSounds.SWORD_ON, 1.0F, 1.0F);
+        FruitServer.sync(player);
+        later(player, LUNGE_DRAW, () -> {
+            dash(player, to, null, 6, LUNGE_SPEED, true);
+            s.lungeUntil = now(player) + ticks + 1;
+            s.lungeLast = centre(player);
+            s.lungeHit.clear();
+            sound(player, player.m_20182_(), PikaSounds.ZIP, 1.0F, 0.85F);
+            sound(player, player.m_20182_(), PikaSounds.SWING, 1.0F, 0.8F);
+        });
+        later(player, LUNGE_DRAW + ticks, () -> {
+            // arrived: the wide level cut, and the wave of light it throws
+            animate(player, "pika_sword_1");
+            sound(player, player.m_20182_(), PikaSounds.SWING, 1.1F, 0.9F);
+        });
+        later(player, LUNGE_DRAW + ticks + 2, () -> {
+            Vec3 look = player.m_20154_();
+            Vec3 flat = new Vec3(look.f_82479_, 0, look.f_82481_);
+            flat = flat.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.m_82541_();
+            int n = cone(player, 5.5, 85, 6.0F, flat.m_82490_(1.4).m_82520_(0, 0.35, 0), true);
+            Vec3 hips = player.m_20182_().m_82520_(0, 1.1, 0).m_82549_(flat.m_82490_(0.6));
+            fx(player, SLASH, 0, hips, new Vec3(0, 1, 0).m_82549_(flat.m_82490_(0.3)), -Math.PI * 0.2 + Math.toRadians(-player.m_146908_()),
+                Math.PI * 1.1, 3.4, n, 1);
+            sound(player, hips, n > 0 ? PikaSounds.HIT_HEAVY : PikaSounds.WHOOSH, 1.1F, 1.0F);
+            wave(player, flat);
         });
     }
 
-    static boolean guards(ServerPlayer player, DamageSource source) {
-        State s = STATES.get(player.m_20148_());
-        if (s == null || !s.guard || !sword(player) || source.m_7270_() == null) {
-            return false;
+    /** 2.9.7: Ama no Murakumo's lunge: blocks a tick, how far it reaches, how far past the one it is aimed at, the draw (ticks). */
+    static final double LUNGE_SPEED = 2.6;
+    static final double LUNGE_RANGE = 26.0;
+    static final double LUNGE_PAST = 2.5;
+    static final int LUNGE_DRAW = 3;
+
+    /** A tick of the lunge: whoever the blade passed through is cut once. */
+    static void lungeTick(ServerPlayer player, State s) {
+        Vec3 c = centre(player);
+        Vec3 way = c.m_82546_(s.lungeLast);
+        if (way.m_82556_() > 1.0E-4) {
+            Vec3 thrown = way.m_82541_().m_82490_(1.1).m_82520_(0, 0.35, 0);
+            for (LivingEntity body : crossed(player, s.lungeLast, c, 1.6)) {
+                if (s.lungeHit.add(body.m_19879_())) {
+                    hit(player, body, 7.0F, thrown, true);
+                    Vec3 at = StyleCombat.middle(body);
+                    fx(player, KICK, 0, at, way, 0, 0, 0, 2, 9);
+                    sound(player, at, PikaSounds.HIT_HEAVY, 1.0F, 1.05F);
+                }
+            }
         }
-        Vec3 from = source.m_7270_().m_82546_(player.m_20182_());
-        from = new Vec3(from.f_82479_, 0, from.f_82481_);
-        Vec3 face = new Vec3(player.m_20154_().f_82479_, 0, player.m_20154_().f_82481_);
-        if (from.m_82556_() < 1.0E-6 || face.m_82556_() < 1.0E-6 || from.m_82541_().m_82526_(face.m_82541_()) < Math.cos(Math.toRadians(70))) {
-            return false;
-        }
-        Vec3 at = player.m_146892_().m_82549_(player.m_20154_().m_82490_(0.8));
-        fx(player, KICK, 0, at, player.m_20154_(), 0, 0, 0, 3, 9);
-        sound(player, at, PikaSounds.PARRY, 1.0F, 1.2F);
-        return true;
+        s.lungeLast = c;
+    }
+
+    /** The lunge's last cut throws a wave of light: forward 24 blocks, cutting whatever it passes. */
+    static void wave(ServerPlayer player, Vec3 flat) {
+        Vec3 start = player.m_20182_().m_82520_(0, 1.0, 0).m_82549_(flat.m_82490_(1.2));
+        Vec3 step = flat.m_82490_(2.4);
+        int life = 10;
+        fx(player, WAVE, 0, start, step, 0, 0, 0, 3.0, life);
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        long born = now(player);
+        List<LivingEntity> struck = new ArrayList<>();
+        LIVE.add(new UoMoves.Live() {
+            int age;
+
+            @Override
+            public boolean tick(long now) {
+                this.age++;
+                Vec3 at = start.m_82549_(step.m_82490_(this.age));
+                for (LivingEntity body : foes(player, at, 2.6)) {
+                    if (!struck.contains(body)) {
+                        struck.add(body);
+                        hit(player, body, 5.0F, flat.m_82520_(0, 0.3, 0), true);
+                    }
+                }
+                return this.age >= life || now - born > life + 2;
+            }
+
+            @Override
+            public ServerLevel level() {
+                return level;
+            }
+        });
     }
 
     // ------------------------------------------------------------------------------------------------------ V: the speed-of-light kick
@@ -1097,9 +994,14 @@ public final class PikaMoves {
         if (s.lightSince >= 0) {
             lightTick(player, s, now);
         }
+        if (s.lungeUntil > 0) {
+            lungeTick(player, s);
+            if (now >= s.lungeUntil) {
+                s.lungeUntil = 0;
+            }
+        }
         if (s.swordUntil > 0 && now >= s.swordUntil) {
             s.swordUntil = 0;
-            s.guard = false;
             fx(player, SWORD_OFF);
             FruitServer.sync(player);
         }

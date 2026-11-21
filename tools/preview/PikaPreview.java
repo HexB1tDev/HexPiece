@@ -21,6 +21,7 @@ import javax.imageio.ImageIO;
 public final class PikaPreview {
     public static void main(String[] args) throws Exception {
         File out = new File(args[0]);
+        // 2.9.7: --fp: as client/FirstPersonLight draws it, the eye at 1.62 over the feet looking ahead, only the limbs drawn
         boolean sword = false;
         double view = 55;
         int frames = 8;
@@ -29,6 +30,7 @@ public final class PikaPreview {
         for (int i = 1; i < args.length; i++) {
             switch (args[i]) {
                 case "--sword" -> sword = true;
+                case "--fp" -> fp = true;
                 case "--view" -> view = Double.parseDouble(args[++i]);
                 case "--frames" -> frames = Integer.parseInt(args[++i]);
                 case "--to" -> to = Double.parseDouble(args[++i]);
@@ -59,21 +61,30 @@ public final class PikaPreview {
     record Quad(double[] xyz, int[] argb, double far) {
     }
 
+    static boolean fp;
+
     static BufferedImage render(String name, boolean sword, double view, float t, int w, int h) {
         double a = Math.toRadians(view);
         double[] target = {0, 1.1, 0.8};
         double[] eye = {Math.sin(a) * 4.6, 1.8, 0.8 - Math.cos(a) * 4.6};
+        if (fp) {
+            eye = new double[] {0.0, 1.62, 0.0};
+            target = new double[] {0.0, 1.62, 5.0};
+            DragonPreview.fov = 70;
+        }
         if (view < -900) {
             // from straight above (--view -999), the player's front up the picture
             target = new double[] {0, 0.0, 0.6};
             eye = new double[] {0.0, 7.5, 0.55};
         }
-        DragonPreview.fov = 50;
+        if (!fp) {
+            DragonPreview.fov = 50;
+        }
         DragonPreview.Raster raster = new DragonPreview.Raster(w, h, eye, target);
         raster.ground(0);
         raster.figure(0, 0, 2.4);
         float[][] pose = StylePoser.sample(name, Math.max(0, t));
-        StylePreview.body(raster, pose, false);
+        StylePreview.body(raster, pose, fp);
         List<Quad> list = new ArrayList<>();
         FireMesh.Sink sink = (xyz, argb) -> {
             double[] q = xyz.clone();

@@ -199,8 +199,11 @@ public final class LightArt {
         double a = age - BURST_GATHER; // since it went off
         double span = life - BURST_GATHER;
         double t = a / span;
-        // the flash, then the light it gives while it burns
+        // the flash, then the light it gives while it burns; 2.9.7: as at Egghead, a star of light bursting on it as it goes off
         glow(sink, x, y + rr * 0.3, z, rr * (2.6 + 1.6 * ease(a / 4.0)), 0xFFF0B8, 0.9 * clamp(1.0 - a / 14.0));
+        if (a < 9.0) {
+            star(sink, x, y + rr * 0.3, z, rr * 3.2 * (0.5 + 0.5 * ease(a / 1.5)) * (1.0 - a / 9.0), 0.2 + a * 0.04, 1.0 - a / 9.0);
+        }
         if (a < 5.0) {
             double f = Math.sin(Math.PI * Math.min(1.0, a / 5.0 + 0.2));
             light(sink, x, y, z, rr * 0.9 * f, 0, 1, 0, 0.1, 1.05, 1.0, a, seed);
@@ -279,10 +282,12 @@ public final class LightArt {
      */
     public static void bullet(FireMesh.Sink sink, double x, double y, double z, double vx, double vy, double vz, double size, double age,
                               int seed) {
+        // 2.9.7 (the owner: "adapt the other abilities to your reference gifs"): as at Egghead, each one a long oval slug of light, white
+        // at its heart, drawn out along its flight, a gold streak behind it
         double vl = Math.max(1.0E-6, Math.sqrt(vx * vx + vy * vy + vz * vz));
-        light(sink, x, y, z, size * 0.45, vx, vy, vz, 1.2, 1.0, 1.0, age * 2.0, seed);
-        glow(sink, x, y, z, size * 1.6, 0xFFE070, 0.5);
-        FireMesh.streak(sink, x, y, z, vx, vy, vz, Math.min(vl * 1.2, 4.0), size * 0.22, 0xFFD040, 0.9);
+        light(sink, x, y, z, size * 0.38, vx, vy, vz, 2.6, 1.0, 1.0, age * 2.0, seed);
+        glow(sink, x, y, z, size * 1.5, 0xFFE070, 0.5);
+        FireMesh.streak(sink, x, y, z, vx, vy, vz, Math.min(vl * 1.6, 5.0), size * 0.3, 0xFFD040, 0.9);
     }
 
     /**
@@ -299,6 +304,18 @@ public final class LightArt {
             direction(seed + (int) (age / 3.0), k, 0.0, D);
             FireMesh.ray(sink, x, y, z, D[0], D[1], D[2], (0.6 + 1.6 * g) * (0.7 + 0.3 * Math.sin(age * 2.7 + k)), 0.04, 0, 0.0, 0xFFF8D0, 0.85);
         }
+    }
+
+    /**
+     * 2.9.7: an open palm pouring Yasakani no Magatama ({@code age} ticks into it), as at Egghead: a white-hot point in a gold glow and a
+     * star of light on it, breathing as the slugs leave it.
+     */
+    public static void palm(FireMesh.Sink sink, double x, double y, double z, double age, int seed) {
+        double g = ease(age / 6.0);
+        double pulse = 1.0 + 0.15 * Math.sin(age * 3.1 + seed);
+        glow(sink, x, y, z, (0.5 + 1.0 * g) * pulse, 0xFFE070, 0.6);
+        light(sink, x, y, z, (0.1 + 0.16 * g) * pulse, 0, 1, 0, 0.0, 1.0, 1.0, age * 2.0, seed);
+        star(sink, x, y, z, (0.6 + 1.3 * g) * pulse, age * 0.07 + seed, 1.0);
     }
 
     // ------------------------------------------------------------------------------------------------------ Yata no Kagami

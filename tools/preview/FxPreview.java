@@ -344,6 +344,10 @@ public final class FxPreview {
             }
             case "zpath" -> zpath(sink, eye, Double.parseDouble(move[1]));
             case "rush" -> com.hexhaki.piece.pika.LightArt.rush(sink, look[0], look[1], look[2], Double.parseDouble(move[1]), 9);
+            case "palm" -> {
+                com.hexhaki.piece.pika.LightArt.palm(sink, -0.42 - eye[0], 1.6 - eye[1], 4.0 - eye[2], Double.parseDouble(move[1]), 1);
+                com.hexhaki.piece.pika.LightArt.palm(sink, 0.42 - eye[0], 1.6 - eye[1], 4.0 - eye[2], Double.parseDouble(move[1]), 2);
+            }
             case "star" -> com.hexhaki.piece.pika.LightArt.star(sink, -eye[0], 1.5 - eye[1], 6.0 - eye[2], Double.parseDouble(move[1]), 0.0, 1.0);
             case "reflect" -> com.hexhaki.piece.pika.LightArt.reflect(sink, -eye[0], 0.02 - eye[1], 10.0 - eye[2], 0, 1, 0, 1.0,
                 Double.parseDouble(move[1]), 5);

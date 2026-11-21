@@ -95,6 +95,8 @@ public final class PikaFx {
     static final Map<Integer, Long> FORMS = new HashMap<>();
     /** 2.9.6: per player gone as light (Z held, or a dash): {since, until} (clock ticks). */
     static final Map<Integer, long[]> LIGHTS = new HashMap<>();
+    /** 2.9.7: per player flying at them with Ama no Murakumo (a dash seen, not as light): until (clock ticks). */
+    static final Map<Integer, Long> LUNGES = new HashMap<>();
     static final Map<Integer, Long> SWORDS = new HashMap<>();
     private static final Map<Integer, Trail> TRAILS = new HashMap<>();
     static final double FAR = 160.0;
@@ -192,10 +194,15 @@ public final class PikaFx {
                 motes(at, 6, 0.3);
             }
             case PikaMoves.DASH -> {
-                // 2.9.6: across as light over a few ticks; one's own body carried there by the game's own movement
-                LIGHTS.put(m.user(), new long[] {clock, clock + m.ticks() + 1});
-                Vec3 from = a.m_82520_(0, 0.9, 0);
-                SPOTS.add(new Spot(from, at.m_82546_(a), 1.2, 0, clock, PikaMoves.LIGHT_ON));
+                // 2.9.6: across as light over a few ticks; one's own body carried there by the game's own movement. 2.9.7: or seen
+                // (by 1: Ama no Murakumo's lunge, the body flying at them with the sword out ahead, a trail of light behind)
+                if (m.by() > 0) {
+                    LUNGES.put(m.user(), clock + m.ticks() + 1);
+                } else {
+                    LIGHTS.put(m.user(), new long[] {clock, clock + m.ticks() + 1});
+                    Vec3 from = a.m_82520_(0, 0.9, 0);
+                    SPOTS.add(new Spot(from, at.m_82546_(a), 1.2, 0, clock, PikaMoves.LIGHT_ON));
+                }
                 if (self(m.user())) {
                     glide = Glide.dash(at, m.id(), m.ticks(), (int) m.bx());
                 }
@@ -266,6 +273,7 @@ public final class PikaFx {
         SPOTS.removeIf(s -> clock - s.born > (s.kind == PikaMoves.BURST ? LightArt.burstLife(s.size) : s.kind == PikaMoves.REFLECT
             || s.kind == PikaMoves.LIGHT_ON || s.kind == PikaMoves.LIGHT_OFF ? LightArt.REFLECT_LIFE : 9) + 1);
         LIGHTS.entrySet().removeIf(e -> e.getValue()[1] < clock);
+        LUNGES.entrySet().removeIf(e -> e.getValue() < clock);
         CUTS.removeIf(c -> clock - c.born > LightArt.SLASH_LIFE + 1);
         WAVES.removeIf(w -> clock - w.born > w.life + 2);
         CLONES.removeIf(c -> clock - c.born > CLONE_LIFE + 1);
@@ -310,7 +318,7 @@ public final class PikaFx {
             boolean flying = player.m_150110_().f_35935_ && com.hexhaki.fruit.client.FruitClient.fruit(player.m_19879_()) == Fruit.PIKA
                 && player.m_20184_().m_82553_() > 0.35;
             Trail trail = TRAILS.get(player.m_19879_());
-            if (streaming || flying) {
+            if (streaming || flying || LUNGES.containsKey(player.m_19879_())) {
                 if (trail == null) {
                     trail = new Trail();
                     TRAILS.put(player.m_19879_(), trail);
@@ -555,6 +563,15 @@ public final class PikaFx {
         Vec3 flat = new Vec3(look.f_82479_, 0, look.f_82481_);
         flat = flat.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.m_82541_();
         return player.m_20318_(partial).m_82520_(0, 1.25, 0).m_82549_(flat.m_82490_(0.55));
+    }
+
+    /** 2.9.7: an open palm thrust out toward the ground ahead (pika_yasakani's pose): {@code side} 1 the right hand, -1 the left. */
+    static Vec3 palm(Player player, float partial, int side) {
+        Vec3 look = player.m_20252_(partial);
+        Vec3 flat = new Vec3(look.f_82479_, 0, look.f_82481_);
+        flat = flat.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.m_82541_();
+        Vec3 right = new Vec3(-flat.f_82481_, 0, flat.f_82479_);
+        return player.m_20318_(partial).m_82520_(0, 0.95, 0).m_82549_(flat.m_82490_(0.62)).m_82549_(right.m_82490_(0.42 * side));
     }
 
     /** The kicking foot, out in front (the speed-of-light kick's charge). */
@@ -826,6 +843,8 @@ public final class PikaFx {
             boolean streaming = lit(player);
             if (streaming) {
                 LightArt.ribbon(SINK, pts, t.count, 0.8, 1.0);
+            } else if (LUNGES.containsKey(e.getKey())) {
+                LightArt.trail(SINK, pts, t.count, 0.6, 1.0); // 2.9.7: the lunge's trail of light
             } else {
                 LightArt.trail(SINK, pts, t.count, 0.35, 0.7);
             }
@@ -875,8 +894,12 @@ public final class PikaFx {
         }
         for (Map.Entry<Integer, Long> e : VOLLEYS.entrySet()) {
             if (level.m_6815_(e.getKey()) instanceof Player player) {
-                Vec3 h = hands(player, partial).m_82520_(0, 0.15, 0);
-                LightArt.crossed(SINK, h.f_82479_ - cx, h.f_82480_ - cy, h.f_82481_ - cz, clock - e.getValue() + partial, e.getKey());
+                // 2.9.7: as at Egghead, the light pouring out of both open palms, a star of light on each
+                double age = clock - e.getValue() + partial;
+                for (int side = -1; side <= 1; side += 2) {
+                    Vec3 h = palm(player, partial, side);
+                    LightArt.palm(SINK, h.f_82479_ - cx, h.f_82480_ - cy, h.f_82481_ - cz, age, e.getKey() * 2 + side);
+                }
             }
         }
         for (Map.Entry<Integer, Long> e : FORMS.entrySet()) {
@@ -949,14 +972,19 @@ public final class PikaFx {
         double yaw = Math.atan2(-face.f_82479_, face.f_82481_);
         double shimmer = age * 0.4 + c.index;
         if (age < 10.0) {
+            // 2.9.7 (the owner: "adapt the other abilities to your reference gifs"): as at Egghead, every clone flies at its foe through
+            // the air, up and over in an arc, laid out with its sword of light thrust out ahead (Ama no Murakumo's lunge), afterimages
+            // behind it
             double t = (age - 4.0) / 6.0;
+            double over = 2.5 + 0.5 * (c.index % 3);
             for (int ghost = 2; ghost >= 0; ghost--) {
                 double tg = Math.max(0.0, t - ghost * 0.14);
-                Vec3 feet = rise.m_82549_(stand.m_82546_(rise).m_82490_(tg * tg * (3 - 2 * tg)));
+                double s = tg * tg * (3 - 2 * tg);
+                Vec3 feet = rise.m_82549_(stand.m_82546_(rise).m_82490_(s)).m_82520_(0, over * Math.sin(Math.PI * s), 0);
                 if (far(feet, cam)) {
                     continue;
                 }
-                float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample("pika_sword_walk", (float) ((age - ghost * 0.8) * 2.5 % 20.0));
+                float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample("pika_lunge", 9.0F);
                 double alpha = Math.min(1.0, (age - 4.0) / 1.5) * (ghost == 0 ? 1.0 : ghost == 1 ? 0.35 : 0.15);
                 com.hexhaki.piece.pika.LightClone.body(SKIN, CLONE_LIGHT, pose, place(feet, cam, yaw), alpha, ghost == 0, shimmer);
             }
@@ -1026,6 +1054,7 @@ public final class PikaFx {
         VOLLEYS.clear();
         FORMS.clear();
         LIGHTS.clear();
+        LUNGES.clear();
         glide = null;
         SWORDS.clear();
         TRAILS.clear();

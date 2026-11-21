@@ -22,8 +22,9 @@ public final class ClonePreview {
     public static void main(String[] args) throws Exception {
         BufferedImage skin = ImageIO.read(new File(args[1]));
         boolean night = args.length > 2 && args[2].equals("--night");
-        String[][] shots = {{"pika_sword_walk", "4"}, {"pika_sword_walk", "12"}, {"pika_sword_1", "3"}, {"pika_sword_1", "6"},
-            {"pika_sword_2", "3"}, {"pika_sword_2", "7"}, {"pika_sword_idle", "0"}, {"pika_sword_walk", "16"}};
+        // 2.9.7: the clones fly at their foes in Ama no Murakumo's lunge pose (PikaFx.clone samples pika_lunge at 9), then cut
+        String[][] shots = {{"pika_lunge", "9"}, {"pika_lunge", "13"}, {"pika_sword_1", "3"}, {"pika_sword_1", "6"},
+            {"pika_sword_2", "3"}, {"pika_sword_2", "7"}, {"pika_sword_idle", "0"}, {"pika_lunge", "9"}};
         int cw = 420;
         int ch = 360;
         BufferedImage sheet = new BufferedImage(cw * 4 + 4, ch * 2 + 4, BufferedImage.TYPE_INT_RGB);
@@ -31,11 +32,11 @@ public final class ClonePreview {
         DragonPreview.fov = 50;
         DragonPreview.texture = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         for (int i = 0; i < shots.length; i++) {
-            boolean running = shots[i][0].equals("pika_sword_walk") && i != 6;
+            boolean running = shots[i][0].equals("pika_lunge") && i != 6;
             BufferedImage cell = render(skin, shots[i][0], Float.parseFloat(shots[i][1]), running, night, cw * 2, ch * 2, i);
             g.drawImage(cell, (i % 4) * cw + 2, (i / 4) * ch + 2, cw - 2, ch - 2, null);
             g.setColor(Color.WHITE);
-            g.drawString(shots[i][0] + " t" + shots[i][1] + (running ? " (running, afterimages)" : ""), (i % 4) * cw + 8, (i / 4) * ch + 16);
+            g.drawString(shots[i][0] + " t" + shots[i][1] + (running ? " (flying, afterimages)" : ""), (i % 4) * cw + 8, (i / 4) * ch + 16);
         }
         ImageIO.write(sheet, "png", new File(args[0]));
     }
