@@ -459,6 +459,19 @@ reflects against objects, can reflect against water to like projectile him up wh
   (2.3.2 and 2.5.4 learned it for the sword; 2.7.8 forgot it for the Light fruit). Render every move in first person too. Never put a
   sound in that is not a web recording. Check each move as the owner plays it, not only that the build passes.
 
+## The owner's verdict on the dragon (same message thread, verbatim) -- TOP PRIORITY with the Light fruit
+"Same logic applies for the dragon. The explosions are, I mean, the effects are good. The sound is good, but the body's moving like a
+stick. Like as if you rotate it, it doesn't have an animation. It just rotates on its own, like instantly as soon as the player turns.
+Like his body does not adapt to the movement, um, which is fucking bothering me. Not gonna lie, quite a lot, I must say. The explosion
+at the end of the beam, which is meant to be the main deal of that beam, is fading way too fast. There's like no residue explosion.
+There's just it's just so lackluster. The dragon is way too fast. Like this flying speed is ridiculously fast. The charge fucking sound,
+the charging, the blast breath, the sound while it's charging ends all of a sudden. For some reason, you can use M1s while you're
+charging the blast breath. The beam itself destroys blocks way too fast compared to the final explosion. Like, bro, the fucking blast
+breath beam is destroying blocks like way too much. When the main block destruction should come from the explosion and residue. Like,
+when it explodes, it should have a big explosion, like a fucking big bomb that just went off. And not even to mention how laggy the
+game in general is. Like, this mod is meant to be more optimized. It's super laggy as it stands."
+- Kept as they are: the dragon's effects and sounds ("the effects are good. The sound is good").
+
 ## Next (2.9.0)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
