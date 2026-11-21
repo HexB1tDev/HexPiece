@@ -197,6 +197,10 @@ public final class PiecePatch implements Opcodes {
         // through HexPiece, which leaves out the supreme release's second pass (the same bolts again from a second seed, 7 ticks
         // later: half the release's 3D lightning, 80,000 quads a frame at its height)
         {VFX, "conquerorRelease", VFX, "addConquerorRangeLightning", "(Lcom/lowdragmc/photon/client/fx/FX;FIJZI)V", STORM, "range", 2},
+        // 2.9.5 (the owner: "after you let go, the all lightning sounds all at once, it's ridiculously loud"): the charge's lightning
+        // (its range-lightning call, every few ticks while G is held) goes through HexPiece too, which makes it land silently: its
+        // long crackles piled up through the charge and past its end (the charge is heard as its own held sound now)
+        {VFX, "conquerorCharge", VFX, "addConquerorRangeLightning", "(Lcom/lowdragmc/photon/client/fx/FX;FIJZI)V", STORM, "charge", 1},
         // 2.4.7 (the owner: "the crackle lightning sound at the end is to be removed along with all the old sounds of the letting go of G
         // button max charge, keep the explosion sound and the new one we just added"): the release's sounds go through HexPiece, which
         // drops the full release's snap and leaves out its rumble (the blast, the explosion, stays; a partial release keeps its own), and

@@ -581,6 +581,8 @@ public final class SwordTests {
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION)
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION_GOOD)
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.EXPLOSION_EVIL)
+                || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.CHARGE)
+                || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.CHARGE_HOLD)
                 || java.util.Arrays.stream(com.hexhaki.piece.dragon.UoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.pika.PikaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");

@@ -20,6 +20,8 @@ import net.minecraft.world.level.Level;
  *       at {@link ConquerorMix#QUIETER} of the loudness the original's balance gives it (its ceilings first, the 35 % after, so it is
  *       35 % quieter whatever was asked), every other sound as it was.</li>
  *   <li>{@link #explode}: the release's explosion, the moment G is let go ({@link ConquerorRelease#visual}).</li>
+ *   <li>2.9.5: the original's charge sound (its press and its 38, 58, 78 and 100 % marks) is not played at all: the charge is one sound
+ *       held on each client from the press to the release ({@link com.hexhaki.piece.haki.ConquerorMix#CHARGE}).</li>
  * </ul>
  */
 public final class ConquerorSounds {
@@ -28,6 +30,9 @@ public final class ConquerorSounds {
 
     /** The original's {@code SoundBalance.pos}, a Conqueror sound 35 % quieter. */
     public static void pos(Level level, Player except, BlockPos at, SoundEvent sound, SoundSource source, float volume, float pitch) {
+        if (sound != null && sound == ModSounds.CONQUEROR_CHARGE.get()) {
+            return; // 2.9.5: the charge is held on each client (ConquerorMix.CHARGE), never replayed from here
+        }
         float played = volume;
         try {
             if (conqueror(sound)) {

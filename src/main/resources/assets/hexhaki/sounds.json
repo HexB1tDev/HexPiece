@@ -642,9 +642,22 @@
   },
   "conqueror_charge": {
     "subtitle": "subtitles.hexhaki.conqueror_charge",
+    "sounds": []
+  },
+  "piece.conqueror.charge": {
+    "subtitle": "subtitles.hexhaki.conqueror_charge",
     "sounds": [
       {
         "name": "hexhaki:piece/conqueror/web/charge",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.conqueror.charge_hold": {
+    "subtitle": "subtitles.hexhaki.conqueror_charge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/conqueror/web/charge_hold",
         "attenuation_distance": 40
       }
     ]

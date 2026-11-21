@@ -35,6 +35,12 @@ public final class ConquerorAura {
     /** S2CUoFx kinds: arcs off a body (size: how many, ticks: the seed), a burst off a drawn blade (x, y, z the hand, a its way, size its length). */
     public static final int SPARKS = 80;
     public static final int BLADE = 81;
+    /**
+     * 2.9.5: S2CUoFx kinds: a player's Conqueror's charge began (size: the ticks it takes to fill) and ended (G let go, or the charge
+     * cut short): every client near holds the charge's sound between the two (client/haki/ConquerorChargeSound).
+     */
+    public static final int CHARGE = 82;
+    public static final int CHARGE_END = 83;
     /** At most one burst a player this often (ticks), and the share of moves that spark. */
     static final int GAP = 8;
     static final double MOVE_CHANCE = 0.6;
@@ -42,6 +48,8 @@ public final class ConquerorAura {
     static final int IDLE_EVERY = 20;
     static final double IDLE_CHANCE = 0.5;
     private static final Map<UUID, Long> NEXT = new HashMap<>();
+    /** 2.9.5: the players whose charge the clients are holding the sound of. */
+    private static final java.util.Set<UUID> CHARGING = new java.util.HashSet<>();
 
     private ConquerorAura() {
     }
@@ -115,6 +123,23 @@ public final class ConquerorAura {
         }
     }
 
+    /**
+     * 2.9.5, every server tick for a player (AlignmentSounds, which reads the original's {@code conquerorCharging} flag): the clients
+     * near are told the moment their charge begins and the moment it ends, so the charge's sound lasts exactly as long as G is held.
+     */
+    static void charging(ServerPlayer player, boolean charging) {
+        try {
+            UUID id = player.m_20148_();
+            if (charging && CHARGING.add(id)) {
+                send(player, CHARGE, Vec3.f_82478_, Vec3.f_82478_, 100.0 / Math.max(0.01, rate(player)));
+            } else if (!charging && CHARGING.remove(id)) {
+                send(player, CHARGE_END, Vec3.f_82478_, Vec3.f_82478_, 0);
+            }
+        } catch (RuntimeException failure) {
+            // a sound never stops the charge
+        }
+    }
+
     static void send(ServerPlayer player, int kind, Vec3 at, Vec3 way, double size) {
         int seed = (int) (player.m_217043_().m_188500_() * Integer.MAX_VALUE);
         PieceNetwork.around(player, new S2CUoFx(kind, 0, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, (float) way.f_82479_,
@@ -135,5 +160,6 @@ public final class ConquerorAura {
 
     static void forget(UUID id) {
         NEXT.remove(id);
+        CHARGING.remove(id);
     }
 }

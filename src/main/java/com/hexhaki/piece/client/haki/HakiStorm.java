@@ -34,6 +34,20 @@ public final class HakiStorm {
             return;
         }
         com.hexhaki.client.vfx.HakiVfx.addConquerorRangeLightning(fx, charge, mastery, seed, release, baseDelay);
+        // 2.9.5 (the owner: "after you let go, the all lightning sounds all at once, it's ridiculously loud"): a partial release's
+        // lightning lands silently too, as a full one's has since 2.4.7: its crackles (one for the whole and one for each of its first
+        // three strikes, each 3.4 s of the original's Armament zap, at once) were heard over the release's own thunder and explosion
+        HakiBolts.silence(fx);
+    }
+
+    /**
+     * 2.9.5: the charge's range lightning ({@code HakiVfx.conquerorCharge}'s call, its visual sent every few ticks while G is held), drawn as
+     * the original draws it, landing silently: the charge is heard as its own held sound (ConquerorChargeSound), and these crackles piled
+     * up under it and rang on past the release.
+     */
+    public static void charge(FX fx, float charge, int mastery, long seed, boolean release, int baseDelay) {
+        com.hexhaki.client.vfx.HakiVfx.addConquerorRangeLightning(fx, charge, mastery, seed, release, baseDelay);
+        HakiBolts.silence(fx);
     }
 
     /**

@@ -586,6 +586,22 @@ public final class LightningTests {
         }
         double boom = oggSeconds(new java.io.File(dir, "web/boom.ogg"));
         Check.that(boom > 2.5 && boom < 7.0, "the boom rolls away for a few seconds (" + boom + " s)");
+        // 2.9.5 (the owner: "it keeps playing like way long after you let go of the key"): the original's charge sound (played five
+        // times a charge, each a second late) is silent; the charge is one held sound of ours, a build-up and then a loop
+        Check.that(entry(sounds, "\"conqueror_charge\"").contains("\"sounds\": []"), "the original's charge event plays nothing");
+        Check.that(entry(sounds, "\"" + com.hexhaki.piece.haki.ConquerorMix.CHARGE + "\"").contains("\"hexhaki:piece/conqueror/web/charge\""),
+            "the held charge's build-up is its web recording");
+        Check.that(entry(sounds, "\"" + com.hexhaki.piece.haki.ConquerorMix.CHARGE_HOLD + "\"")
+            .contains("\"hexhaki:piece/conqueror/web/charge_hold\""), "and its hold the loop cut from it");
+        double build = oggSeconds(new java.io.File(dir, "web/charge.ogg"));
+        double hold = oggSeconds(new java.io.File(dir, "web/charge_hold.ogg"));
+        int holdAt = com.hexhaki.piece.client.haki.ConquerorChargeSound.HOLD_AT;
+        Check.that(holdAt / 20.0 < build - 0.4 && holdAt / 20.0 > build - 1.5,
+            "the loop takes over under the build-up's last second (" + holdAt / 20.0 + " s of " + build + " s)");
+        Check.that(hold > 1.5 && hold < 4.0, "the loop is a few seconds round (" + hold + " s)");
+        Check.that(com.hexhaki.piece.server.ConquerorAura.CHARGE > com.hexhaki.piece.server.ConquerorAura.BLADE
+            && com.hexhaki.piece.server.ConquerorAura.CHARGE_END == com.hexhaki.piece.server.ConquerorAura.CHARGE + 1,
+            "the charge's messages are the Conqueror's kinds (S2CUoFx: 80 and on)");
     }
 
     static String read(String path) {

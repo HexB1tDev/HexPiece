@@ -25,6 +25,16 @@ public final class ConquerorMix {
     public static final String EXPLOSION = "piece.conqueror.explosion";
     public static final String EXPLOSION_GOOD = "piece.conqueror.explosion_good";
     public static final String EXPLOSION_EVIL = "piece.conqueror.explosion_evil";
+    /**
+     * 2.9.5 (the owner: "There's one sound ... that is way too long, and it keeps playing like way long after you let go of the key ...
+     * I think it's a charge sound"): the charge, held. The original plays its charge sound when G is pressed and again at 38, 58, 78 and
+     * 100 % (each a second late, as all its Haki sounds), made for its own 1.85 s clip: with 2.9.4's 9 s recording, five of them stacked
+     * and the last started a second after a full charge, so it played on for up to 10 s after G was let go. Now its event is silent
+     * (sounds.json) and each client holds one sound of its own instead (client/haki/ConquerorChargeSound): the build-up from the press,
+     * a loop of its crackling tail once that is spent, both fading out the moment G is let go.
+     */
+    public static final String CHARGE = "piece.conqueror.charge";
+    public static final String CHARGE_HOLD = "piece.conqueror.charge_hold";
 
     /** The boom for an alignment (Alignment's: at or under -25 evil, at or over 25 good). */
     public static String explosion(int alignment) {

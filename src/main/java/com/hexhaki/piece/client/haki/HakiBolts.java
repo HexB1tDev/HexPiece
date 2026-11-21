@@ -156,11 +156,13 @@ public final class HakiBolts {
      * 3D bolts were never let go. PiecePatch has it ask now: the bolts go, in the Ryou colour of the player nearest (the Gear 5 user).
      */
     public static boolean playedGear(FX fx, double x, double y, double z) {
+        silence(fx); // 2.9.5: Gear 5's moves have their own sounds: its lightning brings no crackle of ours
         return launch(fx, null, null, Minecraft.m_91087_().f_91073_, x, y, z);
     }
 
     /** 2.9.4: the same for the thunderstorm's impact ({@code ThunderstormImpact.play}), which plays its composition itself at {@code at}. */
     public static boolean playedAtPoint(FX fx, Vec3 at) {
+        silence(fx); // 2.9.5: as Gear 5's
         return at != null && launch(fx, null, null, Minecraft.m_91087_().f_91073_, at.f_82479_, at.f_82480_, at.f_82481_);
     }
 

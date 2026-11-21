@@ -573,7 +573,37 @@ lightning. It's a bit too much, too big for one lightning streak is like creatin
   (THROW_TAP 2, THROW_LEAST 3.5, THROW_FULL 9; Impact heavy throw, HakiFalls.knockDown at once for the release's stun).
 - Not rendered: Gear 5's and the storm lance's 3D bolts (the same HakiBolts path the release uses, proven by build and JVM verify).
 
-## Next (2.9.5)
+## The owner's verdict after 2.9.4 (verbatim, two messages)
+"There's one sound in particular when you release Conqueror's, like when you use Conqueror's release, that is way too long, and it
+keeps playing like way long after you let go of the key. I think it's a charge sound, bro. Like I start charging and it keeps going
+even after like I let go of the key. I'm pretty sure it's that."
+"Also, there's a lightning sound, like, after you let go of the key as well, that is way too loud. Like, after you let go, the all
+lightning sounds all at once, it's ridiculously loud, bro."
+
+## Done (2.9.5, pushed): the owner's verdict after 2.9.4 (above)
+- Found: the original plays conqueror_charge on the press and again at 38, 58, 78 and 100 % (HakiServerController.tickConquerorCharge),
+  every Haki sound 20 ticks late (delayedSound), made for its 1.85 s clip. With 2.9.4's 9 s web recording five stacked, and the 100 %
+  one started a second after a full charge: up to 10 s of charge after G was let go.
+- Fix: ConquerorSounds.pos drops CONQUEROR_CHARGE; sounds.json conqueror_charge has no sounds. ConquerorAura.charging (called each
+  tick from AlignmentSounds.playerTick with the conquerorCharging flag) sends S2CUoFx CHARGE (82, size = ticks to full) and CHARGE_END
+  (83) to those tracking. client/haki/ConquerorChargeSound holds LoopSound piece.conqueror.charge (web/charge, the 9 s build-up) from
+  the press, and at HOLD_AT 160 ticks fades in piece.conqueror.charge_hold (web/charge_hold: tools/conqueror_sounds.py LOOPS, 5.0 s for
+  2.4 s of the same recording, crossfade 0.8, 10.5 dB under: about 2 dB over the build-up's tail); both fade out over LoopSound.FADE
+  (8 ticks) once CHARGE_END comes. Simulated: the last sample 0.35 s after release (was up to ~10 s); the loop's seam clean.
+- Found: the lightning sounds at release were HakiBolts' own crackles: a partial release's composition played the original's Armament
+  zap (3.4 s, -8 LUFS momentary) once for itself and once for each of its first three landings, all at once, plus the charge's
+  lightning (HakiVfx.conquerorCharge, every few ticks) doing the same through the whole charge. (A full release's storm was silent
+  since 2.4.7.) Fix: HakiStorm.range silences the release's composition; PiecePatch sends conquerorCharge's addConquerorRangeLightning
+  through HakiStorm.charge, which silences it; HakiBolts.playedGear and playedAtPoint silence Gear 5's and the thunderstorm's (2.9.4
+  had added our crackles to them by accident: Gear 5 has its own sounds).
+- The three release thunders matched (momentary max -13.0 LUFS each: thunder2 2.3 dB under, thunder3 pushed with punch then 2.0
+  under; tools/conqueror_sounds.py LEVELS). What is heard after G now: the boom by path (at once) and one thunder a second later
+  (the original's delayedSound) on a partial release; the world-ending explosion and the boom on a full one (crack and rumble are NOT
+  played: 2.4.7 removed the snap and rumble; 2.9.4's release notes wrongly said they were).
+
+## Next (2.9.6)
+0. Ask the owner how the Conqueror's charge and release sound now (2.9.5), and how 2.9.4 plays (sparks in Ryou colour, Gear 5's
+   3D lightning, thin fissures, bodies thrown).
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
 2. Ask how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the dragon's wave, the Blast Breath

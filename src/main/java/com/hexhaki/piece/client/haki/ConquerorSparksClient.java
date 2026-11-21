@@ -21,6 +21,10 @@ public final class ConquerorSparksClient {
         if (level == null) {
             return;
         }
+        if (m.kind() == ConquerorAura.CHARGE || m.kind() == ConquerorAura.CHARGE_END) {
+            ConquerorChargeSound.accept(m.kind(), m.user()); // 2.9.5: the charge's sound, held while G is
+            return;
+        }
         Entity user = level.m_6815_(m.user());
         try {
             switch (m.kind()) {

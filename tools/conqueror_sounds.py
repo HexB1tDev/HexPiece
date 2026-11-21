@@ -4,11 +4,15 @@ even on like all paths, good, bad, normal. Give it a better sound like you gave 
 one"). Every clip is a CC0 recording on Freesound.org (tools/web_sounds.py fetches, checks the licence, cuts, makes mono, normalises,
 fades, writes Ogg Vorbis) into src/main/resources/assets/hexhaki/sounds/piece/conqueror/web/ with SOURCES.txt.
 
-- The charge (the original's conqueror_charge event, now these): a power charge rising.
+- The charge (2.9.5: piece.conqueror.charge, held on each client by client/haki/ConquerorChargeSound): a power charge rising, then
+  charge_hold, a loop of its own crackling tail, for as long as G is held past it; both fade out the moment G is let go (the owner:
+  "it keeps playing like way long after you let go of the key").
 - The release (conqueror_release): a close lightning strike, one of three.
 - The release's boom, the moment G is let go (piece.conqueror.explosion*): by the releaser's path: neutral a deep bass boom, good a
   dramatic trailer boom, evil a dark trailer impact.
 - A full charge (conqueror_supreme_*): a world-ending explosion, the thunder's crack, rolling thunder after it.
+2.9.5: the three thunders are as loud as one another (the owner: "after you let go, the all lightning sounds all at once, it's
+ridiculously loud"): the loudest made 2.3 dB quieter, the quietest pushed up (compressed, web_sounds.punch) to meet them.
 Nothing is mixed or layered here: each file is one recording's own sound (the game plays the layers together).
 
 Usage: python3 tools/conqueror_sounds.py [--only name,name]   (needs ffmpeg and access to freesound.org and cdn.freesound.org)
@@ -47,12 +51,29 @@ CLIPS = {
     "boom_evil": ("dark_impact", 10.55, 11.5, 0.0, 4.0),
 }
 
+# 2.9.5: our loop: (sound, start s, length s, crossfade s): the charge's crackling tail, held round and round past the build-up
+LOOPS = {
+    "charge_hold": ("power_charge", 5.0, 2.4, 0.8),
+}
+
+# 2.9.5: (dB under full scale less 1, pushed louder): measured, so the thunders' loudest moments match thunder1's (-13 LUFS momentary)
+# and the held loop sits a little (about 2 dB) over the build-up's own tail (5 to 8 s), which it takes over from
+LEVELS = {
+    "thunder2": (-2.3, False),
+    "thunder3": (-2.0, True),
+    "charge_hold": (-10.5, False),
+}
+
+
+def level(name):
+    return LEVELS.get(name, (0.0, False))
+
 
 def main():
     only = None
     if len(sys.argv) > 2 and sys.argv[1] == "--only":
         only = set(sys.argv[2].split(","))
-    web_sounds.build(SOUNDS, CLIPS, {}, OUT, "The Conqueror's Haki release's sounds (tools/conqueror_sounds.py).", only)
+    web_sounds.build(SOUNDS, CLIPS, LOOPS, OUT, "The Conqueror's Haki release's sounds (tools/conqueror_sounds.py).", only, level)
 
 
 if __name__ == "__main__":
