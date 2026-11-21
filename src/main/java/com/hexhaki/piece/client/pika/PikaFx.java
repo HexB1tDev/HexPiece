@@ -183,13 +183,10 @@ public final class PikaFx {
                 SPOTS.add(new Spot(at, a, 1.4, 0, clock, PikaMoves.LIGHT_OFF));
                 motes(at, 8, 0.3);
                 if (self(m.user()) && m.id() >= 0) {
-                    // 2.9.9: the light met someone and kicked them: a body again there, hanging in the air facing them while it lands
-                    net.minecraft.client.player.LocalPlayer me = Minecraft.m_91087_().f_91074_;
-                    Entity kicked = entity(m.id());
-                    if (kicked != null) {
-                        face(me, me.m_20182_(), kicked);
-                    }
-                    glide = Glide.hold((int) m.bx());
+                    // 2.9.9: the light met someone: a body again, kicking them. 3.0.0 (the owner: "the player stops directly infront of
+                    // the entity looking at it ... sometimes looking behind me"): carried in by ticks to the spot in front of them the
+                    // server worked out (x, y, z: its middle), following them, turned to them from there, and hung there while it lands
+                    glide = Glide.dash(at.m_82520_(0, -0.9, 0), m.id(), Math.max(1, (int) m.by()), (int) m.bx());
                 } else if (self(m.user()) && glide != null && glide.mode == Glide.FREE) {
                     // a body again where the light is, still going with some of its speed (off the sea: up into the sky)
                     Minecraft.m_91087_().f_91074_.m_20334_(glide.dx * PikaMoves.LIGHT_CARRY, glide.dy * PikaMoves.LIGHT_CARRY,

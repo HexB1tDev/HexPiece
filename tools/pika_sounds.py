@@ -44,7 +44,8 @@ SOUNDS = {
     "parry": ("chungkury", 760636),              # "Metal_Sword_Parry_Impact_Hit_4", rated 4.8
     # 2.9.6: going as light (Z, held: the owner's "turn you into light itself, and travel in a beam ... and reflect"), and each reflection
     "beam_loop": ("unfa", 584191),               # "Weapons Beam Loop"
-    "glass_ping": ("Qvantor", 878247),           # "UI Hover Glass Ping"
+    # 3.0.0 (the owner: "the reflection sound needs to be different, get a cooler reflection sound from the web"): a laser's zing
+    "laser_zing": ("Qvantor", 881251),           # "Laser Zing Shot"
 }
 
 # our file: (sound, start s, length s or None for the rest, fade in s, fade out s)
@@ -91,7 +92,7 @@ CLIPS = {
     "sparkle1": ("sparkle", 0.3, 2.2, 0.02, 1.0),
     "sparkle2": ("transition", 0.1, 1.6, 0.02, 0.6),
     # 2.9.6: the light reflected off a block or the water
-    "reflect1": ("glass_ping", 0.0, None, 0.0, 0.12),
+    "reflect1": ("laser_zing", 0.0, 0.6, 0.0, 0.22),
 }
 
 # our loop: (sound, start s, length s, crossfade s): the light held at the fingertip, the sword's hum

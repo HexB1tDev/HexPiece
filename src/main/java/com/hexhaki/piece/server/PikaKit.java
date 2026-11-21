@@ -27,11 +27,11 @@ public final class PikaKit extends FruitKit {
             + " light at the fingertip and let go a beam that burns through everything in its way.");
     public static final FruitMove YATA = new FruitMove("Yata no Kagami", "[Z] hold", 0, "pika_yata",
         "As at Egghead: you become light itself and go as a beam where you look, reflected off everything it meets, every block at any"
-            + " angle and the sea (thrown at the water, it comes back up off it), striking whoever it passes through. Let go and you are a"
-            + " body again where the light is, still going with some of its speed. Three uses that come back on their own.");
+            + " angle and the sea (thrown at the water, it comes back up off it). Whoever it meets is kicked out of the light, thrown far and knocked"
+            + " down. Let go and you are a body again where the light is, still going with some of its speed. 4 s cooldown after.");
     public static final FruitMove YASAKANI = new FruitMove("Yasakani no Magatama", "[X] hold", 0, "pika_yasakani",
         "As at Egghead: up into the air over them, both arms thrust out, and a torrent of slugs of light out of both palms that burst"
-            + " wherever they land, over the whole ground where you look for as long as you hold it; fly about over them while it pours. Sneak"
+            + " wherever they land, over the whole ground where you look for as long as you hold it, held up in the air while it pours. Sneak"
             + " to bring it all down on one.");
     public static final FruitMove MURAKUMO = new FruitMove("Ama no Murakumo", "[C]", 0, "pika_lunge",
         "As at Egghead: a sword of solid light drawn out of the joined hands, and you fly at them with it thrust out ahead, through the one"
@@ -101,10 +101,6 @@ public final class PikaKit extends FruitKit {
     @Override
     public void granted(ServerPlayer player) {
         flight(player, false);
-        CompoundTag data = FruitData.get(player);
-        if (!data.m_128441_(PikaMoves.YATA_KEY)) {
-            data.m_128405_(PikaMoves.YATA_KEY, PikaMoves.YATA_MAX);
-        }
     }
 
     @Override

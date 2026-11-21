@@ -93,10 +93,11 @@ public final class PikaMoves {
     public static final int DASH = 57;
 
     // ---- numbers
-    static final String YATA_KEY = "pika_yata";
-    static final String YATA_TIME = "pika_yata_t";
-    static final int YATA_MAX = 3;
-    static final int YATA_RECHARGE = 80;
+    /**
+     * 3.0.0 (the owner: "Z has no cooldown by the way"): Z had three uses that came back on their own and no cooldown at all (its light
+     * never started one); now its cooldown (the move panel's, PikaKit.YATA's "pika_yata") starts the moment the light is a body again.
+     */
+    static final int Z_COOLDOWN = 80;
     /**
      * 2.9.6 (the owner: "1 Ability (Z) has to turn you into light itself, and travel in a beam where you're looking at and reflect
      * against any object/water"; asked, "Hold Z" and "Hit and pass through"): how fast the light goes (blocks a tick; the client moves
@@ -471,11 +472,6 @@ public final class PikaMoves {
 
     // ------------------------------------------------------------------------------------------------------ Z: Yata no Kagami
 
-    static int yataLeft(ServerPlayer player) {
-        CompoundTag data = FruitData.get(player);
-        return data.m_128441_(YATA_KEY) ? data.m_128451_(YATA_KEY) : YATA_MAX;
-    }
-
     /** The middle of the body (where the light is drawn while it is light). */
     static Vec3 centre(ServerPlayer player) {
         return player.m_20182_().m_82520_(0.0, 0.9, 0.0);
@@ -489,21 +485,15 @@ public final class PikaMoves {
      * (client/pika/PikaFx.Glide: the game's own movement and collisions, so it is smooth on screen and the server's movement check agrees),
      * the server follows where it went: whoever the light passes through is struck once, every reflection seen and heard by everyone.
      * Let go of Z (a tap still lasts {@link #LIGHT_MIN} ticks) or after {@link #LIGHT_MAX} ticks it is a body again where the light is,
-     * keeping {@link #LIGHT_CARRY} of its speed. Three uses that come back on their own (Yata no Kagami's).
+     * keeping {@link #LIGHT_CARRY} of its speed. 3.0.0: its cooldown ({@link #Z_COOLDOWN}) starts as it is a body again.
      */
     static void light(ServerPlayer player) {
         State s = state(player);
         long now = now(player);
-        if (now < s.busyUntil || s.volleySince >= 0 || s.chargeSince >= 0 || s.kickChargeSince >= 0 || moving(s, now) || yataLeft(player) <= 0
-            || player.m_20159_()) {
+        if (now < s.busyUntil || s.volleySince >= 0 || s.chargeSince >= 0 || s.kickChargeSince >= 0 || moving(s, now)
+            || !ready(player, PikaKit.YATA) || player.m_20159_()) {
             return;
         }
-        CompoundTag data = FruitData.get(player);
-        data.m_128405_(YATA_KEY, yataLeft(player) - 1);
-        if (!data.m_128441_(YATA_TIME) || data.m_128454_(YATA_TIME) <= now) {
-            data.m_128356_(YATA_TIME, now + YATA_RECHARGE);
-        }
-        FruitServer.sync(player);
         Vec3 look = player.m_20154_();
         s.lightSince = now;
         s.lightStop = 0;
@@ -526,11 +516,14 @@ public final class PikaMoves {
             Vec3 way = d.m_82490_(1.0 / length);
             // 2.9.9 (the owner: "when Z collides with an entity it should be a kick like the reference I sent causing ragdoll after the
             // kick and a ton of knockback"): the first one the light meets is kicked, and the light is a body again there
+            // 3.0.0 (the owner: "currently im stopping a bit after it, or on the side"): the server hears where the body is a tick late
+            // and the light goes 3 blocks a tick, so it also looks a tick ahead (never through a wall), and zKick puts him in front
             LivingEntity first = null;
             double nearest = Double.MAX_VALUE;
-            for (LivingEntity body : crossed(player, s.lightLast, c, 1.2)) {
+            Vec3 ahead = c.m_82549_(way.m_82490_(LIGHT_SPEED));
+            for (LivingEntity body : crossed(player, s.lightLast, ahead, 1.2)) {
                 double along = StyleCombat.middle(body).m_82546_(s.lightLast).m_82526_(way);
-                if (!s.lightHit.contains(body.m_19879_()) && along < nearest) {
+                if (!s.lightHit.contains(body.m_19879_()) && along < nearest && seen(player, c, StyleCombat.middle(body))) {
                     nearest = along;
                     first = body;
                 }
@@ -570,14 +563,43 @@ public final class PikaMoves {
         s.lightHit.add(target.m_19879_());
         s.lightSince = -1;
         s.lightStop = 0;
-        s.dashUntil = now + Z_KICK_HOLD;
-        s.busyUntil = Math.max(s.busyUntil, now + Z_KICK_HOLD);
+        cool(player, PikaKit.YATA, Z_COOLDOWN);
+        s.dashUntil = now + Z_KICK_GLIDE + Z_KICK_HOLD;
+        s.busyUntil = Math.max(s.busyUntil, now + Z_KICK_GLIDE + Z_KICK_HOLD);
         Vec3 flat = new Vec3(way.f_82479_, 0, way.f_82481_);
-        flat = flat.m_82556_() < 1.0E-4 ? new Vec3(player.m_20154_().f_82479_, 0, player.m_20154_().f_82481_) : flat;
+        if (flat.m_82556_() < 1.0E-4) {
+            // straight down (or up) onto them: in front of them on the side he is on
+            Vec3 side = target.m_20182_().m_82546_(player.m_20182_());
+            flat = new Vec3(side.f_82479_, 0, side.f_82481_);
+        }
         flat = flat.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.m_82541_();
+        // 3.0.0 (the owner: "when kicking, the player stops directly infront of the entity looking at it. currently im stopping a bit
+        // after it, or on the side"; "sometimes looking behind me"): where he stands to kick is worked out here, directly in front of
+        // them on the side the light came from, high enough that the kick meets their chest; his own client carries him there in
+        // Z_KICK_GLIDE ticks (following them if they move) and turns him to them from there, and the kick lands as he arrives
+        Vec3 t0 = target.m_20182_();
+        double lift = Math.max(0.0, target.m_20206_() * 0.6 - 1.15);
+        Vec3 stand = room(player, t0, t0.m_82546_(flat.m_82490_(target.m_20205_() * 0.5 + Z_KICK_GAP)).m_82520_(0, lift, 0));
+        Vec3 at = stand.m_82520_(0, 0.9, 0);
+        fx(player, LIGHT_OFF, target.m_19879_(), at, way, Z_KICK_HOLD, Z_KICK_GLIDE, 0, 0, 0);
+        later(player, Z_KICK_GLIDE - 1, () -> animate(player, "pika_z_kick"));
+        Vec3 aim = flat;
+        later(player, Z_KICK_GLIDE, () -> kicked(player, target, aim, level));
+    }
+
+    /** Whether nothing solid stands between {@code from} and {@code to}. */
+    static boolean seen(ServerPlayer player, Vec3 from, Vec3 to) {
+        return player.m_9236_().m_45547_(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player)).m_6662_()
+            != HitResult.Type.BLOCK;
+    }
+
+    /** Z's kick landing: they go far along {@code flat} with a trail of light, and are knocked down where they land. */
+    static void kicked(ServerPlayer player, LivingEntity target, Vec3 flat, ServerLevel level) {
+        if (!target.m_6084_()) {
+            return;
+        }
+        long now = now(player);
         Vec3 at = centre(player);
-        fx(player, LIGHT_OFF, target.m_19879_(), at, way, Z_KICK_HOLD, 0, 0, 0, 0);
-        animate(player, "pika_z_kick");
         Vec3 thrown = flat.m_82490_(Z_KICK_THROW).m_82520_(0, 1.15, 0);
         Vec3 struck = StyleCombat.middle(target);
         if (hit(player, target, Z_KICK_DAMAGE, thrown, true)) {
@@ -611,8 +633,13 @@ public final class PikaMoves {
         sound(player, struck, PikaSounds.HIT_HEAVY, 1.6F, 0.85F);
     }
 
-    /** 2.9.9: Z's kick: how long he hangs where it lands (ticks), how hard they are thrown (blocks a tick), the blow, the ragdoll (ticks). */
+    /**
+     * 2.9.9: Z's kick: how long he hangs where it lands (ticks), how hard they are thrown (blocks a tick), the blow, the ragdoll (ticks).
+     * 3.0.0: how long the glide to the spot in front of them takes (ticks), and how far in front of their side he stands (blocks).
+     */
     static final int Z_KICK_HOLD = 8;
+    static final int Z_KICK_GLIDE = 2;
+    static final double Z_KICK_GAP = 0.85;
     static final double Z_KICK_THROW = 4.6;
     static final float Z_KICK_DAMAGE = 9.0F;
     static final int Z_KICK_STUN = 100;
@@ -625,6 +652,7 @@ public final class PikaMoves {
         }
         s.lightSince = -1;
         s.lightStop = 0;
+        cool(player, PikaKit.YATA, Z_COOLDOWN);
         Vec3 way = s.lightWay != null ? s.lightWay : player.m_20154_();
         Vec3 at = centre(player);
         fx(player, LIGHT_OFF, 0, at, way, 0, 0, 0, 0, 0);
@@ -1021,7 +1049,6 @@ public final class PikaMoves {
     static void view(ServerPlayer player, CompoundTag tag) {
         State s = STATES.get(player.m_20148_());
         tag.m_128379_("sword", s != null && s.swordUntil > now(player));
-        tag.m_128405_("yata", yataLeft(player));
     }
 
     // ------------------------------------------------------------------------------------------------------ the clock
@@ -1029,17 +1056,6 @@ public final class PikaMoves {
     static void tick(ServerPlayer player) {
         State s = STATES.get(player.m_20148_());
         long now = now(player);
-        // Yata no Kagami comes back one use at a time
-        CompoundTag data = FruitData.get(player);
-        if (data.m_128441_(YATA_TIME) && now >= data.m_128454_(YATA_TIME) && yataLeft(player) < YATA_MAX) {
-            data.m_128405_(YATA_KEY, yataLeft(player) + 1);
-            if (yataLeft(player) < YATA_MAX) {
-                data.m_128356_(YATA_TIME, now + YATA_RECHARGE);
-            } else {
-                data.m_128473_(YATA_TIME);
-            }
-            FruitServer.sync(player);
-        }
         player.f_19789_ = 0.0F; // light takes no fall
         PikaKit.flight(player, false); // 2.9.9: no flight with the Light fruit (only Z); takes away what an older version gave
         if (s == null) {
