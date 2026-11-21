@@ -57,7 +57,7 @@ public final class PikaFx {
     record Wave(Vec3 start, Vec3 step, int life, double width, long born) {
     }
 
-    record Clone(Vec3 origin, Vec3 spot, int target, int index, long born) {
+    record Clone(Vec3 origin, Vec3 spot, int target, int index, long born, int user) {
     }
 
     /** The one light-kicked across the field: who, its trail (newest first), when. */
@@ -144,7 +144,7 @@ public final class PikaFx {
                         PikaMoves.KICK));
                 }
             }
-            case PikaMoves.CLONE -> CLONES.add(new Clone(at, a, m.id(), m.ticks(), clock));
+            case PikaMoves.CLONE -> CLONES.add(new Clone(at, a, m.id(), m.ticks(), clock, m.user()));
             case PikaMoves.DODGE -> SPOTS.add(new Spot(at, Vec3.f_82478_, 1.2, 0, clock, PikaMoves.DODGE));
             case PikaMoves.DIVE -> {
                 LINES.add(new Line(a, at, 1.2, clock, PikaMoves.YATA_PATH));
@@ -302,12 +302,15 @@ public final class PikaFx {
         SINK.buffer = buffers.m_6299_(type);
         SINK.matrix = pose.m_85850_().m_252922_();
         FireMesh.quality = Math.max(0.35, PieceFx.density());
+        SKIN.buffers = buffers;
+        com.hexhaki.piece.client.render.Bulk.read(pose.m_85850_(), SKIN.m, SKIN.n);
         try {
             draw(level, event.getCamera().m_90583_(), event.getPartialTick());
         } catch (RuntimeException failure) {
             com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: a Light fruit move could not be drawn", failure);
             clear();
         }
+        SKIN.end();
         buffers.m_109912_(type);
         SINK.buffer = null;
     }
@@ -328,6 +331,53 @@ public final class PikaFx {
     }
 
     static final Writer SINK = new Writer();
+
+    /**
+     * 2.8.8: a clone's skin (LightClone): the user's own skin, washed in light (LightClone.WASH), full bright, through the game's
+     * translucent entity type; every type used this frame ended together.
+     */
+    static final class SkinWriter implements com.hexhaki.piece.pika.LightClone.Skin {
+        MultiBufferSource.BufferSource buffers;
+        final float[] m = new float[12];
+        final float[] n = new float[9];
+        RenderType type;
+        VertexConsumer out;
+        final List<RenderType> used = new ArrayList<>();
+
+        void use(net.minecraft.resources.ResourceLocation skin) {
+            this.type = RenderType.m_110473_(skin);
+            this.out = this.buffers.m_6299_(this.type);
+            if (!this.used.contains(this.type)) {
+                this.used.add(this.type);
+            }
+        }
+
+        @Override
+        public void quad(double[] xyz, float[] uv, int argb) {
+            if (this.out == null) {
+                return;
+            }
+            float r = ((argb >>> 16) & 255) / 255.0F;
+            float g = ((argb >>> 8) & 255) / 255.0F;
+            float b = (argb & 255) / 255.0F;
+            float a = ((argb >>> 24) & 255) / 255.0F;
+            for (int k = 0; k < 4; k++) {
+                com.hexhaki.piece.client.render.Bulk.vertex(this.out, this.m, this.n, (float) xyz[k * 3], (float) xyz[k * 3 + 1],
+                    (float) xyz[k * 3 + 2], r, g, b, a, uv[k * 2], uv[k * 2 + 1], net.minecraft.client.renderer.texture.OverlayTexture.f_118083_,
+                    0xF000F0, 0.0F, 1.0F, 0.0F);
+            }
+        }
+
+        void end() {
+            for (RenderType t : this.used) {
+                this.buffers.m_109912_(t);
+            }
+            this.used.clear();
+            this.out = null;
+        }
+    }
+
+    static final SkinWriter SKIN = new SkinWriter();
 
     static boolean far(Vec3 at, Vec3 cam) {
         return at.m_82557_(cam) > FAR * FAR;
@@ -518,42 +568,59 @@ public final class PikaFx {
             }
             return;
         }
-        Vec3 feet;
-        double run;
-        double swing;
-        double alpha = 1.0;
+        // 2.8.8 (the owner: "the light clones are bad to look it"): the user's own body of light (pika/LightClone), running at the foe
+        // with afterimages behind it, two cuts of Ama no Murakumo (the Light fruit's own sword cuts), then gone in a burst of light
+        Entity owner = level.m_6815_(c.user);
+        if (owner instanceof net.minecraft.client.player.AbstractClientPlayer player) {
+            SKIN.use(player.m_108560_());
+        } else {
+            SKIN.out = null;
+        }
+        Vec3 face = target.m_82546_(stand);
+        double yaw = Math.atan2(-face.f_82479_, face.f_82481_);
+        double shimmer = age * 0.4 + c.index;
         if (age < 10.0) {
             double t = (age - 4.0) / 6.0;
-            feet = rise.m_82549_(stand.m_82546_(rise).m_82490_(t * t * (3 - 2 * t)));
-            run = age * 0.18;
-            swing = -1.0;
-            alpha = Math.min(1.0, (age - 4.0) / 1.5);
-        } else if (age < 22.0) {
-            feet = stand;
-            run = 0.0;
-            double u = (age - 10.0) / 6.0;
-            swing = Math.sin(Math.PI * (u % 1.0) - Math.PI / 2.0);
-        } else {
-            feet = stand;
-            run = 0.0;
-            swing = 1.0;
-            alpha = Math.max(0.0, 1.0 - (age - 22.0) / 4.0);
-            if (!far(feet, cam)) {
-                LightArt.burst(SINK, feet.f_82479_ - cam.f_82479_, feet.f_82480_ + 1.0 - cam.f_82480_, feet.f_82481_ - cam.f_82481_, 1.6, age - 22.0,
-                    c.index * 7 + (int) c.born);
+            for (int ghost = 2; ghost >= 0; ghost--) {
+                double tg = Math.max(0.0, t - ghost * 0.14);
+                Vec3 feet = rise.m_82549_(stand.m_82546_(rise).m_82490_(tg * tg * (3 - 2 * tg)));
+                if (far(feet, cam)) {
+                    continue;
+                }
+                float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample("pika_sword_walk", (float) ((age - ghost * 0.8) * 2.5 % 20.0));
+                double alpha = Math.min(1.0, (age - 4.0) / 1.5) * (ghost == 0 ? 1.0 : ghost == 1 ? 0.35 : 0.15);
+                com.hexhaki.piece.pika.LightClone.body(SKIN, SINK, pose, place(feet, cam, yaw), alpha, ghost == 0, shimmer);
             }
-        }
-        if (far(feet, cam)) {
             return;
         }
-        Vec3 face = target.m_82546_(feet);
-        double yaw = Math.atan2(face.f_82479_, face.f_82481_);
-        LightArt.figure(SINK, feet.f_82479_ - cam.f_82479_, feet.f_82480_ - cam.f_82480_, feet.f_82481_ - cam.f_82481_, yaw, run, swing, alpha,
-            c.index);
-        if (age >= 10.0 && age < 22.0 && ((int) ((age - 10.0) / 6.0)) < 2 && (age - 10.0) % 6.0 < 3.0) {
-            LightArt.slash(SINK, feet.f_82479_ - cam.f_82479_, feet.f_82480_ + 1.0 - cam.f_82480_, feet.f_82481_ - cam.f_82481_, Math.cos(yaw), 0.0,
-                -Math.sin(yaw), 1.8, yaw - 1.3, 2.6, (age - 10.0) % 6.0);
+        if (far(stand, cam)) {
+            return;
         }
+        double alpha = 1.0;
+        float[][] pose;
+        if (age < 22.0) {
+            int cut = (int) ((age - 10.0) / 6.0);
+            double u = (age - 10.0) % 6.0;
+            pose = com.hexhaki.piece.client.npc.StylePoser.sample(cut == 0 ? "pika_sword_1" : "pika_sword_2", (float) (u * 8.0 / 6.0));
+            if (u < 3.0) {
+                // the cut's arc round the clone's side axis (square to where it faces), as 2.7.8 swept it
+                double fl = Math.max(1.0E-6, Math.sqrt(face.f_82479_ * face.f_82479_ + face.f_82481_ * face.f_82481_));
+                double turn = Math.atan2(face.f_82479_, face.f_82481_);
+                LightArt.slash(SINK, stand.f_82479_ - cam.f_82479_, stand.f_82480_ + 1.0 - cam.f_82480_, stand.f_82481_ - cam.f_82481_,
+                    face.f_82481_ / fl, 0.0, -face.f_82479_ / fl, 1.8, turn - 1.3, 2.6, u);
+            }
+        } else {
+            pose = com.hexhaki.piece.client.npc.StylePoser.sample("pika_sword_2", 8.0F);
+            alpha = Math.max(0.0, 1.0 - (age - 22.0) / 4.0);
+            LightArt.burst(SINK, stand.f_82479_ - cam.f_82479_, stand.f_82480_ + 1.0 - cam.f_82480_, stand.f_82481_ - cam.f_82481_, 1.6, age - 22.0,
+                c.index * 7 + (int) c.born);
+        }
+        com.hexhaki.piece.pika.LightClone.body(SKIN, SINK, pose, place(stand, cam, yaw), alpha, true, shimmer);
+    }
+
+    /** Feet at {@code feet}, facing {@code yaw} (radians, the game's way), eye-relative. */
+    static com.hexhaki.piece.style.StyleShow.Place place(Vec3 feet, Vec3 cam, double yaw) {
+        return new com.hexhaki.piece.style.StyleShow.Place(feet.f_82479_ - cam.f_82479_, feet.f_82480_ - cam.f_82480_, feet.f_82481_ - cam.f_82481_, yaw);
     }
 
     // ------------------------------------------------------------------------------------------------------ Photon

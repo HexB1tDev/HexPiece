@@ -297,6 +297,25 @@ public final class LightArt {
      * starburst of rays (the second), that breathe with {@code shimmer} (0 to 1). {@code length} from the fist to the point,
      * {@code width} the rod's radius. Independent of the eye, so it is drawn through the arm's own pose.
      */
+    /** Ama no Murakumo: a long rod of light (blocks from the guard to the point), its radius (2.8.8: here, for the clones too). */
+    public static final double BLADE_LENGTH = 2.6;
+    public static final double BLADE_WIDTH = 0.032;
+
+    /**
+     * 2.8.8 (the owner: "the sword isnt being grabbed by the handle"): from the game's first-person view to the right hand's grip, as
+     * the game places its first-person right arm (ItemInHandRenderer.renderPlayerArm, at rest: no swing, fully up; then the arm's
+     * pivot, as PlayerRenderer.renderRightHand draws it), then to the fist, the blade turned out of its front, and on past the fist to the
+     * guard ({@link LightClone#GUARD}): the hand closes on the middle of the grip. Each step: {kind (0 translate, 1 turn about x, 2 about
+     * y, 3 about z), x, y, z or degrees}.
+     */
+    public static final double[][] FIRST_PERSON_GRIP = {
+        {0, 0.64, -0.6, -0.72}, {2, 45.0}, {0, -1.0, 3.6, 3.5}, {3, 120.0}, {1, 200.0}, {2, -135.0}, {0, 5.6, 0.0, 0.0},
+        {0, -5.0 / 16.0, 2.0 / 16.0, 0.0}, {0, -1.0 / 16.0, 0.6, 0.0}, {1, 90.0}, {0, 0.0, -LightClone.GUARD, 0.0},
+    };
+
+    /** The same in third person, from the right arm's own pivot (the model's arm pose): to the fist, the blade turned out, the guard. */
+    public static final double[][] THIRD_PERSON_GRIP = {{0, -1.0 / 16.0, 0.6, 0.0}, {1, 90.0}, {0, 0.0, -LightClone.GUARD, 0.0}};
+
     public static void blade(FireMesh.Sink sink, double length, double width, double shimmer) {
         double back = 0.8; // the grip: the rod runs well back past the fist (the owner: "the grip handle rod has to be longer")
         double tipAt = -length + width * 14.0;

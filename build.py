@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "2.8.7"
+VERSION = "2.8.8"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -111,6 +111,8 @@ PATCHED = {
     "com/hexhaki/binds/client/AbilityBook.class",
     # 2.8.2: the style moves' (and Pika's, Uo's) arms shown in first person (PiecePatch.firstPersonArms)
     "com/hexhaki/client/anim/HakiAnimations.class",
+    # 2.8.8: the rebuilt Light fruit's and the Uo Uo no Mi's clips on the fruit's own layer (PiecePatch.fruitClips)
+    "com/hexhaki/fruit/client/FruitAnimations.class",
     "META-INF/mods.toml",
     "META-INF/MANIFEST.MF",
 }

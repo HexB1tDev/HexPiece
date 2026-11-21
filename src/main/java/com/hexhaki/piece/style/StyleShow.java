@@ -30,7 +30,7 @@ public final class StyleShow {
     /** Where the user stands, eye-relative (their feet), and the way their body faces (radians, the game's yaw). */
     public record Place(double x, double y, double z, double yaw) {
         /** A point of the player's frame (x to their left, y up, z ahead) where it is, eye-relative. */
-        void put(double[] f, double[] out) {
+        public void put(double[] f, double[] out) {
             double c = Math.cos(this.yaw);
             double s = Math.sin(this.yaw);
             out[0] = this.x + f[0] * c - f[2] * s;
@@ -39,7 +39,7 @@ public final class StyleShow {
         }
 
         /** A direction of the player's frame, turned as they face. */
-        void turn(double[] f, double[] out) {
+        public void turn(double[] f, double[] out) {
             double c = Math.cos(this.yaw);
             double s = Math.sin(this.yaw);
             out[0] = f[0] * c - f[2] * s;

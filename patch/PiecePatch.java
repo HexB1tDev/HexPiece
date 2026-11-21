@@ -421,6 +421,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(HAKI_KEYS + ".class", transform(entries.get(HAKI_KEYS + ".class"), PiecePatch::keyDefaults));
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
+        entries.put(FRUIT_ANIMATIONS + ".class", transform(entries.get(FRUIT_ANIMATIONS + ".class"), PiecePatch::fruitClips));
         entries.put(CLIENT_KITS + ".class", transform(entries.get(CLIENT_KITS + ".class"), node -> {
             for (FieldNode field : node.fields) {
                 if (field.name.equals("KITS")) {
@@ -779,6 +780,27 @@ public final class PiecePatch implements Opcodes {
 
     /** 2.8.2: the original's animation player, and PlayerAnimator's first-person configuration. */
     static final String HAKI_ANIMATIONS = "com/hexhaki/client/anim/HakiAnimations";
+    static final String FRUIT_ANIMATIONS = "com/hexhaki/fruit/client/FruitAnimations";
+
+    /**
+     * 2.8.8 (the owner: "Light animations arent playing"): the original plays a fruit's stance without end on its own layer
+     * (FruitAnimations, priority 1100) and only the clips it {@code handles} ("light_", "magma_", "quake_") as moves on that layer, which
+     * stand the stance down while they play; every other clip goes to HakiAnimations' layer (900), under the stance, unseen. The rebuilt
+     * Light fruit's clips ("pika_") and the Uo Uo no Mi's ("uo_") are its too: {@code handles} asks {@code PieceHooks.fruitClip(name)}
+     * first.
+     */
+    static void fruitClips(ClassNode node) {
+        MethodNode method = method(node, "handles", "(Ljava/lang/String;)Z");
+        InsnList hook = new InsnList();
+        LabelNode theirs = new LabelNode();
+        hook.add(new VarInsnNode(ALOAD, 0));
+        hook.add(new MethodInsnNode(INVOKESTATIC, HOOKS, "fruitClip", "(Ljava/lang/String;)Z", false));
+        hook.add(new JumpInsnNode(IFEQ, theirs));
+        hook.add(new InsnNode(ICONST_1));
+        hook.add(new InsnNode(IRETURN));
+        hook.add(theirs);
+        method.instructions.insert(hook);
+    }
     static final String FP_CONFIG = "dev/kosmx/playerAnim/api/firstPerson/FirstPersonConfiguration";
 
     /**

@@ -13,6 +13,15 @@ public final class PieceHooks {
      * A kit fruit's M1 and right click ({@code FruitKeys}): the kit is active and the player is not in combat mode. R switches between
      * the two (the owner: "tapping R switches from Combat style and fruit (if any is eaten)"); the kit's bound abilities keep their keys.
      */
+    /**
+     * 2.8.8 (the owner: "Light animations arent playing"): the rebuilt Light fruit's clips and the Uo Uo no Mi's play on the fruit's own
+     * layer (the original's FruitAnimations), above its stance and standing it down while they play, as the original's "light_" did
+     * (PiecePatch.fruitClips).
+     */
+    public static boolean fruitClip(String name) {
+        return name != null && (name.startsWith("pika_") || name.startsWith("uo_"));
+    }
+
     public static boolean fruitKeysActive() {
         return FruitClient.active() && !CombatMode.on();
     }

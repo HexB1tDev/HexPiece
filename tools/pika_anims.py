@@ -16,7 +16,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from anim_hand import arms, legs, spine  # noqa: E402
-from style_anims import OUT, PARTS, arm, leg, mirror, p, write  # noqa: E402
+from style_anims import OUT, PARTS, WRITTEN, arm, java_poses, leg, mirror, p, write  # noqa: E402
 
 # his hands in his trouser pockets: the upper arms a little back and out, the elbows bent, the hands at the hips
 POCKET_R = arm(10, 0, 9, -34)
@@ -43,6 +43,7 @@ def write_loop(name, duration, beats, description, parts=None):
     data = {"version": 3, "name": name, "author": "HexPiece 2.7.8", "description": description,
             "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration, "isLoop": True, "returnTick": 0,
                       "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
+    WRITTEN[name] = data
     with open(os.path.join(OUT, name + ".json"), "w", encoding="utf-8") as handle:
         json.dump(data, handle, indent=1)
         handle.write("\n")
@@ -299,6 +300,9 @@ def main():
     murakumo()
     light_kick()
     clones()
+    # 2.8.8: the same keyframes for the clones of light (client/npc/PikaPoses, sampled by StylePoser)
+    java_poses(sorted(n for n in WRITTEN if n.startswith("pika_")), "PikaPoses", "tools/pika_anims.py",
+               "the Light fruit's animations' keyframes, for its clones of light")
 
 
 if __name__ == "__main__":

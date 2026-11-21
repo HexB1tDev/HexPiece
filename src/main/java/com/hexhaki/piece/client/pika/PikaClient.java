@@ -56,9 +56,8 @@ final class PikaClient implements ClientKit {
         }
         pose.m_85836_();
         model.f_102811_.m_104299_(pose);
-        // the fist (the arm's box hangs 10 px from the shoulder), then the blade turned from the arm's length to straight ahead
-        pose.m_85837_(-1.0 / 16.0, 0.6, 0.0);
-        pose.m_252781_(Axis.f_252529_.m_252977_(90.0F));
+        // 2.8.8: the fist, the blade turned out of its front, the guard just ahead of it: the hand closes on the grip
+        apply(pose, LightArt.THIRD_PERSON_GRIP);
         draw(pose, buffers, (player.f_19797_ + partial) * 0.2);
         pose.m_85849_();
     }
@@ -70,17 +69,28 @@ final class PikaClient implements ClientKit {
             return false;
         }
         pose.m_85836_();
-        pose.m_85837_(0.52, -0.5, -0.78);
-        pose.m_252781_(Axis.f_252436_.m_252977_(12.0F));
-        pose.m_252781_(Axis.f_252529_.m_252977_(-70.0F));
+        // 2.8.8 (the owner: "the sword isnt being grabbed by the handle"): in the game's own first-person right hand, held by the grip
+        apply(pose, LightArt.FIRST_PERSON_GRIP);
         draw(pose, buffers, (player.f_19797_ + partial) * 0.2);
         pose.m_85849_();
         return false;
     }
 
-    /** Ama no Murakumo: a long rod of light (blocks from the fist to the point), its radius. */
-    static final double BLADE_LENGTH = 2.6;
-    static final double BLADE_WIDTH = 0.032;
+    /** Ama no Murakumo: a long rod of light (blocks from the guard to the point), its radius (LightArt's). */
+    static final double BLADE_LENGTH = LightArt.BLADE_LENGTH;
+    static final double BLADE_WIDTH = LightArt.BLADE_WIDTH;
+
+    /** A grip's steps (LightArt.FIRST_PERSON_GRIP's form) on the pose. */
+    static void apply(PoseStack pose, double[][] steps) {
+        for (double[] step : steps) {
+            switch ((int) step[0]) {
+                case 0 -> pose.m_85837_(step[1], step[2], step[3]);
+                case 1 -> pose.m_252781_(Axis.f_252529_.m_252977_((float) step[1]));
+                case 2 -> pose.m_252781_(Axis.f_252436_.m_252977_((float) step[1]));
+                default -> pose.m_252781_(Axis.f_252403_.m_252977_((float) step[1]));
+            }
+        }
+    }
 
     static void draw(PoseStack pose, MultiBufferSource buffers, double shimmer) {
         PikaFx.Writer writer = new PikaFx.Writer();
