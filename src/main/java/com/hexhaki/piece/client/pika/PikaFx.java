@@ -182,7 +182,15 @@ public final class PikaFx {
                 LIGHTS.remove(m.user());
                 SPOTS.add(new Spot(at, a, 1.4, 0, clock, PikaMoves.LIGHT_OFF));
                 motes(at, 8, 0.3);
-                if (self(m.user()) && glide != null && glide.mode == Glide.FREE) {
+                if (self(m.user()) && m.id() >= 0) {
+                    // 2.9.9: the light met someone and kicked them: a body again there, hanging in the air facing them while it lands
+                    net.minecraft.client.player.LocalPlayer me = Minecraft.m_91087_().f_91074_;
+                    Entity kicked = entity(m.id());
+                    if (kicked != null) {
+                        face(me, me.m_20182_(), kicked);
+                    }
+                    glide = Glide.hold((int) m.bx());
+                } else if (self(m.user()) && glide != null && glide.mode == Glide.FREE) {
                     // a body again where the light is, still going with some of its speed (off the sea: up into the sky)
                     Minecraft.m_91087_().f_91074_.m_20334_(glide.dx * PikaMoves.LIGHT_CARRY, glide.dy * PikaMoves.LIGHT_CARRY,
                         glide.dz * PikaMoves.LIGHT_CARRY);
@@ -302,21 +310,15 @@ public final class PikaFx {
                 motes(e.m_20182_().m_82520_(0, e.m_20206_() * 0.5, 0), 2, 0.2);
             }
         }
-        // 2.9.0 (the owner: "he can like fly like super fast ... turns into light"): flying and sprinting, the local player goes as light
-        // where they look, LIGHT_FLIGHT blocks a tick (the body becomes a streak of light: lit, below)
         net.minecraft.client.player.LocalPlayer self = minecraft.f_91074_;
+        // 2.9.9 (the owner: "why can light fly? The only flight should be through Z."): the light flight (sprinting while flying) is gone
         if (glide != null) {
             glide(self, level);
-        } else if (self != null && self.m_150110_().f_35935_ && self.m_20142_() && com.hexhaki.fruit.client.FruitClient.fruit(self.m_19879_()) == Fruit.PIKA
-            && minecraft.f_91080_ == null) {
-            Vec3 look = self.m_20154_();
-            self.m_20334_(look.f_82479_ * LIGHT_FLIGHT, look.f_82480_ * LIGHT_FLIGHT, look.f_82481_ * LIGHT_FLIGHT);
         }
-        // trails: a player flying as light, or streaming
+        // trails: a player going as light (Z, a dash), or lunging
         for (Player player : level.m_6907_()) {
             boolean streaming = lit(player);
-            boolean flying = player.m_150110_().f_35935_ && com.hexhaki.fruit.client.FruitClient.fruit(player.m_19879_()) == Fruit.PIKA
-                && player.m_20184_().m_82553_() > 0.35;
+            boolean flying = false;
             Trail trail = TRAILS.get(player.m_19879_());
             if (streaming || flying || LUNGES.containsKey(player.m_19879_())) {
                 if (trail == null) {
@@ -344,22 +346,9 @@ public final class PikaFx {
         }
     }
 
-    /** 2.9.0: the light flight's speed (blocks a tick: some 40 a second), and how fast a flier must go to be drawn as light. */
-    static final double LIGHT_FLIGHT = 2.0;
-    static final double LIT = 0.9;
-
-    /** Whether {@code player} is going as light: flying with the Light fruit faster than {@link #LIT} blocks a tick. */
+    /** Whether {@code player} is going as light (Z held, or a dash as light). */
     static boolean lit(Player player) {
-        if (LIGHTS.containsKey(player.m_19879_())) {
-            return true; // 2.9.6: Z held, or a dash
-        }
-        if (!player.m_150110_().f_35935_ || com.hexhaki.fruit.client.FruitClient.fruit(player.m_19879_()) != Fruit.PIKA) {
-            return false;
-        }
-        double dx = player.m_20185_() - player.f_19790_;
-        double dy = player.m_20186_() - player.f_19791_;
-        double dz = player.m_20189_() - player.f_19792_;
-        return dx * dx + dy * dy + dz * dz > LIT * LIT;
+        return LIGHTS.containsKey(player.m_19879_()); // 2.9.6: Z held, or a dash (2.9.9: the light flight is gone)
     }
 
     /** 2.9.0: a player going as light is not seen: only the light (its streak and its glow, drawn with the trails). */
@@ -410,6 +399,14 @@ public final class PikaFx {
             g.dy = unit.f_82480_;
             g.dz = unit.f_82481_;
             g.speed = speed;
+            return g;
+        }
+
+        /** 2.9.9: hung where it is for {@code ticks} (Z's kick landing). */
+        static Glide hold(int ticks) {
+            Glide g = new Glide();
+            g.mode = HOLD;
+            g.hold = Math.max(1, ticks);
             return g;
         }
 

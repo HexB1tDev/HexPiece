@@ -101,13 +101,12 @@ public final class PikaMoves {
      * 2.9.6 (the owner: "1 Ability (Z) has to turn you into light itself, and travel in a beam where you're looking at and reflect
      * against any object/water"; asked, "Hold Z" and "Hit and pass through"): how fast the light goes (blocks a tick; the client moves
      * itself, the server's movement check allows under 10), the least and the most it lasts (ticks), how much of its speed the body
-     * keeps when it reforms, the blow it deals in passing, and how fast a dash as light goes.
+     * keeps when it reforms, and how fast a dash as light goes.
      */
     public static final double LIGHT_SPEED = 3.0;
     static final int LIGHT_MIN = 6;
     static final int LIGHT_MAX = 60;
     public static final double LIGHT_CARRY = 0.9;
-    static final float LIGHT_HIT = 3.5F;
     static final double DASH_SPEED = 6.0;
     static final double LASER_RANGE = 70.0;
     static final double BEAM_RANGE = 90.0;
@@ -525,13 +524,20 @@ public final class PikaMoves {
         double length = d.m_82553_();
         if (length > 0.05) {
             Vec3 way = d.m_82490_(1.0 / length);
+            // 2.9.9 (the owner: "when Z collides with an entity it should be a kick like the reference I sent causing ragdoll after the
+            // kick and a ton of knockback"): the first one the light meets is kicked, and the light is a body again there
+            LivingEntity first = null;
+            double nearest = Double.MAX_VALUE;
             for (LivingEntity body : crossed(player, s.lightLast, c, 1.2)) {
-                if (s.lightHit.add(body.m_19879_())) {
-                    hit(player, body, LIGHT_HIT, way.m_82490_(0.9).m_82520_(0, 0.3, 0), false);
-                    Vec3 at = StyleCombat.middle(body);
-                    fx(player, KICK, 0, at, way, 0, 0, 0, 1, 9);
-                    sound(player, at, PikaSounds.HIT, 1.0F, 1.1F);
+                double along = StyleCombat.middle(body).m_82546_(s.lightLast).m_82526_(way);
+                if (!s.lightHit.contains(body.m_19879_()) && along < nearest) {
+                    nearest = along;
+                    first = body;
                 }
+            }
+            if (first != null) {
+                zKick(player, s, first, way);
+                return;
             }
             // light goes straight: a turn of more than a few degrees between two ticks is a reflection, at the corner
             if (length > 0.4) {
@@ -550,6 +556,66 @@ public final class PikaMoves {
             lightOff(player);
         }
     }
+
+    /**
+     * 2.9.9 (the owner, with a frame of Kizaru's light-speed kick sending Gear 5 Luffy flying: "when Z collides with an entity it should
+     * be a kick like the reference I sent causing ragdoll after the kick and a ton of knockback"): the light meets {@code target} and is
+     * Kizaru again, a flying kick driven into them (pika_z_kick), hanging there while it lands ({@link #Z_KICK_HOLD}); they are thrown
+     * far along the light's way ({@link #Z_KICK_THROW}) with a trail of light, and knocked down where they land, ragdolled, for the rest
+     * of {@link #Z_KICK_STUN} ticks (HakiFalls, as Blast Breath's blast does).
+     */
+    static void zKick(ServerPlayer player, State s, LivingEntity target, Vec3 way) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        long now = now(player);
+        s.lightHit.add(target.m_19879_());
+        s.lightSince = -1;
+        s.lightStop = 0;
+        s.dashUntil = now + Z_KICK_HOLD;
+        s.busyUntil = Math.max(s.busyUntil, now + Z_KICK_HOLD);
+        Vec3 flat = new Vec3(way.f_82479_, 0, way.f_82481_);
+        flat = flat.m_82556_() < 1.0E-4 ? new Vec3(player.m_20154_().f_82479_, 0, player.m_20154_().f_82481_) : flat;
+        flat = flat.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.m_82541_();
+        Vec3 at = centre(player);
+        fx(player, LIGHT_OFF, target.m_19879_(), at, way, Z_KICK_HOLD, 0, 0, 0, 0);
+        animate(player, "pika_z_kick");
+        Vec3 thrown = flat.m_82490_(Z_KICK_THROW).m_82520_(0, 1.15, 0);
+        Vec3 struck = StyleCombat.middle(target);
+        if (hit(player, target, Z_KICK_DAMAGE, thrown, true)) {
+            long start = now;
+            LIVE.add(new UoMoves.Live() {
+                int age;
+
+                @Override
+                public boolean tick(long t) {
+                    this.age++;
+                    if (!target.m_6084_()) {
+                        return true;
+                    }
+                    if (this.age > 4 && target.m_20096_() || this.age >= 40) {
+                        HakiFalls.knockDown(level, target, (int) Math.max(40L, Z_KICK_STUN - (t - start)), false);
+                        return true;
+                    }
+                    return false;
+                }
+
+                @Override
+                public ServerLevel level() {
+                    return level;
+                }
+            });
+        }
+        fx(player, LIGHT_KICK, target.m_19879_(), at, player.m_20182_(), thrown.f_82479_, thrown.f_82480_, thrown.f_82481_, 1.0, 0);
+        fx(player, KICK, 0, struck, flat, 0, 0, 0, 3, 8);
+        Impact.quake(level, struck, 28.0, 0.9F, 14);
+        sound(player, struck, PikaSounds.KICK_BLAST, 1.8F, 0.9F);
+        sound(player, struck, PikaSounds.HIT_HEAVY, 1.6F, 0.85F);
+    }
+
+    /** 2.9.9: Z's kick: how long he hangs where it lands (ticks), how hard they are thrown (blocks a tick), the blow, the ragdoll (ticks). */
+    static final int Z_KICK_HOLD = 8;
+    static final double Z_KICK_THROW = 4.6;
+    static final float Z_KICK_DAMAGE = 9.0F;
+    static final int Z_KICK_STUN = 100;
 
     /** The light a body again, where it is. */
     static void lightOff(ServerPlayer player) {
@@ -621,14 +687,9 @@ public final class PikaMoves {
         animate(player, "pika_yasakani");
         fx(player, VOLLEY_ON);
         sound(player, player.m_20182_(), PikaSounds.SPARKLE, 1.0F, 0.9F);
-        // up into the air, as over Marineford and Egghead; 2.9.7: flying, so the player steers over them while it pours
+        // up into the air, as over Marineford and Egghead (2.9.9: held there while it pours, no flying: the only flight is Z's)
         player.m_20334_(player.m_20184_().f_82479_ * 0.3, 0.75, player.m_20184_().f_82481_ * 0.3);
         player.f_19864_ = true;
-        var abilities = player.m_150110_();
-        if (abilities.f_35936_ && !abilities.f_35935_) {
-            abilities.f_35935_ = true;
-            player.m_6885_();
-        }
     }
 
     static void stopVolley(ServerPlayer player) {
@@ -646,8 +707,10 @@ public final class PikaMoves {
     /** A tick of the torrent: three beads from the crossed hands onto the ground where the player looks (all onto one when focused). */
     static void volleyTick(ServerPlayer player, State s, long now) {
         long held = now - s.volleySince;
-        // 2.9.7 (the owner: "smooth, fun to use"): no longer held still: flying (volley turns it on), the player moves over them while it
-        // pours; only the fall is stopped
+        // held in the air while it pours (2.9.9: as before 2.9.7; the owner: "The only flight should be through Z")
+        Vec3 v = player.m_20184_();
+        player.m_20334_(v.f_82479_ * 0.6, held < VOLLEY_WINDUP ? v.f_82480_ : Math.max(-0.02, v.f_82480_ * 0.3), v.f_82481_ * 0.6);
+        player.f_19864_ = true;
         player.f_19789_ = 0.0F;
         if (held > VOLLEY_MAX) {
             stopVolley(player);
@@ -978,7 +1041,7 @@ public final class PikaMoves {
             FruitServer.sync(player);
         }
         player.f_19789_ = 0.0F; // light takes no fall
-        PikaKit.flight(player, FruitData.active(player) && !FruitServer.inSea(player));
+        PikaKit.flight(player, false); // 2.9.9: no flight with the Light fruit (only Z); takes away what an older version gave
         if (s == null) {
             return;
         }

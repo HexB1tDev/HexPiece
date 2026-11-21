@@ -289,6 +289,21 @@ def light_kick():
     ], "Pika Pika: the speed-of-light kick: out of the light behind them, a spinning kick into the left side of the head.", KICK)
 
 
+def z_kick():
+    # 2.9.9 (the owner, with a frame of Kizaru's light-speed kick sending Gear 5 Luffy flying: "when Z collides with an entity it should
+    # be a kick"): out of the light, a flying side kick driven straight into them, leaning back off it, the other leg tucked; held a
+    # moment as they fly off, then down to rest. The blow lands as the clip starts (server/PikaMoves.zKick)
+    chamber = p(rightLeg=leg(-62, 6, 96), leftLeg=leg(-40, -6, 80), body={"pitch": 10, "bend": -4})
+    strike = p(rightLeg=leg(-110, 4, 0), leftLeg=leg(-34, -6, 84), body={"pitch": 24, "bend": -10, "yaw": -8})
+    follow = p(rightLeg=leg(-104, 4, 4), leftLeg=leg(-30, -6, 80), body={"pitch": 22, "bend": -8, "yaw": -10})
+    write_parts("pika_z_kick", 14, [
+        (0, "constant", chamber),
+        (1, "outexpo", strike),
+        (5, "outsine", follow),
+        (14, "inoutsine", p(rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0), body={"pitch": 0, "yaw": 0})),
+    ], "Pika Pika: out of the light, a flying kick driven into them.", KICK)
+
+
 def clones():
     spread = p(arms(right=arm(-80, 0, 90, -4), left=arm(-80, 0, -90, -4)), rightLeg=leg(-6, 6, 10), leftLeg=leg(4, -6, 14),
                body={"bend": -12}, head={"pitch": -14})
@@ -308,6 +323,7 @@ def main():
     yasakani()
     murakumo()
     light_kick()
+    z_kick()
     clones()
     # 2.8.8: the same keyframes for the clones of light (client/npc/PikaPoses, sampled by StylePoser)
     java_poses(sorted(n for n in WRITTEN if n.startswith("pika_")), "PikaPoses", "tools/pika_anims.py",

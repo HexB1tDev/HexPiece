@@ -19,7 +19,7 @@ import net.minecraft.world.damagesource.DamageTypes;
  * Yasakani no Magatama (up in the air, arms crossed, a torrent of light from both hands), Ama no Murakumo (a sword of solid light),
  * "have you ever been kicked at the speed of light?", and Egghead's clones of light. Keys as the owner set them for every fruit (Z X
  * C V B, the attack and use buttons). The Logia body (blows pass through as light unless coated in Armament) is the original's
- * FruitServer's; this kit adds the flash, the light flight and the moves (server/PikaMoves).
+ * FruitServer's; this kit adds the flash and the moves (server/PikaMoves); 2.9.9: no flight (only Z, as light).
  */
 public final class PikaKit extends FruitKit {
     public static final FruitMove LASER = new FruitMove("Laser", "[RMB]", 0, "pika_laser",
@@ -45,10 +45,8 @@ public final class PikaKit extends FruitKit {
         "As at Egghead: the light thrown out of the body and every bead of it a Borsalino of light, each flying at someone near with a"
             + " sword of light, cutting, and bursting.");
     public static final FruitMove BODY = new FruitMove("Body of Light", "passive", 0, null,
-        "A Logia: blows and shots pass through you as light unless they come coated in Armament Haki. You fly (double-tap jump), and"
-            + " sprinting while you fly you become light, some 40 blocks a second where you look. You never take a fall. The sea takes it"
-            + " all away.");
-    /** 2.9.7 (the owner: "get rid of the M1s entirely, of the light fruit"): no kicks on the attack button any more. */
+        "A Logia: blows and shots pass through you as light unless they come coated in Armament Haki. You never take a fall. You do not"
+            + " fly: the only way through the air is as light (Z). The sea takes it all away.");
     public static final List<FruitMove> MOVES = List.of(LASER, YATA, YASAKANI, MURAKUMO, LIGHT_KICK, CLONES, BODY);
 
     @Override
@@ -80,7 +78,10 @@ public final class PikaKit extends FruitKit {
         PikaMoves.tick(player);
     }
 
-    /** The light flight while the fruit is in use and out of the sea (double-tap jump), as the original gave it. */
+    /**
+     * The flight the original gave the Light fruit (double-tap jump). 2.9.9 (the owner: "why can light fly? The only flight should be
+     * through Z."): never given any more; called with false to take away what an older version gave.
+     */
     static void flight(ServerPlayer player, boolean on) {
         if (player.m_7500_() || player.m_5833_()) {
             return;
@@ -99,7 +100,7 @@ public final class PikaKit extends FruitKit {
 
     @Override
     public void granted(ServerPlayer player) {
-        flight(player, FruitData.active(player) && !FruitServer.inSea(player));
+        flight(player, false);
         CompoundTag data = FruitData.get(player);
         if (!data.m_128441_(PikaMoves.YATA_KEY)) {
             data.m_128405_(PikaMoves.YATA_KEY, PikaMoves.YATA_MAX);
