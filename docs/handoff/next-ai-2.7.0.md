@@ -472,7 +472,41 @@ when it explodes, it should have a big explosion, like a fucking big bomb that j
 game in general is. Like, this mod is meant to be more optimized. It's super laggy as it stands."
 - Kept as they are: the dragon's effects and sounds ("the effects are good. The sound is good").
 
-## Next (2.9.0)
+## Done (2.9.0, pushed): the owner's verdicts on the Light fruit and the dragon (above), every point
+- Light fruit: clones drawn (their skin type broke the shared buffer and threw, wiping every Light effect: skins now in their own pass,
+  PikaFx.Deferred); every Light animation keys only the parts it uses, never the head (tools/pika_anims.py write_parts); flight stance
+  only in real flight (PikaClient.stance), upright pika_fly/pika_float; Ama no Murakumo: LightClone.GUARD 0.66 (hand at the grip's
+  end), blade tilted 50 degrees toward the forearm (LightArt.LightArtGrip.TILT, same in both grips and LightClone), right elbow never
+  bent in sword clips, five new cut planes (roll 90 level, roll -45 diagonal, roll 0 vertical); first person: client/FirstPersonLight
+  (PieceHooks.played from HakiAnimations.playRemote, a new no-branch patch) draws the posed right arm and sword hung from the view
+  while a sword/laser clip plays and hides the game's hand; the fingertip (laser origin, charge glow) from the pose every frame;
+  LightArt.burst rebuilt (gather 3 ticks, flash, dome, ring, golden ball, gold-lit dust, 28 to 70 ticks); Yasakani one bullet every
+  other tick; damage halved or more; V: behind-left of the target at head height, spinning roundhouse on tick 3 (pika_light_kick,
+  PikaMoves.hold); Yata no Kagami reflected off glancing surfaces and water (PikaMoves.mirror, 3 bounces, 60 blocks; sneak straight);
+  light flight: sprinting while flying, 2 blocks a tick, the body hidden and drawn as light (PikaFx.lit); every sound a CC0 web
+  recording (tools/pika_sounds.py, tools/web_sounds.py, pika/PikaSounds, client/LoopSound for held loops).
+- Dragon: DragonForm.Trail (the body bent along the head's past path, DragonClient keeps 160 ticks of it; the head pinned to the
+  player); FLY_SPEED 0.04; Blast Breath charge sound client-side (charge_build 8.5 s, then the charge_hold loop until released, faded);
+  no breath or bite while charging or burning; craters: strike 1.6+w*0.1, burn 1.4 every 18 ticks, the bomb's 5+8*charge
+  (UoMoves.BOMB_*); the bomb (UoFire.bomb, 9 s: flash, fireball, mushroom cloud, dust ring, burning rim, embers) and aftershocks round
+  the rim for 3.5 s; FireMesh.detail thresholds raised (320 faces only above 0.16 of the view).
+- Renders: docs/handoff renders not added this time (bomb, burst, sword cuts, light kick, dragon trail were judged in the scratchpad).
+
+## The owner's next request (verbatim, after the Light fruit is good enough) -- the Haki edition
+"Next up, I want the fucking, like, when you're done with the live fruit and you think it's good enough, I want a complete haki, like
+edition. Like, the higher your mastery on haki, like the faster the Conqueror release will be. Like, I want Conqueror's haki to be
+fucking crazy. Once you unlock it, Conqueror's haki, your, like, even your Rio, every move, like, should be coating you with lightning.
+Like, lightning should be shooting out from your body like crazy. And I don't mean too much, but like often lightning is sparking out
+of you. Whenever you grab a sword, lightning explodes from it. I want it to be crazy, and I want the Conqueror's release to be, it's
+extremely destructive at max level. Like, I want it to be like fucking tearing the floor. I want massive amounts of lightning shooting
+everywhere, up, down. It doesn't matter. Like, it's meant to be ridiculous. All of this while avoiding as much lag as possible,
+obviously."
+- Plan: Conqueror release charge time scaled down by Haki mastery; once Conqueror is unlocked, frequent lightning arcs out of the body
+  during every move (Ryou too), a burst of lightning off a sword when it is drawn; the max-level release tears the ground (Craters /
+  Scars with growing back) and throws lightning everywhere, up and down; keep the cost low (pooled arcs, capped counts, LOD).
+- Still open: the lag pass (a per-tick/per-frame handler audit was started and cut off by a usage limit: re-run it).
+
+## Next (2.9.1)
 1. Check 2.8.9's runs. Tell the owner 2.8.8 crashed at load and 2.8.9 fixes it; then ask how the Light fruit plays now that its moves
    animate, how the clones and the sword look in game, and which moves still feel boring (the effects themselves are 2.7.8's: LightArt).
 2. Ask how everything since 2.8.2 plays (first person in the styles, the new blows, the new moves, the dragon's wave, the Blast Breath

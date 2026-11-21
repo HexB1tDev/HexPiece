@@ -4,7 +4,7 @@ package net.minecraft.world.level;
 public class ClipContext {
     public enum Block { COLLIDER }
 
-    public enum Fluid { NONE }
+    public enum Fluid { NONE, ANY }
 
     public ClipContext(net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 to, Block block, Fluid fluid,
                        net.minecraft.world.entity.Entity entity) {

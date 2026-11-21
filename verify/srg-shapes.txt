@@ -131,6 +131,9 @@ m_118513_ (Lacq;)V
 m_120367_ (Lfxy;)V
 m_121878_ ()J
 m_122022_ (J)Lgu;
+m_122429_ ()I
+m_122430_ ()I
+m_122431_ ()I
 m_123341_ ()I
 m_123342_ ()I
 m_123343_ ()I
@@ -186,7 +189,6 @@ m_188501_ ()F
 m_188503_ (I)I
 m_188505_ ()J
 m_19879_ ()I
-m_20069_ ()Z
 m_20089_ ()Lbgl;
 m_20096_ ()Z
 m_20142_ ()Z
@@ -412,6 +414,7 @@ m_6147_ ()Z
 m_6162_ ()Z
 m_6263_ (Lbyo;DDDLamg;Lami;FF)V
 m_6299_ (Lfkf;)Lein;
+m_6425_ (Lgu;)Ldxe;
 m_6443_ (Ljava/lang/Class;Leed;Ljava/util/function/Predicate;)Ljava/util/List;
 m_6469_ (Lben;F)Z
 m_6643_ ()I
@@ -526,6 +529,8 @@ m_82371_ (Leei;Leei;)Ljava/util/Optional;
 m_82383_ (Leei;)Leed;
 m_82390_ (Leei;)Z
 m_82400_ (D)Leed;
+m_82425_ ()Lgu;
+m_82434_ ()Lha;
 m_82450_ ()Leei;
 m_82490_ (D)Leei;
 m_82520_ (DDD)Leei;

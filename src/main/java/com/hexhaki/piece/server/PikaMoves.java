@@ -88,6 +88,9 @@ public final class PikaMoves {
     static final int YATA_MAX = 3;
     static final int YATA_RECHARGE = 80;
     static final double YATA_RANGE = 60.0;
+    /** 2.9.0: how many times Yata no Kagami's light may be reflected, and how glancing it must meet a surface to be (|cos| under). */
+    static final int YATA_BOUNCES = 3;
+    static final double YATA_GLANCE = 0.9;
     static final double LASER_RANGE = 70.0;
     static final double BEAM_RANGE = 90.0;
     static final int BEAM_FULL = 40;
@@ -292,11 +295,7 @@ public final class PikaMoves {
 
     static void press(ServerPlayer player, int slot, int flags) {
         if (slot == PikaKit.YATA.slot()) {
-            if (sneak(flags)) {
-                stream(player);
-            } else {
-                yata(player);
-            }
+            yata(player, sneak(flags)); // 2.9.0: sneaking, straight where he looks (the stream is the light flight's now)
         } else if (slot == PikaKit.YASAKANI.slot()) {
             volley(player, sneak(flags));
         } else if (slot == PikaKit.MURAKUMO.slot()) {
@@ -628,7 +627,7 @@ public final class PikaMoves {
         return data.m_128441_(YATA_KEY) ? data.m_128451_(YATA_KEY) : YATA_MAX;
     }
 
-    static void yata(ServerPlayer player) {
+    static void yata(ServerPlayer player, boolean straight) {
         State s = state(player);
         long now = now(player);
         if (now < s.busyUntil || s.volleySince >= 0 || yataLeft(player) <= 0) {
@@ -644,20 +643,97 @@ public final class PikaMoves {
         animate(player, "pika_yata");
         fx(player, YATA_FORM);
         sound(player, player.m_20182_(), PikaSounds.SPARKLE, 0.8F, 1.1F);
-        later(player, 4, () -> {
-            LivingEntity target = aimed(player, YATA_RANGE, 0.03);
-            Vec3 from = player.m_20182_();
-            Vec3 to;
-            if (target != null) {
-                to = beside(player, target, 1.4);
-            } else {
-                Vec3 p = point(player, YATA_RANGE);
-                to = room(player, from, p.m_82546_(player.m_20154_().m_82490_(0.7)).m_82520_(0, -player.m_20192_() * 0.5, 0));
+        later(player, 4, () -> mirror(player, straight));
+    }
+
+    /**
+     * 2.9.0 (the owner: "use a mirror to like reflect his own body, turns into light, reflects against objects, can reflect against
+     * water to like projectile him up while he's made of light"): Yata no Kagami's light leaves the joined hands along the look and is
+     * reflected (as a mirror reflects it) off what it meets glancingly, up to {@link #YATA_BOUNCES} times within {@link #YATA_RANGE}
+     * blocks: off the ground, a wall, and off water at almost any angle, so light skimmed off the sea throws him up into the air. Met
+     * square on, a surface stops it (he is there); a foe on its way stops it beside them. He goes the whole way as light at once.
+     * Sneaking, it goes straight (no reflection: where he looks).
+     */
+    static void mirror(ServerPlayer player, boolean straight) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        Vec3 at = player.m_20182_().m_82520_(0, 1.0, 0);
+        Vec3 way = player.m_20154_();
+        double left = YATA_RANGE;
+        List<Vec3> points = new ArrayList<>();
+        points.add(at);
+        LivingEntity met = null;
+        Vec3 stand = null;
+        for (int bounce = 0; ; bounce++) {
+            Vec3 end = at.m_82549_(way.m_82490_(left));
+            BlockHitResult hit = level.m_45547_(new ClipContext(at, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
+            Vec3 stop = hit.m_6662_() == HitResult.Type.BLOCK ? hit.m_82450_() : end;
+            met = along(player, at, stop);
+            if (met != null) {
+                stand = beside(player, met, 1.4);
+                points.add(stand.m_82520_(0, 1.0, 0));
+                break;
             }
-            travel(player, to, target);
-            fx(player, YATA_PATH, 0, from, to, 0, 0, 0, 0, 0);
-            sound(player, to, PikaSounds.TRAVEL, 1.0F, 1.0F);
-        });
+            if (hit.m_6662_() != HitResult.Type.BLOCK) {
+                points.add(end);
+                stand = end.m_82520_(0, -1.0, 0);
+                break;
+            }
+            net.minecraft.core.Direction face = hit.m_82434_();
+            Vec3 n = new Vec3(face.m_122429_(), face.m_122430_(), face.m_122431_());
+            boolean water = !((net.minecraft.world.level.Level) level).m_6425_(hit.m_82425_()).m_76178_();
+            double dn = way.m_82526_(n);
+            left -= stop.m_82554_(at);
+            boolean reflect = !straight && bounce < YATA_BOUNCES && left > 4.0 && Math.abs(dn) < (water ? 0.97 : YATA_GLANCE);
+            points.add(stop);
+            if (!reflect) {
+                stand = stop.m_82549_(n.m_82490_(0.6)).m_82520_(0, -1.0, 0);
+                break;
+            }
+            fx(player, DODGE, 0, stop, Vec3.f_82478_, 0, 0, 0, 0, 0);
+            sound(player, stop, water ? PikaSounds.ZIP : PikaSounds.SPARKLE, 0.8F, 1.3F);
+            way = way.m_82546_(n.m_82490_(2.0 * dn)).m_82541_();
+            at = stop.m_82549_(n.m_82490_(0.05));
+        }
+        Vec3 from = player.m_20182_();
+        Vec3 to = room(player, points.get(points.size() - 2).m_82520_(0, -1.0, 0), stand);
+        for (int i = 0; i + 1 < points.size(); i++) {
+            Vec3 a = points.get(i).m_82520_(0, -1.0, 0);
+            Vec3 b = i + 2 == points.size() ? to : points.get(i + 1).m_82520_(0, -1.0, 0);
+            fx(player, YATA_PATH, 0, a, b, 0, 0, 0, 0, 0);
+        }
+        travel(player, to, met);
+        if (points.size() > 2 && met == null && to.f_82480_ > from.f_82480_ + 2.0) {
+            // thrown up off the light's last bounce: on up, as light goes
+            Vec3 last = points.get(points.size() - 1).m_82546_(points.get(points.size() - 2)).m_82541_();
+            player.m_20334_(last.f_82479_ * 0.6, Math.max(0.4, last.f_82480_ * 1.2), last.f_82481_ * 0.6);
+            player.f_19864_ = true;
+        }
+        sound(player, to, PikaSounds.TRAVEL, 1.0F, 1.0F);
+    }
+
+    /** The first foe within a block or so of the light's way from {@code a} to {@code b}, or null. */
+    static LivingEntity along(ServerPlayer player, Vec3 a, Vec3 b) {
+        Vec3 way = b.m_82546_(a);
+        double length = way.m_82553_();
+        if (length < 1.0E-6) {
+            return null;
+        }
+        Vec3 unit = way.m_82490_(1.0 / length);
+        LivingEntity best = null;
+        double bestAlong = Double.MAX_VALUE;
+        for (LivingEntity body : player.m_9236_().m_6443_(LivingEntity.class, UoMoves.box(a, b).m_82400_(2.0),
+            e -> e != player && e.m_6084_() && !e.m_5833_() && FruitUtil.foe(player, e))) {
+            Vec3 rel = StyleCombat.middle(body).m_82546_(a);
+            double d = rel.m_82526_(unit);
+            if (d < 0.5 || d > length + 0.5 || rel.m_82546_(unit.m_82490_(d)).m_82553_() > body.m_20205_() * 0.5 + 1.0) {
+                continue;
+            }
+            if (d < bestAlong) {
+                bestAlong = d;
+                best = body;
+            }
+        }
+        return best;
     }
 
     /** Sneak + Z: stream along the look as light while it is held (up to 3 s), striking what you pass. */

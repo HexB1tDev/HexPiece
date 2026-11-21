@@ -30,8 +30,9 @@ public final class PikaKit extends FruitKit {
         "As at Sabaody and Marineford: a finger pointed and a laser out of its tip that blows up where it strikes. Hold to gather the"
             + " light at the fingertip and let go a beam that burns through everything in its way.");
     public static final FruitMove YATA = new FruitMove("Yata no Kagami", "[Z]", 0, "pika_yata",
-        "Light formed between the hands and reflected: you go along it as light and are where you looked, at once (beside whoever you"
-            + " looked at). Three uses that come back on their own. Sneak to stream as light where you look for as long as you hold it.");
+        "As at Egghead: light formed between the hands, and you go along it as light at once. It is reflected off whatever it meets"
+            + " glancingly, ground, walls and the sea (skimmed off water it throws you up into the air), up to three times, and stops"
+            + " beside whoever is on its way. Sneak to go straight where you look. Three uses that come back on their own.");
     public static final FruitMove YASAKANI = new FruitMove("Yasakani no Magatama", "[X] hold", 0, "pika_yasakani",
         "Up into the air, arms crossed, and both hands loose a torrent of light bullets that blow up whatever they touch, over the whole"
             + " ground where you look for as long as you hold it. Sneak to bring it all down on one.");
@@ -39,15 +40,16 @@ public final class PikaKit extends FruitKit {
         "The hands brought together and drawn apart: a long sword of solid light. While it lasts the attack button cuts (five, the last"
             + " a wave of light) and the use button guards. C again puts it away.");
     public static final FruitMove LIGHT_KICK = new FruitMove("Speed of Light Kick", "[V] hold", 0, "pika_light_kick",
-        "\"Have you ever been kicked at the speed of light?\" The light gathered in the leg, let go, and you are on the one you look at,"
-            + " kicking them across the field and through whatever stands behind. Held longer, it lands harder. With no one there, the kick"
-            + " fires a beam out of the leg.");
+        "\"Have you ever been kicked at the speed of light?\" The light gathered in the leg, let go: gone as light and out of it behind"
+            + " the one you look at, over their shoulder, you spin round and kick them in the side of the head, across the field. Held"
+            + " longer, it lands harder. With no one there, the kick fires a beam out of the leg.");
     public static final FruitMove CLONES = new FruitMove("Yasakani no Magatama: Clones", "[B]", 0, "pika_clones",
         "As at Egghead: the light thrown out of the body and every bead of it a Borsalino of light, each running at someone near with a"
             + " sword of light, cutting, and bursting.");
     public static final FruitMove BODY = new FruitMove("Body of Light", "passive", 0, null,
-        "A Logia: blows and shots pass through you as light unless they come coated in Armament Haki. You fly as light (double-tap jump),"
-            + " leaving a streak of it, and never take a fall. The sea takes it all away.");
+        "A Logia: blows and shots pass through you as light unless they come coated in Armament Haki. You fly (double-tap jump), and"
+            + " sprinting while you fly you become light, some 40 blocks a second where you look. You never take a fall. The sea takes it"
+            + " all away.");
     public static final List<FruitMove> MOVES = List.of(KICKS, LASER, YATA, YASAKANI, MURAKUMO, LIGHT_KICK, CLONES, BODY);
 
     @Override

@@ -257,9 +257,17 @@ public final class PikaFx {
                 motes(e.m_20182_().m_82520_(0, e.m_20206_() * 0.5, 0), 2, 0.2);
             }
         }
+        // 2.9.0 (the owner: "he can like fly like super fast ... turns into light"): flying and sprinting, the local player goes as light
+        // where they look, LIGHT_FLIGHT blocks a tick (the body becomes a streak of light: lit, below)
+        net.minecraft.client.player.LocalPlayer self = minecraft.f_91074_;
+        if (self != null && self.m_150110_().f_35935_ && self.m_20142_() && com.hexhaki.fruit.client.FruitClient.fruit(self.m_19879_()) == Fruit.PIKA
+            && minecraft.f_91080_ == null) {
+            Vec3 look = self.m_20154_();
+            self.m_20334_(look.f_82479_ * LIGHT_FLIGHT, look.f_82480_ * LIGHT_FLIGHT, look.f_82481_ * LIGHT_FLIGHT);
+        }
         // trails: a player flying as light, or streaming
         for (Player player : level.m_6907_()) {
-            boolean streaming = STREAMS.containsKey(player.m_19879_());
+            boolean streaming = STREAMS.containsKey(player.m_19879_()) || lit(player);
             boolean flying = player.m_150110_().f_35935_ && com.hexhaki.fruit.client.FruitClient.fruit(player.m_19879_()) == Fruit.PIKA
                 && player.m_20184_().m_82553_() > 0.35;
             Trail trail = TRAILS.get(player.m_19879_());
@@ -286,6 +294,29 @@ public final class PikaFx {
                 Vec3 foot = foot(player, 1.0F);
                 mote(foot.m_82520_(r(0.3), r(0.2), r(0.3)), new Vec3(r(0.03), 0.06 + RANDOM.nextDouble() * 0.05, r(0.03)), 14);
             }
+        }
+    }
+
+    /** 2.9.0: the light flight's speed (blocks a tick: some 40 a second), and how fast a flier must go to be drawn as light. */
+    static final double LIGHT_FLIGHT = 2.0;
+    static final double LIT = 0.9;
+
+    /** Whether {@code player} is going as light: flying with the Light fruit faster than {@link #LIT} blocks a tick. */
+    static boolean lit(Player player) {
+        if (!player.m_150110_().f_35935_ || com.hexhaki.fruit.client.FruitClient.fruit(player.m_19879_()) != Fruit.PIKA) {
+            return false;
+        }
+        double dx = player.m_20185_() - player.f_19790_;
+        double dy = player.m_20186_() - player.f_19791_;
+        double dz = player.m_20189_() - player.f_19792_;
+        return dx * dx + dy * dy + dz * dz > LIT * LIT;
+    }
+
+    /** 2.9.0: a player going as light is not seen: only the light (its streak and its glow, drawn with the trails). */
+    @SubscribeEvent
+    public static void asLight(net.minecraftforge.client.event.RenderPlayerEvent.Pre event) {
+        if (lit(event.getEntity())) {
+            event.setCanceled(true);
         }
     }
 
@@ -589,9 +620,9 @@ public final class PikaFx {
                 pts[i * 3 + 1] = t.points[i * 3 + 1] - cy;
                 pts[i * 3 + 2] = t.points[i * 3 + 2] - cz;
             }
-            boolean streaming = STREAMS.containsKey(e.getKey());
+            boolean streaming = STREAMS.containsKey(e.getKey()) || lit(player);
             LightArt.trail(SINK, pts, t.count, streaming ? 0.8 : 0.35, streaming ? 1.0 : 0.7);
-            if (streaming && player != Minecraft.m_91087_().f_91074_) {
+            if (streaming && (player != Minecraft.m_91087_().f_91074_ || !Minecraft.m_91087_().f_91066_.m_92176_().m_90612_())) {
                 LightArt.light(SINK, pts[0], pts[1], pts[2], 0.6, 0, 1, 0, 0.0, 1.0, 1.0, clock + partial, e.getKey());
                 LightArt.glow(SINK, pts[0], pts[1], pts[2], 2.0, 0xFFE070, 0.5);
             }

@@ -2,6 +2,7 @@
 package net.minecraft.world.level;
 
 public abstract class Level implements LevelAccessor {
+    /** getFluidState (2.9.0) */ public net.minecraft.world.level.material.FluidState m_6425_(net.minecraft.core.BlockPos pos) { throw new UnsupportedOperationException(); }
     /** getGameRules (2.1.4) */ public net.minecraft.world.level.GameRules m_46469_() { throw new UnsupportedOperationException(); }
     /** destroyBlock(pos, drop, entity) (2.1.4) */ public boolean m_46953_(net.minecraft.core.BlockPos pos, boolean drop, net.minecraft.world.entity.Entity entity) { throw new UnsupportedOperationException(); }
     /** isClientSide (1.2.1) */ public boolean f_46443_;
