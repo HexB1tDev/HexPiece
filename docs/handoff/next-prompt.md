@@ -8,7 +8,7 @@ feature's detail.
 
 2.9.9 is pushed: no flight for the Light fruit (only Z), and Z meeting someone is a flying kick that blasts them away and ragdolls
 them; 2.9.8 held the light sword by a short grip with the ring at the fist and redrew it after the owner's reference; 2.9.7, the Light fruit after Kizaru at Egghead (no M1s at all; Z: the body becomes light, reflected off every block and
-the water; C: Ama no Murakumo's lunge; X: Yasakani as at Egghead, flying about while it pours; V: the speed-of-light kick as a dash
+the water; C: Ama no Murakumo's lunge; X: Yasakani as at Egghead, held in the air while it pours; V: the speed-of-light kick as a dash
 of light; B: clones flying in; the flight pose with the arms out, now only seen in creative flight). The next version is 3.0.0. First check the branch's last "Build
 HexPiece" and "Release HexPiece" runs, then ask the owner how the sword and the Light fruit play now, and how 2.9.5's Conqueror sounds and 2.9.4's
 Haki play (both still untested), and fix whatever they report first. Then follow section 9 of next-ai-2.9.9.md.
