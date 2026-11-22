@@ -40,10 +40,17 @@ public final class GuraKit extends FruitKit {
     public static final FruitMove SPLITTER = new FruitMove("Ground Splitter", "[B]", 0, "gura_split",
         "Both fists into the ground: a rift tears open ahead of you, block by block, and everyone along it is thrown into the air. The"
             + " ground grows back.");
+    /** 3.1.6: the ultimate on the End key (server/GuraUltimate; client/gura/GuraKeys sends it, ability {@link GuraUltimate#SLOT}). */
+    public static final FruitMove ULTIMATE = new FruitMove("Island Breaker", "[END] hold", 0, "gura_ultimate",
+        "The ultimate. Cock the right fist back beside your head and hold: the quake bubble swells round it, bigger and bigger, the ground"
+            + " trembling under you. It only goes when fully charged. Let go and the whole ground ahead of you, in a huge cone, heaves up"
+            + " and breaks into squares, splits into fissures and craters, and everyone on it is thrown and knocked down. With the"
+            + " Conqueror's Haki and Ryou on, thick black lightning bursts out of the breaking ground everywhere and those struck are"
+            + " stunned. Five minutes to recover.");
     public static final FruitMove TREMOR = new FruitMove("Tremor Body", "passive", 0, null,
         "You never take a fall: where you land hard, the ground quakes round your feet and throws back whoever stands near. The sea takes"
             + " it all away.");
-    public static final List<FruitMove> MOVES = List.of(KAISHIN, SHIMA, KABUTOWARI, TSUNAMI, GEKISHIN, SPLITTER, TREMOR);
+    public static final List<FruitMove> MOVES = List.of(KAISHIN, SHIMA, KABUTOWARI, TSUNAMI, GEKISHIN, SPLITTER, ULTIMATE, TREMOR);
 
     @Override
     public Fruit fruit() {

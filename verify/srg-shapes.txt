@@ -116,6 +116,7 @@ m_108560_ ()Lacq;
 m_108564_ ()Ljava/lang/String;
 m_109153_ ()Lemz;
 m_109541_ (Lclp;Lgu;)I
+m_109911_ ()V
 m_109912_ (Lfkf;)V
 m_110104_ ()Lfjx$a;
 m_110458_ (Lacq;)Lfkf;
@@ -123,6 +124,7 @@ m_110470_ (Lacq;)Lfkf;
 m_110473_ (Lacq;)Lfkf;
 m_110485_ (Lacq;)Lfkf;
 m_110488_ (Lacq;)Lfkf;
+m_110912_ (Ldcb;Leij;Lfjx;II)V
 m_114382_ (Lbfj;)Lfox;
 m_115326_ (Lftg;)Z
 m_117770_ (Leij;Lfjx;ILfiv;)V
@@ -519,6 +521,7 @@ m_7639_ ()Lbfj;
 m_7640_ ()Lbfj;
 m_7678_ (DDDFF)V
 m_7695_ (Leij;Lein;IIFFFF)V
+m_7702_ (Lgu;)Lczn;
 m_7731_ (Lgu;Ldcb;I)Z
 m_7785_ (DDDLamg;Lami;FFZ)V
 m_7933_ (III)Z
@@ -584,6 +587,7 @@ m_91104_ ()Z
 m_91106_ ()Lfzc;
 m_91152_ (Leuq;)V
 m_91269_ ()Lfkd;
+m_91289_ ()Lfko;
 m_91290_ ()Lfow;
 m_91296_ ()F
 m_91385_ ()Legv;

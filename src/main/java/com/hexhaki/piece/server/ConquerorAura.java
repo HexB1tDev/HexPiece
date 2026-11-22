@@ -176,12 +176,17 @@ public final class ConquerorAura {
      * on the fist where that client draws it (the bubble's place), not where the server guesses the fist is.
      */
     public static boolean mixed(ServerPlayer player, Vec3 at, double radius, int count, double floor, boolean atFist) {
+        return mixed(player, at, radius, count, floor, atFist, 0.0);
+    }
+
+    /** 3.1.6: as above, its arcs {@code thick} times as thick (0: the usual; the Gura ultimate's "thick lightning"). */
+    public static boolean mixed(ServerPlayer player, Vec3 at, double radius, int count, double floor, boolean atFist, double thick) {
         try {
             if (!awakened(player)) {
                 return false;
             }
             int seed = (int) (player.m_217043_().m_188500_() * Integer.MAX_VALUE);
-            PieceNetwork.around(player, new S2CUoFx(MIXED, count, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, 0, 0, 0,
+            PieceNetwork.around(player, new S2CUoFx(MIXED, count, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, (float) thick, 0, 0,
                 (float) floor, 0, atFist ? 1.0F : 0.0F, (float) radius, seed));
             return true;
         } catch (RuntimeException failure) {

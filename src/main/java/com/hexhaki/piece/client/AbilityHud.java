@@ -178,7 +178,9 @@ public final class AbilityHud {
             // 2.7.5 (the owner: "the keys HUD a ton of them say No slot"): a move's ability is its default slot, not its place in the
             // list (BindsClient.keyFor(i) asked for ability i: the Uo moves, out of slot order, were all "no slot")
             String key = LogbookData.moveKey(move);
-            if (move.slot() < 0 && key.indexOf(' ') > 0) {
+            if (move == com.hexhaki.piece.server.GuraKit.ULTIMATE) {
+                key = name(PieceKeys.ULTIMATE); // 3.1.6: the ultimate's own key, as bound in Controls
+            } else if (move.slot() < 0 && key.indexOf(' ') > 0) {
                 key = key.substring(0, key.indexOf(' ')); // "LMB hold": the cap names the key alone, as every other row's does
             }
             long wait = move.cooldown() == null || move.cooldown().isEmpty() ? 0 : Math.max(0, FruitClient.cooldown(move.cooldown()));

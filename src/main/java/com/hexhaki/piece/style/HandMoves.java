@@ -80,6 +80,11 @@ public final class HandMoves {
     static final double[][] THROW = {{0, 0, 0, 0, 0, 0, 0}, {2, 0.05, -0.06, 0.1, -8, 0, 0}, {4, -0.14, 0.1, -0.4, 10, 10, 0},
         {8, -0.05, 0.1, -0.36, 10, -20, 0}, {13, 0, 0, 0, 0, 0, 0}};
     static final double[][] COCKED = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.12, 0.03, 0.08, -7, -12, -10}};
+    /** 3.1.6, the Gura ultimate: the fist pulled up and back to the side of the view, held; let go, driven out and down; given up. */
+    static final double[][] ULT_COCK = {{0, 0, 0, 0, 0, 0, 0}, {8, 0.04, 0.19, 0.08, 28, -6, -12}};
+    static final double[][] ULT_RELEASE = {{0, 0.04, 0.19, 0.08, 28, -6, -12}, {2, -0.18, 0.04, -0.44, 2, 14, 0},
+        {6, -0.16, -0.02, -0.42, -4, 12, 0}, {14, -0.12, -0.02, -0.34, -4, 10, 0}, {24, 0, 0, 0, 0, 0, 0}};
+    static final double[][] ULT_DROP = {{0, 0.04, 0.19, 0.08, 28, -6, -12}, {8, 0, 0, 0, 0, 0, 0}};
     static final double[][] MELT = {{0, 0, 0, 0, 0, 0, 0}, {4, 0.04, -0.01, 0.01, -8, 0, 0}};
     static final double[][] RISE = {{0, 0.04, -0.01, 0.01, -8, 0, 0}, {3, 0.1, 0.22, -0.08, 36, 0, -16}, {14, 0, 0, 0, 0, 0, 0}};
 
@@ -117,6 +122,9 @@ public final class HandMoves {
             case "gura_slam" -> new Move(SLAM, 0);
             case "gura_tsunami" -> new Move(SIDE_QUICK, 0);
             case "gura_split", "magu_erupt" -> new Move(DOWN, 0);
+            case "gura_ult_charge" -> new Move(ULT_COCK, 1.6);
+            case "gura_ult_release" -> new Move(ULT_RELEASE, 0);
+            case "gura_ult_drop" -> new Move(ULT_DROP, 0);
             // the Magma fruit
             case "magu_meigo_wind" -> new Move(COCKED, 0.3);
             case "magu_meigo" -> new Move(BIG, 0);

@@ -92,6 +92,11 @@ public final class GuraFx {
     private static final List<Wave> WAVES = new ArrayList<>();
     static final Map<Integer, Bubble> BUBBLES = new HashMap<>();
     static final Map<Integer, Shake> SHAKES = new HashMap<>();
+    /** 3.1.6: the ultimate's ground heaving: its blocks (HeaveDraw) and its wave's dust and rocks (GuraArt.heave). */
+    record Heaving(HeaveDraw blocks, Vec3 at, Vec3 dir, double cone, double reach, double speed, long born, int seed) {
+    }
+
+    static final List<Heaving> HEAVES = new ArrayList<>();
     static final double FAR = 160.0;
 
     private GuraFx() {
@@ -130,7 +135,9 @@ public final class GuraFx {
                 BUBBLES.put(m.user(), bubble);
                 // the quake gathering, held while the bubble is (faded out the moment it is let go); 3.1.4: a deep steady hum (the
                 // owner: the rumble pitched up "sounds like a car trepidating")
-                com.hexhaki.piece.client.LoopSound.play(GuraSounds.CHARGE, entity(m.user()), 0.8F, m.id() == 1 ? 0.9F : 1.0F, true, true, 1.2,
+                // 3.1.6: the ultimate's deeper (its bubble 3)
+                com.hexhaki.piece.client.LoopSound.play(GuraSounds.CHARGE, entity(m.user()), m.id() == 3 ? 1.0F : 0.8F,
+                    m.id() == 3 ? 0.72F : m.id() == 1 ? 0.9F : 1.0F, true, true, 1.2,
                     () -> BUBBLES.get(m.user()) == bubble);
             }
             case GuraMoves.BUBBLE_OFF -> {
@@ -159,7 +166,18 @@ public final class GuraFx {
                     TILTS.put(m.user(), new double[] {clock, m.bx(), at.f_82479_, at.f_82481_, m.size()});
                 }
             }
-            case GuraMoves.RIFT -> RIFTS.add(new Rift(at, a, m.size(), heights(at, a, m.size()), m.bx() > 0.0F ? 1.8 : 1.0, clock, m.id()));
+            case GuraMoves.RIFT -> RIFTS.add(new Rift(at, a, m.size(), heights(at, a, m.size()), m.bx() > 0.0F ? 1.8 : m.bx() < 0.0F ? 0.55 : 1.0,
+                clock, m.id()));
+            case GuraMoves.HEAVE -> {
+                ClientLevel level = Minecraft.m_91087_().f_91073_;
+                if (level != null) {
+                    if (HEAVES.size() >= 3) {
+                        HEAVES.remove(0);
+                    }
+                    HEAVES.add(new Heaving(new HeaveDraw(level, at, a, m.bx(), m.size(), m.by(), m.ticks(), clock), at, a, m.bx(), m.size(),
+                        m.by(), clock, m.ticks()));
+                }
+            }
             case GuraMoves.TSUNAMI -> WAVES.add(new Wave(at, a, m.size(), m.bx(), m.ticks(), (int) m.by(), clock, m.id()));
             case GuraMoves.LEAP -> {
                 // a puff of dust where the feet leave the ground, the quake fist alight for the slam
@@ -228,6 +246,7 @@ public final class GuraFx {
         BUBBLES.entrySet().removeIf(e -> e.getValue().until >= 0 && e.getValue().until < clock || entity(e.getKey()) == null);
         SHAKES.entrySet().removeIf(e -> clock - e.getValue().since > GuraMoves.SHAKE_MAX + 40 || entity(e.getKey()) == null);
         TILTS.entrySet().removeIf(e -> clock - e.getValue()[0] > 30);
+        HEAVES.removeIf(h -> clock - h.born > GuraArt.heaveLife(h.reach, h.speed) + 1 && h.blocks.over(clock - h.born));
         for (Wave w : WAVES) {
             // the wave's foot follows the ground under its middle
             double age = clock - w.born;
@@ -467,7 +486,7 @@ public final class GuraFx {
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || SPOTS.isEmpty() && RIFTS.isEmpty() && WAVES.isEmpty()
-            && BUBBLES.isEmpty() && SHAKES.isEmpty()) {
+            && BUBBLES.isEmpty() && SHAKES.isEmpty() && HEAVES.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -482,6 +501,26 @@ public final class GuraFx {
         FireMesh.quality = Math.max(0.35, PieceFx.density());
         Vec3 cam = event.getCamera().m_90583_();
         float partial = event.getPartialTick();
+        if (!HEAVES.isEmpty()) {
+            // 3.1.6: the ultimate's heaving ground first: solid blocks (the world's own models), under every see-through effect
+            try {
+                net.minecraft.client.renderer.block.BlockRenderDispatcher blocks = minecraft.m_91289_();
+                int budget = com.hexhaki.piece.gura.Heave.MOST_DRAWN;
+                for (Heaving h : HEAVES) {
+                    if (h.at.m_82557_(cam) > (FAR + h.reach) * (FAR + h.reach)) {
+                        continue;
+                    }
+                    budget -= h.blocks.draw(pose, buffers, blocks, cam, clock - h.born + partial, budget);
+                    if (budget <= 0) {
+                        break;
+                    }
+                }
+            } catch (RuntimeException failure) {
+                com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: the Gura ultimate's ground could not be drawn", failure);
+                HEAVES.clear();
+            }
+            buffers.m_109911_();
+        }
         try {
             SINK.buffer = buffers.m_6299_(type);
             draw(level, cam, partial);
@@ -505,6 +544,13 @@ public final class GuraFx {
         double cy = cam.f_82480_;
         double cz = cam.f_82481_;
         // the ground first (far under everything), then the water, then what hangs in the air
+        for (Heaving h : HEAVES) {
+            if (h.at.m_82557_(cam) > (FAR + h.reach) * (FAR + h.reach)) {
+                continue;
+            }
+            GuraArt.heave(SINK, h.at.f_82479_ - cx, h.at.f_82480_ - cy, h.at.f_82481_ - cz, h.dir.f_82479_, h.dir.f_82481_, h.cone, h.reach,
+                h.speed, clock - h.born + partial, h.seed);
+        }
         for (Rift r : RIFTS) {
             if (far(r.at, cam) && far(r.at.m_82549_(r.dir.m_82490_(r.length)), cam)) {
                 continue;
@@ -585,10 +631,12 @@ public final class GuraFx {
             if (far(fist, cam)) {
                 continue;
             }
-            double grow = Math.min(1.0, age / (b.which == 1 ? 30.0 : 40.0));
-            double radius = b.which == 2 ? 0.42 : b.which == 1 ? 0.26 + 0.34 * grow : 0.2 + 0.26 * grow;
+            double grow = Math.min(1.0, age / (b.which == 3 ? 80.0 : b.which == 1 ? 30.0 : 40.0));
+            // 3.1.6: the ultimate's (3) swelling "bigger and bigger" round the cocked fist
+            double radius = b.which == 3 ? 0.3 + 0.75 * grow * (2.0 - grow) : b.which == 2 ? 0.42 : b.which == 1 ? 0.26 + 0.34 * grow
+                : 0.2 + 0.26 * grow;
             if (ownView(e.getKey())) {
-                radius = Math.min(radius, 0.22);
+                radius = Math.min(radius, b.which == 3 ? 0.42 : 0.22);
             }
             GuraArt.bubble(SINK, fist.f_82479_ - cx, fist.f_82480_ - cy, fist.f_82481_ - cz, radius, age, e.getKey());
         }
@@ -613,6 +661,7 @@ public final class GuraFx {
         BUBBLES.clear();
         SHAKES.clear();
         TILTS.clear();
+        HEAVES.clear();
         move = null;
     }
 

@@ -187,3 +187,8 @@ F net/minecraft/world/level/ClipContext$Fluid ANY Lnet/minecraft/world/level/Cli
 
 # --- 3.1.2: the Gura fruit's tsunami only near a big body of water (water told from lava) ------------------------------------------
 M net/minecraft/world/level/material/FluidState m_205070_ (Lnet/minecraft/tags/TagKey;)Z   # [srg] is(TagKey): joined.tsrg dxe (FluidState, HexGhoul's m_76178_ isEmpty) a (Lanl;)Z m_205070_ 205070 (anl TagKey, as ItemStack.m_204117_ in HexGhoul's list); its neighbours m_205072_ is(HolderSet) (Lhi;)Z and m_164512_ is(Fluid) (Ldxd;)Z; FluidTags.f_13131_ WATER is read by the original's FruitServer
+
+# --- 3.1.6: the Gura ultimate's heaving ground drawn with the world's own block models (client/gura/HeaveDraw) -----------------------
+C net/minecraft/client/renderer/block/BlockRenderDispatcher   # [srg] joined.tsrg fko C_4183_, intermediary class_776 (yarn BlockRenderManager); Minecraft (enn) am ()Lfko; m_91289_ returns it
+M net/minecraft/client/Minecraft m_91289_ ()Lnet/minecraft/client/renderer/block/BlockRenderDispatcher;   # [srg] getBlockRenderer: joined.tsrg enn (Minecraft: s f_91073_ level, t f_91074_ player as the original uses) am ()Lfko; m_91289_ 91289, beside ao m_167982_ getBlockEntityRenderDispatcher already proven
+M net/minecraft/client/renderer/block/BlockRenderDispatcher m_110912_ (Lnet/minecraft/world/level/block/state/BlockState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;II)V   # [srg] renderSingleBlock(state, pose, buffers, light, overlay): joined.tsrg fko a (Ldcb;Leij;Lfjx;II)V m_110912_ 110912 (dcb BlockState, eij PoseStack, fjx MultiBufferSource as the original uses them)

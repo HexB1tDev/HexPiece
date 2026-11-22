@@ -17,6 +17,7 @@ public class Minecraft {
     /** gameMode (4.1.32): joined.tsrg enn.r f_91072_, intermediary field_1761 (yarn interactionManager) */ public net.minecraft.client.multiplayer.MultiPlayerGameMode f_91072_;
     /** particleEngine */ public net.minecraft.client.particle.ParticleEngine f_91061_;
     /** renderBuffers */ public net.minecraft.client.renderer.RenderBuffers m_91269_() { throw new UnsupportedOperationException(); }
+    /** getBlockRenderer (3.1.6): joined.tsrg enn am ()Lfko; m_91289_ */ public net.minecraft.client.renderer.block.BlockRenderDispatcher m_91289_() { throw new UnsupportedOperationException(); }
     /** getSoundManager */ public net.minecraft.client.sounds.SoundManager m_91106_() { throw new UnsupportedOperationException(); }
     /** getTextureManager */ public net.minecraft.client.renderer.texture.TextureManager m_91097_() { throw new UnsupportedOperationException(); }
     /** getItemRenderer */ public net.minecraft.client.renderer.entity.ItemRenderer m_91291_() { throw new UnsupportedOperationException(); }

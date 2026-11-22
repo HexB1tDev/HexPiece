@@ -12,6 +12,95 @@ public final class GuraShots {
     private GuraShots() {
     }
 
+    /**
+     * 3.1.6: the Gura ultimate {@code age} ticks after the strike ({@code boost} 1.6 with Ryou on), the player at the origin looking along
+     * +z: the heaving plates (gura/Heave) as grass-topped dirt cubes where the game draws the world's own blocks (client/gura/HeaveDraw),
+     * the wave (GuraArt.heave), the five narrow fissures, the craters' quakes, the air's crack at the fist and the shock.
+     */
+    static void ultimate(FireMesh.Sink sink, double ex, double ey, double ez, double age, double boost) {
+        double reach = com.hexhaki.piece.gura.Heave.REACH * boost;
+        double cone = com.hexhaki.piece.gura.Heave.CONE;
+        double speed = com.hexhaki.piece.gura.Heave.WAVE;
+        for (com.hexhaki.piece.gura.Heave.Plate p : com.hexhaki.piece.gura.Heave.plates(0.0, 0.0, 0.0, 1.0, cone, reach, speed, 9)) {
+            if (!com.hexhaki.piece.gura.Heave.shows(p, age)) {
+                continue;
+            }
+            double lift = com.hexhaki.piece.gura.Heave.lift(p, age);
+            double tip = com.hexhaki.piece.gura.Heave.tip(p, age);
+            double cx = p.x() + p.size() * 0.5;
+            double cz = p.z() + p.size() * 0.5;
+            for (int i = 0; i < p.size(); i++) {
+                for (int k = 0; k < p.size(); k++) {
+                    cube(sink, p.x() + i - cx, -1.0, p.z() + k - cz, cx, lift, cz, p.ax(), p.az(), tip, ex, ey, ez, 0x5FA33A);
+                    if (lift > 0.5) {
+                        cube(sink, p.x() + i - cx, -2.0, p.z() + k - cz, cx, lift, cz, p.ax(), p.az(), tip, ex, ey, ez, 0x8A6642);
+                    }
+                }
+            }
+        }
+        GuraArt.heave(sink, -ex, -ey, -ez, 0, 1, cone, reach, speed, age, 9);
+        double[] heights = new double[90];
+        double[] fan = {-0.8, -0.42, 0.0, 0.42, 0.8};
+        for (int i = 0; i < fan.length; i++) {
+            double an = Math.toRadians(cone * fan[i]);
+            double dx = -Math.sin(an);
+            double dz = Math.cos(an);
+            double length = (reach - 3.0) * (i == 2 ? 0.95 : 0.7 + 0.08 * Math.abs(i - 2));
+            GuraArt.rift(sink, dx * 3.0 - ex, -ey, dz * 3.0 - ez, dx, dz, length, com.hexhaki.piece.server.GuraMoves.RIFT_STEP, heights, 0.55,
+                age, 30 + i);
+        }
+        for (int k = 0; k < 4; k++) {
+            double d = 8.0 + reach / 4.0 * k;
+            GuraArt.quake(sink, -ex, -ey, d - ez, 2.4 * (boost > 1.0 ? 1.3 : 1.0) * 1.4, 0.9, age - d / speed, 40 + k);
+        }
+        GuraArt.crack(sink, 0.3 - ex, 1.4 - ey, 1.8 - ez, 0, 0, 1, 3.2, age + 3.0, 7);
+        GuraArt.shock(sink, 0.3 - ex, 1.4 - ey, 1.0 - ez, 0, 0, 1, reach, 0.7, 1.0, com.hexhaki.piece.server.GuraMoves.SHOCK_SPEED, age + 3.0, 5);
+    }
+
+    /**
+     * One block (unit cube from (bx, by, bz) relative to its plate's pivot (px, 0, pz) on top of the ground), lifted {@code lift},
+     * turned {@code tip} about the flat axis (ax, az): its top {@code top}, its sides dirt, each face shaded as the game shades them.
+     */
+    static void cube(FireMesh.Sink sink, double bx, double by, double bz, double px, double lift, double pz, double ax, double az, double tip,
+                     double ex, double ey, double ez, int top) {
+        double[][] c = new double[8][];
+        double cos = Math.cos(tip);
+        double sin = Math.sin(tip);
+        for (int n = 0; n < 8; n++) {
+            double x = bx + (n & 1);
+            double y = by + ((n >> 1) & 1);
+            double z = bz + ((n >> 2) & 1);
+            // Rodrigues about (ax, 0, az)
+            double dot = x * ax + z * az;
+            double crx = 0 * z - az * y;
+            double cry = az * x - ax * z;
+            double crz = ax * y - 0 * x;
+            double rx = x * cos + crx * sin + ax * dot * (1 - cos);
+            double ry = y * cos + cry * sin;
+            double rz = z * cos + crz * sin + az * dot * (1 - cos);
+            c[n] = new double[] {rx + px - ex, ry + lift - ey, rz + pz - ez};
+        }
+        int dirt = 0x8A6642;
+        face(sink, c, 2, 3, 7, 6, shade(top, 1.0));
+        face(sink, c, 0, 1, 5, 4, shade(dirt, 0.5));
+        face(sink, c, 0, 2, 6, 4, shade(dirt, 0.6));
+        face(sink, c, 1, 3, 7, 5, shade(dirt, 0.6));
+        face(sink, c, 0, 1, 3, 2, shade(dirt, 0.8));
+        face(sink, c, 4, 5, 7, 6, shade(dirt, 0.8));
+    }
+
+    static int shade(int rgb, double f) {
+        int r = (int) (((rgb >> 16) & 255) * f);
+        int g = (int) (((rgb >> 8) & 255) * f);
+        int b = (int) ((rgb & 255) * f);
+        return 0xFF000000 | r << 16 | g << 8 | b;
+    }
+
+    static void face(FireMesh.Sink sink, double[][] c, int a, int b, int d, int e, int col) {
+        FireMesh.quad(sink, c[a][0], c[a][1], c[a][2], col, c[b][0], c[b][1], c[b][2], col, c[d][0], c[d][1], c[d][2], col, c[e][0], c[e][1],
+            c[e][2], col);
+    }
+
     static boolean shot(FireMesh.Sink sink, double[] eye, String[] move) {
         double ex = eye[0];
         double ey = eye[1];
@@ -55,6 +144,7 @@ public final class GuraShots {
                     GuraArt.quake(sink, 0.3 - ex, -ey, 1.0 + d - ez, (1.2 + 1.3 * charge) * 1.8, 0.4 + 0.4 * charge, a - d / speed, 20 + (int) d);
                 }
             }
+            case "gult" -> ultimate(sink, ex, ey, ez, a, move.length > 2 ? Double.parseDouble(move[2]) : 1.0);
             case "gslam" -> {
                 GuraArt.crack(sink, -ex, 2.3 - ey, 4.0 - ez, 0, 0, -1, 2.4, a, 12);
                 GuraArt.quake(sink, -ex, -ey, 4.0 - ez, 7.0, 1.0, a, 13);

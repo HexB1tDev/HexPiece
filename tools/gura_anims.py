@@ -194,6 +194,38 @@ def split():
     ], "Gura Gura: both fists driven down into the ground, the ground splitting ahead.", ALL)
 
 
+# ------------------------------------------------------------------------------------------------------ End: the ultimate (3.1.6)
+
+# the owner: "the user pulls the fist, like the right fist, like back ... like a little further away from the face, but like around that
+# area" (docs/handoff/gura-ref/ultimate-whitebeard-punch.gif: the fist cocked high beside his head, the other arm out ahead): the upper
+# arm out to the side and back, the forearm up, the fist beside the head; the body wound up away from the punch, leaning back a little
+COCKED = p(rightArm=arm(-88, 64, 10, -100), leftArm=arm(-60, -14, -18, -20), body={"yaw": -24, "bend": -4})
+
+
+def ultimate():
+    beats = [(0, "linear", REST), (8, "outexpo", COCKED)]
+    # trembling harder as the bubble grows (server/GuraUltimate.FULL 80), and held so up to its HOLD_MOST 220
+    sign = 1
+    for t in range(10, 221, 2):
+        g = min(1.0, t / 80.0)
+        w = 0.6 + 2.4 * g
+        beats.append((t, "inoutsine", p(COCKED, rightArm={"roll": 10 + 2.5 * w * sign, "bend": -100 - 1.5 * w * sign},
+                                         body={"roll": 0.5 * w * sign, "yaw": -24 - 0.6 * w * sign})))
+        sign = -sign
+    write_parts("gura_ult_charge", 220, beats,
+                "Gura Gura: the ultimate: the right fist cocked back beside the head, the quake bubble swelling on it, trembling harder.", ARMS)
+    punch = p(rightArm=arm(-92, 6, 4, -2), leftArm=arm(16, 0, -16, -40), body={"yaw": 32, "bend": 16})
+    write_parts("gura_ult_release", 24, [
+        (0, "constant", COCKED),
+        (2, "outexpo", punch),
+        (6, "outback", p(punch, rightArm={"pitch": -80}, body={"yaw": 34, "bend": 20})),
+        (14, "outsine", p(punch, rightArm={"pitch": -78}, body={"yaw": 30, "bend": 18})),
+        (24, "inoutsine", REST),
+    ], "Gura Gura: the ultimate let go: the fist driven out and down, the ground ahead breaking.", ARMS)
+    write_parts("gura_ult_drop", 8, [(0, "constant", COCKED), (8, "inoutsine", REST)],
+                "Gura Gura: the ultimate given up before it was full: the fist lowered.", ARMS)
+
+
 def main():
     kaishin()
     shima()
@@ -201,6 +233,7 @@ def main():
     tsunami()
     gekishin()
     split()
+    ultimate()
     names = sorted(n for n in WRITTEN if n.startswith("gura_"))
     java_poses(names, "GuraPoses", "tools/gura_anims.py", "the Gura fruit's animations' keyframes, for the quake bubble on the fist")
     print(f"wrote {len(names)} Gura animations and their poses")

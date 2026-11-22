@@ -6,6 +6,7 @@ public interface MultiBufferSource {
 
     class BufferSource implements MultiBufferSource {
         /** getBuffer */ public com.mojang.blaze3d.vertex.VertexConsumer m_6299_(RenderType type) { throw new UnsupportedOperationException(); }
+        /** endBatch() (3.1.6; the original uses it) */ public void m_109911_() { throw new UnsupportedOperationException(); }
         /** endBatch(type) */ public void m_109912_(RenderType type) { throw new UnsupportedOperationException(); }
     }
 }

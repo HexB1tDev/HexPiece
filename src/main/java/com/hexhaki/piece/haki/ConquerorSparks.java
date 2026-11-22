@@ -66,13 +66,18 @@ public final class ConquerorSparks {
      * quarter of them grounding down to {@code floor} (the ground's height under the point, relative to it). Points relative to it.
      */
     public static List<Bolt> burst(double radius, int count, double floor, long seed) {
+        return burst(radius, count, floor, seed, 1.0);
+    }
+
+    /** 3.1.6: as {@link #burst(double, int, double, long)}, the arcs {@code thick} times as thick (the Gura ultimate's). */
+    public static List<Bolt> burst(double radius, int count, double floor, long seed, double thick) {
         SplittableRandom random = new SplittableRandom(seed ^ 0x4255_5253_54L);
         List<Bolt> out = new ArrayList<>(count * 2);
         double[] at = {0.0, 0.0, 0.0};
         // 3.1.5 (the owner: "the explosion is what gets the lightning like blowing from outwards of it"): out of a blast on the ground,
         // half the arcs went down into it, unseen, and a big blast's arcs were as thin as a fist's: the arcs that do not ground go up and
         // out of the ground (never steeper down than a fifth), thicker the bigger it is
-        double thick = Math.max(1.0, Math.sqrt(radius / 4.0));
+        thick *= Math.max(1.0, Math.sqrt(radius / 4.0));
         for (int i = 0; i < count; i++) {
             double[] dir = Sphere.unit(random);
             double length = radius * (0.45 + 0.55 * random.nextDouble());

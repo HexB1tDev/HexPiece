@@ -58,8 +58,10 @@ public final class ConquerorSparksClient {
                         y = fist.f_82480_;
                         z = fist.f_82481_;
                     }
-                    HakiBolts.sparks(level, user, x, y, z, ConquerorSparks.burst(m.size(), Math.max(2, Math.min(14, m.id())), m.bx(), m.ticks()), 0.0,
-                        0.0F);
+                    // 3.1.6: ax carries how thick (the Gura ultimate's "thick lightning"; 0 is the usual)
+                    double thick = m.ax() > 0.0F ? Math.min(3.0, m.ax()) : 1.0;
+                    HakiBolts.sparks(level, user, x, y, z, ConquerorSparks.burst(m.size(), Math.max(2, Math.min(14, m.id())), m.bx(), m.ticks(),
+                        thick), 0.0, 0.0F);
                 }
                 default -> {
                 }

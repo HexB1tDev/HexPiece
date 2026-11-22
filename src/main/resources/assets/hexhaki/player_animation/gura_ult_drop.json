@@ -1,0 +1,227 @@
+{
+ "version": 3,
+ "name": "gura_ult_drop",
+ "author": "HexPiece 3.1.2",
+ "description": "Gura Gura: the ultimate given up before it was full: the fist lowered.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 8,
+  "stopTick": 11,
+  "isLoop": false,
+  "returnTick": 0,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {
+    "tick": 0,
+    "easing": "constant",
+    "body": {
+     "yaw": -24.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "body": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "body": {
+     "bend": -4.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "torso": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "rightArm": {
+     "pitch": -88.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "rightArm": {
+     "yaw": 64.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "rightArm": {
+     "roll": 10.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "rightArm": {
+     "bend": -100.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "leftArm": {
+     "pitch": -60.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "leftArm": {
+     "yaw": -14.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "leftArm": {
+     "roll": -18.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "constant",
+    "leftArm": {
+     "bend": -20.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "body": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "body": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "body": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "torso": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "torso": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "torso": {
+     "bend": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightArm": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightArm": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightArm": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightArm": {
+     "bend": -4.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "leftArm": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "leftArm": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "leftArm": {
+     "roll": -4.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "leftArm": {
+     "bend": -4.0
+    }
+   }
+  ]
+ }
+}

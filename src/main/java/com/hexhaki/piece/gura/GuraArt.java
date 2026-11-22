@@ -639,6 +639,74 @@ public final class GuraArt {
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------ the ultimate's wave
+
+    /** How long the ultimate's wave shows (ticks): out to its reach, then the dust settling. */
+    public static double heaveLife(double reach, double speed) {
+        return reach / speed + 34.0;
+    }
+
+    /**
+     * 3.1.6, the Gura ultimate's wave over its cone (the blocks heaving are client/gura/HeaveDraw's, from gura/Heave): from the feet
+     * ({@code x}, {@code y}, {@code z}) along the flat ({@code dx}, {@code dz}) (unit), {@code cone} degrees each side, out to
+     * {@code reach} at {@code speed} blocks a tick, {@code age} ticks in. A white shock arc riding the front and a glow under it, ground
+     * cracks running out through the cone, a wall of dust rising behind the front, rocks thrown up as it passes.
+     */
+    public static void heave(FireMesh.Sink sink, double x, double y, double z, double dx, double dz, double cone, double reach, double speed,
+                             double age, int seed) {
+        double life = heaveLife(reach, speed);
+        if (age < 0.0 || age > life) {
+            return;
+        }
+        double half = Math.toRadians(cone);
+        double way = Math.atan2(-dx, -dz); // as FireMesh.basis(0, 1, 0) turns it
+        double centre = Math.atan2(dz, dx); // as cos/sin place a point in the world
+        double r = Math.min(reach, Math.max(0.5, age * speed));
+        double front = clamp((reach / speed + 3.0 - age) / 3.0);
+        if (front > 0.0) {
+            FireMesh.arc(sink, x, y + 0.5, z, 0, 1, 0, r, 1.6, way - half, half * 2.0, 1.6, SHOCK, 0.85 * front);
+            FireMesh.arc(sink, x, y + 0.2, z, 0, 1, 0, r * 0.96, 1.0, way - half * 0.9, half * 1.8, 0.4, GLOW, 0.45 * front);
+        }
+        double fade = clamp((life - age) / 16.0);
+        for (int i = 0; i < 9; i++) {
+            double a = centre + half * (2.0 * (i + 0.5 * FireMesh.rand(seed, 40 + i)) / 9.0 - 1.0);
+            double length = Math.min(r, reach * (0.55 + 0.45 * FireMesh.rand(seed, 60 + i)));
+            groundCrack(sink, x, y + 0.04, z, a, 2.5, length, 9, 0.22, clamp(1.0 - (age - length / speed) / 12.0), fade, seed + i * 23);
+        }
+        // the dust wall behind the front, and rocks thrown up as it passes
+        FireMesh.palette(FireMesh.SMOKE);
+        // (thin: the heaving squares are the move, the dust must never hide them)
+        int n = (int) Math.max(4, 8 * FireMesh.quality);
+        for (int i = 0; i < n; i++) {
+            int s = seed * 7 + i;
+            double a = centre + half * (2.0 * FireMesh.rand(s, 1) - 1.0);
+            double rr = reach * (0.35 + 0.65 * FireMesh.rand(s, 2));
+            double u = (age - rr / speed) / 34.0;
+            if (u < 0.0 || u > 1.0) {
+                continue;
+            }
+            double size = 1.0 + 0.8 * FireMesh.rand(s, 3);
+            FireMesh.puff(sink, x + Math.cos(a) * rr, y + size * 0.5 + u * 2.0, z + Math.sin(a) * rr, size * (0.6 + 0.8 * ease(u * 3.0)),
+                Math.cos(a), 0.6, Math.sin(a), 0.3, 0.1, 0.84, 0.1, false, 0.4 * (1.0 - u * u), age, s);
+        }
+        FireMesh.palette(FireMesh.BAND);
+        int rocks = (int) Math.max(8, 22 * FireMesh.quality);
+        for (int i = 0; i < rocks; i++) {
+            int s = seed * 3 + 500 + i;
+            double a = centre + half * (2.0 * FireMesh.rand(s, 1) - 1.0);
+            double rr = reach * (0.1 + 0.9 * FireMesh.rand(s, 2));
+            double t = age - rr / speed;
+            if (t < 0.0 || t > 30.0) {
+                continue;
+            }
+            double up = 0.6 + 0.4 * FireMesh.rand(s, 3);
+            double h = Math.max(0.0, up * t - 0.045 * t * t);
+            double size = 0.3 + 0.45 * FireMesh.rand(s, 4);
+            FireMesh.shard(sink, x + Math.cos(a) * (rr + t * 0.1), y + h + size * 0.4, z + Math.sin(a) * (rr + t * 0.1), size, t * 0.3, s, ROCK,
+                clamp((30.0 - t) / 6.0));
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ the rift
 
     /** How long the rift shows after it has opened all the way (ticks). */
@@ -698,8 +766,8 @@ public final class GuraArt {
                     flat(sink, prevCx, prevY + 0.03, prevCz, cx, cy + 0.03, cz, w * 0.5, CORE, 0.95 * hot, false);
                     flat(sink, prevCx, prevY + 0.04, prevCz, cx, cy + 0.04, cz, w * 2.2, GLOW, 0.45 * hot, true);
                 }
-                // side cracks off the edges
-                if (k % 2 == 0) {
+                // side cracks off the edges (3.1.6: a narrow fissure, the ultimate's, fewer: five of them run at once)
+                if (k % (wide < 1.0 ? 5 : 2) == 0) {
                     double side = FireMesh.rand(seed, 400 + k) < 0.5 ? 1.0 : -1.0;
                     double bx = side > 0 ? lx : rx;
                     double bz = side > 0 ? lz : rz;
@@ -733,7 +801,8 @@ public final class GuraArt {
         // rocks thrown up as the front passes, and dust rising behind it
         int shown = 0;
         FireMesh.palette(FireMesh.SMOKE);
-        for (int k = 1; k <= blocks && shown < 9; k += 4) {
+        int puffs = wide < 1.0 ? 2 : 9; // 3.1.6: a narrow fissure (five run at once) raises less dust and fewer rocks
+        for (int k = 1; k <= blocks && shown < puffs; k += wide < 1.0 ? 11 : 4) {
             double since = age - k / step;
             if (since > 40.0) {
                 continue;
@@ -749,7 +818,7 @@ public final class GuraArt {
                 0.6 * (1.0 - u * u), age, s);
         }
         FireMesh.palette(FireMesh.BAND);
-        for (int k = 1; k <= blocks; k += 2) {
+        for (int k = 1; k <= blocks; k += wide < 1.0 ? 4 : 2) {
             double t = age - k / step;
             if (t < 0.0 || t > 24.0) {
                 continue;

@@ -393,7 +393,8 @@ public final class StyleTests {
             for (double v : m) {
                 rest &= Math.abs(v) < 0.2 || clip.endsWith("_end") || clip.equals("gura_slam") || clip.equals("gura_tilt")
                     || clip.equals("gura_release") || clip.equals("gura_gekishin") || clip.equals("magu_release") || clip.equals("magu_meigo")
-                    || clip.equals("magu_rise") || clip.equals("pika_laser_fire");
+                    || clip.equals("magu_rise") || clip.equals("pika_laser_fire") || clip.equals("gura_ult_release")
+                    || clip.equals("gura_ult_drop");
             }
             Check.that(rest, "hands: " + clip + " starts from the hand's place or from the pose before it");
             boolean seen = true;

@@ -20,7 +20,7 @@ public final class SparkPreview {
     }
 
     public static void main(String[] args) throws Exception {
-        String[] rows = {"body 2", "body 6", "blade", "gura burst", "blast 9"};
+        String[] rows = {"body 2", "body 6", "blade", "gura burst", "blast 9", "ultimate thick"};
         double[] ages = {0.5, 2, 4, 6, 9, 12};
         int cw = 300;
         int ch = 300;
@@ -34,6 +34,19 @@ public final class SparkPreview {
                 case 0 -> ConquerorSparks.body(2, 1.8, 0.6, 11L);
                 case 1 -> ConquerorSparks.body(6, 1.8, 0.6, 12L);
                 case 2 -> ConquerorSparks.blade(new double[] {-0.35, 1.15, 0.45}, new double[] {-0.35, 1.9, 2.5}, 11, 0.0, 13L);
+                case 5 -> {
+                    // 3.1.6: the Gura ultimate's thick lightning out of the breaking ground (GuraUltimate.Front: 5 to 7 blocks, 9 arcs, x 2.2)
+                    List<Bolt> moved = new ArrayList<>();
+                    for (Bolt bolt : ConquerorSparks.burst(6.0, 9, -0.4, 16L, 2.2)) {
+                        double[] q = bolt.points.clone();
+                        for (int i = 0; i < q.length; i += 3) {
+                            q[i + 1] += 0.4;
+                            q[i + 2] += 8.0;
+                        }
+                        moved.add(new Bolt(q, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                    }
+                    yield moved;
+                }
                 case 4 -> {
                     // 3.1.5: ConquerorAura.exploded out of a radius 9 blast (the Light fruit's full beam): 0.8 of it, 11 arcs, 8 ahead
                     List<Bolt> moved = new ArrayList<>();
@@ -64,7 +77,7 @@ public final class SparkPreview {
             g.setColor(Color.WHITE);
             g.drawString(rows[r], 4, r * (ch + 16) + 13);
             for (int c = 0; c < ages.length; c++) {
-                far = r == 4;
+                far = r >= 4;
                 g.drawImage(render(bolts, ages[c], cw * 2, ch * 2), c * cw + 2, r * (ch + 16) + 16, cw - 2, ch - 2, null);
                 g.setColor(Color.BLACK);
                 g.drawString(String.format("t%.1f", ages[c]), c * cw + 6, r * (ch + 16) + 30);

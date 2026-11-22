@@ -131,6 +131,69 @@ public final class DragonTests {
     }
 
     /**
+     * 3.1.6: the Gura ultimate fits a phone's budget at every moment: its wave over the cone at the longest reach (with Ryou on), the
+     * air's crack, the shock, the five fissures and the craters, the bubble at its biggest, under 16,000 see-through quads; the heaving
+     * ground's blocks drawn at once stay near {@link com.hexhaki.piece.gura.Heave#MOST_DRAWN} whatever the reach (and are cut there);
+     * every plate rests before and after its life and moves within bounds; no tap (a full charge only), five minutes to recover.
+     */
+    static void guraUltimate() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double reach = com.hexhaki.piece.gura.Heave.REACH * 1.6;
+        double speed = com.hexhaki.piece.gura.Heave.WAVE;
+        double[] heights = new double[80];
+        for (int age = 0; age <= 90; age += 2) {
+            count[0] = 0;
+            com.hexhaki.piece.gura.GuraArt.heave(sink, 0, -1.62, 0, 0, 1, com.hexhaki.piece.gura.Heave.CONE, reach, speed, age, 9);
+            com.hexhaki.piece.gura.GuraArt.crack(sink, 0.3, -0.2, 1.6, 0, 0, 1, 3.2, age, 7);
+            com.hexhaki.piece.gura.GuraArt.shock(sink, 0.3, -0.2, 1.0, 0, 0, 1, reach, 0.7, 1.0, com.hexhaki.piece.server.GuraMoves.SHOCK_SPEED,
+                age, 5);
+            for (int k = -2; k <= 2; k++) {
+                double a = Math.toRadians(com.hexhaki.piece.gura.Heave.CONE * 0.4 * k);
+                com.hexhaki.piece.gura.GuraArt.rift(sink, Math.sin(a) * 3.0, -1.6, Math.cos(a) * 3.0, Math.sin(a), Math.cos(a), reach * 0.9,
+                    com.hexhaki.piece.server.GuraMoves.RIFT_STEP, heights, 0.55, age, 30 + k);
+            }
+            for (int k = 0; k < 4; k++) {
+                double d = 8.0 + reach / 4.0 * k;
+                com.hexhaki.piece.gura.GuraArt.quake(sink, 0.3, -1.6, d, 2.4 * 1.3 * 1.4, 0.9, age - d / speed, 40 + k);
+            }
+            com.hexhaki.piece.gura.GuraArt.bubble(sink, 0.6, -0.1, 1.2, 1.05, age, 3);
+            Check.that(finite[0], "the ultimate is finite at " + age);
+            Check.that(count[0] < 16000, "the ultimate fits a phone's budget at " + age + " (" + count[0] + " quads)");
+        }
+        for (double r : new double[] {com.hexhaki.piece.gura.Heave.REACH, reach}) {
+            java.util.List<com.hexhaki.piece.gura.Heave.Plate> plates = com.hexhaki.piece.gura.Heave.plates(0.5, 0.5, 0.3, 1.0,
+                com.hexhaki.piece.gura.Heave.CONE, r, speed, 77);
+            Check.that(plates.size() > 40, "the ultimate breaks the ground into many squares (" + plates.size() + " at reach " + r + ")");
+            int most = 0;
+            for (double t = 0; t < r / speed + com.hexhaki.piece.gura.Heave.LIFE + 4; t += 0.5) {
+                most = Math.max(most, com.hexhaki.piece.gura.Heave.drawn(plates, t));
+            }
+            Check.that(most <= com.hexhaki.piece.gura.Heave.MOST_DRAWN * 1.5, "the heaving blocks stay near the budget at reach " + r
+                + " (" + most + " at most)");
+            for (com.hexhaki.piece.gura.Heave.Plate p : plates) {
+                Check.that(com.hexhaki.piece.gura.Heave.lift(p, p.delay() - 0.5) == 0.0
+                    && com.hexhaki.piece.gura.Heave.lift(p, p.delay() + com.hexhaki.piece.gura.Heave.LIFE + 0.1) == 0.0
+                    && com.hexhaki.piece.gura.Heave.tip(p, p.delay() + com.hexhaki.piece.gura.Heave.LIFE + 0.1) == 0.0,
+                    "a plate rests before the wave and after its life");
+                for (double u = 0; u < com.hexhaki.piece.gura.Heave.LIFE; u += 1.0) {
+                    double h = com.hexhaki.piece.gura.Heave.lift(p, p.delay() + u);
+                    double tip = com.hexhaki.piece.gura.Heave.tip(p, p.delay() + u);
+                    Check.that(Double.isFinite(h) && Math.abs(h) <= 1.5 && Math.abs(tip) < Math.toRadians(23.0), "a plate moves within bounds");
+                }
+            }
+        }
+        Check.that(com.hexhaki.piece.server.GuraUltimate.COOLDOWN == 6000 && com.hexhaki.piece.server.GuraUltimate.FULL >= 40,
+            "the ultimate needs a full charge and takes five minutes to recover");
+    }
+
+    /**
      * 3.1.3: the Magma fruit's effects (magu/MaguArt) fit a phone's budget: a giant fist flying near the eye with its burst, the burning
      * ground, three meteors, the hound, two geysers, the stream, the spike and the swelling fist all at once stay under 16,000 quads,
      * every vertex finite.
@@ -214,6 +277,7 @@ public final class DragonTests {
         fire();
         lightTravel();
         guraQuakes();
+        guraUltimate();
         maguMagma();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {

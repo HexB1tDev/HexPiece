@@ -61,6 +61,11 @@ public final class GuraMoves {
     public static final int DASH = 70;
     /** The landing quake round the feet: x, y, z the feet, size its radius. */
     public static final int TREMOR = 71;
+    /**
+     * 3.1.6, the ultimate's ground heaving in a cone (gura/Heave): x, y, z the feet, a the flat way, bx the cone's half angle (degrees),
+     * by how fast the wave goes (blocks a tick), size its reach, ticks its seed.
+     */
+    public static final int HEAVE = 72;
 
     // ---- numbers
     /** How fast every drawn shock goes out (blocks a tick): a body is struck as it reaches them. */
@@ -124,6 +129,8 @@ public final class GuraMoves {
         double shakeRadius = SHAKE_RADIUS;
         float lastFall;
         long tremorAt = -100;
+        /** 3.1.6: the ultimate (End) being charged, since; -1 when not. */
+        long ultSince = -1;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -132,6 +139,19 @@ public final class GuraMoves {
     private static int frames = (1 << 30) + (1 << 28);
 
     private GuraMoves() {
+    }
+
+    /** 3.1.6: for {@link GuraUltimate}: a live thing ticked with the rest, the next seed, the next impact frame's id. */
+    static void live(UoMoves.Live live) {
+        LIVE.add(live);
+    }
+
+    static int seed() {
+        return ++seeds;
+    }
+
+    static int frame() {
+        return ++frames;
     }
 
     static State state(ServerPlayer player) {
@@ -195,7 +215,7 @@ public final class GuraMoves {
 
     /** Whether a move holds the player now (a charge, the shake, a leap or a dash, or a move's own wind-down). */
     static boolean busy(State s, long now) {
-        return s.chargeSince >= 0 || s.fistSince >= 0 || s.shakeSince >= 0 || now < s.busyUntil || now < s.moveUntil;
+        return s.chargeSince >= 0 || s.fistSince >= 0 || s.shakeSince >= 0 || s.ultSince >= 0 || now < s.busyUntil || now < s.moveUntil;
     }
 
     // ------------------------------------------------------------------------------------------------------ where things are
@@ -301,7 +321,9 @@ public final class GuraMoves {
         if (busy(s, now) || player.m_20159_()) {
             return;
         }
-        if (slot == GuraKit.SHIMA.slot()) {
+        if (slot == GuraUltimate.SLOT) {
+            GuraUltimate.press(player, s, now);
+        } else if (slot == GuraKit.SHIMA.slot()) {
             shake(player, s, now);
         } else if (slot == GuraKit.KABUTOWARI.slot()) {
             kabutowari(player, s, now);
@@ -316,7 +338,9 @@ public final class GuraMoves {
 
     static void release(ServerPlayer player, int slot) {
         State s = state(player);
-        if (slot == GuraKit.SHIMA.slot() && s.shakeSince >= 0) {
+        if (slot == GuraUltimate.SLOT && s.ultSince >= 0) {
+            GuraUltimate.letGo(player, s);
+        } else if (slot == GuraKit.SHIMA.slot() && s.shakeSince >= 0) {
             shakeOff(player, s);
         } else if (slot == GuraKit.GEKISHIN.slot() && s.fistSince >= 0) {
             gekishin(player, s);
@@ -999,13 +1023,20 @@ public final class GuraMoves {
         final List<double[]> supports = new ArrayList<>();
         final double length;
         final boolean wide;
+        /** 3.1.6: the ultimate's fissures: one block wide, two deep, striking no one (its own wave strikes). */
+        final boolean narrow;
         double y;
         int age;
         int torn;
 
         Rift(ServerLevel level, ServerPlayer owner, Vec3 start, Vec3 flat, double length, boolean wide) {
+            this(level, owner, start, flat, length, wide, false);
+        }
+
+        Rift(ServerLevel level, ServerPlayer owner, Vec3 start, Vec3 flat, double length, boolean wide, boolean narrow) {
             this.length = length;
             this.wide = wide;
+            this.narrow = narrow;
             this.level = level;
             this.owner = owner;
             this.start = start;
@@ -1043,10 +1074,10 @@ public final class GuraMoves {
                 if (griefing) {
                     int top = (int) Math.floor(g.f_82480_ - 0.01);
                     // 3.1.3: with Ryou on, 5 wide and a block deeper
-                    int depths = this.wide ? 4 : 3;
-                    int most = this.wide ? RIFT_MOST_BLOCKS * 3 : RIFT_MOST_BLOCKS;
+                    int depths = this.narrow ? (this.wide ? 3 : 2) : this.wide ? 4 : 3;
+                    int most = this.narrow ? RIFT_MOST_BLOCKS / 2 : this.wide ? RIFT_MOST_BLOCKS * 3 : RIFT_MOST_BLOCKS;
                     for (int depth = 0; depth < depths; depth++) {
-                        int wide = this.wide ? (depth < 2 ? 2 : depth < 3 ? 1 : 0) : (depth < 2 ? 1 : 0);
+                        int wide = this.narrow ? 0 : this.wide ? (depth < 2 ? 2 : depth < 3 ? 1 : 0) : (depth < 2 ? 1 : 0);
                         for (int o = -wide; o <= wide && this.torn < most && scars.room(); o++) {
                             Vec3 q = g.m_82549_(this.side.m_82490_(o * 0.9));
                             net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos((int) Math.floor(q.f_82479_), top - depth,
@@ -1057,7 +1088,7 @@ public final class GuraMoves {
                         }
                     }
                 }
-                for (LivingEntity body : PikaMoves.foes(this.owner, g.m_82520_(0, 1.0, 0), this.wide ? 3.6 : 2.6)) {
+                for (LivingEntity body : this.narrow ? List.<LivingEntity>of() : PikaMoves.foes(this.owner, g.m_82520_(0, 1.0, 0), this.wide ? 3.6 : 2.6)) {
                     if (!this.struck.add(body.m_19879_())) {
                         continue;
                     }
@@ -1068,11 +1099,11 @@ public final class GuraMoves {
                     }
                 }
             }
-            if (this.age % 3 == 0) {
+            if (this.age % 3 == 0 && !this.narrow) {
                 Vec3 p = this.start.m_82549_(this.flat.m_82490_(d1));
                 Impact.quake(this.level, new Vec3(p.f_82479_, this.y, p.f_82481_), 20.0, 0.5F, 8);
             }
-            if (this.age % 4 == 0) {
+            if (this.age % 4 == 0 && !this.narrow) {
                 Vec3 p = this.start.m_82549_(this.flat.m_82490_(d1));
                 ConquerorAura.mixed(this.owner, new Vec3(p.f_82479_, this.y + 0.3, p.f_82481_), 2.5, 3, -0.3);
                 sound(this.owner, new Vec3(p.f_82479_, this.y, p.f_82481_), GuraSounds.CRUMBLE, 1.2F, 0.9F + 0.04F * (this.age % 5));
@@ -1127,6 +1158,9 @@ public final class GuraMoves {
         if (s.shakeSince >= 0) {
             shakeTick(player, s, now);
         }
+        if (s.ultSince >= 0) {
+            GuraUltimate.tick(player, s, now);
+        }
         // 3.1.2: the Conqueror's lightning crackling round the gathering quake fist (with Ryou on and the Conqueror's Haki awakened)
         long gathering = s.chargeSince >= 0 ? now - s.chargeSince : s.fistSince >= 0 ? now - s.fistSince : -1;
         if (gathering >= 4 && gathering % 6 == 0) {
@@ -1154,6 +1188,9 @@ public final class GuraMoves {
         }
         if (s.shakeSince >= 0) {
             fx(player, SHAKE_OFF, -1, centre(player), Vec3.f_82478_, 0, 0, 0, 0, 0);
+        }
+        if (s.ultSince >= 0) {
+            fx(player, BUBBLE_OFF, GuraUltimate.BUBBLE);
         }
     }
 
