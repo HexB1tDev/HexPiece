@@ -9,7 +9,7 @@ the Magu Magu no Mi (3.1.3), 8u 3.1.3's Gura changes, 8v 3.1.4 (first-person han
 requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gura ultimate (3.1.6) and 8z its key moved to N (3.1.7).
 
 Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.5 (Build #144, Release #105) and 3.1.6 (Build #145, Release
-#106) are pushed and green. 3.1.7 (section 8z: the ultimate moved from End to N) is pushed: see the end of 8z for its runs. Nothing the
+#106) are pushed and green. 3.1.7 (section 8z: the ultimate moved from End to N) is pushed and green (Build #147, Release #107). Nothing the
 owner asked for is open: ask how 3.1.5 to 3.1.7 play (section 9). The next version is 3.1.8 (tools/next_version.py --write).**
 
 ## POINT ONE (the owner, 3.1.4: always keep this first in every handoff and pass it on to every AI after you)
@@ -909,7 +909,7 @@ is this session's (the owner gave none); say so if they ask.
 - Sounds: only the Gura fruit's existing CC0 recordings (boom, crack, quake, crumble, the charge hum); nothing new, none outlasting it.
 - Not tested in game: all of it. Not previewed with the real block models (no Minecraft here): HeaveDraw's look in game is unverified.
 
-## 8z. Done (3.1.7, pushed): the ultimate on N, not End
+## 8z. Done (3.1.7, pushed and green): the ultimate on N, not End
 
 - The owner (verbatim, after 3.1.6): "It doesn't require ultimate key. It's just another extra key for the moves I said. God damn it.
   We're just like adding n to one. That's it." So "the end key" in 8w was the **N key**: one more fruit move key beside Z X C V B (2.7.1:
