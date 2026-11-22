@@ -13,7 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 3.1.6, the Gura Gura no Mi's ultimate on the End key. The owner (verbatim, with docs/handoff/gura-ref/ultimate-whitebeard-punch.gif:
+ * 3.1.6, the Gura Gura no Mi's ultimate, on N (3.1.7; the owner's "end key" was the N key). The owner (verbatim, with docs/handoff/gura-ref/ultimate-whitebeard-punch.gif:
  * Whitebeard, the right fist cocked high beside his head in a bright white bubble): "the user pulls the fist, like the right fist, like
  * back, like more to the left, like a little further away from the face, but like around that area. He charges up, and like this is a
  * charge move. It's not a tap. It's no option to be a tap. You have to charge it fully for it to activate. It's basically the right click
@@ -24,7 +24,7 @@ import net.minecraft.world.phys.Vec3;
  * If Haki is activated, I feel like the lightning from Conqueror, the thick lightning, should like shoot everywhere from like where the
  * floor is breaking, and actually also stun and all, like just make this an absolutely crazy move."
  *
- * <p>Held (End, client/gura/GuraKeys): gura_ult_charge, the bubble ({@link #BUBBLE}) swelling on the cocked fist for {@link #FULL}
+ * <p>Held (N, client/FruitKeyN): gura_ult_charge, the bubble ({@link #BUBBLE}) swelling on the cocked fist for {@link #FULL}
  * ticks, the ground trembling more and more round the feet, the player slowed. Let go before it is full: nothing (no tap, no cooldown).
  * Full, let go (or held {@link #HOLD_MOST}): gura_ult_release, the air shatters at the fist, a shock and a wave go out over a cone
  * {@link #CONE} degrees each side, {@link #REACH} blocks (x {@link GuraMoves#HAKI_RANGE} with Ryou on): the ground in it heaves and breaks
@@ -34,7 +34,7 @@ import net.minecraft.world.phys.Vec3;
  * (asked for by name for this move). Cooldown {@link #COOLDOWN} (5 minutes).
  */
 public final class GuraUltimate {
-    /** The End key's ability number (client/gura/GuraKeys sends it; the original's slots are 0 to 8). */
+    /** The N key's ability number (client/FruitKeyN.ABILITY sends it; the original's slots are 0 to 8). */
     static final int SLOT = 40;
     /** Its bubble's id in BUBBLE_ON/OFF (client/gura/GuraFx: swelling over {@link #FULL}). */
     static final int BUBBLE = 3;

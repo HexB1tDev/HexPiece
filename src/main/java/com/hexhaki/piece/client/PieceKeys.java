@@ -22,8 +22,11 @@ public final class PieceKeys {
     public static final KeyMapping EXTRA_C = new KeyMapping("key.hexpiece.extra_c", InputConstants.Type.KEYSYM, 67, CATEGORY);
     public static final KeyMapping EXTRA_V = new KeyMapping("key.hexpiece.extra_v", InputConstants.Type.KEYSYM, 86, CATEGORY);
     public static final KeyMapping EXTRA_B = new KeyMapping("key.hexpiece.extra_b", InputConstants.Type.KEYSYM, 66, CATEGORY);
-    /** 3.1.6 (the owner: "Gura should have a new move on the end key, like the absolute ultimate"): a fruit's ultimate, End (GLFW 269). */
-    public static final KeyMapping ULTIMATE = new KeyMapping("key.hexpiece.ultimate", InputConstants.Type.KEYSYM, 269, CATEGORY);
+    /**
+     * 3.1.7 (the owner: "It's just another extra key for the moves ... adding N to one"): N, one more fruit move key beside Z X C V B
+     * (client/FruitKeyN; GLFW 78, free since 2.7.1 moved the original's slot 8 from N to V). 3.1.6's End key is gone.
+     */
+    public static final KeyMapping FRUIT_N = new KeyMapping("key.hexpiece.fruit_n", InputConstants.Type.KEYSYM, 78, CATEGORY);
 
     private PieceKeys() {
     }
@@ -35,6 +38,6 @@ public final class PieceKeys {
         event.register(EXTRA_C);
         event.register(EXTRA_V);
         event.register(EXTRA_B);
-        event.register(ULTIMATE);
+        event.register(FRUIT_N);
     }
 }

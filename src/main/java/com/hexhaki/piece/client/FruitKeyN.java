@@ -1,0 +1,68 @@
+package com.hexhaki.piece.client;
+
+import com.hexhaki.fruit.FruitMove;
+import com.hexhaki.fruit.client.ClientKit;
+import com.hexhaki.fruit.client.ClientKits;
+import com.hexhaki.fruit.client.FruitClient;
+import com.hexhaki.fruit.client.FruitKeys;
+import net.minecraft.client.Minecraft;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+
+/**
+ * 3.1.7 (the owner, after 3.1.6 put the Gura ultimate on a key of its own, End: "It doesn't require ultimate key. It's just another
+ * extra key for the moves I said ... We're just like adding N to one. That's it."; 2.7.1: "All keys of the mod (but haki) will now be
+ * the following Z, X, C, V, B, N, M"): N is one more fruit move key beside Z X C V B. The original's nine quick slots are all taken (G K
+ * L H for Haki, B Z C V X for the fruit), so N is a key mapping of its own ({@link PieceKeys#FRUIT_N}, N by default): in fruit mode,
+ * when the fruit's kit has a move on "[N]", its press and its let go go to the server through the original's own fruit message
+ * ({@code FruitKeys.send}: 0 down, 1 up) with the ability number {@link #ABILITY} (out of the original's 0 to 8), as a quick key's do.
+ * Let go is always sent once it was pressed (a screen opening, the mode or the fruit changing let it go too).
+ */
+@Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
+public final class FruitKeyN {
+    /** The N key's ability number (server/GuraUltimate.SLOT takes it). */
+    public static final int ABILITY = 40;
+    private static boolean down;
+
+    private FruitKeyN() {
+    }
+
+    /** Whether the active fruit has a move on N. */
+    static boolean hasN(Minecraft minecraft) {
+        com.hexhaki.fruit.Fruit fruit = FruitClient.fruit(minecraft.f_91074_.m_19879_());
+        ClientKit kit = fruit == null ? null : ClientKits.get(fruit);
+        if (kit == null || kit.moves() == null) {
+            return false;
+        }
+        for (FruitMove move : kit.moves()) {
+            if (move.key() != null && move.key().startsWith("[N]")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @SubscribeEvent
+    public static void tick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.m_91087_();
+        boolean can = minecraft.f_91074_ != null && minecraft.f_91080_ == null && PieceHooks.fruitKeysActive() && hasN(minecraft);
+        boolean held = can && PieceKeys.FRUIT_N.m_90857_();
+        while (PieceKeys.FRUIT_N.m_90859_()) {
+            // the clicks are counted by the key itself: only whether it is held matters here
+        }
+        if (held && !down) {
+            down = true;
+            FruitKeys.send(0, ABILITY, FruitKeys.flags(minecraft));
+        } else if (!held && down) {
+            down = false;
+            if (minecraft.f_91074_ != null) {
+                FruitKeys.send(1, ABILITY, FruitKeys.flags(minecraft));
+            }
+        }
+    }
+}

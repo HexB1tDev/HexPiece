@@ -40,8 +40,8 @@ public final class GuraKit extends FruitKit {
     public static final FruitMove SPLITTER = new FruitMove("Ground Splitter", "[B]", 0, "gura_split",
         "Both fists into the ground: a rift tears open ahead of you, block by block, and everyone along it is thrown into the air. The"
             + " ground grows back.");
-    /** 3.1.6: the ultimate on the End key (server/GuraUltimate; client/gura/GuraKeys sends it, ability {@link GuraUltimate#SLOT}). */
-    public static final FruitMove ULTIMATE = new FruitMove("Island Breaker", "[END] hold", 0, "gura_ultimate",
+    /** 3.1.6: the ultimate (server/GuraUltimate); 3.1.7: on N, one more fruit move key (client/FruitKeyN, ability {@link GuraUltimate#SLOT}). */
+    public static final FruitMove ULTIMATE = new FruitMove("Island Breaker", "[N] hold", 0, "gura_ultimate",
         "The ultimate. Cock the right fist back beside your head and hold: the quake bubble swells round it, bigger and bigger, the ground"
             + " trembling under you. It only goes when fully charged. Let go and the whole ground ahead of you, in a huge cone, heaves up"
             + " and breaks into squares, splits into fissures and craters, and everyone on it is thrown and knocked down. With the"
