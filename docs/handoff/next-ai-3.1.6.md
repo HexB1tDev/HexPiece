@@ -9,7 +9,7 @@ the Magu Magu no Mi (3.1.3), 8u 3.1.3's Gura changes, 8v 3.1.4 (first-person han
 requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did and 8y the Gura ultimate (3.1.6).
 
 Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.5 is pushed and green (Build #144, Release #105). 3.1.6 is
-built and pushed (see the end of 8y for its runs). Nothing the owner asked for is open: ask how 3.1.5 and 3.1.6 play (section 9).
+pushed and green (Build #145, Release #106). Nothing the owner asked for is open: ask how 3.1.5 and 3.1.6 play (section 9).
 The next version is 3.1.7 (tools/next_version.py --write).**
 
 ## POINT ONE (the owner, 3.1.4: always keep this first in every handoff and pass it on to every AI after you)
@@ -853,7 +853,7 @@ session built it, rendered and judged it, finished the hound's look, gave Gear 5
 - POINT ONE is at the top of this handoff and a RULE in CLAUDE.md (the owner asked every AI to be told).
 - Not tested in game: all of it.
 
-## 8y. Done (3.1.6, pushed): the Gura ultimate, Island Breaker, on the End key
+## 8y. Done (3.1.6, pushed and green): the Gura ultimate, Island Breaker, on the End key
 
 The owner's words are in 8w (verbatim); reference GIF docs/handoff/gura-ref/ultimate-whitebeard-punch.gif. The name "Island Breaker"
 is this session's (the owner gave none); say so if they ask.
