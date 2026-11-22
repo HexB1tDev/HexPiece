@@ -1,8 +1,8 @@
 {
  "version": 3,
  "name": "gear5_stance",
- "author": "HexHaki, reworked for HexPiece 2.1.1",
- "description": "Gear 5 idle: a slow rubbery roll through the torso with the head lagging behind it. Torso, head and body bob only, so vanilla keeps the walk and run cycles.",
+ "author": "HexPiece 3.2.4",
+ "description": "Nika: Gear 5's bouncy stance (the rubbery bob; the head the player's own).",
  "emote": {
   "beginTick": 0,
   "endTick": 48,
@@ -23,63 +23,7 @@
     "tick": 0,
     "easing": "inoutsine",
     "body": {
-     "x": 0.01
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "body": {
      "y": 0.01
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -0.962
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": -2.66
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": 0.0
     }
    },
    {
@@ -87,6 +31,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": 2.35
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.0
     }
    },
    {
@@ -100,63 +51,7 @@
     "tick": 6,
     "easing": "inoutsine",
     "body": {
-     "x": 0.01
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "body": {
      "y": 0.03
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -4.228
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 2.12
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": -2.11
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": -3.25
     }
    },
    {
@@ -164,6 +59,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": 1.86
+    }
+   },
+   {
+    "tick": 6,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": -0.102
     }
    },
    {
@@ -177,63 +79,7 @@
     "tick": 12,
     "easing": "inoutsine",
     "body": {
-     "x": -0.01
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "body": {
      "y": 0.02
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -2.078
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 3.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 2.66
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": -4.6
     }
    },
    {
@@ -241,6 +87,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": -2.35
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": -0.143
     }
    },
    {
@@ -254,63 +107,7 @@
     "tick": 18,
     "easing": "inoutsine",
     "body": {
-     "x": -0.01
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "body": {
      "y": 0.01
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -2.422
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 2.12
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 2.11
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": -3.25
     }
    },
    {
@@ -318,6 +115,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": -1.86
+    }
+   },
+   {
+    "tick": 18,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": -0.102
     }
    },
    {
@@ -331,63 +135,7 @@
     "tick": 24,
     "easing": "inoutsine",
     "body": {
-     "x": 0.01
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "body": {
      "y": 0.01
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -4.302
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": -2.66
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 24,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": 0.0
     }
    },
    {
@@ -395,6 +143,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": 2.35
+    }
+   },
+   {
+    "tick": 24,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.0
     }
    },
    {
@@ -408,63 +163,7 @@
     "tick": 30,
     "easing": "inoutsine",
     "body": {
-     "x": 0.01
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "body": {
      "y": -0.01
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": 0.052
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "head": {
-     "roll": -2.12
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": -2.11
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 1.6
-    }
-   },
-   {
-    "tick": 30,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": 3.25
     }
    },
    {
@@ -472,6 +171,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": 1.86
+    }
+   },
+   {
+    "tick": 30,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.102
     }
    },
    {
@@ -485,63 +191,7 @@
     "tick": 36,
     "easing": "inoutsine",
     "body": {
-     "x": -0.01
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "body": {
      "y": -0.04
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": 7.342
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "head": {
-     "roll": -3.0
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 2.66
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 36,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": 4.6
     }
    },
    {
@@ -549,6 +199,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": -2.35
+    }
+   },
+   {
+    "tick": 36,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.143
     }
    },
    {
@@ -562,63 +219,7 @@
     "tick": 42,
     "easing": "inoutsine",
     "body": {
-     "x": -0.01
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "body": {
      "y": -0.03
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": 6.598
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "head": {
-     "roll": -2.12
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 2.11
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 42,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": 3.25
     }
    },
    {
@@ -626,6 +227,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": -1.86
+    }
+   },
+   {
+    "tick": 42,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.102
     }
    },
    {
@@ -639,63 +247,7 @@
     "tick": 48,
     "easing": "inoutsine",
     "body": {
-     "x": 0.01
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "body": {
      "y": 0.01
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": -0.962
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": -2.66
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 48,
-    "easing": "inoutsine",
-    "torso": {
-     "roll": 0.0
     }
    },
    {
@@ -703,6 +255,13 @@
     "easing": "inoutsine",
     "torso": {
      "yaw": 2.35
+    }
+   },
+   {
+    "tick": 48,
+    "easing": "inoutsine",
+    "torso": {
+     "roll": 0.0
     }
    }
   ]

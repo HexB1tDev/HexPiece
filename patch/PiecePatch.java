@@ -436,10 +436,12 @@ public final class PiecePatch implements Opcodes {
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
         entries.put(CONTROLLER + ".class", transform(entries.get(CONTROLLER + ".class"), PiecePatch::conquerorHaki));
         entries.put(GEAR_KEYS + ".class", transform(entries.get(GEAR_KEYS + ".class"), PiecePatch::nikaKeys));
+        entries.put(REMOTE_GEAR + ".class", transform(entries.get(REMOTE_GEAR + ".class"), PiecePatch::gearFastClient));
         entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), node -> {
             gearLightning(node);
             gearDrums(node);
             gearUntransformed(node);
+            gearFast(node);
         }));
         // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
         // lightning themselves, past HakiBolts, and showed the original's flat beams
@@ -1102,6 +1104,57 @@ public final class PiecePatch implements Opcodes {
         tick.instructions.insert(head);
         for (String name : new String[] {"releaseHeld", "drain"}) {
             method(node, name, "()V").instructions.insert(new MethodInsnNode(INVOKESTATIC, NIKA_KEYS, name, "()V", false));
+        }
+    }
+
+    /** 3.2.4: the client's clock of a Gear 5 transformation (RemoteGearStates.advance). */
+    static final String REMOTE_GEAR = "com/hexhaki/client/devilfruit/RemoteGearStates";
+
+    /**
+     * 3.2.4 (the owner, asked: the transformation "Shorten to about 4 s"): the transformation runs on its own clock ({@code GearData
+     * "transformTick"}, 1 to 170, its beats at fixed ticks: the burst at 34, the drums at 40 to 96, the leap at 129, the landing at 164;
+     * the clients read the same clock for the clouds, the white skin and the chatter). Running that clock twice a tick halves it
+     * everywhere at once: {@code GearServerController.tick} calls {@code tickTransform} a second time right after the first (it returns
+     * at once when the transformation ended in the first), so every beat still lands on its own tick of the clock, 85 game ticks in all
+     * (tools/nika_anims.py's gear5_awaken is 85 ticks with the same beats). Exactly one call, or the build fails.
+     */
+    static void gearFast(ClassNode node) {
+        MethodNode tick = method(node, "tick", "(Lnet/minecraft/server/level/ServerPlayer;)V");
+        int calls = 0;
+        for (AbstractInsnNode insn = tick.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.owner.equals(GEAR_SERVER) && call.name.equals("tickTransform")) {
+                InsnList again = new InsnList();
+                MethodInsnNode second = new MethodInsnNode(INVOKESTATIC, GEAR_SERVER, "tickTransform", call.desc, false);
+                again.add(new VarInsnNode(ALOAD, 0));
+                again.add(second);
+                tick.instructions.insert(call, again);
+                calls++;
+                insn = second;
+            }
+        }
+        if (calls != 1) {
+            throw new AssertionError("Gear 5's transformation clock is not called as inspected: " + calls);
+        }
+    }
+
+    /**
+     * 3.2.4: between the server's updates each client moves its own copy of the clock on ({@code RemoteGearStates.advance}: {@code
+     * state.transformTick + 1} a tick, the clouds and the white skin following it): it moves by 2, as the server's now does. Exactly one
+     * step, or the build fails.
+     */
+    static void gearFastClient(ClassNode node) {
+        MethodNode advance = method(node, "advance", null);
+        int steps = 0;
+        for (AbstractInsnNode insn = advance.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof FieldInsnNode field && field.getOpcode() == GETFIELD && field.name.equals("transformTick")
+                && nextReal(field) instanceof InsnNode one && one.getOpcode() == ICONST_1 && nextReal(one) != null
+                && nextReal(one).getOpcode() == IADD) {
+                advance.instructions.set(one, new InsnNode(ICONST_2));
+                steps++;
+            }
+        }
+        if (steps != 1) {
+            throw new AssertionError("RemoteGearStates.advance's transformation step is not the one inspected: " + steps);
         }
     }
 

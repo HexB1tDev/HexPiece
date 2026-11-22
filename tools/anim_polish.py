@@ -41,7 +41,9 @@ OUT = os.path.join(ROOT, "src/main/resources/assets/hexhaki/player_animation")
 LIMB_ANGLES = ("pitch", "yaw", "roll", "bend")
 LOOP_WORDS = ("charge", "idle", "stance", "float", "fly", "run", "walk", "ready", "loop", "hold")
 # 2.4.7: the Conqueror's charge and releases are tools/conqueror_anims.py's own (this pass leaves them alone)
-GENERATED = {"conqueror_gear5_charge", "supreme_conqueror_release", "conqueror_gear5_release"}
+GENERATED = {"conqueror_gear5_charge", "supreme_conqueror_release", "conqueror_gear5_release",
+             # 3.2.4: the Nika fruit's reworked ones are tools/nika_anims.py's (run it after this pass)
+             "gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance"}
 # synchronised pairs (attacker and victim are played together and must stay in step): only the safe passes (easing, head)
 PAIRED = ("thragg_",)
 # arms seen in first person (HakiAnimations.OWN_FIRST_PERSON_ARM): no counter-swing of the off arm (it would cross the view)

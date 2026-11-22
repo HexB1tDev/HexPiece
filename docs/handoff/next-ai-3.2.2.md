@@ -10,13 +10,13 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
 lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 (8zl: the Nika fruit's keys Z X C V B N M, Haki names,
-white panel, stretch moves untransformed, drums instead of the music) is pushed (check its runs: section 9). Next is the rest of the
-Nika rework (8zk's list, section 9).** The cloud environment
+white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
+and its new animation, the punch's wobble) is pushed (check its runs: section 9). Next is the rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -1441,14 +1441,34 @@ The owner's answers are in 8zk. Nothing tested in game: build, tests, the panel 
 - The session started on Default (freesound.org refused): the personal HexPiece environment is env_01DEzkwiWiBUXF6hnQ29v2S5 now
   (switch_environment to it; env_01PmnEXrwDhxzij8M5q6P6bL no longer exists).
 
-## 9. What to do next (after 3.2.3)
+## 8zm. Done (3.2.4): the Nika fruit, part 2: the four-second transformation, its new animation, the punch's wobble
 
-1. Check 3.2.3's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika rework, part 2 on (8zk's list, in its own versions): the transformation shortened to about 4 s with a new clip (keep the
-   chest pounding and the clouds; GearTiming's numbers are compile-time constants inlined in GearServerController.tickTransform
-   (sipush 128, 129, 164, 170, bipush 34) and in the client (GearClientState, the clouds' manifest/lift/landSquash): redirect
-   tickTransform to our own or patch every constant, and move the drum beats with it); the punch's wobble; Bajrang Gun from above with
-   the body turning in the air and a big rounded fist; Dawn Whip redone as a cartoon spin after Luffy vs Kizaru; Star Gun's struck
+Nothing tested in game: build, tests, every clip rendered (tools/anim_preview.py, docs/handoff/nika-awaken-3.2.4.jpg).
+- **The clock twice a tick** (patch/PiecePatch.gearFast, gearFastClient; build.py PATCHED lists RemoteGearStates): the transformation's
+  clock (GearData "transformTick", 1 to 170; its beats are compile-time constants inlined everywhere: tickTransform 34, 128, 129, 164,
+  170, DRUM_STRIKES 40-96, FinalServerPatch.transformTick 10/128/163, GearJacketSkin 96/128, NikaChatter 164/170, GearTiming's
+  manifest/lift/landSquash) runs at double speed: `GearServerController.tick` calls `tickTransform` a second time right after the first,
+  and `RemoteGearStates.advance` steps the clients' copy by 2. Every beat still lands on its own clock tick; 85 game ticks in all. The
+  lock (lockUntil now + 170) ends when the clock does (it is set to 0 at 170). The leap (vy 0.52 at clock 129) is real physics: he lands
+  about when the clock's landing comes (~17 ticks).
+- **gear5_awaken** (tools/nika_anims.py, 85 ticks, body/torso/arms only, no head, no leg): stagger 5, coil 13, burst 17, chest pounds
+  on 20/27/34/41/48 (right, left, right, left, both: the arm wound out wide and back with the chest puffed out at beat - 3, the fist
+  on the chest at the beat (outexpo), an overshooting rebound at + 2), loose as rubber 50-53, crouch 58-63, the star at 64 (arms up in
+  a V: with the arm up a NEGATIVE roll spreads it out, as Magma's sky fist), the float 68-71 (arms wide, leaning back, rocking), the
+  fall 80, the squash landing 82, the stance 85. anim.lint clean (the first star with a positive roll went through the head).
+- **The wobble** (the owner: "The punching animation makes the body wobble too much in the third person"): gear5_pistol swung the body
+  bend +13 then -17 with x/y/z shifts, the torso yaw ±10 and roll ±5, the head yaw ±15 and pitch ±8; gear5_gatling twisted torso and
+  head ±10 every 3 ticks; gear5_stance keyed the head (it froze the look). nika_anims.calm keeps every arm track exactly (first person
+  shows them: HakiAnimations' OWN_FIRST_PERSON_ARM lists gear5_pistol, gatling, whip, rocket, coil_release, giant_grab, giant_throw),
+  drops the head and puts in: the punch body bend 0, 7 at 5 (the limb flies on tick 5), 9 at 8, 3 at 14, 0 at 22; the Gatling body bend
+  7 steady and torso yaw ±3; the stance its own bend, y bob and torso yaw, half its torso roll. tools/anim_polish.py's GENERATED skips
+  these four (run nika_anims.py after it).
+
+## 9. What to do next (after 3.2.4)
+
+1. Check 3.2.4's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika rework, part 3 on (8zk's list, in its own versions; the transformation and the wobble are done, 8zm): Bajrang Gun from
+   above with the body turning in the air and a big rounded fist; Dawn Whip redone as a cartoon spin after Luffy vs Kizaru; Star Gun's struck
    body more rubbery; Giant holding bodies properly; Rubber World bending the real ground in waves; Toon Force everywhere. Render every
    clip in third person; first person stays.
 3. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the

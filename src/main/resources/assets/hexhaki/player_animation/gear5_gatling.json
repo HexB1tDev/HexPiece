@@ -1,8 +1,8 @@
 {
  "version": 3,
  "name": "gear5_gatling",
- "author": "HexHaki, reworked for HexPiece 2.1.1",
- "description": "Gum-Gum Gatling: the torso snaps left and right on a six-tick beat while the arms fire.",
+ "author": "HexPiece 3.2.4",
+ "description": "Nika: the Gatling (leaning in, a small twist with each fist; the arms as they were).",
  "emote": {
   "beginTick": 0,
   "endTick": 12,
@@ -14,385 +14,56 @@
   "moves": [
    {
     "tick": 0,
-    "easing": "inoutquad",
+    "easing": "linear",
     "body": {
-     "bend": 0.0
+     "bend": 7.0
     }
    },
    {
     "tick": 0,
-    "easing": "inoutquad",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "head": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
-    "torso": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "inoutquad",
+    "easing": "inoutsine",
     "torso": {
      "yaw": 0.0
     }
    },
    {
     "tick": 3,
-    "easing": "inoutquad",
-    "body": {
-     "bend": 1.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "body": {
-     "x": 0.04
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "body": {
-     "y": -0.01
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "head": {
-     "pitch": -2.8
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "head": {
-     "roll": 4.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "head": {
-     "yaw": -11.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
+    "easing": "inoutsine",
     "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "torso": {
-     "roll": -5.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "inoutquad",
-    "torso": {
-     "yaw": 10.0
+     "yaw": 3.0
     }
    },
    {
     "tick": 6,
-    "easing": "inoutquad",
+    "easing": "linear",
     "body": {
-     "bend": 0.0
+     "bend": 7.0
     }
    },
    {
     "tick": 6,
-    "easing": "inoutquad",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "head": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
-    "torso": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "inoutquad",
+    "easing": "inoutsine",
     "torso": {
      "yaw": 0.0
     }
    },
    {
     "tick": 9,
-    "easing": "inoutquad",
-    "body": {
-     "bend": 1.0
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "body": {
-     "x": -0.04
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "body": {
-     "y": -0.01
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "head": {
-     "pitch": -2.8
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "head": {
-     "roll": -4.0
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "head": {
-     "yaw": 11.0
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
+    "easing": "inoutsine",
     "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "torso": {
-     "roll": 5.0
-    }
-   },
-   {
-    "tick": 9,
-    "easing": "inoutquad",
-    "torso": {
-     "yaw": -10.0
+     "yaw": -3.0
     }
    },
    {
     "tick": 12,
-    "easing": "inoutquad",
+    "easing": "linear",
     "body": {
-     "bend": 0.0
+     "bend": 7.0
     }
    },
    {
     "tick": 12,
-    "easing": "inoutquad",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "head": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "head": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "torso": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "torso": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
-    "torso": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutquad",
+    "easing": "inoutsine",
     "torso": {
      "yaw": 0.0
     }
