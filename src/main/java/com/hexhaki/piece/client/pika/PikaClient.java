@@ -34,7 +34,12 @@ final class PikaClient implements ClientKit {
     @Override
     public String stance(AbstractClientPlayer player, CompoundTag state, long now) {
         double speed = player.m_20184_().m_165924_();
-        boolean sword = PikaFx.sword(player.m_19879_()) || state != null && state.m_128471_("sword");
+        // 3.0.7 (the owner, with a screenshot of the player stood with the right arm hanging a little out: "the player sometimes gets
+        // stuck in this position and cant use left click (the fists dont move)"): the sword's stance (it holds the right arm) only while
+        // this client's own timer of the sword says it is out (PikaFx.SWORDS: SWORD_ON's ticks, always running out); the server's "sword"
+        // in the player's state could stay set when the sword went with the move cut short (a mode switch, death, the fruit set aside:
+        // PikaMoves.forget sends no new state), leaving the stance on for good with no sword in the hand
+        boolean sword = PikaFx.sword(player.m_19879_());
         // 2.9.0 (the owner: "Flying and jumping gives you a fuck ass animation"): only flight (as light) has its pose; a jump or a fall is
         // the game's own, with the hands in the pockets (or the sword held)
         if (player.m_150110_().f_35935_ && !player.m_20096_()) {

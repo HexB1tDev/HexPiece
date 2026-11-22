@@ -1273,6 +1273,9 @@ public final class PikaMoves {
         if (s == null) {
             return;
         }
+        if (s.swordUntil > now(player)) {
+            FruitServer.sync(player); // 3.0.7: the state the clients hold says the sword is gone too
+        }
         if (s.volleySince >= 0) {
             fx(player, VOLLEY_OFF);
         }
