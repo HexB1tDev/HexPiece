@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.2.2"
+VERSION = "3.2.3"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -100,6 +100,8 @@ PATCHED = {
     "com/hexhaki/client/render/HakiChestLayer.class",
     "com/hexhaki/gameplay/HakiServerController.class",
     "com/hexhaki/devilfruit/gameplay/GearServerController.class",  # 3.1.5: its effects throw the Conqueror's lightning (gearLightning)
+    # 3.2.3: the Nika fruit on the fruit keys Z X C V B N M (nikaKeys), its stretch moves untransformed (gearUntransformed), drums
+    "com/hexhaki/client/devilfruit/GearKeys.class",
     # 2.9.4: Gear 5's and the thunderstorm's lightning through the 3D Haki lightning
     "com/hexhaki/client/devilfruit/GearVfx.class",
     "com/hexhaki/patch/ThunderstormImpact.class",
@@ -153,7 +155,10 @@ RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.
            # 2.9.4 (the owner: "remove this fuck ass sound for the Rio sound"; "Give Conqueror's Haiku release a new proper sound ...
            # Go search around the web"): Ryou's on and off sounds silenced, the Conqueror's events playing CC0 web recordings
            SOUNDS: {"acoc_on", "acoc_off", "conqueror_charge", "conqueror_release", "conqueror_supreme_blast", "conqueror_supreme_rumble",
-                    "conqueror_supreme_snap"}}
+                    "conqueror_supreme_snap",
+                    # 3.2.3 (the owner: "give the transformation just the drum sounds and just get rid of the music because of
+                    # copyright"): Gear 5's transformation music silenced (the drums are server/GearDrums')
+                    "gear5_ambient_transformation"}}
 # 2.1.1 (the owner: "Get rid of the Imu fruit (Devil Devil fruit). Get rid of it ENTIRELY, but keep it's assets, for future use on other
 # things"): no code, text or file name of the jar may name it; its assets (the Black Soul texture, model and name) stay.
 IMU = re.compile(rb"(?<![A-Za-z])(imu|Imu|IMU)(?![A-Za-z])|Akuma Akuma|akuma_akuma|AKUMA_AKUMA|Devil Devil|devil_devil")

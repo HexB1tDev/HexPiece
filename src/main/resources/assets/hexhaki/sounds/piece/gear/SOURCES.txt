@@ -1,0 +1,6 @@
+The Nika fruit's transformation drums (tools/gear_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+drum1.ogg: "Tomtom6_TribalFloor.wav" by hello_flowers, https://freesound.org/people/hello_flowers/sounds/30822/ (CC0 1.0), from 0.0 s, 1.50 s long, compressed to sound louder
+drum2.ogg: "crdn_cinematic_heavy_drums - 14.wav" by choomaque-crispydinner, https://freesound.org/people/choomaque-crispydinner/sounds/577408/ (CC0 1.0), from 0.0 s, 1.33 s long, compressed to sound louder

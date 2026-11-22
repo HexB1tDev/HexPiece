@@ -9,14 +9,16 @@ the Magu Magu no Mi (3.1.3), 8u 3.1.3's Gura changes, 8v 3.1.4 (first-person han
 requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gura ultimate (3.1.6) and 8z its key moved to N (3.1.7),
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
-built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework, next), 8zk the Nika plan.
+built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
+owner's answers, 8zl 3.2.3 (Nika part 1).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
-lightning, no ground art in midair, the Magma X fix) is pushed (check its runs: section 9). Next is the Nika fruit rework (8zh item 8,
-8zj item 2, the plan in 8zk).** The cloud environment
-is the personal "HexPiece", now env_01PmnEXrwDhxzij8M5q6P6bL (freesound.org, tenor.com and the rest); a session on Default is refused
-freesound.org: switch_environment to it.
+lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 (8zl: the Nika fruit's keys Z X C V B N M, Haki names,
+white panel, stretch moves untransformed, drums instead of the music) is pushed (check its runs: section 9). Next is the rest of the
+Nika rework (8zk's list, section 9).** The cloud environment
+is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
+Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
 ## POINT ONE (the owner, 3.1.4: always keep this first in every handoff and pass it on to every AI after you)
 
@@ -1295,8 +1297,10 @@ Read 8zc (the plan) and 8zd (the owner's answers) first. What the code does (not
 - **No ground art in midair** (8zh 7): `GuraFx.ground(at, up, down)` (a clip, Fluid.ANY; GROUND_DOWN 3): QUAKE, TREMOR, the LEAP's dust,
   SHAKE_ON's spreading cracks (Shake.at null: none drawn, the rumble and the view shake stay), SHAKE_OFF's tilt, RIFT and HEAVE are put
   on the ground under them or not drawn; MaguFx does the same for POOL, GEYSER and ERUPT. The fists' white air cracks (CRACK) and the
-  shock rings (SHOCK) stay: they are the air breaking (Whitebeard), by design since 3.1.1. **Asked in the release notes** whether the
-  air cracks should go in midair too.
+  shock rings (SHOCK) stay: they are the air breaking (Whitebeard), by design since 3.1.1. The owner, asked in the 3.2.2 notes
+  (verbatim): "Why is this being put in question? I said the cracks on the floor, not the air glassing cracks" and "I said the cracks
+  on the floor are the only ones that are meant to leave, not the air cracks." So the air cracks stay: never remove them, never ask
+  again. (Speech-to-text turned "the cracks of" into "agronomy": read through it.)
 - **Magma X** (8zj 1): tools/magu_anims.py `up` arm(-168, 0, -22, -10), `pulled` arm(-110, 0, -14, -8) (with the arm up, the old +16
   roll tipped the fist over the head); the SKY fists leave from feet + 2.45, 0.5 to the right, 0.1 ahead; `MaguArt.meteor(..., trail)`
   draws a fist thrown up with a trail only as long as it has flown (was 8 blocks of streaks under it at launch: "particles ... from the
@@ -1391,19 +1395,63 @@ WHIP, STAR_GUN -> STAR_GUN, OBSERVATION -> ROCKET_START/RELEASE, STRIKE -> GATLI
 ACOC -> RUBBER_WORLD_START/RELEASE, CONVERGENCE -> COIL_START/RELEASE, the attack -> PISTOL; each sent as C2SGearAction(GearAction).
 So the rework can keep the server's GearActions and remap only the client keys to the fruit keys (Z X C V B N M) in fruit mode, as
 the other fruits read them (client/FruitKeyN for N).
+**The owner's answers (AskUserQuestion, 3.2.2's session):** keys = "Star Gun takes X": Z Gear 5 (transform / revert), X Rocket, C Whip,
+V Gatling, B Giant, N Coil Spring, M Rubber World, left click the stretching punch (Pistol), Shift+Space Sky Bounce; **with Haki on**: X Star
+Gun, C Dawn Whip, B Bajrang Gun, N Lightning Lance, left click Dawn Pistol (the panel renames them the moment Haki goes on).
+Untransformed = "All stretch moves": Pistol, Gatling, Rocket, Whip, Giant and Coil Spring work without Gear 5; Gear 5 only: Rubber World,
+Sky Bounce, Bajrang Gun, Star Gun and the Dawn moves. Music: first answered "Only while transforming", then replaced by the owner
+(verbatim): "Honestly, if you could give the transformation just the drum sounds and just get rid of the music because of copyright, that
+would be perfect." So **no music at all** (gear5_ambient_transformation silenced for good, never bring it back): the transformation plays
+only drum hits (CC0 web recordings, tools/web_sounds.py), on the chest pounding's beats. Transformation = "Shorten to about 4 s": keep the
+chest pounding and the clouds, cut the slow parts.
 How: the original's code is com/hexhaki/devilfruit (GearServerController and the rest, Gear 5's moves and keys), patched through
 patch/PiecePatch (as gearLightning hooks it); its animations are among the original player_animation files (reworked ones go under
 src/main/resources/assets/hexhaki/player_animation/). Read it all first, list its moves, keys, clips, HUD and sounds, and how its
 transformation works; then plan file by file, ask the owner what is unclear (AskUserQuestion: which move goes on which key, what the
 untransformed set is), and build in several versions, rendering every clip in third person (POINT ONE's style: no head, no unused limb).
 
-## 9. What to do next (after 3.2.2)
+## 8zl. Done (3.2.3): the Nika fruit, part 1: keys, Haki names, white panel, stretch moves untransformed, drums
 
-1. Check 3.2.2's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika fruit rework (8zk): read the original's Gear 5 code and clips first, plan, ask the owner what is unclear, then build it in
-   its own versions (3.2.3 on), carefully: the owner loves the fruit, the transformation and the clouds.
-3. Ask the owner how the Ice fruit plays after 3.2.2 (the crystal, the frost punches, Ice World's field, the new sounds), whether the
-   white air cracks at the Gura fists should also go in midair (asked in the 3.2.2 notes), how the energy feels (FruitEnergy.COSTS, the
+The owner's answers are in 8zk. Nothing tested in game: build, tests, the panel rendered (UiPreview hud-6, hud-7: docs/handoff/nika-panel-3.2.3.png).
+- **Keys** (`client/gear/NikaKeys`; patch/PiecePatch.nikaKeys: `GearKeys.tick` first asks `NikaKeys.tick(minecraft)` and returns when it
+  says true (always); `releaseHeld` and `drain` call NikaKeys' first): in Devil Fruit mode (the original runs GearKeys.tick instead of the
+  quick slots there) Z `HakiKeys.SLOT_6` GEAR_FIVE_TOGGLE; X `HakiKeys.MODE` ROCKET_START/RELEASE held, or STAR_GUN on the press when
+  `NikaKeys.haki()` (Gear 5 and Armament or Ryou on, as the server's `dawn`); C `SLOT_7` WHIP; V `SLOT_8` GATLING held; B `STAR_GUN`
+  GIANT held (the server makes it the Bajrang Gun under dawn); N `PieceKeys.FRUIT_N` COIL held (the lance under dawn); M
+  `PieceKeys.FRUIT_M` (new, "Fruit move M", GLFW 77) RUBBER_WORLD held; the attack PISTOL. It calls the original's first two steps
+  itself (`GiantGrabClient.tick`, `GearMovement.tick`), sends `C2SGearAction` on `HakiNetwork.CHANNEL` (only with a local player: the
+  stubs have no getConnection). The quick-slot keys are the player's own (Binds: G K L H Haki, B Z C V X the fruit). build.py PATCHED
+  lists GearKeys. `CombatMode.power`: Ctrl + R is Armament in every mode now (it toggled Gear 5 in Devil Fruit mode).
+- **The panel** (`AbilityHud.gear/gearKeys`, `NIKA_WHITE` 0xFFF2F0E6 for Gomu Gomu and Gear 5, was yellow 0xFFE8C26A untransformed):
+  rows {ability, key, name, Gear 5 only}: Haki on in Gear 5 renames them (Dawn Pistol, Star Gun on X in place of Rocket, Dawn Whip,
+  Bajrang Gun, Lightning Lance); untransformed, Rubber World and Sky Bounce are dimmed with "Gear 5". The Ability Book's Nika section
+  (`LogbookData.nika`) lists all ten with their keys and Haki versions, Giant's text's "[G]" read as "[B]", white.
+- **Untransformed** (`server/NikaRules`; patch/PiecePatch.gearUntransformed): `onAction`'s Gear 5 gate (`GearData.flag(player,
+  "gear5")`, every action but the toggle) became `NikaRules.allowed(player, action)` (Gear 5, or `stretch(action)`: PISTOL,
+  ROCKET_START/RELEASE, WHIP, GATLING_START/RELEASE, GIANT_START/RELEASE, COIL_START/RELEASE, GIANT_GRAB); the same check in
+  `tickGatling`, `beginGiant`, `beginCoil`, `releaseCoil` became `NikaRules.stretched` (has the fruit). Gear 5 only stays: Rubber World,
+  Sky Bounce, Star Gun, and the Haki versions (the original's `dawn` needs Gear 5). HudTests.nika pins the list.
+- **Drums, no music** (`tools/gear_sounds.py`, sounds/piece/gear, SOURCES.txt; `gear/GearSounds`; `server/GearDrums`; patch/PiecePatch
+  .gearDrums): `gear5_ambient_transformation` (the 128 s music) is `"sounds": []` (build.py RENAMED[SOUNDS]); on each of the five beats
+  (`GearTiming.DRUM_STRIKES` 40, 54, 68, 82, 96 of the 170-tick transformation) `tickTransform`'s two vanilla sounds (`SoundEvents
+  .f_12316_`, `f_12090_`) go to `GearDrums.beat` (piece.gear.drum: drum1, "Tomtom6_TribalFloor.wav" by hello_flowers 30822, a deep
+  tribal floor tom, 1.5 s, -14.5 LUFS; pitch 0.94 rising 0.025 a beat) and `GearDrums.under` (nothing); the last beat piece.gear.drum_big
+  (drum2, "crdn_cinematic_heavy_drums - 14.wav" by choomaque-crispydinner 577408, -13.1 LUFS). Rejected: "taiko.wav" 486140 (a roll),
+  "Mystic Power Taiko ... Bass Kick" 347126 (sounds processed). A drum has a body pitch by nature: the owner asked for drums.
+- The session started on Default (freesound.org refused): the personal HexPiece environment is env_01DEzkwiWiBUXF6hnQ29v2S5 now
+  (switch_environment to it; env_01PmnEXrwDhxzij8M5q6P6bL no longer exists).
+
+## 9. What to do next (after 3.2.3)
+
+1. Check 3.2.3's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika rework, part 2 on (8zk's list, in its own versions): the transformation shortened to about 4 s with a new clip (keep the
+   chest pounding and the clouds; GearTiming's numbers are compile-time constants inlined in GearServerController.tickTransform
+   (sipush 128, 129, 164, 170, bipush 34) and in the client (GearClientState, the clouds' manifest/lift/landSquash): redirect
+   tickTransform to our own or patch every constant, and move the drum beats with it); the punch's wobble; Bajrang Gun from above with
+   the body turning in the air and a big rounded fist; Dawn Whip redone as a cartoon spin after Luffy vs Kizaru; Star Gun's struck
+   body more rubbery; Giant holding bodies properly; Rubber World bending the real ground in waves; Toon Force everywhere. Render every
+   clip in third person; first person stays.
+3. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
    refill) and whether Gear 5 should spend energy too.
 4. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
    first-person hands (3.1.4), 3.1.2's Gura fixes, the Light fruit and katana fixes (3.0.x to 3.1.0), 2.9.5's Conqueror sounds.

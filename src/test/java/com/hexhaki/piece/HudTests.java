@@ -14,6 +14,7 @@ public final class HudTests {
 
     public static void main(String[] args) throws Exception {
         energy();
+        nika();
         ranks();
         sword();
         style();
@@ -191,6 +192,24 @@ public final class HudTests {
      * rest): every fruit has its rank, its name in the language file is written in that rank's colour, the Devil Fruits tab's title is
      * there, and every fruit move with a cooldown has its energy cost listed (server/FruitEnergy).
      */
+    /**
+     * 3.2.3 (the owner, asked: "All stretch moves" work untransformed): the stretching punch, Rocket, Whip, Gatling, Giant and Coil
+     * Spring (press and let go) go ahead out of Gear 5; Rubber World, Star Gun, Sky Bounce and the transformation's own toggle are
+     * left to the original's rules.
+     */
+    static void nika() {
+        java.util.Set<String> stretch = java.util.Set.of("PISTOL", "ROCKET_START", "ROCKET_RELEASE", "WHIP", "GATLING_START", "GATLING_RELEASE",
+            "GIANT_START", "GIANT_RELEASE", "COIL_START", "COIL_RELEASE", "GIANT_GRAB");
+        for (com.hexhaki.network.GearAction action : com.hexhaki.network.GearAction.values()) {
+            Check.that(com.hexhaki.piece.server.NikaRules.stretch(action) == stretch.contains(action.name()),
+                "nika: " + action + (stretch.contains(action.name()) ? " works untransformed" : " needs Gear 5"));
+        }
+        for (String needed : stretch) {
+            Check.that(java.util.Arrays.stream(com.hexhaki.network.GearAction.values()).anyMatch(a -> a.name().equals(needed)),
+                "nika: the original has " + needed);
+        }
+    }
+
     static void ranks() throws Exception {
         String lang = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
         for (com.hexhaki.fruit.Fruit fruit : com.hexhaki.fruit.Fruit.values()) {

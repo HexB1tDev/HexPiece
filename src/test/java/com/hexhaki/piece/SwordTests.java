@@ -587,7 +587,8 @@ public final class SwordTests {
                 || java.util.Arrays.stream(com.hexhaki.piece.pika.PikaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.gura.GuraSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.magu.MaguSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
-                || java.util.Arrays.stream(com.hexhaki.piece.hie.HieSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                || java.util.Arrays.stream(com.hexhaki.piece.hie.HieSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.gear.GearSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
@@ -649,6 +650,8 @@ public final class SwordTests {
         webSounds("magu", com.hexhaki.piece.magu.MaguSounds.EVENTS, 9);
         // 3.1.9: the Hie Hie no Mi's (tools/hie_sounds.py)
         webSounds("hie", com.hexhaki.piece.hie.HieSounds.EVENTS, 11);
+        // 3.2.3: the Nika fruit's transformation drums (tools/gear_sounds.py)
+        webSounds("gear", com.hexhaki.piece.gear.GearSounds.EVENTS, 2);
     }
 
     /** One fruit's web sounds (sounds/piece/{folder}): as {@link #dragonSounds} checks them, at least {@code least} clips. */

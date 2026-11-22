@@ -232,6 +232,31 @@ public class UiPreview {
                     new com.hexhaki.piece.ui.AbilityPanel.Move("LMB", "Dragon: Fire Breath", "", 0, 0),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("X", "Dragon: Blast Breath", "", 40, 100),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("C", "Dragon: Gigantic Bite", "", 0, 0)), false, false, false, false,
+                java.util.List.of(), 64, 100)},
+            // 3.2.3: the Nika fruit on Z X C V B N M (client/AbilityHud.gearKeys), white; untransformed, then Gear 5 with Haki on
+            {"Gomu Gomu, untransformed", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
+                java.util.List.of(), null, "Gomu Gomu", 0xFFF2F0E6, true, java.util.List.of(
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("Z", "Gear 5", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("LMB", "Gum-Gum Pistol", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("X hold", "Gum-Gum Rocket", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("C", "Gum-Gum Whip", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("V hold", "Gum-Gum Gatling", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("B hold", "Gum-Gum Gigante", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("N hold", "Gum-Gum Coil Spring", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("M hold", "Gum-Gum Rubber World", "Gear 5", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("Shift+Space", "Gum-Gum Sky Bounce", "Gear 5", 0, 0)), true, false, false, false,
+                java.util.List.of(), 64, 100)},
+            {"Gear 5, Armament on", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
+                java.util.List.of(), null, "Gear 5", 0xFFF2F0E6, true, java.util.List.of(
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("Z", "Gear 5 (end)", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("LMB", "Dawn Pistol", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("X", "Gum-Gum Star Gun", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("C", "Dawn Whip", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("V hold", "Gum-Gum Gatling", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("B hold", "Bajrang Gun", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("N hold", "Lightning Lance", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("M hold", "Gum-Gum Rubber World", "", 0, 0),
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("Shift+Space", "Gum-Gum Sky Bounce", "", 0, 0)), true, true, false, false,
                 java.util.List.of(), 64, 100)}};
         for (int i = 0; i < huds.length; i++) {
             com.hexhaki.piece.ui.AbilityPanel.Input input = (com.hexhaki.piece.ui.AbilityPanel.Input)huds[i][1];

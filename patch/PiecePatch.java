@@ -435,7 +435,12 @@ public final class PiecePatch implements Opcodes {
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
         entries.put(CONTROLLER + ".class", transform(entries.get(CONTROLLER + ".class"), PiecePatch::conquerorHaki));
-        entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), PiecePatch::gearLightning));
+        entries.put(GEAR_KEYS + ".class", transform(entries.get(GEAR_KEYS + ".class"), PiecePatch::nikaKeys));
+        entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), node -> {
+            gearLightning(node);
+            gearDrums(node);
+            gearUntransformed(node);
+        }));
         // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
         // lightning themselves, past HakiBolts, and showed the original's flat beams
         entries.put(GEAR_VFX + ".class", transform(entries.get(GEAR_VFX + ".class"), node -> playHook(method(node, "playAt",
@@ -1040,6 +1045,105 @@ public final class PiecePatch implements Opcodes {
         call.add(new MethodInsnNode(INVOKESTATIC, CONQUEROR_AURA, "gear",
             "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/Enum;Lnet/minecraft/world/phys/Vec3;F)V", false));
         fx.instructions.insert(call);
+    }
+
+    /** 3.2.3: Gear 5's transformation drums (server/GearDrums). */
+    static final String GEAR_DRUMS = "com/hexhaki/piece/server/GearDrums";
+
+    /**
+     * 3.2.3 (the owner: "give the transformation just the drum sounds and just get rid of the music because of copyright"): on each of the
+     * chest pounding's beats ({@code GearTiming.DRUM_STRIKES}) {@code GearServerController.tickTransform} played two of the game's own
+     * sounds ({@code SoundEvents.f_12316_} then {@code f_12090_}) through its {@code sound(player, event, volume, pitch)}: the first call
+     * now goes to {@code GearDrums.beat} (a CC0 drum), the second to {@code GearDrums.under} (nothing: one drum a beat). The music itself
+     * is silenced in sounds.json. Exactly one call after each of the two fields, or the build fails.
+     */
+    static void gearDrums(ClassNode node) {
+        MethodNode tick = method(node, "tickTransform", "(Lnet/minecraft/server/level/ServerPlayer;)V");
+        String sound = "(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/sounds/SoundEvent;FF)V";
+        Map<String, String> to = Map.of("f_12316_", "beat", "f_12090_", "under");
+        Map<String, Integer> done = new java.util.HashMap<>();
+        for (AbstractInsnNode insn = tick.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof FieldInsnNode field && field.getOpcode() == GETSTATIC && field.owner.equals("net/minecraft/sounds/SoundEvents")
+                && to.containsKey(field.name)) {
+                for (AbstractInsnNode next = insn.getNext(); next != null; next = next.getNext()) {
+                    if (next instanceof MethodInsnNode call && call.owner.equals(GEAR_SERVER) && call.name.equals("sound") && call.desc.equals(sound)) {
+                        tick.instructions.set(call, new MethodInsnNode(INVOKESTATIC, GEAR_DRUMS, to.get(field.name), sound, false));
+                        done.merge(field.name, 1, Integer::sum);
+                        break;
+                    }
+                }
+            }
+        }
+        if (!done.equals(Map.of("f_12316_", 1, "f_12090_", 1))) {
+            throw new AssertionError("Gear 5's beat sounds are not the ones inspected: " + done);
+        }
+    }
+
+    /** 3.2.3: the Nika fruit's keys (client/gear/NikaKeys). */
+    static final String GEAR_KEYS = "com/hexhaki/client/devilfruit/GearKeys";
+    static final String NIKA_KEYS = "com/hexhaki/piece/client/gear/NikaKeys";
+
+    /**
+     * 3.2.3 (the owner: "even transformation to Z, and all the others following the transformation, X, C, V, B, N, M"; asked, "Star Gun
+     * takes X"): {@code GearKeys.tick(minecraft)} first asks {@code NikaKeys.tick(minecraft)} and returns at once when it says it did
+     * everything (it always does: the fruit keys Z X C V B N M in place of the Haki keys); {@code releaseHeld} and {@code drain} call
+     * NikaKeys' own first, so held moves are let go and waiting presses dropped there too. The original's code stays as it is behind them.
+     */
+    static void nikaKeys(ClassNode node) {
+        MethodNode tick = method(node, "tick", "(Lnet/minecraft/client/Minecraft;)V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, 0));
+        head.add(new MethodInsnNode(INVOKESTATIC, NIKA_KEYS, "tick", "(Lnet/minecraft/client/Minecraft;)Z", false));
+        LabelNode theirs = new LabelNode();
+        head.add(new JumpInsnNode(IFEQ, theirs));
+        head.add(new InsnNode(RETURN));
+        head.add(theirs);
+        head.add(new FrameNode(F_SAME, 0, null, 0, null));
+        tick.instructions.insert(head);
+        for (String name : new String[] {"releaseHeld", "drain"}) {
+            method(node, name, "()V").instructions.insert(new MethodInsnNode(INVOKESTATIC, NIKA_KEYS, name, "()V", false));
+        }
+    }
+
+    /** 3.2.3: which Nika moves work untransformed (server/NikaRules). */
+    static final String NIKA_RULES = "com/hexhaki/piece/server/NikaRules";
+
+    /**
+     * 3.2.3 (the owner: "The stretchy moves like M1s and whatsoever, they should all be used in the normal like non-transformed state";
+     * asked, "All stretch moves"): {@code GearServerController.onAction} refused every move but the transformation unless
+     * {@code GearData.flag(player, "gear5")}: that check becomes {@code NikaRules.allowed(player, action)} (the {@code "gear5"} constant
+     * replaced by the action, the call by ours). Gatling's tick, Giant's and Coil Spring's start and Coil Spring's let go checked it again:
+     * there it becomes {@code NikaRules.stretched(player, "gear5")}. Exactly one check in each, or the build fails.
+     */
+    static void gearUntransformed(ClassNode node) {
+        String flag = "(Lnet/minecraft/world/entity/player/Player;Ljava/lang/String;)Z";
+        String data = "com/hexhaki/devilfruit/data/GearData";
+        MethodNode action = method(node, "onAction", "(Lnet/minecraft/server/level/ServerPlayer;Lcom/hexhaki/network/GearAction;)V");
+        int gates = 0;
+        for (AbstractInsnNode insn = action.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof LdcInsnNode ldc && "gear5".equals(ldc.cst) && nextReal(ldc) instanceof MethodInsnNode call && call.owner.equals(data)
+                && call.name.equals("flag") && call.desc.equals(flag)) {
+                action.instructions.set(call, new MethodInsnNode(INVOKESTATIC, NIKA_RULES, "allowed",
+                    "(Lnet/minecraft/server/level/ServerPlayer;Lcom/hexhaki/network/GearAction;)Z", false));
+                action.instructions.set(ldc, new VarInsnNode(ALOAD, 1));
+                gates++;
+                break;
+            }
+        }
+        for (String name : new String[] {"tickGatling", "beginGiant", "beginCoil", "releaseCoil"}) {
+            MethodNode move = method(node, name, "(Lnet/minecraft/server/level/ServerPlayer;)V");
+            for (AbstractInsnNode insn = move.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+                if (insn instanceof LdcInsnNode ldc && "gear5".equals(ldc.cst) && nextReal(ldc) instanceof MethodInsnNode call && call.owner.equals(data)
+                    && call.name.equals("flag") && call.desc.equals(flag)) {
+                    move.instructions.set(call, new MethodInsnNode(INVOKESTATIC, NIKA_RULES, "stretched", flag, false));
+                    gates++;
+                    break;
+                }
+            }
+        }
+        if (gates != 5) {
+            throw new AssertionError("Gear 5's checks are not the ones inspected: " + gates + " of 5");
+        }
     }
 
     /** 2.7.1: the quick slots' letters ({@code Binds.DEFAULT_KEYS}, {@code HAKI_KEYS}) as keyDefaults sets the keys: M -> H, N -> V, H -> X. */

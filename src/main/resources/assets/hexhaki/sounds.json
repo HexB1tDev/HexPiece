@@ -967,5 +967,26 @@
         "attenuation_distance": 24
       }
     ]
+  },
+  "gear5_ambient_transformation": {
+    "sounds": []
+  },
+  "piece.gear.drum": {
+    "subtitle": "subtitles.hexhaki.piece.gear.drum",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/drum1",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.gear.drum_big": {
+    "subtitle": "subtitles.hexhaki.piece.gear.drum_big",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/drum2",
+        "attenuation_distance": 56
+      }
+    ]
   }
 }

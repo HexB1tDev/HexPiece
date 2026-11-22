@@ -5,10 +5,8 @@ import com.hexhaki.client.HakiKeys;
 import com.hexhaki.client.devilfruit.GearClientState;
 import com.hexhaki.client.devilfruit.GearKeys;
 import com.hexhaki.fruit.client.FruitClient;
-import com.hexhaki.network.GearAction;
 import com.hexhaki.network.HakiAction;
 import com.hexhaki.network.HakiNetwork;
-import com.hexhaki.network.msg.C2SGearAction;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.network.C2SCombat;
 import com.hexhaki.piece.network.PieceNetwork;
@@ -31,8 +29,8 @@ import net.minecraftforge.fml.common.Mod;
  * <ul>
  *   <li>No fruit: R toggles combat mode.</li>
  *   <li>The Gomu fruit (Devil Fruit mode, {@code GearKeys}): R leaves combat mode for Devil Fruit mode and back ({@code
- *       GearKeys.switchMode}, the original's X key does the same). Devil Fruit mode had Gear 5 on R: it is on Ctrl + R there now, as
- *       Armament is in combat mode (Ctrl + R is the mode's own power).</li>
+ *       GearKeys.switchMode}, the original's X key does the same). Devil Fruit mode had Gear 5 on R: Ctrl + R until 3.2.2, Z since 3.2.3
+ *       (client/gear/NikaKeys); Ctrl + R is Armament in every mode.</li>
  *   <li>A kit fruit (the Pika fruit, binds on): R swaps M1 and the right click between the style (combat mode) and the kit ({@link
  *       PieceHooks#fruitKeysActive}); the kit's bound abilities keep their keys. (The original's "powers off" is not used: it turns
  *       Haki off too.)</li>
@@ -116,11 +114,12 @@ public final class CombatMode {
         }
     }
 
-    /** Ctrl + R: the mode's own power, Gear 5 in Devil Fruit mode, Armament Haki otherwise. */
+    /**
+     * Ctrl + R: Armament Haki. (Until 3.2.2 it was Gear 5 in the Gomu fruit's Devil Fruit mode; 3.2.3 put Gear 5 on Z with the fruit's
+     * other moves, client/gear/NikaKeys, so Ctrl + R is Armament there too: the Haki that turns its moves into their Dawn versions.)
+     */
     static void power() {
-        if (GearClientState.hasFruit && GearClientState.devilFruitMode()) {
-            HakiNetwork.CHANNEL.sendToServer(new C2SGearAction(GearAction.GEAR_FIVE_TOGGLE));
-        } else if (HakiClientState.enabled) {
+        if (HakiClientState.enabled) {
             HakiKeys.send(HakiAction.ARMAMENT_TOGGLE);
         }
     }

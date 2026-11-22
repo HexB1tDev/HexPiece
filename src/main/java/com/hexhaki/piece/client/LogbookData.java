@@ -256,20 +256,42 @@ final class LogbookData {
     }
 
     static Section nika() {
+        // 3.2.3: every move on its key (client/gear/NikaKeys), the Haki versions named, the stretch moves untransformed too
+        Minecraft minecraft = Minecraft.m_91087_();
+        Object[][] rows = {
+            {GearAbility.GEAR_FIVE, AbilityHud.name(HakiKeys.SLOT_6)},
+            {GearAbility.PISTOL, AbilityHud.name(minecraft.f_91066_.f_92096_) + " (Dawn Pistol with Haki in Gear 5)"},
+            {GearAbility.ROCKET, AbilityHud.name(HakiKeys.MODE) + " hold"},
+            {GearAbility.STAR_GUN, AbilityHud.name(HakiKeys.MODE) + " with Haki in Gear 5"},
+            {GearAbility.WHIP, AbilityHud.name(HakiKeys.SLOT_7) + " (Dawn Whip with Haki in Gear 5)"},
+            {GearAbility.GATLING, AbilityHud.name(HakiKeys.SLOT_8) + " hold"},
+            {GearAbility.GIANT, AbilityHud.name(HakiKeys.STAR_GUN) + " hold (Bajrang Gun with Haki in Gear 5)"},
+            {GearAbility.COIL, AbilityHud.name(com.hexhaki.piece.client.PieceKeys.FRUIT_N) + " hold (the lightning lance with Haki in Gear 5)"},
+            {GearAbility.RUBBER_WORLD, AbilityHud.name(com.hexhaki.piece.client.PieceKeys.FRUIT_M) + " hold"},
+            {GearAbility.SKY_BOUNCE, "Shift+Space"}};
         List<Entry> entries = new ArrayList<>();
-        for (Object[] row : AbilityHud.gearKeys()) {
+        for (Object[] row : rows) {
             GearAbility ability = (GearAbility) row[0];
             boolean open = GearClientState.unlocked(ability);
-            String lock = ability.requiresGearFive ? "Needs Gear 5 and fruit mastery " + ability.mastery : "Needs fruit mastery " + ability.mastery;
-            String info = GearClientState.usable(ability) ? "ready in Devil Fruit mode" : ability.requiresGearFive ? "in Gear 5" : "in Devil Fruit mode";
-            entries.add(Entry.of(ability.display, (String) row[1], info, HakiKeyLabels.live(ability.description), open, lock));
+            boolean five = gearFiveOnly(ability);
+            String lock = five ? "Needs Gear 5 and fruit mastery " + ability.mastery : "Needs fruit mastery " + ability.mastery;
+            String info = five ? "in Gear 5" : "in Devil Fruit mode, transformed or not";
+            // the original's text names Giant's old key ([G]); B is its key now (the label rewriter shows it as bound)
+            String text = ability == GearAbility.GIANT ? ability.description.replace("[G]", "[B]") : ability.description;
+            entries.add(Entry.of(ability.display, (String) row[1], info, HakiKeyLabels.live(text), open, lock));
         }
         long into = GearMastery.intoLevel(GearClientState.xp);
         long cost = Math.max(1, GearMastery.nextLevelCost(GearClientState.xp));
-        return new Section(NIKA, "Mastery " + GearClientState.mastery, 0xFFE8C26A, Math.min(1F, into / (float) cost), List.of(
+        return new Section(NIKA, "Mastery " + GearClientState.mastery, AbilityHud.NIKA_WHITE, Math.min(1F, into / (float) cost), List.of(
             "Mastery " + GearClientState.mastery + "/" + GearMastery.MAX_LEVEL + ", " + into + "/" + cost + " XP to the next level.",
-            "R swaps between your fighting style and Devil Fruit mode, where the fruit has the keys (Ctrl + R: Gear 5).",
-            "Levels earn points for the upgrades below."), entries);
+            "R swaps between your fighting style and Devil Fruit mode, where the fruit has the keys: Z for Gear 5, X C V B N M its moves.",
+            "Ctrl + R is Armament: with it (or Ryou) on in Gear 5 the moves become their Haki versions. Levels earn points for the upgrades below."),
+            entries);
+    }
+
+    /** 3.2.3 (the owner, asked: "All stretch moves" untransformed): the Nika moves only Gear 5 has (server/NikaRules). */
+    static boolean gearFiveOnly(GearAbility ability) {
+        return ability == GearAbility.STAR_GUN || ability == GearAbility.RUBBER_WORLD || ability == GearAbility.SKY_BOUNCE;
     }
 
     static Section upgrades() {

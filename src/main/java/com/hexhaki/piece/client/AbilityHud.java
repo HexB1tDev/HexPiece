@@ -127,7 +127,8 @@ public final class AbilityHud {
         List<AbilityPanel.Move> fruitMoves = new ArrayList<>();
         if (GearClientState.hasFruit) {
             fruit = GearClientState.gearFive ? "Gear 5" : "Gomu Gomu";
-            fruitColour = GearClientState.gearFive ? 0xFFF2F0E6 : 0xFFE8C26A;
+            // 3.2.3 (the owner: "We need to change the color of the HUD to be white instead of yellow"): white, transformed or not
+            fruitColour = NIKA_WHITE;
             fruitMode = GearClientState.devilFruitMode();
             if (fruitMode) {
                 gear(fruitMoves);
@@ -190,22 +191,40 @@ public final class AbilityHud {
         }
     }
 
-    /** Gear 5's moves in Devil Fruit mode, on the keys the original's Gear keys read. */
+    /** 3.2.3: the Nika fruit's colour on the panel (the owner: "white instead of yellow"). */
+    static final int NIKA_WHITE = 0xFFF2F0E6;
+
+    /**
+     * The Nika fruit's moves in Devil Fruit mode, on its keys (client/gear/NikaKeys: Z X C V B N M since 3.2.3). 3.2.3 (the owner: "the
+     * moves change name whenever you activate Haki, because currently they don't ... The HUD should like rename them as soon as Haki is
+     * activated"): with Haki on in Gear 5 ({@code NikaKeys.haki}, as the server's dawn) each row shows its Haki version (Dawn Pistol,
+     * Star Gun on X, Dawn Whip, the Bajrang Gun, the lightning lance); out of Gear 5 the moves only Gear 5 has say so.
+     */
     static void gear(List<AbilityPanel.Move> out) {
+        boolean five = GearClientState.gearFive;
         for (Object[] row : gearKeys()) {
             GearAbility ability = (GearAbility)row[0];
-            out.add(new AbilityPanel.Move((String)row[1], ability.display, GearClientState.unlocked(ability) ? "" : "locked", 0, 0));
+            String needs = !GearClientState.unlocked(ability) ? "locked" : !five && (Boolean)row[3] ? "Gear 5" : "";
+            out.add(new AbilityPanel.Move((String)row[1], (String)row[2], needs, 0, 0));
         }
     }
 
-    /** {ability, key} for each of Gear 5's moves, as the original's Gear keys read them in Devil Fruit mode ({@code GearKeys.tick}). */
+    /** {ability, key, name, Gear 5 only} for each of the Nika fruit's moves as client/gear/NikaKeys reads them now. */
     static Object[][] gearKeys() {
         Minecraft minecraft = Minecraft.m_91087_();
-        return new Object[][] {{GearAbility.PISTOL, name(minecraft.f_91066_.f_92096_)}, {GearAbility.GEAR_FIVE, "Ctrl+" + name(HakiKeys.ARMAMENT)},
-            {GearAbility.WHIP, name(HakiKeys.DOMINION)}, {GearAbility.ROCKET, name(HakiKeys.OBSERVATION) + " hold"},
-            {GearAbility.GATLING, name(HakiKeys.STRIKE) + " hold"}, {GearAbility.GIANT, name(HakiKeys.CONQUEROR) + " hold"},
-            {GearAbility.COIL, name(HakiKeys.CONVERGENCE) + " hold"}, {GearAbility.RUBBER_WORLD, name(HakiKeys.ACOC) + " hold"},
-            {GearAbility.STAR_GUN, name(HakiKeys.STAR_GUN)}, {GearAbility.SKY_BOUNCE, "Shift+Space"}};
+        boolean haki = com.hexhaki.piece.client.gear.NikaKeys.haki();
+        boolean five = GearClientState.gearFive;
+        return new Object[][] {
+            {GearAbility.GEAR_FIVE, name(HakiKeys.SLOT_6), five ? "Gear 5 (end)" : "Gear 5", false},
+            {GearAbility.PISTOL, name(minecraft.f_91066_.f_92096_), haki ? "Dawn Pistol" : GearAbility.PISTOL.display, false},
+            haki ? new Object[] {GearAbility.STAR_GUN, name(HakiKeys.MODE), GearAbility.STAR_GUN.display, true}
+                : new Object[] {GearAbility.ROCKET, name(HakiKeys.MODE) + " hold", GearAbility.ROCKET.display, false},
+            {GearAbility.WHIP, name(HakiKeys.SLOT_7), haki ? "Dawn Whip" : GearAbility.WHIP.display, false},
+            {GearAbility.GATLING, name(HakiKeys.SLOT_8) + " hold", GearAbility.GATLING.display, false},
+            {GearAbility.GIANT, name(HakiKeys.STAR_GUN) + " hold", haki ? "Bajrang Gun" : GearAbility.GIANT.display, false},
+            {GearAbility.COIL, name(PieceKeys.FRUIT_N) + " hold", haki ? "Lightning Lance" : GearAbility.COIL.display, false},
+            {GearAbility.RUBBER_WORLD, name(PieceKeys.FRUIT_M) + " hold", GearAbility.RUBBER_WORLD.display, true},
+            {GearAbility.SKY_BOUNCE, "Shift+Space", GearAbility.SKY_BOUNCE.display, true}};
     }
 
     /** The player's name for each key the panel names, as bound in Controls (Forge's modifier included). */

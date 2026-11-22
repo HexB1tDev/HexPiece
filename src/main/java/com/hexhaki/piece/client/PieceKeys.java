@@ -27,6 +27,8 @@ public final class PieceKeys {
      * (client/FruitKeyN; GLFW 78, free since 2.7.1 moved the original's slot 8 from N to V). 3.1.6's End key is gone.
      */
     public static final KeyMapping FRUIT_N = new KeyMapping("key.hexpiece.fruit_n", InputConstants.Type.KEYSYM, 78, CATEGORY);
+    /** 3.2.3 (the owner, on the Nika fruit's keys: "X, C, V, B, N, M"): M, the last fruit move key (client/gear/NikaKeys: Rubber World). */
+    public static final KeyMapping FRUIT_M = new KeyMapping("key.hexpiece.fruit_m", InputConstants.Type.KEYSYM, 77, CATEGORY);
 
     private PieceKeys() {
     }
@@ -39,5 +41,6 @@ public final class PieceKeys {
         event.register(EXTRA_V);
         event.register(EXTRA_B);
         event.register(FRUIT_N);
+        event.register(FRUIT_M);
     }
 }

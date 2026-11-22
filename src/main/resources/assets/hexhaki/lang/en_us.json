@@ -7,6 +7,7 @@
   "key.hexpiece.extra_v": "Style move V",
   "key.hexpiece.extra_b": "Style move B",
   "key.hexpiece.fruit_n": "Fruit move N",
+  "key.hexpiece.fruit_m": "Fruit move M",
   "entity.hexhaki.pirate": "Pirate",
   "entity.hexhaki.marine": "Marine",
   "key.hexhaki.armament": "Combat style / fruit (R), the mode's power (Ctrl + R: Armament, Gear 5)",
@@ -130,5 +131,7 @@
   "subtitles.hexhaki.piece.magu.burst": "Magma bursts",
   "subtitles.hexhaki.piece.magu.boom": "Magma explodes",
   "subtitles.hexhaki.piece.magu.sizzle": "Magma hisses",
-  "subtitles.hexhaki.piece.magu.roar": "Fire roars"
+  "subtitles.hexhaki.piece.magu.roar": "Fire roars",
+  "subtitles.hexhaki.piece.gear.drum": "A drum beats",
+  "subtitles.hexhaki.piece.gear.drum_big": "A great drum booms"
 }
