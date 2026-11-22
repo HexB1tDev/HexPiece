@@ -61,14 +61,10 @@ public final class FirstPersonLight {
     private static final float[] N = new float[9];
 
     static {
-        // 2.9.7: the sword's cuts on the attack button are gone; the lunge (C) ends on the level cut (its flight is the game's own hand
-        // holding the sword: the lunge lays the body out flat, an arm hung from that would float below the view)
-        ARM.put("pika_sword_1", 10);
-        ARM.put("pika_sword_2", 10);
-        ARM.put("pika_murakumo", 11);
-        ARM.put("pika_laser", 9);
-        ARM.put("pika_laser_charge", 0);
-        ARM.put("pika_laser_fire", 11);
+        // 3.0.5 (the owner, with a screenshot of the laser's charge in first person: "right click is still not showing the arm"): this
+        // drawn arm hid the game's own hand and did not show in its place on the owner's device; no clip draws it now: in first person
+        // the game's own right hand stays (the sword in it through PikaClient's FIRST_PERSON_GRIP), and the laser leaves from its
+        // fingertip (fingertip, below)
     }
 
     private FirstPersonLight() {
@@ -178,9 +174,18 @@ public final class FirstPersonLight {
         }
         Minecraft minecraft = Minecraft.m_91087_();
         boolean view = player == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON;
+        if (view) {
+            // 3.0.5: the game's own first-person hand's fingertips (LightArt.firstPersonFingertip, in the view), turned with the look
+            double[] v = com.hexhaki.piece.pika.LightArt.firstPersonFingertip(0.1);
+            Vec3 forward = player.m_20252_(partial);
+            Vec3 right = forward.m_82537_(new Vec3(0, 1, 0));
+            right = right.m_82556_() < 1.0E-6 ? new Vec3(-1, 0, 0) : right.m_82541_();
+            Vec3 up = right.m_82537_(forward);
+            return player.m_20299_(partial).m_82549_(right.m_82490_(v[0])).m_82549_(up.m_82490_(v[1])).m_82549_(forward.m_82490_(-v[2]));
+        }
         float[][] pose = StylePoser.sample(clip.name, now() - clip.start + partial);
         double[] out = new double[3];
-        place(player, view, partial, Vec3.f_82478_, StyleRig.limb(pose, StyleRig.RIGHT_ARM, 0.0, 1.1, -0.5), out);
+        place(player, false, partial, Vec3.f_82478_, StyleRig.limb(pose, StyleRig.RIGHT_ARM, 0.0, 1.1, -0.5), out);
         return new Vec3(out[0], out[1], out[2]);
     }
 

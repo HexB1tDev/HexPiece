@@ -472,12 +472,14 @@ public final class PikaMoves {
             }
             hit(player, body, 6.0F + 8.0F * charge, look.m_82490_(1.2 + charge).m_82520_(0, 0.4, 0), true);
         }
-        double radius = 3.0 + 4.0 * charge;
-        UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, look, radius, 5.0F + 7.0F * charge, 0, 1.4 + 1.6 * charge);
+        // 3.0.5 (the owner: "the right click explosion range (full charge and Mid charge, is too small, and entities are barely getting
+        // knocked back)"): 5 to 13 blocks (was 3 to 7), thrown 2.6 to 6 times as hard (was 1.4 to 3)
+        double radius = 5.0 + 8.0 * charge;
+        UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, look, radius, 5.0F + 7.0F * charge, 0, 2.6 + 3.4 * charge);
         // 3.0.2 (the owner: "the HELD version should have a lingering explosion effect, it's dissappearing instantly after it explodes"):
         // the blast is its own burst (LightArt.burst: gathering, going off, its dome, its ball of light and dust, 2 to 3.5 s), no longer
         // drawn inside the beam, which is gone in 12 ticks and took the blast with it
-        fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 2.0 + 3.0 * charge, 0);
+        fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 3.0 + 5.0 * charge, 0);
         Impact.quake((ServerLevel) player.m_9236_(), to, radius * 4.0, (float) Math.min(1.0, radius / 6.0), 12);
         sound(player, to, PikaSounds.EXPLODE, 2.2F, 0.9F);
     }

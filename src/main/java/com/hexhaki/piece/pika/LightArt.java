@@ -392,6 +392,57 @@ public final class LightArt {
     };
 
     /**
+     * 3.0.5 (the owner: "right click is still not showing the arm"): where the game's own first-person right hand's fingertips are, in
+     * the view at rest (x right, y up, z back toward the eye: ahead is -z), from {@link #FIRST_PERSON_GRIP}'s steps up to the fist and
+     * {@code past} blocks on down the hand: the laser leaves from there and the light gathers there in first person.
+     */
+    public static double[] firstPersonFingertip(double past) {
+        double[] m = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        for (int i = 0; i < FIRST_PERSON_GRIP.length - 2; i++) {
+            m = step(m, FIRST_PERSON_GRIP[i]); // up to the fist: not the blade's turn, nor the guard
+        }
+        m = step(m, new double[] {0, 0.0, past, 0.0});
+        return new double[] {m[3], m[7], m[11]};
+    }
+
+    /** {@code m} (row-major 4x4) times one grip step (0 translate, 1 turn about x, 2 about y, 3 about z, in degrees). */
+    static double[] step(double[] m, double[] s) {
+        double[] r = new double[16];
+        double[] b = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+        if ((int) s[0] == 0) {
+            b[3] = s[1];
+            b[7] = s[2];
+            b[11] = s[3];
+        } else {
+            double a = Math.toRadians(s[1]);
+            double c = Math.cos(a);
+            double n = Math.sin(a);
+            int kind = (int) s[0];
+            int p = kind == 1 ? 1 : 0;
+            int q = kind == 3 ? 1 : 2;
+            // the two axes turned: (y, z) about x, (z, x) about y, (x, y) about z
+            if (kind == 2) {
+                p = 2;
+                q = 0;
+            }
+            b[p * 4 + p] = c;
+            b[p * 4 + q] = -n;
+            b[q * 4 + p] = n;
+            b[q * 4 + q] = c;
+        }
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                double v = 0;
+                for (int k = 0; k < 4; k++) {
+                    v += m[i * 4 + k] * b[k * 4 + j];
+                }
+                r[i * 4 + j] = v;
+            }
+        }
+        return r;
+    }
+
+    /**
      * The same in third person, from the right arm's own pivot (the model's arm pose): to the fist, the blade turned out (and
      * {@link LightArtGrip#TILT} on toward the line of the arm), the guard.
      */
