@@ -1367,6 +1367,30 @@ The owner's points, in one list (keep every one; ask before removing anything th
 10. **HUD** white instead of yellow; **Haki versions** better.
 11. **Toon Force** everywhere: every move goofy and cartoonish, "like a Bugs Bunny movie" (squash and stretch, big anticipation,
     exaggerated arcs, smears, things that make barely any sense). The rarest fruit (Mythical): it must feel special.
+The original as found (3.2.2's session, javap on input/hexhaki-2.1.0.jar): com/hexhaki/devilfruit has NikaFruitItem, data/ (AbilityMode,
+BajrangPhase, GearAbility, GearCloudShape, GearData, GearMastery, GearTiming, GearUpgrade, RubberLimb, StretchCurve, StretchStyle) and
+gameplay/ (GearEvents, GearFields, GearServerController). `GearAbility` (mastery, requiresGearFive, display, key, description): PISTOL
+(0, base, "Gum-Gum Pistol", Attack: the arm stretched to the target), ROCKET (15, "[V]": an arm anchored, hauled to it), WHIP (35, "[K]":
+a leg swept in an arc; the owner's "Dawn Whip"), GEAR_FIVE (0, "[R]": the transformation), GATLING (50, "[L] hold"), SKY_BOUNCE (80,
+"[Shift]+[Space]"), GIANT (110, "[G] toggle": Gigante, right-click grabs one body and again throws it; under Armament or the Advanced
+Conqueror's [G] charges the Bajrang Gun), COIL (150, "[M] hold-release": a coiled launch; with Haki a lightning lance), RUBBER_WORLD
+(200, "[J] hold-release": a field, "nothing is placed or broken"), STAR_GUN (260, "[B]", Haki only: an arm curving round cover to a
+target up to 50 blocks, folding everything on the curve). Its keys clash with the Haki keys (R mode, G Conqueror, J Observation, K L
+H): hence the owner's Z X C V B N M. `GearTiming`: TRANSFORM_TICKS 170 (gather 34, loosen 106, rise 128, float 146, land 170),
+DRUM_STRIKES, REVERT_TICKS 14. Clips (original player_animation): gear5_awaken, gear5_stance, gear5_run, gear5_pistol, gear5_don_gun_left
+/ _right, gear5_gatling, gear5_rocket, gear5_whip, gear5_bounce, gear5_coil_charge / _release, gear5_lance_charge / _throw,
+gear5_giant_charge / _grab / _throw, gear5_gigante_laugh, gear5_bajrang_charge / _slam, gear5_dodge_* (4), conqueror_gear5_charge /
+_release. Sounds: gear5_*.ogg (ambient_transformation is the transformation music; dawn_pistol, dawn_whip, bajrang_*, rubber_world ...).
+Client side: com/hexhaki/client/devilfruit GearKeys (its keys), GearHud (the yellow HUD), GearClientState, GearMovement, GearVfx,
+RemoteGearStates, RubberBendStates, RubberLimbStates, render/ (GearAuraLayer, GearBodyDeformer, GearCloudLayer and GearCloudMesh: the
+clouds, GearJacket*, GearOutfit*, GearRenderHooks, RubberBendDeformer, RubberLimbGeometry/Layer/Mesh: the stretched limbs),
+screen/GearMasteryScreen; network GearAction, C2SGearAction, C2SGearUpgrade, S2CGearEntity, S2CGearFx; mixin GearJacketSkinMixin.
+PiecePatch already touches GearHud, GearVfx, GearJacketHaki, GearJacketSkin and GearServerController (grep "Gear" in it).
+GearKeys.tick reads the Haki key mappings (com/hexhaki/client/HakiKeys) for Gear 5's moves: ARMAMENT -> GEAR_FIVE_TOGGLE, DOMINION ->
+WHIP, STAR_GUN -> STAR_GUN, OBSERVATION -> ROCKET_START/RELEASE, STRIKE -> GATLING_START/RELEASE, CONQUEROR -> GIANT_START/RELEASE,
+ACOC -> RUBBER_WORLD_START/RELEASE, CONVERGENCE -> COIL_START/RELEASE, the attack -> PISTOL; each sent as C2SGearAction(GearAction).
+So the rework can keep the server's GearActions and remap only the client keys to the fruit keys (Z X C V B N M) in fruit mode, as
+the other fruits read them (client/FruitKeyN for N).
 How: the original's code is com/hexhaki/devilfruit (GearServerController and the rest, Gear 5's moves and keys), patched through
 patch/PiecePatch (as gearLightning hooks it); its animations are among the original player_animation files (reworked ones go under
 src/main/resources/assets/hexhaki/player_animation/). Read it all first, list its moves, keys, clips, HUD and sounds, and how its
