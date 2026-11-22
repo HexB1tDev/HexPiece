@@ -128,8 +128,9 @@ public final class GuraFx {
             case GuraMoves.BUBBLE_ON -> {
                 Bubble bubble = new Bubble(clock, m.id(), -1L);
                 BUBBLES.put(m.user(), bubble);
-                // the quake gathering: the ground's rumble, higher, held while the bubble is (faded out the moment it is let go)
-                com.hexhaki.piece.client.LoopSound.play(GuraSounds.RUMBLE, entity(m.user()), 0.7F, m.id() == 1 ? 1.35F : 1.6F, true, true, 1.2,
+                // the quake gathering, held while the bubble is (faded out the moment it is let go); 3.1.4: a deep steady hum (the
+                // owner: the rumble pitched up "sounds like a car trepidating")
+                com.hexhaki.piece.client.LoopSound.play(GuraSounds.CHARGE, entity(m.user()), 0.8F, m.id() == 1 ? 0.9F : 1.0F, true, true, 1.2,
                     () -> BUBBLES.get(m.user()) == bubble);
             }
             case GuraMoves.BUBBLE_OFF -> {
@@ -594,7 +595,7 @@ public final class GuraFx {
     }
 
     /** The right fist where the clip's pose has it this frame, else out in front of the right shoulder. */
-    static Vec3 fist(Player player, float partial) {
+    public static Vec3 fist(Player player, float partial) {
         Vec3 posed = com.hexhaki.piece.client.FirstPersonLight.fist(player, partial);
         if (posed != null) {
             return posed;

@@ -75,6 +75,17 @@ public final class FirstPersonLight {
         return minecraft.f_91073_ == null ? 0L : minecraft.f_91073_.m_46467_();
     }
 
+    /** 3.1.4: the clip {@code id} was last told to play (null none), and from what game tick (client/FirstPersonHand). */
+    static String current(int id) {
+        Clip clip = CLIPS.get(id);
+        return clip == null ? null : clip.name;
+    }
+
+    static long started(int id) {
+        Clip clip = CLIPS.get(id);
+        return clip == null ? 0L : clip.start;
+    }
+
     /** PieceHooks.played: {@code id} was told to play {@code name}. */
     static void played(int id, String name) {
         if (name == null) {
@@ -177,6 +188,7 @@ public final class FirstPersonLight {
         if (view) {
             // 3.0.5: the game's own first-person hand's fingertips (LightArt.firstPersonFingertip, in the view), turned with the look
             double[] v = com.hexhaki.piece.pika.LightArt.firstPersonFingertip(0.1);
+            FirstPersonHand.move(v.clone(), partial, v); // 3.1.4: where the moved hand is (the hand's view space, as v)
             Vec3 forward = player.m_20252_(partial);
             Vec3 right = forward.m_82537_(new Vec3(0, 1, 0));
             right = right.m_82556_() < 1.0E-6 ? new Vec3(-1, 0, 0) : right.m_82541_();
@@ -203,6 +215,7 @@ public final class FirstPersonLight {
         boolean view = player == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON;
         if (view) {
             double[] v = com.hexhaki.piece.pika.LightArt.firstPersonFingertip(-0.05);
+            FirstPersonHand.move(v.clone(), partial, v); // 3.1.4: where the moved hand is (the hand's view space, as v)
             Vec3 forward = player.m_20252_(partial);
             Vec3 right = forward.m_82537_(new Vec3(0, 1, 0));
             right = right.m_82556_() < 1.0E-6 ? new Vec3(-1, 0, 0) : right.m_82541_();

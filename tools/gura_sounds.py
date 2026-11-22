@@ -33,6 +33,7 @@ SOUNDS = {
     "waves": ("kyles", 450634),                  # "waves ocean crash on beach nearby wide big metallic sound.flac"
     "whoosh": ("Qvantor", 877977),               # "Whoosh Deep Heavy"
     "slam": ("Qvantor", 879268),                 # "Heavy Slam Impact"
+    "portal_hum": ("Qvantor", 880775),           # "Magic Portal Hum" (3.1.4: the bubble gathering on the fist)
 }
 
 # our file: (sound, start s, length s or None for the rest, fade in s, fade out s)
@@ -59,6 +60,9 @@ CLIPS = {
 # our loop: (sound, start s, length s, crossfade s): the ground quaking while a quake is held
 LOOPS = {
     "rumble": ("earthquake", 6.0, 8.0, 1.0),
+    # 3.1.4 (the owner: "That charge sound is horrible. Like it sounds like a car trepidating. Get another one."): the bubble gathering
+    # on the fist, a deep steady hum (the rumble pitched up rattled like an engine)
+    "charge": ("portal_hum", 1.2, 3.6, 0.8),
 }
 
 
@@ -66,6 +70,8 @@ def level(name):
     """(gain in dB below full scale, compressed louder): the rumble sits under the blows (it is held for seconds)."""
     if name == "rumble":
         return -6.0, False
+    if name == "charge":
+        return -3.0, False
     return 0.0, False
 
 

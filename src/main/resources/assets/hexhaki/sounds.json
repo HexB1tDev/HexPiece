@@ -765,6 +765,15 @@
       }
     ]
   },
+  "piece.gura.charge": {
+    "subtitle": "subtitles.hexhaki.piece.gura.charge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/charge",
+        "attenuation_distance": 32
+      }
+    ]
+  },
   "piece.gura.quake": {
     "subtitle": "subtitles.hexhaki.piece.gura.quake",
     "sounds": [

@@ -1130,7 +1130,7 @@ public final class GuraMoves {
         // 3.1.2: the Conqueror's lightning crackling round the gathering quake fist (with Ryou on and the Conqueror's Haki awakened)
         long gathering = s.chargeSince >= 0 ? now - s.chargeSince : s.fistSince >= 0 ? now - s.fistSince : -1;
         if (gathering >= 4 && gathering % 6 == 0) {
-            ConquerorAura.mixed(player, fist(player), 1.2 + 0.8 * Math.min(1.0, gathering / 40.0), 3, -1.3);
+            ConquerorAura.mixed(player, fist(player), 1.2 + 0.8 * Math.min(1.0, gathering / 40.0), 3, -1.3, true);
         }
         if (s.chargeSince >= 0 && now - s.chargeSince > KAISHIN_FULL + 40) {
             useUp(player);

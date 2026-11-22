@@ -13,3 +13,4 @@ wave1.ogg: "waves ocean crash on beach nearby wide big metallic sound.flac" by k
 whoosh1.ogg: "Whoosh Deep Heavy" by Qvantor, https://freesound.org/people/Qvantor/sounds/877977/ (CC0 1.0), from 0.0 s, 1.60 s long
 hit1.ogg: "Heavy Slam Impact" by Qvantor, https://freesound.org/people/Qvantor/sounds/879268/ (CC0 1.0), from 0.0 s, 0.87 s long
 rumble.ogg: "Hard Earthquake.mp3" by crunchymaniac, https://freesound.org/people/crunchymaniac/sounds/678418/ (CC0 1.0), a loop from 6.0 s, 8.00 s long, 6.0 dB quieter
+charge.ogg: "Magic Portal Hum" by Qvantor, https://freesound.org/people/Qvantor/sounds/880775/ (CC0 1.0), a loop from 1.2 s, 3.60 s long, 3.0 dB quieter

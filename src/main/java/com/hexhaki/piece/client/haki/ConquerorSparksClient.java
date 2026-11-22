@@ -47,8 +47,19 @@ public final class ConquerorSparksClient {
                 }
                 case ConquerorAura.MIXED -> {
                     // 3.1.2: the Conqueror's lightning mixed into a Gura quake at a point (silent: the quake has its own sounds)
-                    HakiBolts.sparks(level, user, m.x(), m.y(), m.z(), ConquerorSparks.burst(m.size(), Math.max(2, Math.min(14, m.id())), m.bx(),
-                        m.ticks()), 0.9, 0.0F);
+                    // 3.1.4: no flash of its own (a white orb in the air, the owner's screenshot), and on the fist where it is drawn when
+                    // it gathers there
+                    double x = m.x();
+                    double y = m.y();
+                    double z = m.z();
+                    if (m.bz() > 0.0F && user instanceof net.minecraft.world.entity.player.Player player) {
+                        Vec3 fist = com.hexhaki.piece.client.gura.GuraFx.fist(player, 1.0F);
+                        x = fist.f_82479_;
+                        y = fist.f_82480_;
+                        z = fist.f_82481_;
+                    }
+                    HakiBolts.sparks(level, user, x, y, z, ConquerorSparks.burst(m.size(), Math.max(2, Math.min(14, m.id())), m.bx(), m.ticks()), 0.0,
+                        0.0F);
                 }
                 default -> {
                 }

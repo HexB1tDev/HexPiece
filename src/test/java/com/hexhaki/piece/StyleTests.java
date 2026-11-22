@@ -1,6 +1,7 @@
 package com.hexhaki.piece;
 
 import com.hexhaki.piece.style.FightingStyle;
+import com.hexhaki.piece.style.HandMoves;
 import com.hexhaki.piece.style.Hit;
 import com.hexhaki.piece.style.Slot;
 import com.hexhaki.piece.style.StyleCombo;
@@ -25,6 +26,7 @@ public final class StyleTests {
         prison();
         air();
         show();
+        hands();
         Check.done("StyleTests");
     }
 
@@ -359,5 +361,56 @@ public final class StyleTests {
             "Fishman Karate's water turns black with Haki");
         Check.that(com.hexhaki.piece.style.StyleArt.of(FightingStyle.BRAWLER, true) == com.hexhaki.piece.style.StyleArt.HAKI,
             "Iron Fist turns black with Haki");
+    }
+
+    /**
+     * 3.1.4 (the owner: "We need to give them better first-person simple animations. Like, just make them simple for every move of the
+     * two fruits we made. Quick. Better light. And better quake."): every Gura and Magma clip, and every Light fruit move, moves the
+     * first-person hand; the fist stays on screen through the whole move and never jumps.
+     */
+    static void hands() throws Exception {
+        java.util.List<String> clips = new java.util.ArrayList<>();
+        try (var files = Files.list(ANIMATIONS)) {
+            files.map(f -> f.getFileName().toString().replace(".json", "")).filter(n -> n.startsWith("gura_") || n.startsWith("magu_"))
+                .sorted().forEach(clips::add);
+        }
+        Check.that(clips.size() >= 20, "hands: the Gura and Magma clips are found (" + clips.size() + ")");
+        for (String light : new String[] {"pika_laser", "pika_laser_charge", "pika_laser_fire", "pika_laser_end", "pika_yasakani",
+            "pika_yasakani_end", "pika_lunge", "pika_sword_1", "pika_sword_2", "pika_light_kick_charge", "pika_light_kick", "pika_z_kick",
+            "pika_z_slam", "pika_clones", "pika_murakumo", "pika_yata"}) {
+            clips.add(light);
+        }
+        Check.that(!HandMoves.moves("pika_walk") && !HandMoves.moves("pika_idle") && !HandMoves.moves(null),
+            "hands: walking, standing and no clip leave the hand alone");
+        double[] fist = {0.42, -0.42, -0.85}; // where the fist sits in tools/preview/HandPreview, low in the view as the game draws it
+        double[] m = new double[6];
+        double[] at = new double[3];
+        double[] was = new double[3];
+        for (String clip : clips) {
+            Check.that(HandMoves.moves(clip), "hands: " + clip + " moves the first-person hand");
+            HandMoves.at(clip, 0.0, m);
+            boolean rest = true;
+            for (double v : m) {
+                rest &= Math.abs(v) < 0.2 || clip.endsWith("_end") || clip.equals("gura_slam") || clip.equals("gura_tilt")
+                    || clip.equals("gura_release") || clip.equals("gura_gekishin") || clip.equals("magu_release") || clip.equals("magu_meigo")
+                    || clip.equals("magu_rise") || clip.equals("pika_laser_fire");
+            }
+            Check.that(rest, "hands: " + clip + " starts from the hand's place or from the pose before it");
+            boolean seen = true;
+            boolean smooth = true;
+            for (int i = 0; i <= 160; i++) {
+                HandMoves.at(clip, i * 0.25, m);
+                HandMoves.apply(m, fist, at);
+                seen &= at[2] < -0.3 && Math.abs(at[0] / -at[2]) < 1.15 && Math.abs(at[1] / -at[2]) < 0.66;
+                if (i > 0) {
+                    double step = Math.sqrt((at[0] - was[0]) * (at[0] - was[0]) + (at[1] - was[1]) * (at[1] - was[1])
+                        + (at[2] - was[2]) * (at[2] - was[2]));
+                    smooth &= step < 0.2;
+                }
+                System.arraycopy(at, 0, was, 0, 3);
+            }
+            Check.that(seen, "hands: " + clip + " keeps the fist on screen");
+            Check.that(smooth, "hands: " + clip + " never jumps the fist");
+        }
     }
 }

@@ -167,13 +167,22 @@ public final class ConquerorAura {
      * player has Ryou on and the Conqueror's Haki awakened (as every other spark of it); returns whether it went.
      */
     public static boolean mixed(ServerPlayer player, Vec3 at, double radius, int count, double floor) {
+        return mixed(player, at, radius, count, floor, false);
+    }
+
+    /**
+     * 3.1.4 (the owner, with a screenshot of a glowing white orb over his head while the Gura fruit's right click gathered with Haki on:
+     * "the right click gets the little glowing orb above the player instead of around the fist"): {@code atFist}: every client puts it
+     * on the fist where that client draws it (the bubble's place), not where the server guesses the fist is.
+     */
+    public static boolean mixed(ServerPlayer player, Vec3 at, double radius, int count, double floor, boolean atFist) {
         try {
             if (!awakened(player)) {
                 return false;
             }
             int seed = (int) (player.m_217043_().m_188500_() * Integer.MAX_VALUE);
             PieceNetwork.around(player, new S2CUoFx(MIXED, count, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, 0, 0, 0,
-                (float) floor, 0, 0, (float) radius, seed));
+                (float) floor, 0, atFist ? 1.0F : 0.0F, (float) radius, seed));
             return true;
         } catch (RuntimeException failure) {
             return false; // lightning never stops a move
