@@ -1208,6 +1208,28 @@ Read 8zc (the plan) and 8zd (the owner's answers) first. What the code does (not
    puddles or anything like lava stuff. None of that should appear midair. I mean, it doesn't make sense and looks bad if you ask me."
    (Screenshot: the player in the air, arms thrown out (Shima Yurashi), the dark ground cracks spread round him at his own height in the
    air, grey dust puffs in the air, two white glass crack webs at his fists, shock rings in the sky.)
+8. (The Nika fruit, Gear 5) "Next, I also want you to better the Nika animations and adapt the controls to what we have now. All the
+   moves there that were like before, they're all not adapted to our current situation. The animations are old and outdated, and I
+   don't like it. You gotta better them. Badgerangan, Badgerangun [Bajrang Gun], that move, um, it's just the animation needs work. It
+   needs work to be more realistic and match our current mod. Transformation should be in Z. The music is lasting for far too long. It
+   should be like way faster. The stretchy moves like M1s and whatsoever, they should all be used in the normal like non-transformed
+   state. Like Nika needs a ton of work. This is going to require some elbow grease, and this is going to be really, we have to be
+   really careful because the fruit is beautiful, the transformation is beautiful, the clouds are beautiful, the move ideas are all
+   there. It's perfectly working. We need to work on it. We need to change the color of the HUD to be white instead of yellow. We need
+   to better the hotkey [Haki] versions. We need to better the animation most of all. The first person is fine for the most part. I
+   don't think there's any issue with it. So we don't have to be touching that. We just need to better the outside animations. Like
+   rotate the character when need be, like in midair, like Badgerangun, like rotate it mid-air to like, actually aim down instead of
+   just standing still in the arm, just doing all the work. Rubber world, we need the world to actually physically bounce like rubber.
+   This is going to be the most challenging thing in the mod. We need to actually make the world behave like rubber, like the ground
+   itself be manipulated so that it behaves like it's made of like pure slime, sort of, as in like actually wave and all, like bend to
+   the user's will. Yeah, that's pretty much it. I don't think we're going to be able to finish in this session. So all these pictures,
+   all that I told you to do recently, they should all be written in the next handoff and prompt when I tell you to. I'm gonna wait till
+   you reach 93% usage, then I'm gonna ask you for it."
+   (So: the Nika fruit's moves keyed like every fruit (transformation on Z), its third-person animations reworked (Bajrang Gun turned in
+   midair to aim down, the whole body in it), the transformation music much shorter, the stretchy moves and M1s usable untransformed,
+   the HUD white not yellow, the Haki versions better, Rubber World bending the real ground like slime in waves; first person left
+   alone. Careful: the owner loves the fruit, the transformation, the clouds and the move ideas. The owner will ask for the handoff and
+   prompt at 93% usage.)
 - Session note: this session started on Default (freesound.org refused); the personal HexPiece environment is now
   env_01PmnEXrwDhxzij8M5q6P6bL (switch_environment to it).
 - Found: the melodic clips by their spectra (tools: spectral flatness and the share of the 8 strongest bins): freeze1 ("Ice Spell
