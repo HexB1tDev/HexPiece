@@ -203,8 +203,9 @@ public final class GuraUltimate {
         }
         // the wave front: the ground groaning along it, and (with the Conqueror's Haki) thick lightning out of the breaking ground
         GuraMoves.live(new Front(level, player, base, flat, reach, haki, seed));
-        // 3.1.8: the ground bent where it passes: sunk into a bowl with rings, its rim heaved up, squares lifted and sunk (gura/Heave.bend)
-        if (level.m_46469_().m_46207_(net.minecraft.world.level.GameRules.f_46132_)) {
+        // 3.1.8: the ground bent where it passes (gura/Heave.bend; 3.2.2: a trench in the cone, deepening forward, arcs across it, its sides
+        // heaved up, the ground shoved forward at its front, squares lifted and sunk)
+        if (ground != null && level.m_46469_().m_46207_(net.minecraft.world.level.GameRules.f_46132_)) {
             GuraMoves.live(new Bend(level, player, base, flat, Math.min(reach, Heave.BEND_MOST), seed));
         }
         Impact.quake(level, base, 70.0 * b, 1.0F, 30);
@@ -220,7 +221,7 @@ public final class GuraUltimate {
     /**
      * 3.1.8 (the owner, with Blackbeard's "Tremor Crush!": "the ground should like subside ... parts of it should lift, other parts should
      * like go down ... it should fucking bend the terrain where it passed"): the real ground bent as the wave reaches it, column by
-     * column ({@link Heave#bend}: sunk into a bowl with rings stepped into it, its rim heaved up, squares lifted or sunk), within
+     * column ({@link Heave#bend}: 3.2.2 a trench pressed into the cone, arcs stepped across it, its sides heaved up, squares lifted or sunk), within
      * Scars' blocks-a-tick budget (the rest the next tick), all of it growing back {@link #BEND_BACK} ticks later. A sunk column loses its
      * top blocks and gets its own surface back at the bottom (the grass goes down with it); a lifted one is built up from the block
      * under its top with its top on it; nothing is lifted into a body, under water, in a tree, or from sand and gravel (they would fall).

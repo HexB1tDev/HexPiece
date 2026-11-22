@@ -191,7 +191,7 @@ public final class DragonTests {
         }
         Check.that(com.hexhaki.piece.server.GuraUltimate.COOLDOWN == 6000 && com.hexhaki.piece.server.GuraUltimate.FULL >= 40,
             "the ultimate needs a full charge and takes five minutes to recover");
-        // 3.1.8: the Conqueror's lightning out of a blast is the release's own bolts (as wide), short-lived, within a phone's budget
+        // 3.1.8: the Conqueror's lightning out of a blast is the release's own bolts, short-lived, within a phone's budget
         int[] bq = {0};
         com.hexhaki.piece.haki.BoltMesh.Sink boltSink = (glow, xyz, argb) -> bq[0]++;
         java.util.List<com.hexhaki.piece.haki.Bolt> blast = com.hexhaki.piece.haki.ConquerorStorm.blast(9.0, 14, -0.5, 21L, 1.35);
@@ -211,8 +211,10 @@ public final class DragonTests {
             blastMost = Math.max(blastMost, bq[0]);
         }
         Check.that(blastMost < 1600, "the biggest blast's lightning fits (" + blastMost + " quads)");
-        Check.that(widest > 0.9F && widest < 2.6F, "a blast's bolts are as wide as the release's near a player (" + widest + " blocks)");
-        // 3.1.8: the ground bent (Heave.bend): a deep bowl with a heaved rim, squares lifted and sunk, nothing outside it, a bounded area
+        // 3.2.2 (the owner: "ridiculously fat compared to" the release's): thin lines, as the release's look from the player (under 0.6)
+        Check.that(widest > 0.2F && widest < 0.6F, "a blast's bolts are as thin as the release's look (" + widest + " blocks)");
+        // 3.1.8: the ground bent (Heave.bend); 3.2.2: in the cone (the owner: "in a cone ... you made a sphere, like a circle"): a trench
+        // deepening forward with heaved sides, squares lifted and sunk, nothing behind the feet or out past the cone's sides
         for (double length : new double[] {com.hexhaki.piece.gura.Heave.REACH, com.hexhaki.piece.gura.Heave.BEND_MOST}) {
             int deepest = 0;
             int highest = 0;
@@ -220,9 +222,15 @@ public final class DragonTests {
             int down = 0;
             int moved = 0;
             boolean outside = false;
+            double deepAt = 0.0;
             for (int x = -70; x <= 70; x++) {
                 for (int z = -70; z <= 70; z++) {
                     int o = com.hexhaki.piece.gura.Heave.bend(z + 0.5, x + 0.5, x, z, length, com.hexhaki.piece.gura.Heave.CONE, 5);
+                    if (o < deepest) {
+                        deepAt = z + 0.5;
+                    }
+                    double off = Math.toDegrees(Math.atan2(Math.abs(x + 0.5), z + 0.5));
+                    outside |= o != 0 && (z + 0.5 <= 0.0 || off > com.hexhaki.piece.gura.Heave.CONE + 14.0);
                     deepest = Math.min(deepest, o);
                     highest = Math.max(highest, o);
                     up += o > 0 ? 1 : 0;
@@ -232,10 +240,11 @@ public final class DragonTests {
                 }
             }
             Check.that(deepest <= -4 && deepest >= -com.hexhaki.piece.gura.Heave.SINK_MOST && highest >= 2
-                && highest <= com.hexhaki.piece.gura.Heave.LIFT_MOST, "the ground sinks into a bowl and its rim heaves up at " + length + " ("
+                && highest <= com.hexhaki.piece.gura.Heave.LIFT_MOST, "the ground sinks into a trench and its sides heave up at " + length + " ("
                 + deepest + " to " + highest + ")");
+            Check.that(deepAt > length * 0.3, "the trench is deepest out in the cone at " + length + " (" + deepAt + " blocks ahead)");
             Check.that(up > 100 && down > 400, "parts of the ground lift and parts sink at " + length + " (" + up + " up, " + down + " down)");
-            Check.that(!outside && moved < 4200, "the bent ground stays in the cone and the bowl at " + length + " (" + moved + " columns)");
+            Check.that(!outside && moved < 4200, "the bent ground stays in the cone at " + length + " (" + moved + " columns)");
         }
     }
 
@@ -351,6 +360,32 @@ public final class DragonTests {
             com.hexhaki.piece.hie.HieArt.scatter(sink, 0, -0.7, 3.0, 1.8, age % 15, 22);
             com.hexhaki.piece.hie.HieArt.burst(sink, 0, -0.4, 3.0, 2.4, 1.0, age, 23);
             check(count[0], finite[0], "the saber, the ice fist and the ice body", age);
+            // 3.2.2: a crowd frozen in crystal by Ice Age (client/hie/HieFx: FULL_FROZEN in full, the rest lite), shattering (FULL_SHATTERS
+            // in full), with the Ice Ball's prison breaking beside them
+            count[0] = 0;
+            for (int k = 0; k < 24; k++) {
+                com.hexhaki.piece.hie.HieArt.lite = k >= 6;
+                com.hexhaki.piece.hie.HieArt.block(sink, -9 + (k % 8) * 2.5, -1.6, 6.0 + (k / 8) * 3.0, 0.3, 1.9, age, 80, 30 + k);
+            }
+            for (int k = 0; k < 12; k++) {
+                com.hexhaki.piece.hie.HieArt.lite = k >= 4;
+                com.hexhaki.piece.hie.HieArt.crystalShatter(sink, -6 + k, -0.6, 9.0, 1.3, age % 32, 60 + k);
+            }
+            com.hexhaki.piece.hie.HieArt.lite = false;
+            com.hexhaki.piece.hie.HieArt.prison(sink, 0, -0.5, 7.0, com.hexhaki.piece.server.HieMoves.BALL_RADIUS, age, 80, 80);
+            check(count[0], finite[0], "a crowd frozen in crystal and shattering", age);
+            // the frost on a dozen bodies (FULL_FROSTS in full), half of it from the arm
+            count[0] = 0;
+            for (int k = 0; k < 12; k++) {
+                com.hexhaki.piece.hie.HieArt.lite = k >= 6;
+                if (k % 2 == 0) {
+                    com.hexhaki.piece.hie.HieArt.frost(sink, -6 + k, -1.6, 5.0, 0.3, 1.9, 0.75, age, 90 + k);
+                } else {
+                    com.hexhaki.piece.hie.HieArt.armFrost(sink, -6 + k, -1.6, 5.0, -1, 0, 0.3, 1.9, 0.75, age, 90 + k);
+                }
+            }
+            com.hexhaki.piece.hie.HieArt.lite = false;
+            check(count[0], finite[0], "a dozen frosted bodies", age);
         }
     }
 

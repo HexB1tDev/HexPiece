@@ -490,9 +490,10 @@ public final class MaguMoves {
         if (s.thrown >= THROWS_MOST || held < THROW_FIRST || (held - THROW_FIRST) % THROW_EVERY != 0) {
             return;
         }
-        // one more fist of magma up into the sky, out of the raised fist
+        // one more fist of magma up into the sky, out of the raised fist (3.2.2: up and out to the right of the head, as magu_sky holds it)
         s.thrown++;
-        Vec3 from = player.m_20182_().m_82520_(0, 2.3, 0).m_82549_(flat(player).m_82490_(0.1));
+        Vec3 f = flat(player);
+        Vec3 from = player.m_20182_().m_82520_(0, 2.45, 0).m_82549_(f.m_82490_(0.1)).m_82549_(new Vec3(-f.f_82481_, 0, f.f_82479_).m_82490_(0.5));
         fx(player, SKY, ++seeds, from, Vec3.f_82478_, 0, 0, 0, 0.6, 0);
         sound(player, from, MaguSounds.WHOOSH, 1.2F, 0.75F + 0.02F * s.thrown);
     }

@@ -19,6 +19,11 @@ public final class MaguShots {
             case "mfist" -> MaguArt.fist(sink, -ex, 1.6 - ey, 6.0 + a * 1.7 - ez, 0, 0, 1, Double.parseDouble(move[2]), a, 7);
             case "mburst" -> MaguArt.burst(sink, -ex, 0.5 - ey, 8.0 - ez, Double.parseDouble(move[2]), 1.0, a, 9);
             case "mpool" -> MaguArt.pool(sink, -ex, -ey, 5.0 - ez, Double.parseDouble(move[2]), a, 100, 4);
+            case "msky" -> {
+                // 3.2.2: Ryusei Kazan's fist punched up out of the raised fist (client/magu/MaguFx SKY), a body standing there for scale
+                HieShots.body(sink, -ex, -ey, -ez);
+                MaguArt.meteor(sink, -0.5 - ex, 2.45 + 2.6 * a - ey, -ez, 0, 2.6, 0, 0.6, a, 5, 2.6 * a);
+            }
             case "mmeteor" -> {
                 double t = a / com.hexhaki.piece.server.MaguMoves.METEOR_FALL;
                 MaguArt.meteor(sink, 4.0 * (1 - t) - ex, 26.0 * (1 - t) + 0.5 - ey, 14.0 - ez, -4.0 / 12, -26.0 / 12, 0, 0.9, a, 5);

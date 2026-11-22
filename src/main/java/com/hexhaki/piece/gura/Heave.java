@@ -106,38 +106,58 @@ public final class Heave {
 
     /**
      * 3.1.8 (the owner: "the ground should like subside ... parts of it should lift, other parts should like go down. Like, it should
-     * fucking bend the terrain where it passed"; their reference, Blackbeard's "Tremor Crush!": the ground pressed down into a huge
-     * deep bowl with concentric rings, its rim heaved up): how many blocks the column at ({@code along}, {@code side}) from the feet (in
-     * the cone's own frame; {@code x}, {@code z} its world block) moves, up (+) or down (-), for a bend {@code length} long (at most
-     * {@link #BEND_MOST}). A bowl ({@code length} / 2 across, its middle 0.55 of the way out) sunk 5 to 8 blocks, a ring stepped
-     * into it every five blocks, its rim heaved up about 3.5; everywhere in the cone the ground broken into 4 by 4 slabs, some lifted a
-     * block or two, some sunk (half as much inside the bowl).
+     * fucking bend the terrain where it passed"; their reference, Blackbeard's "Tremor Crush!"). 3.2.2 (the owner: "But in a cone, like a
+     * cone forming this, like slowly forming, going forward, like pushing forward ... you made a sphere, like a circle"): how many blocks
+     * the column at ({@code along}, {@code side}) from the feet (in the cone's own frame; {@code x}, {@code z} its world block) moves, up
+     * (+) or down (-), for a bend {@code length} long (at most {@link #BEND_MOST}) and {@code cone} degrees each side. The cone is pressed
+     * down into a trench that deepens and widens with the distance (5 to 8 blocks at its deepest, shallowing again at the front), arcs
+     * stepped across it every five blocks (round the feet, as the wave runs), its two sides heaved up along the cone's edges and the
+     * ground shoved forward into a pile at its front; inside it the ground broken into 4 by 4 slabs, some lifted a block or two, some
+     * sunk (half as much in its deep middle). Nothing behind the feet moves. The wave (server/GuraUltimate.Bend) moves the columns as it
+     * reaches them, so the trench forms pushing forward.
      */
     public static int bend(double along, double side, int x, int z, double length, double cone, int seed) {
-        double rb = length * 0.5;
-        double ra = along - length * 0.55;
-        double r = Math.sqrt(ra * ra + side * side);
         double d = Math.sqrt(along * along + side * side);
-        boolean inCone = d >= NEAREST && d <= length && along > 0.0 && along / d >= Math.cos(Math.toRadians(cone + 2.0));
-        if (!inCone && r > rb + 5.0) {
+        if (along <= 0.0 || d < NEAREST) {
+            return 0;
+        }
+        double half = Math.toRadians(cone);
+        double angle = Math.atan2(Math.abs(side), along);
+        double edge = d * Math.sin(angle - half); // blocks out past the cone's side (under 0 inside)
+        double front = d - length; // blocks past its front
+        if (edge > 6.0 || front > 6.0) {
             return 0;
         }
         double depth = Math.max(5.0, Math.min(8.0, length * 0.15));
+        double q = Math.min(1.0, angle / half);
+        double deep = depth * smooth(NEAREST, 0.45 * length, along) * (1.0 - smooth(0.8 * length, length, d));
+        boolean inside = angle < half && d <= length;
         double h = 0.0;
-        if (r < rb) {
-            double q = r / rb;
-            h -= depth * (1.0 - q * q);
-            h += 1.0 * Math.cos(2.0 * Math.PI * r / 5.0) * q; // the rings stepped into it, one every five blocks
+        if (inside) {
+            h -= deep * (1.0 - q * q);
+            h += Math.cos(2.0 * Math.PI * d / 5.0) * Math.sqrt(1.0 - q * q) * deep / depth; // the arcs stepped across it
         }
-        h += 3.4 * Math.exp(-((r - rb) / 3.0) * ((r - rb) / 3.0)); // its rim heaved up
-        if (inCone) {
-            // slabs of the ground (4 by 4 on the world's grid) lifted or sunk, fewer inside the bowl (its shape must read)
+        // its sides heaved up along the cone's edges (higher the farther out), and the ground shoved forward at its front
+        h += 3.4 * smooth(NEAREST, 0.4 * length, along) * Math.exp(-(edge / 3.0) * (edge / 3.0)) * (1.0 - smooth(length, length + 5.0, d));
+        double spill = Math.toRadians(6.0);
+        if (angle < half + spill) {
+            h += 3.6 * Math.exp(-(front / 3.0) * (front / 3.0)) * (1.0 - smooth(half, half + spill, angle));
+        }
+        if (inside) {
+            // slabs of the ground (4 by 4 on the world's grid) lifted or sunk, fewer in the deep middle (the trench's shape must read)
             double u = new SplittableRandom(mix(seed + 77, Math.floorDiv(x, 4), Math.floorDiv(z, 4))).nextDouble();
-            double fade = (1.0 - 0.4 * d / length) * (r < rb * 0.8 ? 0.5 : 1.0);
+            double fade = (1.0 - 0.4 * d / length) * (q < 0.7 && deep > depth * 0.5 ? 0.5 : 1.0);
             h += (u < 0.12 ? 2.0 : u < 0.3 ? 1.2 : u > 0.9 ? -2.0 : u > 0.74 ? -1.2 : 0.0) * fade;
         }
         int o = (int) Math.round(h);
         return Math.max(-SINK_MOST, Math.min(LIFT_MOST, o));
+    }
+
+    /** 0 at {@code from}, 1 at {@code to}, smooth between. */
+    static double smooth(double from, double to, double v) {
+        double t = (v - from) / (to - from);
+        t = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
+        return t * t * (3.0 - 2.0 * t);
     }
 
     /** How high the plate is {@code t} ticks after the strike (blocks; under 0 it has sunk back into the ground). */

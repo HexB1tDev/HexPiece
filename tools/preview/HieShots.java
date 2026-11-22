@@ -3,8 +3,9 @@ import com.hexhaki.piece.hie.HieArt;
 
 /**
  * 3.1.9: the Hie Hie no Mi's drawn ice (hie/HieArt, the smooth glassy look the owner chose) for FxPreview, round the scene's middle (the
- * ground at 0, a body standing at the middle facing +z). The frozen bodies and the frozen ground are real blocks in the game (they cannot
- * be drawn here). Shots after the camera: {@code |hshatter:age}, {@code |hburst:age:radius}, {@code |hspear:grow}, {@code |hspears:age}
+ * ground at 0, a body standing at the middle facing +z). The frozen ground is real blocks in the game (it cannot be drawn here); since
+ * 3.2.2 the frozen bodies are drawn crystal ({@code |hblock}, {@code |hlblock} lite, {@code |hcshatter}, {@code |hlcshatter}, {@code |hfrost},
+ * {@code |harm} the frost from the arm, {@code |hprison}). Shots after the camera: {@code |hshatter:age}, {@code |hburst:age:radius}, {@code |hspear:grow}, {@code |hspears:age}
  * (Partisan's spears in the air round the body), {@code |hflight:age}, {@code |horb:age}, {@code |hgather:age},
  * {@code |hpheasant:age[:scale]}, {@code |hcoat:age}, {@code |hsaber}, {@code |hslash:age}, {@code |hscatter:age}, {@code |hmist:age}.
  */
@@ -47,9 +48,26 @@ public final class HieShots {
                 HieArt.block(sink, -ex, -ey, -ez, 0.3, 1.9, a, move.length > 2 ? Double.parseDouble(move[2]) : 80, 5);
             }
             case "hcshatter" -> HieArt.crystalShatter(sink, -ex, 0.95 - ey, -ez, 1.3, a, 6);
+            // the cheap versions drawn past the nearest few (client/hie/HieFx)
+            case "hlblock" -> {
+                body(sink, -ex, -ey, -ez);
+                HieArt.lite = true;
+                HieArt.block(sink, -ex, -ey, -ez, 0.3, 1.9, a, move.length > 2 ? Double.parseDouble(move[2]) : 80, 5);
+                HieArt.lite = false;
+            }
+            case "hlcshatter" -> {
+                HieArt.lite = true;
+                HieArt.crystalShatter(sink, -ex, 0.95 - ey, -ez, 1.3, a, 6);
+                HieArt.lite = false;
+            }
             case "hfrost" -> {
                 body(sink, -ex, -ey, -ez);
                 HieArt.frost(sink, -ex, -ey, -ez, 0.3, 1.9, move.length > 2 ? Double.parseDouble(move[2]) : 0.5, a, 7);
+            }
+            case "harm" -> {
+                // facing +z: his right is -x
+                body(sink, -ex, -ey, -ez);
+                HieArt.armFrost(sink, -ex, -ey, -ez, -1, 0, 0.3, 1.9, move.length > 2 ? Double.parseDouble(move[2]) : 0.25, a, 7);
             }
             case "hprison" -> {
                 body(sink, -ex, -ey, -ez);

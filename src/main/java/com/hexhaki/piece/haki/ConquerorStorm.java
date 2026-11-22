@@ -97,6 +97,15 @@ public final class ConquerorStorm {
      * ground {@code floor} under it (relative, negative) and tearing along it; {@code size} the release's (1, its thickest 1.35). Points
      * relative to the blast's point.
      */
+    /**
+     * 3.2.2 (the owner: "the lightning is too thick. If you compare the two lightnings of the Conqueror's release and the one you just
+     * added, the one you added is ridiculously fat compared to the other one"): a blast's bolts' width, as a share of the release's.
+     * The release's bolts leave the player thin (0.43 blocks) and reach their 3.6 only some 30 blocks out, so they are seen as thin black
+     * lines; a blast's bolts are seen from a few blocks off, so they are drawn thinner in the world to look as thin (3.1.8's 0.4 made them
+     * 1.4 blocks wide beside the player: fat tubes).
+     */
+    public static final double BLAST_WIDTH = 0.08;
+
     public static List<Bolt> blast(double radius, int count, double floor, long seed, double size) {
         SplittableRandom random = new SplittableRandom(seed ^ 0x424C_4153_54L);
         double height = Math.max(GROUND + 0.3, -floor);
@@ -110,9 +119,8 @@ public final class ConquerorStorm {
                 dir = normalise(dir);
             }
             double length = Math.max(8.0, Math.min(40.0, radius * 2.5)) * (0.75 + 0.25 * random.nextDouble());
-            // as wide as the release's bolts are where they are seen near a player (about 1.4 blocks; the release's 3.6 is reached 30
-            // blocks out of a 90-block bolt), kinked as often for its length
-            bolt(strands, random, dir, length, (float) (random.nextDouble() * 0.8), size * 0.4, height, 0.4, STEP * 0.5);
+            // kinked as often for its length as the release's; as thin as the release's look (BLAST_WIDTH)
+            bolt(strands, random, dir, length, (float) (random.nextDouble() * 0.8), size * BLAST_WIDTH, height, 0.4, STEP * 0.5);
         }
         List<Bolt> out = new ArrayList<>(strands.size() * 2);
         for (Strand strand : strands) {

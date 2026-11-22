@@ -58,10 +58,12 @@ def meigo():
 
 
 def ryusei():
-    up = p(rightArm=arm(-168, 0, 16, -10), leftArm=arm(-20, 0, -24, -20), body={"bend": -8, "yaw": 6})
+    # 3.2.2 (the owner: "the animation makes the hand go inside the player's head instead of being a little more to the right"): the
+    # raised fist up and out to the right of the head (the roll the other way: with the arm up a positive roll tipped it over the head)
+    up = p(rightArm=arm(-168, 0, -22, -10), leftArm=arm(-20, 0, -24, -20), body={"bend": -8, "yaw": 6})
     # 3.1.5 (the owner: "the more you hold X, the more fireballs you throw at the sky"): a punch up at tick 3 and every 6 ticks after,
     # 15 in all (MaguMoves.THROW_FIRST, THROW_EVERY, THROWS_MOST), the fist drawn back to the shoulder between them; held up after
-    pulled = p(up, rightArm=arm(-110, 0, 24, -8), body={"bend": -2, "yaw": 6})
+    pulled = p(up, rightArm=arm(-110, 0, -14, -8), body={"bend": -2, "yaw": 6})
     beats = [(0, "linear", REST), (2, "insine", p(rightArm=arm(10, 0, 14, -90), body={"bend": 6})), (3, "outexpo", up)]
     for k in range(1, 15):
         t = 3 + 6 * k

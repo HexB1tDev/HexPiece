@@ -1,5 +1,7 @@
 package com.hexhaki.piece.server;
 
+import com.hexhaki.fruit.Fruit;
+import com.hexhaki.fruit.FruitData;
 import com.hexhaki.piece.hie.HieSounds;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CUoFx;
@@ -17,23 +19,28 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * 3.1.9 (the owner: "Like actually freeze them and like blocks of ice"; shown drawn crystal: "The ground can also turn into like actual ice
- * blocks, bro. I'm not stopping you from using Minecraft stuff", and asked, "Real ice blocks"): a body frozen solid by the Hie Hie no Mi.
- * Real ice blocks are put round it (every free block its body takes up, through server/Scars: protection, claims and the mobGriefing rule
- * obeyed, and put back if the server stops; where none may go, every client draws the game's own ice block there instead, client/hie/
- * HieFx), it is held exactly where it froze (put back if it drifts, no gravity, its legs slowed to nothing), it strikes nothing (its
- * blows and shots cancelled, as a Water Prison's) and its ice does not choke it. In its last {@link #CRACK_TICKS} ticks the game's own
- * cracks run over the ice; when its time is up, or once it has taken {@link #BREAKS} damage, the ice breaks with the game's own
- * ice-breaking particles and sound, the glassy shards of hie/HieArt and a last bite of damage. The hits that do not freeze at once leave
- * the cold in a body ({@link #chill}): slowed, and frozen solid on the {@link #CHILL_FREEZES}th.
+ * A body frozen solid by the Hie Hie no Mi. 3.2.2 (the owner: "the ice sometimes melts" and "I think like the entity should be like in a
+ * crystal like you had before that then shatters"): no block of the world changes any more (3.1.9's real ice blocks melted into water by
+ * any light); every client draws the body held in hie/HieArt's cut crystal (client/hie/HieFx), cracking over its last
+ * {@link #CRACK_TICKS} ticks and shattering into crystal shards. It is held exactly where it froze (put back if it drifts, no gravity, its
+ * legs slowed to nothing), it strikes nothing (its blows and shots cancelled, as a Water Prison's). When its time is up, or once it has
+ * taken {@link #BREAKS} damage, or the next time the one who froze it strikes it ("when you hit them again, you can shatter them"), it
+ * shatters with a last bite of damage.
+ * <p>
+ * The frost (the owner: "imagine whenever an entity punches you that doesn't have Haki on, their limbs that they hit with like turn blue"
+ * and "whenever you left-click someone. You should be able to, like, freeze them slowly, and when we punch them a certain number of times,
+ * they get completely frozen, and when you hit them again, you can shatter them"): every cold hit ({@link #frost}) leaves the body bluer
+ * and slower; the {@link #FROST_FULL}th within {@link #FROST_KEEP} ticks of the last freezes it solid. The Ice fruit's own punches in fruit
+ * mode frost what they hit ({@link #punch}); a bare-handed blow on the body of ice frosts the attacker from the arm (server/HieMoves.dodged).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class HieFreeze {
-    /** A body frozen: whose ice, where it is held, until when, inside an Ice Ball (that client draws the ball, not a block), damage taken. */
+    /** A body frozen: whose ice, where it is held, until when, inside an Ice Ball (that client draws the ball, not a crystal), damage taken. */
     static final class Hold {
         final ServerLevel level;
         final ServerPlayer owner;
@@ -41,48 +48,52 @@ public final class HieFreeze {
         final Vec3 at;
         final long until;
         final boolean ball;
-        /** The ice blocks put round it (BlockPos longs), and the first breaker id its cracks are sent under. */
-        final long[] ice;
-        final int crackId;
+        /** The tick it froze (its freezer's next blow smashes it only a few ticks after: never the blow that froze it). */
+        final long since;
         float taken;
         /** Broken by the damage it took: it shatters on the next tick (never inside the blow's own damage). */
         boolean broken;
+        /** Struck by the one who froze it: it shatters on the next tick with {@link #SMASH_DAMAGE}. */
+        boolean smashed;
 
-        Hold(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 at, long until, boolean ball, long[] ice) {
+        Hold(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 at, long until, boolean ball) {
             this.level = level;
             this.owner = owner;
             this.body = body;
             this.at = at;
             this.until = until;
             this.ball = ball;
-            this.ice = ice;
-            this.crackId = CRACK_IDS + (body.m_19879_() & 0xFFFFF) * 16;
+            this.since = level.m_46467_();
         }
     }
 
     /** Damage taken inside the ice that breaks it early. */
     static final float BREAKS = 14.0F;
-    /** The shatter's last bite. */
+    /** The shatter's last bite, and the bite when its freezer smashes it. */
     static final float SHATTER_DAMAGE = 4.0F;
+    static final float SMASH_DAMAGE = 8.0F;
     /** A held body that drifts this far (blocks) is put back. */
     static final double DRIFT = 0.12;
     /** The most bodies frozen at once (the oldest thaws first). */
     static final int MOST = 48;
-    /** Chill: how many cold hits freeze a body solid, for how long (ticks), and how long the cold stays without another hit. */
-    public static final int CHILL_FREEZES = 3;
-    static final int CHILL_FREEZE_TICKS = 60;
-    static final int CHILL_KEEP = 100;
-    /** The game's cracks run over a frozen body's ice in its last this many ticks. */
+    /** The frost: how many cold hits freeze a body solid, for how long (ticks), how long the frost stays without another hit. */
+    public static final int FROST_FULL = 4;
+    public static final int FROST_FREEZE_TICKS = 80;
+    public static final int FROST_KEEP = 100;
+    /** One punch's frost on one body at most this often (ticks): clicking fast does not freeze anyone in a second. */
+    static final int PUNCH_EVERY = 8;
+    /** Its freezer's blow smashes a frozen body only this many ticks after it froze. */
+    static final int SMASH_AFTER = 4;
+    /** The crystal cracks over a frozen body's last this many ticks (hie/HieArt.CRACK_TIME draws it). */
     public static final int CRACK_TICKS = 24;
-    /** Breaker ids for the cracks (out of any entity's id). */
-    static final int CRACK_IDS = 0x50000000;
-    /** The ice put round a body: the most blocks, the game's break effect for at most this many of them. */
-    static final int MOST_ICE = 12;
-    static final int MOST_BREAKS = 6;
+    /** After it thaws, a body is not frozen again by a lasting field (Ice Age's) for this many ticks. */
+    public static final int GRACE = 20;
 
     private static final Map<Integer, Hold> HELD = new HashMap<>();
-    /** Each chilled body's cold: {hits, the tick of the last}. */
-    private static final Map<Integer, long[]> CHILL = new HashMap<>();
+    /** Each frosted body's frost: {hits, the tick of the last, the tick of the last punch}. */
+    private static final Map<Integer, long[]> FROST = new HashMap<>();
+    /** The tick each body last thawed. */
+    private static final Map<Integer, Long> THAWED = new HashMap<>();
 
     private HieFreeze() {
     }
@@ -90,6 +101,12 @@ public final class HieFreeze {
     /** Whether {@code body} is frozen solid now. */
     public static boolean frozen(Entity body) {
         return body != null && HELD.containsKey(body.m_19879_());
+    }
+
+    /** Whether {@code body} thawed within the last {@link #GRACE} ticks. */
+    static boolean graced(Entity body, long now) {
+        Long at = THAWED.get(body.m_19879_());
+        return at != null && now - at < GRACE;
     }
 
     /**
@@ -121,13 +138,10 @@ public final class HieFreeze {
         body.m_20242_(true);
         body.m_20256_(Vec3.f_82478_);
         boolean inBall = ball || old != null && old.ball;
-        long[] ice = old != null ? old.ice : inBall ? new long[0] : encase(owner, level, body, at, ticks);
-        Hold hold = new Hold(level, owner, body, at, now + ticks, inBall, ice);
-        HELD.put(body.m_19879_(), hold);
-        CHILL.remove(body.m_19879_());
-        // bz: whether real ice went round it (else every client draws the game's own ice block there)
+        HELD.put(body.m_19879_(), new Hold(level, owner, body, at, now + ticks, inBall));
+        FROST.remove(body.m_19879_());
         PieceNetwork.around(body, new S2CUoFx(HieMoves.FREEZE, body.m_19879_(), owner.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, 0, 0, 0,
-            body.m_20206_(), inBall ? 1.0F : 0.0F, ice.length > 0 ? 1.0F : 0.0F, (float) (body.m_20205_() * 0.5), ticks));
+            body.m_20206_(), inBall ? 1.0F : 0.0F, 0.0F, (float) (body.m_20205_() * 0.5), ticks));
         if (old == null) {
             HieMoves.sound(owner, at.m_82520_(0, body.m_20206_() * 0.5, 0), HieSounds.FREEZE, 1.1F, 0.9F + level.m_213780_().m_188501_() * 0.2F);
         }
@@ -135,118 +149,66 @@ public final class HieFreeze {
     }
 
     /**
-     * Real ice in every free block {@code body}'s box takes up, standing at {@code at} (air only: never a block of the world, never the
-     * ground under it), through Scars (put back a little after {@code ticks} if the break never comes); none when the mobGriefing rule
-     * is off. Returns the blocks put.
+     * {@code hits} cold hits on {@code body} by {@code owner}: the body bluer and slower with each (every client draws hie/HieArt.frost
+     * over it, from the arm up when {@code fromArm}: an attacker's own blow); the {@link #FROST_FULL}th within {@link #FROST_KEEP} ticks
+     * of the last freezes it solid for {@link #FROST_FREEZE_TICKS}. Returns whether it froze.
      */
-    static long[] encase(ServerPlayer owner, ServerLevel level, LivingEntity body, Vec3 at, int ticks) {
-        if (!level.m_46469_().m_46207_(net.minecraft.world.level.GameRules.f_46132_)) {
-            return new long[0];
-        }
-        double half = body.m_20205_() * 0.5;
-        int x0 = (int) Math.floor(at.f_82479_ - half + 0.05);
-        int x1 = (int) Math.floor(at.f_82479_ + half - 0.05);
-        int y0 = (int) Math.floor(at.f_82480_ + 0.05);
-        int y1 = (int) Math.floor(at.f_82480_ + body.m_20206_() - 0.05);
-        int z0 = (int) Math.floor(at.f_82481_ - half + 0.05);
-        int z1 = (int) Math.floor(at.f_82481_ + half - 0.05);
-        Scars scars = Scars.of(level);
-        net.minecraft.world.level.block.state.BlockState ice = net.minecraft.world.level.block.Blocks.f_50126_.m_49966_();
-        long[] put = new long[MOST_ICE];
-        int n = 0;
-        for (int y = y0; y <= y1 && n < MOST_ICE; y++) {
-            for (int x = x0; x <= x1 && n < MOST_ICE; x++) {
-                for (int z = z0; z <= z1 && n < MOST_ICE; z++) {
-                    net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x, y, z);
-                    if (!level.m_8055_(pos).m_60795_()) {
-                        continue;
-                    }
-                    if (scars.swap(owner, pos, ice, List.of(), ticks + 4L) == Scars.TORN) {
-                        put[n++] = pos.m_121878_();
-                    }
-                }
-            }
-        }
-        return java.util.Arrays.copyOf(put, n);
-    }
-
-    /**
-     * The ice round a body breaks: each block still ice (or the water it melted into) goes back to air, the game's own ice-breaking
-     * particles and sound at a few of them, the cracks taken off.
-     */
-    static void breakIce(ServerLevel level, long[] ice, int crackId) {
-        net.minecraft.world.level.block.state.BlockState air = net.minecraft.world.level.block.Blocks.f_50016_.m_49966_();
-        int effect = net.minecraft.world.level.block.Block.m_49956_(net.minecraft.world.level.block.Blocks.f_50126_.m_49966_());
-        for (int k = 0; k < ice.length; k++) {
-            net.minecraft.core.BlockPos pos = net.minecraft.core.BlockPos.m_122022_(ice[k]);
-            level.m_6801_(crackId + k, pos, -1);
-            net.minecraft.world.level.block.state.BlockState state = level.m_8055_(pos);
-            boolean melted = state.m_60734_() == net.minecraft.world.level.block.Blocks.f_49990_;
-            if (state.m_60734_() == net.minecraft.world.level.block.Blocks.f_50126_ || melted) {
-                level.m_7731_(pos, air, 2 | 16);
-                if (k < MOST_BREAKS) {
-                    level.m_46796_(2001, pos, effect);
-                }
-            }
-        }
-    }
-
-    /**
-     * A cold hit on {@code body} ({@code hits} of them): slowed more with each; the {@link #CHILL_FREEZES}th within {@link #CHILL_KEEP}
-     * ticks of the last freezes it solid. Returns whether it froze.
-     */
-    public static boolean chill(ServerPlayer owner, LivingEntity body, int hits) {
-        if (!(body.m_9236_() instanceof ServerLevel level) || !body.m_6084_() || frozen(body)) {
+    public static boolean frost(ServerPlayer owner, LivingEntity body, int hits, boolean fromArm) {
+        if (!(body.m_9236_() instanceof ServerLevel level) || !body.m_6084_() || frozen(body) || hits <= 0) {
             return false;
         }
         long now = level.m_46467_();
-        long[] cold = CHILL.get(body.m_19879_());
-        if (cold == null || now - cold[1] > CHILL_KEEP) {
-            cold = new long[] {0, now};
-            if (CHILL.size() > 256) {
-                CHILL.values().removeIf(c -> now - c[1] > CHILL_KEEP);
+        long[] cold = FROST.get(body.m_19879_());
+        if (cold == null || now - cold[1] > FROST_KEEP) {
+            cold = new long[] {0, now, now - PUNCH_EVERY};
+            if (FROST.size() > 256) {
+                FROST.values().removeIf(c -> now - c[1] > FROST_KEEP);
             }
-            CHILL.put(body.m_19879_(), cold);
+            FROST.put(body.m_19879_(), cold);
         }
         cold[0] += hits;
         cold[1] = now;
-        if (cold[0] >= CHILL_FREEZES) {
-            return freeze(owner, body, CHILL_FREEZE_TICKS, false);
+        if (cold[0] >= FROST_FULL) {
+            return freeze(owner, body, FROST_FREEZE_TICKS, false);
         }
-        body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, 60, (int) cold[0], false, false, false));
+        body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, FROST_KEEP, (int) cold[0] - 1, false, false, false));
+        Vec3 feet = body.m_20182_();
+        PieceNetwork.around(body, new S2CUoFx(HieMoves.CHILL, body.m_19879_(), owner.m_19879_(), feet.f_82479_, feet.f_82480_, feet.f_82481_, 0, 0, 0,
+            fromArm ? 1.0F : 0.0F, body.m_20206_(), 0.0F, cold[0] / (float) FROST_FULL, FROST_KEEP));
+        HieMoves.sound(owner, feet.m_82520_(0, body.m_20206_() * 0.6, 0), HieSounds.CRACK, 0.45F, 1.25F + 0.1F * cold[0]);
         return false;
     }
 
-    /** The ice round a held body breaks ({@code shatter}: it shatters, with its last bite and its sound; else it only melts away). */
+    /** The ice round a held body goes ({@code shatter}: it shatters, with its last bite and its sound; else it only fades away). */
     static void thaw(Hold hold, boolean shatter) {
         LivingEntity body = hold.body;
         body.m_20242_(false);
-        if (hold.ice.length > 0) {
-            breakIce(hold.level, hold.ice, hold.crackId);
+        THAWED.put(body.m_19879_(), hold.level.m_46467_());
+        if (THAWED.size() > 256) {
+            long now = hold.level.m_46467_();
+            THAWED.values().removeIf(t -> now - t > GRACE);
         }
         Vec3 middle = body.m_20182_().m_82520_(0, body.m_20206_() * 0.5, 0);
         PieceNetwork.around(body, new S2CUoFx(HieMoves.THAW, body.m_19879_(), hold.owner.m_19879_(), middle.f_82479_, middle.f_82480_,
-            middle.f_82481_, 0, 0, 0, 0, shatter ? 1.0F : 0.0F, hold.ball ? 1.0F : 0.0F, (float) Math.max(0.9, body.m_20206_() * 0.6), 0));
+            middle.f_82481_, 0, 0, 0, 0, shatter ? 1.0F : 0.0F, hold.ball && !hold.smashed ? 1.0F : 0.0F, (float) Math.max(0.9, body.m_20206_() * 0.7), 0));
         if (shatter && body.m_6084_()) {
             if (hold.owner.m_6084_()) {
-                HieMoves.hurt(hold.owner, body, SHATTER_DAMAGE);
+                HieMoves.hurt(hold.owner, body, hold.smashed ? SMASH_DAMAGE : SHATTER_DAMAGE);
             }
-            if (!hold.ball) {
-                HieMoves.sound(hold.owner, middle, HieSounds.SHATTER, 0.9F, 0.95F + hold.level.m_213780_().m_188501_() * 0.2F);
+            if (!hold.ball || hold.smashed) {
+                HieMoves.sound(hold.owner, middle, HieSounds.SHATTER, hold.smashed ? 1.2F : 0.9F, 0.95F + hold.level.m_213780_().m_188501_() * 0.2F);
             }
         }
     }
 
-    /** {@code owner}'s player left (or the fruit went): nothing changes for the bodies it froze (they thaw on their own). */
+    /** Every frozen body let go at once (the server stopping). */
     static void clear() {
         for (Hold h : new ArrayList<>(HELD.values())) {
             h.body.m_20242_(false);
-            if (h.ice.length > 0) {
-                breakIce(h.level, h.ice, h.crackId);
-            }
         }
         HELD.clear();
-        CHILL.clear();
+        FROST.clear();
+        THAWED.clear();
     }
 
     @SubscribeEvent
@@ -261,7 +223,7 @@ public final class HieFreeze {
                 continue;
             }
             LivingEntity body = hold.body;
-            if (!body.m_6084_() || body.m_213877_() || body.m_9236_() != level || now >= hold.until || hold.broken) {
+            if (!body.m_6084_() || body.m_213877_() || body.m_9236_() != level || now >= hold.until || hold.broken || hold.smashed) {
                 done.add(hold);
                 continue;
             }
@@ -273,16 +235,9 @@ public final class HieFreeze {
             body.f_19789_ = 0.0F;
             body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, 3, 9, false, false, false));
             Clashes.stagger(body, now, 3);
-            // the game's own cracks running over its ice before it breaks
-            long left = hold.until - now;
-            if (left <= CRACK_TICKS && hold.ice.length > 0 && left % 3 == 0) {
-                int progress = (int) Math.min(9, (CRACK_TICKS - left) * 10 / CRACK_TICKS);
-                for (int k = 0; k < hold.ice.length; k++) {
-                    level.m_6801_(hold.crackId + k, net.minecraft.core.BlockPos.m_122022_(hold.ice[k]), progress);
-                }
-                if (left == CRACK_TICKS - CRACK_TICKS % 3) {
-                    HieMoves.sound(hold.owner, hold.at.m_82520_(0, body.m_20206_() * 0.5, 0), HieSounds.CRACK, 0.9F, 1.0F);
-                }
+            // the crystal starts to crack (every client draws the cracks running over it)
+            if (!hold.ball && hold.until - now == CRACK_TICKS) {
+                HieMoves.sound(hold.owner, hold.at.m_82520_(0, body.m_20206_() * 0.5, 0), HieSounds.CRACK, 0.9F, 1.0F);
             }
         }
         for (Hold hold : done) {
@@ -307,20 +262,55 @@ public final class HieFreeze {
         }
     }
 
+    /**
+     * {@code owner} strikes {@code body} on purpose (a punch, a spear, a cut of the saber): if it froze that body at least
+     * {@link #SMASH_AFTER} ticks ago, the crystal shatters on the next tick with {@link #SMASH_DAMAGE} ("when you hit them again, you can
+     * shatter them"). Returns whether it will.
+     */
+    public static boolean smash(ServerPlayer owner, LivingEntity body) {
+        Hold hold = HELD.get(body.m_19879_());
+        if (hold == null || hold.owner != owner || hold.level.m_46467_() < hold.since + SMASH_AFTER) {
+            return false;
+        }
+        hold.smashed = true;
+        return true;
+    }
+
     /** A frozen body strikes nothing (its blows, and what it shoots). */
     @SubscribeEvent
     public static void freezeAttack(LivingAttackEvent event) {
         if (HELD.isEmpty()) {
             return;
         }
-        // its own ice never chokes it
-        if (HELD.containsKey(event.getEntity().m_19879_()) && "inWall".equals(event.getSource().m_19385_())) {
-            event.setCanceled(true);
-            return;
-        }
         Entity attacker = event.getSource().m_7639_();
         if (attacker != null && attacker != event.getEntity() && HELD.containsKey(attacker.m_19879_())) {
             event.setCanceled(true);
+        }
+    }
+
+    /**
+     * The Ice fruit's punch in fruit mode (a real left click on a body: the game's own punch, client/hie/HieFx gives it back): what it hits
+     * is frosted one hit (at most every {@link #PUNCH_EVERY} ticks a body); a body this player froze is smashed instead.
+     */
+    @SubscribeEvent
+    public static void punch(AttackEntityEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !(event.getTarget() instanceof LivingEntity body) || !body.m_6084_()
+            || FruitData.fruit(player) != Fruit.HIE || !FruitData.active(player) || !player.m_21205_().m_41619_() || HieMoves.saberOut(player)) {
+            return;
+        }
+        if (HELD.containsKey(body.m_19879_())) {
+            smash(player, body); // a frozen body: its freezer's punch smashes it (anyone else's damage adds up: freezeHurt)
+            return;
+        }
+        long now = player.m_9236_().m_46467_();
+        long[] cold = FROST.get(body.m_19879_());
+        if (cold != null && now - cold[1] <= FROST_KEEP && now - cold[2] < PUNCH_EVERY) {
+            return;
+        }
+        frost(player, body, 1, false);
+        cold = FROST.get(body.m_19879_());
+        if (cold != null) {
+            cold[2] = now;
         }
     }
 }

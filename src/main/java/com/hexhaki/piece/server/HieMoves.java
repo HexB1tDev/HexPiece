@@ -34,9 +34,9 @@ import net.minecraftforge.fml.common.Mod;
 /**
  * 3.1.9: the Hie Hie no Mi's moves (server/HieKit), as Kuzan uses them in the references (docs/handoff/hie-ref). Every hit and freeze is
  * worked out here on the server's ticks, in step with its animation (tools/hie_anims.py keeps the same beats); what everyone sees is one
- * small {@link S2CUoFx} (kinds {@link #FREEZE} to {@link #SHATTER}, 120 to 139) and every client builds the ice from it (client/hie/HieFx,
- * hie/HieArt). No block of the world ever changes: the ice, the frozen ground and the road are all drawn, and the bodies frozen solid
- * are held by server/HieFreeze.
+ * small {@link S2CUoFx} (kinds {@link #FREEZE} to {@link #CHILL}, 120 to 159) and every client builds the ice from it (client/hie/HieFx,
+ * hie/HieArt). The ground under Ice Age and the road turns to real ice for a while (server/Scars puts it back); the bodies frozen solid
+ * (server/HieFreeze) and the Ice Ball are drawn crystal (3.2.2: real ice blocks melted into water).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class HieMoves {
@@ -79,6 +79,12 @@ public final class HieMoves {
     public static final int SCATTER = 138;
     /** Ice shattering where no body is (the Ice Ball's end, the saber let go): x, y, z, size. */
     public static final int SHATTER = 139;
+    /**
+     * 3.2.2: the frost on a body (id: the body, user: whose cold): x, y, z its feet, bx 1 from the arm (an attacker's own blow), by its
+     * height, size how far the frost has spread (0 to 1), ticks how long it stays without another hit. Kinds 140 to 159 are the Ice
+     * fruit's too.
+     */
+    public static final int CHILL = 140;
 
     // ---- numbers
     /** The N key's ability number (client/FruitKeyN.ABILITY, as GuraUltimate.SLOT: out of the original's quick slots 0 to 8). */
@@ -94,7 +100,8 @@ public final class HieMoves {
     /** Ice Time: reach, the lunge's speed (blocks a tick), how long they stay frozen. */
     static final double TIME_RANGE = 12.0;
     static final double TIME_SPEED = 2.4;
-    static final int TIME_HOLD = 100;
+    /** 3.2.2 (the owner: Ice Time "meant to be one of the most satisfying abilities"): held 3.5 s, then it shatters. */
+    static final int TIME_HOLD = 70;
     /** Ice Ball: the gathering (ticks), the orb's speed and reach, the prison's radius and how long it holds. */
     public static final int GATHER_TICKS = 10;
     static final double ORB_SPEED = 1.6;
@@ -115,8 +122,17 @@ public final class HieMoves {
     static final double ROAD_RANGE = 22.0;
     static final double ROAD_SPEED = 1.8;
     public static final int ROAD_LIFE = 160;
-    /** 3.1.9 (the owner, asked: "Real ice ground"): how long the frozen ground (Ice Age's, the road's) stays before it is put back (ticks). */
-    public static final int GROUND_BACK = 400;
+    /**
+     * 3.1.9 (the owner, asked: "Real ice ground"): how long the frozen ground (Ice Age's, the road's) stays before it is put back (ticks).
+     * 3.2.2 (the owner: "Ice World is lasting way too long"): 8 s, was 20.
+     */
+    public static final int GROUND_BACK = 160;
+    /**
+     * 3.2.2 (the owner: "it's meant to freeze everyone, like, in there"; "anything that comes in there should freeze"): while Ice Age's
+     * ground lies there, every so many ticks everyone in its cone who is not frozen (and did not just thaw) freezes for so long.
+     */
+    static final int AGE_FIELD_EVERY = 4;
+    static final int AGE_FIELD_HOLD = 60;
     /** Ice Age's ridges of ice: along this many lines out from where it started (and here and there). */
     static final int RIDGES = 5;
     /** The Ice Saber: how long it lasts (ticks), a cut at most this often, its reach. */
@@ -190,6 +206,19 @@ public final class HieMoves {
                 action.run();
             }
         }));
+    }
+
+    /** Whether {@code player} holds the Ice Saber now (its left click cuts, it does not punch). */
+    static boolean saberOut(ServerPlayer player) {
+        State s = STATES.get(player.m_20148_());
+        return s != null && s.saberUntil >= 0;
+    }
+
+    /** A blow on purpose on {@code body}: a body {@code player} froze is smashed; any other is frosted {@code hits}. */
+    static void cold(ServerPlayer player, LivingEntity body, int hits) {
+        if (!HieFreeze.smash(player, body)) {
+            HieFreeze.frost(player, body, hits, false);
+        }
     }
 
     static boolean busy(State s, long now) {
@@ -335,7 +364,7 @@ public final class HieMoves {
 
     /**
      * One spear of ice from {@code from} at {@code target} ({@link #SPEAR_SPEED} blocks a tick): it strikes the first body on its way
-     * ({@code damage}, a little thrown, the cold left in them: HieFreeze.chill) or bursts on the first block; {@code slot} the spear that
+     * ({@code damage}, a little thrown, the frost left in them: HieFreeze.frost; a body he froze shatters) or bursts on the first block; {@code slot} the spear that
      * left the air round him (+1; 0 one out of the hand).
      */
     static void spear(ServerPlayer player, Vec3 from, Vec3 target, int slot, float damage) {
@@ -372,8 +401,8 @@ public final class HieMoves {
                 }
                 if (first != null) {
                     Vec3 struck = StyleCombat.middle(first);
+                    cold(player, first, 1);
                     PikaMoves.hit(player, first, damage, dir.m_82490_(0.4).m_82520_(0, 0.15, 0), false);
-                    HieFreeze.chill(player, first, 1);
                     burst(player, struck, 0.9, 0.3, seed);
                     ConquerorAura.exploded(player, level, struck, 1.2);
                     sound(player, struck, HieSounds.HIT, 0.9F, 1.0F + level.m_213780_().m_188501_() * 0.2F);
@@ -443,7 +472,7 @@ public final class HieMoves {
                 burst(player, hand, 0.7, 0.2, 0);
                 for (LivingEntity body : PikaMoves.foes(player, hand, 2.2)) {
                     hurt(player, body, 4.0F);
-                    HieFreeze.freeze(player, body, TIME_HOLD - 20, false);
+                    HieFreeze.freeze(player, body, TIME_HOLD - 15, false);
                 }
                 sound(player, hand, HieSounds.FREEZE, 0.8F, 1.2F);
             }
@@ -508,111 +537,30 @@ public final class HieMoves {
     }
 
     /**
-     * The ball of ice where the orb landed (the owner, asked: "Real ice blocks"): a real ball of ice blocks {@link #BALL_RADIUS} round, sat on
-     * the ground under it (only where there is air, never round anyone it does not freeze), everyone in it frozen inside; when they thaw it
-     * breaks with the game's own ice-breaking particles and sound (the Conqueror's lightning out of that break, with Haki). Where no ice may
-     * go (the mobGriefing rule, a claim) every client draws the game's own ice blocks there instead.
+     * The ball of ice where the orb landed: 3.2.2 (the owner: "the ice sometimes melts"; "in a crystal like you had before that then
+     * shatters") a ball of cut crystal {@link #BALL_RADIUS} round, sat on the ground under it, drawn by every client (hie/HieArt.prison),
+     * everyone in it frozen inside; its cracks run over it before it shatters (the Conqueror's lightning out of that shattering, with Haki).
+     * No block of the world changes.
      */
     static void prison(ServerPlayer player, ServerLevel level, Vec3 at, int orb) {
         Vec3 g = MaguMoves.ground(level, at, 1.0, 4.0);
         Vec3 centre = g != null ? g.m_82520_(0, BALL_RADIUS * 0.72, 0) : at;
-        List<LivingEntity> held = PikaMoves.foes(player, centre, BALL_RADIUS + 0.4);
-        for (LivingEntity body : held) {
+        for (LivingEntity body : PikaMoves.foes(player, centre, BALL_RADIUS + 0.4)) {
             hurt(player, body, 6.0F);
             HieFreeze.freeze(player, body, BALL_HOLD, true);
         }
-        long[] ice = ball(player, level, centre, BALL_RADIUS, held);
         int seed = ++seeds;
-        fx(player, BALL, seed, centre, Vec3.f_82478_, 0, orb, ice.length > 0 ? 1 : 0, BALL_RADIUS, BALL_HOLD);
+        fx(player, BALL, seed, centre, Vec3.f_82478_, 0, orb, 0, BALL_RADIUS, BALL_HOLD);
         Impact.quake(level, centre, 20.0, 0.45F, 10);
         sound(player, centre, HieSounds.FREEZE, 1.6F, 0.75F);
         sound(player, centre, HieSounds.FORM, 1.2F, 0.7F);
-        int crack = HieFreeze.CRACK_IDS - 0x1000000 + (seed & 0xFFFF) * 128;
         later(player, BALL_HOLD - HieFreeze.CRACK_TICKS, () -> sound(player, centre, HieSounds.CRACK, 1.4F, 0.85F));
-        for (int step = 0; step < 4; step++) {
-            int progress = 2 + step * 2;
-            later(player, BALL_HOLD - HieFreeze.CRACK_TICKS + step * 6, () -> {
-                for (int k = 0; k < ice.length; k += 3) {
-                    level.m_6801_(crack + k, net.minecraft.core.BlockPos.m_122022_(ice[k]), progress);
-                }
-            });
-        }
         later(player, BALL_HOLD, () -> {
-            for (int k = 0; k < ice.length; k += 3) {
-                level.m_6801_(crack + k, net.minecraft.core.BlockPos.m_122022_(ice[k]), -1);
-            }
-            HieFreeze.breakIce(level, spread(ice, 14), crack + 1);
-            HieFreeze.breakIce(level, ice, crack + 2);
             fx(player, SHATTER, seed, centre, Vec3.f_82478_, 0, 0, 0, BALL_RADIUS * 1.2, 0);
             ConquerorAura.exploded(player, level, centre, BALL_RADIUS * 1.6);
             Impact.quake(level, centre, 24.0, 0.5F, 10);
             sound(player, centre, HieSounds.SHATTER, 1.8F, 0.8F);
         });
-    }
-
-    /** {@code count} of {@code ice}'s blocks, spread evenly through it (the ones the game's break effect is played at). */
-    static long[] spread(long[] ice, int count) {
-        int n = Math.min(count, ice.length);
-        long[] out = new long[n];
-        for (int k = 0; k < n; k++) {
-            out[k] = ice[(int) ((long) k * ice.length / Math.max(1, n))];
-        }
-        return out;
-    }
-
-    /** Real ice in every free block within {@code radius} of {@code centre} that no body but {@code held} stands in; the blocks put. */
-    static long[] ball(ServerPlayer player, ServerLevel level, Vec3 centre, double radius, List<LivingEntity> held) {
-        if (!level.m_46469_().m_46207_(net.minecraft.world.level.GameRules.f_46132_)) {
-            return new long[0];
-        }
-        Scars scars = Scars.of(level);
-        net.minecraft.world.level.block.state.BlockState ice = net.minecraft.world.level.block.Blocks.f_50126_.m_49966_();
-        net.minecraft.world.phys.AABB all = new net.minecraft.world.phys.AABB(centre.f_82479_ - radius - 1, centre.f_82480_ - radius - 1,
-            centre.f_82481_ - radius - 1, centre.f_82479_ + radius + 1, centre.f_82480_ + radius + 1, centre.f_82481_ + radius + 1);
-        List<LivingEntity> free = new ArrayList<>();
-        for (LivingEntity body : level.m_6443_(LivingEntity.class, all, LivingEntity::m_6084_)) {
-            if (!held.contains(body)) {
-                free.add(body);
-            }
-        }
-        int r = (int) Math.ceil(radius);
-        int cx = (int) Math.floor(centre.f_82479_);
-        int cy = (int) Math.floor(centre.f_82480_);
-        int cz = (int) Math.floor(centre.f_82481_);
-        long[] put = new long[160];
-        int n = 0;
-        for (int dy = -r; dy <= r; dy++) {
-            for (int dx = -r; dx <= r; dx++) {
-                for (int dz = -r; dz <= r && n < put.length; dz++) {
-                    double ox = cx + dx + 0.5 - centre.f_82479_;
-                    double oy = cy + dy + 0.5 - centre.f_82480_;
-                    double oz = cz + dz + 0.5 - centre.f_82481_;
-                    if (ox * ox + oy * oy + oz * oz > radius * radius) {
-                        continue;
-                    }
-                    net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(cx + dx, cy + dy, cz + dz);
-                    if (!level.m_8055_(pos).m_60795_() || inside(free, pos)) {
-                        continue;
-                    }
-                    if (scars.swap(player, pos, ice, List.of(), BALL_HOLD + 4L) == Scars.TORN) {
-                        put[n++] = pos.m_121878_();
-                    }
-                }
-            }
-        }
-        return java.util.Arrays.copyOf(put, n);
-    }
-
-    /** Whether any of {@code bodies} stands in the block at {@code pos}. */
-    static boolean inside(List<LivingEntity> bodies, net.minecraft.core.BlockPos pos) {
-        net.minecraft.world.phys.AABB block = new net.minecraft.world.phys.AABB(pos.m_123341_(), pos.m_123342_(), pos.m_123343_(), pos.m_123341_() + 1.0,
-            pos.m_123342_() + 1.0, pos.m_123343_() + 1.0);
-        for (LivingEntity body : bodies) {
-            if (body.m_20191_().m_82381_(block)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // ------------------------------------------------------------------------------------------------------ the frozen ground
@@ -793,9 +741,13 @@ public final class HieMoves {
                 @Override
                 public boolean tick(long t) {
                     this.age++;
-                    double front = this.age * HieArt.SHEET_SPEED;
-                    if (front > AGE_REACH + 2.0 || !player.m_6084_()) {
+                    double front = Math.min(AGE_REACH + 1.0, this.age * HieArt.SHEET_SPEED);
+                    if (this.age > GROUND_BACK || !player.m_6084_()) {
                         return true;
+                    }
+                    boolean running = this.age * HieArt.SHEET_SPEED <= AGE_REACH + 2.0;
+                    if (!running && this.age % AGE_FIELD_EVERY != 0) {
+                        return false;
                     }
                     // the ground freezing as the wave runs over it (at most so many columns a tick: the rest the next)
                     int done = 0;
@@ -810,17 +762,22 @@ public final class HieMoves {
                         double dx = p.f_82479_ - origin.f_82479_;
                         double dz = p.f_82481_ - origin.f_82481_;
                         double d = Math.sqrt(dx * dx + dz * dz);
-                        if (d > front || Math.abs(p.f_82480_ - origin.f_82480_) > 6.0 || frozen.contains(body.m_19879_())) {
+                        if (d > front || Math.abs(p.f_82480_ - origin.f_82480_) > 6.0) {
                             continue;
                         }
                         if (d > 1.0 && (dx * way.f_82479_ + dz * way.f_82481_) / d < cos) {
                             continue;
                         }
-                        frozen.add(body.m_19879_());
-                        hurt(player, body, 6.0F);
-                        HieFreeze.freeze(player, body, AGE_HOLD, false);
-                        if (sparks < 2 && ConquerorAura.mixed(player, StyleCombat.middle(body), 2.2, 6, -1.0)) {
-                            sparks++;
+                        if (frozen.add(body.m_19879_())) {
+                            // the wave reaching them: struck and frozen (the lightning out of the first two, with Haki)
+                            hurt(player, body, 6.0F);
+                            HieFreeze.freeze(player, body, AGE_HOLD, false);
+                            if (sparks < 2 && ConquerorAura.mixed(player, StyleCombat.middle(body), 2.2, 6, -1.0)) {
+                                sparks++;
+                            }
+                        } else if (this.age % AGE_FIELD_EVERY == 0 && !HieFreeze.frozen(body) && !HieFreeze.graced(body, t)) {
+                            // still in the frozen world (or come into it): frozen again while it lasts
+                            HieFreeze.freeze(player, body, AGE_FIELD_HOLD, false);
                         }
                     }
                     return false;
@@ -884,7 +841,7 @@ public final class HieMoves {
                     PieceNetwork.around(player, new S2CClash(++frames, struck.f_82479_, struck.f_82480_, struck.f_82481_, (float) aim.f_82479_,
                         (float) aim.f_82481_, 2.0F, 0, 0, player.m_19879_(), target.m_19879_(), 0));
                 }
-                HieFreeze.chill(player, target, 2);
+                HieFreeze.frost(player, target, 2, false);
                 UoMoves.explode(player, level, struck, aim, 2.4, 4.0F, 0, 1.0);
                 burst(player, struck, 2.4, 1.0, 0);
                 Impact.quake(level, struck, 24.0, 0.7F, 12);
@@ -895,7 +852,7 @@ public final class HieMoves {
                 burst(player, hand, 1.2, 0.4, 0);
                 for (LivingEntity body : PikaMoves.foes(player, hand, 2.0)) {
                     PikaMoves.hit(player, body, 8.0F, aim.m_82490_(1.2).m_82520_(0, 0.3, 0), true);
-                    HieFreeze.chill(player, body, 1);
+                    HieFreeze.frost(player, body, 1, false);
                 }
                 sound(player, hand, HieSounds.HIT, 1.2F, 0.9F);
             }
@@ -1019,8 +976,8 @@ public final class HieMoves {
                 if (d > CUT_REACH + body.m_20205_() * 0.5 || d > 1.0E-6 && rel.m_82526_(look) / d < cos) {
                     continue;
                 }
+                cold(player, body, 1);
                 PikaMoves.hit(player, body, 6.0F, look.m_82490_(0.5).m_82520_(0, 0.2, 0), false);
-                HieFreeze.chill(player, body, 1);
                 if (!sparked) {
                     sparked = ConquerorAura.mixed(player, StyleCombat.middle(body), 1.6, 5, -1.0);
                 }
@@ -1047,7 +1004,9 @@ public final class HieMoves {
             return;
         }
         hurt(player, attacker, 3.0F);
-        HieFreeze.chill(player, attacker, 1);
+        // 3.2.2 (the owner: "whenever an entity punches you that doesn't have Haki on, their limbs that they hit with like turn blue"):
+        // the frost starts at the arm that struck
+        HieFreeze.frost(player, attacker, 1, true);
         Vec3 at = StyleCombat.middle(attacker).m_82549_(StyleCombat.middle(player)).m_82490_(0.5);
         burst(player, at, 0.6, 0.1, 0);
         sound(player, at, HieSounds.HIT, 0.8F, 1.2F);

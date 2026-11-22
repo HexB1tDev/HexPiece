@@ -1,4 +1,4 @@
-# HexPiece: handoff for 3.2.2 (in progress; every rule in one place, where things stand, what is next)
+# HexPiece: handoff for 3.2.2 (every rule in one place, where things stand, what is next)
 
 This is the newest handoff. Read it whole before touching anything. It gathers every standing rule the owner has given (CLAUDE.md's
 house rules plus everything learned since 2.1), so you do not have to dig them out of the older notes. The full history (verbatim
@@ -8,12 +8,13 @@ sections 8b to 8p below; section 8q is the Gura Gura no Mi's research and plan, 
 the Magu Magu no Mi (3.1.3), 8u 3.1.3's Gura changes, 8v 3.1.4 (first-person hands, the Haki orb, the charge sound), 8w the owner's
 requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gura ultimate (3.1.6) and 8z its key moved to N (3.1.7),
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
-8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar).
+8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
+built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework, next), 8zk the Nika plan.
 
-Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.9 (Build #151, Release #109), 3.2.0 (Build #152, Release
-#110) and 3.2.1 (Build #153, Release #111) are pushed and green. 3.2.2 is IN PROGRESS and committed WITHOUT a full build (the owner
-asked for this handoff mid-work): build.py still says 3.2.1. Section 8zh holds the owner's eight requests after 3.2.1 (verbatim, with
-the screenshots described); section 8zi says exactly what is done and what is left, file by file. Start there.** The cloud environment
+Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
+and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
+lightning, no ground art in midair, the Magma X fix) is pushed (check its runs: section 9). Next is the Nika fruit rework (8zh item 8,
+8zj item 2, the plan in 8zk).** The cloud environment
 is the personal "HexPiece", now env_01PmnEXrwDhxzij8M5q6P6bL (freesound.org, tenor.com and the rest); a session on Default is refused
 freesound.org: switch_environment to it.
 
@@ -73,7 +74,8 @@ freesound.org: switch_environment to it.
 8. **Judge your own renders:** "the animations always have to be top tier, no excuses whatsoever". Every animation, pose, menu,
    texture or effect you change: render it (tools/anim_preview.py, tools/ui_preview.py, tools/lightning_preview.py, the
    tools/preview/*.java previews), look at it yourself, fix and render again until it is right.
-9. Git: commit on `claude/nice-bell-gam7qf` only, push with `git push -u origin claude/nice-bell-gam7qf`. No pull requests unless asked.
+9. Git: commit on the branch the session names (3.2.2: `claude/pensive-heisenberg-mkr9cl`), push with `git push -u origin <branch>`. No
+   pull requests unless asked.
    Commit messages end with the two trailer lines the session gives you. No model names in commits, code or docs. Keep the owner's
    email private.
 
@@ -1235,9 +1237,9 @@ Read 8zc (the plan) and 8zd (the owner's answers) first. What the code does (not
   Freeze": sustained chime lines, the fairy one, played by Ice Time's freeze), freeze2, form1, form2, hit1 and age1 carry pitched bands;
   crack1, crack2, shatter1, shatter2 and the frost loop are broadband (real ice).
 
-## 8zi. 3.2.2 IN PROGRESS: what is done (committed, unbuilt) and what is left, file by file
+## 8zi. Done (3.2.2): the owner's requests 8zh 1 to 7, and the Magma X bug (8zj 1)
 
-**Done:**
+**Done in the previous session (committed then unbuilt, built in 3.2.2):**
 - **The sounds** (8zh 1): every Ice fruit clip is now a real ice recording that is broadband noise (no pitched lines). tools/hie_sounds.py
   rewritten (SOUNDS, CLIPS, level()), clips regenerated, SOURCES.txt credits them: freeze1 Mooe "ice_cracking_01" (169897, from 32.5 s),
   freeze2 karlis.stigis "Ice Cracks" (168712, 4.35 s), form1 PhilllChabbb "Slow Cracking Ice" (268862, 24.4 s, -5 dB), form2 northern87
@@ -1257,62 +1259,128 @@ Read 8zc (the plan) and 8zd (the owner's answers) first. What the code does (not
   `|hcshatter:age`, `|hprison:age[:life]`): the frost reads as the body turning blue and crusting at 0.25/0.5/0.75, the crystal block
   as before, the shatter a satisfying burst, the prison a crystal ball with the body inside. Not yet used by the game (below).
 
-**Left, in this order (then version 3.2.2, release notes, handoff, push, both runs green):**
-1. `server/HieFreeze`: no real ICE any more (it melts near light into water and, when broken, leaves water: the owner's "the ice
-   sometimes melts"): remove `encase`, `breakIce`, the crack ids and the destroyBlockProgress calls; FREEZE's bz always 0 (every client
-   draws HieArt.block; ball holds draw nothing of their own). The shatter on thaw sends THAW shattered as now (client: crystalShatter).
-   **Frost** (8zh 3 and 4) in place of `chill`: `frost(owner, body, hits, fromArm)`, FROST_FULL 4 hits within 100 ticks freeze it 80
-   ticks in crystal; each hit sends a new kind CHILL 140 (id the body, size the fraction, bx 1 when from the arm (an attacker's frost
-   starts at the arm), ticks the keep); **a blow from the freezer on a body it froze shatters it on the next tick with 8 more damage**
-   ("when you hit them again, you can shatter them"); **punches**: `AttackEntityEvent` (a real left click; the owner: "while in fruit
-   mode whenever you left-click someone"): the attacker a ServerPlayer with FruitData.fruit HIE, FruitData.active (fruit mode), an empty
-   main hand, no saber out, the target living: frozen by this player -> shatter; else frost +1 (at most once every 8 ticks a target,
-   so spam-clicking does not freeze in a second). Prove `AttackEntityEvent.getTarget` first: add to verify/api-allowlist.txt
-   `M net/minecraftforge/event/entity/player/AttackEntityEvent getTarget ()Lnet/minecraft/world/entity/Entity;   # [forge] 1.20.1
-   event/entity/player/AttackEntityEvent.java: public Entity getTarget()` (the stub already has it; the class is in HexGhoul's list).
-   `HieMoves.dodged`: frost(attacker, 1, fromArm true) (the owner: "their limbs that they hit with like turn blue"). The spears and
-   saber cuts: frost +1 as chill did.
-2. `server/HieMoves`: the Ice Ball without real blocks (remove `ball`, `inside`, `spread`, its crack steps and breakIce; BALL bz 0;
-   clients draw HieArt.prison); Ice Time's hold 70 (its shatter sooner: "meant to be one of the most satisfying abilities"); **Ice Age**
-   (8zh 1, 2: "Ice World"): `GROUND_BACK` 400 -> 160 (8 s), and a field that lasts as long: every 4 ticks every living thing but the
-   caster (not only foes: "anything that comes in there should freeze") inside the cone (reach 26, 50 degrees each side, within 6 up or
-   down) is frozen 60 ticks if not frozen and not in its 20-tick grace after thawing. Keep the frosted ice under the feet on water (the
-   Frost Walker's, it melts by design); say so if the owner means that by "melts".
-3. `client/hie/HieFx`: FROZEN draws HieArt.block at the held body (drop drawIce, encased, sphere, the BlockRenderDispatcher pass);
-   THAW shattered -> a crystalShatter spot (size about the body's height x 0.7); BALL -> HieArt.prison; kind 140 CHILL -> a map body ->
-   {fraction, fromArm, since, until} drawn with HieArt.frost (an arm's frost: draw it over the upper half); drop it on FREEZE. Route
-   kinds 120-159 to HieFx in `client/dragon/UoFx` (only 120-139 now).
-4. `DragonTests.hieIce`: add block, crystalShatter, frost and prison to the budget.
-5. **The Gura ultimate's ground in a cone** (8zh 5): `gura/Heave.bend` now presses a round bowl (length/2 across, middle 0.55 out) with
-   rings and a heaved rim; the owner wants the same bending but in the cone, forming and pushing forward with the wave: make the
-   depression follow the cone (deepening and widening with the distance, its edges along the cone's sides heaved up, the rings arcs
-   across the cone), keep the slabs and the self-repair. Render through GuraShots `|gbend:age` from above and behind.
-6. **The Haki lightning on moves is too fat** (8zh 6: "ridiculously fat compared to" the release's): `haki/ConquerorStorm.blast` (used
-   by client/haki/ConquerorSparksClient for every MIXED burst) draws the release's bolts with width `size x 0.4` (about 1.4 blocks near
-   a player): the release's own bolts read as thin black lines with a pale rim and fine branches near the player. Make the move bolts
-   as thin as the release's are where the player sees them (start about a fifth of now and judge in SparkPreview rows "blast 9",
-   "ultimate thick" beside "release" at the same distance), keep their count and reach.
-7. **No ground effects in midair** (8zh 7): ground cracks, dust, rocks and pools must sit on the ground under where they happen, and
-   not appear at all with no ground near: Gura's QUAKE, TREMOR, SHAKE (Shima Yurashi draws its spreading cracks at the player's feet:
-   in midair they hang in the air: the screenshot), TILT, RIFT starts, the ultimate's heave; Magma's POOL and ERUPT (pools already look
-   for ground 4 under: check the client too). Do it on the client: the ground found once under the point (a clip down a few blocks,
-   Fluid.ANY), the ground art drawn there, skipped when none. Ask the owner whether the white glass cracks at the fists (Whitebeard's
-   air cracking, by design since 3.1.1) count too, before removing them.
-8. **The Nika fruit (Gear 5) rework** (8zh 8, the biggest): the transformation on Z, the moves on the current keys, the stretchy moves
-   and M1s usable untransformed, the transformation music much shorter, the HUD white instead of yellow, better Haki versions, the
-   third-person animations reworked (Bajrang Gun: the body turned in midair to aim down, the whole body in it, not just the arm), Rubber
-   World bending the real ground like rubber/slime in waves (through Scars, put back, like the Gura ultimate's bend); first person left
-   alone. The original's code: com/hexhaki/devilfruit/gameplay/GearServerController and the rest of com/hexhaki/devilfruit (patched
-   through patch/PiecePatch, as gearLightning hooks it). The owner loves the fruit, the transformation and the clouds: change carefully,
-   ask before removing anything.
+**Done in 3.2.2 (nothing tested in game; build, tests and renders):**
+- **No real ice round bodies** (`server/HieFreeze` rewritten): `encase`, `breakIce`, the crack ids and destroyBlockProgress are gone;
+  FREEZE's bz is always 0; every client draws `HieArt.block` at the held feet (`client/hie/HieFx` FROZEN: at, half, height, born, life,
+  ball; a re-freeze keeps the crystal's age). THAW shattered -> a CRYSTAL spot (`HieFx.CRYSTAL` -1, `HieArt.crystalShatter`, size the
+  body's height x 0.7); inside a ball no shatter of its own unless smashed. The "inWall" cancel is gone (no blocks). The crack sound
+  plays CRACK_TICKS 24 before the end (the crystal's cracks are drawn by HieArt.block's CRACK_TIME).
+- **Frost** (8zh 3, 4): `HieFreeze.frost(owner, body, hits, fromArm)` replaces chill: FROST_FULL 4 hits within FROST_KEEP 100 ticks
+  freeze FROST_FREEZE_TICKS 80; each hit slows (amplifier hits - 1), plays CRACK quietly and sends **CHILL 140** (id the body, bx 1
+  from the arm, by its height, size the fraction, ticks the keep). `HieFreeze.punch` (AttackEntityEvent, proven by the original's own
+  use): a ServerPlayer with FruitData.fruit HIE, FruitData.active, an empty main hand, no saber out, a living target: a body it froze
+  -> `smash` (SMASH_AFTER 4 ticks after it froze: shatters next tick with SMASH_DAMAGE 8), else frost +1 at most every PUNCH_EVERY 8
+  ticks a body. `HieMoves.cold` (spears, saber cuts): smash or frost 1; the road's fist frost 2; `dodged`: frost(attacker, 1, fromArm
+  true). The move bursts (Pheasant's explosion and so on) never smash. Client: FROSTS (fraction, arm, since, until), drawn over the
+  moving body (`HieArt.frost`; from the arm `HieArt.armFrost`: the right arm (yBodyRot f_20883_) turned blue under a crystal sleeve,
+  spreading over the body past 0.25), fading over its last 10 ticks, dropped on FREEZE. `HieArt.skin` (a blue column) makes the body
+  read as turning blue. Kinds 120 to 159 now go to HieFx (`client/dragon/UoFx`).
+- **Ice Ball** (`HieMoves.prison`): no blocks (`ball`, `inside`, `spread` gone); BALL bz 0; clients draw `HieArt.prison` and, on its
+  SHATTER, a crystalShatter of radius x 1.2 (a SHATTER with no ball, the saber's, stays glassy).
+- **Ice Time** TIME_HOLD 70 (was 100), a miss 55.
+- **Ice World** (Ice Age): GROUND_BACK 160 (8 s, the road's too); the move's Live lasts GROUND_BACK: the wave front as before (struck 6,
+  frozen AGE_HOLD 80, lightning out of the first two), then every AGE_FIELD_EVERY 4 ticks everyone in the cone (PikaMoves.foes: every
+  living thing but the caster, his allies, creative players, his own pets and armour stands) not frozen and not in GRACE 20 ticks after
+  thawing frozen AGE_FIELD_HOLD 60 (no damage). Newcomers are struck as by the front.
+- **Budget** (`HieArt.lite`: no mist, half the little crystals, 8 shards; `HieFx` FULL_FROZEN 6, FULL_FROSTS 6, FULL_SHATTERS 4 drawn in
+  full, the rest and anything past LITE_FAR 24 lite): DragonTests.hieIce "a crowd frozen in crystal and shattering" (24 crystals, 12
+  shatters, the prison: worst 14,909 quads) and "a dozen frosted bodies" (worst 4,650). Renders: docs/handoff/hie-crystal-3.2.2.jpg.
+- **The Gura cone** (8zh 5, `gura/Heave.bend` rewritten): in the cone's frame, a trench (q = angle / cone; depth 5-8 x (1 - q^2),
+  ramping in over 0.45 of the length, shallowing over the last 0.2), arcs across it every 5 blocks round the feet, the sides heaved 3.4
+  along the cone's edges (gaussian 3 blocks off the edge line), the ground shoved into a 3.6 pile at the front, the 4x4 slabs as before
+  (halved in the deep middle); nothing behind the feet or past 14 degrees outside the cone (DragonTests). The Bend runs only with ground
+  under the feet. GuraShots `|gbend` now shades the ground by height. Render: docs/handoff/gura-cone-3.2.2.jpg.
+- **Thin Haki lightning** (8zh 6): `ConquerorStorm.BLAST_WIDTH` 0.08 (was 0.4) of the release's width: at most about 0.39 blocks
+  (DragonTests: 0.2 to 0.6). SparkPreview rows "blast 9" and "ultimate thick" read as thin black lines with a rim.
+- **No ground art in midair** (8zh 7): `GuraFx.ground(at, up, down)` (a clip, Fluid.ANY; GROUND_DOWN 3): QUAKE, TREMOR, the LEAP's dust,
+  SHAKE_ON's spreading cracks (Shake.at null: none drawn, the rumble and the view shake stay), SHAKE_OFF's tilt, RIFT and HEAVE are put
+  on the ground under them or not drawn; MaguFx does the same for POOL, GEYSER and ERUPT. The fists' white air cracks (CRACK) and the
+  shock rings (SHOCK) stay: they are the air breaking (Whitebeard), by design since 3.1.1. **Asked in the release notes** whether the
+  air cracks should go in midair too.
+- **Magma X** (8zj 1): tools/magu_anims.py `up` arm(-168, 0, -22, -10), `pulled` arm(-110, 0, -14, -8) (with the arm up, the old +16
+  roll tipped the fist over the head); the SKY fists leave from feet + 2.45, 0.5 to the right, 0.1 ahead; `MaguArt.meteor(..., trail)`
+  draws a fist thrown up with a trail only as long as it has flown (was 8 blocks of streaks under it at launch: "particles ... from the
+  player's feet"). MaguShots `|msky:age`. First person untouched (HandMoves PUMP).
 
-## 9. What to do next (3.2.2)
+## 8zj. The owner's stress-test notes during 3.2.2 (verbatim, with the images described)
 
-1. Run `python3 build.py` first (the committed 3.2.2 work is unbuilt: only HieArt and the preview were compiled on their own).
-2. Do 8zi's "Left" items 1 to 4 (the Ice fruit), then 5 to 7, release 3.2.2 with notes, handoff, push, both runs green. Then 8 (Nika),
-   carefully, in its own versions.
-3. Ask the owner how the Ice fruit plays after 3.2.2 (the crystal, the frost punches, Ice Age's field, the new sounds), and how the
-   energy feels (FruitEnergy.COSTS, the refill) and whether Gear 5 should spend energy too.
+"I'm gonna now list a few bugs that I find while I'm now like actually stress testing this on my PC. Magu no Mi, the lava fruit, the X
+move is the only bug I see in it, where the animation makes the hand go inside the player's head instead of being a little more to the
+right. So basically just move it a little bit to the right instead of the left. Also, I think the projectiles are coming from a bit too
+below. Honestly, still on the X move, by the way. The projectiles are coming from too low in the player's body, causing particles to
+summon from the player's feet.
+
+2. About the Nika fruit, we gotta do a lot of reworks. It is really old, bro. This is like really old. It was the first fruit I made, so
+since I got you now, we're gonna do a major rework on this shit. The punching animation makes the body wobble too much in the third
+person. I don't know why it wobbles too much. The transformation animation is completely broken. It's just busted. It looks bad. It
+doesn't look badass at all. The pounding on the chest is cool, but the rest of it is horrible. Bajarang gun, as already said, that move
+is completely awful looking. The fist is like should be, I don't know, perhaps like more shaped like a fist and more rounder. I'm not
+saying make it completely round, but like it should be a fist, a big one. And it should be coming first from above, and then the player
+slowly rotates it downwards and slams it down. This is one of the strongest moves in the entire game, so it should definitely be
+something special. The only one that is actually properly decent is what's it called? The one Star Gun, yeah, the Star Gun is okay. It
+could push the entities model a bit further and make it more like rubber, but it's good. Dawn Whip needs a complete rework. That move
+has to be entirely scrapped and redone. I recommend you check and get your references for Luffy against Kizaru, where he uses that move
+with that name, Dawn Whip, and he actually rotates like a cartoon character. I think that the player's feet should also rotate like a
+cartoon character. Like I'll send you some reference images for reference, but just make sure that this fruit feels like a cartoon,
+like Bugs Bunny type of deal. Like every move should feel like a Bugs Bunny movie, where it makes barely any sense because he's just very
+goofy, very cartoonish, because he has kind of Toon Force. You can research that on your own if you feel like you need to, if you don't
+know what it is. This fruit has to be special, considering it's the rarest fruit in the game, or it will be once we add a rarity system.
+Like we need to make this one super special. Giant is not holding the creatures right. Sometimes they get off the player's hand. It's
+overall really junky. Also make sure that it adapts the new keys. And that the moves change name whenever you activate hotkey, because
+currently they don't. And I already said to the previous AI, I hope you wrote in the next hand, like on the previous handoff, is that we
+need to adapt this fruit to the new keys. All of the moves, literally all of them, even transformation to Z, and all the others following
+the transformation, X, C, V, B, N, M, and that's it. Not the transformation, I mean the hotkey versions should replace the slots still as
+they do. The HUD should like rename them as soon as hotkey is activated. And yeah, that should be it for now."
+
+Images sent with it (not kept: they are only in that conversation):
+1. In game at night, the player (white top, red hair skin) doing Ryusei Kazan: the raised right hand inside the side of the head.
+2. In game from behind: Ryusei Kazan's fist of magma high above, a dark smoke ball under it, and orange flame spikes in a line from it
+   down to the player's feet and the ground. Both fixed in 3.2.2 (8zi, Magma X).
+3. Anime frame (Bajrang Gun): Gear 5 Luffy grinning in the air over his giant fist, the fist huge, rounded and soft like a balloon but
+   still a fist (knuckles and fingers folded), tan, with motion lines.
+4. Anime frame (the cartoon run): Gear 5 Luffy bent forward running, his legs stretched to twice their length in huge rubbery strides,
+   the feet flopping, like an old cartoon.
+5. Anime frame (Rubber World / Toon Force): a tiny Gear 5 Luffy jumping over ground that rolls in soft rubbery waves under a full moon.
+
+Read as: (1) done in 3.2.2. (2) the Nika fruit rework, with 8zh item 8: see 8zk.
+
+## 8zk. The Nika fruit rework: what the owner asked (8zh 8 and 8zj 2), to plan and build next
+
+The owner's points, in one list (keep every one; ask before removing anything they did not name):
+1. **Keys**: like every fruit: the transformation on Z; the other moves on X, C, V, B, N, M (the fruit move keys; M was unused). With
+   the Haki on, the Haki versions replace the slots "as they do", and the HUD (the abilities panel) renames them the moment the Haki
+   goes on (today it does not).
+2. **Untransformed**: the stretchy moves and the M1s work in the normal, untransformed state too.
+3. **Transformation**: much shorter music; the animation reworked ("completely broken ... doesn't look badass at all"): keep the
+   chest pounding (the drum of liberation: "cool"), redo the rest; the clouds and the look of the transformation are loved: keep them.
+4. **Third person**: every animation reworked to today's standard (first person is fine: leave it). The punch makes the body wobble too
+   much: find why (likely the body or its roll keyed, or two clips fighting) and calm it. Turn the whole body when a move needs it.
+5. **Bajrang Gun** (one of the strongest moves in the game, "something special"): the fist a big, rounded but real fist (ref image 3:
+   ballooned knuckles and folded fingers, not a ball), coming first from above, the player rotating slowly in the air to aim it down,
+   then slamming it down (the whole body in it, not just the arm).
+6. **Star Gun**: keep; push the struck body's model further and make it more rubbery.
+7. **Dawn Whip**: scrap and redo after Luffy vs Kizaru (Egghead): he spins like a cartoon character, the feet too (ref image 4: the
+   legs stretched into huge floppy strides).
+8. **Giant** (the giant form): bodies held in the hand slip off: hold them properly ("overall really junky").
+9. **Rubber World**: the real ground bends like rubber, rolling in waves (ref image 5), through Scars as the Gura ultimate's bend,
+   always put back.
+10. **HUD** white instead of yellow; **Haki versions** better.
+11. **Toon Force** everywhere: every move goofy and cartoonish, "like a Bugs Bunny movie" (squash and stretch, big anticipation,
+    exaggerated arcs, smears, things that make barely any sense). The rarest fruit (Mythical): it must feel special.
+How: the original's code is com/hexhaki/devilfruit (GearServerController and the rest, Gear 5's moves and keys), patched through
+patch/PiecePatch (as gearLightning hooks it); its animations are among the original player_animation files (reworked ones go under
+src/main/resources/assets/hexhaki/player_animation/). Read it all first, list its moves, keys, clips, HUD and sounds, and how its
+transformation works; then plan file by file, ask the owner what is unclear (AskUserQuestion: which move goes on which key, what the
+untransformed set is), and build in several versions, rendering every clip in third person (POINT ONE's style: no head, no unused limb).
+
+## 9. What to do next (after 3.2.2)
+
+1. Check 3.2.2's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika fruit rework (8zk): read the original's Gear 5 code and clips first, plan, ask the owner what is unclear, then build it in
+   its own versions (3.2.3 on), carefully: the owner loves the fruit, the transformation and the clouds.
+3. Ask the owner how the Ice fruit plays after 3.2.2 (the crystal, the frost punches, Ice World's field, the new sounds), whether the
+   white air cracks at the Gura fists should also go in midair (asked in the 3.2.2 notes), how the energy feels (FruitEnergy.COSTS, the
+   refill) and whether Gear 5 should spend energy too.
 4. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
    first-person hands (3.1.4), 3.1.2's Gura fixes, the Light fruit and katana fixes (3.0.x to 3.1.0), 2.9.5's Conqueror sounds.
 5. POINT ONE for any new fruit: same style (meshes, clips without legs or head, first-person hands, CC0 sounds), the Conqueror's

@@ -80,7 +80,9 @@ public final class GuraShots {
             for (int z = -8; z <= r; z++) {
                 int o = h[x + r][z + 8];
                 double top = LIFT + o;
-                int grass = 0xFF5FA33A;
+                // shaded by height (3.2.2: the shape must read from above): darker the deeper, lighter the higher
+                int grass = o == 0 ? 0xFF5FA33A : o > 0 ? 0xFF000000 | FireMesh.mix(0x5FA33A, 0xD8E8A0, Math.min(1.0, o / 4.0))
+                    : 0xFF000000 | FireMesh.mix(0x5FA33A, 0x1E3A24, Math.min(1.0, -o / 8.0));
                 FireMesh.quad(sink, x - ex, top - ey, z - ez, grass, x + 1 - ex, top - ey, z - ez, grass, x + 1 - ex, top - ey, z + 1 - ez, grass,
                     x - ex, top - ey, z + 1 - ez, grass);
                 int[][] nb = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};

@@ -16,11 +16,8 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
@@ -36,10 +33,11 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 
 /**
- * 3.1.9: the Hie Hie no Mi's moves as every client sees them (server/HieMoves sends S2CUoFx kinds 120 to 139; client/dragon/UoFx hands
- * them here). The frozen bodies, the Ice Ball and the frozen ground are real ice blocks the server puts in the world (the owner, asked:
- * "Real ice blocks", "Real ice ground"); where the world refused them (the mobGriefing rule, a claim) the game's own ice block is drawn
- * there instead, so it looks the same. Everything else is hie/HieArt's smooth glassy ice ("Smooth glassy ice"), drawn once a frame after
+ * 3.1.9: the Hie Hie no Mi's moves as every client sees them (server/HieMoves sends S2CUoFx kinds 120 to 159; client/dragon/UoFx hands
+ * them here). The frozen ground is real ice the server puts in the world (the owner, asked: "Real ice ground"). 3.2.2 (the owner: "the
+ * ice sometimes melts"; "in a crystal like you had before that then shatters"): the frozen bodies and the Ice Ball are hie/HieArt's cut
+ * crystal (block, prison), cracking and shattering into crystal shards (crystalShatter), and the frost the cold hits leave creeps over a
+ * body as it turns blue (frost, armFrost from the arm that struck). Everything else is the smooth glassy ice ("Smooth glassy ice"), drawn once a frame after
  * the particles through the game's own debugQuads type (alpha blended, depth tested, no culling: the owner's device), eye-centred: the
  * spears forming round the user and flying, the orb gathering and flying, the pheasant, bursts, the mist of the freeze, the saber's cuts,
  * the ice fist (client/FirstPersonLight.fist; in first person in the hand's own pass, client/HandPass), the slide along the road (one's
@@ -55,13 +53,23 @@ public final class HieFx {
     record Spot(int kind, int id, int user, Vec3 at, Vec3 dir, Vec3 b, double size, int ticks, long born) {
     }
 
-    /** A body frozen: where it is held, its size, whether real ice went round it (else the blocks drawn here), until when. */
-    record Frozen(Vec3 at, long[] drawn, long until) {
+    /** A body frozen: where its feet are held, its half width and height, when it froze, how long it is held, inside an Ice Ball. */
+    record Frozen(Vec3 at, double half, double height, long born, int life, boolean ball) {
+        long until() {
+            return this.born + this.life + 2;
+        }
     }
 
-    /** An Ice Ball's prison: its middle, its radius, the blocks drawn here where no real ice could go, until when. */
-    record Ball(Vec3 at, double radius, long[] drawn, long born, long until, int seed) {
+    /** An Ice Ball's crystal prison: its middle, its radius, when it formed, how long it holds. */
+    record Ball(Vec3 at, double radius, long born, int life, int seed) {
     }
+
+    /** The frost on a body: how far it has spread (0 to 1), from the arm that struck, since and until when. */
+    record Frost(double fraction, boolean arm, long since, long until) {
+    }
+
+    /** A spot's kind for a crystal shattering (a frozen body's, the Ice Ball's): out of the server's kinds. */
+    static final int CRYSTAL = -1;
 
     /** Ice Age's freeze running over the ground: where, its way, half width, reach, the ground's height at its front's mist points. */
     record Sheet(Vec3 at, double fx, double fz, double half, double reach, double[] heights, long born, int seed) {
@@ -72,6 +80,14 @@ public final class HieFx {
     }
 
     static final int MOST_SPOTS = 96;
+    /**
+     * A frame draws at most so many frozen bodies, frosted bodies and crystal shatterings in full, and every one past {@link #LITE_FAR}
+     * blocks cheaply (hie/HieArt.lite): a crowd frozen by Ice Age stays in the phone's budget.
+     */
+    static final int FULL_FROZEN = 6;
+    static final int FULL_FROSTS = 6;
+    static final int FULL_SHATTERS = 4;
+    static final double LITE_FAR = 24.0;
     static final double FAR = 160.0;
     /** Ice Age's front mist: across its width so many points, out along its reach a height every so many blocks. */
     static final int SHEET_ACROSS = 9;
@@ -81,6 +97,7 @@ public final class HieFx {
     private static final List<Sheet> SHEETS = new ArrayList<>();
     private static final List<Road> ROADS = new ArrayList<>();
     static final Map<Integer, Frozen> FROZEN = new HashMap<>();
+    static final Map<Integer, Frost> FROSTS = new HashMap<>();
     /** Partisan's spears formed round each user: the tick each slot's spear took shape (-1: none). */
     static final Map<Integer, long[]> FORMS = new HashMap<>();
     static final Map<Integer, Long> GATHERS = new HashMap<>();
@@ -146,18 +163,24 @@ public final class HieFx {
         Vec3 b = new Vec3(m.bx(), m.by(), m.bz());
         switch (m.kind()) {
             case HieMoves.FREEZE -> {
-                boolean real = m.bz() > 0.5F;
                 boolean ball = m.by() > 0.5F;
-                long[] drawn = real || ball ? new long[0] : encased(at, m.size(), m.bx());
-                FROZEN.put(m.id(), new Frozen(at, drawn, clock + m.ticks() + 2));
-                add(new Spot(m.kind(), m.id(), m.user(), at, a, b, m.size(), 24, clock));
+                Frozen old = FROZEN.get(m.id());
+                // held longer: the same crystal (its age goes on), only its end moves
+                long born = old != null && old.ball == ball ? old.born : clock;
+                FROZEN.put(m.id(), new Frozen(at, m.size(), m.bx(), born, (int) (clock - born) + m.ticks(), ball));
+                FROSTS.remove(m.id());
+                if (old == null) {
+                    add(new Spot(m.kind(), m.id(), m.user(), at, a, b, m.size(), 24, clock));
+                }
             }
             case HieMoves.THAW -> {
                 FROZEN.remove(m.id());
                 if (m.by() > 0.5F && m.bz() < 0.5F) {
-                    add(new Spot(HieMoves.SHATTER, m.id(), m.user(), at, a, b, m.size(), (int) HieArt.SHATTER_LIFE, clock));
+                    add(new Spot(CRYSTAL, m.id(), m.user(), at, a, b, m.size(), (int) HieArt.CRYSTAL_SHATTER_LIFE, clock));
                 }
             }
+            case HieMoves.CHILL -> FROSTS.put(m.id(), new Frost(m.size(), m.bx() > 0.5F, FROSTS.containsKey(m.id()) ? FROSTS.get(m.id()).since : clock,
+                clock + m.ticks()));
             case HieMoves.SPEAR -> {
                 int slot = (int) m.bz();
                 long[] formed = FORMS.get(m.user());
@@ -205,12 +228,13 @@ public final class HieFx {
             case HieMoves.BALL -> {
                 int orb = (int) m.by();
                 SPOTS.removeIf(s -> s.kind == HieMoves.ORB && s.id == orb);
-                long[] drawn = m.bz() > 0.5F ? new long[0] : sphere(at, m.size());
-                BALLS.add(new Ball(at, m.size(), drawn, clock, clock + m.ticks() + 1, m.id()));
+                BALLS.add(new Ball(at, m.size(), clock, m.ticks(), m.id()));
             }
             case HieMoves.SHATTER -> {
-                BALLS.removeIf(ball -> ball.seed == m.id());
-                add(new Spot(m.kind(), m.id(), m.user(), at, a, b, m.size(), (int) HieArt.SHATTER_LIFE, clock));
+                // the Ice Ball's crystal shattering, or glassy ice where no crystal was (the saber let go)
+                boolean ball = BALLS.removeIf(b2 -> b2.seed == m.id());
+                add(new Spot(ball ? CRYSTAL : m.kind(), m.id(), m.user(), at, a, b, m.size(),
+                    (int) (ball ? HieArt.CRYSTAL_SHATTER_LIFE : HieArt.SHATTER_LIFE), clock));
             }
             case HieMoves.PHEASANT, HieMoves.SLASH, HieMoves.SCATTER -> add(new Spot(m.kind(), m.id(), m.user(), at, a, b, m.size(), m.ticks(), clock));
             case HieMoves.SHEET -> SHEETS.add(new Sheet(at, a.f_82479_, a.f_82481_, m.bx(), m.size(), sheetHeights(at, a.f_82479_, a.f_82481_, m.bx(),
@@ -230,68 +254,7 @@ public final class HieFx {
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------ the ice blocks drawn
-
-    /** The free blocks a body's box takes up standing at {@code at} (as server/HieFreeze.encase picks them), where the game's ice is drawn. */
-    static long[] encased(Vec3 at, double half, double height) {
-        ClientLevel level = Minecraft.m_91087_().f_91073_;
-        if (level == null) {
-            return new long[0];
-        }
-        List<Long> out = new ArrayList<>();
-        for (int y = (int) Math.floor(at.f_82480_ + 0.05); y <= (int) Math.floor(at.f_82480_ + height - 0.05); y++) {
-            for (int x = (int) Math.floor(at.f_82479_ - half + 0.05); x <= (int) Math.floor(at.f_82479_ + half - 0.05); x++) {
-                for (int z = (int) Math.floor(at.f_82481_ - half + 0.05); z <= (int) Math.floor(at.f_82481_ + half - 0.05) && out.size() < 12; z++) {
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (level.m_8055_(pos).m_60795_()) {
-                        out.add(pos.m_121878_());
-                    }
-                }
-            }
-        }
-        return out.stream().mapToLong(Long::longValue).toArray();
-    }
-
-    /** The free blocks within {@code radius} of {@code at} (an Ice Ball's, where the game's ice is drawn). */
-    static long[] sphere(Vec3 at, double radius) {
-        ClientLevel level = Minecraft.m_91087_().f_91073_;
-        if (level == null) {
-            return new long[0];
-        }
-        List<Long> out = new ArrayList<>();
-        int r = (int) Math.ceil(radius);
-        int cx = (int) Math.floor(at.f_82479_);
-        int cy = (int) Math.floor(at.f_82480_);
-        int cz = (int) Math.floor(at.f_82481_);
-        for (int dy = -r; dy <= r; dy++) {
-            for (int dx = -r; dx <= r; dx++) {
-                for (int dz = -r; dz <= r && out.size() < 160; dz++) {
-                    double ox = cx + dx + 0.5 - at.f_82479_;
-                    double oy = cy + dy + 0.5 - at.f_82480_;
-                    double oz = cz + dz + 0.5 - at.f_82481_;
-                    BlockPos pos = new BlockPos(cx + dx, cy + dy, cz + dz);
-                    if (ox * ox + oy * oy + oz * oz <= radius * radius && level.m_8055_(pos).m_60795_()) {
-                        out.add(pos.m_121878_());
-                    }
-                }
-            }
-        }
-        return out.stream().mapToLong(Long::longValue).toArray();
-    }
-
-    /** The game's own ice block at every one of {@code blocks} (where the world took no real ice). */
-    static int drawIce(PoseStack pose, MultiBufferSource buffers, net.minecraft.client.renderer.block.BlockRenderDispatcher dispatcher, ClientLevel level,
-                       Vec3 cam, long[] blocks) {
-        net.minecraft.world.level.block.state.BlockState ice = net.minecraft.world.level.block.Blocks.f_50126_.m_49966_();
-        for (long key : blocks) {
-            BlockPos pos = BlockPos.m_122022_(key);
-            pose.m_85836_();
-            pose.m_85837_(pos.m_123341_() - cam.f_82479_, pos.m_123342_() - cam.f_82480_, pos.m_123343_() - cam.f_82481_);
-            dispatcher.m_110912_(ice, pose, buffers, LevelRenderer.m_109541_(level, pos), OverlayTexture.f_118083_);
-            pose.m_85849_();
-        }
-        return blocks.length;
-    }
+    // ------------------------------------------------------------------------------------------------------ the ground under it
 
     /** The ground's height (relative to {@code at}) under Ice Age's front mist points, worked out once: [across][out]. */
     static double[] sheetHeights(Vec3 at, double fx, double fz, double half, double reach) {
@@ -338,10 +301,11 @@ public final class HieFx {
             return;
         }
         SPOTS.removeIf(s -> clock - s.born > life(s) + 1);
-        BALLS.removeIf(b -> clock > b.until + 2);
+        BALLS.removeIf(b -> clock > b.born + b.life + 3);
         SHEETS.removeIf(s -> (clock - s.born) * HieArt.SHEET_SPEED > s.reach + 12.0);
         ROADS.removeIf(r -> clock - r.born > r.ticks + 16);
-        FROZEN.values().removeIf(f -> clock > f.until);
+        FROZEN.values().removeIf(f -> clock > f.until());
+        FROSTS.entrySet().removeIf(e -> clock > e.getValue().until || entity(e.getKey()) == null);
         FORMS.keySet().removeIf(id -> entity(id) == null);
         GATHERS.entrySet().removeIf(e -> clock - e.getValue() > HieMoves.GATHER_TICKS + 6 || entity(e.getKey()) == null);
         COATS.entrySet().removeIf(e -> clock - e.getValue() > 80 || entity(e.getKey()) == null);
@@ -356,6 +320,7 @@ public final class HieFx {
             case HieMoves.SPEAR, HieMoves.ORB, HieMoves.PHEASANT -> s.ticks + 2;
             case HieMoves.BURST -> HieArt.burstLife(s.size);
             case HieMoves.SHATTER -> HieArt.SHATTER_LIFE;
+            case CRYSTAL -> HieArt.CRYSTAL_SHATTER_LIFE;
             case HieMoves.SLASH -> HieArt.SLASH_LIFE;
             case HieMoves.SCATTER -> HieArt.SCATTER_LIFE;
             default -> s.ticks;
@@ -480,8 +445,8 @@ public final class HieFx {
     static final Writer SINK = new Writer();
 
     static boolean idle() {
-        return SPOTS.isEmpty() && BALLS.isEmpty() && SHEETS.isEmpty() && ROADS.isEmpty() && FROZEN.isEmpty() && FORMS.isEmpty() && GATHERS.isEmpty()
-            && COATS.isEmpty();
+        return SPOTS.isEmpty() && BALLS.isEmpty() && SHEETS.isEmpty() && ROADS.isEmpty() && FROZEN.isEmpty() && FROSTS.isEmpty() && FORMS.isEmpty()
+            && GATHERS.isEmpty() && COATS.isEmpty();
     }
 
     @SubscribeEvent
@@ -498,30 +463,6 @@ public final class HieFx {
         MultiBufferSource.BufferSource buffers = minecraft.m_91269_().m_110104_();
         Vec3 cam = event.getCamera().m_90583_();
         float partial = event.getPartialTick();
-        // where the world took no real ice, the game's own ice block drawn in its place (first: under every see-through effect)
-        boolean drew = false;
-        try {
-            net.minecraft.client.renderer.block.BlockRenderDispatcher dispatcher = minecraft.m_91289_();
-            for (Frozen f : FROZEN.values()) {
-                if (f.drawn.length > 0 && f.at.m_82557_(cam) < FAR * FAR) {
-                    drawIce(pose, buffers, dispatcher, level, cam, f.drawn);
-                    drew = true;
-                }
-            }
-            for (Ball b : BALLS) {
-                if (b.drawn.length > 0 && b.at.m_82557_(cam) < FAR * FAR) {
-                    drawIce(pose, buffers, dispatcher, level, cam, b.drawn);
-                    drew = true;
-                }
-            }
-        } catch (RuntimeException failure) {
-            com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: the Ice fruit's ice blocks could not be drawn", failure);
-            FROZEN.clear();
-            BALLS.clear();
-        }
-        if (drew) {
-            buffers.m_109911_();
-        }
         RenderType type = RenderType.m_269166_();
         SINK.matrix = pose.m_85850_().m_252922_();
         FireMesh.quality = Math.max(0.35, PieceFx.density());
@@ -531,6 +472,8 @@ public final class HieFx {
         } catch (RuntimeException failure) {
             com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: an Ice fruit move could not be drawn", failure);
             clear();
+        } finally {
+            HieArt.lite = false;
         }
         FireMesh.palette(FireMesh.BAND);
         if (SINK.buffer != null) {
@@ -577,16 +520,46 @@ public final class HieFx {
             HieArt.mist(SINK, end.f_82479_ - cx, end.f_82480_ + 0.6 - cy, end.f_82481_ - cz, 1.0, 0.45, age, r.seed);
             HieArt.trail(SINK, end.f_82479_ - cx, end.f_82480_ + 0.3 - cy, end.f_82481_ - cz, v.f_82479_, v.f_82480_, v.f_82481_, 0.4, age, r.seed);
         }
-        // mist at the foot of every Ice Ball
+        // every Ice Ball's crystal prison (cracking over its last ticks)
         for (Ball b : BALLS) {
-            if (far(b.at, cam)) {
+            if (!far(b.at, cam)) {
+                HieArt.prison(SINK, b.at.f_82479_ - cx, b.at.f_82480_ - cy, b.at.f_82481_ - cz, b.radius, clock - b.born + partial, b.life, b.seed);
+            }
+        }
+        // every body frozen in crystal where it is held (inside an Ice Ball the ball is its crystal)
+        int full = 0;
+        for (Map.Entry<Integer, Frozen> e : FROZEN.entrySet()) {
+            Frozen f = e.getValue();
+            if (!f.ball && !far(f.at, cam)) {
+                HieArt.lite = full >= FULL_FROZEN || f.at.m_82557_(cam) > LITE_FAR * LITE_FAR;
+                full += HieArt.lite ? 0 : 1;
+                HieArt.block(SINK, f.at.f_82479_ - cx, f.at.f_82480_ - cy, f.at.f_82481_ - cz, f.half, f.height, clock - f.born + partial, f.life, e.getKey());
+            }
+        }
+        full = 0;
+        // the frost on every frosted body, following it (from the arm that struck: up the right arm first)
+        for (Map.Entry<Integer, Frost> e : FROSTS.entrySet()) {
+            if (!(level.m_6815_(e.getKey()) instanceof net.minecraft.world.entity.LivingEntity body) || FROZEN.containsKey(e.getKey())) {
                 continue;
             }
-            double age = clock - b.born + partial;
-            for (int k = 0; k < 3; k++) {
-                double a = 6.283 * k / 3.0 + age * 0.015 + b.seed;
-                HieArt.mist(SINK, b.at.f_82479_ + Math.cos(a) * b.radius * 0.9 - cx, b.at.f_82480_ - b.radius * 0.7 - cy, b.at.f_82481_ + Math.sin(a) * b.radius * 0.9 - cz,
-                    b.radius * 0.4, 0.3 * Math.min(1.0, age / 4.0), age, b.seed + k);
+            Vec3 feet = body.m_20318_(partial);
+            if (far(feet, cam) || firstPerson(e.getKey())) {
+                continue;
+            }
+            Frost f = e.getValue();
+            HieArt.lite = full >= FULL_FROSTS || feet.m_82557_(cam) > LITE_FAR * LITE_FAR;
+            full += HieArt.lite ? 0 : 1;
+            double age = clock - f.since + partial;
+            double fade = Math.min(1.0, (f.until - clock - partial) / 10.0);
+            double fraction = f.fraction * Math.max(0.0, fade);
+            double half = body.m_20205_() * 0.5;
+            double height = body.m_20206_();
+            if (f.arm) {
+                double yaw = Math.toRadians(body.f_20883_);
+                HieArt.armFrost(SINK, feet.f_82479_ - cx, feet.f_82480_ - cy, feet.f_82481_ - cz, -Math.cos(yaw), -Math.sin(yaw), half, height, fraction,
+                    age, e.getKey());
+            } else {
+                HieArt.frost(SINK, feet.f_82479_ - cx, feet.f_82480_ - cy, feet.f_82481_ - cz, half, height, fraction, age, e.getKey());
             }
         }
         // Partisan's spears in the air round their users, pointing where each looks
@@ -614,6 +587,8 @@ public final class HieFx {
                     e.getKey() * 31 + k);
             }
         }
+        full = 0;
+        HieArt.lite = false;
         for (Spot s : SPOTS) {
             if (far(s.at, cam)) {
                 continue;
@@ -654,6 +629,12 @@ public final class HieFx {
                 }
                 case HieMoves.BURST -> HieArt.burst(SINK, x, y, z, s.size, s.b.f_82479_, age, s.id);
                 case HieMoves.SHATTER -> HieArt.shatter(SINK, x, y, z, s.size, age, s.id);
+                case CRYSTAL -> {
+                    HieArt.lite = full >= FULL_SHATTERS || s.at.m_82557_(cam) > LITE_FAR * LITE_FAR;
+                    full += HieArt.lite ? 0 : 1;
+                    HieArt.crystalShatter(SINK, x, y, z, s.size, age, s.id);
+                    HieArt.lite = false;
+                }
                 case HieMoves.SCATTER -> HieArt.scatter(SINK, x, y, z, s.size, age, s.id);
                 case HieMoves.FREEZE -> {
                     // the freeze's mist rolling off its foot
@@ -719,6 +700,7 @@ public final class HieFx {
         SHEETS.clear();
         ROADS.clear();
         FROZEN.clear();
+        FROSTS.clear();
         FORMS.clear();
         GATHERS.clear();
         COATS.clear();

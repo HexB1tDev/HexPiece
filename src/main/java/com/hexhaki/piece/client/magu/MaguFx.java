@@ -122,6 +122,15 @@ public final class MaguFx {
             }
             case MaguMoves.FIST, MaguMoves.POOL, MaguMoves.METEOR, MaguMoves.SKY, MaguMoves.GEYSER, MaguMoves.PIERCE, MaguMoves.TOUCH,
                 MaguMoves.ERUPT -> {
+                if (m.kind() == MaguMoves.POOL || m.kind() == MaguMoves.GEYSER || m.kind() == MaguMoves.ERUPT) {
+                    // 3.2.2 (the owner: "no cracks or puddles or anything like lava stuff ... should appear midair"): the magma on the
+                    // ground under it, or nowhere
+                    Vec3 g = com.hexhaki.piece.client.gura.GuraFx.ground(at, 0.6, 3.0);
+                    if (g == null) {
+                        return;
+                    }
+                    at = g;
+                }
                 add(new Spot(m.kind(), m.id(), m.user(), at, a, m.size(), m.bx(), m.ticks(), clock));
                 if (m.kind() == MaguMoves.ERUPT) {
                     long until = clock + m.ticks();
@@ -437,7 +446,7 @@ public final class MaguFx {
                         MaguArt.meteor(SINK, x + vx * age, y + vy * age, z + vz * age, vx, vy, vz, s.size, age, s.id);
                     }
                 }
-                case MaguMoves.SKY -> MaguArt.meteor(SINK, x, y + 2.6 * age, z, 0, 2.6, 0, s.size, age, s.id);
+                case MaguMoves.SKY -> MaguArt.meteor(SINK, x, y + 2.6 * age, z, 0, 2.6, 0, s.size, age, s.id, 2.6 * age);
                 case MaguMoves.BURST -> MaguArt.burst(SINK, x, y, z, s.size, s.bx, age, s.id);
                 case MaguMoves.TOUCH -> MaguArt.burst(SINK, x, y, z, 0.6, 0.2, age, s.id);
                 case MaguMoves.GEYSER -> MaguArt.geyser(SINK, x, y, z, s.size, age, s.id);

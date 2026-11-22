@@ -210,16 +210,33 @@ public final class MaguArt {
 
     /** A meteor of magma at ({@code x}, {@code y}, {@code z}) falling ({@code vx}, {@code vy}, {@code vz}) a tick: a fist of magma, a long trail. */
     public static void meteor(FireMesh.Sink sink, double x, double y, double z, double vx, double vy, double vz, double size, double age, int seed) {
+        meteor(sink, x, y, z, vx, vy, vz, size, age, seed, Double.MAX_VALUE);
+    }
+
+    /**
+     * As above, its trail reaching at most {@code trail} blocks behind it (3.2.2, the owner: Ryusei Kazan's fists thrown up "are coming
+     * from too low in the player's body, causing particles to summon from the player's feet": a fist punched up has come only as far as
+     * it has flown, so nothing of it shows under the fist it left).
+     */
+    public static void meteor(FireMesh.Sink sink, double x, double y, double z, double vx, double vy, double vz, double size, double age, int seed,
+                              double trail) {
         double vl = Math.max(1.0E-6, Math.sqrt(vx * vx + vy * vy + vz * vz));
         double ux = vx / vl;
         double uy = vy / vl;
         double uz = vz / vl;
         FireMesh.shell(sink, x, y, z, size * 1.8, GLOW, 0.22, 0.0);
         lump(sink, x, y, z, size, ux, uy, uz, 0.9, 0.8, 1.0, age, seed);
-        fire(sink, x - ux * size * 1.4, y - uy * size * 1.4, z - uz * size * 1.4, size * 0.6, -ux, -uy, -uz, 0.8, 0.9, age * 2.0, seed + 1);
-        smoke(sink, x - ux * size * 3.2, y - uy * size * 3.2 + size * 0.4, z - uz * size * 3.2, size * 0.9, 0.6, age, seed + 2);
+        if (size * 2.0 <= trail) {
+            fire(sink, x - ux * size * 1.4, y - uy * size * 1.4, z - uz * size * 1.4, size * 0.6, -ux, -uy, -uz, 0.8, 0.9, age * 2.0, seed + 1);
+        }
+        if (size * 4.0 <= trail) {
+            smoke(sink, x - ux * size * 3.2, y - uy * size * 3.2 + size * 0.4, z - uz * size * 3.2, size * 0.9, 0.6, age, seed + 2);
+        }
         for (int k = 0; k < 6; k++) {
             double d = size * 2.0 + k * 1.1;
+            if (d + 1.35 > trail) {
+                break; // a streak's tail is 0.75 of its 1.8 behind its point
+            }
             FireMesh.streak(sink, x - ux * d + (FireMesh.rand(seed, k) - 0.5) * size, y - uy * d, z - uz * d + (FireMesh.rand(seed, 10 + k) - 0.5) * size,
                 vx, vy, vz, 1.8, 0.08, 0xFF8A1A, 0.8 - 0.1 * k);
         }

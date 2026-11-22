@@ -289,7 +289,7 @@
     "tick": 3,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -394,7 +394,7 @@
     "tick": 6,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -499,7 +499,7 @@
     "tick": 9,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -604,7 +604,7 @@
     "tick": 12,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -709,7 +709,7 @@
     "tick": 15,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -814,7 +814,7 @@
     "tick": 18,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -919,7 +919,7 @@
     "tick": 21,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -1024,7 +1024,7 @@
     "tick": 24,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -1129,7 +1129,7 @@
     "tick": 27,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -1234,7 +1234,7 @@
     "tick": 30,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -1339,7 +1339,7 @@
     "tick": 33,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -1444,7 +1444,7 @@
     "tick": 36,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -1549,7 +1549,7 @@
     "tick": 39,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -1654,7 +1654,7 @@
     "tick": 42,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -1759,7 +1759,7 @@
     "tick": 45,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -1864,7 +1864,7 @@
     "tick": 48,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -1969,7 +1969,7 @@
     "tick": 51,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -2074,7 +2074,7 @@
     "tick": 54,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -2179,7 +2179,7 @@
     "tick": 57,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -2284,7 +2284,7 @@
     "tick": 60,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -2389,7 +2389,7 @@
     "tick": 63,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -2494,7 +2494,7 @@
     "tick": 66,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -2599,7 +2599,7 @@
     "tick": 69,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -2704,7 +2704,7 @@
     "tick": 72,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -2809,7 +2809,7 @@
     "tick": 75,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -2914,7 +2914,7 @@
     "tick": 78,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -3019,7 +3019,7 @@
     "tick": 81,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -3124,7 +3124,7 @@
     "tick": 84,
     "easing": "inoutsine",
     "rightArm": {
-     "roll": 24.0
+     "roll": -14.0
     }
    },
    {
@@ -3229,7 +3229,7 @@
     "tick": 87,
     "easing": "outexpo",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {
@@ -3334,7 +3334,7 @@
     "tick": 96,
     "easing": "linear",
     "rightArm": {
-     "roll": 16.0
+     "roll": -22.0
     }
    },
    {

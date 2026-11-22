@@ -646,6 +646,12 @@ public final class HieArt {
     // ICE, white edge lines, a highlight here and there), and it shatters into crystal shards; the frost a punch leaves grows as crystal
     // crusting over the body. Everything else stays smooth glassy ice.
 
+    /**
+     * Drawn cheaply (client/hie/HieFx sets it past the nearest few frozen, frosted or shattering bodies, so a crowd frozen by Ice Age stays
+     * in the phone's budget): no mist, and fewer of the little crystals and shards.
+     */
+    public static boolean lite;
+
     /** The crystal by shade: deep blue, blue, cyan-blue, cyan, pale cyan, ice white, frost white, white. */
     public static final int[] ICE = {0x14507F, 0x2475AE, 0x3D9DD6, 0x67C2EE, 0x9BDDF8, 0xCBEFFD, 0xEEFBFF, 0xFFFFFF};
 
@@ -855,6 +861,17 @@ public final class HieArt {
         double tall = (height + 0.45) * (0.25 + 0.75 * up);
         double fade = clamp((life + 1.0 - age) / 2.0);
         crystal(sink, x, y - 0.12, z, 0, 1, 0, tall, r * grow, 1.0, 6, 0.24, 0.0, 0.52 * fade, true, seed);
+        if (lite) {
+            for (int k = 0; k < 3; k++) {
+                double a = 6.283 * (k + FireMesh.rand(seed, 300 + k) * 0.6) / 3.0;
+                double ox = Math.cos(a);
+                double oz = Math.sin(a);
+                crystal(sink, x + ox * r * 0.75, y - 0.1, z + oz * r * 0.75, ox * 0.55, 0.83, oz * 0.55, height * 0.4 * grow * up, r * 0.24, 1.0, 5, 0.4,
+                    0.0, 0.85 * fade, true, seed + 7 + k);
+            }
+            blockCracks(sink, x, y, z, r, height, age, life, fade, seed);
+            return;
+        }
         double la = 6.283 * FireMesh.rand(seed, 290);
         double lx = Math.cos(la) * 0.32;
         double lz = Math.sin(la) * 0.32;
@@ -884,6 +901,11 @@ public final class HieArt {
             double rr = r * (1.1 + 0.25 * k);
             mist(sink, x + Math.cos(a) * rr, y + 0.2, z + Math.sin(a) * rr, 0.4 + 0.1 * k + 0.003 * age, 0.3 * fade * clamp(age / 3.0), age, seed + 40 + k);
         }
+        blockCracks(sink, x, y, z, r, height, age, life, fade, seed);
+    }
+
+    /** The white cracks running over a frozen body's crystal ({@code r} round) in its last {@link #CRACK_TIME} ticks. */
+    static void blockCracks(FireMesh.Sink sink, double x, double y, double z, double r, double height, double age, double life, double fade, int seed) {
         double cracking = clamp((age - (life - CRACK_TIME)) / CRACK_TIME);
         if (cracking > 0.0) {
             double w = edgeWidth(r * 0.2, x, y + height * 0.5, z);
@@ -916,7 +938,7 @@ public final class HieArt {
             FireMesh.shell(sink, x, y, z, size * (1.1 + 1.2 * age / 5.0), GLOW, 0.3 * f, 0.0);
             FireMesh.ring(sink, x, y, z, 0, 1, 0, size * (0.5 + 1.4 * age / 5.0), size * 0.3, size * 0.1, RIM, 0.7 * f);
         }
-        int count = size > 1.5 ? 24 : 18;
+        int count = lite ? 8 : size > 1.5 ? 24 : 18;
         double fade = 1.0 - clamp((age - CRYSTAL_SHATTER_LIFE * 0.6) / (CRYSTAL_SHATTER_LIFE * 0.4));
         for (int k = 0; k < count; k++) {
             double a = 6.283 * FireMesh.rand(seed, 500 + k);
@@ -939,7 +961,7 @@ public final class HieArt {
         }
         FireMesh.ring(sink, x, y - size * 0.45, z, 0, 1, 0, size * (0.5 + 2.2 * ease(u * 2.0)), 0.25 + size * 0.25, size * 0.12, RIM,
             0.55 * (1.0 - clamp(u * 2.0)));
-        for (int k = 0; k < 4; k++) {
+        for (int k = 0; k < (lite ? 0 : 4); k++) {
             double a = 6.283 * (k + FireMesh.rand(seed, 560 + k)) / 4.0;
             double out = size * (0.3 + 1.0 * ease(u * 1.5));
             mist(sink, x + Math.cos(a) * out, y - size * 0.2 + 0.4 * u, z + Math.sin(a) * out, size * (0.35 + 0.4 * u), 0.42 * (1.0 - u), age,
@@ -959,9 +981,11 @@ public final class HieArt {
             return;
         }
         double r = half + 0.06;
-        // the cold cast: the body seen through a thin blue skin of ice
-        crystal(sink, x, y - 0.02, z, 0, 1, 0, height * (0.45 + 0.6 * f), r * 1.15, 1.0, 8, 0.1, 0.0, 0.16 + 0.22 * f, false, seed);
-        int count = (int) Math.round(4 + 14 * f);
+        // the body turning blue, then seen through a thin skin of ice
+        double cast = Math.min(height + 0.06, height * (0.45 + 0.6 * f));
+        skin(sink, x, y - 0.02, z, cast, r * 1.08, 0.22 + 0.2 * f);
+        crystal(sink, x, y - 0.02, z, 0, 1, 0, height * (0.45 + 0.6 * f), r * 1.15, 1.0, 8, 0.1, 0.0, 0.12 + 0.16 * f, false, seed);
+        int count = (int) Math.round((4 + 14 * f) * (lite ? 0.5 : 1.0));
         for (int k = 0; k < count; k++) {
             double a = 6.283 * FireMesh.rand(seed, 700 + k);
             double h = height * FireMesh.rand(seed, 710 + k) * (0.35 + 0.65 * f);
@@ -973,7 +997,73 @@ public final class HieArt {
             crystal(sink, x + ox * r * 0.95, y + h, z + oz * r * 0.95, ox * outward / ul, 1.0 / ul, oz * outward / ul, len, len * 0.32, 1.0, 4, 0.45,
                 0.0, 0.85, true, seed + 100 + k);
         }
-        mist(sink, x, y + 0.2, z, r + 0.3, 0.12 + 0.15 * f, age, seed + 140);
+        if (!lite) {
+            mist(sink, x, y + 0.2, z, r + 0.3, 0.12 + 0.15 * f, age, seed + 140);
+        }
+    }
+
+    /** A cold blue skin: an upright eight-sided column from ({@code x}, {@code y}, {@code z}), {@code height} tall, {@code radius} round. */
+    static void skin(FireMesh.Sink sink, double x, double y, double z, double height, double radius, double alpha) {
+        int n = 8;
+        int top = FireMesh.argb(alpha * 0.8, ICE[3]);
+        for (int k = 0; k < n; k++) {
+            double a0 = (k + 0.5) * 6.283185307 / n;
+            double a1 = (k + 1.5) * 6.283185307 / n;
+            double c0 = Math.cos(a0) * radius;
+            double s0 = Math.sin(a0) * radius;
+            double c1 = Math.cos(a1) * radius;
+            double s1 = Math.sin(a1) * radius;
+            double lit = (Math.cos((k + 1.0) * 6.283185307 / n) * LX + Math.sin((k + 1.0) * 6.283185307 / n) * LZ) * 0.5 + 0.5;
+            int foot = FireMesh.argb(alpha, ICE[1 + (int) Math.round(lit * 1.4)]);
+            int head = FireMesh.argb(alpha * 0.85, ICE[2 + (int) Math.round(lit * 1.6)]);
+            FireMesh.quad(sink, x + c0, y, z + s0, foot, x + c1, y, z + s1, foot, x + c1, y + height, z + s1, head, x + c0, y + height, z + s0, head);
+            if (k > 0 && k < n - 1) {
+                double a2 = 0.5 * 6.283185307 / n;
+                FireMesh.quad(sink, x + Math.cos(a2) * radius, y + height, z + Math.sin(a2) * radius, top, x + c0, y + height, z + s0, top, x + c1,
+                    y + height, z + s1, top, x + c1, y + height, z + s1, top);
+            }
+        }
+    }
+
+    /**
+     * The frost from the arm that struck (the owner: "whenever an entity punches you that doesn't have Haki on, their limbs that they hit
+     * with like turn blue"): a body (feet at {@code x}, {@code y}, {@code z}, its right side along ({@code rx}, {@code rz}), {@code half}
+     * its half width, {@code height} tall) whose right arm (shoulder to hand) is crusted in crystal and cast blue first; past
+     * {@code frost} 0.25 the frost spreads over the whole body as {@link #frost} draws it.
+     */
+    public static void armFrost(FireMesh.Sink sink, double x, double y, double z, double rx, double rz, double half, double height, double frost,
+                                double age, int seed) {
+        double f = clamp(frost);
+        if (f <= 0.0) {
+            return;
+        }
+        double arm = Math.max(0.09, half * 0.42);
+        double ax = x + rx * (half + arm * 0.35);
+        double az = z + rz * (half + arm * 0.35);
+        double hand = y + height * 0.38;
+        double shoulder = y + height * 0.74;
+        double reach = (shoulder - hand) * clamp(0.55 + f * 1.8);
+        // the arm turning blue from the hand up, under a thin crystal sleeve
+        skin(sink, ax, hand - 0.03, az, reach + 0.06, arm * 1.15, 0.4 + 0.15 * f);
+        crystal(sink, ax, hand - 0.03, az, 0, 1, 0, reach + 0.06, arm * 1.3, 1.0, 6, 0.08, 0.0, 0.2 + 0.12 * f, false, seed);
+        int count = (int) Math.round((4 + 8 * f) * (lite ? 0.5 : 1.0));
+        for (int k = 0; k < count; k++) {
+            double a = 6.283 * FireMesh.rand(seed, 750 + k);
+            double h = reach * FireMesh.rand(seed, 760 + k);
+            double ox = Math.cos(a);
+            double oz = Math.sin(a);
+            double outward = 0.5 + 0.6 * FireMesh.rand(seed, 770 + k);
+            double ul = Math.sqrt(1.0 + outward * outward);
+            double len = (0.1 + 0.16 * FireMesh.rand(seed, 780 + k)) * (0.7 + 0.5 * f);
+            crystal(sink, ax + ox * arm * 1.1, hand + h, az + oz * arm * 1.1, ox * outward / ul, 1.0 / ul, oz * outward / ul, len, len * 0.32, 1.0, 4,
+                0.45, 0.0, 0.85, true, seed + 150 + k);
+        }
+        if (!lite && f <= 0.25) {
+            mist(sink, ax, hand + reach * 0.4, az, arm * 2.2 + 0.15, 0.1 + 0.1 * f, age, seed + 190);
+        }
+        if (f > 0.25) {
+            frost(sink, x, y, z, half, height, (f - 0.25) / 0.75, age, seed);
+        }
     }
 
     /**

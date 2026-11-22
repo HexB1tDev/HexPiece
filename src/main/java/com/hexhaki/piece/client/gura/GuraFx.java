@@ -124,12 +124,36 @@ public final class GuraFx {
         SPOTS.add(spot);
     }
 
+    /**
+     * 3.2.2 (the owner: "cracks form in the midair. Like if you use the move midair, no cracks or puddles or anything like lava stuff.
+     * None of that should appear midair"): the ground under {@code at} (from {@code up} over it to {@code down} under it; water's face
+     * counts), or null where there is none: ground art (cracks, rings pressed into the ground, dust, rocks) is drawn only there.
+     */
+    public static Vec3 ground(Vec3 at, double up, double down) {
+        ClientLevel level = Minecraft.m_91087_().f_91073_;
+        if (level == null) {
+            return null;
+        }
+        BlockHitResult hit = level.m_45547_(new ClipContext(at.m_82520_(0, up, 0), at.m_82520_(0, -down, 0), ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.ANY, null));
+        return hit.m_6662_() == HitResult.Type.BLOCK ? hit.m_82450_() : null;
+    }
+
+    /** How far under a ground effect's point the ground may be (blocks): a little hop still cracks the ground under it, no more. */
+    static final double GROUND_DOWN = 3.0;
+
     public static void accept(S2CUoFx m) {
         Vec3 at = new Vec3(m.x(), m.y(), m.z());
         Vec3 a = new Vec3(m.ax(), m.ay(), m.az());
         switch (m.kind()) {
-            case GuraMoves.CRACK, GuraMoves.SHOCK, GuraMoves.QUAKE, GuraMoves.TREMOR -> add(new Spot(m.kind(), m.id(), m.user(), at, a, m.size(),
-                m.bx(), m.by(), clock, m.ticks()));
+            case GuraMoves.CRACK, GuraMoves.SHOCK -> add(new Spot(m.kind(), m.id(), m.user(), at, a, m.size(), m.bx(), m.by(), clock, m.ticks()));
+            case GuraMoves.QUAKE, GuraMoves.TREMOR -> {
+                // on the ground under it, or not at all
+                Vec3 g = ground(at, 0.6, GROUND_DOWN);
+                if (g != null) {
+                    add(new Spot(m.kind(), m.id(), m.user(), g, a, m.size(), m.bx(), m.by(), clock, m.ticks()));
+                }
+            }
             case GuraMoves.BUBBLE_ON -> {
                 Bubble bubble = new Bubble(clock, m.id(), -1L);
                 BUBBLES.put(m.user(), bubble);
@@ -147,7 +171,8 @@ public final class GuraFx {
                 }
             }
             case GuraMoves.SHAKE_ON -> {
-                Shake shake = new Shake(clock, at.m_82520_(0, -0.9, 0), m.size());
+                // its cracks on the ground under the feet (none in the air: the rumble is still heard)
+                Shake shake = new Shake(clock, ground(at.m_82520_(0, -0.9, 0), 0.6, GROUND_DOWN), m.size());
                 SHAKES.put(m.user(), shake);
                 com.hexhaki.piece.client.LoopSound.play(GuraSounds.RUMBLE, entity(m.user()), 1.6F, 0.85F, true, true, 0.5,
                     () -> SHAKES.get(m.user()) == shake);
@@ -162,15 +187,22 @@ public final class GuraFx {
                     }
                 }
                 if (m.size() > 0.0F) {
-                    add(new Spot(GuraMoves.SHAKE_OFF, 0, m.user(), at.m_82520_(0, -0.9, 0), a, m.size(), m.bx(), 0, clock, m.ticks()));
+                    Vec3 g = ground(at.m_82520_(0, -0.9, 0), 0.6, GROUND_DOWN);
+                    if (g != null) {
+                        add(new Spot(GuraMoves.SHAKE_OFF, 0, m.user(), g, a, m.size(), m.bx(), 0, clock, m.ticks()));
+                    }
                     TILTS.put(m.user(), new double[] {clock, m.bx(), at.f_82479_, at.f_82481_, m.size()});
                 }
             }
-            case GuraMoves.RIFT -> RIFTS.add(new Rift(at, a, m.size(), heights(at, a, m.size()), m.bx() > 0.0F ? 1.8 : m.bx() < 0.0F ? 0.55 : 1.0,
-                clock, m.id()));
+            case GuraMoves.RIFT -> {
+                if (ground(at, 0.6, GROUND_DOWN) != null) {
+                    RIFTS.add(new Rift(at, a, m.size(), heights(at, a, m.size()), m.bx() > 0.0F ? 1.8 : m.bx() < 0.0F ? 0.55 : 1.0,
+                        clock, m.id()));
+                }
+            }
             case GuraMoves.HEAVE -> {
                 ClientLevel level = Minecraft.m_91087_().f_91073_;
-                if (level != null) {
+                if (level != null && ground(at, 0.6, GROUND_DOWN) != null) {
                     if (HEAVES.size() >= 3) {
                         HEAVES.remove(0);
                     }
@@ -180,8 +212,11 @@ public final class GuraFx {
             }
             case GuraMoves.TSUNAMI -> WAVES.add(new Wave(at, a, m.size(), m.bx(), m.ticks(), (int) m.by(), clock, m.id()));
             case GuraMoves.LEAP -> {
-                // a puff of dust where the feet leave the ground, the quake fist alight for the slam
-                add(new Spot(GuraMoves.TREMOR, 0, m.user(), a, Vec3.f_82478_, 2.2, 0, 0, clock, m.user() * 7 + (int) clock));
+                // a puff of dust where the feet leave the ground (only off the ground), the quake fist alight for the slam
+                Vec3 g = ground(a, 0.6, GROUND_DOWN);
+                if (g != null) {
+                    add(new Spot(GuraMoves.TREMOR, 0, m.user(), g, Vec3.f_82478_, 2.2, 0, 0, clock, m.user() * 7 + (int) clock));
+                }
                 BUBBLES.put(m.user(), new Bubble(clock, 2, clock + m.ticks() + 4));
                 if (self(m.user())) {
                     move = Move.leap(a, at, m.id(), m.ticks(), m.bx());
@@ -297,6 +332,9 @@ public final class GuraFx {
             Shake s = e.getValue();
             Entity user = entity(e.getKey());
             Vec3 c = user != null ? user.m_20182_() : s.at;
+            if (c == null) {
+                continue;
+            }
             double d = Math.sqrt((me.f_82479_ - c.f_82479_) * (me.f_82479_ - c.f_82479_) + (me.f_82481_ - c.f_82481_) * (me.f_82481_ - c.f_82481_));
             if (d > s.radius * 1.5) {
                 continue;
@@ -560,7 +598,7 @@ public final class GuraFx {
         }
         for (Map.Entry<Integer, Shake> e : SHAKES.entrySet()) {
             Shake s = e.getValue();
-            if (far(s.at, cam)) {
+            if (s.at == null || far(s.at, cam)) {
                 continue;
             }
             GuraArt.shake(SINK, s.at.f_82479_ - cx, s.at.f_82480_ - cy, s.at.f_82481_ - cz, s.radius, clock - s.since + partial, 10,
