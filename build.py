@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.0.8"
+VERSION = "3.0.9"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -86,6 +86,7 @@ PATCHED = {
     "com/hexhaki/gameplay/ConquerorLightningPath.class",
     "com/hexhaki/command/HakiCommands.class",
     "com/hexhaki/fruit/client/FruitKeys.class",
+    "com/hexhaki/fruit/FruitServer.class",  # 3.0.9: its sea check asks the Light fruit (no sea while the body is light: PikaMoves.inWater)
     "com/hexhaki/client/HakiKeys$ForgeBus.class",  # 2.2.4: Haki's keys ignore the fruit's "powers off" (PiecePatch CALL_REDIRECTS)
     # 2.2.2: the original's HUDs give way to the one abilities panel (PiecePatch HUDS_REPLACED)
     "com/hexhaki/client/HakiHud.class",

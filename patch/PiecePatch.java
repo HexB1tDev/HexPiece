@@ -264,6 +264,11 @@ public final class PiecePatch implements Opcodes {
         // 2.6.9: the original's arm handler cancels the arm event through HexPiece (not while HexPiece draws the arm from inside it)
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "arm", "net/minecraftforge/client/event/RenderArmEvent", "setCanceled", "(Z)V",
             RYOU_HANDS, "cancelArm", 1},
+        // 3.0.9 (the owner: "while reflecting over water, the player sinks to the sea floor nearly instantly. while in yata no kagami, the
+        // player NEVER suffers the effect of the sea"): the fruits' sea check (sinking, weakness, the fruit's moves cancelled) asks
+        // HexPiece whether the player is in the water: never while their body is light
+        {"com/hexhaki/fruit/FruitServer", "inSea", "net/minecraft/world/entity/player/Player", "m_20072_", "()Z",
+            "com/hexhaki/piece/server/PikaMoves", "inWater", 1},
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura", "renderFirstPerson"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},

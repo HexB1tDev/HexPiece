@@ -460,7 +460,9 @@ public final class PikaFx {
                     net.minecraft.world.phys.BlockHitResult hit = level.m_45547_(new net.minecraft.world.level.ClipContext(feet, feet.m_82549_(step),
                         net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.ANY, self));
                     if (hit.m_6662_() == net.minecraft.world.phys.HitResult.Type.BLOCK && !level.m_6425_(hit.m_82425_()).m_76178_()) {
-                        step = step.m_82490_(Math.max(0.0, hit.m_82450_().m_82554_(feet) / g.speed));
+                        // 3.0.9 (the owner: "while reflecting over water, the player sinks"): turned back a little over the surface,
+                        // so the feet never stand in the water's block
+                        step = step.m_82490_(Math.max(0.0, hit.m_82450_().m_82554_(feet) / g.speed)).m_82520_(0, 0.15, 0);
                         g.flipY = true;
                     }
                 }

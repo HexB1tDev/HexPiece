@@ -156,6 +156,20 @@ public final class PikaMoves {
         long dashUntil;
     }
 
+    /**
+     * 3.0.9 (the owner: "while reflecting over water, the player sinks to the sea floor nearly instantly. while in yata no kagami, the
+     * player NEVER suffers the effect of the sea"): the original's FruitServer.inSea asks here (PiecePatch VIRTUAL_REDIRECTS) whether the
+     * player is in the water: never while their body is light (Z, its kick, a dash as light), so the sea neither sinks nor weakens
+     * them nor cancels the light; otherwise the game's own answer.
+     */
+    public static boolean inWater(net.minecraft.world.entity.player.Player player) {
+        State s = STATES.get(player.m_20148_());
+        if (s != null && player instanceof ServerPlayer server && moving(s, now(server))) {
+            return false;
+        }
+        return player.m_20072_();
+    }
+
     /** 2.9.6: whether the body is light now (Z held, or a dash): no other move until it is a body again. */
     static boolean moving(State s, long now) {
         return s.lightSince >= 0 || now < s.dashUntil;
