@@ -33,26 +33,11 @@ final class PikaClient implements ClientKit {
 
     @Override
     public String stance(AbstractClientPlayer player, CompoundTag state, long now) {
-        double speed = player.m_20184_().m_165924_();
-        // 3.0.7 (the owner, with a screenshot of the player stood with the right arm hanging a little out: "the player sometimes gets
-        // stuck in this position and cant use left click (the fists dont move)"): the sword's stance (it holds the right arm) only while
-        // this client's own timer of the sword says it is out (PikaFx.SWORDS: SWORD_ON's ticks, always running out); the server's "sword"
-        // in the player's state could stay set when the sword went with the move cut short (a mode switch, death, the fruit set aside:
-        // PikaMoves.forget sends no new state), leaving the stance on for good with no sword in the hand
-        boolean sword = PikaFx.sword(player.m_19879_());
-        // 2.9.0 (the owner: "Flying and jumping gives you a fuck ass animation"): only flight (as light) has its pose; a jump or a fall is
-        // the game's own, with the hands in the pockets (or the sword held)
-        if (player.m_150110_().f_35935_ && !player.m_20096_()) {
-            return speed > 0.22 ? "pika_fly" : "pika_float";
-        }
-        boolean moving = speed > 0.02;
-        if (sword) {
-            return moving || !player.m_20096_() ? "pika_sword_walk" : "pika_sword_idle";
-        }
-        if (player.m_20142_()) {
-            return null; // running: the game's own run
-        }
-        return moving || !player.m_20096_() ? "pika_walk" : "pika_idle";
+        // 3.1.0 (the owner, with a screenshot of the player stood with the hands in the pockets: "this pose presists, its not needed,
+        // and it bugs like shit"): no stance at all with the Light fruit: the original plays a fruit's stance without end, and these held
+        // the arms (and in the air the whole body), so the game's own punch, walk and every other animation could not move them. Only
+        // the moves themselves animate; between them the body is the game's own.
+        return null;
     }
 
     /** The sword of light in the right hand (the model's own arm pose), the leg alight while it gathers the light. */
