@@ -31,6 +31,10 @@ public final class PikaPreview {
             switch (args[i]) {
                 case "--sword" -> sword = true;
                 case "--fp" -> fp = true;
+                case "--shift" -> {
+                    String[] s = args[++i].split(",");
+                    FP_SHIFT = new double[] {Double.parseDouble(s[0]), Double.parseDouble(s[1]), Double.parseDouble(s[2])};
+                }
                 case "--view" -> view = Double.parseDouble(args[++i]);
                 case "--frames" -> frames = Integer.parseInt(args[++i]);
                 case "--to" -> to = Double.parseDouble(args[++i]);
@@ -62,14 +66,16 @@ public final class PikaPreview {
     }
 
     static boolean fp;
+    static double[] FP_SHIFT = {0, 0, 0};
 
     static BufferedImage render(String name, boolean sword, double view, float t, int w, int h) {
         double a = Math.toRadians(view);
         double[] target = {0, 1.1, 0.8};
         double[] eye = {Math.sin(a) * 4.6, 1.8, 0.8 - Math.cos(a) * 4.6};
         if (fp) {
-            eye = new double[] {0.0, 1.62, 0.0};
-            target = new double[] {0.0, 1.62, 5.0};
+            // the view moved back, up and left by FP_SHIFT: the same as client/FirstPersonLight moving the arm forward, down and right
+            eye = new double[] {FP_SHIFT[0], 1.62 + FP_SHIFT[1], -FP_SHIFT[2]};
+            target = new double[] {FP_SHIFT[0], 1.62 + FP_SHIFT[1], 5.0};
             DragonPreview.fov = 70;
         }
         if (view < -900) {

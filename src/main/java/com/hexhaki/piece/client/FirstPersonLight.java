@@ -55,6 +55,8 @@ public final class FirstPersonLight {
     static final Set<String> POINTING = Set.of("pika_laser", "pika_laser_charge", "pika_laser_fire");
     /** The sword's clips: the sword is in the hand. */
     static final Set<String> SWORD = Set.of("pika_sword_1", "pika_sword_2", "pika_murakumo");
+    /** 3.0.3: the posed arm in first person moved this far right, down and ahead of the eye (blocks; PikaPreview --fp --shift). */
+    static final double[] VIEW_SHIFT = {0.12, 0.15, 0.5};
     private static final float[] M = new float[12];
     private static final float[] N = new float[9];
 
@@ -133,6 +135,14 @@ public final class FirstPersonLight {
         if (view) {
             double eye = player.m_20192_();
             y -= eye;
+            // 3.0.3 (the owner, with a screenshot of the laser's charge: "in first person the hand is bugged, it pointing to the side and
+            // not forward"): hung from the eye as the body has it, the shoulder sat beside the eye at its own depth, so the upper arm ran
+            // past the view's edge as a huge box across the screen (behind the eye it can even fold to the other side); as the game draws
+            // its own first-person arm, the whole arm is moved ahead of the eye and down to the right (VIEW_SHIFT): it comes in from the
+            // lower right, the hand out ahead toward the crosshair
+            x -= VIEW_SHIFT[0];
+            y -= VIEW_SHIFT[1];
+            z += VIEW_SHIFT[2];
             double pitch = Math.toRadians(player.f_19860_ + (player.m_146909_() - player.f_19860_) * partial);
             double ny = y * Math.cos(pitch) - z * Math.sin(pitch);
             double nz = y * Math.sin(pitch) + z * Math.cos(pitch);
