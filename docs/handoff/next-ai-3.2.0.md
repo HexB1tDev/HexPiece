@@ -1177,6 +1177,43 @@ Read 8zc (the plan) and 8zd (the owner's answers) first. What the code does (not
 - `EnergyBarView.COLOUR` 0xA46BFF (violet: no vanilla bar is violet) for every fruit; client/EnergyBar no longer reads Fruit.colour.
   UiPreview "energy" renders the one bar in its four states (docs/handoff/energy-bar-3.2.1.png). Never give a fruit its own bar colour.
 
+## 8zh. The owner's requests after 3.2.1 (verbatim, in the order sent; 3.2.2 works on them)
+
+1. "Ice World is lasting way too long, and it's meant to freeze everyone, like, in there. There's a sound that you added that sounds like
+   a fucking fairy, bro. It's one of the sounds when you click Z, one of them. Like, only a few sound like actual ice, the other ones
+   don't. It's too melodic, bro. Like, I don't know why you keep making sounds so melodic." ("Ice World" = Ice Age, V.)
+2. "Also, the ice sometimes melts. Ice world is like the world itself. The ice lasts way too long, and I don't think it's disappearing.
+   Um, if it is, it's taking a bit too long. Plus, like I said, nothing is really being frozen. Like anything that comes in there
+   should freeze. I don't like ice time. I think like the entity should be like in a crystal like you had before that then shatters.
+   Like I truly don't like ice time where it's like meant to be one of the most satisfying abilities."
+3. "Also, I think that we could implement a feature that is pretty cool. That just like imagine whenever an entity punches you that
+   doesn't have hotkey [Haki] on, their limbs that they hit with like turn blue, like the skin. Let's say it's recolored to blue, and
+   then the player like I don't know can shatter them. I guess I don't know. Like we could implement something like this. Just an
+   idea. Or like they just freeze in place, like if they hit the player repeatedly. I don't know, something like that."
+4. "Shows up to me while in fruit mode whenever you left-click someone. You should be able to, like, freeze them slowly, and when we
+   punch them a certain number of times, they get completely frozen, and when you hit them again, you can shatter them. I think that
+   would be a cool mechanic in general. Like, there's so many possibilities with this fruit. It just feels very, very bare. Very. It
+   looks good, but it just looks very. It's missing out a few stuff, like quite a lot of stuff."
+5. (The Gura ultimate) "Also, the end move of Goro no Mi [Gura], you got it right. It's what I wanted to do with the terrain. That's it.
+   But in a cone, like a cone forming this, like slowly forming, going forward, like pushing forward. You got the right idea, like I
+   said, but you made a sphere, like a circle. That's not very accurate. And also, the ground should fix itself to how it was, exactly
+   how it was, and return any item that is broken. Like oh, it self repairs. Okay, never mind. I think it's fine. Just do what I said
+   though."
+6. "Another thing is that the lightning, whenever you like I told you to do, whenever Ryohaki [Ryou Haki] is activated, the lightning
+   coming out of the out of the explosion or like anything at all, the lightning is too thick. If you compare the two lightnings of the
+   Conqueror's release and the one you just added, the one you added is ridiculously fat compared to the other one." (Two screenshots:
+   the release's thin black bolts with a pale rim and fine branches, beside fat black tubes from the move lightning; a close-up of a
+   huge fat tube crossed out in red.)
+7. "Another thing that is bothering me a lot lately is that cracks form in the midair. Like if you use the move midair, no cracks or
+   puddles or anything like lava stuff. None of that should appear midair. I mean, it doesn't make sense and looks bad if you ask me."
+   (Screenshot: the player in the air, arms thrown out (Shima Yurashi), the dark ground cracks spread round him at his own height in the
+   air, grey dust puffs in the air, two white glass crack webs at his fists, shock rings in the sky.)
+- Session note: this session started on Default (freesound.org refused); the personal HexPiece environment is now
+  env_01PmnEXrwDhxzij8M5q6P6bL (switch_environment to it).
+- Found: the melodic clips by their spectra (tools: spectral flatness and the share of the 8 strongest bins): freeze1 ("Ice Spell
+  Freeze": sustained chime lines, the fairy one, played by Ice Time's freeze), freeze2, form1, form2, hit1 and age1 carry pitched bands;
+  crack1, crack2, shatter1, shatter2 and the frost loop are broadband (real ice).
+
 ## 9. What to do next (3.2.2)
 
 1. Check that 3.2.0's and 3.2.1's runs are green if this session did not (Build HexPiece and Release HexPiece on the branch).
