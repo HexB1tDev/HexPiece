@@ -288,9 +288,11 @@ public final class PikaFx {
             Bead b = it.next();
             if (clock - b.born >= b.flight) {
                 it.remove();
-                SPOTS.add(new Spot(b.to, Vec3.f_82478_, b.size * 2.4, 0, clock, PikaMoves.BURST));
+                // 3.0.4 (the owner: "X move is causing extreme lag"): a slug landing is a small flash of light and its star (LightArt.impact:
+                // some 80 quads for 7 ticks), no longer a whole explosion (some 1,500 quads for 28 ticks, a dozen of them at once)
+                SPOTS.add(new Spot(b.to.m_82520_(0, 0.3, 0), Vec3.f_82478_, b.size * 2.6, 0, clock, PikaMoves.DODGE));
                 if (RANDOM.nextInt(3) == 0) {
-                    motes(b.to, 3, 0.3);
+                    motes(b.to, 2, 0.3);
                 }
             }
         }
@@ -499,6 +501,25 @@ public final class PikaFx {
         self.f_19860_ = pitch;
         self.f_20885_ = yaw;
         self.f_20886_ = yaw;
+    }
+
+    /**
+     * 3.0.4 (the owner: "LEft click should be default punching instead of nothing"): the original's fruit mode takes the attack button
+     * from an empty hand (FruitKeys.interact cancels it and sends it to the kit, where the Light fruit does nothing with it since 2.9.7);
+     * with the Light fruit it is given back to the game: its own punch, the hand swung (not while one's body is light).
+     */
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST, receiveCanceled = true)
+    public static void punch(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+        if (!event.isAttack() || !event.isCanceled()) {
+            return;
+        }
+        net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
+        if (self == null || glide != null || !com.hexhaki.fruit.client.FruitClient.active()
+            || com.hexhaki.fruit.client.FruitClient.fruit(self.m_19879_()) != Fruit.PIKA || !self.m_21205_().m_41619_()) {
+            return;
+        }
+        event.setCanceled(false);
+        event.setSwingHand(true);
     }
 
     /** 2.9.6: while one's own body is light, no movement key moves it (it goes as the light goes). */

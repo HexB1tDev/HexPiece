@@ -118,7 +118,12 @@ public final class PikaMoves {
     static final int BEAM_FULL = 40;
     static final int TAP = 6;
     static final int VOLLEY_MAX = 56;
-    static final int VOLLEY_EVERY = 2;
+    /**
+     * 3.0.4 (the owner: "X move is causing extreme lag, and is shooting too fast, too many projectiles"): one slug every 5 ticks (was 2)
+     * at {@link #VOLLEY_SPEED} blocks a tick (was 3.2), and where each lands a small flash of light (PikaFx), not a whole explosion.
+     */
+    static final int VOLLEY_EVERY = 5;
+    static final double VOLLEY_SPEED = 2.2;
     static final int VOLLEY_WINDUP = 6;
     static final double VOLLEY_SPREAD = 8.0;
     static final int SWORD_TICKS = 400;
@@ -792,7 +797,7 @@ public final class PikaMoves {
         double spread = target != null ? 1.4 : VOLLEY_SPREAD;
         ServerLevel level = (ServerLevel) player.m_9236_();
         // 2.9.0 (the owner: "The X move is shooting countless projectiles. It's way too many"): one bullet every other tick (three a
-        // tick before: 210 over the 3.5 s), some 25 in all
+        // tick before: 210 over the 3.5 s), some 25 in all; 3.0.4: one every 5 ticks, some 10 in all
         if ((held - VOLLEY_WINDUP) % VOLLEY_EVERY != 0) {
             return;
         }
@@ -803,7 +808,7 @@ public final class PikaMoves {
             Vec3 land = centre.m_82520_(Math.cos(a) * r, 0, Math.sin(a) * r);
             Vec3 way = land.m_82546_(hands);
             double length = way.m_82553_();
-            int flight = Math.max(2, (int) Math.ceil(length / 3.2));
+            int flight = Math.max(2, (int) Math.ceil(length / VOLLEY_SPEED));
             fx(player, BEAD, k, hands, land, 0, 0, 0, target != null ? 0.55 : 0.7, flight);
             sound(player, hands, PikaSounds.ZAP, 0.7F, 0.9F + level.m_213780_().m_188501_() * 0.25F);
             Vec3 step = way.m_82490_(1.0 / flight);
@@ -986,36 +991,29 @@ public final class PikaMoves {
         LivingEntity target = aimed(player, KICK_RANGE, 0.06);
         Vec3 from = player.m_20182_();
         if (target != null) {
-            // 2.9.0 (the owner: "kick from the side, like comes from the back and then rotates and it hits on the left side of the mob
-            // ... around the head area"): gone as light and out of it behind them, over their left shoulder at the height of their
-            // head, turned away; he spins round (the animation) and the kick lands in the left side of the head on tick 3, throwing them
-            // away to their right. 2.9.6 (the owner: "smooth"): there as light over a few ticks (a dash, following them if they move,
-            // no snap of the view), the spin begun as he arrives, the body hanging there until the kick has landed
-            float yaw = target.f_20883_;
-            Vec3 face = new Vec3(-Math.sin(Math.toRadians(yaw)), 0, Math.cos(Math.toRadians(yaw)));
-            Vec3 left = new Vec3(Math.cos(Math.toRadians(yaw)), 0, Math.sin(Math.toRadians(yaw)));
-            double reach = target.m_20205_() * 0.5 + 0.85;
-            double lift = Math.max(0.0, target.m_20192_() - LIGHT_KICK_FOOT);
+            // 3.0.4 (the owner: "Light kick should now be like V, kicks forward but much much farther with an impact frame and sending
+            // through blocks (like Speed kick in HexGhoul)"): as HexGhoul's Speed Kick (Kizaru's kick), there as light to straight in
+            // front of them on his side (a dash, following them), turned to them, the flying kick driven into their middle as he
+            // arrives; an impact frame; and they are sent off straight away from him, low and very far, carried (no air drag), smashing
+            // through every block up to iron on the way (the self-repairing Scars), stopped dead by anything harder, knocked down and
+            // ragdolled where they come to rest
             Vec3 t = target.m_20182_();
-            Vec3 to = room(player, t, t.m_82549_(face.m_82490_(-reach * 0.55)).m_82549_(left.m_82490_(reach)).m_82520_(0, lift, 0));
+            Vec3 flat = t.m_82546_(from);
+            flat = new Vec3(flat.f_82479_, 0, flat.f_82481_);
+            flat = flat.m_82556_() < 1.0E-6 ? new Vec3(player.m_20154_().f_82479_, 0, player.m_20154_().f_82481_) : flat;
+            flat = flat.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.m_82541_();
+            double lift = Math.max(0.0, target.m_20206_() * 0.6 - 1.15);
+            Vec3 to = room(player, t, t.m_82546_(flat.m_82490_(target.m_20205_() * 0.5 + Z_KICK_GAP)).m_82520_(0, lift, 0));
             int ticks = dash(player, to, target, LIGHT_KICK_HOLD);
-            int lands = ticks + LIGHT_KICK_LANDS - 1;
-            s.busyUntil = now(player) + lands + 6;
-            Vec3 thrown = left.m_82490_(-(2.8 + 2.6 * charge)).m_82549_(face.m_82490_(0.6)).m_82520_(0, 0.6 + 0.35 * charge, 0);
+            s.busyUntil = now(player) + ticks + LIGHT_KICK_HOLD;
             sound(player, from, PikaSounds.ZIP, 1.2F, 1.0F);
-            later(player, ticks - 1, () -> animate(player, "pika_light_kick"));
-            later(player, ticks, () -> sound(player, player.m_20182_(), PikaSounds.TRAVEL, 1.2F, 1.1F));
-            later(player, lands, () -> {
-                if (!target.m_6084_()) {
-                    return;
+            Vec3 aim = flat;
+            later(player, ticks - 1, () -> animate(player, "pika_z_kick"));
+            later(player, ticks, () -> {
+                sound(player, player.m_20182_(), PikaSounds.TRAVEL, 1.2F, 1.1F);
+                if (target.m_6084_()) {
+                    speedKick(player, target, aim, charge);
                 }
-                hit(player, target, 7.0F + 9.0F * charge, thrown, true);
-                Vec3 head = new Vec3(target.m_20185_(), target.m_20186_() + target.m_20192_(), target.m_20189_()).m_82549_(left.m_82490_(target.m_20205_() * 0.5));
-                fx(player, LIGHT_KICK, target.m_19879_(), from, player.m_20182_(), thrown.f_82479_, thrown.f_82480_, thrown.f_82481_, charge, 0);
-                fx(player, KICK, 0, head, left.m_82490_(-1.0), 0, 0, 0, 3, 8);
-                Impact.quake((ServerLevel) player.m_9236_(), head, 20.0 + 20.0 * charge, 0.5F + 0.5F * charge, 14);
-                sound(player, head, PikaSounds.KICK_BLAST, 1.8F, 0.9F);
-                sound(player, head, PikaSounds.HIT_HEAVY, 1.6F, 0.85F);
             });
         } else {
             // no one there: the kick fires a beam out of the leg (as at Zoro)
@@ -1030,6 +1028,147 @@ public final class PikaMoves {
                     1.4 + 1.4 * charge);
                 Impact.quake((ServerLevel) player.m_9236_(), to, 16.0, 0.5F, 10);
             });
+        }
+    }
+
+    /**
+     * 3.0.4: V's kick landing (HexGhoul's Speed Kick, the owner's word): the blow, an impact frame (the clash's: Clashes' S2CClash, no
+     * Haki colours), and the launch ({@link Launch}): off along {@code flat} at {@link #V_SPEED} (more charged, faster), carried.
+     */
+    static void speedKick(ServerPlayer player, LivingEntity target, Vec3 flat, float charge) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        double speed = V_SPEED * (0.7 + 0.3 * charge);
+        Vec3 thrown = flat.m_82490_(speed).m_82520_(0, V_UP, 0);
+        Vec3 struck = StyleCombat.middle(target);
+        if (!hit(player, target, 7.0F + 9.0F * charge, thrown, true)) {
+            return;
+        }
+        float power = 1.6F + 1.0F * charge;
+        PieceNetwork.around(player, new com.hexhaki.piece.network.S2CClash(++frames, struck.f_82479_, struck.f_82480_, struck.f_82481_,
+            (float) flat.f_82479_, (float) flat.f_82481_, power, 0, 0, player.m_19879_(), target.m_19879_(), 0));
+        fx(player, LIGHT_KICK, target.m_19879_(), struck, player.m_20182_(), thrown.f_82479_, thrown.f_82480_, thrown.f_82481_, charge, 0);
+        fx(player, KICK, 0, struck, flat, 0, 0, 0, 3, 8);
+        Impact.quake(level, struck, 24.0 + 16.0 * charge, 0.7F + 0.3F * charge, 14);
+        sound(player, struck, PikaSounds.KICK_BLAST, 1.8F, 0.9F);
+        sound(player, struck, PikaSounds.HIT_HEAVY, 1.6F, 0.85F);
+        LIVE.add(new Launch(level, player, target, flat, speed));
+    }
+
+    /** 3.0.4: V's launch: blocks a tick off the kick (at a full charge), up, ticks it is carried at most, blocks it may smash. */
+    static final double V_SPEED = 4.6;
+    static final double V_UP = 0.5;
+    static final int V_FLIGHT = 60;
+    static final int V_MOST_BLOCKS = 160;
+    static final int V_MOST_A_TICK = 24;
+    /** Nothing harder than iron (its destroy time) is smashed through; each block smashed takes this much of its speed. */
+    static final float V_HARDEST = 5.0F;
+    static final double V_PER_BLOCK = 0.96;
+    private static int frames = 1 << 30;
+
+    /**
+     * 3.0.4: a body sent off by V's kick, as HexGhoul's BlockSmash carries the Speed Kick's: each tick it is driven on along the kick
+     * (no drag), every block in its way this tick up to iron torn out through the self-repairing Scars (back after their 15 to 25 s,
+     * never dropped) and a little of its speed with it; anything harder (or protected, or a block entity) stops it dead, and it hurts;
+     * down on the ground after its first ticks, or its speed or time spent, it is knocked down there (ragdolled) for the rest of
+     * {@link #Z_KICK_STUN} ticks.
+     */
+    static final class Launch implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final LivingEntity body;
+        final Vec3 carry;
+        final long start;
+        double speed;
+        int flown;
+        int broken;
+
+        Launch(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 carry, double speed) {
+            this.level = level;
+            this.owner = owner;
+            this.body = body;
+            this.carry = carry;
+            this.speed = speed;
+            this.start = level.m_46467_();
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (!this.body.m_6084_() || this.body.m_9236_() != this.level) {
+                return true;
+            }
+            this.flown++;
+            if (this.flown > 2 && this.body.m_20096_() || this.flown > V_FLIGHT || this.speed < 0.7) {
+                return this.down(now);
+            }
+            Vec3 was = this.body.m_20184_();
+            Vec3 velocity = new Vec3(this.carry.f_82479_ * this.speed, Math.max(was.f_82480_, this.flown <= 1 ? V_UP : -1.0),
+                this.carry.f_82481_ * this.speed);
+            net.minecraft.world.phys.AABB box = this.body.m_20191_();
+            net.minecraft.world.phys.AABB path = box.m_82369_(velocity).m_82400_(0.05);
+            Scars scars = Scars.of(this.level);
+            List<double[]> supports = new ArrayList<>();
+            for (net.minecraft.world.entity.decoration.HangingEntity hanging : this.level.m_6443_(
+                net.minecraft.world.entity.decoration.HangingEntity.class, path.m_82400_(Scars.HANGING_CLEARANCE), e -> true)) {
+                Vec3 p = hanging.m_20182_();
+                supports.add(new double[] {p.f_82479_, p.f_82480_, p.f_82481_});
+            }
+            int broke = 0;
+            boolean blocked = false;
+            Vec3 hitAt = null;
+            int floor = (int) Math.floor(box.f_82289_ + 0.05); // the ground it skims is not in its way
+            for (int x = (int) Math.floor(path.f_82288_); x <= (int) Math.floor(path.f_82291_) && broke < V_MOST_A_TICK; x++) {
+                for (int y = Math.max(floor, (int) Math.floor(path.f_82289_)); y <= (int) Math.floor(path.f_82292_) && broke < V_MOST_A_TICK; y++) {
+                    for (int z = (int) Math.floor(path.f_82290_); z <= (int) Math.floor(path.f_82293_) && broke < V_MOST_A_TICK; z++) {
+                        net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x, y, z);
+                        net.minecraft.world.level.block.state.BlockState state = this.level.m_8055_(pos);
+                        if (state.m_60795_() || state.m_60812_(this.level, pos).m_83281_()) {
+                            continue; // air, or nothing to bump into (grass, flowers)
+                        }
+                        float hardness = state.m_60800_(this.level, pos);
+                        boolean torn = this.broken < V_MOST_BLOCKS && hardness >= 0.0F && hardness <= V_HARDEST && scars.room()
+                            && scars.tear(this.owner, pos, supports, -1L) == Scars.TORN;
+                        if (torn) {
+                            broke++;
+                            this.broken++;
+                            this.speed *= V_PER_BLOCK;
+                        } else {
+                            blocked = true;
+                            if (hitAt == null) {
+                                hitAt = new Vec3(x + 0.5, y + 0.5, z + 0.5);
+                            }
+                        }
+                    }
+                }
+            }
+            if (blocked) {
+                // into something that holds: stopped dead, and it hurts
+                this.body.m_20256_(new Vec3(0, Math.min(0.0, was.f_82480_), 0));
+                this.body.f_19864_ = true;
+                Vec3 at = hitAt.m_82546_(this.carry.m_82490_(0.5));
+                fx(this.owner, BURST, 0, at, Vec3.f_82478_, 0, 0, 0, 1.6, 0);
+                sound(this.owner, at, PikaSounds.HIT_HEAVY, 1.4F, 0.7F);
+                if (this.speed > 1.0) {
+                    this.body.f_19802_ = 0;
+                    this.body.m_6469_(StyleCombat.of(this.owner), (float) ((this.speed - 1.0) * 2.5));
+                }
+                return this.down(now);
+            }
+            this.body.m_20256_(velocity);
+            this.body.f_19864_ = true;
+            this.body.f_19812_ = true;
+            this.body.f_19789_ = 0.0F;
+            return false;
+        }
+
+        /** Come to rest: knocked down, ragdolled, for the rest of the stun. */
+        boolean down(long now) {
+            HakiFalls.knockDown(this.level, this.body, (int) Math.max(40L, Z_KICK_STUN - (now - this.start)), false);
+            return true;
         }
     }
 
