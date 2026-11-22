@@ -1,10 +1,10 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
-Read CLAUDE.md, then docs/handoff/next-ai-3.1.2.md whole: it holds every standing rule in one place (talking to the owner, the house
+Read CLAUDE.md, then docs/handoff/next-ai-3.1.3.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8s of next-ai-3.1.2.md
-(2.9.6 to 3.1.2); open the older next-ai-*.md only for a feature's detail. If freesound.org or tenor.com is refused, the session is on
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8u of next-ai-3.1.3.md
+(2.9.6 to 3.1.3); open the older next-ai-*.md only for a feature's detail. If freesound.org or tenor.com is refused, the session is on
 the Default environment: switch_environment to "HexPiece" (section 7).
 
 3.1.1 is the Gura Gura no Mi (section 8r), built from the Whitebeard and Blackbeard GIFs in docs/handoff/gura-ref/ after the owner
@@ -13,10 +13,12 @@ X Kabutowari, C Tsunami, V Gekishin (hold), B Ground Splitter, LMB the game's pu
 land hard). 3.1.2 (section 8s) fixed what the owner found on first play: the tsunami is two walls rising left and right (only near
 a big body of water), the glass crack grows slowly with slim lines, no Gura clip keys the legs, sneaking no longer breaks the body
 in a move, Kabutowari leaps far higher and only strikes the ground on landing, and with Ryou on the moves mix in the Conqueror's
-lightning (Blackbeard). Not tested in game.
+lightning (Blackbeard). 3.1.3 (sections 8t and 8u): the Magu Magu no Mi after Akainu (RMB Dai Funka, Z Meigo, X Ryusei Kazan, C
+Inugami Guren, V Bakuretsu Kazan, B Magma Flow, fire/lava immunity and burning bare-handed attackers; no leg animated), and the Gura
+fruit 1.6x the range and more destruction with Ryou on, its shock arcs no longer bowed the wrong way. Not tested in game.
 
-First check the branch's last "Build HexPiece" and "Release HexPiece" runs (3.1.2) are green. Then follow section 9 of
-next-ai-3.1.2.md: ask the owner how 3.1.2 plays and fix what they say (the next version is 3.1.3); the owner still has to say
+First check the branch's last "Build HexPiece" and "Release HexPiece" runs (3.1.3) are green. Then follow section 9 of
+next-ai-3.1.3.md: ask the owner how the Magma fruit and the Gura fruit with Haki play and fix what they say (the next version is 3.1.4); the owner still has to say
 how 3.0.x to 3.1.0's Light fruit and katana fixes play, and 2.9.5's and 2.9.4's.
 
 Earlier: 3.1.0: no Light fruit stance at all. 3.0.9: no sea effects while the body is light. 3.0.8: a drawn katana's ready pose plays

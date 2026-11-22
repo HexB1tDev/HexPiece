@@ -119,6 +119,10 @@ public final class UoFx {
     }
 
     public static void accept(S2CUoFx m) {
+        if (m.kind() >= 100 && m.kind() < 120) {
+            com.hexhaki.piece.client.magu.MaguFx.accept(m); // 3.1.3: the Magma fruit's moves (100 to 119)
+            return;
+        }
         if (m.kind() >= com.hexhaki.piece.server.ConquerorAura.SPARKS) {
             com.hexhaki.piece.client.haki.ConquerorSparksClient.accept(m); // 2.9.1: the Conqueror's lightning off its user
             return;

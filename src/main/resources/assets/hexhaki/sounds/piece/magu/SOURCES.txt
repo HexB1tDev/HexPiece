@@ -1,0 +1,13 @@
+The Magu Magu no Mi's sounds (tools/magu_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+whoosh1.ogg: "Basic Fire Whoosh 2" by LookIMadeAThing, https://freesound.org/people/LookIMadeAThing/sounds/260555/ (CC0 1.0), from 0.0 s, 1.60 s long
+whoosh2.ogg: "fire-whoosh.wav" by hnhnh, https://freesound.org/people/hnhnh/sounds/244926/ (CC0 1.0), from 0.0 s, 2.20 s long
+burst1.ogg: "Fireball Explosion.wav" by Blankened, https://freesound.org/people/Blankened/sounds/431174/ (CC0 1.0), from 0.0 s, 1.08 s long
+burst2.ogg: "fire_explosion.wav" by ReadeOnly, https://freesound.org/people/ReadeOnly/sounds/186932/ (CC0 1.0), from 0.6 s, 2.60 s long, 4.0 dB quieter
+boom1.ogg: "BOOMING PUNCHY EXPLOSION - close, big SCHOEPS MK41.wav" by misosound, https://freesound.org/people/misosound/sounds/251759/ (CC0 1.0), from 0.0 s, 2.99 s long
+sizzle1.ogg: "SFX_HOT_BALL_LAVA_SHORT" by tiagusilva37, https://freesound.org/people/tiagusilva37/sounds/737659/ (CC0 1.0), from 0.0 s, 1.81 s long
+sizzle2.ogg: "Water Poured onto a Burning Fireplace – Hissing Steam and Sizzling Embers" by bassimat, https://freesound.org/people/bassimat/sounds/870180/ (CC0 1.0), from 1.0 s, 2.40 s long
+roar1.ogg: "Flame Burst" by magnuswaker, https://freesound.org/people/magnuswaker/sounds/592572/ (CC0 1.0), from 0.0 s, 2.80 s long
+bubble.ogg: "Bubbling lava flowing1.wav" by Jim-Bretherick, https://freesound.org/people/Jim-Bretherick/sounds/618013/ (CC0 1.0), a loop from 20.0 s, 8.00 s long, 6.0 dB quieter

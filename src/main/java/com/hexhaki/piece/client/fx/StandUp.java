@@ -29,7 +29,7 @@ public final class StandUp {
     /** Whether {@code player} is in one of the fruits' moves now. */
     static boolean moving(Player player) {
         String clip = com.hexhaki.fruit.client.FruitAnimations.clip(player);
-        return clip != null && (clip.startsWith("gura_") || clip.startsWith("pika_"));
+        return clip != null && (clip.startsWith("gura_") || clip.startsWith("pika_") || clip.startsWith("magu_"));
     }
 
     /** Last (after anything that cancels the drawing): the crouch taken off a player in a move. */

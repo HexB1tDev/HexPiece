@@ -130,6 +130,71 @@ public final class DragonTests {
             "the Gura fruit's own moves go under the server's movement check (10 blocks a tick)");
     }
 
+    /**
+     * 3.1.3: the Magma fruit's effects (magu/MaguArt) fit a phone's budget: a giant fist flying near the eye with its burst, the burning
+     * ground, three meteors, the hound, two geysers, the stream, the spike and the swelling fist all at once stay under 16,000 quads,
+     * every vertex finite.
+     */
+    static void maguMagma() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double[] stream = new double[14 * 3];
+        for (int i = 0; i < 14; i++) {
+            stream[i * 3] = 2.0;
+            stream[i * 3 + 1] = -1.6;
+            stream[i * 3 + 2] = 3.0 + i * 1.6;
+        }
+        for (int age = 0; age <= 60; age += 3) {
+            // Dai Funka at a full charge: the giant fist near the eye, its blast, the burning ground round it
+            count[0] = 0;
+            com.hexhaki.piece.magu.MaguArt.fist(sink, 0.4, -0.2, 3.0 + age * 1.7, 0, 0, 1, 2.2, age, 7);
+            com.hexhaki.piece.magu.MaguArt.burst(sink, 0, -1.0, 12.0, 8.0, 1.0, age, 9);
+            com.hexhaki.piece.magu.MaguArt.pool(sink, 0, -1.6, 10.0, 4.5, age, 160, 4);
+            for (int k = 0; k < 4; k++) {
+                com.hexhaki.piece.magu.MaguArt.pool(sink, -5 + 3 * k, -1.6, 13.0, 2.4, age, 120, 5 + k);
+            }
+            com.hexhaki.piece.magu.MaguArt.swell(sink, 0.4, -0.4, 1.0, 0.22, age, 3);
+            check(count[0], finite[0], "Dai Funka", age);
+            // Ryusei Kazan: three meteors falling, three bursting, the ground burning where six fell, the fist up in the sky
+            count[0] = 0;
+            for (int k = 0; k < 3; k++) {
+                com.hexhaki.piece.magu.MaguArt.meteor(sink, -6 + 6 * k, 10.0 - (age % 12), 18.0, 0, -2.2, 0, 0.9, age, 20 + k);
+                com.hexhaki.piece.magu.MaguArt.burst(sink, -5 + 5 * k, -1.2, 14.0 + k, 2.8, 0.35, (age + k * 4) % 40, 30 + k);
+            }
+            for (int k = 0; k < 6; k++) {
+                com.hexhaki.piece.magu.MaguArt.pool(sink, -6 + 2.4 * k, -1.6, 12.0 + (k % 2) * 4, 1.6, age, 60, 40 + k);
+            }
+            com.hexhaki.piece.magu.MaguArt.meteor(sink, 0, 4.0 + age, 1.0, 0, 2.6, 0, 0.6, age, 50);
+            check(count[0], finite[0], "Ryusei Kazan", age);
+            // Inugami Guren, Magma Flow and Meigo near each other
+            count[0] = 0;
+            com.hexhaki.piece.magu.MaguArt.hound(sink, 0, -1.6, 6.0 + age * 0.4, 0, 1, com.hexhaki.piece.server.MaguMoves.HOUND_SCALE, age, 11);
+            com.hexhaki.piece.magu.MaguArt.stream(sink, stream, 14, age, 6);
+            com.hexhaki.piece.magu.MaguArt.pierce(sink, 0, -0.4, 3.0, 0, 0, 1, 1.0, age % 16, 8);
+            check(count[0], finite[0], "the hound, the stream and Meigo", age);
+            // Bakuretsu Kazan: the boiling ground round the eye and the six geysers alive at once (one every 5 ticks, 28 ticks each)
+            count[0] = 0;
+            com.hexhaki.piece.magu.MaguArt.pool(sink, 0, -1.6, 0.0, com.hexhaki.piece.server.MaguMoves.ERUPT_RADIUS, age, 100, 12);
+            for (int k = 0; k < 6; k++) {
+                double ga = k * 1.05;
+                com.hexhaki.piece.magu.MaguArt.geyser(sink, Math.cos(ga) * 5.0, -1.6, Math.sin(ga) * 5.0 + 2.0, com.hexhaki.piece.server.MaguMoves.GEYSER_HEIGHT,
+                    (age + k * 5) % 28, 3 + k);
+            }
+            check(count[0], finite[0], "Bakuretsu Kazan", age);
+        }
+    }
+
+    static void check(int quads, boolean finite, String what, int age) {
+        Check.that(finite, what + " is finite at " + age);
+        Check.that(quads < 16000, what + " fits a phone's budget at " + age + " (" + quads + " quads)");
+    }
+
     public static void main(String[] args) throws Exception {
         Path jar;
         try (var files = Files.list(Path.of("build"))) {
@@ -149,6 +214,7 @@ public final class DragonTests {
         fire();
         lightTravel();
         guraQuakes();
+        maguMagma();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

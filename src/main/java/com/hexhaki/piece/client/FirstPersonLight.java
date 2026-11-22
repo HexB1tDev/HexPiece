@@ -196,7 +196,7 @@ public final class FirstPersonLight {
      */
     public static Vec3 fist(Player player, float partial) {
         Clip clip = CLIPS.get(player.m_19879_());
-        if (clip == null || !clip.name.startsWith("gura_")) {
+        if (clip == null || !clip.name.startsWith("gura_") && !clip.name.startsWith("magu_")) {
             return null;
         }
         Minecraft minecraft = Minecraft.m_91087_();

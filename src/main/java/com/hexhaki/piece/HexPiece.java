@@ -29,6 +29,8 @@ public final class HexPiece {
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.PIKA, com.hexhaki.piece.server.PikaKit::new);
         // 3.1.1: the Gura Gura no Mi after Whitebeard and Blackbeard (the original gives it no moves at all: Fruits' empty kit)
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.GURA, com.hexhaki.piece.server.GuraKit::new);
+        // 3.1.3: the Magu Magu no Mi after Akainu (the original gives it no moves either)
+        com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.MAGU, com.hexhaki.piece.server.MaguKit::new);
         LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, the katanas, pirates and marines, the Uo Uo no Mi");
     }
 }

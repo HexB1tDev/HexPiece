@@ -813,5 +813,71 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "piece.magu.bubble": {
+    "subtitle": "subtitles.hexhaki.piece.magu.bubble",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/bubble",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "piece.magu.whoosh": {
+    "subtitle": "subtitles.hexhaki.piece.magu.whoosh",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/whoosh1",
+        "attenuation_distance": 40
+      },
+      {
+        "name": "hexhaki:piece/magu/whoosh2",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.magu.burst": {
+    "subtitle": "subtitles.hexhaki.piece.magu.burst",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/burst1",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "hexhaki:piece/magu/burst2",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.magu.boom": {
+    "subtitle": "subtitles.hexhaki.piece.magu.boom",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/boom1",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "piece.magu.sizzle": {
+    "subtitle": "subtitles.hexhaki.piece.magu.sizzle",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/sizzle1",
+        "attenuation_distance": 32
+      },
+      {
+        "name": "hexhaki:piece/magu/sizzle2",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "piece.magu.roar": {
+    "subtitle": "subtitles.hexhaki.piece.magu.roar",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/roar1",
+        "attenuation_distance": 64
+      }
+    ]
   }
 }

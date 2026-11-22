@@ -347,16 +347,20 @@ public final class GuraArt {
         double d = Math.min(reach, age * speed);
         double fade = (1.0 - 0.55 * d / reach) * clamp((shockLife(reach, speed) - age) / 5.0);
         double tan = Math.tan(half);
-        double rho = 0.35 + d * tan;
+        // 3.1.3 (the owner, with a screenshot of two white arcs up in the sky bowed the wrong way: "the rings around the impact are like
+        // opposite to where the impact was"): the drawn front never wider than 1.5 + 0.16 blocks a block out (a 40-block shock's was a
+        // 21-block ring in the sky), and its arcs lean a little ahead, never back toward the eye (leaning back, their ends came so much
+        // nearer the eye than their middles that they bowed the other way)
+        double rho = Math.min(0.35 + d * tan, 1.5 + d * 0.16);
         double fx = x + ux * d;
         double fy = y + uy * d;
         double fz = z + uz * d;
         double bold = (0.6 + 0.4 * strength) * clamp(d / 1.5);
-        FireMesh.ring(sink, fx, fy, fz, ux, uy, uz, rho, 0.2 + rho * 0.1, -rho * 0.25, SHOCK, 0.9 * fade * bold);
+        FireMesh.ring(sink, fx, fy, fz, ux, uy, uz, rho, 0.2 + rho * 0.1, rho * 0.08, SHOCK, 0.9 * fade * bold);
         if (d > 2.0) {
             double d2 = d * 0.72;
-            double r2 = 0.35 + d2 * tan;
-            FireMesh.ring(sink, x + ux * d2, y + uy * d2, z + uz * d2, ux, uy, uz, r2, 0.15 + r2 * 0.08, -r2 * 0.2, SHOCK, 0.45 * fade * bold);
+            double r2 = Math.min(0.35 + d2 * tan, 1.5 + d2 * 0.16);
+            FireMesh.ring(sink, x + ux * d2, y + uy * d2, z + uz * d2, ux, uy, uz, r2, 0.15 + r2 * 0.08, r2 * 0.06, SHOCK, 0.45 * fade * bold);
         }
         // a swell of air at its front (the bold ones)
         if (strength > 0.45) {
@@ -367,7 +371,7 @@ public final class GuraArt {
             double ri = rho * (0.8 + 0.35 * FireMesh.rand(seed, i));
             double start = Math.PI * 2.0 * FireMesh.rand(seed, 10 + i) + age * 0.05;
             double sweep = 0.6 + 1.0 * FireMesh.rand(seed, 20 + i);
-            FireMesh.arc(sink, fx - ux * lag, fy - uy * lag, fz - uz * lag, ux, uy, uz, ri, 0.08 + ri * 0.07, start, sweep, -ri * 0.45, SHOCK,
+            FireMesh.arc(sink, fx - ux * lag, fy - uy * lag, fz - uz * lag, ux, uy, uz, ri, 0.08 + ri * 0.07, start, sweep, ri * 0.12, SHOCK,
                 0.95 * fade * bold);
         }
         FireMesh.basis(ux, uy, uz, B2);
@@ -648,6 +652,12 @@ public final class GuraArt {
      */
     public static void rift(FireMesh.Sink sink, double x, double y, double z, double fx, double fz, double length, double step, double[] heights,
                             double age, int seed) {
+        rift(sink, x, y, z, fx, fz, length, step, heights, 1.0, age, seed);
+    }
+
+    /** As above, {@code wide} times as wide (3.1.3: with Ryou on). */
+    public static void rift(FireMesh.Sink sink, double x, double y, double z, double fx, double fz, double length, double step, double[] heights,
+                            double wide, double age, int seed) {
         double opened = length / step;
         if (age < 0.0 || age > opened + RIFT_AFTER) {
             return;
@@ -670,7 +680,7 @@ public final class GuraArt {
             double cx = x + fx * k;
             double cz = z + fz * k;
             double since = age - k / step;
-            double w = (0.25 + 0.9 * ease(since / 4.0)) * (k == 0 ? 0.4 : 1.0) * (1.0 - 0.3 * k / length);
+            double w = (0.25 + 0.9 * ease(since / 4.0)) * (k == 0 ? 0.4 : 1.0) * (1.0 - 0.3 * k / length) * wide;
             double jl = (FireMesh.rand(seed, k) - 0.5) * 0.35;
             double jr = (FireMesh.rand(seed, 200 + k) - 0.5) * 0.35;
             double lx = cx + sx * (w * 0.5 + jl);

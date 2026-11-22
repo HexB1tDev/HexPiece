@@ -293,6 +293,69 @@ public final class FireMesh {
         }
     }
 
+    /**
+     * 3.1.3: a lump of magma (the Magu fruit, magu/MaguArt; refs docs/handoff/magu-ref 14, 19, 37: orange-red with yellow-white hot spots,
+     * darker lines and plates of crust over it): as {@link #puff}, its heat {@code heat} flat (no shading by the view), mottled by the
+     * noise into hot spots and crust ({@code crust}: how much of it is crust, 0 none to 1 thick). Drawn in the current palette (MaguArt
+     * sets its own).
+     */
+    public static void lump(Sink sink, double x, double y, double z, double radius, double vx, double vy, double vz, double stretch, double heat,
+                            double crust, double alpha, double time, int seed) {
+        if (radius < 0.02 || alpha < 0.004) {
+            return;
+        }
+        double dist = Math.sqrt(x * x + y * y + z * z);
+        if (dist < radius * 1.1) {
+            return;
+        }
+        radius = Math.min(radius, dist / 5.0);
+        // its crust lines cut many band pieces: 80 faces unless it is a big lump filling the view
+        int level = Math.min(detail(radius, dist), radius > 1.2 ? 2 : 1);
+        float[] dirs = DIRS[level];
+        int[] faces = FACES[level];
+        int n = dirs.length / 3;
+        double vl = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        double ux = vl > 1.0E-6 ? vx / vl : 0.0;
+        double uy = vl > 1.0E-6 ? vy / vl : 0.0;
+        double uz = vl > 1.0E-6 ? vz / vl : 0.0;
+        double ox = rand(seed, 1) * 50.0;
+        double oy = rand(seed, 2) * 50.0;
+        double oz = rand(seed, 3) * 50.0;
+        double roll = time * 0.06;
+        double line = 1.0 - 0.17 * crust;
+        for (int i = 0; i < n; i++) {
+            double dx = dirs[i * 3];
+            double dy = dirs[i * 3 + 1];
+            double dz = dirs[i * 3 + 2];
+            double big = noise(dx * 1.3 + ox, dy * 1.3 + oy - roll, dz * 1.3 + oz, seed);
+            double fine = noise(dx * 2.8 + oz, dy * 2.8 + ox - roll * 1.4, dz * 2.8 + oy, seed + 17);
+            double r = radius * (0.88 + 0.18 * big);
+            double back = -(dx * ux + dy * uy + dz * uz);
+            if (back > 0.0 && stretch > 0.0) {
+                r *= 1.0 + stretch * back * back;
+            }
+            double px = x + dx * r;
+            double py = y + dy * r;
+            double pz = z + dz * r;
+            P[i * 3] = px;
+            P[i * 3 + 1] = py;
+            P[i * 3 + 2] = pz;
+            double el = Math.max(1.0E-6, Math.sqrt(px * px + py * py + pz * pz));
+            double facing = Math.min(1.0, Math.abs((dx * px + dy * py + dz * pz) / el));
+            // flat as the anime draws it: one orange, yellow-white where the noise swells (its hot spots), red-brown plates of crust
+            // where it sinks and along the fine noise's zero lines, no shading by the view (heat is cut into bands linearly across each
+            // face, so every step is kept to a neighbouring band or two: never a ring of every band at an outline)
+            double h = heat - 0.1 + 0.1 * big + (big > 0.5 ? 0.12 : 0.0) - (big < -0.45 ? 0.26 * crust : 0.0);
+            if (1.0 - Math.abs(fine) > line) {
+                h -= 0.22 * crust;
+            }
+            H[i] = h;
+        }
+        for (int f = 0; f < faces.length; f += 3) {
+            banded(sink, faces[f], faces[f + 1], faces[f + 2], alpha);
+        }
+    }
+
     static final double[] H = new double[162];
     static final double[] POLY = new double[8 * 4];
     static final double[] CLIP = new double[8 * 4];

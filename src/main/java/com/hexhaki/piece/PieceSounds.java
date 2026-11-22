@@ -53,6 +53,11 @@ public final class PieceSounds {
             String name = event[0];
             BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
         }
+        // 3.1.3: the Magu Magu no Mi's (CC0 recordings from Freesound.org, magu/MaguSounds)
+        for (String[] event : com.hexhaki.piece.magu.MaguSounds.EVENTS) {
+            String name = event[0];
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
     }
 
     /** 2.8.6: one of HexPiece's own sound events by name, or null (not one of ours, or not registered yet). */

@@ -76,6 +76,18 @@ public final class ConquerorAura {
      * player whenever Rio was activated ... hockey's not activated yet, fucking lightning is shooting for me"): only while their Ryou is
      * on (Armament with Ryou: the {@code acocOn} flag), the Conqueror's Haki awakened.
      */
+    /**
+     * 3.1.3: whether {@code player} has Ryou on (Armament with Ryou: the {@code armamentOn} and {@code acocOn} flags), whatever their
+     * Conqueror's Haki (the Gura fruit's moves reach further with it: GuraMoves.boost).
+     */
+    public static boolean ryou(ServerPlayer player) {
+        try {
+            return HakiData.flag(player, "armamentOn") && HakiData.flag(player, "acocOn");
+        } catch (RuntimeException failure) {
+            return false;
+        }
+    }
+
     static boolean awakened(ServerPlayer player) {
         try {
             return HakiData.flag(player, "armamentOn") && HakiData.flag(player, "acocOn") && HakiProgression.conquerorAwakened(player);

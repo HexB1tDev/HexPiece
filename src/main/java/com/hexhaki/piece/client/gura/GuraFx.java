@@ -58,7 +58,7 @@ public final class GuraFx {
     }
 
     /** The rift: its start, way, length, how far it opens a tick, the ground's height under each block (relative to the start). */
-    record Rift(Vec3 at, Vec3 dir, double length, double[] heights, long born, int seed) {
+    record Rift(Vec3 at, Vec3 dir, double length, double[] heights, double wide, long born, int seed) {
     }
 
     /** The tsunami: its start, its step, its width and height, its life, its foot's height now (following the ground). */
@@ -158,7 +158,7 @@ public final class GuraFx {
                     TILTS.put(m.user(), new double[] {clock, m.bx(), at.f_82479_, at.f_82481_, m.size()});
                 }
             }
-            case GuraMoves.RIFT -> RIFTS.add(new Rift(at, a, m.size(), heights(at, a, m.size()), clock, m.id()));
+            case GuraMoves.RIFT -> RIFTS.add(new Rift(at, a, m.size(), heights(at, a, m.size()), m.bx() > 0.0F ? 1.8 : 1.0, clock, m.id()));
             case GuraMoves.TSUNAMI -> WAVES.add(new Wave(at, a, m.size(), m.bx(), m.ticks(), (int) m.by(), clock, m.id()));
             case GuraMoves.LEAP -> {
                 // a puff of dust where the feet leave the ground, the quake fist alight for the slam
@@ -509,7 +509,7 @@ public final class GuraFx {
                 continue;
             }
             GuraArt.rift(SINK, r.at.f_82479_ - cx, r.at.f_82480_ - cy, r.at.f_82481_ - cz, r.dir.f_82479_, r.dir.f_82481_, r.length,
-                GuraMoves.RIFT_STEP, r.heights, clock - r.born + partial, r.seed);
+                GuraMoves.RIFT_STEP, r.heights, r.wide, clock - r.born + partial, r.seed);
         }
         for (Map.Entry<Integer, Shake> e : SHAKES.entrySet()) {
             Shake s = e.getValue();

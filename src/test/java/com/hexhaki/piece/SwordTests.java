@@ -585,7 +585,8 @@ public final class SwordTests {
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.CHARGE_HOLD)
                 || java.util.Arrays.stream(com.hexhaki.piece.dragon.UoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.pika.PikaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
-                || java.util.Arrays.stream(com.hexhaki.piece.gura.GuraSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                || java.util.Arrays.stream(com.hexhaki.piece.gura.GuraSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.magu.MaguSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
@@ -643,6 +644,8 @@ public final class SwordTests {
         webSounds("pika", com.hexhaki.piece.pika.PikaSounds.EVENTS, 30);
         // 3.1.1: the Gura Gura no Mi's (tools/gura_sounds.py)
         webSounds("gura", com.hexhaki.piece.gura.GuraSounds.EVENTS, 11);
+        // 3.1.3: the Magu Magu no Mi's (tools/magu_sounds.py)
+        webSounds("magu", com.hexhaki.piece.magu.MaguSounds.EVENTS, 9);
     }
 
     /** One fruit's web sounds (sounds/piece/{folder}): as {@link #dragonSounds} checks them, at least {@code least} clips. */

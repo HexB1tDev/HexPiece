@@ -378,7 +378,11 @@ public final class FxPreview {
                 }
                 com.hexhaki.piece.pika.LightArt.trail(sink, pts, 20, 0.5, 1.0);
             }
-            default -> GuraShots.shot(sink, eye, move); // 3.1.1: the Gura fruit's (tools/preview/GuraShots)
+            default -> {
+                if (!GuraShots.shot(sink, eye, move)) { // 3.1.1: the Gura fruit's (tools/preview/GuraShots)
+                    MaguShots.shot(sink, eye, move); // 3.1.3: the Magma fruit's (tools/preview/MaguShots)
+                }
+            }
         }
         quads = list.size();
         list.sort((a, b) -> Double.compare(b.far, a.far));
