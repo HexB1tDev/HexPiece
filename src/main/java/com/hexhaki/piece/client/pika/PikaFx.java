@@ -835,14 +835,18 @@ public final class PikaFx {
                 pts[i * 3 + 2] = t.points[i * 3 + 2] - cz;
             }
             boolean streaming = lit(player);
-            if (streaming) {
+            boolean inside = player == Minecraft.m_91087_().f_91074_ && Minecraft.m_91087_().f_91066_.m_92176_().m_90612_();
+            // 3.0.1 (the owner: "in first person you should not see the trail of light, only in third, but you do see the speed marks"):
+            // one's own trail (it started at the eye and filled the view) is drawn only for others and in third person
+            if (inside) {
+                // nothing of one's own trail
+            } else if (streaming) {
                 LightArt.ribbon(SINK, pts, t.count, 0.8, 1.0);
             } else if (LUNGES.containsKey(e.getKey())) {
                 LightArt.trail(SINK, pts, t.count, 0.6, 1.0); // 2.9.7: the lunge's trail of light
             } else {
                 LightArt.trail(SINK, pts, t.count, 0.35, 0.7);
             }
-            boolean inside = player == Minecraft.m_91087_().f_91074_ && Minecraft.m_91087_().f_91066_.m_92176_().m_90612_();
             if (streaming && inside && LIGHTS.containsKey(player.m_19879_())) {
                 // 2.9.6: one's own body as light, seen from inside it: light rushing past round the view
                 Vec3 way = glide != null && glide.mode == Glide.FREE ? new Vec3(glide.dx, glide.dy, glide.dz)

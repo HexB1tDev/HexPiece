@@ -106,7 +106,11 @@ public final class PikaMoves {
      */
     public static final double LIGHT_SPEED = 3.0;
     static final int LIGHT_MIN = 6;
-    static final int LIGHT_MAX = 60;
+    /**
+     * 3.0.1 (the owner: "Also Z does not end till the user lets go of the Key"): no time limit while Z is held (it was 3 s); only a
+     * 30 s safety, in case the key's release is never heard (a screen opened while holding it).
+     */
+    static final int LIGHT_MAX = 600;
     public static final double LIGHT_CARRY = 0.9;
     static final double DASH_SPEED = 6.0;
     static final double LASER_RANGE = 70.0;
@@ -484,7 +488,7 @@ public final class PikaMoves {
      * every block at any angle and the sea, so light thrown at the water comes back up off it. The player's own client moves the body
      * (client/pika/PikaFx.Glide: the game's own movement and collisions, so it is smooth on screen and the server's movement check agrees),
      * the server follows where it went: whoever the light passes through is struck once, every reflection seen and heard by everyone.
-     * Let go of Z (a tap still lasts {@link #LIGHT_MIN} ticks) or after {@link #LIGHT_MAX} ticks it is a body again where the light is,
+     * Let go of Z (a tap still lasts {@link #LIGHT_MIN} ticks; 3.0.1: held, it lasts as long as it is held) it is a body again where the light is,
      * keeping {@link #LIGHT_CARRY} of its speed. 3.0.0: its cooldown ({@link #Z_COOLDOWN}) starts as it is a body again.
      */
     static void light(ServerPlayer player) {
@@ -578,13 +582,38 @@ public final class PikaMoves {
         // them on the side the light came from, high enough that the kick meets their chest; his own client carries him there in
         // Z_KICK_GLIDE ticks (following them if they move) and turns him to them from there, and the kick lands as he arrives
         Vec3 t0 = target.m_20182_();
-        double lift = Math.max(0.0, target.m_20206_() * 0.6 - 1.15);
-        Vec3 stand = room(player, t0, t0.m_82546_(flat.m_82490_(target.m_20205_() * 0.5 + Z_KICK_GAP)).m_82520_(0, lift, 0));
+        // 3.0.1 (the owner: "If Z hits from above the entity make it slams the entity downwards, not to the side with a downwards kick
+        // animation"): the light coming down on them steeply (or from over their head): he is over them, just in front, and drives an
+        // axe kick down onto them (pika_z_slam), slamming them into the ground
+        boolean above = way.f_82480_ < Z_SLAM_STEEP || player.m_20186_() > t0.f_82480_ + target.m_20206_() * 0.9;
+        Vec3 stand;
+        if (above) {
+            Vec3 over = t0.m_82520_(0, target.m_20206_() * 0.5, 0);
+            stand = room(player, over, t0.m_82546_(flat.m_82490_(target.m_20205_() * 0.5 + 0.35)).m_82520_(0, target.m_20206_() + 0.15, 0));
+        } else {
+            double lift = Math.max(0.0, target.m_20206_() * 0.6 - 1.15);
+            stand = room(player, t0, t0.m_82546_(flat.m_82490_(target.m_20205_() * 0.5 + Z_KICK_GAP)).m_82520_(0, lift, 0));
+        }
         Vec3 at = stand.m_82520_(0, 0.9, 0);
         fx(player, LIGHT_OFF, target.m_19879_(), at, way, Z_KICK_HOLD, Z_KICK_GLIDE, 0, 0, 0);
-        later(player, Z_KICK_GLIDE - 1, () -> animate(player, "pika_z_kick"));
+        if (above) {
+            animate(player, "pika_z_slam"); // its heel comes down on its tick 2, as he arrives
+        } else {
+            later(player, Z_KICK_GLIDE - 1, () -> animate(player, "pika_z_kick"));
+        }
         Vec3 aim = flat;
-        later(player, Z_KICK_GLIDE, () -> kicked(player, target, aim, level));
+        later(player, Z_KICK_GLIDE, () -> kicked(player, target, aim, level, above));
+    }
+
+    /** 3.0.1: how steeply down (the light's way's y) the light must come for its kick to be a slam. */
+    static final double Z_SLAM_STEEP = -0.55;
+
+    /** 3.0.1: the ground under {@code body} (within {@code depth} blocks), or its feet. */
+    static Vec3 point(LivingEntity body, double depth) {
+        Vec3 feet = body.m_20182_();
+        BlockHitResult ground = body.m_9236_().m_45547_(new ClipContext(feet.m_82520_(0, 0.2, 0), feet.m_82520_(0, -depth, 0),
+            ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, body));
+        return ground.m_6662_() == HitResult.Type.BLOCK ? ground.m_82450_() : feet;
     }
 
     /** Whether nothing solid stands between {@code from} and {@code to}. */
@@ -594,14 +623,21 @@ public final class PikaMoves {
     }
 
     /** Z's kick landing: they go far along {@code flat} with a trail of light, and are knocked down where they land. */
-    static void kicked(ServerPlayer player, LivingEntity target, Vec3 flat, ServerLevel level) {
+    static void kicked(ServerPlayer player, LivingEntity target, Vec3 flat, ServerLevel level, boolean slam) {
         if (!target.m_6084_()) {
             return;
         }
         long now = now(player);
         Vec3 at = centre(player);
-        Vec3 thrown = flat.m_82490_(Z_KICK_THROW).m_82520_(0, 1.15, 0);
-        Vec3 struck = StyleCombat.middle(target);
+        // a slam drives them straight down into the ground (a burst of light where they hit it); a kick throws them far along the way
+        Vec3 thrown = slam ? new Vec3(flat.f_82479_ * 0.3, -Z_KICK_THROW * 0.7, flat.f_82481_ * 0.3) : flat.m_82490_(Z_KICK_THROW).m_82520_(0, 1.15, 0);
+        Vec3 struck = slam ? new Vec3(target.m_20185_(), target.m_20186_() + target.m_20206_() * 0.85, target.m_20189_()) : StyleCombat.middle(target);
+        if (slam) {
+            Vec3 ground = point(target, 6.0);
+            fx(player, BURST, 0, ground, Vec3.f_82478_, 0, 0, 0, 2.6, 0);
+            Impact.quake(level, ground, 30.0, 1.0F, 16);
+            sound(player, ground, PikaSounds.EXPLODE, 1.4F, 1.1F);
+        }
         if (hit(player, target, Z_KICK_DAMAGE, thrown, true)) {
             long start = now;
             LIVE.add(new UoMoves.Live() {
@@ -613,7 +649,7 @@ public final class PikaMoves {
                     if (!target.m_6084_()) {
                         return true;
                     }
-                    if (this.age > 4 && target.m_20096_() || this.age >= 40) {
+                    if (this.age > (slam ? 1 : 4) && target.m_20096_() || this.age >= 40) {
                         HakiFalls.knockDown(level, target, (int) Math.max(40L, Z_KICK_STUN - (t - start)), false);
                         return true;
                     }

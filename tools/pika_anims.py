@@ -304,6 +304,21 @@ def z_kick():
     ], "Pika Pika: out of the light, a flying kick driven into them.", KICK)
 
 
+def z_slam():
+    # 3.0.1 (the owner: "If Z hits from above the entity make it slams the entity downwards, not to the side with a downwards kick
+    # animation"): out of the light over them, the right leg swung up high and the heel brought down onto them (an axe kick), the body
+    # bent over it, the other leg tucked; the heel lands on tick 2 (server/PikaMoves.zKick: as he arrives)
+    raised = p(rightLeg=leg(-150, 6, 4), leftLeg=leg(-36, -6, 76), body={"pitch": 14, "bend": -6})
+    down = p(rightLeg=leg(-26, 4, 0), leftLeg=leg(-30, -6, 70), body={"pitch": -18, "bend": 12})
+    write_parts("pika_z_slam", 14, [
+        (0, "outsine", p(rightLeg=leg(-90, 6, 30), leftLeg=leg(-36, -6, 76), body={"pitch": 6})),
+        (1, "insine", raised),
+        (2, "outexpo", down),
+        (6, "outsine", p(down, rightLeg={"pitch": -22})),
+        (14, "inoutsine", p(rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0), body={"pitch": 0, "bend": 0})),
+    ], "Pika Pika: out of the light over them, an axe kick brought down onto them.", KICK)
+
+
 def clones():
     spread = p(arms(right=arm(-80, 0, 90, -4), left=arm(-80, 0, -90, -4)), rightLeg=leg(-6, 6, 10), leftLeg=leg(4, -6, 14),
                body={"bend": -12}, head={"pitch": -14})
@@ -324,6 +339,7 @@ def main():
     murakumo()
     light_kick()
     z_kick()
+    z_slam()
     clones()
     # 2.8.8: the same keyframes for the clones of light (client/npc/PikaPoses, sampled by StylePoser)
     java_poses(sorted(n for n in WRITTEN if n.startswith("pika_")), "PikaPoses", "tools/pika_anims.py",
