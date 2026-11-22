@@ -137,6 +137,10 @@ public final class PiecePatch implements Opcodes {
     static final String[] UO = {"uo", "Uo Uo no Mi", "Dragon", "4FB7E8",
         "A Mythical Zoan that makes its eater an Azure Dragon: Seiryu, a serpent of the sky as long as an island, who flies on clouds of"
             + " its own making. Kaido's fruit."};
+    /** 3.1.9: the Hie Hie no Mi (id, name, element, colour, lore): a Logia, Admiral Aokiji's. */
+    static final String[] HIE = {"hie", "Hie Hie no Mi", "Ice", "9FE6FF",
+        "A Logia that makes its eater an Ice Human: to become ice and freeze anything it touches solid, to freeze the very sea into a field"
+            + " of ice. Admiral Aokiji's fruit."};
     static final String HAND = "com/hexhaki/client/render/HakiHandLayer";
     static final String RYOU_HANDS = "com/hexhaki/piece/client/haki/RyouHands";
     static final String RYOU_FX = "com/hexhaki/piece/client/haki/RyouFx";
@@ -775,8 +779,14 @@ public final class PiecePatch implements Opcodes {
      * HexPiece's (server/UoKit, client/dragon/UoClient).
      */
     static void uoFruit(ClassNode node) {
+        // 3.1.9 (the owner: "Can you create the ice fruit, the Aokiji one?"): the Hie Hie no Mi joins after it (ordinal 5)
+        String[][] extra = {UO, HIE};
+        String[] names = {"UO", "HIE"};
+        boolean[] logia = {false, true};
         String type = "L" + FRUIT + ";";
-        node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, "UO", type, null, null));
+        for (String name : names) {
+            node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, name, type, null, null));
+        }
         MethodNode clinit = method(node, "<clinit>", "()V");
         MethodInsnNode values = null;
         for (AbstractInsnNode insn = clinit.instructions.getFirst(); insn != null; insn = insn.getNext()) {
@@ -787,21 +797,23 @@ public final class PiecePatch implements Opcodes {
         if (values == null) {
             throw new AssertionError("Fruit.<clinit> has no $values call");
         }
-        InsnList make = new InsnList();
-        make.add(new TypeInsnNode(NEW, FRUIT));
-        make.add(new InsnNode(DUP));
-        make.add(new LdcInsnNode("UO"));
-        make.add(new InsnNode(ICONST_4));
-        make.add(new LdcInsnNode(UO[0]));
-        make.add(new LdcInsnNode(UO[1]));
-        make.add(new LdcInsnNode(UO[2]));
-        make.add(new InsnNode(ICONST_0));
-        make.add(new LdcInsnNode(Integer.parseInt(UO[3], 16)));
-        make.add(new LdcInsnNode(UO[4]));
-        make.add(new MethodInsnNode(INVOKESPECIAL, FRUIT, "<init>",
-            "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/String;)V", false));
-        make.add(new FieldInsnNode(PUTSTATIC, FRUIT, "UO", type));
-        clinit.instructions.insertBefore(values, make);
+        for (int k = 0; k < names.length; k++) {
+            InsnList make = new InsnList();
+            make.add(new TypeInsnNode(NEW, FRUIT));
+            make.add(new InsnNode(DUP));
+            make.add(new LdcInsnNode(names[k]));
+            make.add(new IntInsnNode(BIPUSH, 4 + k));
+            make.add(new LdcInsnNode(extra[k][0]));
+            make.add(new LdcInsnNode(extra[k][1]));
+            make.add(new LdcInsnNode(extra[k][2]));
+            make.add(new InsnNode(logia[k] ? ICONST_1 : ICONST_0));
+            make.add(new LdcInsnNode(Integer.parseInt(extra[k][3], 16)));
+            make.add(new LdcInsnNode(extra[k][4]));
+            make.add(new MethodInsnNode(INVOKESPECIAL, FRUIT, "<init>",
+                "(Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/String;)V", false));
+            make.add(new FieldInsnNode(PUTSTATIC, FRUIT, names[k], type));
+            clinit.instructions.insertBefore(values, make);
+        }
         MethodNode list = method(node, "$values", "()[" + type);
         AbstractInsnNode first = list.instructions.getFirst();
         while (first.getOpcode() < 0) {
@@ -810,17 +822,19 @@ public final class PiecePatch implements Opcodes {
         if (first.getOpcode() != ICONST_4) {
             throw new AssertionError("Fruit.$values does not start with 4 values");
         }
-        list.instructions.set(first, new InsnNode(ICONST_5));
+        list.instructions.set(first, new IntInsnNode(BIPUSH, 4 + names.length));
         AbstractInsnNode end = list.instructions.getLast();
         while (end.getOpcode() != ARETURN) {
             end = end.getPrevious();
         }
-        InsnList add = new InsnList();
-        add.add(new InsnNode(DUP));
-        add.add(new InsnNode(ICONST_4));
-        add.add(new FieldInsnNode(GETSTATIC, FRUIT, "UO", type));
-        add.add(new InsnNode(AASTORE));
-        list.instructions.insertBefore(end, add);
+        for (int k = 0; k < names.length; k++) {
+            InsnList add = new InsnList();
+            add.add(new InsnNode(DUP));
+            add.add(new IntInsnNode(BIPUSH, 4 + k));
+            add.add(new FieldInsnNode(GETSTATIC, FRUIT, names[k], type));
+            add.add(new InsnNode(AASTORE));
+            list.instructions.insertBefore(end, add);
+        }
     }
 
     /**

@@ -4,8 +4,7 @@ Read CLAUDE.md, then docs/handoff/next-ai-3.1.8.md whole: it holds every standin
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zb of next-ai-3.1.8.md
-(2.9.6 to 3.1.8); open the older next-ai-*.md only for a feature's detail. If freesound.org or tenor.com is refused, the session is on
-the Default environment: switch_environment to "HexPiece" (section 7).
+(2.9.6 to 3.1.8); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -20,11 +19,20 @@ bubble swelling on the cocked fist, the ground in a huge cone heaving and breaki
 gura/Heave + client/gura/HeaveDraw), five fissures, craters, a 5-minute cooldown, with Haki thick Conqueror's lightning out of the
 breaking ground and a 10-second stun.
 
-3.1.8 (8zb): the Gura ultimate really bends the ground (a bowl with rings, its rim heaved up, slabs up and down, all growing back),
-the Haki lightning on every fruit's moves is the Conqueror's release's own bolts, every charge on the first-person fist drawn in the
-hand's own pass. Next (8za, the owner's open requests verbatim, in order): 2. the Hie Hie no Mi (Aokiji's ice fruit) as 3.1.9
-(references in docs/handoff/hie-ref, the move set in 8za); 3. a Creative tab for the fruits only, rarity ranks (common, uncommon,
-rare, legendary, mythical) in the fruits' names, a custom fruit energy bar over the food bar (an original design).
+3.1.8 (8zb, green): the Gura ultimate really bends the ground (a bowl with rings, its rim heaved up, slabs up and down, all growing
+back), the Haki lightning on every fruit's moves is the Conqueror's release's own bolts, every charge on the first-person fist drawn in
+the hand's own pass.
+
+3.1.9, the Hie Hie no Mi (Aokiji's ice fruit), is STARTED and committed WITHOUT a build (the owner stopped the session): section 8zc of
+next-ai-3.1.8.md says what is in the code (the fruit added to the original's enum as HIE, a Logia; its CC0 sounds, HieSounds, sounds.json,
+lang) and lists everything left, file by file, with the move set (RMB Partisan, Z Ice Time, X Ice Ball, C Pheasant Beak, V Ice Age,
+B Ice Road + ice fist, N Ice Saber, the three passives) and the freezing design (custom crystal ice blocks round frozen bodies, never
+Minecraft ice). References: docs/handoff/hie-ref. Run python3 build.py first and fix what fails. Then 8za's item 3: a Creative tab for
+the fruits only, rarity ranks (common, uncommon, rare, legendary, mythical) in the fruits' names, a custom fruit energy bar over the
+food bar (an original design).
+
+The cloud environment is the personal "HexPiece" (env_016v9rNSffz2fds2ha514nhY); if tenor.com or freesound.org is refused, the session
+is on Default: switch_environment to it.
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;
 render and judge every animation and effect yourself, third and first person; never key the head or unused limbs; keep every effect

@@ -8,11 +8,13 @@ sections 8b to 8p below; section 8q is the Gura Gura no Mi's research and plan, 
 the Magu Magu no Mi (3.1.3), 8u 3.1.3's Gura changes, 8v 3.1.4 (first-person hands, the Haki orb, the charge sound), 8w the owner's
 requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gura ultimate (3.1.6) and 8z its key moved to N (3.1.7).
 
-Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.5 to 3.1.7 are pushed and green. 3.1.8 (section 8zb: the
-Gura ultimate bends the ground, the moves' Haki lightning is the release's, every charge on the first-person fist) is pushed: see the
-end of 8zb for its runs. Next: section 8za's item 2, the Hie Hie no Mi, as 3.1.9; then item 3 (the fruits' Creative tab, rarity ranks,
-the energy bar). The cloud environment is the new personal "HexPiece" (env_016v9rNSffz2fds2ha514nhY: tenor, freesound, the wiki); the
-old one is gone. The One Piece wiki refuses automated reads (Cloudflare).**
+Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.5 to 3.1.8 are pushed and green (3.1.8: Build #149,
+Release #108). 3.1.9, the Hie Hie no Mi (Aokiji's ice fruit), is STARTED and committed WITHOUT a build (the owner stopped the session):
+section 8zc says exactly what is in the code and what is left; build.py still says 3.1.8 (bump with tools/next_version.py --write when
+3.1.9 is ready). Then 8za's item 3 (the fruits' Creative tab, rarity ranks, the energy bar). The cloud environment is the new personal
+"HexPiece" (env_016v9rNSffz2fds2ha514nhY: tenor.com, media.tenor.com, media1.tenor.com, freesound.org, cdn.freesound.org,
+onepiece.fandom.com, static.wikia.nocookie.net); the old HexPiece environment of section 7 is gone. The One Piece wiki refuses automated
+reads (a Cloudflare check).**
 
 ## POINT ONE (the owner, 3.1.4: always keep this first in every handoff and pass it on to every AI after you)
 
@@ -966,7 +968,7 @@ creative and make it look good." (a Creative tab with only the fruits; each frui
 mythical, shown in its name and tooltip; a fruit energy bar over the food bar, an original design, not a copy of HexGhoul's or
 HexKagune's.)
 
-## 8zb. Done (3.1.8, pushed): the Gura ultimate bends the ground, the release's lightning on every move, charges on the first-person fist
+## 8zb. Done (3.1.8, pushed and green): the Gura ultimate bends the ground, the release's lightning on every move, charges on the first-person fist
 
 The owner's words are in 8za (1 and 1b).
 - **The ground bent** (`gura/Heave.bend`, pure; `server/GuraUltimate.Bend`; `Scars.swap`, new): the owner's reference is Blackbeard's
@@ -1004,9 +1006,69 @@ The owner's words are in 8za (1 and 1b).
   own in first person. Not previewable here (the preview has one projection for everything); not tested in game.
 - Not tested in game: all of it.
 
+## 8zc. IN PROGRESS (3.1.9, the Hie Hie no Mi; committed WITHOUT a build: the owner stopped the session)
+
+The owner's words are in 8za (item 2), the references in docs/handoff/hie-ref (README: what each of 82 Tenor GIFs shows and which move
+it informs; sheets/). The owner did not pick an option on the proposed move set; their next messages assumed it would be built ("after
+all this is done, all the ice fruit and everything is done"), so build the proposed set and all three passives, and say so.
+
+**Done in the code (unbuilt):**
+- `patch/PiecePatch.uoFruit` now adds two fruits to the original's enum: UO (ordinal 4, as before) and **HIE (ordinal 5)**: `HIE` = {"hie",
+  "Hie Hie no Mi", "Ice", "9FE6FF", lore}, **logia true** (the constructor's flag; PIKA and MAGU are Logia), so the original registers its
+  item `hie_hie_no_mi` in the fruits' creative tab, eats, saves and binds it, and its Logia dodge calls the kit's `dodged` (as MaguKit's).
+  `$values` now holds 4 + 2. Not built: check the patch (IntInsnNode BIPUSH for the ordinals) and that the item gets a model.
+- Sounds (`tools/hie_sounds.py`, CC0, SOURCES.txt, written to src/main/resources/assets/hexhaki/sounds/piece/hie/): freeze1 (Qvantor "Ice
+  Spell Freeze" 880760), freeze2 (lori.mortimer "Freeze" 723875), form1 (Vrymaa "Ice - Fracture, roots or growing plants" 735401), form2
+  and crack2 (Sanderboah "Ice / Frost cracking" 709137), crack1 (j_p_higgins "Ice Crack 1" 262635), shatter1 (InMotionAudio
+  "ICEBrk_Break04" 719973), shatter2 (davilca "Break Ice" 677230), hit1 (JustInvoke "Chill Hit" 138484), age1 (craigsmith "Ice avalanche
+  sliding & breaking up" 675734), frost (qubodup "Subzero Frost Loop" 844261, a loop). Integrated loudness -15 to -25 LUFS (the Gura crack
+  -20.8, the Magma burst -21.5), the frost loop -30. Two candidates failed to download (InMotionAudio 719169, Magdaadga 420392): unused.
+- `hie/HieSounds` (FREEZE, FORM, CRACK, SHATTER, HIT, AGE, FROST; EVENTS), registered in `PieceSounds`; sounds.json `piece.hie.*`;
+  en_us.json: the subtitles and `item.hexhaki.hie_hie_no_mi` "Hie Hie no Mi".
+
+**Left to build (the plan, following the Magu fruit file by file: MaguKit, MaguMoves, MaguArt, MaguFx, MaguClient, magu_anims.py,
+MaguShots):**
+1. Item: `models/item/hie_hie_no_mi.json` (as uo_uo_no_mi.json) and `textures/item/hie_hie_no_mi.png` (an icon made by a script, as
+   tools/uo_icon.py: a pale blue-white fruit with swirls, like the series' Hie Hie no Mi).
+2. `server/HieKit` (FruitKit: moves list, action kinds 0 key down, 1 up, 2 attack, 3 use down, 4 up; `dodged`; `immune` to freezing
+   (DamageTypes FREEZE) for the cold passive) registered in `HexPiece.init` (`Fruits.register(Fruit.HIE, HieKit::new)`); `client/hie/
+   HieClient` put in `ClientKits.KITS` on the first client tick (as GuraFx/MaguFx do).
+3. The moves (`server/HieMoves`), keys as every fruit (Z X C V B, N since 3.1.7 via client/FruitKeyN: a move whose key starts "[N]",
+   ability 40): LMB the game's punch (as PikaFx.punch / GuraFx.punch give it back); RMB **Ice Block: Partisan** (tap: one spear of ice at
+   where he looks; hold: spears form in the air round him, one every few ticks up to 8, let go: they all fly at the aimed point; each hit
+   crusts the target in ice and slows it, three freeze it solid; ref 62); Z **Ice Time** (a short dash, he takes hold of the one he looks
+   at, they freeze solid at once; refs 47, 51, 77, 78); X **Ice Ball** (an orb gathered between the hands, thrown; where it lands a huge
+   ball of ice swallows everyone near, frozen inside it, then it cracks like glass and shatters; refs 76, 09: Garp's prison); C **Ice
+   Block: Pheasant Beak** (a giant pheasant of ice flies where he aims, freezing what it touches, bursting into ice spikes at the end:
+   the Conqueror's lightning out of that burst); V **Ice Age** (palm to the ground: a freezing wave rolls out in a wide cone, the ground
+   and the sea an ice sheet with jagged ridges, everyone in it frozen; refs 32, 42, 45, 48, 04); B **Ice Road + ice fist** (the Garp
+   fight: a road of jagged ice shoots ahead along the ground, he slides along it (the player's own client flies it, as GuraFx.Move) and
+   drives an ice-coated fist into the one he looks at; refs 01, 15, 38); N **Ice Saber** (a sword of ice in the hand for a while, its cuts
+   freeze). Passives: the ice body (Logia: blows without Haki pass through, the body shatters into ice shards and reforms; a bare-handed
+   attacker frostbitten), walking on water (the sea freezing under his feet as custom ice, melting back behind him; ref 80), no cold
+   damage.
+4. **Freezing** (the core; the owner: "The ice is custom, not Minecraft ice shit. Like actually freeze them and like blocks of ice"): a
+   frozen body is held where it is (velocity zero every tick, slowness and weakness as ConquerorRelease.hold gives, no jump), encased in
+   a custom ice crystal block drawn round its bounding box (faceted, cyan to white, white edge lines, frost mist), cracking like glass
+   near the end (GuraArt.crack's style on its faces) and shattering into shards with damage. Never real ice blocks.
+5. Network: S2CUoFx kinds **120 to 139** for the ice fruit; `client/dragon/UoFx.accept` routes them to `client/hie/HieFx` before the
+   Conqueror's >= 80 (as 100-119 go to MaguFx). POINT ONE: `ConquerorAura.exploded` at every burst (Pheasant Beak's end, Ice Ball, Ice
+   Age), `ConquerorAura.mixed` at strikes.
+6. Art (`hie/HieArt`, pure, eye-centred, previewable; FireMesh-style banded flat colours, alpha-blended, depth-tested, never additive):
+   the look from the references (hie-ref README "What they agree on"): faceted crystal, cel-shaded cyan to white, hard flat faces, white
+   edge lines, bright highlights; the freeze block, a spear, the orb and the ice ball, the pheasant (body, wings spread, long tail, beak,
+   built from crystal shards), the ice sheet with white crack lines and jagged ridges, the road with spikes along both sides, the saber,
+   frost mist, shards. Previews: `tools/preview/HieShots` (as MaguShots, wired into FxPreview), every effect rendered and judged; a
+   budget test in DragonTests (under 16,000 quads per move).
+7. Animations `tools/hie_anims.py` (gura_anims' write_parts: no leg, no head, body yaw/roll/bend only; lint clean), `client/npc/HiePoses`
+   (generated) read by `StylePoser`; add "hie_" to `PieceHooks.fruitClip` and `firstPersonArms`, `client/fx/StandUp`,
+   `FirstPersonLight.fist` (the gura_/magu_ prefix check), `style/HandMoves.move` (a first-person hand move per clip), `client/HandPass`
+   (a charge on the fist: the Partisan's and the Ice Ball's gathering).
+8. Bump to 3.1.9, `.github/release-notes-3.1.9.md`, handoff, push, both runs green.
+
 ## 9. What to do next (3.1.9)
 
-1. Build 8za's item 2, the Hie Hie no Mi, as 3.1.9 (references in docs/handoff/hie-ref; the move set in 8za), then item 3.
+1. Finish 8zc (the Hie Hie no Mi, 3.1.9: started, unbuilt), then 8za's item 3 (Creative tab, rarity ranks, energy bar).
 2. Ask the owner how 3.1.5 (the hound, Ryusei Kazan, the Light beam's drag, the lightning on every fruit and Gear 5) and 3.1.6 (the
    ultimate: does the ground heave in game, is it laggy on the phone with 420 blocks a frame?) play. If the heaving blocks lag, lower
    `Heave.MOST_DRAWN` or `BREAK` first.
