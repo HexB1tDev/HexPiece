@@ -155,7 +155,7 @@ public final class LightArt {
             FireMesh.ring(sink, ax + ux * along, ay + uy * along, az + uz * along, ux, uy, uz, width * (1.0 + 0.6 * FireMesh.rand(seed, k)), width * 0.3,
                 -width * 0.6, 0xFFFFFF, 0.75 * fade);
         }
-        burst(sink, bx, by, bz, width * 2.5, age, seed + 9);
+        // 3.0.2: the blast at its end is the server's own BURST now (it outlasts the beam), never drawn here
     }
 
     // ------------------------------------------------------------------------------------------------------ his explosions

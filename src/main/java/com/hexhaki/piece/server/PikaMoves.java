@@ -436,9 +436,8 @@ public final class PikaMoves {
             if (target != null) {
                 hit(player, target, 4.0F, player.m_20154_().m_82490_(0.4).m_82520_(0, 0.25, 0), false);
             }
-            UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, player.m_20154_(), 1.8, 2.5F, 0, 0.6);
-            fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 2.4, 0); // 2.9.0: a real explosion where it strikes
-            sound(player, to, PikaSounds.EXPLODE, 1.0F, 1.3F);
+            // 3.0.2 (the owner: "the Right click (tap) should just be the laser (small) no explosion at the end"): only the laser and
+            // its glint where it struck (LightArt.laser); no blast, no explosion sound
         });
     }
 
@@ -470,6 +469,10 @@ public final class PikaMoves {
         }
         double radius = 3.0 + 4.0 * charge;
         UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, look, radius, 5.0F + 7.0F * charge, 0, 1.4 + 1.6 * charge);
+        // 3.0.2 (the owner: "the HELD version should have a lingering explosion effect, it's dissappearing instantly after it explodes"):
+        // the blast is its own burst (LightArt.burst: gathering, going off, its dome, its ball of light and dust, 2 to 3.5 s), no longer
+        // drawn inside the beam, which is gone in 12 ticks and took the blast with it
+        fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 2.0 + 3.0 * charge, 0);
         Impact.quake((ServerLevel) player.m_9236_(), to, radius * 4.0, (float) Math.min(1.0, radius / 6.0), 12);
         sound(player, to, PikaSounds.EXPLODE, 2.2F, 0.9F);
     }
@@ -1021,6 +1024,7 @@ public final class PikaMoves {
                 Vec3 foot = player.m_20182_().m_82520_(0, 0.9, 0).m_82549_(player.m_20154_().m_82490_(0.8));
                 Vec3 to = point(player, 40.0);
                 fx(player, BEAM, 1, foot, to, 0, 0, 0, 0.8 + 0.8 * charge, 0);
+                fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 2.0 + 2.0 * charge, 0); // 3.0.2: its blast lingers on its own
                 sound(player, foot, PikaSounds.BEAM, 1.6F, 1.1F);
                 UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, player.m_20154_(), 3.0 + 3.0 * charge, 5.0F + 6.0F * charge, 0,
                     1.4 + 1.4 * charge);
