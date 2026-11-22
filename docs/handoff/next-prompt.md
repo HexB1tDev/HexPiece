@@ -1,35 +1,26 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
-Read CLAUDE.md, then docs/handoff/next-ai-3.1.8.md whole: it holds every standing rule in one place (talking to the owner, the house
+Read CLAUDE.md, then docs/handoff/next-ai-3.1.9.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zb of next-ai-3.1.8.md
-(2.9.6 to 3.1.8); open the older next-ai-*.md only for a feature's detail.
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8ze of next-ai-3.1.9.md
+(2.9.6 to 3.1.9); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
 every move of every fruit throws the Conqueror's lightning (visual only), out of the move's end explosion when it has one (not optional).
 
-3.1.1 to 3.1.3 are the Gura Gura no Mi (sections 8r, 8s, 8u) and the Magu Magu no Mi (8t). 3.1.4 (8v): first-person hand moves for
-every Light, Gura and Magma move. 3.1.5 (8x, green): the Conqueror's lightning out of every fruit's explosions (Gear 5 too, through
-PiecePatch.gearLightning), the Light right click dragging foes to the beam's end, the Magma hound rebuilt as a wolf's head flying
-where you aim, Ryusei Kazan's hold-to-load meteors. 3.1.6 (8y): the Gura ultimate, Island Breaker, on N since 3.1.7 (8z: the owner's "end key" was the N key, one more fruit
-move key beside Z X C V B): charge only, the
-bubble swelling on the cocked fist, the ground in a huge cone heaving and breaking into squares (drawn with the world's own blocks,
-gura/Heave + client/gura/HeaveDraw), five fissures, craters, a 5-minute cooldown, with Haki thick Conqueror's lightning out of the
-breaking ground and a 10-second stun.
+3.1.9 (sections 8zc, 8zd, 8ze) is the Hie Hie no Mi, Aokiji's ice fruit: RMB Partisan, Z Ice Time, X Ice Ball, C Pheasant Beak, V Ice
+Age, B Ice Road + ice fist, N Ice Saber, the ice body, walking on water, no cold damage. The owner saw the first renders (every piece of
+ice a pointed crystal) and said: "They're just like crystals ... Looks weird ... The ground can also turn into like actual ice blocks,
+bro. I'm not stopping you from using Minecraft stuff"; asked, he chose real Minecraft ice blocks round frozen bodies (server/HieFreeze,
+through server/Scars, put back afterwards), real ice ground for Ice Age and the road (packed ice, the sea frozen, ridges, back after
+about 20 s), and smooth glassy ice (hie/HieArt: lathes and lumps, no crystal facets) for everything thrown or held. Never bring the
+crystal look back.
 
-3.1.8 (8zb, green): the Gura ultimate really bends the ground (a bowl with rings, its rim heaved up, slabs up and down, all growing
-back), the Haki lightning on every fruit's moves is the Conqueror's release's own bolts, every charge on the first-person fist drawn in
-the hand's own pass.
-
-3.1.9, the Hie Hie no Mi (Aokiji's ice fruit), is STARTED and committed WITHOUT a build (the owner stopped the session): section 8zc of
-next-ai-3.1.8.md says what is in the code (the fruit added to the original's enum as HIE, a Logia; its CC0 sounds, HieSounds, sounds.json,
-lang) and lists everything left, file by file, with the move set (RMB Partisan, Z Ice Time, X Ice Ball, C Pheasant Beak, V Ice Age,
-B Ice Road + ice fist, N Ice Saber, the three passives) and the freezing design (custom crystal ice blocks round frozen bodies, never
-Minecraft ice). References: docs/handoff/hie-ref. Run python3 build.py first and fix what fails. Then 8za's item 3: a Creative tab for
-the fruits only, rarity ranks (common, uncommon, rare, legendary, mythical) in the fruits' names, a custom fruit energy bar over the
-food bar (an original design).
+Next: check 3.1.9's runs are green if the last session did not; then 8za's item 3 (a Creative tab with only the fruits, rarity ranks
+common / uncommon / rare / legendary / mythical in the fruits' names and tooltips, a fruit energy bar over the food bar in an original
+design); ask the owner which rank each fruit gets and what the energy is spent on before building. Ask how 3.1.5 to 3.1.9 play.
 
 The cloud environment is the personal "HexPiece" (env_016v9rNSffz2fds2ha514nhY); if tenor.com or freesound.org is refused, the session
 is on Default: switch_environment to it.

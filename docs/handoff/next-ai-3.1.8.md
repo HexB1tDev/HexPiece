@@ -1066,27 +1066,6 @@ MaguShots):**
    (a charge on the fist: the Partisan's and the Ice Ball's gathering).
 8. Bump to 3.1.9, `.github/release-notes-3.1.9.md`, handoff, push, both runs green.
 
-## 8zd. 3.1.9 session 2 (in progress): the owner on the first ice renders; real ice blocks
-
-- Built and fixed: the unbuilt start of 8zc now builds (SwordTests listed the new piece.hie.* sounds); the item's icon
-  (tools/hie_icon.py, textures/item/hie_hie_no_mi.png, models/item/hie_hie_no_mi.json, build.py NEW_PREFIXES); S2CUoFx reads its kind
-  unsigned (the ice kinds run to 139); UoFx routes 120-139 to client/hie/HieFx; HexPiece.init registers HieKit; PieceHooks, StandUp,
-  FirstPersonLight.fist, StylePoser and HandPass know hie_; server/HieKit, server/HieMoves (every move), server/HieFreeze (held bodies,
-  the chill: three cold hits freeze); hie/HieArt; tools/preview/HieShots (FxPreview `|hblock`, `|hball`, `|hspears`, ...).
-- The owner, verbatim, on the first renders (every piece of ice drawn as pointed hexagonal crystals: the freeze block a crystal pillar,
-  spikes everywhere on the ground, the pheasant and spears of crystal blades): "It is very clear that that ice does not look good, bro.
-  Look at They're just like crystals. I mean, all of them are just crystals. Looks weird. Like what? The ground can also turn into like
-  actual ice blocks, bro. I'm not stopping you from using Minecraft stuff. It's just God, it looks like shit. What the fuck is that?"
-- Asked (AskUserQuestion), the owner chose: frozen body = **"Real ice blocks"** (real Minecraft ice blocks placed round the body,
-  see-through, holding it, broken with the game's ice-breaking particles and sound, the world put back); Ice Age and the Ice Road =
-  **"Real ice ground"** (the ground's top blocks turn to ice and packed ice, the sea freezes into ice you can walk on, ridges of packed
-  ice, everything back after about 20 s); the spears, pheasant, orb, saber and bursts = **"Smooth glassy ice"** (their shapes kept,
-  drawn smooth and chunky like the game's ice texture: pale, see-through, soft white highlights, far fewer pointed spikes).
-  So 8zc's "never Minecraft ice" is overruled by the owner for the ground and the frozen bodies: never bring the crystal look back.
-- Proven for the blocks (verify/api-allowlist.txt 3.1.9): Blocks ICE f_50126_, PACKED_ICE f_50354_, FROSTED_ICE f_50449_, BLUE_ICE
-  f_50568_ (joined.tsrg cpo dO/iC/kI/mW joined with FabricMC intermediary 1.20.1: field_10295/10225/10110/10384); DamageTypeTags
-  IS_FREEZING f_268419_ (the no-cold passive). A frozen body's suffocation inside its ice is cancelled by its message id "inWall".
-
 ## 9. What to do next (3.1.9)
 
 1. Finish 8zc (the Hie Hie no Mi, 3.1.9: started, unbuilt), then 8za's item 3 (Creative tab, rarity ranks, energy bar).

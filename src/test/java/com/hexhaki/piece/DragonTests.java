@@ -299,6 +299,61 @@ public final class DragonTests {
         }
     }
 
+    /**
+     * 3.1.9: the Ice fruit's drawn ice (hie/HieArt, the smooth glassy look) fits a phone's budget at every moment: Partisan's eight spears
+     * round the eye and eight flying with their trails and bursts; the pheasant close by with its big burst; the Ice Ball's orb, its mist
+     * and its breaking; Ice Age's mist row; a saber cut, the ice fist and the body of ice scattering; every vertex finite.
+     */
+    static void hieIce() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double[] row = new double[9 * 3];
+        for (int i = 0; i < 9; i++) {
+            row[i * 3] = -8 + 2 * i;
+            row[i * 3 + 1] = -1.0;
+            row[i * 3 + 2] = 10.0;
+        }
+        for (int age = 0; age <= 60; age += 3) {
+            count[0] = 0;
+            for (int k = 0; k < com.hexhaki.piece.server.HieMoves.SPEARS_MOST; k++) {
+                double[] slot = com.hexhaki.piece.hie.HieArt.slot(k);
+                com.hexhaki.piece.hie.HieArt.spear(sink, -slot[0], slot[1] - 1.62, -slot[2], 0, 0, 1, com.hexhaki.piece.hie.HieArt.SPEAR_LENGTH,
+                    age / 4.0, 1.0, 40 + k);
+                com.hexhaki.piece.hie.HieArt.spear(sink, -3 + k, 0.5, 3.0 + age * 2.4, 0, 0, 1, com.hexhaki.piece.hie.HieArt.SPEAR_LENGTH, 1.0, 1.0, 50 + k);
+                com.hexhaki.piece.hie.HieArt.trail(sink, -3 + k, 0.5, 2.0 + age * 2.4, 0, 0, 2.4, 0.16, age, 50 + k);
+                com.hexhaki.piece.hie.HieArt.burst(sink, -3 + k, 0.0, 14.0, 0.9, 0.3, (age + k * 2) % 34, 60 + k);
+            }
+            check(count[0], finite[0], "Partisan", age);
+            count[0] = 0;
+            com.hexhaki.piece.hie.HieArt.pheasant(sink, 0, 0.5, 6.0 + age * 0.4, 0, 0, 1, com.hexhaki.piece.server.HieMoves.PHEASANT_SCALE, age, 13);
+            com.hexhaki.piece.hie.HieArt.trail(sink, 0, 0.5, 6.0 + age * 0.4, 0, 0, 1.6, 1.4, age, 13);
+            com.hexhaki.piece.hie.HieArt.burst(sink, 0, -0.5, 12.0, 4.5, 1.0, age, 14);
+            check(count[0], finite[0], "Pheasant Beak", age);
+            count[0] = 0;
+            com.hexhaki.piece.hie.HieArt.gather(sink, 0.4, -0.3, 0.8, 0.35, age % 12, 15);
+            com.hexhaki.piece.hie.HieArt.orb(sink, 0, 0, 3.0 + age * 1.6, 0.35, age, 16);
+            com.hexhaki.piece.hie.HieArt.trail(sink, 0, 0, 3.0 + age * 1.6, 0, 0, 1.6, 0.35, age, 16);
+            com.hexhaki.piece.hie.HieArt.shatter(sink, 0, -0.5, 8.0, com.hexhaki.piece.server.HieMoves.BALL_RADIUS * 1.2, age % 32, 17);
+            for (int k = 0; k < 3; k++) {
+                com.hexhaki.piece.hie.HieArt.mist(sink, -2 + 2 * k, -1.2, 8.0, 1.0, 0.3, age, 18 + k);
+            }
+            com.hexhaki.piece.hie.HieArt.mistRow(sink, row, 9, 1.6, 0.5, age, 19);
+            check(count[0], finite[0], "Ice Ball and Ice Age", age);
+            count[0] = 0;
+            com.hexhaki.piece.hie.HieArt.slash(sink, 0, -0.35, 0, 0, 1, 0, 0.5, 2.4, age % 13, 20);
+            com.hexhaki.piece.hie.HieArt.coat(sink, 0.4, -0.3, 0.8, 0, 0, 1, 1.0, age, 21);
+            com.hexhaki.piece.hie.HieArt.scatter(sink, 0, -0.7, 3.0, 1.8, age % 15, 22);
+            com.hexhaki.piece.hie.HieArt.burst(sink, 0, -0.4, 3.0, 2.4, 1.0, age, 23);
+            check(count[0], finite[0], "the saber, the ice fist and the ice body", age);
+        }
+    }
+
     static void check(int quads, boolean finite, String what, int age) {
         Check.that(finite, what + " is finite at " + age);
         Check.that(quads < 16000, what + " fits a phone's budget at " + age + " (" + quads + " quads)");
@@ -314,6 +369,8 @@ public final class DragonTests {
             Check.that(entry != null, "the jar carries the dragon");
             Check.that(zip.getEntry("assets/hexhaki/textures/piece/dragon/seiryu.png") != null, "and its texture");
             Check.that(zip.getEntry("assets/hexhaki/textures/item/uo_uo_no_mi.png") != null, "and the fruit's icon");
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/hie_hie_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/hie_hie_no_mi.json") != null, "the Ice fruit's icon and model");
             try (InputStream in = zip.getInputStream(entry)) {
                 model = DragonModel.read(in);
             }
@@ -325,6 +382,7 @@ public final class DragonTests {
         guraQuakes();
         guraUltimate();
         maguMagma();
+        hieIce();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);
