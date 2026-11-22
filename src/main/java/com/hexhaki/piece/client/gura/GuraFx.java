@@ -68,12 +68,14 @@ public final class GuraFx {
         final double width;
         final double height;
         final int life;
+        final int hold;
         final long born;
         final int seed;
         double baseY;
 
-        Wave(Vec3 at, Vec3 step, double width, double height, int life, long born, int seed) {
+        Wave(Vec3 at, Vec3 step, double width, double height, int life, int hold, long born, int seed) {
             this.at = at;
+            this.hold = hold;
             this.step = step;
             this.width = width;
             this.height = height;
@@ -157,7 +159,7 @@ public final class GuraFx {
                 }
             }
             case GuraMoves.RIFT -> RIFTS.add(new Rift(at, a, m.size(), heights(at, a, m.size()), clock, m.id()));
-            case GuraMoves.TSUNAMI -> WAVES.add(new Wave(at, a, m.size(), m.bx(), m.ticks(), clock, m.id()));
+            case GuraMoves.TSUNAMI -> WAVES.add(new Wave(at, a, m.size(), m.bx(), m.ticks(), (int) m.by(), clock, m.id()));
             case GuraMoves.LEAP -> {
                 // a puff of dust where the feet leave the ground, the quake fist alight for the slam
                 add(new Spot(GuraMoves.TREMOR, 0, m.user(), a, Vec3.f_82478_, 2.2, 0, 0, clock, m.user() * 7 + (int) clock));
@@ -228,9 +230,10 @@ public final class GuraFx {
         for (Wave w : WAVES) {
             // the wave's foot follows the ground under its middle
             double age = clock - w.born;
-            Vec3 front = w.at.m_82549_(w.step.m_82490_(Math.min(age, w.life + 6.0)));
+            Vec3 front = w.at.m_82549_(w.step.m_82490_(Math.max(0.0, Math.min(age, w.life + 6.0) - w.hold)));
+            // 3.1.2: on the water's face where there is water (Fluid.ANY), the ground where there is none
             BlockHitResult hit = level.m_45547_(new ClipContext(new Vec3(front.f_82479_, w.baseY + 6.0, front.f_82481_),
-                new Vec3(front.f_82479_, w.baseY - 10.0, front.f_82481_), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+                new Vec3(front.f_82479_, w.baseY - 10.0, front.f_82481_), ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, null));
             if (hit.m_6662_() == HitResult.Type.BLOCK) {
                 w.baseY += (hit.m_82450_().f_82480_ - w.baseY) * 0.5;
             }
@@ -537,7 +540,7 @@ public final class GuraFx {
                 continue;
             }
             GuraArt.tsunami(SINK, w.at.f_82479_ - cx, w.baseY - cy, w.at.f_82481_ - cz, w.step.f_82479_, w.step.f_82481_, w.width, w.height, w.life,
-                GuraMoves.TSUNAMI_RISE, clock - w.born + partial, w.seed);
+                GuraMoves.TSUNAMI_RISE, w.hold, clock - w.born + partial, w.seed);
         }
         for (Spot s : SPOTS) {
             if (far(s.at, cam)) {

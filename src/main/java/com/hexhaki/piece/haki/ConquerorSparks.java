@@ -60,6 +60,29 @@ public final class ConquerorSparks {
     }
 
     /**
+     * 3.1.2 (the owner: "if hockey Rio is activated, I think that the moves should add lightning from the Conqueror effect to it ...
+     * check the reference of Blackbeard and try to copy what he does"; refs 28, 55: white crackle round his quake fist, 32, 34: lightning
+     * over the rings of the ground he struck): a burst of {@code count} arcs out of a point every way, {@code radius} long at most, a
+     * quarter of them grounding down to {@code floor} (the ground's height under the point, relative to it). Points relative to it.
+     */
+    public static List<Bolt> burst(double radius, int count, double floor, long seed) {
+        SplittableRandom random = new SplittableRandom(seed ^ 0x4255_5253_54L);
+        List<Bolt> out = new ArrayList<>(count * 2);
+        double[] at = {0.0, 0.0, 0.0};
+        for (int i = 0; i < count; i++) {
+            double[] dir = Sphere.unit(random);
+            double length = radius * (0.45 + 0.55 * random.nextDouble());
+            if (i % 4 == 0 && floor < 0.0) {
+                dir = ConquerorStorm.normalise(new double[] {dir[0] * 0.6, -1.0, dir[2] * 0.6});
+                length = Math.max(length, -floor + 0.4);
+            }
+            double[] from = {dir[0] * 0.15, dir[1] * 0.15, dir[2] * 0.15};
+            arc(out, random, from, dir, length, 0.06 + 0.05 * random.nextDouble(), (float) (random.nextDouble() * 2.5), 6 + random.nextInt(5));
+        }
+        return out;
+    }
+
+    /**
      * One arc from {@code from} along {@code dir}: a crackled stroke (Bolt.crackled: fractal kinks, swelling and pinching), thin, black
      * with its red rim, and now and then a fork off its middle.
      */

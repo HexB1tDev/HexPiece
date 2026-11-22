@@ -184,3 +184,6 @@ M net/minecraft/core/Direction m_122430_ ()I   # [srg] getStepY: joined.tsrg ha 
 M net/minecraft/core/Direction m_122431_ ()I   # [srg] getStepZ: joined.tsrg ha l ()I m_122431_ 122431
 M net/minecraft/world/level/Level m_6425_ (Lnet/minecraft/core/BlockPos;)Lnet/minecraft/world/level/material/FluidState;   # [srg] getFluidState: joined.tsrg cmm (Level, as HexGhoul's list: m_7731_ setBlock) b_ (Lgu;)Ldxe; m_6425_ 45864 (dxe FluidState, HexGhoul's m_76178_)
 F net/minecraft/world/level/ClipContext$Fluid ANY Lnet/minecraft/world/level/ClipContext$Fluid;   # [srg] joined.tsrg clv$b C_1565_$C_1567_ (a NONE as the original uses, b SOURCE_ONLY) c ANY 45723 (enum constants keep their names)
+
+# --- 3.1.2: the Gura fruit's tsunami only near a big body of water (water told from lava) ------------------------------------------
+M net/minecraft/world/level/material/FluidState m_205070_ (Lnet/minecraft/tags/TagKey;)Z   # [srg] is(TagKey): joined.tsrg dxe (FluidState, HexGhoul's m_76178_ isEmpty) a (Lanl;)Z m_205070_ 205070 (anl TagKey, as ItemStack.m_204117_ in HexGhoul's list); its neighbours m_205072_ is(HolderSet) (Lhi;)Z and m_164512_ is(Fluid) (Ldxd;)Z; FluidTags.f_13131_ WATER is read by the original's FruitServer

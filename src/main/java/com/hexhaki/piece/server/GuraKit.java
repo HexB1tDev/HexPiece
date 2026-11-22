@@ -26,12 +26,13 @@ public final class GuraKit extends FruitKit {
             + " the ground quakes all round you, everyone near staggering, the world tilting. Let go and you pull the island over: everyone"
             + " round you is thrown out and knocked down.");
     public static final FruitMove KABUTOWARI = new FruitMove("Kabutowari", "[X]", 0, "gura_kabutowari",
-        "Helmet Splitter. A leap at the one you look at and the quake fist brought down on their head: the air cracks over them, they are"
-            + " slammed into the ground, a crater opens and everyone near is thrown up. With no one there, you dive fist first into the"
-            + " ground where you look.");
+        "Helmet Splitter. A high leap at the one you look at and the quake fist brought down on their head: the air cracks over them,"
+            + " they are slammed into the ground, and where you land a crater opens and everyone near is thrown up. With no one there, you"
+            + " dive fist first into the ground where you look.");
     public static final FruitMove TSUNAMI = new FruitMove("Tsunami", "[C]", 0, "gura_tsunami",
-        "Both fists driven out and the sea answers: a wall of water rises ahead of you and rolls on, carrying everyone it meets and"
-            + " dumping them down when it breaks.");
+        "Only near the sea or a big lake. Both arms smashed out to the sides and the sea answers: a wall of water rises slowly on your"
+            + " left and another on your right, then they roll in toward the middle ahead of you, carrying everyone they meet, and crash"
+            + " together, slamming them down.");
     public static final FruitMove GEKISHIN = new FruitMove("Gekishin", "[V] hold", 0, "gura_gekishin",
         "Violent Quake. Gather the bubble on the drawn-back fist; let go and you are on the one you look at, the quake driven point-blank"
             + " into them: the shock bursts out of their back, cracking the air behind them, and they are sent flying through walls. Held"

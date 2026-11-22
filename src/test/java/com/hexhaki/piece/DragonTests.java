@@ -96,7 +96,7 @@ public final class DragonTests {
         };
         double speed = com.hexhaki.piece.server.GuraMoves.SHOCK_SPEED;
         double[] heights = new double[40];
-        for (int age = 0; age <= 60; age += 2) {
+        for (int age = 0; age <= 64; age += 2) {
             count[0] = 0;
             com.hexhaki.piece.gura.GuraArt.crack(sink, 0.3, -0.2, 1.6, 0, 0, 1, 5.0, age, 7);
             com.hexhaki.piece.gura.GuraArt.shock(sink, 0.3, -0.2, 1.0, 0, 0, 1, 40.0, 0.48, 1.0, speed, age, 5);
@@ -115,9 +115,13 @@ public final class DragonTests {
             com.hexhaki.piece.gura.GuraArt.tilt(sink, 0, -1.6, 0, com.hexhaki.piece.server.GuraMoves.SHAKE_RADIUS, 1.0, speed, age, 6);
             com.hexhaki.piece.gura.GuraArt.rift(sink, 0, -1.6, 1.4, 0, 1, com.hexhaki.piece.server.GuraMoves.RIFT_LENGTH,
                 com.hexhaki.piece.server.GuraMoves.RIFT_STEP, heights, age, 8);
-            com.hexhaki.piece.gura.GuraArt.tsunami(sink, 0, -1.6, 3.0, 0, com.hexhaki.piece.server.GuraMoves.TSUNAMI_SPEED,
-                com.hexhaki.piece.server.GuraMoves.TSUNAMI_WIDTH, com.hexhaki.piece.server.GuraMoves.TSUNAMI_HEIGHT,
-                com.hexhaki.piece.server.GuraMoves.TSUNAMI_LIFE, com.hexhaki.piece.server.GuraMoves.TSUNAMI_RISE, age, 11);
+            for (int side = -1; side <= 1; side += 2) {
+                com.hexhaki.piece.gura.GuraArt.tsunami(sink, -side * com.hexhaki.piece.server.GuraMoves.TSUNAMI_SIDE, -1.6,
+                    com.hexhaki.piece.server.GuraMoves.TSUNAMI_AHEAD, side * com.hexhaki.piece.server.GuraMoves.TSUNAMI_SPEED, 0,
+                    com.hexhaki.piece.server.GuraMoves.TSUNAMI_LENGTH, com.hexhaki.piece.server.GuraMoves.TSUNAMI_HEIGHT,
+                    com.hexhaki.piece.server.GuraMoves.TSUNAMI_LIFE, com.hexhaki.piece.server.GuraMoves.TSUNAMI_RISE,
+                    com.hexhaki.piece.server.GuraMoves.TSUNAMI_RISE, age, 11 + side);
+            }
             com.hexhaki.piece.gura.GuraArt.tremor(sink, 2, -1.6, 2, 6.0, age, 4);
             Check.that(finite[0], "the ground's quakes are finite at " + age);
             Check.that(count[0] < 16000, "every ground quake at once fits a phone's budget at " + age + " (" + count[0] + " quads)");

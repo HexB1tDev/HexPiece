@@ -17,14 +17,44 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pika_anims import write_parts  # noqa: E402
-from style_anims import WRITTEN, arm, java_poses, leg, mirror, p  # noqa: E402
+import json  # noqa: E402
+
+from anim_hand import spine  # noqa: E402
+from style_anims import OUT as ANIM_DIR, PARTS, WRITTEN, arm, java_poses, leg, mirror, p  # noqa: E402
+
+# 3.1.2 (the owner: "the entire body is being animated, including the legs, which I tell you not to do"; "when you're on the floor
+# sneaking and you right click, the entire body just breaks ... Your torso moves forward"): no clip keys a leg, and the body only by its
+# turn, its side tilt and its bend at the waist (bendy-lib: the upper body only), never its place or its pitch (those move the whole
+# model, legs and all). The arms and the upper body do the work; the legs are always the game's own (walking, standing, sneaking).
+BODY = ("yaw", "roll", "bend")
+
+
+def write_parts(name, duration, beats, description, parts, stop_extra=3):
+    """As tools/pika_anims.write_parts, keying only {parts} (never the head, never a leg) and of the body only its {BODY} channels."""
+    assert "head" not in parts and "rightLeg" not in parts and "leftLeg" not in parts, name + ": the head and the legs are the player's own"
+    moves = []
+    for tick, easing, q in beats:
+        q = spine(q)
+        for part in parts:
+            values = q.get(part, {})
+            for channel in PARTS[part]:
+                if part == "body" and channel not in BODY:
+                    continue
+                moves.append({"tick": tick, "easing": easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
+    moves.sort(key=lambda m: m["tick"])
+    data = {"version": 3, "name": name, "author": "HexPiece 3.1.2", "description": description,
+            "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration + stop_extra, "isLoop": False, "returnTick": 0,
+                      "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
+    WRITTEN[name] = data
+    with open(os.path.join(ANIM_DIR, name + ".json"), "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=1)
+        handle.write("\n")
 
 REST = p(rightArm=arm(0, 0, 4, -4), leftArm=arm(0, 0, -4, -4), rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0),
          body={"yaw": 0, "bend": 0, "pitch": 0, "roll": 0, "x": 0, "y": 0, "z": 0})
 RIGHT = ("body", "torso", "rightArm")
 ARMS = ("body", "torso", "rightArm", "leftArm")
-ALL = ("body", "torso", "rightArm", "leftArm", "rightLeg", "leftLeg")
+ALL = ARMS  # 3.1.2: never the legs
 
 
 def tremble(base, start, end, every, wobble):
@@ -114,15 +144,18 @@ def kabutowari():
 # ------------------------------------------------------------------------------------------------------ C: the tsunami
 
 def tsunami():
-    back = p(rightArm=arm(30, 0, 14, -90), leftArm=mirror(arm(30, 0, 14, -90)), body={"bend": -4})
-    out = p(rightArm=arm(-92, -8, 0, 0), leftArm=arm(-92, 8, 0, 0), body={"bend": 10, "z": -0.08})
-    write_parts("gura_tsunami", 14, [
+    # 3.1.2 (the owner: "He smashes both his arms to the side, each one to the left, one to the right, and then two waves come from
+    # both left and right"): the arms gathered crossed before the chest, then smashed out to either side (on tick 4: the air cracks at
+    # both fists and the two walls of water start rising), held a moment, back
+    gather = p(rightArm=arm(-100, -40, 0, -50), leftArm=mirror(arm(-100, -40, 0, -50)), body={"bend": 6})
+    out = p(rightArm=arm(-12, 0, 72, -4), leftArm=mirror(arm(-12, 0, 72, -4)), body={"bend": 10})
+    write_parts("gura_tsunami", 16, [
         (0, "linear", REST),
-        (2, "insine", back),
+        (2, "insine", gather),
         (4, "outexpo", out),
-        (7, "outback", p(out, rightArm={"pitch": -97}, leftArm={"pitch": -97})),
-        (14, "inoutsine", REST),
-    ], "Gura Gura: both fists driven out, the sea rising ahead.", ARMS)
+        (8, "outback", p(out, rightArm={"roll": 77}, leftArm={"roll": -77})),
+        (16, "inoutsine", REST),
+    ], "Gura Gura: both arms smashed out to the sides, a wave rising on either side.", ARMS)
 
 
 # ------------------------------------------------------------------------------------------------------ V: Gekishin

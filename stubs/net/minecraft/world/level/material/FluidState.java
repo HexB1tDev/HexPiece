@@ -4,4 +4,5 @@ package net.minecraft.world.level.material;
 public final class FluidState {
     /** isEmpty */ public boolean m_76178_() { throw new UnsupportedOperationException(); }
     /** isSource */ public boolean m_76170_() { throw new UnsupportedOperationException(); }
+    /** is(TagKey) */ public boolean m_205070_(net.minecraft.tags.TagKey<Fluid> tag) { throw new UnsupportedOperationException(); }
 }

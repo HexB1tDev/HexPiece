@@ -35,9 +35,16 @@ public final class GuraShots {
                 GuraArt.rift(sink, 0.0 - ex, -ey, 1.4 - ez, 0, 1, com.hexhaki.piece.server.GuraMoves.RIFT_LENGTH,
                     com.hexhaki.piece.server.GuraMoves.RIFT_STEP, heights, a, 8);
             }
-            case "gwave" -> GuraArt.tsunami(sink, -ex, -ey, 3.0 - ez, 0, com.hexhaki.piece.server.GuraMoves.TSUNAMI_SPEED,
-                com.hexhaki.piece.server.GuraMoves.TSUNAMI_WIDTH, com.hexhaki.piece.server.GuraMoves.TSUNAMI_HEIGHT,
-                com.hexhaki.piece.server.GuraMoves.TSUNAMI_LIFE, com.hexhaki.piece.server.GuraMoves.TSUNAMI_RISE, a, 11);
+            case "gwave" -> {
+                // 3.1.2: the two walls, left and right of the player (at the origin, looking along +z), rising, then rolling in
+                for (int side = -1; side <= 1; side += 2) {
+                    GuraArt.tsunami(sink, -side * com.hexhaki.piece.server.GuraMoves.TSUNAMI_SIDE - ex, -ey,
+                        com.hexhaki.piece.server.GuraMoves.TSUNAMI_AHEAD - ez, side * com.hexhaki.piece.server.GuraMoves.TSUNAMI_SPEED, 0,
+                        com.hexhaki.piece.server.GuraMoves.TSUNAMI_LENGTH, com.hexhaki.piece.server.GuraMoves.TSUNAMI_HEIGHT,
+                        com.hexhaki.piece.server.GuraMoves.TSUNAMI_LIFE, com.hexhaki.piece.server.GuraMoves.TSUNAMI_RISE,
+                        com.hexhaki.piece.server.GuraMoves.TSUNAMI_RISE, a, 11 + side);
+                }
+            }
             case "gkaishin" -> {
                 double charge = Double.parseDouble(move[2]);
                 double reach = 18.0 + 22.0 * charge;

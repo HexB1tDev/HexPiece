@@ -77,15 +77,26 @@ public final class GuraMoves {
     static final int SHAKE_EVERY = 10;
     /** Kabutowari: how far it leaps at most, how fast across the ground (blocks a tick), the shortest and longest flight (ticks). */
     static final double LEAP_RANGE = 26.0;
-    static final double LEAP_SPEED = 1.9;
-    static final int LEAP_LEAST = 6;
-    static final int LEAP_MOST = 16;
-    /** The tsunami: its width, height (blocks), speed (blocks a tick), life (ticks) and how long it takes to rise. */
-    public static final double TSUNAMI_WIDTH = 22.0;
+    static final double LEAP_SPEED = 1.5;
+    static final int LEAP_LEAST = 12;
+    static final int LEAP_MOST = 22;
+    /** 3.1.2: how high the leap goes at the least (blocks over the way), how far down solid ground is looked for, how long he may fall
+     * after the arc before the slam meets the ground (ticks). */
+    static final double LEAP_HIGH = 8.0;
+    static final double LEAP_DROP = 40.0;
+    static final int LEAP_WAIT = 30;
+    /** The tsunami (3.1.2: two walls, left and right): each one's length along his way, height, inward speed (blocks a tick), how far to
+     * his sides they rise and how far ahead their middle is, how long they rise (ticks), their life (ticks). */
+    public static final double TSUNAMI_LENGTH = 26.0;
     public static final double TSUNAMI_HEIGHT = 9.0;
-    public static final double TSUNAMI_SPEED = 1.1;
-    public static final int TSUNAMI_LIFE = 38;
-    public static final int TSUNAMI_RISE = 8;
+    public static final double TSUNAMI_SPEED = 0.6;
+    public static final double TSUNAMI_SIDE = 18.0;
+    public static final double TSUNAMI_AHEAD = 16.0;
+    public static final int TSUNAMI_RISE = 24;
+    public static final int TSUNAMI_LIFE = TSUNAMI_RISE + (int) (TSUNAMI_SIDE / TSUNAMI_SPEED) - 2;
+    /** 3.1.2: the tsunami needs a big body of water: this many water columns (one every 2 blocks) within this radius. */
+    static final double WATER_RADIUS = 24.0;
+    static final int WATER_LEAST = 40;
     /** Gekishin: a full charge (ticks), its reach (blocks), how fast the dash goes (blocks a tick), the launch's speed at full. */
     static final int GEKISHIN_FULL = 30;
     static final double GEKISHIN_RANGE = 16.0;
@@ -336,7 +347,8 @@ public final class GuraMoves {
         later(player, 2, () -> {
             Vec3 look = player.m_20154_();
             Vec3 fist = fist(player);
-            fx(player, CRACK, 0, fist.m_82549_(look.m_82490_(0.5)), look, 0, 0, 0, 1.5, ++seeds);
+            fx(player, CRACK, 0, fist.m_82549_(look.m_82490_(0.5)), look, 0, 0, 0, 0.9, ++seeds);
+            ConquerorAura.mixed(player, fist.m_82549_(look.m_82490_(0.5)), 2.0, 4, -1.2);
             fx(player, SHOCK, 0, fist, look, 0.45, 0.35, 0, TAP_REACH, ++seeds);
             shock(player, fist, look, TAP_REACH, 26.0, 5.0F, 1.6, false, null);
             Impact.quake((ServerLevel) player.m_9236_(), fist, 18.0, 0.35F, 8);
@@ -359,7 +371,8 @@ public final class GuraMoves {
             Vec3 look = player.m_20154_();
             Vec3 fist = fist(player);
             double reach = KAISHIN_REACH + KAISHIN_MORE * charge;
-            fx(player, CRACK, 1, fist.m_82549_(look.m_82490_(0.7)), look, 0, 0, 0, 2.0 + 3.0 * charge, ++seeds);
+            fx(player, CRACK, 1, fist.m_82549_(look.m_82490_(0.7)), look, 0, 0, 0, 1.2 + 1.4 * charge, ++seeds);
+            ConquerorAura.mixed(player, fist.m_82549_(look.m_82490_(0.7)), 3.0 + 3.0 * charge, 6 + (int) (6 * charge), -1.3);
             fx(player, SHOCK, 1, fist, look, 0.36 + 0.12 * charge, 0.5 + 0.5 * charge, 0, reach, ++seeds);
             List<LivingEntity> struck = shock(player, fist, look, reach, 24.0 + 6.0 * charge, 6.0F + 10.0F * charge, 2.0 + 3.0 * charge,
                 charge >= 0.5F, null);
@@ -384,9 +397,13 @@ public final class GuraMoves {
                     craters++;
                     double radius = 1.2 + 1.3 * charge;
                     int seed = ++seeds;
+                    boolean bolts = craters <= 2;
                     later(player, (int) (d / SHOCK_SPEED), () -> {
                         Craters.open(level, player, g, radius);
                         fx(player, QUAKE, 0, g, flat, 0.4 + 0.4 * charge, 0, 0, radius * 1.8, seed);
+                        if (bolts) {
+                            ConquerorAura.mixed(player, g.m_82520_(0, 0.4, 0), 2.5, 4, -0.4);
+                        }
                     });
                 }
             }
@@ -421,8 +438,10 @@ public final class GuraMoves {
             Vec3 flat = flat(player);
             Vec3 right = new Vec3(-flat.f_82481_, 0, flat.f_82479_);
             Vec3 chest = player.m_20182_().m_82520_(0, 1.45, 0).m_82549_(flat.m_82490_(0.25));
-            fx(player, CRACK, 2, chest.m_82549_(right.m_82490_(1.25)), right, 0, 0, 0, 1.7, ++seeds);
-            fx(player, CRACK, 2, chest.m_82549_(right.m_82490_(-1.25)), right.m_82490_(-1), 0, 0, 0, 1.7, ++seeds);
+            fx(player, CRACK, 2, chest.m_82549_(right.m_82490_(1.25)), right, 0, 0, 0, 1.0, ++seeds);
+            fx(player, CRACK, 2, chest.m_82549_(right.m_82490_(-1.25)), right.m_82490_(-1), 0, 0, 0, 1.0, ++seeds);
+            ConquerorAura.mixed(player, chest.m_82549_(right.m_82490_(1.25)), 2.2, 4, -1.45);
+            ConquerorAura.mixed(player, chest.m_82549_(right.m_82490_(-1.25)), 2.2, 4, -1.45);
             sound(player, chest, GuraSounds.CRACK, 1.2F, 0.95F);
         });
     }
@@ -442,6 +461,7 @@ public final class GuraMoves {
         Vec3 c = player.m_20182_();
         float grip = (float) Math.min(1.0, held / 60.0);
         Impact.quake(level, c, SHAKE_RADIUS * 1.5, 0.3F + 0.4F * grip, 12);
+        ConquerorAura.mixed(player, c.m_82520_(0, 0.3, 0), 3.5 + 3.0 * grip, 4, -0.3);
         for (LivingEntity body : PikaMoves.foes(player, c, SHAKE_RADIUS)) {
             if (!body.m_20096_()) {
                 continue;
@@ -479,6 +499,7 @@ public final class GuraMoves {
             });
         }
         Impact.quake(level, c, SHAKE_RADIUS * 2.0, 1.0F, 24);
+        ConquerorAura.mixed(player, c.m_82520_(0, 0.9, 0), 7.0, 14, -0.9);
         sound(player, c, GuraSounds.QUAKE, 2.2F, 0.9F);
         sound(player, c, GuraSounds.BOOM, 2.0F, 0.8F);
     }
@@ -488,7 +509,11 @@ public final class GuraMoves {
     /**
      * Kabutowari (refs 04, 06, 32, 52): a leap at the one looked at (the player's own client flies the arc, client/gura/GuraFx) and
      * the quake fist brought down on their head as he lands: the air cracked over them, slammed into the ground, a crater with its rings,
-     * everyone near thrown up. No one aimed at: he dives fist first into the ground where he looks (Blackbeard onto Law).
+     * everyone near thrown up. No one aimed at: he dives fist first into the ground where he looks (Blackbeard onto Law). 3.1.2 (the
+     * owner: "should make you jump way higher. It's barely anything, and it should only do the cracks around like touches a solid surface.
+     * Currently, if you look up ... you're gonna do the crack animation on the sky, and you can just keep flying with this move"): the arc
+     * goes {@link #LEAP_HIGH} blocks and more over the way, it always ends on solid ground (looking up: straight up and down where he
+     * stands; no ground under the way within {@link #LEAP_DROP} blocks: no leap at all), and the ground is only struck once he is down on it.
      */
     static void kabutowari(ServerPlayer player, State s, long now) {
         if (!ready(player, GuraKit.KABUTOWARI)) {
@@ -503,18 +528,34 @@ public final class GuraMoves {
             Vec3 t = target.m_20182_();
             way = new Vec3(t.f_82479_ - from.f_82479_, 0, t.f_82481_ - from.f_82481_);
             way = way.m_82556_() < 1.0E-6 ? flat(player) : way.m_82541_();
-            to = PikaMoves.room(player, t, t.m_82546_(way.m_82490_(target.m_20205_() * 0.5 + 0.7)));
+            Vec3 stand = t.m_82546_(way.m_82490_(target.m_20205_() * 0.5 + 0.7));
+            Vec3 g = ground(level, stand, 2.0, LEAP_DROP);
+            to = PikaMoves.room(player, t, g != null ? g : stand);
         } else {
             way = flat(player);
-            Vec3 aim = PikaMoves.point(player, LEAP_RANGE).m_82546_(player.m_20154_().m_82490_(0.6));
-            Vec3 g = ground(level, aim, 1.0, 8.0);
-            to = PikaMoves.room(player, from, g != null ? g : aim.m_82520_(0, -0.9, 0));
+            Vec3 eye = player.m_146892_();
+            Vec3 look = player.m_20154_();
+            BlockHitResult hit = level.m_45547_(new ClipContext(eye, eye.m_82549_(look.m_82490_(LEAP_RANGE)), ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE, player));
+            Vec3 over;
+            if (hit.m_6662_() == HitResult.Type.BLOCK) {
+                over = hit.m_82450_().m_82546_(look.m_82490_(0.6));
+            } else {
+                // nothing in the way (the sky): as far along the ground's way as the look reaches across it
+                double across = LEAP_RANGE * Math.sqrt(look.f_82479_ * look.f_82479_ + look.f_82481_ * look.f_82481_);
+                over = from.m_82549_(way.m_82490_(across)).m_82520_(0, 1.0, 0);
+            }
+            Vec3 g = ground(level, over, 2.0, LEAP_DROP);
+            if (g == null) {
+                return; // nothing solid to come down on: no leap (and no cooldown)
+            }
+            to = PikaMoves.room(player, from, g);
         }
         cool(player, GuraKit.KABUTOWARI, 120);
         double across = Math.sqrt(Math.pow(to.f_82479_ - from.f_82479_, 2) + Math.pow(to.f_82481_ - from.f_82481_, 2));
         int ticks = Math.max(LEAP_LEAST, Math.min(LEAP_MOST, (int) Math.ceil(across / LEAP_SPEED)));
-        double arc = 2.5 + across * 0.18 + Math.max(0.0, to.f_82480_ - from.f_82480_);
-        s.moveUntil = now + ticks + 3;
+        double arc = LEAP_HIGH + across * 0.25 + Math.max(0.0, to.f_82480_ - from.f_82480_);
+        s.moveUntil = now + ticks + LEAP_WAIT;
         s.busyUntil = now + ticks + 8;
         player.f_19789_ = 0.0F;
         animate(player, "gura_leap");
@@ -522,32 +563,61 @@ public final class GuraMoves {
         sound(player, from, GuraSounds.WHOOSH, 1.2F, 0.85F);
         later(player, ticks - 3, () -> animate(player, "gura_slam"));
         Vec3 aimWay = way;
-        later(player, ticks, () -> slam(player, target, aimWay));
+        later(player, ticks, () -> slam(player, s, target, aimWay));
     }
 
-    /** Kabutowari landing: the fist down on them (or into the ground), the crater, the rings, everyone near thrown up. */
-    static void slam(ServerPlayer player, LivingEntity target, Vec3 way) {
+    /**
+     * Kabutowari's fist comes down: on them (the air cracked over their head, slammed down), then, once he is down on solid ground (at
+     * most {@link #LEAP_WAIT} ticks later), the ground struck: the crater, the rings, everyone near thrown up. Never in the air.
+     */
+    static void slam(ServerPlayer player, State s, LivingEntity target, Vec3 way) {
         ServerLevel level = (ServerLevel) player.m_9236_();
         Vec3 feet = player.m_20182_();
-        Vec3 g = ground(level, feet.m_82549_(way.m_82490_(0.8)), 1.0, 4.0);
-        Vec3 spot = g != null ? g : feet;
         Set<Integer> skip = new HashSet<>();
         if (target != null && target.m_6084_() && target.m_20182_().m_82554_(feet) < 4.5) {
             skip.add(target.m_19879_());
             Vec3 head = target.m_20182_().m_82520_(0, target.m_20206_() + 0.35, 0);
-            fx(player, CRACK, 3, head, player.m_20154_().m_82490_(-1), 0, 0, 0, 2.4, ++seeds);
+            fx(player, CRACK, 3, head, player.m_20154_().m_82490_(-1), 0, 0, 0, 1.4, ++seeds);
+            ConquerorAura.mixed(player, head, 3.0, 8, -(target.m_20206_() + 0.35));
             if (PikaMoves.hit(player, target, 12.0F, new Vec3(way.f_82479_ * 0.2, -1.6, way.f_82481_ * 0.2), true)) {
                 downOnLanding(level, target, STUN + 20);
             }
-            Vec3 tg = ground(level, target.m_20182_(), 1.0, 4.0);
-            if (tg != null) {
-                spot = tg;
-            }
-        } else {
-            fx(player, CRACK, 3, spot.m_82520_(0, 0.6, 0).m_82549_(way.m_82490_(0.2)), new Vec3(0, 1, 0), 0, 0, 0, 2.0, ++seeds);
+            sound(player, head, GuraSounds.HIT, 1.6F, 0.9F);
         }
+        LIVE.add(new UoMoves.Live() {
+            int waited;
+
+            @Override
+            public boolean tick(long now) {
+                if (!player.m_6084_()) {
+                    return true;
+                }
+                Vec3 at = player.m_20182_();
+                Vec3 under = ground(level, at.m_82520_(0, 0.1, 0), 0.4, 0.8);
+                if (under == null && ++this.waited < LEAP_WAIT) {
+                    return false;
+                }
+                s.moveUntil = Math.min(s.moveUntil, now);
+                if (under != null) {
+                    struck(player, under, way, skip);
+                }
+                return true;
+            }
+
+            @Override
+            public ServerLevel level() {
+                return level;
+            }
+        });
+    }
+
+    /** Kabutowari: the solid ground under him struck at {@code spot}. */
+    static void struck(ServerPlayer player, Vec3 spot, Vec3 way, Set<Integer> skip) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        fx(player, CRACK, 3, spot.m_82520_(0, 0.5, 0).m_82549_(way.m_82490_(0.4)), new Vec3(0, 1, 0), 0, 0, 0, 1.2, ++seeds);
         Craters.open(level, player, spot, 2.6);
         fx(player, QUAKE, 1, spot, way, 1.0, 0, 0, 7.0, ++seeds);
+        ConquerorAura.mixed(player, spot.m_82520_(0, 0.4, 0), 5.0, 12, -0.4);
         for (LivingEntity body : PikaMoves.foes(player, spot, 6.5)) {
             if (skip.contains(body.m_19879_())) {
                 continue;
@@ -566,53 +636,116 @@ public final class GuraMoves {
     // ------------------------------------------------------------------------------------------------------ C: the tsunami
 
     /**
-     * The tsunami (refs 29, 51): both fists driven out, a wall of water rises ahead ({@link #TSUNAMI_WIDTH} wide, {@link #TSUNAMI_HEIGHT}
-     * high, in {@link #TSUNAMI_RISE} ticks) and rolls on at {@link #TSUNAMI_SPEED} blocks a tick for {@link #TSUNAMI_LIFE} ticks,
-     * carrying everyone it meets; where it breaks they are dumped down and knocked down. Drawn, never real water: nothing is flooded.
+     * The tsunami, 3.1.2 (the owner: "it never sends a wave straight forward. He smashes both his arms to the side, each one to the left,
+     * one to the right, and then two waves come from both left and right, slowly growing ... where's the water coming from? ... This move
+     * should not work unless you're near water"; refs 29, 51: the tsunamis rising either side of Marineford's bay): only with a big body
+     * of water near ({@link #WATER_LEAST} columns of it within {@link #WATER_RADIUS} blocks; else a word and no cooldown); both arms
+     * smashed out to the sides (gura_tsunami, the air cracked at both fists on tick 4), and two walls of water rise
+     * {@link #TSUNAMI_SIDE} blocks to his left and right ({@link #TSUNAMI_LENGTH} long along his way, {@link #TSUNAMI_HEIGHT} high,
+     * slowly: {@link #TSUNAMI_RISE} ticks), then roll in toward the middle ahead of him at {@link #TSUNAMI_SPEED} blocks a tick, carrying
+     * everyone they meet, and crash together there: everyone carried or caught between them dumped down and knocked down. Drawn, never
+     * real water: nothing is flooded.
      */
     static void tsunami(ServerPlayer player, State s, long now) {
         if (!ready(player, GuraKit.TSUNAMI)) {
             return;
         }
-        cool(player, GuraKit.TSUNAMI, 220);
+        if (!nearWater(player)) {
+            player.m_5661_(net.minecraft.network.chat.Component.m_237113_("Tsunami: no sea or lake near enough to raise a wave from"), true);
+            return;
+        }
+        cool(player, GuraKit.TSUNAMI, 240);
         s.busyUntil = now + 14;
         animate(player, "gura_tsunami");
         later(player, 4, () -> {
             ServerLevel level = (ServerLevel) player.m_9236_();
             Vec3 flat = flat(player);
-            Vec3 start = player.m_20182_().m_82549_(flat.m_82490_(3.0));
-            Vec3 g = ground(level, start, 3.0, 8.0);
-            if (g != null) {
-                start = g;
+            Vec3 right = new Vec3(-flat.f_82481_, 0, flat.f_82479_);
+            Vec3 chest = player.m_20182_().m_82520_(0, 1.3, 0);
+            for (int side = -1; side <= 1; side += 2) {
+                Vec3 fist = chest.m_82549_(right.m_82490_(1.3 * side));
+                fx(player, CRACK, 0, fist, right.m_82490_(side), 0, 0, 0, 0.9, ++seeds);
+                ConquerorAura.mixed(player, fist, 2.2, 4, -1.3);
+                Vec3 middle = player.m_20182_().m_82549_(flat.m_82490_(TSUNAMI_AHEAD)).m_82549_(right.m_82490_(TSUNAMI_SIDE * side));
+                Vec3 g = sea(level, middle);
+                Vec3 start = g != null ? g : middle;
+                Vec3 step = right.m_82490_(-side * TSUNAMI_SPEED);
+                int seed = ++seeds;
+                fx(player, TSUNAMI, seed, start, step, TSUNAMI_HEIGHT, TSUNAMI_RISE, 0, TSUNAMI_LENGTH, TSUNAMI_LIFE);
+                sound(player, start, GuraSounds.WAVE, 2.4F, 0.9F + 0.1F * side);
+                LIVE.add(new Wave(level, player, start, step, flat, side > 0));
             }
-            Vec3 step = flat.m_82490_(TSUNAMI_SPEED);
-            int seed = ++seeds;
-            fx(player, TSUNAMI, seed, start, step, TSUNAMI_HEIGHT, 0, 0, TSUNAMI_WIDTH, TSUNAMI_LIFE);
-            sound(player, start, GuraSounds.WAVE, 2.4F, 1.0F);
-            sound(player, player.m_20182_(), GuraSounds.BOOM, 1.4F, 1.1F);
-            LIVE.add(new Wave(level, player, start, step, flat));
+            sound(player, chest, GuraSounds.BOOM, 1.4F, 1.1F);
+            sound(player, chest, GuraSounds.CRACK, 1.0F, 1.0F);
         });
     }
 
-    /** The tsunami rolling on: whoever its face meets is caught and carried; where it breaks, everyone it carried is dumped down. */
+    /** The surface under {@code at} (water or ground, whichever comes first from over it), or null. */
+    static Vec3 sea(ServerLevel level, Vec3 at) {
+        BlockHitResult hit = level.m_45547_(new ClipContext(at.m_82520_(0, 6.0, 0), at.m_82520_(0, -12.0, 0), ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.ANY, null));
+        return hit.m_6662_() == HitResult.Type.BLOCK ? hit.m_82450_() : null;
+    }
+
+    /**
+     * Whether a big body of water lies near {@code player}: of the columns every 2 blocks within {@link #WATER_RADIUS} blocks, at least
+     * {@link #WATER_LEAST} whose surface (the first block that is not air, from 4 over the feet down to 12 under) is water. Asked once, on
+     * the key: at most some 7,000 block looks.
+     */
+    static boolean nearWater(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        int px = (int) Math.floor(player.m_20185_());
+        int py = (int) Math.floor(player.m_20186_());
+        int pz = (int) Math.floor(player.m_20189_());
+        int r = (int) WATER_RADIUS;
+        int wet = 0;
+        for (int dx = -r; dx <= r; dx += 2) {
+            for (int dz = -r; dz <= r; dz += 2) {
+                if (dx * dx + dz * dz > r * r) {
+                    continue;
+                }
+                for (int y = py + 4; y >= py - 12; y--) {
+                    net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(px + dx, y, pz + dz);
+                    net.minecraft.world.level.material.FluidState fluid = level.m_6425_(pos);
+                    if (!fluid.m_76178_()) {
+                        if (fluid.m_205070_(net.minecraft.tags.FluidTags.f_13131_)) {
+                            wet++;
+                        }
+                        break;
+                    }
+                    if (!level.m_8055_(pos).m_60795_()) {
+                        break;
+                    }
+                }
+                if (wet >= WATER_LEAST) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** One of the two walls of the tsunami: it rises, rolls in toward the middle, carries whoever its face meets, and crashes there. */
     static final class Wave implements UoMoves.Live {
         final ServerLevel level;
         final ServerPlayer owner;
         final Vec3 start;
         final Vec3 step;
-        final Vec3 flat;
-        final Vec3 side;
+        final Vec3 in;
+        final Vec3 along;
+        final boolean crash;
         final List<LivingEntity> caught = new ArrayList<>();
         double groundY;
         int age;
 
-        Wave(ServerLevel level, ServerPlayer owner, Vec3 start, Vec3 step, Vec3 flat) {
+        Wave(ServerLevel level, ServerPlayer owner, Vec3 start, Vec3 step, Vec3 along, boolean crash) {
             this.level = level;
             this.owner = owner;
             this.start = start;
             this.step = step;
-            this.flat = flat;
-            this.side = new Vec3(-flat.f_82481_, 0, flat.f_82479_);
+            this.in = step.m_82541_();
+            this.along = along;
+            this.crash = crash;
             this.groundY = start.f_82480_;
         }
 
@@ -621,47 +754,70 @@ public final class GuraMoves {
             return this.level;
         }
 
+        Vec3 front() {
+            return this.start.m_82549_(this.step.m_82490_(Math.max(0, this.age - TSUNAMI_RISE)));
+        }
+
         @Override
         public boolean tick(long now) {
             this.age++;
             if (this.age > TSUNAMI_LIFE || !this.owner.m_6084_()) {
+                // the two walls crash together in the middle: everyone carried, and everyone caught between them, slammed down
+                Vec3 front = this.front();
+                if (this.crash && this.owner.m_6084_()) {
+                    for (LivingEntity body : PikaMoves.foes(this.owner, front, TSUNAMI_LENGTH * 0.5 + 2.0)) {
+                        Vec3 rel = body.m_20182_().m_82546_(front);
+                        if (!this.caught.contains(body) && Math.abs(rel.m_82526_(this.along)) <= TSUNAMI_LENGTH * 0.5
+                            && Math.abs(rel.m_82526_(this.in)) < 4.0) {
+                            this.caught.add(body);
+                        }
+                    }
+                    Impact.quake(this.level, front, 30.0, 0.7F, 14);
+                    sound(this.owner, front, GuraSounds.WAVE, 2.0F, 0.8F);
+                }
                 for (LivingEntity body : this.caught) {
                     if (body.m_6084_()) {
-                        body.m_20334_(this.step.f_82479_ * 0.5, -0.8, this.step.f_82481_ * 0.5);
+                        body.f_19802_ = 0;
+                        body.m_6469_(StyleCombat.of(this.owner), 5.0F);
+                        body.m_20334_(this.in.f_82479_ * 0.3, -0.9, this.in.f_82481_ * 0.3);
                         body.f_19864_ = true;
-                        downOnLanding(this.level, body, 60);
+                        downOnLanding(this.level, body, 70);
                     }
                 }
                 return true;
             }
-            Vec3 front = this.start.m_82549_(this.step.m_82490_(this.age));
-            Vec3 g = ground(this.level, new Vec3(front.f_82479_, this.groundY, front.f_82481_), 6.0, 10.0);
+            Vec3 front = this.front();
+            Vec3 g = sea(this.level, new Vec3(front.f_82479_, this.groundY, front.f_82481_));
             if (g != null) {
                 this.groundY += (g.f_82480_ - this.groundY) * 0.5;
             }
             double height = TSUNAMI_HEIGHT * Math.min(1.0, this.age / (double) TSUNAMI_RISE);
+            if (this.age < TSUNAMI_RISE / 2) {
+                return false; // still rising out of the water
+            }
             Vec3 middle = new Vec3(front.f_82479_, this.groundY + height * 0.5, front.f_82481_);
-            for (LivingEntity body : PikaMoves.foes(this.owner, middle, TSUNAMI_WIDTH * 0.5 + 2.0)) {
+            for (LivingEntity body : PikaMoves.foes(this.owner, middle, TSUNAMI_LENGTH * 0.5 + 2.0)) {
                 if (this.caught.contains(body)) {
                     continue;
                 }
                 Vec3 rel = body.m_20182_().m_82546_(front);
-                double along = rel.m_82526_(this.flat);
-                double lateral = rel.m_82526_(this.side);
+                double ahead = rel.m_82526_(this.in);
+                double lengthwise = rel.m_82526_(this.along);
                 double up = body.m_20186_() - this.groundY;
-                if (Math.abs(lateral) <= TSUNAMI_WIDTH * 0.5 && along > -3.0 && along < 1.5 && up > -2.0 && up < height + 1.0) {
+                if (Math.abs(lengthwise) <= TSUNAMI_LENGTH * 0.5 && ahead > -3.0 && ahead < 1.5 && up > -2.0 && up < height + 1.0) {
                     this.caught.add(body);
                     body.f_19802_ = 0;
                     body.m_6469_(StyleCombat.of(this.owner), 4.0F);
                 }
             }
+            boolean rolling = this.age > TSUNAMI_RISE;
             for (LivingEntity body : this.caught) {
                 if (!body.m_6084_()) {
                     continue;
                 }
                 double up = body.m_20186_() - this.groundY;
                 double lift = up < height * 0.6 ? 0.2 : up < height ? 0.04 : -0.1;
-                body.m_20334_(this.step.f_82479_, lift, this.step.f_82481_);
+                body.m_20334_(rolling ? this.step.f_82479_ : 0.0, lift, rolling ? this.step.f_82481_ : 0.0);
                 body.f_19864_ = true;
                 body.f_19789_ = 0.0F;
                 if (this.age % 8 == 0) {
@@ -705,7 +861,8 @@ public final class GuraMoves {
                 Vec3 look = player.m_20154_();
                 Vec3 fist = fist(player);
                 double reach = 12.0 + 10.0 * charge;
-                fx(player, CRACK, 1, fist.m_82549_(look.m_82490_(0.6)), look, 0, 0, 0, 2.0 + 2.0 * charge, ++seeds);
+                fx(player, CRACK, 1, fist.m_82549_(look.m_82490_(0.6)), look, 0, 0, 0, 1.2 + 1.0 * charge, ++seeds);
+                ConquerorAura.mixed(player, fist.m_82549_(look.m_82490_(0.6)), 3.0, 6, -1.2);
                 fx(player, SHOCK, 1, fist, look, 0.3, 0.6 + 0.4 * charge, 0, reach, ++seeds);
                 shock(player, fist, look, reach, 18.0, 7.0F + 8.0F * charge, 2.2 + 2.0 * charge, charge >= 0.5F, null);
                 Impact.quake((ServerLevel) player.m_9236_(), fist, 24.0, 0.6F, 12);
@@ -747,7 +904,8 @@ public final class GuraMoves {
         PieceNetwork.around(player, new com.hexhaki.piece.network.S2CClash(++frames, struck.f_82479_, struck.f_82480_, struck.f_82481_,
             (float) way.f_82479_, (float) way.f_82481_, 1.6F + 1.0F * charge, 0, 0, player.m_19879_(), target.m_19879_(), 0));
         Vec3 behind = struck.m_82549_(way.m_82490_(target.m_20205_() * 0.5 + 0.9));
-        fx(player, CRACK, 4, behind, way, 0, 0, 0, 2.2 + 2.0 * charge, ++seeds);
+        fx(player, CRACK, 4, behind, way, 0, 0, 0, 1.3 + 1.0 * charge, ++seeds);
+        ConquerorAura.mixed(player, behind, 4.0 + 2.0 * charge, 10, -(behind.f_82480_ - target.m_20186_()));
         fx(player, SHOCK, 2, struck, way, 0.28, 0.6 + 0.4 * charge, 0, 10.0 + 8.0 * charge, ++seeds);
         Set<Integer> skip = new HashSet<>();
         skip.add(target.m_19879_());
@@ -791,6 +949,7 @@ public final class GuraMoves {
             fx(player, RIFT, ++seeds, start, flat, 0, 0, 0, RIFT_LENGTH, ticks);
             fx(player, QUAKE, 3, start, flat, 0.6, 0, 0, 3.5, ++seeds);
             Impact.quake(level, start, 30.0, 0.8F, 14);
+            ConquerorAura.mixed(player, start.m_82520_(0, 0.3, 0), 3.5, 8, -0.3);
             sound(player, start, GuraSounds.QUAKE, 2.0F, 1.0F);
             sound(player, start, GuraSounds.CRUMBLE, 1.8F, 0.9F);
             LIVE.add(new Rift(level, player, start, flat));
@@ -876,6 +1035,7 @@ public final class GuraMoves {
             }
             if (this.age % 4 == 0) {
                 Vec3 p = this.start.m_82549_(this.flat.m_82490_(d1));
+                ConquerorAura.mixed(this.owner, new Vec3(p.f_82479_, this.y + 0.3, p.f_82481_), 2.5, 3, -0.3);
                 sound(this.owner, new Vec3(p.f_82479_, this.y, p.f_82481_), GuraSounds.CRUMBLE, 1.2F, 0.9F + 0.04F * (this.age % 5));
             }
             return d1 >= RIFT_LENGTH || !this.owner.m_6084_();
@@ -906,6 +1066,9 @@ public final class GuraMoves {
             PikaMoves.hit(player, body, (float) Math.min(8.0, 1.0 + fall * 0.3), out.m_82490_(0.6 + 0.8 * strength).m_82520_(0, 0.35, 0), false);
         }
         Impact.quake(level, feet, radius * 3.0, (float) (0.3 + 0.5 * strength), 10);
+        if (strength >= 0.3) {
+            ConquerorAura.mixed(player, feet.m_82520_(0, 0.3, 0), radius * 0.6, 5, -0.3);
+        }
         sound(player, feet, GuraSounds.BOOM, (float) (0.7 + 0.8 * strength), 1.25F - 0.25F * (float) strength);
     }
 
@@ -924,6 +1087,11 @@ public final class GuraMoves {
         s.lastFall = onGround ? 0.0F : player.f_19789_;
         if (s.shakeSince >= 0) {
             shakeTick(player, s, now);
+        }
+        // 3.1.2: the Conqueror's lightning crackling round the gathering quake fist (with Ryou on and the Conqueror's Haki awakened)
+        long gathering = s.chargeSince >= 0 ? now - s.chargeSince : s.fistSince >= 0 ? now - s.fistSince : -1;
+        if (gathering >= 4 && gathering % 6 == 0) {
+            ConquerorAura.mixed(player, fist(player), 1.2 + 0.8 * Math.min(1.0, gathering / 40.0), 3, -1.3);
         }
         if (s.chargeSince >= 0 && now - s.chargeSince > KAISHIN_FULL + 40) {
             useUp(player);

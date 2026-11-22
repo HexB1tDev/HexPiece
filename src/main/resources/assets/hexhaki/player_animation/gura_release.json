@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "gura_release",
- "author": "HexPiece 2.9.0",
+ "author": "HexPiece 3.1.2",
  "description": "Gura Gura: Kaishin let go: the fist driven out into the air, the air shattering.",
  "emote": {
   "beginTick": 0,
@@ -12,34 +12,6 @@
   "degrees": true,
   "easeBeforeKeyframe": true,
   "moves": [
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "pitch": 0.0
-    }
-   },
    {
     "tick": 0,
     "easing": "constant",
@@ -143,34 +115,6 @@
     "easing": "constant",
     "leftArm": {
      "bend": -12.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "z": -0.1
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "pitch": 0.0
     }
    },
    {
@@ -282,34 +226,6 @@
     "tick": 4,
     "easing": "outback",
     "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "z": -0.1
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
      "yaw": 31.0
     }
    },
@@ -409,34 +325,6 @@
     "easing": "outback",
     "leftArm": {
      "bend": -42.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 12,
-    "easing": "inoutsine",
-    "body": {
-     "pitch": 0.0
     }
    },
    {

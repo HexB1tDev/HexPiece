@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "gura_punch",
- "author": "HexPiece 2.9.0",
+ "author": "HexPiece 3.1.2",
  "description": "Gura Gura: Kaishin tapped: a punch into the air, the bubble on the fist, the air cracking where it strikes.",
  "emote": {
   "beginTick": 0,
@@ -12,34 +12,6 @@
   "degrees": true,
   "easeBeforeKeyframe": true,
   "moves": [
-   {
-    "tick": 0,
-    "easing": "linear",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "linear",
-    "body": {
-     "pitch": 0.0
-    }
-   },
    {
     "tick": 0,
     "easing": "linear",
@@ -115,34 +87,6 @@
     "easing": "linear",
     "rightArm": {
      "bend": -4.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "insine",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "insine",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "insine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "insine",
-    "body": {
-     "pitch": 0.0
     }
    },
    {
@@ -226,34 +170,6 @@
     "tick": 2,
     "easing": "outexpo",
     "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
-     "z": -0.06
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
      "yaw": 22.0
     }
    },
@@ -331,34 +247,6 @@
     "tick": 4,
     "easing": "outback",
     "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "z": -0.06
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
      "yaw": 25.0
     }
    },
@@ -430,34 +318,6 @@
     "easing": "outback",
     "rightArm": {
      "bend": -2.0
-    }
-   },
-   {
-    "tick": 8,
-    "easing": "inoutsine",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 8,
-    "easing": "inoutsine",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 8,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 8,
-    "easing": "inoutsine",
-    "body": {
-     "pitch": 0.0
     }
    },
    {

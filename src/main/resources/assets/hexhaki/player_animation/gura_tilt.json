@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "gura_tilt",
- "author": "HexPiece 2.9.0",
+ "author": "HexPiece 3.1.2",
  "description": "Gura Gura: the air pulled down, the island tilted.",
  "emote": {
   "beginTick": 0,
@@ -12,34 +12,6 @@
   "degrees": true,
   "easeBeforeKeyframe": true,
   "moves": [
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "pitch": 4.0
-    }
-   },
    {
     "tick": 0,
     "easing": "constant",
@@ -143,34 +115,6 @@
     "easing": "constant",
     "leftArm": {
      "bend": -8.0
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 2,
-    "easing": "outexpo",
-    "body": {
-     "pitch": 0.0
     }
    },
    {
@@ -282,34 +226,6 @@
     "tick": 6,
     "easing": "outsine",
     "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outsine",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outsine",
-    "body": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outsine",
-    "body": {
      "yaw": 0.0
     }
    },
@@ -409,34 +325,6 @@
     "easing": "outsine",
     "leftArm": {
      "bend": -50.0
-    }
-   },
-   {
-    "tick": 14,
-    "easing": "inoutsine",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 14,
-    "easing": "inoutsine",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 14,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 14,
-    "easing": "inoutsine",
-    "body": {
-     "pitch": 0.0
     }
    },
    {

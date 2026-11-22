@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "gura_gekishin",
- "author": "HexPiece 2.9.0",
+ "author": "HexPiece 3.1.2",
  "description": "Gura Gura: Gekishin: the quake driven point-blank into them, lunging.",
  "emote": {
   "beginTick": 0,
@@ -12,34 +12,6 @@
   "degrees": true,
   "easeBeforeKeyframe": true,
   "moves": [
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "y": -0.06
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "body": {
-     "pitch": 0.0
-    }
-   },
    {
     "tick": 0,
     "easing": "constant",
@@ -143,90 +115,6 @@
     "easing": "constant",
     "leftArm": {
      "bend": -20.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightLeg": {
-     "pitch": 18.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "rightLeg": {
-     "bend": 14.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftLeg": {
-     "pitch": -26.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "constant",
-    "leftLeg": {
-     "bend": 34.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "y": -0.04
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "z": -0.15
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "body": {
-     "pitch": 0.0
     }
    },
    {
@@ -335,90 +223,6 @@
     }
    },
    {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightLeg": {
-     "pitch": 22.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "rightLeg": {
-     "bend": 10.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftLeg": {
-     "pitch": -38.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 1,
-    "easing": "outexpo",
-    "leftLeg": {
-     "bend": 40.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "y": -0.04
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "z": -0.15
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "body": {
-     "pitch": 0.0
-    }
-   },
-   {
     "tick": 4,
     "easing": "outback",
     "body": {
@@ -524,90 +328,6 @@
     }
    },
    {
-    "tick": 4,
-    "easing": "outback",
-    "rightLeg": {
-     "pitch": 22.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "rightLeg": {
-     "bend": 10.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftLeg": {
-     "pitch": -38.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 4,
-    "easing": "outback",
-    "leftLeg": {
-     "bend": 40.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "body": {
-     "x": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "body": {
-     "y": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "body": {
-     "z": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "body": {
-     "pitch": 0.0
-    }
-   },
-   {
     "tick": 10,
     "easing": "inoutsine",
     "body": {
@@ -710,62 +430,6 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -4.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "rightLeg": {
-     "bend": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "yaw": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "inoutsine",
-    "leftLeg": {
-     "bend": 0.0
     }
    }
   ]

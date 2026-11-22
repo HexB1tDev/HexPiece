@@ -45,6 +45,11 @@ public final class ConquerorSparksClient {
                     HakiBolts.sparks(level, user, feet.f_82479_, feet.f_82480_, feet.f_82481_, ConquerorSparks.blade(base, tip, 11, 0.0, m.ticks()), 1.1,
                         0.9F);
                 }
+                case ConquerorAura.MIXED -> {
+                    // 3.1.2: the Conqueror's lightning mixed into a Gura quake at a point (silent: the quake has its own sounds)
+                    HakiBolts.sparks(level, user, m.x(), m.y(), m.z(), ConquerorSparks.burst(m.size(), Math.max(2, Math.min(14, m.id())), m.bx(),
+                        m.ticks()), 0.9, 0.0F);
+                }
                 default -> {
                 }
             }

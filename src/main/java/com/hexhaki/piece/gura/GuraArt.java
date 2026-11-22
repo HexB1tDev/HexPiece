@@ -101,28 +101,40 @@ public final class GuraArt {
 
     // ------------------------------------------------------------------------------------------------------ the air cracked like glass
 
-    /** How long the air stays cracked (ticks): it forms in 2, holds, and shatters away from {@link #CRACK_HOLD}. */
-    public static final double CRACK_LIFE = 26.0;
-    public static final double CRACK_HOLD = 8.0;
-    static final int SPOKES = 13;
+    /**
+     * How long the air stays cracked (ticks). 3.1.2 (the owner: "it's too large and it's like spawning instantly. Like it should crack
+     * slowly, and the lines of the crack should be way slimmer. I mean, it should actually be like a glass"): its cracks run out over
+     * {@link #CRACK_GROW} ticks in little jumps, as glass gives, hold, and it shatters away from {@link #CRACK_HOLD}.
+     */
+    public static final double CRACK_LIFE = 44.0;
+    public static final double CRACK_HOLD = 26.0;
+    public static final double CRACK_GROW = 12.0;
+    static final int SPOKES = 11;
     static final int STEPS = 6;
-    static final double[] RINGS = {0.28, 0.52, 0.78};
-    /** One web's spokes: [spoke][step] (angle, radius fraction) worked out for its seed. */
+    static final double[] RINGS = {0.3, 0.55, 0.8};
+    /** One web's spokes: [spoke][step] (angle, radius fraction) worked out for its seed; each spoke's start and how long it runs. */
     static final double[] SPOKE_A = new double[SPOKES * (STEPS + 1)];
     static final double[] SPOKE_R = new double[SPOKES * (STEPS + 1)];
+    static final double[] REACH = new double[SPOKES];
 
-    static void web(int seed) {
+    static void web(int seed, double age) {
         for (int i = 0; i < SPOKES; i++) {
-            double a0 = Math.PI * 2.0 * (i + 0.35 * (FireMesh.rand(seed, i) - 0.5)) / SPOKES;
-            double length = 0.72 + 0.28 * FireMesh.rand(seed, 40 + i);
+            double a0 = Math.PI * 2.0 * (i + 0.45 * (FireMesh.rand(seed, i) - 0.5)) / SPOKES;
+            double length = 0.65 + 0.35 * FireMesh.rand(seed, 40 + i);
             double a = a0;
             for (int k = 0; k <= STEPS; k++) {
                 if (k > 0) {
-                    a += 0.22 * (FireMesh.rand(seed, 100 + i * 13 + k) - 0.5);
+                    a += 0.26 * (FireMesh.rand(seed, 100 + i * 13 + k) - 0.5);
                 }
                 SPOKE_A[i * (STEPS + 1) + k] = a;
                 SPOKE_R[i * (STEPS + 1) + k] = length * k / STEPS * (k == 0 ? 0.0 : 0.85 + 0.3 * FireMesh.rand(seed, 200 + i * 7 + k));
             }
+            // each crack starts on its own (up to 3 ticks late) and runs out in little jumps, a pause between each, as glass gives
+            double start = 3.0 * FireMesh.rand(seed, 60 + i);
+            double run = CRACK_GROW - 3.0 - 2.0 * FireMesh.rand(seed, 70 + i);
+            double t = clamp((age - start) / run) * 8.0;
+            double hop = Math.floor(t);
+            REACH[i] = Math.min(1.0, (hop + ease((t - hop) * 3.0)) / 8.0);
         }
     }
 
@@ -141,9 +153,10 @@ public final class GuraArt {
 
     /**
      * The air cracked like glass at ({@code x}, {@code y}, {@code z}) (refs 06, 15, 19, 39, 47): a web {@code radius} across in the
-     * plane square to ({@code nx}, {@code ny}, {@code nz}) (unit: the way the fist struck), {@code age} ticks old. Its spokes shoot out in
-     * two ticks with a flash at the middle, its broken rings join them, white cores in a cyan glow; from {@link #CRACK_HOLD} it breaks
-     * up: the lines drift apart and fade and shards of it fly off, gone by {@link #CRACK_LIFE}.
+     * plane square to ({@code nx}, {@code ny}, {@code nz}) (unit: the way the fist struck), {@code age} ticks old. A small flash where it
+     * struck; its cracks run out from there one by one in little jumps over {@link #CRACK_GROW} ticks, side cracks branching off them,
+     * the broken rings closing between them as they pass; hair-thin white lines with a faint cyan edge; from {@link #CRACK_HOLD} it
+     * breaks up: the pieces drift apart and fade and shards of it fall away, gone by {@link #CRACK_LIFE}.
      */
     public static void crack(FireMesh.Sink sink, double x, double y, double z, double nx, double ny, double nz, double radius, double age,
                              int seed) {
@@ -151,24 +164,22 @@ public final class GuraArt {
             return;
         }
         FireMesh.basis(nx, ny, nz, B);
-        web(seed);
-        double grow = ease(age / 2.0);
+        web(seed, age);
         double broken = clamp((age - CRACK_HOLD) / (CRACK_LIFE - CRACK_HOLD - 2.0));
         double alpha = 1.0 - broken * broken;
-        double core = Math.max(0.03, radius * 0.026);
-        double glow = core * 5.5;
-        double flicker = age < CRACK_HOLD ? 0.85 + 0.15 * Math.sin(age * 5.0 + seed) : 1.0;
-        // the flash where the fist struck
-        if (age < 5.0) {
-            double f = 1.0 - age / 5.0;
-            FireMesh.shell(sink, x, y, z, radius * (0.18 + 0.2 * ease(age / 2.0)), CORE, 0.9 * f, 0.0);
-            FireMesh.shell(sink, x, y, z, radius * (0.35 + 0.35 * ease(age / 3.0)), GLOW, 0.35 * f, 0.0);
+        double core = Math.max(0.012, radius * 0.011);
+        double glow = core * 3.2;
+        // a small flash where the fist struck
+        if (age < 3.0) {
+            double f = 1.0 - age / 3.0;
+            FireMesh.shell(sink, x, y, z, radius * 0.1, CORE, 0.75 * f, 0.0);
+            FireMesh.shell(sink, x, y, z, radius * 0.25, GLOW, 0.2 * f, 0.0);
         }
-        double drift = broken * radius * 0.35;
-        double push = broken * radius * 0.25;
-        // the spokes
+        double drift = broken * radius * 0.25;
+        double push = broken * radius * 0.2;
+        // the cracks, and the side cracks off them
         for (int i = 0; i < SPOKES; i++) {
-            double reach = grow;
+            double reach = REACH[i];
             for (int k = 0; k < STEPS; k++) {
                 int j = i * (STEPS + 1) + k;
                 double r0 = SPOKE_R[j];
@@ -180,23 +191,30 @@ public final class GuraArt {
                 double a0 = SPOKE_A[j];
                 double a1 = SPOKE_A[j] + (SPOKE_A[j + 1] - SPOKE_A[j]) * t;
                 double e1 = r0 + (r1 - r0) * t;
-                // each piece of the broken web drifts out from the middle as it shatters
                 double out = drift * (0.5 + r0);
-                segment(sink, x, y, z, radius, a0, r0, a1, e1, out, push * (0.4 + 0.6 * FireMesh.rand(seed, 300 + j)), core, glow,
-                    alpha * flicker * (1.0 - 0.35 * r0));
+                double p = push * (0.4 + 0.6 * FireMesh.rand(seed, 300 + j));
+                segment(sink, x, y, z, radius, a0, r0, a1, e1, out, p, core * (1.0 - 0.4 * r0), glow, alpha * (1.0 - 0.3 * r0));
+                if ((k == 2 || k == 4) && t >= 1.0 && FireMesh.rand(seed, 400 + j) < 0.7) {
+                    double side = FireMesh.rand(seed, 420 + j) < 0.5 ? 1.0 : -1.0;
+                    double grown = clamp((reach - r1) / 0.12);
+                    double ab = a1 + side * (0.35 + 0.3 * FireMesh.rand(seed, 440 + j));
+                    double eb = r1 + (0.1 + 0.12 * FireMesh.rand(seed, 460 + j)) * grown;
+                    segment(sink, x, y, z, radius, a1, r1, ab, eb, out, p, core * 0.6, glow * 0.7, alpha * 0.8);
+                }
             }
         }
-        // the broken rings joining them (a third of each ring's pieces missing)
+        // the broken rings closing between the cracks as they pass (a third of each ring's pieces missing)
         for (int ring = 0; ring < RINGS.length; ring++) {
             double f = RINGS[ring];
-            if (grow < f) {
-                continue;
-            }
             for (int i = 0; i < SPOKES; i++) {
                 if (FireMesh.rand(seed, 500 + ring * 31 + i) < 0.32) {
                     continue;
                 }
                 int n = (i + 1) % SPOKES;
+                double closed = clamp((Math.min(REACH[i], REACH[n]) - f) / 0.15);
+                if (closed <= 0.0) {
+                    continue;
+                }
                 double fa = f * (0.92 + 0.16 * FireMesh.rand(seed, 600 + ring * 31 + i));
                 double fb = f * (0.92 + 0.16 * FireMesh.rand(seed, 600 + ring * 31 + n));
                 double aa = spokeAngle(i, fa);
@@ -204,27 +222,32 @@ public final class GuraArt {
                 if (ab < aa) {
                     ab += Math.PI * 2.0;
                 }
-                // a kink in the middle, as glass breaks
+                // a kink in the middle, as glass breaks; drawn from one crack across to the next
                 double am = (aa + ab) * 0.5;
                 double fm = (fa + fb) * 0.5 * (0.9 + 0.12 * FireMesh.rand(seed, 700 + ring * 31 + i));
                 double out = drift * (0.5 + f);
                 double p = push * (0.4 + 0.6 * FireMesh.rand(seed, 800 + ring * 31 + i));
-                segment(sink, x, y, z, radius, aa, fa, am, fm, out, p, core * 0.85, glow * 0.8, alpha * flicker * (0.95 - 0.3 * f));
-                segment(sink, x, y, z, radius, am, fm, ab, fb, out, p, core * 0.85, glow * 0.8, alpha * flicker * (0.95 - 0.3 * f));
+                double first = Math.min(1.0, closed * 2.0);
+                double second = Math.max(0.0, closed * 2.0 - 1.0);
+                double a = alpha * (0.9 - 0.3 * f);
+                segment(sink, x, y, z, radius, aa, fa, aa + (am - aa) * first, fa + (fm - fa) * first, out, p, core * 0.75, glow * 0.8, a);
+                if (second > 0.0) {
+                    segment(sink, x, y, z, radius, am, fm, am + (ab - am) * second, fm + (fb - fm) * second, out, p, core * 0.75, glow * 0.8, a);
+                }
             }
         }
-        // shards of it flying off as it breaks
+        // shards of it falling away as it breaks
         if (broken > 0.0) {
-            for (int i = 0; i < 16; i++) {
+            for (int i = 0; i < 14; i++) {
                 double a = Math.PI * 2.0 * FireMesh.rand(seed, 900 + i);
-                double r = radius * (0.2 + 0.7 * FireMesh.rand(seed, 920 + i)) * (1.0 + broken * 1.4);
-                double along = broken * radius * (0.4 + 0.8 * FireMesh.rand(seed, 940 + i));
-                double fall = broken * broken * radius * 0.9;
+                double r = radius * (0.2 + 0.7 * FireMesh.rand(seed, 920 + i)) * (1.0 + broken * 0.8);
+                double along = broken * radius * (0.2 + 0.5 * FireMesh.rand(seed, 940 + i));
+                double fall = broken * broken * radius * 1.2;
                 double ox = B[0] * Math.cos(a) * r + B[3] * Math.sin(a) * r + nx * along;
                 double oy = B[1] * Math.cos(a) * r + B[4] * Math.sin(a) * r + ny * along - fall;
                 double oz = B[2] * Math.cos(a) * r + B[5] * Math.sin(a) * r + nz * along;
-                FireMesh.shard(sink, x + ox, y + oy, z + oz, radius * (0.05 + 0.05 * FireMesh.rand(seed, 960 + i)), broken * 9.0, seed + i,
-                    0xD8F7FF, 0.85 * (1.0 - broken));
+                FireMesh.shard(sink, x + ox, y + oy, z + oz, radius * (0.03 + 0.03 * FireMesh.rand(seed, 960 + i)), broken * 7.0, seed + i,
+                    0xE6FAFF, 0.8 * (1.0 - broken));
             }
         }
     }
@@ -252,7 +275,7 @@ public final class GuraArt {
         double bx = x + ox + (B[0] * cb + B[3] * sb) * r1 * radius;
         double by = y + oy + (B[1] * cb + B[4] * sb) * r1 * radius;
         double bz = z + oz + (B[2] * cb + B[5] * sb) * r1 * radius;
-        line(sink, ax, ay, az, bx, by, bz, glow, GLOW, 0.62 * alpha, true);
+        line(sink, ax, ay, az, bx, by, bz, glow, GLOW, 0.35 * alpha, true);
         line(sink, ax, ay, az, bx, by, bz, core, CORE, alpha, false);
     }
 
@@ -760,10 +783,11 @@ public final class GuraArt {
      * {@code z}) on the ground and rolls on ({@code vx}, {@code vz}) a tick for {@code life} ticks, {@code age} ticks in: it rises in
      * {@code rise} ticks, its crest curling over, its height swelling in the middle and falling away at its ends, foam on its crest and at
      * its foot, spray thrown off its lip; at the end it breaks forward and falls. {@code baseY}: its foot's height now (relative to the
-     * eye, following the ground).
+     * eye, following the ground or the water). 3.1.2: it stays where it rose for {@code hold} ticks (slowly growing out of the water),
+     * then rolls (the two walls of the tsunami, left and right, rolling in to the middle).
      */
     public static void tsunami(FireMesh.Sink sink, double x, double baseY, double z, double vx, double vz, double width, double height, int life,
-                               int rise, double age, int seed) {
+                               int rise, int hold, double age, int seed) {
         double end = tsunamiLife(life);
         if (age < 0.0 || age > end) {
             return;
@@ -773,7 +797,7 @@ public final class GuraArt {
         double fz = speed < 1.0E-6 ? 1.0 : vz / speed;
         double sx = -fz;
         double sz = fx;
-        double travelled = speed * Math.min(age, life + 6.0);
+        double travelled = speed * Math.max(0.0, Math.min(age, life + 6.0) - hold);
         double cx = x + fx * travelled;
         double cz = z + fz * travelled;
         double grow = ease(age / rise);
@@ -825,8 +849,8 @@ public final class GuraArt {
                 if (j % 2 == 0 && hk > 0.6) {
                     foam(sink, cur[6 * 3], cur[6 * 3 + 1], cur[6 * 3 + 2], 0.75 + 0.45 * hk / height + lean * 0.8, fx, fz, alpha, age, seed * 31 + j);
                 }
-                if (j % 3 == 0 && hk > 0.6) {
-                    foam(sink, cur[12 * 3] + fx * 0.4, baseY + 0.3, cur[12 * 3 + 2] + fz * 0.4, 0.45 + lean * 0.6, fx, fz, alpha * 0.9, age,
+                if (j % 4 == 0 && hk > 0.6) {
+                    foam(sink, cur[12 * 3] + fx * 0.4, baseY + 0.3, cur[12 * 3 + 2] + fz * 0.4, 0.5 + lean * 0.6, fx, fz, alpha * 0.9, age,
                         seed * 37 + j);
                 }
                 // spray off the lip

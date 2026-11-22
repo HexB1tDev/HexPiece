@@ -41,6 +41,8 @@ public final class ConquerorAura {
      */
     public static final int CHARGE = 82;
     public static final int CHARGE_END = 83;
+    /** 3.1.2: the Conqueror's lightning mixed into a Gura quake (x, y, z the point, size its radius, bx the ground under it, ticks the seed). */
+    public static final int MIXED = 84;
     /** At most one burst a player this often (ticks), and the share of moves that spark. */
     static final int GAP = 8;
     static final double MOVE_CHANCE = 0.6;
@@ -144,6 +146,26 @@ public final class ConquerorAura {
         int seed = (int) (player.m_217043_().m_188500_() * Integer.MAX_VALUE);
         PieceNetwork.around(player, new S2CUoFx(kind, 0, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, (float) way.f_82479_,
             (float) way.f_82480_, (float) way.f_82481_, 0, 0, 0, (float) size, seed));
+    }
+
+    /**
+     * 3.1.2 (the owner: "if hockey Rio is activated, I think that the moves should add lightning from the Conqueror effect to it. Because
+     * if you check Blackbeard's attacks, you can see that he apparently can use Conquerors mixed with the fruit"): a burst of the
+     * Conqueror's lightning at {@code at} ({@code radius} blocks, {@code count} arcs, grounding {@code floor} blocks under it), when the
+     * player has Ryou on and the Conqueror's Haki awakened (as every other spark of it); returns whether it went.
+     */
+    public static boolean mixed(ServerPlayer player, Vec3 at, double radius, int count, double floor) {
+        try {
+            if (!awakened(player)) {
+                return false;
+            }
+            int seed = (int) (player.m_217043_().m_188500_() * Integer.MAX_VALUE);
+            PieceNetwork.around(player, new S2CUoFx(MIXED, count, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, 0, 0, 0,
+                (float) floor, 0, 0, (float) radius, seed));
+            return true;
+        } catch (RuntimeException failure) {
+            return false; // lightning never stops a move
+        }
     }
 
     /** Now and then, on its own: a Conqueror's lightning sparks off them even standing still. */

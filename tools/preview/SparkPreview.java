@@ -20,7 +20,7 @@ public final class SparkPreview {
     }
 
     public static void main(String[] args) throws Exception {
-        String[] rows = {"body 2", "body 6", "blade"};
+        String[] rows = {"body 2", "body 6", "blade", "gura burst"};
         double[] ages = {0.5, 2, 4, 6, 9, 12};
         int cw = 300;
         int ch = 300;
@@ -33,7 +33,20 @@ public final class SparkPreview {
             List<Bolt> bolts = switch (r) {
                 case 0 -> ConquerorSparks.body(2, 1.8, 0.6, 11L);
                 case 1 -> ConquerorSparks.body(6, 1.8, 0.6, 12L);
-                default -> ConquerorSparks.blade(new double[] {-0.35, 1.15, 0.45}, new double[] {-0.35, 1.9, 2.5}, 11, 0.0, 13L);
+                case 2 -> ConquerorSparks.blade(new double[] {-0.35, 1.15, 0.45}, new double[] {-0.35, 1.9, 2.5}, 11, 0.0, 13L);
+                default -> {
+                    // 3.1.2: the Conqueror's lightning mixed into a Gura quake (the fist's crack 1.5 ahead, 1.2 over the ground)
+                    List<Bolt> moved = new ArrayList<>();
+                    for (Bolt bolt : ConquerorSparks.burst(4.0, 10, -1.2, 14L)) {
+                        double[] q = bolt.points.clone();
+                        for (int i = 0; i < q.length; i += 3) {
+                            q[i + 1] += 1.2;
+                            q[i + 2] += 1.5;
+                        }
+                        moved.add(new Bolt(q, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                    }
+                    yield moved;
+                }
             };
             g.setColor(Color.WHITE);
             g.drawString(rows[r], 4, r * (ch + 16) + 13);
