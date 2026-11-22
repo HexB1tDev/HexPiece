@@ -41,6 +41,14 @@ import net.minecraftforge.fml.common.Mod;
 public final class SwordClient {
     static final ResourceLocation LAYER = HexHaki.id("piece_sword");
     static final int PRIORITY = 920;
+    /**
+     * 3.0.8 (the owner, with a screenshot of a player standing with Yoru drawn, held low at the side: "this pose is breaking every other
+     * animation"): the guard and the idle (the sword held ready, not a move) on a layer of their own under every other move (the
+     * original's Haki and style layer is 900, the fruits' 1100), so any move plays over them; the cuts, draws and sheathings stay on
+     * {@link #PRIORITY}.
+     */
+    static final ResourceLocation STANCE_LAYER = HexHaki.id("piece_sword_stance");
+    static final int STANCE_PRIORITY = 880;
     private static final Map<Integer, S2CSword> SEEN = new HashMap<>();
     private static final Map<Integer, Playing> PLAYING = new HashMap<>();
     /** 2.3.2: entity id -> the game tick it last moved (walked, jumped, crouched): the guard plays while moving, the idle when still. */
@@ -94,23 +102,33 @@ public final class SwordClient {
     }
 
     /** The player's sword layer, made once per player object. */
-    @SuppressWarnings("unchecked")
     static ModifierLayer<IAnimation> layer(AbstractClientPlayer player) {
+        return layer(player, false);
+    }
+
+    /** 3.0.8: the player's sword layer ({@code stance}: the guard's and the idle's, under every other move), made once per player. */
+    @SuppressWarnings("unchecked")
+    static ModifierLayer<IAnimation> layer(AbstractClientPlayer player, boolean stance) {
         PlayerAnimationAccess.PlayerAssociatedAnimationData data = PlayerAnimationAccess.getPlayerAssociatedData(player);
-        IAnimation existing = data.get(LAYER);
+        ResourceLocation key = stance ? STANCE_LAYER : LAYER;
+        IAnimation existing = data.get(key);
         if (existing instanceof ModifierLayer<?> layer) {
             return (ModifierLayer<IAnimation>) layer;
         }
         ModifierLayer<IAnimation> layer = new ModifierLayer<>();
-        PlayerAnimationAccess.getPlayerAnimLayer(player).addAnimLayer(PRIORITY, layer);
-        data.set(LAYER, layer);
+        PlayerAnimationAccess.getPlayerAnimLayer(player).addAnimLayer(stance ? STANCE_PRIORITY : PRIORITY, layer);
+        data.set(key, layer);
         return layer;
     }
 
-    /** The layer if it was made already (null otherwise), for reading its item channels. */
+    /**
+     * The layer playing the sword now if it was made already (null otherwise), for reading its item channels: 3.0.8, the stance's
+     * while the guard or the idle plays.
+     */
     @SuppressWarnings("unchecked")
     static ModifierLayer<IAnimation> existing(AbstractClientPlayer player) {
-        IAnimation existing = PlayerAnimationAccess.getPlayerAssociatedData(player).get(LAYER);
+        boolean stance = anim(player.m_19879_()) == SwordAnims.GUARD;
+        IAnimation existing = PlayerAnimationAccess.getPlayerAssociatedData(player).get(stance ? STANCE_LAYER : LAYER);
         return existing instanceof ModifierLayer<?> layer ? (ModifierLayer<IAnimation>) layer : null;
     }
 
@@ -124,7 +142,8 @@ public final class SwordClient {
         int anim = seen == null ? SwordAnims.NONE : seen.anim();
         int start = seen == null ? 0 : seen.start();
         Playing playing = PLAYING.get(id);
-        ModifierLayer<IAnimation> layer = layer(player);
+        boolean stance = anim == SwordAnims.GUARD;
+        ModifierLayer<IAnimation> layer = layer(player, stance);
         String name = SwordAnims.name(anim, katana(id));
         if (anim == SwordAnims.GUARD && still(level, player)) {
             name = SwordAnims.idle(katana(id));
@@ -151,6 +170,10 @@ public final class SwordClient {
         }
         boolean swap = playing != null && playing.anim() == SwordAnims.GUARD && anim == SwordAnims.GUARD;
         int fade = anim == SwordAnims.NONE ? 4 : swap ? 6 : anim == SwordAnims.GUARD ? 3 : 2;
+        if (playing != null && playing.layer() != layer) {
+            // 3.0.8: from the stance's layer to the moves' (or back): the one left fades out as the other fades in
+            playing.layer().replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTQUAD), null);
+        }
         layer.replaceAnimationWithFade(AbstractFadeModifier.standardFadeIn(fade, Ease.INOUTQUAD), player2);
         if (anim == SwordAnims.NONE) {
             PLAYING.remove(id);
