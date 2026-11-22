@@ -378,8 +378,7 @@ public final class FxPreview {
                 }
                 com.hexhaki.piece.pika.LightArt.trail(sink, pts, 20, 0.5, 1.0);
             }
-            default -> {
-            }
+            default -> GuraShots.shot(sink, eye, move); // 3.1.1: the Gura fruit's (tools/preview/GuraShots)
         }
         quads = list.size();
         list.sort((a, b) -> Double.compare(b.far, a.far));

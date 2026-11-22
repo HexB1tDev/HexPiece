@@ -18,7 +18,7 @@ public final class StylePoser {
     static float[] data(String name) {
         return CACHE.computeIfAbsent(name, n -> {
             float[] data = n.startsWith("sword_") || n.equals("style_swordsman_stance") ? SwordPoses.of(n)
-                : n.startsWith("pika_") ? PikaPoses.of(n) : StylePoses.of(n);
+                : n.startsWith("pika_") ? PikaPoses.of(n) : n.startsWith("gura_") ? GuraPoses.of(n) : StylePoses.of(n);
             return data == null ? new float[0] : data;
         });
     }

@@ -1,0 +1,15 @@
+The Gura Gura no Mi's sounds (tools/gura_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+boom1.ogg: "Boom with Rumble" by Qvantor, https://freesound.org/people/Qvantor/sounds/879263/ (CC0 1.0), from 0.0 s, 3.60 s long
+boom2.ogg: "DSGNImpt_Deep Cinematic Impact 4_ZAZZ" by zazz.sound.design, https://freesound.org/people/zazz.sound.design/sounds/754423/ (CC0 1.0), from 0.0 s, 3.20 s long
+crack1.ogg: "Glass Break" by unfa, https://freesound.org/people/unfa/sounds/221528/ (CC0 1.0), from 0.0 s, 1.91 s long
+crack2.ogg: "Glass panel shattering" by LukaCafuka, https://freesound.org/people/LukaCafuka/sounds/758207/ (CC0 1.0), from 0.0 s, 1.92 s long
+quake1.ogg: "Cracking Earthquake (cracking soil, cracking stone)" by uagadugu, https://freesound.org/people/uagadugu/sounds/222521/ (CC0 1.0), from 0.4 s, 3.00 s long
+crumble1.ogg: "Rocks Crumbling from room or cave" by ALLANZ10D, https://freesound.org/people/ALLANZ10D/sounds/155934/ (CC0 1.0), from 3.8 s, 2.50 s long
+crumble2.ogg: "Rock Smash" by NeoSpica, https://freesound.org/people/NeoSpica/sounds/512243/ (CC0 1.0), from 2.4 s, 2.00 s long
+wave1.ogg: "waves ocean crash on beach nearby wide big metallic sound.flac" by kyles, https://freesound.org/people/kyles/sounds/450634/ (CC0 1.0), from 0.5 s, 3.20 s long
+whoosh1.ogg: "Whoosh Deep Heavy" by Qvantor, https://freesound.org/people/Qvantor/sounds/877977/ (CC0 1.0), from 0.0 s, 1.60 s long
+hit1.ogg: "Heavy Slam Impact" by Qvantor, https://freesound.org/people/Qvantor/sounds/879268/ (CC0 1.0), from 0.0 s, 0.87 s long
+rumble.ogg: "Hard Earthquake.mp3" by crunchymaniac, https://freesound.org/people/crunchymaniac/sounds/678418/ (CC0 1.0), a loop from 6.0 s, 8.00 s long, 6.0 dB quieter

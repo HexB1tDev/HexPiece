@@ -48,6 +48,11 @@ public final class PieceSounds {
             String name = event[0];
             BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
         }
+        // 3.1.1: the Gura Gura no Mi's (CC0 recordings from Freesound.org, gura/GuraSounds)
+        for (String[] event : com.hexhaki.piece.gura.GuraSounds.EVENTS) {
+            String name = event[0];
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
     }
 
     /** 2.8.6: one of HexPiece's own sound events by name, or null (not one of ours, or not registered yet). */

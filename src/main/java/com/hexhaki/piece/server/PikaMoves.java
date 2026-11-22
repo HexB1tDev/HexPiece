@@ -1097,6 +1097,8 @@ public final class PikaMoves {
         double speed;
         int flown;
         int broken;
+        /** 3.1.1: what is seen and heard where it is stopped dead (the Gura fruit's Gekishin); null: the Light fruit's burst. */
+        java.util.function.BiConsumer<ServerPlayer, Vec3> stopped;
 
         Launch(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 carry, double speed) {
             this.level = level;
@@ -1166,8 +1168,12 @@ public final class PikaMoves {
                 this.body.m_20256_(new Vec3(0, Math.min(0.0, was.f_82480_), 0));
                 this.body.f_19864_ = true;
                 Vec3 at = hitAt.m_82546_(this.carry.m_82490_(0.5));
-                fx(this.owner, BURST, 0, at, Vec3.f_82478_, 0, 0, 0, 1.6, 0);
-                sound(this.owner, at, PikaSounds.HIT_HEAVY, 1.4F, 0.7F);
+                if (this.stopped != null) {
+                    this.stopped.accept(this.owner, at);
+                } else {
+                    fx(this.owner, BURST, 0, at, Vec3.f_82478_, 0, 0, 0, 1.6, 0);
+                    sound(this.owner, at, PikaSounds.HIT_HEAVY, 1.4F, 0.7F);
+                }
                 if (this.speed > 1.0) {
                     this.body.f_19802_ = 0;
                     this.body.m_6469_(StyleCombat.of(this.owner), (float) ((this.speed - 1.0) * 2.5));

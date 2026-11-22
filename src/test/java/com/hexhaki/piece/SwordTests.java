@@ -584,7 +584,8 @@ public final class SwordTests {
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.CHARGE)
                 || event.group(1).equals(com.hexhaki.piece.haki.ConquerorMix.CHARGE_HOLD)
                 || java.util.Arrays.stream(com.hexhaki.piece.dragon.UoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
-                || java.util.Arrays.stream(com.hexhaki.piece.pika.PikaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                || java.util.Arrays.stream(com.hexhaki.piece.pika.PikaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.gura.GuraSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
@@ -640,6 +641,8 @@ public final class SwordTests {
         webSounds("uo", com.hexhaki.piece.dragon.UoSounds.EVENTS, 25);
         // 2.9.0 (the owner: "The sounds are atrocious ... I keep telling you to get the sounds from the web"): the Light fruit's too
         webSounds("pika", com.hexhaki.piece.pika.PikaSounds.EVENTS, 30);
+        // 3.1.1: the Gura Gura no Mi's (tools/gura_sounds.py)
+        webSounds("gura", com.hexhaki.piece.gura.GuraSounds.EVENTS, 11);
     }
 
     /** One fruit's web sounds (sounds/piece/{folder}): as {@link #dragonSounds} checks them, at least {@code least} clips. */

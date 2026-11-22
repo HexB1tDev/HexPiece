@@ -123,6 +123,10 @@ public final class UoFx {
             com.hexhaki.piece.client.haki.ConquerorSparksClient.accept(m); // 2.9.1: the Conqueror's lightning off its user
             return;
         }
+        if (m.kind() >= 60 && m.kind() < 80) {
+            com.hexhaki.piece.client.gura.GuraFx.accept(m); // 3.1.1: the Gura fruit's moves (60 to 79) share it too
+            return;
+        }
         if (m.kind() >= 32) {
             com.hexhaki.piece.client.pika.PikaFx.accept(m); // 2.7.8: the Light fruit's moves share this message
             return;

@@ -80,6 +80,52 @@ public final class DragonTests {
         Check.that(com.hexhaki.piece.server.PikaMoves.LIGHT_SPEED < 10.0, "the light goes under the server's movement check (10 blocks a tick)");
     }
 
+    /**
+     * 3.1.1: the Gura fruit's quakes (gura/GuraArt) fit a phone's budget at every moment, all of a move's pieces at once (a full Kaishin:
+     * the crack, the shock, five craters; Kabutowari's landing; Shima Yurashi held with its two cracks and let go; the rift; the tsunami;
+     * the bubble near the eye), every vertex finite; the leap and the dash go under the server's movement check.
+     */
+    static void guraQuakes() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double speed = com.hexhaki.piece.server.GuraMoves.SHOCK_SPEED;
+        double[] heights = new double[40];
+        for (int age = 0; age <= 60; age += 2) {
+            count[0] = 0;
+            com.hexhaki.piece.gura.GuraArt.crack(sink, 0.3, -0.2, 1.6, 0, 0, 1, 5.0, age, 7);
+            com.hexhaki.piece.gura.GuraArt.shock(sink, 0.3, -0.2, 1.0, 0, 0, 1, 40.0, 0.48, 1.0, speed, age, 5);
+            for (int k = 0; k < 5; k++) {
+                com.hexhaki.piece.gura.GuraArt.quake(sink, 0.3, -1.6, 6.0 + 7.0 * k, 4.5, 0.8, age - k * 2.3, 20 + k);
+            }
+            com.hexhaki.piece.gura.GuraArt.bubble(sink, 0.4, -0.4, 1.0, 0.22, age, 3);
+            Check.that(finite[0], "Kaishin is finite at " + age);
+            Check.that(count[0] < 16000, "a full Kaishin fits a phone's budget at " + age + " (" + count[0] + " quads)");
+            count[0] = 0;
+            com.hexhaki.piece.gura.GuraArt.crack(sink, 0, 0.7, 4.0, 0, 0, -1, 2.4, age, 12);
+            com.hexhaki.piece.gura.GuraArt.quake(sink, 0, -1.6, 4.0, 7.0, 1.0, age, 13);
+            com.hexhaki.piece.gura.GuraArt.shake(sink, 0, -1.6, 0, com.hexhaki.piece.server.GuraMoves.SHAKE_RADIUS, age, 10, 6);
+            com.hexhaki.piece.gura.GuraArt.crack(sink, 1.3, 0, 0.3, 1, 0, 0, 1.7, Math.min(age, 7.5), 8);
+            com.hexhaki.piece.gura.GuraArt.crack(sink, -1.3, 0, 0.3, -1, 0, 0, 1.7, Math.min(age, 7.5), 9);
+            com.hexhaki.piece.gura.GuraArt.tilt(sink, 0, -1.6, 0, com.hexhaki.piece.server.GuraMoves.SHAKE_RADIUS, 1.0, speed, age, 6);
+            com.hexhaki.piece.gura.GuraArt.rift(sink, 0, -1.6, 1.4, 0, 1, com.hexhaki.piece.server.GuraMoves.RIFT_LENGTH,
+                com.hexhaki.piece.server.GuraMoves.RIFT_STEP, heights, age, 8);
+            com.hexhaki.piece.gura.GuraArt.tsunami(sink, 0, -1.6, 3.0, 0, com.hexhaki.piece.server.GuraMoves.TSUNAMI_SPEED,
+                com.hexhaki.piece.server.GuraMoves.TSUNAMI_WIDTH, com.hexhaki.piece.server.GuraMoves.TSUNAMI_HEIGHT,
+                com.hexhaki.piece.server.GuraMoves.TSUNAMI_LIFE, com.hexhaki.piece.server.GuraMoves.TSUNAMI_RISE, age, 11);
+            com.hexhaki.piece.gura.GuraArt.tremor(sink, 2, -1.6, 2, 6.0, age, 4);
+            Check.that(finite[0], "the ground's quakes are finite at " + age);
+            Check.that(count[0] < 16000, "every ground quake at once fits a phone's budget at " + age + " (" + count[0] + " quads)");
+        }
+        Check.that(com.hexhaki.piece.server.GuraMoves.SHOCK_SPEED * 2 < 10.0 && com.hexhaki.piece.server.GuraMoves.TSUNAMI_SPEED < 10.0,
+            "the Gura fruit's own moves go under the server's movement check (10 blocks a tick)");
+    }
+
     public static void main(String[] args) throws Exception {
         Path jar;
         try (var files = Files.list(Path.of("build"))) {
@@ -98,6 +144,7 @@ public final class DragonTests {
         keys();
         fire();
         lightTravel();
+        guraQuakes();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

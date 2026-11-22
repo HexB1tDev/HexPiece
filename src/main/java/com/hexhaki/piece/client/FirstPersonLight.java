@@ -189,6 +189,32 @@ public final class FirstPersonLight {
         return new Vec3(out[0], out[1], out[2]);
     }
 
+    /**
+     * 3.1.1: where {@code player}'s right fist is (world) while they play one of the Gura fruit's clips (the quake bubble is drawn on
+     * it), or null in any other clip: in first person the game's own right hand (LightArt.firstPersonFingertip, turned with the look), in
+     * third person the clip's own pose this frame.
+     */
+    public static Vec3 fist(Player player, float partial) {
+        Clip clip = CLIPS.get(player.m_19879_());
+        if (clip == null || !clip.name.startsWith("gura_")) {
+            return null;
+        }
+        Minecraft minecraft = Minecraft.m_91087_();
+        boolean view = player == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON;
+        if (view) {
+            double[] v = com.hexhaki.piece.pika.LightArt.firstPersonFingertip(-0.05);
+            Vec3 forward = player.m_20252_(partial);
+            Vec3 right = forward.m_82537_(new Vec3(0, 1, 0));
+            right = right.m_82556_() < 1.0E-6 ? new Vec3(-1, 0, 0) : right.m_82541_();
+            Vec3 up = right.m_82537_(forward);
+            return player.m_20299_(partial).m_82549_(right.m_82490_(v[0])).m_82549_(up.m_82490_(v[1])).m_82549_(forward.m_82490_(-v[2]));
+        }
+        float[][] pose = StylePoser.sample(clip.name, now() - clip.start + partial);
+        double[] out = new double[3];
+        place(player, false, partial, Vec3.f_82478_, StyleRig.limb(pose, StyleRig.RIGHT_ARM, 0.0, 0.95, 0.0), out);
+        return new Vec3(out[0], out[1], out[2]);
+    }
+
     // ------------------------------------------------------------------------------------------------------ first person
 
     @SubscribeEvent

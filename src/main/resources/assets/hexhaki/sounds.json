@@ -729,5 +729,89 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "piece.gura.boom": {
+    "subtitle": "subtitles.hexhaki.piece.gura.boom",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/boom1",
+        "attenuation_distance": 80
+      },
+      {
+        "name": "hexhaki:piece/gura/boom2",
+        "attenuation_distance": 80
+      }
+    ]
+  },
+  "piece.gura.crack": {
+    "subtitle": "subtitles.hexhaki.piece.gura.crack",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/crack1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "hexhaki:piece/gura/crack2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.gura.rumble": {
+    "subtitle": "subtitles.hexhaki.piece.gura.rumble",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/rumble",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.gura.quake": {
+    "subtitle": "subtitles.hexhaki.piece.gura.quake",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/quake1",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "piece.gura.crumble": {
+    "subtitle": "subtitles.hexhaki.piece.gura.crumble",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/crumble1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "hexhaki:piece/gura/crumble2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.gura.wave": {
+    "subtitle": "subtitles.hexhaki.piece.gura.wave",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/wave1",
+        "attenuation_distance": 80
+      }
+    ]
+  },
+  "piece.gura.whoosh": {
+    "subtitle": "subtitles.hexhaki.piece.gura.whoosh",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/whoosh1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "piece.gura.hit": {
+    "subtitle": "subtitles.hexhaki.piece.gura.hit",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/hit1",
+        "attenuation_distance": 48
+      }
+    ]
   }
 }

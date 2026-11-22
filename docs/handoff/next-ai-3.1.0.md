@@ -488,6 +488,9 @@ Keys as the owner set them for every fruit (Z X C V B, the attack and use button
 | B | Ground Splitter | both fists into the ground: a rift runs out ahead about 36 blocks, opening block by block (Scars, self-repairing), everyone along it thrown up and ragdolled | 28 37 41 55 |
 | passive | Tremor landing | no fall damage; a hard landing quakes the ground round the feet (a small ring that knocks foes back). Unasked: ask the owner before adding it | 50 |
 
+**Asked (AskUserQuestion, next session): the owner chose "Go ahead" for the whole set above and "Add it" for the passive.** Being
+built as 3.1.1 (see next-ai-3.1.1.md once it exists).
+
 ### How to build it (what was found in the code; the Light fruit is the template)
 
 - Files to add: `server/GuraKit.java` (the move list, `action` kinds 0 key down, 1 key up (only for moves whose key text says "hold"),
