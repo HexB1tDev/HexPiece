@@ -16,7 +16,8 @@ import net.minecraftforge.fml.common.Mod;
 
 /**
  * 3.2.0 (the owner: "an energy bar for the fruits, appearing over the food bar with a custom good-looking bar"; asked, "Moves spend it"):
- * one's own fruit energy (server/FruitEnergy, told by S2CEnergy) drawn over the food bar (ui/EnergyBarView) while one has a fruit with
+ * one's own fruit energy (server/FruitEnergy, told by S2CEnergy) drawn over the food bar (ui/EnergyBarView; 3.2.1: in one colour
+ * whatever the fruit, the owner: "the energy bars should be universal") while one has a fruit with
  * moves of HexPiece's, in survival or adventure (where the food bar is); up a row while air bubbles show. The bar eases to the energy;
  * what a move just cost stays white a moment, then drains; a refused move flashes it.
  */
@@ -74,12 +75,11 @@ public final class EnergyBar {
         if (player == null || !shows(player)) {
             return;
         }
-        Fruit fruit = FruitClient.fruit(player.m_19879_());
         int shift = player.m_20069_() ? 10 : 0;
         GuiCanvas canvas = new GuiCanvas(graphics, minecraft.f_91062_, null);
         double time = clock + partial;
         double denied = Math.max(0.0, 1.0 - (time - deniedAt) / 12.0);
-        EnergyBarView.draw(canvas, width / 2 + 91 - EnergyBarView.EMBLEM / 2, height - 49 - shift, shown / 100.0, chip / 100.0, fruit.colour & 0xFFFFFF,
+        EnergyBarView.draw(canvas, width / 2 + 91 - EnergyBarView.EMBLEM / 2, height - 49 - shift, shown / 100.0, chip / 100.0, EnergyBarView.COLOUR,
             time, denied);
     }
 

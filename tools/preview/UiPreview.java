@@ -251,8 +251,10 @@ public class UiPreview {
             });
         }
         // 3.2.0: the fruit energy bar over the food bar (ui/EnergyBarView), at GUI scale 3, in four states
-        Object[][] bars = {{"Hie Hie, full", 1.0, 1.0, 0x9FE6FF, 0.0}, {"Gura Gura, a move just spent", 0.55, 0.8, 0xE8E2C8, 0.0},
-            {"Magu Magu, low (blinking)", 0.18, 0.18, 0xFF5A1E, 0.0}, {"Pika Pika, refused", 0.06, 0.06, 0xFFD23A, 1.0}};
+        // 3.2.1: one colour whatever the fruit (the owner: "the energy bars should be universal")
+        int one = com.hexhaki.piece.ui.EnergyBarView.COLOUR;
+        Object[][] bars = {{"full", 1.0, 1.0, one, 0.0, 30.0}, {"a move just spent", 0.55, 0.8, one, 0.0, 30.0},
+            {"low (blinking)", 0.18, 0.18, one, 0.0, 36.0}, {"refused", 0.06, 0.06, one, 1.0, 30.0}};
         save(dir, "energy", 230 * 3, 4 * 64 * 3, 1, c -> {
             c.scale(3.0F);
             for (int i = 0; i < bars.length; i++) {
@@ -269,7 +271,7 @@ public class UiPreview {
                     c.fill(mid + 91 - (k + 1) * 8 + 1, bottom - 39, mid + 91 - k * 8, bottom - 32, 0xFF9A6A30);
                 }
                 com.hexhaki.piece.ui.EnergyBarView.draw(c, mid + 91 - com.hexhaki.piece.ui.EnergyBarView.EMBLEM / 2, bottom - 49,
-                    (Double) bars[i][1], (Double) bars[i][2], (Integer) bars[i][3], 30.0, (Double) bars[i][4]);
+                    (Double) bars[i][1], (Double) bars[i][2], (Integer) bars[i][3], (Double) bars[i][5], (Double) bars[i][4]);
             }
         });
         System.out.println("wrote previews to " + dir);

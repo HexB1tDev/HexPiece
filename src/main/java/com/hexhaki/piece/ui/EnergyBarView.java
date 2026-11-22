@@ -19,6 +19,8 @@ public final class EnergyBarView {
     public static final int HEIGHT = 7;
     public static final int SLANT = 3;
     public static final int EMBLEM = 11;
+    /** 3.2.1: the one colour of every fruit's energy (a violet: none of the game's own bars is violet). */
+    public static final int COLOUR = 0xA46BFF;
 
     static int argb(int alpha, int rgb) {
         return (Math.max(0, Math.min(255, alpha)) << 24) | (rgb & 0xFFFFFF);
@@ -47,7 +49,7 @@ public final class EnergyBarView {
 
     /**
      * The bar with its right end (the emblem's middle) at ({@code right}, {@code top}): {@code fill} 0 to 1 the energy, {@code chip} 0 to 1
-     * what it was a moment ago (shown in white past the fill), {@code colour} the fruit's (RGB), {@code time} in ticks (the stripes'
+     * what it was a moment ago (shown in white past the fill), {@code colour} its colour (RGB; the game draws it in {@link #COLOUR}), {@code time} in ticks (the stripes'
      * slide, the blink), {@code denied} 0 to 1 a refused move's flash (1 just refused).
      */
     public static void draw(UiCanvas c, int right, int top, double fill, double chip, int colour, double time, double denied) {

@@ -11,7 +11,7 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar).
 
 Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.5 to 3.1.9 are pushed and green (3.1.8: Build #149,
-Release #108; 3.1.9: Build #151, Release #109). 3.2.0 (8zf: the Devil Fruits tab, the ranks, the energy bar) is pushed. 3.1.9, the Hie Hie no Mi (Aokiji's ice fruit), is BUILT and released (sections 8zc, 8zd, 8ze: real ice blocks for
+Release #108; 3.1.9: Build #151, Release #109; 3.2.0: Build #152, Release #110). 3.2.0 (8zf: the Devil Fruits tab, the ranks, the energy bar) is green and 3.2.1 (8zg: one energy bar colour) is pushed. 3.1.9, the Hie Hie no Mi (Aokiji's ice fruit), is BUILT and released (sections 8zc, 8zd, 8ze: real ice blocks for
 frozen bodies and the ground, smooth glassy ice for the rest, at the owner's word). Next: 8za's item 3 (the fruits' Creative tab,
 rarity ranks, the energy bar): built as 3.2.0, section 8zf. The cloud environment is the new personal
 "HexPiece" (env_016v9rNSffz2fds2ha514nhY: tenor.com, media.tenor.com, media1.tenor.com, freesound.org, cdn.freesound.org,
@@ -1161,16 +1161,25 @@ Read 8zc (the plan) and 8zd (the owner's answers) first. What the code does (not
   `COSTS` per cooldown key (HudTests.ranks: every move with a cooldown listed), a "[RMB]" move's tap (cooldown <= 20) 35%; creative and
   spectator never spend. Not Gear 5 (the original's code): say so if the owner asks. `network/S2CEnergy` (message 19, protocol 13):
   the tenths and a refused flag, sent when the whole number changes.
-- **Bar** (`ui/EnergyBarView`, pure, UiPreview "energy"; `client/EnergyBar`, overlay "hexpiece_fruit_energy" above all): 81 x 7 GUI px,
+- **Bar** (`ui/EnergyBarView`, pure, UiPreview "energy"; `client/EnergyBar`, overlay "hexpiece_fruit_energy" above all; one colour
+  since 3.2.1, 8zg): 81 x 7 GUI px,
   slanted 3, its right end (an 11 px swirled fruit emblem with a stem and leaf) at the food row's right end, 49 px over the screen's
   bottom (59 in water); the fill in the fruit's colour (Fruit.colour), a light band on top and a dark one under, swirl stripes sliding,
-  notches every fifth, the chip (what was just spent) white for 10 ticks then draining, blinking under 25%, a refused move's red frame
+  notches every fifth (3.2.0 coloured it by the fruit: replaced by one colour in 3.2.1), the chip (what was just spent) white for 10 ticks then draining, blinking under 25%, a refused move's red frame
   and 1 px shake for 12 ticks. Shown only with a fruit (not the Nika fruit), not in creative or spectator. Render judged:
   docs/handoff/energy-bar-3.2.0.png (full, a move just spent, low, refused). HudTests.energy keeps every pixel in its place.
 
-## 9. What to do next (3.2.1)
+## 8zg. Done (3.2.1): one universal energy bar
 
-1. Check that 3.2.0's runs are green if this session did not (Build HexPiece and Release HexPiece on the branch).
+- The owner (verbatim, while 3.2.0 was being checked): "I think the energy bars should be universal. You shouldn't be able like, you
+  shouldn't be creating new ones for each fruit, bro. That's just we're gonna have way more fruits and, like, we're not gonna bother
+  adding a custom bar for every single one of them. Just turn make them one color and call it a day."
+- `EnergyBarView.COLOUR` 0xA46BFF (violet: no vanilla bar is violet) for every fruit; client/EnergyBar no longer reads Fruit.colour.
+  UiPreview "energy" renders the one bar in its four states (docs/handoff/energy-bar-3.2.1.png). Never give a fruit its own bar colour.
+
+## 9. What to do next (3.2.2)
+
+1. Check that 3.2.0's and 3.2.1's runs are green if this session did not (Build HexPiece and Release HexPiece on the branch).
 2. Ask the owner how the energy plays (the costs in FruitEnergy.COSTS, the refill rate) and whether Gear 5 should spend it too (it
    would need a patch into the original's GearServerController, as PiecePatch.gearLightning hooks it).
 3. Ask the owner how the Ice fruit plays (3.1.9: the real ice round frozen bodies, Ice Age's frozen ground, the ball of ice, the
