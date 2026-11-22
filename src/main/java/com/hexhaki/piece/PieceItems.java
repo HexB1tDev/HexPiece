@@ -64,6 +64,26 @@ public final class PieceItems {
         })
         .m_257652_());
 
+    /**
+     * 3.2.0 (the owner: "we're going to need a tab in Creative for only the fruits"): every Devil Fruit and nothing else, by rank
+     * (FruitRanks: the Legendary ones, then the Mythical, the Nika fruit last), each named in its rank's colour.
+     */
+    public static final RegistryObject<CreativeModeTab> FRUIT_TAB = TABS.register("fruits", () -> CreativeModeTab.builder()
+        .m_257941_(Component.m_237113_("Devil Fruits"))
+        .m_257737_(() -> new ItemStack(com.hexhaki.fruit.Fruits.ITEM.get(com.hexhaki.fruit.Fruit.GURA).get(), 1))
+        .m_257501_((parameters, output) -> {
+            for (FruitRanks.Rank rank : FruitRanks.Rank.values()) {
+                for (com.hexhaki.fruit.Fruit fruit : com.hexhaki.fruit.Fruit.values()) {
+                    RegistryObject<Item> item = com.hexhaki.fruit.Fruits.ITEM.get(fruit);
+                    if (item != null && FruitRanks.of(fruit) == rank) {
+                        output.m_246342_(new ItemStack(item.get(), 1));
+                    }
+                }
+            }
+            output.m_246342_(new ItemStack(com.hexhaki.registry.ModItems.NIKA_FRUIT.get(), 1));
+        })
+        .m_257652_());
+
     private PieceItems() {
     }
 

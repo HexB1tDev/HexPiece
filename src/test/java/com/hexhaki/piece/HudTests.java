@@ -2,6 +2,7 @@ package com.hexhaki.piece;
 
 import com.hexhaki.piece.ui.AbilityHudView;
 import com.hexhaki.piece.ui.AbilityPanel;
+import com.hexhaki.piece.ui.EnergyBarView;
 import com.hexhaki.piece.ui.UiCanvas;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +12,9 @@ public final class HudTests {
     static final Map<String, String> KEYS = Map.of("attack", "LMB", "use", "RMB", "special_a", "Y", "special_b", "U", "toggle", "R", "armament",
         "Ctrl+R", "observation", "V", "menu", "P");
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        energy();
+        ranks();
         sword();
         style();
         fruit();
@@ -118,5 +121,98 @@ public final class HudTests {
     /** The game's scale (client/AbilityHud.SCALE: 0.6), kept here so the pure test does not load the client class. */
     static final class AbilityHudFits {
         static final float SCALE = 0.6F;
+    }
+
+    /**
+     * 3.2.0: the fruit energy bar (ui/EnergyBarView) draws only inside its place over the food bar (the food row's width, its emblem's
+     * round at the right end, the leaf over it), whatever the energy, the white chip, the time and a refused move's shake.
+     */
+    static void energy() {
+        int right = 200;
+        int top = 100;
+        int[] box = {right - EnergyBarView.WIDTH - 3, top - EnergyBarView.EMBLEM, right + EnergyBarView.EMBLEM / 2 + 4, top + EnergyBarView.HEIGHT + 4};
+        for (double fill : new double[] {0.0, 0.05, 0.18, 0.5, 1.0}) {
+            for (double denied : new double[] {0.0, 1.0}) {
+                for (double time = 0; time < 40; time += 7) {
+                    boolean[] inside = {true};
+                    int[] drawn = {0};
+                    UiCanvas canvas = new UiCanvas() {
+                        @Override
+                        public void fill(int x0, int y0, int x1, int y1, int argb) {
+                            drawn[0]++;
+                            inside[0] &= x0 >= box[0] && x1 <= box[2] && y0 >= box[1] && y1 <= box[3];
+                        }
+
+                        @Override
+                        public void gradient(int x0, int y0, int x1, int y1, int top, int bottom) {
+                            this.fill(x0, y0, x1, y1, top);
+                        }
+
+                        @Override
+                        public void text(String text, int x, int y, int argb, boolean shadow) {
+                            inside[0] = false;
+                        }
+
+                        @Override
+                        public int width(String text) {
+                            return text.length() * 6;
+                        }
+
+                        @Override
+                        public void face(int x, int y, int size) {
+                            inside[0] = false;
+                        }
+
+                        @Override
+                        public void push() {
+                        }
+
+                        @Override
+                        public void translate(float x, float y) {
+                        }
+
+                        @Override
+                        public void scale(float factor) {
+                        }
+
+                        @Override
+                        public void pop() {
+                        }
+                    };
+                    EnergyBarView.draw(canvas, right, top, fill, Math.min(1.0, fill + 0.2), 0x9FE6FF, time, denied);
+                    Check.that(drawn[0] > 40 && inside[0], "energy bar: drawn in its place (fill " + fill + ", denied " + denied + ", t " + time + ")");
+                }
+            }
+        }
+    }
+
+    /**
+     * 3.2.0 (the owner: the fruits' rarity "in the name and everything"; asked, Mythical the Nika fruit and the Uo Uo no Mi, Legendary the
+     * rest): every fruit has its rank, its name in the language file is written in that rank's colour, the Devil Fruits tab's title is
+     * there, and every fruit move with a cooldown has its energy cost listed (server/FruitEnergy).
+     */
+    static void ranks() throws Exception {
+        String lang = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
+        for (com.hexhaki.fruit.Fruit fruit : com.hexhaki.fruit.Fruit.values()) {
+            com.hexhaki.piece.FruitRanks.Rank rank = com.hexhaki.piece.FruitRanks.of(fruit);
+            if (fruit == com.hexhaki.fruit.Fruit.NONE) {
+                Check.that(rank == null, "ranks: no fruit, no rank");
+                continue;
+            }
+            Check.that(rank != null, "ranks: " + fruit + " has a rank");
+            Check.that(lang.contains("\"item.hexhaki." + fruit.id + "_" + fruit.id + "_no_mi\": \"" + rank.code), "ranks: " + fruit + "'s name in its colour");
+        }
+        Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.UO) == com.hexhaki.piece.FruitRanks.Rank.MYTHICAL
+            && com.hexhaki.piece.FruitRanks.NIKA == com.hexhaki.piece.FruitRanks.Rank.MYTHICAL, "ranks: the Uo Uo and Nika fruits Mythical");
+        Check.that(lang.contains("\"item.hexhaki.nika_fruit\": \"" + com.hexhaki.piece.FruitRanks.NIKA.code), "ranks: the Nika fruit's name in its colour");
+        for (java.util.List<com.hexhaki.fruit.FruitMove> moves : java.util.List.of(com.hexhaki.piece.server.GuraKit.MOVES,
+            com.hexhaki.piece.server.HieKit.MOVES, com.hexhaki.piece.server.MaguKit.MOVES, com.hexhaki.piece.server.PikaKit.MOVES,
+            com.hexhaki.piece.server.UoKit.MOVES)) {
+            for (com.hexhaki.fruit.FruitMove move : moves) {
+                if (move.cooldown() != null) {
+                    Check.that(com.hexhaki.piece.server.FruitEnergy.listed(move), "energy: " + move.name() + " has its cost listed");
+                }
+            }
+        }
     }
 }

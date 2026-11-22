@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.1.9"
+VERSION = "3.2.0"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -146,6 +146,9 @@ NEW_PREFIXES = (
 ) + tuple(f"assets/hexhaki/models/item/{key}.json" for key in ARMOR_KEYS)
 # Original lang keys the expansion may change (renamed controls).
 RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.armament", "key.hexhaki.acoc",
+                  # 3.2.0 (the owner: the fruits' rarity "in the name and everything"): the fruits' names in their rank's colour
+                  "item.hexhaki.pika_pika_no_mi", "item.hexhaki.magu_magu_no_mi", "item.hexhaki.gura_gura_no_mi",
+                  "item.hexhaki.nika_fruit",
                   "subtitles.hexhaki.acoc_on", "subtitles.hexhaki.acoc_off"},
            # 2.9.4 (the owner: "remove this fuck ass sound for the Rio sound"; "Give Conqueror's Haiku release a new proper sound ...
            # Go search around the web"): Ryou's on and off sounds silenced, the Conqueror's events playing CC0 web recordings

@@ -158,10 +158,12 @@ public final class MaguMoves {
     }
 
     static boolean ready(ServerPlayer player, FruitMove move) {
-        return move.cooldown() == null || FruitData.ready(player, move.cooldown());
+        // 3.2.0: and the fruit energy for it (server/FruitEnergy)
+        return move.cooldown() == null || FruitData.ready(player, move.cooldown()) && FruitEnergy.afford(player, move);
     }
 
     static void cool(ServerPlayer player, FruitMove move, int ticks) {
+        FruitEnergy.spend(player, move, ticks); // 3.2.0: the move began: its energy is spent
         FruitData.cooldown(player, move.cooldown(), ticks);
         FruitServer.sync(player);
     }

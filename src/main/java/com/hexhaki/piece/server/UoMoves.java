@@ -989,10 +989,11 @@ public final class UoMoves {
     }
 
     static boolean ready(ServerPlayer player, com.hexhaki.fruit.FruitMove move) {
-        return FruitData.ready(player, move.cooldown());
+        return FruitData.ready(player, move.cooldown()) && FruitEnergy.afford(player, move); // 3.2.0: and the fruit energy for it
     }
 
     static void cool(ServerPlayer player, com.hexhaki.fruit.FruitMove move, int ticks) {
+        FruitEnergy.spend(player, move, ticks); // 3.2.0: the move began: its energy is spent
         FruitData.cooldown(player, move.cooldown(), ticks);
         FruitServer.sync(player);
     }

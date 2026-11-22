@@ -20,7 +20,7 @@ public final class PieceNetwork {
      * every client draws) and its shape changed, so the two sides must be the same version. 9 (2.4.6): S2CProfile carries the
      * player's alignment. 10 (2.7.0): S2CDragon (16), the Uo Uo no Mi's dragon form. 11 (2.7.1):
      * S2CDragon carries the dragon's colour. 12 (2.7.2): S2CUoFx (17), C2SDragon (18), the Uo Uo no Mi's moves. */
-    private static final String PROTOCOL = "12";
+    private static final String PROTOCOL = "13";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -52,6 +52,8 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(16, S2CDragon.class, S2CDragon::encode, S2CDragon::decode, S2CDragon::handle);
         CHANNEL.registerMessage(17, S2CUoFx.class, S2CUoFx::encode, S2CUoFx::decode, S2CUoFx::handle);
         CHANNEL.registerMessage(18, C2SDragon.class, C2SDragon::encode, C2SDragon::decode, C2SDragon::handle);
+        // 3.2.0: one's own fruit energy (server/FruitEnergy -> client/EnergyBar)
+        CHANNEL.registerMessage(19, S2CEnergy.class, S2CEnergy::encode, S2CEnergy::decode, S2CEnergy::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

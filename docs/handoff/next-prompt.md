@@ -1,10 +1,10 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
-Read CLAUDE.md, then docs/handoff/next-ai-3.1.9.md whole: it holds every standing rule in one place (talking to the owner, the house
+Read CLAUDE.md, then docs/handoff/next-ai-3.2.0.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8ze of next-ai-3.1.9.md
-(2.9.6 to 3.1.9); open the older next-ai-*.md only for a feature's detail.
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zf of next-ai-3.2.0.md
+(2.9.6 to 3.2.0); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -18,9 +18,12 @@ through server/Scars, put back afterwards), real ice ground for Ice Age and the 
 about 20 s), and smooth glassy ice (hie/HieArt: lathes and lumps, no crystal facets) for everything thrown or held. Never bring the
 crystal look back.
 
-Next: check 3.1.9's runs are green if the last session did not; then 8za's item 3 (a Creative tab with only the fruits, rarity ranks
-common / uncommon / rare / legendary / mythical in the fruits' names and tooltips, a fruit energy bar over the food bar in an original
-design); ask the owner which rank each fruit gets and what the energy is spent on before building. Ask how 3.1.5 to 3.1.9 play.
+3.2.0 (section 8zf) is 8za's item 3: the "Devil Fruits" Creative tab, rarity ranks (Mythical: the Nika fruit and the Uo Uo no Mi;
+Legendary: Gura, Pika, Magu, Hie; the owner's choice) in the fruits' names and tooltips, and the fruit energy bar over the food bar
+that every move of HexPiece's fruit kits spends (server/FruitEnergy; Gear 5 not yet).
+
+Next: check 3.2.0's runs are green if the last session did not; ask the owner how 3.1.5 to 3.2.0 play (the ice fruit's real ice, the
+energy costs and refill, whether Gear 5 should spend energy) and do what they ask.
 
 The cloud environment is the personal "HexPiece" (env_016v9rNSffz2fds2ha514nhY); if tenor.com or freesound.org is refused, the session
 is on Default: switch_environment to it.

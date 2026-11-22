@@ -169,10 +169,12 @@ public final class HieMoves {
     }
 
     static boolean ready(ServerPlayer player, FruitMove move) {
-        return move.cooldown() == null || FruitData.ready(player, move.cooldown());
+        // 3.2.0: and the fruit energy for it (server/FruitEnergy)
+        return move.cooldown() == null || FruitData.ready(player, move.cooldown()) && FruitEnergy.afford(player, move);
     }
 
     static void cool(ServerPlayer player, FruitMove move, int ticks) {
+        FruitEnergy.spend(player, move, ticks); // 3.2.0: the move began: its energy is spent
         FruitData.cooldown(player, move.cooldown(), ticks);
         FruitServer.sync(player);
     }
@@ -966,6 +968,7 @@ public final class HieMoves {
         }
         s.saberUntil = now + SABER_TIME;
         s.cuts = 0;
+        FruitEnergy.spend(player, HieKit.SABER, SABER_TIME); // 3.2.0: spent as it forms (its cooldown starts when it goes)
         s.cutNext = now + 6;
         fx(player, SABER_ON, 0, Vec3.f_82478_, Vec3.f_82478_, 0, 0, 0, 0, SABER_TIME);
         animate(player, "hie_saber_draw");
@@ -981,7 +984,8 @@ public final class HieMoves {
             fx(player, SHATTER, ++seeds, hand, Vec3.f_82478_, 0, 0, 0, 0.7, 0);
             sound(player, hand, HieSounds.SHATTER, 0.8F, 1.3F);
         }
-        cool(player, HieKit.SABER, 200);
+        FruitData.cooldown(player, HieKit.SABER.cooldown(), 200);
+        FruitServer.sync(player);
     }
 
     /** The attack button: with the saber out, a cut (two cuts by turns, a cold crescent; three cuts on one body freeze it). */
