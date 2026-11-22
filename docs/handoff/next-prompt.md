@@ -6,20 +6,21 @@ never made by hand, the Haki lightning style, what must never come back), where 
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8p of next-ai-3.1.0.md (2.9.6 to 3.1.0); open the older next-ai-*.md only for a
 feature's detail.
 
-3.1.0 is pushed: no Light fruit stance at all (it held the arms between moves). 3.0.9: no sea effects while the body is light (Z over water sank the player). 3.0.8: a drawn katana's ready pose plays under every other animation (it covered the Haki and style moves). 3.0.7: no
-more sticking in the sword's stance (it held the right arm, so no punch swing). 3.0.6: Ama no Murakumo's
-wave flies level (it stood upright, an arch). 3.0.5: in first person the game's own hand stays during the right click (the light at its fingertip), the held
-beam's blast is 5 to 13 blocks and throws much harder. 3.0.4: X no longer lags (fewer, slower slugs, a small flash where each lands), left click is the game's punch again, V
-is HexGhoul's Speed Kick (in front of them, an impact frame, sent far through blocks up to iron). 3.0.3: the first-person arm (the laser's, the sword's) comes in from the lower right pointing forward. 3.0.2: the right
-click's tap is only the small laser (no blast), the held beam's blast lingers in full. 3.0.1: Z from
-above slams them into the ground with an axe kick; Z lasts as long as the key is held; one's own trail is
-not drawn in first person. 3.0.0: Z's kick puts the player directly in front of the one kicked, facing them; a laser-zing reflection sound from the
-web; Z has a 4 s cooldown. 2.9.9: no flight for the Light fruit (only Z), and Z meeting someone is a flying kick that blasts them
-away and ragdolls them; 2.9.8 held the light sword by a short grip with the ring at the fist and redrew it after the owner's reference; 2.9.7, the Light fruit after Kizaru at Egghead (no M1s at all; Z: the body becomes light, reflected off every block and
-the water; C: Ama no Murakumo's lunge; X: Yasakani as at Egghead, held in the air while it pours; V: the speed-of-light kick as a dash
-of light; B: clones flying in; the flight pose with the arms out, now only seen in creative flight). The next version is 3.1.1. First check the branch's last "Build
-HexPiece" and "Release HexPiece" runs, then ask the owner how the sword and the Light fruit play now, and how 2.9.5's Conqueror sounds and 2.9.4's
-Haki play (both still untested), and fix whatever they report first. Then follow section 9 of next-ai-3.1.0.md.
+The owner's current request: "Now do Gura Gura, get reference gifs from white beard and black beard both". The references are
+gathered and on the branch in docs/handoff/gura-ref/ (README.md: every GIF, what it shows, which move it informs, its link; sheets/: all
+56 as frame strips; clips/: the 30 that show the powers as small MP4s). No Gura code exists yet: the original gives the fruit no moves
+at all, so the kit is built from scratch on the Light fruit's pattern. Section 8q of next-ai-3.1.0.md has what the original has, the
+proposed move set (RMB Kaishin, Z Shima Yurashi, X Kabutowari, C Tsunami, V Gekishin, B Ground Splitter, the punch on LMB), every
+ready-made piece of code to use and the plan for the art, animations and sounds.
+
+First check the branch's last "Build HexPiece" run (and 3.1.0's "Release HexPiece", green). Then look at the reference sheets yourself,
+show the owner the proposed Gura move set in one AskUserQuestion (go ahead or change), and build it as 3.1.1: the server kit, the 3D
+effects, the animations, CC0 web sounds, every effect and pose rendered and judged against the references in third and first person,
+release notes, push, runs green. Then follow section 9 of next-ai-3.1.0.md (the owner still has to say how 3.0.x to 3.1.0's Light
+fruit and katana fixes play, and 2.9.5's and 2.9.4's).
+
+Earlier: 3.1.0: no Light fruit stance at all. 3.0.9: no sea effects while the body is light. 3.0.8: a drawn katana's ready pose plays
+under every other animation. 3.0.0 to 3.0.7 and 2.9.6 to 2.9.9: the Light fruit rebuilt after Kizaru at Egghead (sections 8b to 8p).
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;
 render and judge every animation and effect yourself, third and first person; never key the head or unused limbs; keep every effect

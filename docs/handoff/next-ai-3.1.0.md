@@ -3,7 +3,8 @@
 This is the newest handoff. Read it whole before touching anything. It gathers every standing rule the owner has given (CLAUDE.md's
 house rules plus everything learned since 2.1), so you do not have to dig them out of the older notes. The full history (verbatim
 messages, what each version did) is in next-ai-2.7.0.md (2.7.0 to 2.9.5) and the older next-ai-*.md files; open them only when you
-need the detail of a feature. 2.9.6 to 3.1.0 (the Light fruit after Egghead, and 3.0.8 the katana stance) are written up in full in sections 8b to 8p below.
+need the detail of a feature. 2.9.6 to 3.1.0 (the Light fruit after Egghead, and 3.0.8 the katana stance) are written up in full in sections 8b to 8p below;
+section 8q is the Gura Gura no Mi's research and plan (references in docs/handoff/gura-ref/, no code yet).
 
 Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.0 is pushed (check its "Build HexPiece" and "Release
 HexPiece" runs are green before anything else; 2.9.6 to 3.0.9 are green). The next version is 3.1.1.**
@@ -454,12 +455,91 @@ Mods beside HexPiece: geckolib, fdlib, architectury, playeranimator, ldlib, phot
   previews sample some). Never bring a Light stance back.
 - Not tested in game.
 
+## 8q. Started (research only, no code yet): the Gura Gura no Mi after Whitebeard and Blackbeard
+
+- The owner (verbatim, 2026-11-22): "Now do Gura Gura, get reference gifs from white beard and black beard both". Then, while the
+  kit was being started: "When you get the material for the reference upload it to GitHub and give me a handoff and a prompt for the
+  next ai". So this session stopped before writing any code: **the build is still 3.1.0; nothing of the Gura fruit exists yet.**
+- **The references are in `docs/handoff/gura-ref/`** (README.md: every GIF, who, what it shows, which move it informs, its Tenor
+  link; `sheets/`: all 56 as frame strips; `clips/`: the 30 that show the powers as small MP4s). Read the README and look at the sheets
+  before designing anything. What they agree on: the white quake **bubble** round the fist; the **air cracking like glass** (a web of
+  jagged white lines with a cyan glow, radial cracks joined by broken rings, hanging where the fist struck, then shattering away);
+  white **shock rings and curved shock lines** racing ahead with rocks and dust; the **ground**: crater, white shock lines thrown up,
+  debris, dust dome, concentric rings seen from above, a split running across it; the **tsunami** walls; Blackbeard's **open shaking
+  palm** and his **dive from the sky**. His darkness (Yami) clips are not this fruit: never use them.
+- **What the original has**: `Fruit.GURA` (id "gura", "Gura Gura no Mi", element "Tremor", a Paramecia, its lore line) and the item's
+  model and texture (`gura_gura_no_mi`), but **no kit at all**: `Fruits.register` leaves it the `Fruits$EmptyKit` (no moves), no
+  animation in the jar, and `FruitAnimations.handles` knows a "quake_" prefix with no clip behind it. The kit is built from scratch,
+  registered the way HexPiece registers the Light fruit's (`HexPiece.init`: `Fruits.register(Fruit.GURA, GuraKit::new)`).
+
+### The proposed move set (this session's design; the owner has NOT seen it)
+
+Keys as the owner set them for every fruit (Z X C V B, the attack and use buttons). Show the owner this list in one AskUserQuestion
+(go ahead / change) before building, unless they already said to just build it.
+
+| Key | Move | What it does | Refs |
+|-----|------|--------------|------|
+| LMB | the game's punch | as the Light fruit since 3.0.4 (give the attack back to the game as `PikaFx.punch` does, for `Fruit.GURA`) | |
+| RMB tap / hold | Kaishin (Sea Quake) | tap: the bubble flashes on the fist, a punch into the air, the air cracks like glass at the fist, a shockwave cone about 14 blocks. Hold (to 40 ticks): the bubble swells on the drawn-back, trembling fist; let go: the air shatters, the shockwave reaches 18 to 40 blocks, the ground under its path torn (small self-repairing craters), everyone in the cone thrown far, ragdolled from half charge, an impact frame at full | 00 01 02 07 15 52 |
+| Z hold | Shima Yurashi (Island Shaker) | both arms thrust out to the sides, the air cracking at both fists, then he grips the air: while held (up to 5 s) the ground quakes about 24 blocks round: everyone's view shakes (`Impact.quake`) and tilts (camera roll), foes hop and stagger every half second, cracks spread over the ground; let go: he pulls the air down, the "island tilts": everyone in range thrown out and ragdolled, a big lurch of the view | 47 48 |
+| X | Kabutowari (Helmet Splitter) | a leap at the one looked at (up to about 26 blocks, an arc the player's own client flies, as `PikaFx.Glide.dash`) and the quake fist brought down on their head: the glass crack over them, slammed into the ground, a crater with concentric rings, everyone near thrown up. No one aimed: the leap goes where he looks and he dives fist first into the ground (Blackbeard onto Law) | 04 06 32 34 52 |
+| C | Tsunami | both fists punched out, a wall of water (about 9 high, 22 wide) rises ahead and rolls on about 40 blocks, carrying everyone it meets and dumping them down; drawn as a cel-shaded curling wave with a foam crest and spray (no real water blocks) | 29 51 |
+| V hold | Gekishin (Violent Quake) | the bubble gathered on the drawn-back fist (up to 1.5 s); let go: a short dash to just in front of the one looked at (up to about 16 blocks) and the bubble driven point-blank into them: the shock bursts out of their back and cracks the air behind them, an impact frame, sent flying through blocks up to iron (as `PikaMoves.Launch`). No one there: the punch cracks the air ahead | 00 11 14 53 |
+| B | Ground Splitter | both fists into the ground: a rift runs out ahead about 36 blocks, opening block by block (Scars, self-repairing), everyone along it thrown up and ragdolled | 28 37 41 55 |
+| passive | Tremor landing | no fall damage; a hard landing quakes the ground round the feet (a small ring that knocks foes back). Unasked: ask the owner before adding it | 50 |
+
+### How to build it (what was found in the code; the Light fruit is the template)
+
+- Files to add: `server/GuraKit.java` (the move list, `action` kinds 0 key down, 1 key up (only for moves whose key text says "hold"),
+  2 attack, 3 use down, 4 use up; `immune` for fall damage), `server/GuraMoves.java` (as `PikaMoves`: per-player State, `fx(...)`,
+  `later`, `ready`/`cool`, `aimed`, `point`, `foes`, `hit`, `LIVE` list ticked in a LevelTickEvent), `gura/GuraArt.java` (pure 3D art
+  as `pika/LightArt`: eye-centred, a `FireMesh.Sink`, previewable off-game), `gura/GuraSounds.java`, `client/gura/GuraClient.java`
+  (a `ClientKit`, put in `ClientKits.KITS` on the first client tick as `PikaFx.tick` does for PIKA), `client/gura/GuraFx.java` (as
+  `PikaFx`: `accept`, the clock, drawn once a frame AFTER_PARTICLES through `RenderType.m_269166_()`, the leap mover, the punch
+  hand-back, the camera tilt), `tools/gura_anims.py`, `tools/gura_sounds.py`.
+- Hooks to touch: `client/dragon/UoFx.accept` routes kinds >= 80 to the Conqueror's sparks and >= 32 to `PikaFx`: route **60 to 79**
+  to `GuraFx` before the >= 32 check (the Light fruit uses 32 to 57; `S2CUoFx` writes the kind as a byte). `PieceHooks.fruitClip` and
+  `PieceHooks.firstPersonArms`: add "gura_". `client/npc/StylePoser.data`: "gura_" clips from a generated `GuraPoses` (`java_poses`
+  in `tools/style_anims.py`, as `pika_anims.py` makes `PikaPoses`). Sounds in `sounds.json` and the lang file.
+- Ready-made pieces: `Impact.quake(level, at, radius, strength, ticks)` (the original's view shake for players near);
+  `Impact.hit(user, body, StyleCombat.spec(weight, launch))`; `UoMoves.explode(user, level, at, dir, radius, damage, fire, knock)`;
+  `Craters.open(level, owner, at, radius)` (self-repairing ball, at most 13); `Scars.of(level).tear(owner, pos, supports, restoreIn)`
+  (TORN / LEFT / REFUSED; `PikaMoves.Launch` shows a body driven through blocks with it); `HakiFalls.knockDown(level, body, ticks,
+  false)` (the ragdoll); an impact frame is an `S2CClash` sent as `PikaMoves.speedKick` sends it; `HakiServerController.animate(player,
+  name, 1)` plays a clip; `ViewportEvent.ComputeCameraAngles#setRoll` is already used (`client/fx/Tumbles.fallView`), so the Z tilt
+  needs nothing new proven. A client-flown move: `PikaFx.Glide` (velocity set a tick ahead, movement keys zeroed in
+  `MovementInputUpdateEvent`).
+- The bubble on the fist: in third person from the playing clip's pose (`StylePoser.sample` + `StyleRig.limb(pose, RIGHT_ARM, ...)`,
+  placed as `FirstPersonLight.place` does: add a public wrapper; `FirstPersonLight.CLIPS` already records every clip played); in first
+  person the game's own right hand stays (as the Light fruit since 3.0.5) and the fist is `LightArt.firstPersonFingertip(past)` turned
+  with the look, as `FirstPersonLight.fingertip` does.
+- The art (plan): the air crack as camera-facing line quads (each segment's width axis = cross(segment, its midpoint), the camera being
+  at the origin), a white core over a wider cyan glow, rays grown out in 2 ticks, held, faded and broken into `FireMesh.shard`s by
+  about 26 ticks; the bubble a `FireMesh.shell` with a bright rim, spinning `FireMesh.arc`s and ripple shells; the shockwave
+  `FireMesh.ring`s travelling and widening along the punch with streaks; the ground: radial cracks glowing white then cooling dark,
+  concentric rings, a ring of dust puffs (`FireMesh.SMOKE`), rocks on arcs (`FireMesh.shard`); the tsunami a curling profile swept
+  across about 20 columns in flat cel bands (deep blue to white foam), foam puffs on the crest, spray off the lip, rising in 10 ticks
+  and crashing down at the end, its base following the ground under its middle. Keep each effect well under the 16k quad budget.
+- Animations: Whitebeard is heavy and wide-legged. Clips (keying only the parts each move uses, never the head; positive body pitch
+  leans BACK): gura_punch, gura_charge, gura_release, gura_charge_end, gura_shake, gura_tilt, gura_leap, gura_slam, gura_tsunami,
+  gura_fist_charge, gura_gekishin, gura_split. No stance (the owner removed the Light fruit's: never give a fruit a held stance).
+- Sounds (CC0 Freesound only, `tools/web_sounds.py` refuses anything else): an earthquake rumble to loop for Z, glass cracking and
+  shattering (the air breaking), a deep boom for the punch, rocks crumbling, a big wave crashing for C, a whoosh for the leap. No sound
+  outlasting its move.
+- Render every effect and pose (FxPreview shots, PikaPreview-style pose sheets, third and first person) and judge them against the
+  sheets in `gura-ref/` before pushing. Version 3.1.1 with release notes.
+- Getting more references: Tenor's search pages load from this environment (`https://tenor.com/search/<words>-gifs`; parse
+  `<img src="https://media.tenor.com/<id>AAAAM/<name>.gif" alt=...>`, download `<id>AAAAC/<name>.gif` for the full size); Giphy
+  answers 403.
+
 ## 9. What to do next (3.1.1)
 
-1. Check 3.1.0's runs. Ask the owner whether anything still sticks or covers a move (the Light fruit, the katana), Z over the sea,
-   the right click in first person, the bigger blast, C's wave, V's kick, X, the punch. Still unanswered: 2.9.5's Conqueror sounds,
-   2.9.4's Haki.
-2. Not rendered in a preview yet: Gear 5's and the storm lance's 3D bolts (tools/preview/BoltPreview or FxPreview). Render and judge.
-3. Lag: the dragon's per-frame CPU skinning; re-run the per-tick/per-frame handler audit. Ask the owner where they still see lag.
-4. Still unanswered by the owner: the fighting styles in first person (2.8.2), the 3D blows (2.8.3), the show moves (2.8.4), the
+1. Check 3.1.0's runs (both were green: Build 44968634824, Release 44968634858) and this handoff push's Build run.
+2. **The owner's current request: the Gura Gura no Mi (section 8q).** Show them the proposed move set once, then build it as 3.1.1:
+   server kit, effects, animations, sounds, renders judged in third and first person, release notes, push, runs green.
+3. Ask the owner whether anything still sticks or covers a move (the Light fruit, the katana), Z over the sea, the right click in
+   first person, the bigger blast, C's wave, V's kick, X, the punch. Still unanswered: 2.9.5's Conqueror sounds, 2.9.4's Haki.
+4. Not rendered in a preview yet: Gear 5's and the storm lance's 3D bolts (tools/preview/BoltPreview or FxPreview). Render and judge.
+5. Lag: the dragon's per-frame CPU skinning; re-run the per-tick/per-frame handler audit. Ask the owner where they still see lag.
+6. Still unanswered by the owner: the fighting styles in first person (2.8.2), the 3D blows (2.8.3), the show moves (2.8.4), the
    dragon's wave and sounds. Ask, do not guess.
