@@ -20,9 +20,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -49,25 +46,8 @@ public final class MaguFx {
     record Spot(int kind, int id, int user, Vec3 at, Vec3 dir, double size, double bx, int ticks, long born) {
     }
 
-    /** Inugami Guren's hound: its start, step, scale, life, its foot's height now (following the ground). */
-    static final class Hound {
-        final Vec3 at;
-        final Vec3 step;
-        final double scale;
-        final int life;
-        final long born;
-        final int seed;
-        double baseY;
-
-        Hound(Vec3 at, Vec3 step, double scale, int life, long born, int seed) {
-            this.at = at;
-            this.step = step;
-            this.scale = scale;
-            this.life = life;
-            this.born = born;
-            this.seed = seed;
-            this.baseY = at.f_82480_;
-        }
+    /** Inugami Guren's hound: its head's start, step a tick (3.1.5: straight along the aim), scale, life, seed. */
+    record Hound(Vec3 at, Vec3 step, double scale, int life, long born, int seed) {
     }
 
     /** A player gone into a stream of magma: until, and the way it went (newest first). */
@@ -116,6 +96,7 @@ public final class MaguFx {
                 int ended = (int) m.by();
                 if (ended != 0) {
                     SPOTS.removeIf(s -> (s.kind == MaguMoves.FIST || s.kind == MaguMoves.METEOR) && s.id == ended);
+                    HOUNDS.removeIf(h -> h.seed == ended);
                 }
                 add(new Spot(m.kind(), m.id(), m.user(), at, a, m.size(), m.bx(), 0, clock));
             }
@@ -173,14 +154,6 @@ public final class MaguFx {
         HOUNDS.removeIf(h -> clock - h.born > h.life + 2);
         SWELLS.entrySet().removeIf(e -> clock - e.getValue() > 200 || entity(e.getKey()) == null);
         STREAMS.entrySet().removeIf(e -> e.getValue().until + 6 < clock || entity(e.getKey()) == null);
-        for (Hound h : HOUNDS) {
-            Vec3 front = h.at.m_82549_(h.step.m_82490_(clock - h.born));
-            BlockHitResult hit = level.m_45547_(new ClipContext(new Vec3(front.f_82479_, h.baseY + 4.0, front.f_82481_),
-                new Vec3(front.f_82479_, h.baseY - 8.0, front.f_82481_), ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-            if (hit.m_6662_() == HitResult.Type.BLOCK) {
-                h.baseY += (hit.m_82450_().f_82480_ - h.baseY) * 0.5;
-            }
-        }
         for (Map.Entry<Integer, Stream> e : STREAMS.entrySet()) {
             Entity user = level.m_6815_(e.getKey());
             Stream st = e.getValue();
@@ -418,9 +391,8 @@ public final class MaguFx {
             if (far(front, cam)) {
                 continue;
             }
-            double speed = Math.max(1.0E-6, Math.sqrt(h.step.f_82479_ * h.step.f_82479_ + h.step.f_82481_ * h.step.f_82481_));
-            MaguArt.hound(SINK, front.f_82479_ - cx, h.baseY - cy, front.f_82481_ - cz, h.step.f_82479_ / speed, h.step.f_82481_ / speed, h.scale, age,
-                h.seed);
+            MaguArt.hound(SINK, front.f_82479_ - cx, front.f_82480_ - cy, front.f_82481_ - cz, h.step.f_82479_, h.step.f_82480_, h.step.f_82481_,
+                h.scale, age, h.seed);
         }
         for (Spot s : SPOTS) {
             if (far(s.at, cam)) {

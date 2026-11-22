@@ -527,6 +527,7 @@ public final class UoMoves {
 
     /** {@code radius} around {@code at}: damage falling off to the edge, fire, a throw away from the middle (and on along {@code dir}). */
     static void explode(ServerPlayer user, ServerLevel level, Vec3 at, Vec3 dir, double radius, float damage, int fire, double knock) {
+        ConquerorAura.exploded(user, level, at, radius);
         Predicate<LivingEntity> foe = other -> FruitUtil.foe(user, other);
         DamageSource source = StyleCombat.of(user);
         for (LivingEntity body : level.m_6443_(LivingEntity.class, box(at, at).m_82400_(radius + 1.0),

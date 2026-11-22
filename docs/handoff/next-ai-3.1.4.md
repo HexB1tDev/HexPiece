@@ -8,8 +8,26 @@ sections 8b to 8p below; section 8q is the Gura Gura no Mi's research and plan, 
 the Magu Magu no Mi (3.1.3), 8u 3.1.3's Gura changes, 8v 3.1.4 (first-person hands, the Haki orb, the charge sound) and 8w the owner's
 requests still open (3.1.5 and 3.1.6).
 
-Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.4 is pushed: check its "Build HexPiece" and "Release HexPiece"
-runs are green before anything else (3.1.3 and before are green). The next version is 3.1.5.**
+Branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest). **3.1.4 is pushed and green (Build and Release). 3.1.5 is HALF DONE
+and committed UNBUILT (the owner said stop mid-work): read section 8x first, run `python3 build.py`, finish it. The next version is 3.1.5
+(build.py still says 3.1.4: bump it with tools/next_version.py --write when 3.1.5 is ready).**
+
+## POINT ONE (the owner, 3.1.4: always keep this first in every handoff and pass it on to every AI after you)
+
+1. **Every fruit is made in the same style as the Light, Gura and Magma fruits.** The owner (verbatim): "It's important to be always
+   written in the handoff is point one, that the models and everything that it creates should be from in exactly like the other fruits,
+   like basically the same style of animation that you've been doing for the light, quake, and magma. Those models are absolutely
+   beautiful, and I love how you made them. So just keep that in mind, and always tell the other AIs like that they are to follow this
+   same exact idea." So: 3D meshes built the way FireMesh/GuraArt/MaguArt/the Light fruit's art build them (banded alpha-blended shells,
+   puffs, arcs, rays, streaks, lumps, shards), PlayerAnimator clips written by tools/*_anims.py with no leg and no head keyed, a short
+   first-person hand move for every move (style/HandMoves), CC0 web sounds, every effect rendered and judged.
+2. **With the Conqueror's Haki and Ryou on, every move of every fruit throws the Conqueror's lightning (visual only, no stun), and a
+   move that ends in an explosion throws it out of that explosion.** The owner (verbatim): "If the move has an explosion at the end,
+   well, then the explosion is the thing that gets the lightning. So basically, right click of the light fruit, that the end at the end
+   around the explosion is where the lightning is going to come from. If you get what I mean, it's not the beam itself. ... And the
+   explosions and all this hockey [Haki] thing on the explosions is not optional. It is like if the move has an explosion at the end, the
+   explosion is what gets the lightning like blowing from outwards of it." Use `ConquerorAura.mixed` (gated on the Conqueror's Haki
+   awakened and Ryou on) at each explosion, outward from it; a move with no explosion throws it at its strike point.
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -790,9 +808,46 @@ just make this an absolutely crazy move."
 (The later "doesn't stun" rule is for every move's lightning in general; this move's stun was asked for by name, so keep it here and
 tell the owner.)
 
+## 8x. IN PROGRESS (3.1.5, committed without a build: the session was stopped by the owner mid-work)
+
+Done in code (all of 8w's 3.1.5 except Gear 5; NOT built since the last change, NOT pushed as a version, NOT tested in game):
+- **The Conqueror's lightning out of every explosion** (POINT ONE, 2): `ConquerorAura.exploded(player, level, at, radius)` (gated on
+  `awakened`: the Conqueror's Haki and Ryou on; visual only, no stun; blasts under radius 4 at most one per `BLAST_GAP` 6 ticks a player;
+  grounded on the ground under the blast; count 3 to 14, radius 0.8 of the blast's, 1.8 to 9), called at the top of `UoMoves.explode`
+  (every Light, Magma and dragon blast, so the Light right click's lightning comes out of the explosion at the beam's end, not the
+  beam). Moves with no explosion: `PikaMoves.fx` throws it for KICK (a kick or cut landing) and LASER (the tap laser's end);
+  `MaguMoves.fx` for PIERCE (Meigo). Gura already had its own (ConquerorAura.mixed). `forget` clears BLAST_NEXT.
+- **The Light right click drags** (`PikaMoves.beam`): whoever the beam crosses is hit (6 + 8 x charge, a tiny push) and dragged along it
+  to just short of its end (`DRAG_SPEED` 5 blocks a tick at most, all arriving together, `DRAG_MOST` 12 ticks), then the end explodes
+  (the 3.0.5 blast, BURST, quake, sound) the moment they arrive (1 tick after when no one was caught).
+- **The Magma hound** (C): `MaguArt.hound(sink, x, y, z, fx, fy, fz, scale, age, seed)` rebuilt as a dog's head in its own aimed frame
+  (part/point/fang helpers, crust 0.4 so the outline reads): skull and cheek ruff, brow ridges, a muzzle of three tapering lumps with a
+  dark nose, the lower jaw hinged under the ear snapping 26 to 48 degrees open on a dark gape with a tongue, fangs top and bottom, wolf
+  ears swept back, big glowing eyes, the neck trailing. Rendered (scratchpad hound4.png, FxPreview `e:270:5:10:0:2:11.8|mhound:6`): the
+  side profile reads as a snarling hound; ~4k quads. Server (`MaguMoves.hound`): starts ahead of the chest (eye - 0.2), flies straight
+  along the look (up or down), bursts where its jaws meet a block (`erupt(..., seed)` so clients drop it) or at the end of its life;
+  client `MaguFx.Hound` is a record, straight flight, removed on BURST's `ended`. MaguShots `mhound:age[:fy]`, DragonTests updated.
+- **Ryusei Kazan** (X): `MaguMoves.rain/rainTick/stopRain/meteor`: while held a fist of magma goes up (SKY) at tick `THROW_FIRST` 3 and
+  every `THROW_EVERY` 6 (at most `THROWS_MOST` 15, State.thrown); let go (or at `RAIN_HOLD_MOST` 140) and exactly that many meteors fall
+  where he looks, one every `FALL_EVERY` 2 ticks, spread wider the more there are; cooldown 80 + 14 per fist. MaguKit's text updated.
+  `tools/magu_anims.py` magu_sky (96 ticks): a punch up at 3 and every 6 ticks, the arm swung down to `arm(-110, 0, 24, -8)` between
+  (a bent arm failed the lint: through the head); regenerated (11 clips + MaguPoses); my local lint passes. HandMoves PUMP (generated)
+  for magu_sky.
+- POINT ONE added at the top of this handoff and as a RULE in CLAUDE.md (the owner asked every AI to be told).
+
+Still to do for 3.1.5:
+1. `python3 build.py` (the last full build failed only on magu_sky's lint, since fixed; nothing built after) and fix what fails.
+2. Render and judge: magu_sky at the punch and pull ticks (anim_preview `--frames 33`), HandPreview `magu_sky` (delete com/ in its
+   output folder first), the hound again from the caster's view; check the per-move budget test.
+3. Gear 5 (the original's Nika moves) has no lightning yet: the owner said every fruit. Find where its blows land in the original
+   (input jar, com/hexhaki/devilfruit, Gear classes) and call ConquerorAura.exploded there through PiecePatch, or at least
+   ConquerorAura.moved for gear5_ clips.
+4. Bump to 3.1.5, `.github/release-notes-3.1.5.md` (plain words, not tested in game), handoff next-ai-3.1.5.md, push, both runs green.
+5. Then 3.1.6, the Gura ultimate (8w). Its stun stays (asked for by name); tell the owner.
+
 ## 9. What to do next (3.1.5)
 
-1. Check 3.1.4's runs (Build and Release HexPiece on claude/nice-bell-gam7qf).
+1. Finish 8x (build, render, Gear 5, release 3.1.5).
 2. Build 8w's 3.1.5 (Magma C hound head aimed with pitch, Magma X hold-count meteors, the Light right click dragging to the beam's end and
    exploding, the Conqueror's lightning on every fruit's moves), render and judge, push; then 3.1.6 (the Gura ultimate).
 3. Still unanswered: how the first-person hands (3.1.4) and the Gura fruit with Haki play; 3.1.2's Gura fixes; the Light fruit and

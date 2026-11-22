@@ -24,8 +24,8 @@ public final class MaguKit extends FruitKit {
         "Hell Hound. A lunge, and your magma fist driven straight through the one you look at: the magma bursts out of their back, they"
             + " burn and are thrown down.");
     public static final FruitMove RYUSEI = new FruitMove("Ryusei Kazan", "[X] hold", 0, "magu_ryusei",
-        "Meteor Volcano. A fist of magma punched up into the sky, and while you hold it, fists of magma rain down like meteors where you"
-            + " look, bursting into fire and leaving the ground burning.");
+        "Meteor Volcano. Hold to punch fist after fist of magma up into the sky (the longer you hold, the more); let go and every one of"
+            + " them falls back like a meteor where you look, bursting into fire and leaving the ground burning.");
     public static final FruitMove INUGAMI = new FruitMove("Inugami Guren", "[C]", 0, "magu_inugami",
         "Crimson Hound. A giant hound's head of magma surges out along the ground, jaws snapping, mauling and carrying everyone it bites,"
             + " and bursts into a flood of magma.");

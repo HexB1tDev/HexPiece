@@ -59,10 +59,16 @@ def meigo():
 
 def ryusei():
     up = p(rightArm=arm(-168, 0, 16, -10), leftArm=arm(-20, 0, -24, -20), body={"bend": -8, "yaw": 6})
+    # 3.1.5 (the owner: "the more you hold X, the more fireballs you throw at the sky"): a punch up at tick 3 and every 6 ticks after,
+    # 15 in all (MaguMoves.THROW_FIRST, THROW_EVERY, THROWS_MOST), the fist drawn back to the shoulder between them; held up after
+    pulled = p(up, rightArm=arm(-110, 0, 24, -8), body={"bend": -2, "yaw": 6})
     beats = [(0, "linear", REST), (2, "insine", p(rightArm=arm(10, 0, 14, -90), body={"bend": 6})), (3, "outexpo", up)]
-    for t in range(6, 81, 6):
-        beats.append((t, "inoutsine", p(up, rightArm={"pitch": -168 + (3 if t % 12 else -3)})))
-    write_parts("magu_sky", 80, beats, "Magu Magu: Ryusei Kazan: the fist punched up at the sky, held while magma rains.", ARMS)
+    for k in range(1, 15):
+        t = 3 + 6 * k
+        beats.append((t - 3, "inoutsine", pulled))
+        beats.append((t, "outexpo", up))
+    beats.append((96, "linear", up))
+    write_parts("magu_sky", 96, beats, "Magu Magu: Ryusei Kazan: fist after fist of magma punched up at the sky while X is held.", ARMS)
     write_parts("magu_sky_end", 10, [(0, "constant", up), (10, "inoutsine", REST)], "Magu Magu: the fist brought down.", ARMS)
 
 

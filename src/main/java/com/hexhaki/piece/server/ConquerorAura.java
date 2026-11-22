@@ -189,6 +189,37 @@ public final class ConquerorAura {
         }
     }
 
+    /** 3.1.5: at most one small explosion's lightning a player this often (ticks); a big one (radius 4 and up) always throws it. */
+    static final int BLAST_GAP = 6;
+    private static final Map<UUID, Long> BLAST_NEXT = new HashMap<>();
+
+    /**
+     * 3.1.5 (the owner: "If the player has Conqueror's Haki and, like, in Rio activated, every move pretty much releases the exact
+     * lightning from the Conqueror's move, but that doesn't stun. It's just for visual effect"; "If the move has an explosion at the end,
+     * well, then the explosion is the thing that gets the lightning ... it's not the beam itself ... the explosion is what gets the
+     * lightning like blowing from outwards of it"): every fruit explosion (UoMoves.explode: the Light fruit's, the Magma fruit's, the
+     * dragon's) throws the Conqueror's lightning out of it, as wide as the blast, grounded on the ground under it. Visual only.
+     */
+    public static void exploded(ServerPlayer player, net.minecraft.server.level.ServerLevel level, Vec3 at, double radius) {
+        try {
+            if (player == null || !awakened(player)) {
+                return;
+            }
+            long now = level.m_46467_();
+            Long next = BLAST_NEXT.get(player.m_20148_());
+            if (radius < 4.0 && next != null && now < next) {
+                return;
+            }
+            BLAST_NEXT.put(player.m_20148_(), now + BLAST_GAP);
+            Vec3 under = MaguMoves.ground(level, at, 0.5, 8.0);
+            double floor = under != null ? Math.max(-8.0, Math.min(0.0, under.f_82480_ - at.f_82480_)) : -0.5;
+            int count = (int) Math.max(3, Math.min(14, 3 + radius * 0.9));
+            mixed(player, at, Math.max(1.8, Math.min(9.0, radius * 0.8)), count, floor);
+        } catch (RuntimeException failure) {
+            // lightning never stops a blast
+        }
+    }
+
     /** Now and then, on its own: a Conqueror's lightning sparks off them even standing still. */
     @SubscribeEvent
     public static void tick(TickEvent.PlayerTickEvent event) {
@@ -203,6 +234,7 @@ public final class ConquerorAura {
 
     static void forget(UUID id) {
         NEXT.remove(id);
+        BLAST_NEXT.remove(id);
         CHARGING.remove(id);
     }
 }

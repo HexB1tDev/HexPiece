@@ -174,7 +174,7 @@ public final class DragonTests {
             check(count[0], finite[0], "Ryusei Kazan", age);
             // Inugami Guren, Magma Flow and Meigo near each other
             count[0] = 0;
-            com.hexhaki.piece.magu.MaguArt.hound(sink, 0, -1.6, 6.0 + age * 0.4, 0, 1, com.hexhaki.piece.server.MaguMoves.HOUND_SCALE, age, 11);
+            com.hexhaki.piece.magu.MaguArt.hound(sink, 0, 0.4, 6.0 + age * 0.4, 0, -0.2, 1, com.hexhaki.piece.server.MaguMoves.HOUND_SCALE, age, 11);
             com.hexhaki.piece.magu.MaguArt.stream(sink, stream, 14, age, 6);
             com.hexhaki.piece.magu.MaguArt.pierce(sink, 0, -0.4, 3.0, 0, 0, 1, 1.0, age % 16, 8);
             check(count[0], finite[0], "the hound, the stream and Meigo", age);

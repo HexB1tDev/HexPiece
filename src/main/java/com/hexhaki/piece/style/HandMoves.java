@@ -31,6 +31,31 @@ public final class HandMoves {
     static final double[][] TILT = {{0, 0.26, 0.06, -0.04, 0, -38, -24}, {2, 0.04, -0.05, -0.12, -21, 0, 0}, {6, 0.04, -0.04, -0.1, -20, 0, 0},
         {14, 0, 0, 0, 0, 0, 0}};
     static final double[][] UP = {{0, 0, 0, 0, 0, 0, 0}, {2, 0.04, -0.06, 0.06, -10, 0, 0}, {4, 0.04, 0.3, -0.02, 45, 0, 0}};
+    /**
+     * 3.1.5: Ryusei Kazan held: the fist punched up at tick 3 and every 6 ticks after (15 in all, MaguMoves.THROW_EVERY), drawn back down
+     * between the punches, held up after.
+     */
+    static final double[][] PUMP = pump();
+
+    static double[][] pump() {
+        double[][] up = {{0.04, 0.3, -0.02, 45, 0, 0}};
+        double[][] back = {{0.06, 0.14, 0.02, 22, -4, -6}};
+        java.util.List<double[]> rows = new java.util.ArrayList<>();
+        rows.add(new double[] {0, 0, 0, 0, 0, 0, 0});
+        rows.add(new double[] {2, 0.04, -0.06, 0.06, -10, 0, 0});
+        for (int k = 0; k < 15; k++) {
+            int t = 3 + 6 * k;
+            if (k > 0) {
+                rows.add(row(t - 3, back[0]));
+            }
+            rows.add(row(t, up[0]));
+        }
+        return rows.toArray(new double[0][]);
+    }
+
+    static double[] row(double tick, double[] m) {
+        return new double[] {tick, m[0], m[1], m[2], m[3], m[4], m[5]};
+    }
     static final double[][] UP_END = {{0, 0.04, 0.3, -0.02, 45, 0, 0}, {10, 0, 0, 0, 0, 0, 0}};
     static final double[][] SLAM = {{0, 0.04, 0.3, -0.02, 45, 0, 0}, {2, 0.04, 0.34, 0.0, 52, 0, 0}, {5, -0.04, -0.22, -0.26, -34, 0, 0},
         {8, -0.04, -0.2, -0.24, -30, 0, 0}, {14, 0, 0, 0, 0, 0, 0}};
@@ -87,7 +112,8 @@ public final class HandMoves {
             case "gura_release", "gura_gekishin", "magu_release" -> new Move(BIG, 0);
             case "gura_shake" -> new Move(SIDE, 1.4);
             case "gura_tilt" -> new Move(TILT, 0);
-            case "gura_leap", "magu_sky" -> new Move(UP, 0.3);
+            case "gura_leap" -> new Move(UP, 0.3);
+            case "magu_sky" -> new Move(PUMP, 0.3);
             case "gura_slam" -> new Move(SLAM, 0);
             case "gura_tsunami" -> new Move(SIDE_QUICK, 0);
             case "gura_split", "magu_erupt" -> new Move(DOWN, 0);

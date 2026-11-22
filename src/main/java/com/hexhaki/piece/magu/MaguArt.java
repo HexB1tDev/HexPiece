@@ -228,59 +228,131 @@ public final class MaguArt {
     // ------------------------------------------------------------------------------------------------------ the hound
 
     /**
-     * Inugami Guren's hound (ref 01: hounds of magma blooming out of him): a hound's head of magma {@code scale} big surging along the ground
-     * from ({@code x}, {@code y}, {@code z}) (its front, on the ground) along ({@code fx}, {@code fz}) (flat, unit), {@code age} ticks old:
-     * a skull, a long snout, the lower jaw snapping open and shut, two ears laid back, glowing eyes, fangs, its neck of magma pouring
-     * along the ground behind it, smoke boiling off it.
+     * Inugami Guren's hound (ref 01). 3.1.5 (the owner: "the face does not look like a hound at all. I'd like you to better it ... it should
+     * go where the player is aiming"): a dog's head of magma, its middle at ({@code x}, {@code y}, {@code z}), looking along ({@code fx},
+     * {@code fy}, {@code fz}) (unit, the aim, up and down too): a broad skull with a ruff at the cheeks, a brow stepped down to a long
+     * muzzle tapering to a dark nose, the lower jaw snapping wide open on a dark gape, fangs down from the muzzle and up from the jaw, two
+     * tall pointed ears pricked up and back, glowing eyes under the brow, the neck pouring away behind it, smoke boiling off.
      */
-    public static void hound(FireMesh.Sink sink, double x, double y, double z, double fx, double fz, double scale, double age, int seed) {
+    public static void hound(FireMesh.Sink sink, double x, double y, double z, double fx, double fy, double fz, double scale, double age,
+                             int seed) {
         double s = scale * ease(age / 4.0);
         if (s < 0.05) {
             return;
         }
-        double sx = -fz;
-        double sz = fx;
-        double hy = y + 1.15 * s;
+        // the head's own frame: f ahead, u its up (the world's up tipped with the aim), r its right
+        double fl = Math.max(1.0E-6, Math.sqrt(fx * fx + fy * fy + fz * fz));
+        fx /= fl;
+        fy /= fl;
+        fz /= fl;
+        double rx = -fz;
+        double rz = fx;
+        double rl = Math.sqrt(rx * rx + rz * rz);
+        if (rl < 1.0E-4) {
+            rx = 1.0;
+            rz = 0.0;
+            rl = 1.0;
+        }
+        rx /= rl;
+        rz /= rl;
+        double ux = -rz * fy;
+        double uy = rz * fx - rx * fz;
+        double uz = rx * fy;
+        H[0] = x;
+        H[1] = y;
+        H[2] = z;
+        H[3] = fx;
+        H[4] = fy;
+        H[5] = fz;
+        H[6] = ux;
+        H[7] = uy;
+        H[8] = uz;
+        H[9] = rx;
+        H[10] = 0.0;
+        H[11] = rz;
+        H[12] = s;
         double bite = 0.5 + 0.5 * Math.sin(age * 0.9);
-        FireMesh.shell(sink, x, hy, z, s * 2.6, GLOW, 0.2, 0.0);
-        // the neck pouring along the ground behind it
-        for (int k = 1; k >= 1; k--) {
-            double d = k * 0.9 * s;
-            double r = s * (0.75 - 0.12 * k);
-            double wob = Math.sin(age * 0.5 + k) * 0.12 * s;
-            lump(sink, x - fx * d + sx * wob, y + r * 0.35, z - fz * d + sz * wob, r, fx, 0, fz, 0.6, 0.72, 1.0, age, seed + 40 + k);
-        }
-        // the skull
-        lump(sink, x, hy, z, s * 0.85, fx, 0, fz, 0.2, 0.8, 1.0, age, seed);
-        // the snout, long, a little down
-        lump(sink, x + fx * 0.85 * s, hy - 0.05 * s, z + fz * 0.85 * s, s * 0.5, -fx, 0, -fz, 0.6, 0.85, 1.0, age, seed + 1);
-        lump(sink, x + fx * 1.25 * s, hy - 0.1 * s, z + fz * 1.25 * s, s * 0.36, -fx, 0, -fz, 0.4, 0.88, 1.0, age, seed + 3);
-        // the mouth's dark inside, and the lower jaw snapping under it
-        double drop = (0.3 + 0.35 * bite) * s;
-        lump(sink, x + fx * 0.95 * s, hy - 0.2 * s - drop * 0.4, z + fz * 0.95 * s, s * 0.34, -fx, 0, -fz, 0.6, 0.18, 1.0, age, seed + 4);
-        lump(sink, x + fx * 0.9 * s, hy - 0.2 * s - drop, z + fz * 0.9 * s, s * 0.36, -fx, 0, -fz, 0.9, 0.75, 1.0, age, seed + 2);
+        FireMesh.shell(sink, x, y, z, s * 2.8, GLOW, 0.2, 0.0);
+        // the neck pouring away behind it
+        part(sink, -1.0, -0.22, 0.0, 0.62, -1, 0, 0, 0.8, 0.72, 1.0, age, seed + 40);
+        part(sink, -1.7, -0.38, 0.0, 0.5, -1, 0, 0, 1.0, 0.66, 0.9, age, seed + 41);
+        // the skull, and the ruff at the cheeks
+        part(sink, -0.15, 0.08, 0.0, 0.68, 1, 0, 0, 0.3, 0.8, 1.0, age, seed);
         for (int side = -1; side <= 1; side += 2) {
-            // ears pricked up and back
-            lump(sink, x - fx * 0.3 * s + sx * side * 0.42 * s, hy + 0.8 * s, z - fz * 0.3 * s + sz * side * 0.42 * s, s * 0.3, -fx * 0.4, -1.0, -fz * 0.4,
-                1.3, 0.72, 1.0, age, seed + 6 + side);
-            // a glowing eye on the brow
-            FireMesh.shell(sink, x + fx * 0.86 * s + sx * side * 0.34 * s, hy + 0.34 * s, z + fz * 0.86 * s + sz * side * 0.34 * s, s * 0.15, 0xFFF4B0,
-                1.0, 0.7);
+            part(sink, -0.32, -0.24, 0.48 * side, 0.36, -0.6, 0.3, 0.7 * side, 0.8, 0.74, 1.0, age, seed + 10 + side);
+            // the brow: a ridge over each eye, the step down to the muzzle
+            part(sink, 0.32, 0.3, 0.24 * side, 0.27, -1, 0, 0, 0.3, 0.84, 1.0, age, seed + 14 + side);
+            // pointed ears, pricked up, back and out (a wolf's, broad at the base)
+            part(sink, -0.34, 0.52, 0.42 * side, 0.26, 0.55, -1.0, -0.42 * side, 1.6, 0.74, 1.0, age, seed + 18 + side);
+            // a glowing eye under the brow, slanted
+            point(sink, 0.5, 0.16, 0.34 * side, 0.15, 0xFFF4B0, 1.0, 0.75);
+            point(sink, 0.56, 0.15, 0.4 * side, 0.1, 0xFFF4B0, 0.9, 0.6);
         }
-        // fangs down from the snout, up from the jaw
-        for (int k = 0; k < 4; k++) {
-            double off = (k - 1.5) * 0.16 * s;
-            double fxp = x + fx * 1.3 * s + sx * off;
-            double fzp = z + fz * 1.3 * s + sz * off;
-            FireMesh.streak(sink, fxp, hy - 0.35 * s, fzp, 0, -1, 0, 0.35 * s, 0.05 * s, 0xFFE9A0, 0.95);
-            FireMesh.streak(sink, fxp - fx * 0.15 * s, hy - 0.1 * s - drop, fzp - fz * 0.15 * s, 0, 1, 0, 0.25 * s, 0.04 * s, 0xFFE9A0, 0.9);
+        // the muzzle: long and tapering, the dark nose on its tip
+        part(sink, 0.55, -0.04, 0.0, 0.42, -1, 0.05, 0, 0.5, 0.86, 1.0, age, seed + 1);
+        part(sink, 0.98, -0.08, 0.0, 0.35, -1, 0.05, 0, 0.5, 0.88, 1.0, age, seed + 5);
+        part(sink, 1.36, -0.11, 0.0, 0.28, -1, 0.05, 0, 0.4, 0.88, 1.0, age, seed + 7);
+        part(sink, 1.62, -0.05, 0.0, 0.17, -1, 0, 0, 0.2, 0.1, 1.0, age, seed + 3);
+        // the lower jaw hinged under the ear, snapping open (26 to 48 degrees): its line, the dark gape and the tongue in it
+        double open = Math.toRadians(26.0 + 22.0 * bite);
+        double jf = Math.cos(open);
+        double ju = -Math.sin(open);
+        double ha = 0.05;
+        double hu = -0.4;
+        for (int k = 0; k < 3; k++) {
+            double t = 0.35 + 0.42 * k;
+            part(sink, ha + jf * t, hu + ju * t, 0.0, 0.3 - 0.05 * k, -jf, -ju, 0, 0.4, 0.8, 1.0, age, seed + 2 + 30 * k);
+        }
+        part(sink, 0.62 + 0.1 * jf, -0.33 + 0.55 * ju, 0.0, 0.28, -1, 0, 0, 0.9, 0.06, 1.0, age, seed + 4);
+        part(sink, ha + jf * 0.8, hu + ju * 0.8 + 0.2, 0.0, 0.17, -jf, -ju, 0, 1.4, 0.5, 1.0, age, seed + 8);
+        // fangs: down from the muzzle into the gape, up from the jaw's tip
+        for (int k = -1; k <= 1; k += 2) {
+            fang(sink, 1.3, -0.33, 0.17 * k, 0, -1, 0, 0.42, 0.06);
+            fang(sink, 0.98, -0.36, 0.22 * k, 0, -1, 0, 0.28, 0.045);
+            double tip = 1.15;
+            fang(sink, ha + jf * tip, hu + ju * tip + 0.2, 0.14 * k, -ju, jf, 0, 0.32, 0.05);
         }
         // smoke boiling off it
         for (int k = 0; k < 2; k++) {
             double phase = (age * 0.08 + k / 2.0) % 1.0;
-            smoke(sink, x - fx * (0.6 + 1.6 * phase) * s, hy + (0.8 + 1.4 * phase) * s, z - fz * (0.6 + 1.6 * phase) * s, s * (0.4 + 0.5 * phase),
+            double back = -(0.6 + 1.6 * phase);
+            double up = 0.8 + 1.4 * phase;
+            smoke(sink, x + (fx * back + ux * up) * s, y + (fy * back + uy * up) * s, z + (fz * back + uz * up) * s, s * (0.4 + 0.5 * phase),
                 0.7 * (1.0 - phase), age, seed + 60 + k);
         }
+    }
+
+    /** The hound's frame (middle, ahead, up, right, its scale), set by {@link #hound} for its parts. */
+    static final double[] H = new double[13];
+
+    /** A lump of the hound at (ahead, up, right) in its frame, its tail stretched against (va, vu, vr). */
+    static void part(FireMesh.Sink sink, double a, double u, double r, double radius, double va, double vu, double vr, double stretch, double heat,
+                     double alpha, double age, int seed) {
+        double sc = H[12];
+        double px = H[0] + (H[3] * a + H[6] * u + H[9] * r) * sc;
+        double py = H[1] + (H[4] * a + H[7] * u + H[10] * r) * sc;
+        double pz = H[2] + (H[5] * a + H[8] * u + H[11] * r) * sc;
+        double vx = H[3] * va + H[6] * vu + H[9] * vr;
+        double vy = H[4] * va + H[7] * vu + H[10] * vr;
+        double vz = H[5] * va + H[8] * vu + H[11] * vr;
+        FireMesh.palette(MAGMA);
+        FireMesh.lump(sink, px, py, pz, radius * sc, vx, vy, vz, stretch, heat, 0.4, alpha, age, seed);
+        FireMesh.palette(FireMesh.BAND);
+    }
+
+    /** A glowing point of the hound (an eye) at (ahead, up, right). */
+    static void point(FireMesh.Sink sink, double a, double u, double r, double radius, int rgb, double centre, double rim) {
+        double sc = H[12];
+        FireMesh.shell(sink, H[0] + (H[3] * a + H[6] * u + H[9] * r) * sc, H[1] + (H[4] * a + H[7] * u + H[10] * r) * sc,
+            H[2] + (H[5] * a + H[8] * u + H[11] * r) * sc, radius * sc, rgb, centre, rim);
+    }
+
+    /** A fang of the hound at (ahead, up, right), pointing along (da, du, dr). */
+    static void fang(FireMesh.Sink sink, double a, double u, double r, double da, double du, double dr, double length, double width) {
+        double sc = H[12];
+        FireMesh.streak(sink, H[0] + (H[3] * a + H[6] * u + H[9] * r) * sc, H[1] + (H[4] * a + H[7] * u + H[10] * r) * sc,
+            H[2] + (H[5] * a + H[8] * u + H[11] * r) * sc, H[3] * da + H[6] * du + H[9] * dr, H[4] * da + H[7] * du + H[10] * dr,
+            H[5] * da + H[8] * du + H[11] * dr, length * sc, width * sc, 0xFFE9A0, 0.95);
     }
 
     // ------------------------------------------------------------------------------------------------------ geysers, the stream, the spike

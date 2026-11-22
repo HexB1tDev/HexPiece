@@ -23,8 +23,8 @@ public final class MaguShots {
                 double t = a / com.hexhaki.piece.server.MaguMoves.METEOR_FALL;
                 MaguArt.meteor(sink, 4.0 * (1 - t) - ex, 26.0 * (1 - t) + 0.5 - ey, 14.0 - ez, -4.0 / 12, -26.0 / 12, 0, 0.9, a, 5);
             }
-            case "mhound" -> MaguArt.hound(sink, -ex, -ey, 4.0 + a * com.hexhaki.piece.server.MaguMoves.HOUND_SPEED - ez, 0, 1,
-                com.hexhaki.piece.server.MaguMoves.HOUND_SCALE, a, 11);
+            case "mhound" -> MaguArt.hound(sink, -ex, 2.0 - ey, 4.0 + a * com.hexhaki.piece.server.MaguMoves.HOUND_SPEED - ez, 0,
+                move.length > 2 ? Double.parseDouble(move[2]) : 0.0, 1, com.hexhaki.piece.server.MaguMoves.HOUND_SCALE, a, 11);
             case "mgeyser" -> MaguArt.geyser(sink, -ex, -ey, 8.0 - ez, com.hexhaki.piece.server.MaguMoves.GEYSER_HEIGHT, a, 3);
             case "mstream" -> {
                 double[] pts = new double[12 * 3];

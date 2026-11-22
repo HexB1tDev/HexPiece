@@ -77,10 +77,15 @@ public final class MaguMoves {
     /** Meigo: its reach, the lunge's speed (blocks a tick). */
     static final double MEIGO_RANGE = 16.0;
     static final double MEIGO_SPEED = 2.6;
-    /** Ryusei Kazan: the most it is held, a meteor every this many ticks after the wind-up, their fall, where they land, how wide. */
-    static final int RAIN_MAX = 80;
-    static final int RAIN_WINDUP = 8;
-    static final int RAIN_EVERY = 4;
+    /**
+     * Ryusei Kazan (3.1.5): the first fist up this many ticks after X, then one every {@link #THROW_EVERY}, at most {@link #THROWS_MOST};
+     * let go by {@link #RAIN_HOLD_MOST} ticks at the latest; one falls every {@link #FALL_EVERY} ticks after; their fall, where, how wide.
+     */
+    public static final int THROW_FIRST = 3;
+    public static final int THROW_EVERY = 6;
+    public static final int THROWS_MOST = 15;
+    static final int RAIN_HOLD_MOST = 140;
+    static final int FALL_EVERY = 2;
     public static final int METEOR_FALL = 12;
     static final double RAIN_RANGE = 40.0;
     static final double RAIN_SPREAD = 8.0;
@@ -106,6 +111,8 @@ public final class MaguMoves {
         long busyUntil;
         long chargeSince = -1;
         long rainSince = -1;
+        /** 3.1.5: the fists of magma thrown up into the sky while X is held (as many fall when it is let go). */
+        int thrown;
         long moveUntil;
     }
 
@@ -133,6 +140,10 @@ public final class MaguMoves {
     static void fx(ServerPlayer player, int kind, int id, Vec3 at, Vec3 a, double bx, double by, double bz, double size, int ticks) {
         PieceNetwork.around(player, new S2CUoFx(kind, id, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, (float) a.f_82479_,
             (float) a.f_82480_, (float) a.f_82481_, (float) bx, (float) by, (float) bz, (float) size, ticks));
+        // 3.1.5: Meigo's fist through them throws the Conqueror's lightning out of the wound (every burst throws it: UoMoves.explode)
+        if (kind == PIERCE) {
+            ConquerorAura.exploded(player, (ServerLevel) player.m_9236_(), at, 2.5 + size);
+        }
     }
 
     static void fx(ServerPlayer player, int kind, int id) {
@@ -453,36 +464,59 @@ public final class MaguMoves {
     // ------------------------------------------------------------------------------------------------------ X: Ryusei Kazan
 
     /**
-     * Ryusei Kazan (refs 17, 18, 20): a fist of magma punched up into the sky (magu_sky), and while X is held (up to {@link #RAIN_MAX}
-     * ticks) fists of magma fall like meteors where he looks, one every {@link #RAIN_EVERY} ticks, {@link #RAIN_SPREAD} blocks round,
-     * each bursting into fire and leaving a little burning ground.
+     * Ryusei Kazan (refs 17, 18, 20). 3.1.5 (the owner: "It should be like you hold X, and the more you hold X, the more fireballs you
+     * throw at the sky. When you let go, that's when they fall. It should be the exact amount of fireballs you fire to the sky fall to the
+     * floor. Um, Same design and all"): while X is held, a fist of magma is punched up into the sky every {@link #THROW_EVERY} ticks (at
+     * most {@link #THROWS_MOST}; magu_sky pumps the fist with each); let go and exactly as many fall like meteors where he looks, one
+     * every {@link #FALL_EVERY} ticks, {@link #RAIN_SPREAD} blocks round, each bursting into fire and leaving a little burning ground.
      */
     static void rain(ServerPlayer player, State s, long now) {
         if (!ready(player, MaguKit.RYUSEI)) {
             return;
         }
         s.rainSince = now;
+        s.thrown = 0;
         animate(player, "magu_sky");
-        later(player, 3, () -> {
-            Vec3 from = player.m_20182_().m_82520_(0, 2.2, 0);
-            fx(player, SKY, ++seeds, from, Vec3.f_82478_, 0, 0, 0, 0.6, 0);
-            sound(player, from, MaguSounds.WHOOSH, 1.4F, 0.7F);
-        });
     }
 
     static void rainTick(ServerPlayer player, State s, long now) {
         long held = now - s.rainSince;
-        if (held > RAIN_MAX) {
+        if (held > RAIN_HOLD_MOST) {
             stopRain(player, s);
             return;
         }
-        if (held < RAIN_WINDUP || (held - RAIN_WINDUP) % RAIN_EVERY != 0) {
+        if (s.thrown >= THROWS_MOST || held < THROW_FIRST || (held - THROW_FIRST) % THROW_EVERY != 0) {
             return;
         }
-        ServerLevel level = (ServerLevel) player.m_9236_();
+        // one more fist of magma up into the sky, out of the raised fist
+        s.thrown++;
+        Vec3 from = player.m_20182_().m_82520_(0, 2.3, 0).m_82549_(flat(player).m_82490_(0.1));
+        fx(player, SKY, ++seeds, from, Vec3.f_82478_, 0, 0, 0, 0.6, 0);
+        sound(player, from, MaguSounds.WHOOSH, 1.2F, 0.75F + 0.02F * s.thrown);
+    }
+
+    static void stopRain(ServerPlayer player, State s) {
+        int count = s.thrown;
+        s.rainSince = -1;
+        s.thrown = 0;
+        cool(player, MaguKit.RYUSEI, 80 + 14 * count);
+        animate(player, "magu_sky_end");
+        if (count == 0) {
+            return;
+        }
+        // where he looks as he lets go; the more fists, the wider they fall
         Vec3 centre = PikaMoves.point(player, RAIN_RANGE);
+        double spread = RAIN_SPREAD * (0.55 + 0.45 * Math.min(1.0, count / 8.0));
+        for (int i = 0; i < count; i++) {
+            later(player, 4 + i * FALL_EVERY, () -> meteor(player, centre, spread));
+        }
+    }
+
+    /** One fist of magma falling from the sky somewhere within {@code spread} of {@code centre}, bursting where it lands. */
+    static void meteor(ServerPlayer player, Vec3 centre, double spread) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
         double a = level.m_213780_().m_188500_() * Math.PI * 2.0;
-        double r = RAIN_SPREAD * Math.sqrt(level.m_213780_().m_188500_());
+        double r = spread * Math.sqrt(level.m_213780_().m_188500_());
         Vec3 aim = centre.m_82520_(Math.cos(a) * r, 0, Math.sin(a) * r);
         Vec3 g = ground(level, aim, 6.0, 12.0);
         Vec3 land = g != null ? g : aim;
@@ -496,19 +530,14 @@ public final class MaguMoves {
         });
     }
 
-    static void stopRain(ServerPlayer player, State s) {
-        long held = now(player) - s.rainSince;
-        s.rainSince = -1;
-        cool(player, MaguKit.RYUSEI, 120 + (int) Math.min(RAIN_MAX, held) * 2);
-        animate(player, "magu_sky_end");
-    }
-
     // ------------------------------------------------------------------------------------------------------ C: Inugami Guren
 
     /**
      * Inugami Guren (ref 01, the hounds of magma blooming out of him): both arms thrust out and a giant hound's head of magma surges out
-     * along the ground ({@link #HOUND_SPEED} blocks a tick for {@link #HOUND_LIFE} ticks), jaws snapping: whoever it bites is burned and
-     * carried in its jaws; at the end it bursts into a flood of magma (a blast, the ground burning) and they are thrown down.
+     * ({@link #HOUND_SPEED} blocks a tick for {@link #HOUND_LIFE} ticks), jaws snapping: whoever it bites is burned and carried in its
+     * jaws; at the end it bursts into a flood of magma (a blast, the ground burning) and they are thrown down. 3.1.5 (the owner: "it
+     * should go where the player is aiming, not directly in front of the player. So, because if I aim down, it's not going down"): it
+     * flies straight along the aim, up or down, and bursts where it runs into the ground or a wall.
      */
     static void hound(ServerPlayer player, State s, long now) {
         if (!ready(player, MaguKit.INUGAMI)) {
@@ -519,13 +548,16 @@ public final class MaguMoves {
         animate(player, "magu_hound");
         later(player, 3, () -> {
             ServerLevel level = (ServerLevel) player.m_9236_();
-            Vec3 flat = flat(player);
-            Vec3 start = player.m_20182_().m_82549_(flat.m_82490_(2.0));
-            Vec3 g = ground(level, start, 2.0, 6.0);
-            if (g != null) {
-                start = g;
+            Vec3 look = player.m_20154_();
+            Vec3 eye = player.m_146892_();
+            // its head starts ahead of the chest (pulled back if a wall is nearer)
+            Vec3 chest = eye.m_82520_(0, -0.2, 0);
+            Vec3 start = chest.m_82549_(look.m_82490_(2.6));
+            BlockHitResult near = level.m_45547_(new ClipContext(chest, start, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+            if (near.m_6662_() == HitResult.Type.BLOCK) {
+                start = chest.m_82549_(look.m_82490_(Math.max(0.5, near.m_82450_().m_82554_(chest) - 0.6)));
             }
-            Vec3 step = flat.m_82490_(HOUND_SPEED);
+            Vec3 step = look.m_82490_(HOUND_SPEED);
             int seed = ++seeds;
             fx(player, HOUND, seed, start, step, 0, 0, 0, HOUND_SCALE, HOUND_LIFE);
             sound(player, start, MaguSounds.ROAR, 2.0F, 0.85F);
@@ -533,19 +565,22 @@ public final class MaguMoves {
             List<LivingEntity> caught = new ArrayList<>();
             LIVE.add(new UoMoves.Live() {
                 int age;
-                double y = origin.f_82480_;
 
                 @Override
                 public boolean tick(long t) {
                     this.age++;
-                    Vec3 front = origin.m_82549_(step.m_82490_(this.age));
-                    Vec3 under = ground(level, new Vec3(front.f_82479_, this.y, front.f_82481_), 4.0, 8.0);
-                    if (under != null) {
-                        this.y += (under.f_82480_ - this.y) * 0.5;
+                    Vec3 was = origin.m_82549_(step.m_82490_(this.age - 1));
+                    Vec3 jaws = origin.m_82549_(step.m_82490_(this.age));
+                    // its jaws run into the ground or a wall: it bursts there
+                    BlockHitResult struck = level.m_45547_(new ClipContext(was, jaws.m_82549_(look.m_82490_(HOUND_SCALE * 0.8)),
+                        ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+                    boolean hit = struck.m_6662_() == HitResult.Type.BLOCK;
+                    if (hit) {
+                        jaws = struck.m_82450_().m_82546_(look.m_82490_(0.6));
                     }
-                    Vec3 jaws = new Vec3(front.f_82479_, this.y + HOUND_SCALE * 0.9, front.f_82481_);
-                    if (this.age > HOUND_LIFE || !player.m_6084_()) {
-                        erupt(player, jaws, flat, 4.5, 8.0F, 6, 1.8, 3.0, 100);
+                    if (hit || this.age > HOUND_LIFE || !player.m_6084_()) {
+                        erupt(player, jaws, look, 4.5, 8.0F, 6, 1.8, 3.0, 100, seed);
+                        Vec3 flat = flat(player);
                         for (LivingEntity body : caught) {
                             if (body.m_6084_()) {
                                 body.m_20334_(flat.f_82479_ * 1.2, 0.6, flat.f_82481_ * 1.2);
@@ -568,8 +603,8 @@ public final class MaguMoves {
                         if (!body.m_6084_()) {
                             continue;
                         }
-                        Vec3 want = jaws.m_82546_(body.m_20182_());
-                        body.m_20334_(step.f_82479_ + want.f_82479_ * 0.3, Math.max(0.0, want.f_82480_ * 0.3), step.f_82481_ + want.f_82481_ * 0.3);
+                        Vec3 want = jaws.m_82546_(StyleCombat.middle(body));
+                        body.m_20334_(step.f_82479_ + want.f_82479_ * 0.3, step.f_82480_ + want.f_82480_ * 0.3, step.f_82481_ + want.f_82481_ * 0.3);
                         body.f_19864_ = true;
                         body.f_19789_ = 0.0F;
                         if (this.age % 6 == 0) {

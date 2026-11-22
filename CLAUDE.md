@@ -19,6 +19,12 @@ workflow runs are kept (the owner: keep 5 versions, delete the older ones).
 RULE: a push is done only when GitHub says so. After every push, check the branch's "Build HexPiece" run (and "Release HexPiece" when release
 notes changed) ends green. A local `python3 build.py` EXIT 0 is not enough on its own.
 
+RULE: one style for every fruit, and Haki lightning out of explosions (the owner: "always tell the other AIs like that they are to
+follow this same exact idea"). Every fruit's models, effects and animations are made exactly like the Light, Gura and Magma fruits'
+(3D meshes as FireMesh/GuraArt/MaguArt build them, clips with no leg or head keyed, a first-person hand move per move, CC0 sounds).
+With the Conqueror's Haki and Ryou on, every move of every fruit throws the Conqueror's lightning (visual only, no stun): a move that
+ends in an explosion throws it outward from that explosion, not from its beam ("not optional"). The handoff keeps both as POINT ONE.
+
 RULE: the Imu fruit (the Devil Devil fruit) is gone for good. The owner: "Get rid of the Imu fruit (Devil Devil fruit) Get rid of it ENTIRELY,
 but keep it's assets, for future use on other things." Its assets (`textures/item/black_soul.png`, `models/item/black_soul.json`, the
 "Black Soul" name) stay in the jar, unregistered; `build.py` (`check_imu`) fails if any code, text or file name names it again.

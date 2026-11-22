@@ -116,6 +116,9 @@ public final class PikaMoves {
     static final double LASER_RANGE = 70.0;
     static final double BEAM_RANGE = 90.0;
     static final int BEAM_FULL = 40;
+    /** 3.1.5: the beam drags whoever it crosses to its end at most this fast (blocks a tick), and never longer than this (ticks). */
+    static final double DRAG_SPEED = 5.0;
+    static final int DRAG_MOST = 12;
     static final int TAP = 6;
     static final int VOLLEY_MAX = 56;
     /**
@@ -193,6 +196,13 @@ public final class PikaMoves {
     static void fx(ServerPlayer player, int kind, int id, Vec3 at, Vec3 a, double bx, double by, double bz, double size, int ticks) {
         PieceNetwork.around(player, new S2CUoFx(kind, id, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, (float) a.f_82479_,
             (float) a.f_82480_, (float) a.f_82481_, (float) bx, (float) by, (float) bz, (float) size, ticks));
+        // 3.1.5: with the Conqueror's Haki and Ryou on, a move with no explosion throws the Conqueror's lightning where it strikes (a kick
+        // or a cut landing, the tap laser's end); explosions throw it themselves (UoMoves.explode)
+        if (kind == KICK) {
+            ConquerorAura.exploded(player, (ServerLevel) player.m_9236_(), at, 2.0 + size * 0.5);
+        } else if (kind == LASER) {
+            ConquerorAura.exploded(player, (ServerLevel) player.m_9236_(), a, 1.8);
+        }
     }
 
     static void fx(ServerPlayer player, int kind) {
@@ -460,7 +470,12 @@ public final class PikaMoves {
         });
     }
 
-    /** The light gathered at the fingertip let go: a beam burning through everything in its way, blowing up at its end. */
+    /**
+     * The light gathered at the fingertip let go: a beam burning through everything in its way, blowing up at its end. 3.1.5 (the owner:
+     * "I think the beam should drag entities to the end of it and then explode, like the magma hound does"): whoever it crosses is burned
+     * and dragged along it to its end ({@link #DRAG_SPEED} blocks a tick at most, all there by the same tick), and the end blows up the
+     * moment they arrive, throwing them out.
+     */
     static void beam(ServerPlayer player, float charge) {
         if (!ready(player, PikaKit.LASER)) {
             animate(player, "pika_laser_end");
@@ -469,6 +484,7 @@ public final class PikaMoves {
         cool(player, PikaKit.LASER, 40 + (int) (40 * charge));
         state(player).busyUntil = now(player) + 10;
         animate(player, "pika_laser_fire");
+        ServerLevel level = (ServerLevel) player.m_9236_();
         Vec3 from = fingertip(player);
         Vec3 look = player.m_20154_();
         Vec3 to = point(player, BEAM_RANGE);
@@ -477,25 +493,59 @@ public final class PikaMoves {
         sound(player, from, PikaSounds.BEAM, 2.0F, 1.0F);
         double length = to.m_82554_(from);
         Vec3 way = to.m_82546_(from).m_82541_();
-        for (LivingEntity body : player.m_9236_().m_6443_(LivingEntity.class, UoMoves.box(from, to).m_82400_(width + 1.0),
+        List<LivingEntity> caught = new ArrayList<>();
+        for (LivingEntity body : level.m_6443_(LivingEntity.class, UoMoves.box(from, to).m_82400_(width + 1.0),
             e -> e != player && e.m_6084_() && !e.m_5833_() && FruitUtil.foe(player, e))) {
             Vec3 rel = StyleCombat.middle(body).m_82546_(from);
             double along = rel.m_82526_(way);
             if (along < 0 || along > length || rel.m_82546_(way.m_82490_(along)).m_82553_() > width + body.m_20205_() * 0.5) {
                 continue;
             }
-            hit(player, body, 6.0F + 8.0F * charge, look.m_82490_(1.2 + charge).m_82520_(0, 0.4, 0), true);
+            hit(player, body, 6.0F + 8.0F * charge, way.m_82490_(0.2), false);
+            caught.add(body);
         }
-        // 3.0.5 (the owner: "the right click explosion range (full charge and Mid charge, is too small, and entities are barely getting
-        // knocked back)"): 5 to 13 blocks (was 3 to 7), thrown 2.6 to 6 times as hard (was 1.4 to 3)
-        double radius = 5.0 + 8.0 * charge;
-        UoMoves.explode(player, (ServerLevel) player.m_9236_(), to, look, radius, 5.0F + 7.0F * charge, 0, 2.6 + 3.4 * charge);
-        // 3.0.2 (the owner: "the HELD version should have a lingering explosion effect, it's dissappearing instantly after it explodes"):
-        // the blast is its own burst (LightArt.burst: gathering, going off, its dome, its ball of light and dust, 2 to 3.5 s), no longer
-        // drawn inside the beam, which is gone in 12 ticks and took the blast with it
-        fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 3.0 + 5.0 * charge, 0);
-        Impact.quake((ServerLevel) player.m_9236_(), to, radius * 4.0, (float) Math.min(1.0, radius / 6.0), 12);
-        sound(player, to, PikaSounds.EXPLODE, 2.2F, 0.9F);
+        // where they are dragged to: just short of the end (a wall's face, not inside it); how long it takes the farthest of them
+        Vec3 end = to.m_82546_(way.m_82490_(Math.min(1.2, length * 0.5)));
+        double farthest = 0.0;
+        for (LivingEntity body : caught) {
+            farthest = Math.max(farthest, StyleCombat.middle(body).m_82554_(end));
+        }
+        int drag = caught.isEmpty() ? 1 : (int) Math.max(3, Math.min(DRAG_MOST, Math.ceil(farthest / DRAG_SPEED)));
+        LIVE.add(new UoMoves.Live() {
+            int age;
+
+            @Override
+            public boolean tick(long t) {
+                this.age++;
+                if (this.age >= drag || !player.m_6084_()) {
+                    // 3.0.5: 5 to 13 blocks, thrown 2.6 to 6 times as hard; 3.0.2: the blast is its own lingering burst
+                    double radius = 5.0 + 8.0 * charge;
+                    UoMoves.explode(player, level, to, look, radius, 5.0F + 7.0F * charge, 0, 2.6 + 3.4 * charge);
+                    fx(player, BURST, 0, to, Vec3.f_82478_, 0, 0, 0, 3.0 + 5.0 * charge, 0);
+                    Impact.quake(level, to, radius * 4.0, (float) Math.min(1.0, radius / 6.0), 12);
+                    sound(player, to, PikaSounds.EXPLODE, 2.2F, 0.9F);
+                    return true;
+                }
+                int left = Math.max(1, drag - this.age);
+                for (LivingEntity body : caught) {
+                    if (!body.m_6084_()) {
+                        continue;
+                    }
+                    Vec3 want = end.m_82546_(StyleCombat.middle(body));
+                    double d = want.m_82553_();
+                    Vec3 v = d < 1.0E-3 ? Vec3.f_82478_ : want.m_82490_(Math.min(DRAG_SPEED, d / left) / d);
+                    body.m_20334_(v.f_82479_, v.f_82480_, v.f_82481_);
+                    body.f_19864_ = true;
+                    body.f_19789_ = 0.0F;
+                }
+                return false;
+            }
+
+            @Override
+            public ServerLevel level() {
+                return level;
+            }
+        });
     }
 
     // ------------------------------------------------------------------------------------------------------ Z: Yata no Kagami
