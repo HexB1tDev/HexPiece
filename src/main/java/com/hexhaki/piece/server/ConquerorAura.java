@@ -220,6 +220,26 @@ public final class ConquerorAura {
         }
     }
 
+    /** 3.1.5: Gear 5's effects (S2CGearFx.Kind's names) that are a blow landing or a blast: the lightning comes out of these. */
+    static final java.util.Set<String> GEAR_BLASTS = java.util.Set.of("IMPACT", "AWAKEN_BURST", "AWAKEN_LAND", "COIL_RELEASE",
+        "RUBBER_FIELD", "STAR_GUN");
+
+    /**
+     * 3.1.5, PiecePatch.gearLightning: Gear 5 sent its effect {@code kind} at {@code at} ({@code size}: its own scale, about 0.5 to 4):
+     * a blow's impact, a landing, the coil's release, the giant fist's slam or the star gun throws the Conqueror's lightning out of it
+     * as {@link #exploded} does (visual only); its bounces and its own lightning do not.
+     */
+    public static void gear(ServerPlayer player, Enum<?> kind, Vec3 at, float size) {
+        try {
+            if (player == null || kind == null || at == null || !GEAR_BLASTS.contains(kind.name())) {
+                return;
+            }
+            exploded(player, (net.minecraft.server.level.ServerLevel) player.m_9236_(), at, Math.max(1.8, Math.min(10.0, size * 2.4)));
+        } catch (RuntimeException failure) {
+            // lightning never stops a move
+        }
+    }
+
     /** Now and then, on its own: a Conqueror's lightning sparks off them even standing still. */
     @SubscribeEvent
     public static void tick(TickEvent.PlayerTickEvent event) {

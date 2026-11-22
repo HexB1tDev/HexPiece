@@ -20,7 +20,7 @@ public final class SparkPreview {
     }
 
     public static void main(String[] args) throws Exception {
-        String[] rows = {"body 2", "body 6", "blade", "gura burst"};
+        String[] rows = {"body 2", "body 6", "blade", "gura burst", "blast 9"};
         double[] ages = {0.5, 2, 4, 6, 9, 12};
         int cw = 300;
         int ch = 300;
@@ -34,6 +34,19 @@ public final class SparkPreview {
                 case 0 -> ConquerorSparks.body(2, 1.8, 0.6, 11L);
                 case 1 -> ConquerorSparks.body(6, 1.8, 0.6, 12L);
                 case 2 -> ConquerorSparks.blade(new double[] {-0.35, 1.15, 0.45}, new double[] {-0.35, 1.9, 2.5}, 11, 0.0, 13L);
+                case 4 -> {
+                    // 3.1.5: ConquerorAura.exploded out of a radius 9 blast (the Light fruit's full beam): 0.8 of it, 11 arcs, 8 ahead
+                    List<Bolt> moved = new ArrayList<>();
+                    for (Bolt bolt : ConquerorSparks.burst(7.2, 11, -0.5, 15L)) {
+                        double[] q = bolt.points.clone();
+                        for (int i = 0; i < q.length; i += 3) {
+                            q[i + 1] += 0.5;
+                            q[i + 2] += 8.0;
+                        }
+                        moved.add(new Bolt(q, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                    }
+                    yield moved;
+                }
                 default -> {
                     // 3.1.2: the Conqueror's lightning mixed into a Gura quake (the fist's crack 1.5 ahead, 1.2 over the ground)
                     List<Bolt> moved = new ArrayList<>();
@@ -51,6 +64,7 @@ public final class SparkPreview {
             g.setColor(Color.WHITE);
             g.drawString(rows[r], 4, r * (ch + 16) + 13);
             for (int c = 0; c < ages.length; c++) {
+                far = r == 4;
                 g.drawImage(render(bolts, ages[c], cw * 2, ch * 2), c * cw + 2, r * (ch + 16) + 16, cw - 2, ch - 2, null);
                 g.setColor(Color.BLACK);
                 g.drawString(String.format("t%.1f", ages[c]), c * cw + 6, r * (ch + 16) + 30);
@@ -59,9 +73,12 @@ public final class SparkPreview {
         ImageIO.write(sheet, "png", new File(args[0]));
     }
 
+    /** 3.1.5: the blast row seen from further back, over the caster's shoulder. */
+    static boolean far;
+
     static BufferedImage render(List<Bolt> bolts, double age, int w, int h) {
-        double[] eye = {3.2, 1.6, -2.4};
-        double[] target = {0, 1.0, 0.6};
+        double[] eye = far ? new double[] {4.5, 3.4, -5.0} : new double[] {3.2, 1.6, -2.4};
+        double[] target = far ? new double[] {0, 1.5, 7.0} : new double[] {0, 1.0, 0.6};
         DragonPreview.fov = 55;
         DragonPreview.Raster raster = new DragonPreview.Raster(w, h, eye, target);
         raster.ground(0);

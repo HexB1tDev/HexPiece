@@ -69,15 +69,22 @@ public final class ConquerorSparks {
         SplittableRandom random = new SplittableRandom(seed ^ 0x4255_5253_54L);
         List<Bolt> out = new ArrayList<>(count * 2);
         double[] at = {0.0, 0.0, 0.0};
+        // 3.1.5 (the owner: "the explosion is what gets the lightning like blowing from outwards of it"): out of a blast on the ground,
+        // half the arcs went down into it, unseen, and a big blast's arcs were as thin as a fist's: the arcs that do not ground go up and
+        // out of the ground (never steeper down than a fifth), thicker the bigger it is
+        double thick = Math.max(1.0, Math.sqrt(radius / 4.0));
         for (int i = 0; i < count; i++) {
             double[] dir = Sphere.unit(random);
             double length = radius * (0.45 + 0.55 * random.nextDouble());
             if (i % 4 == 0 && floor < 0.0) {
                 dir = ConquerorStorm.normalise(new double[] {dir[0] * 0.6, -1.0, dir[2] * 0.6});
                 length = Math.max(length, -floor + 0.4);
+            } else if (floor < 0.0 && dir[1] < -0.2) {
+                dir = ConquerorStorm.normalise(new double[] {dir[0], -dir[1] * 0.8, dir[2]});
             }
             double[] from = {dir[0] * 0.15, dir[1] * 0.15, dir[2] * 0.15};
-            arc(out, random, from, dir, length, 0.06 + 0.05 * random.nextDouble(), (float) (random.nextDouble() * 2.5), 6 + random.nextInt(5));
+            arc(out, random, from, dir, length, (0.06 + 0.05 * random.nextDouble()) * thick, (float) (random.nextDouble() * 2.5),
+                6 + random.nextInt(5));
         }
         return out;
     }

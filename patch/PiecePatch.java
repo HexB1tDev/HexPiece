@@ -431,6 +431,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
         entries.put(CONTROLLER + ".class", transform(entries.get(CONTROLLER + ".class"), PiecePatch::conquerorHaki));
+        entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), PiecePatch::gearLightning));
         // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
         // lightning themselves, past HakiBolts, and showed the original's flat beams
         entries.put(GEAR_VFX + ".class", transform(entries.get(GEAR_VFX + ".class"), node -> playHook(method(node, "playAt",
@@ -1004,6 +1005,27 @@ public final class PiecePatch implements Opcodes {
         moved.add(new VarInsnNode(ALOAD, 1));
         moved.add(new MethodInsnNode(INVOKESTATIC, CONQUEROR_AURA, "moved", "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;)V", false));
         animate.instructions.insert(moved);
+    }
+
+    static final String GEAR_SERVER = "com/hexhaki/devilfruit/gameplay/GearServerController";
+
+    /**
+     * 3.1.5 (POINT ONE of the handoff, the owner: "every move from every fruit does that"): Gear 5's server sends every one of its
+     * effects through {@code GearServerController.fx(player, kind, at, size)} (the blows' impacts, the landings, the coil's release, the
+     * giant fist's slam, the star gun); each goes past {@code ConquerorAura.gear(player, kind, at, size)} first, which throws the
+     * Conqueror's lightning (visual only) out of the impacts when the player has the Conqueror's Haki and Ryou on. No branch added.
+     */
+    static void gearLightning(ClassNode node) {
+        MethodNode fx = method(node, "fx", "(Lnet/minecraft/server/level/ServerPlayer;Lcom/hexhaki/network/msg/S2CGearFx$Kind;"
+            + "Lnet/minecraft/world/phys/Vec3;F)V");
+        InsnList call = new InsnList();
+        call.add(new VarInsnNode(ALOAD, 0));
+        call.add(new VarInsnNode(ALOAD, 1));
+        call.add(new VarInsnNode(ALOAD, 2));
+        call.add(new VarInsnNode(FLOAD, 3));
+        call.add(new MethodInsnNode(INVOKESTATIC, CONQUEROR_AURA, "gear",
+            "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/Enum;Lnet/minecraft/world/phys/Vec3;F)V", false));
+        fx.instructions.insert(call);
     }
 
     /** 2.7.1: the quick slots' letters ({@code Binds.DEFAULT_KEYS}, {@code HAKI_KEYS}) as keyDefaults sets the keys: M -> H, N -> V, H -> X. */

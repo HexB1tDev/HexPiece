@@ -282,11 +282,17 @@ public final class MaguArt {
             part(sink, -0.32, -0.24, 0.48 * side, 0.36, -0.6, 0.3, 0.7 * side, 0.8, 0.74, 1.0, age, seed + 10 + side);
             // the brow: a ridge over each eye, the step down to the muzzle
             part(sink, 0.32, 0.3, 0.24 * side, 0.27, -1, 0, 0, 0.3, 0.84, 1.0, age, seed + 14 + side);
-            // pointed ears, pricked up, back and out (a wolf's, broad at the base)
-            part(sink, -0.34, 0.52, 0.42 * side, 0.26, 0.55, -1.0, -0.42 * side, 1.6, 0.74, 1.0, age, seed + 18 + side);
+            // pointed ears, pricked up, back and out (a wolf's: a broad base, a cone of magma to a dark point; 3.1.5, the owner: "the
+            // face does not look like a hound at all": round ears read as a mouse's from behind)
+            part(sink, -0.36, 0.5, 0.4 * side, 0.22, 0.4, -1.0, -0.3 * side, 0.6, 0.76, 1.0, age, seed + 18 + side);
+            spike(sink, -0.38, 0.56, 0.4 * side, -0.5, 1.0, 0.22 * side, 0.9, 0.22, 0xFF8A22, 0x6A1406);
             // a glowing eye under the brow, slanted
-            point(sink, 0.5, 0.16, 0.34 * side, 0.15, 0xFFF4B0, 1.0, 0.75);
-            point(sink, 0.56, 0.15, 0.4 * side, 0.1, 0xFFF4B0, 0.9, 0.6);
+            point(sink, 0.52, 0.17, 0.34 * side, 0.1, 0xFFE070, 1.0, 0.8);
+            point(sink, 0.58, 0.16, 0.39 * side, 0.07, 0xFFF4B0, 0.9, 0.6);
+        }
+        // the hackles: three low tongues of magma raised along the nape
+        for (int k = 0; k < 3; k++) {
+            spike(sink, -0.75 - 0.4 * k, 0.5 - 0.1 * k, 0.0, -1.0, 0.45, 0.0, 0.55 - 0.08 * k, 0.15, 0xFF8A22, 0x6A1406);
         }
         // the muzzle: long and tapering, the dark nose on its tip
         part(sink, 0.55, -0.04, 0.0, 0.42, -1, 0.05, 0, 0.5, 0.86, 1.0, age, seed + 1);
@@ -336,7 +342,7 @@ public final class MaguArt {
         double vy = H[4] * va + H[7] * vu + H[10] * vr;
         double vz = H[5] * va + H[8] * vu + H[11] * vr;
         FireMesh.palette(MAGMA);
-        FireMesh.lump(sink, px, py, pz, radius * sc, vx, vy, vz, stretch, heat, 0.4, alpha, age, seed);
+        FireMesh.lump(sink, px, py, pz, radius * sc, vx, vy, vz, stretch, heat, 0.7, alpha, age, seed);
         FireMesh.palette(FireMesh.BAND);
     }
 
@@ -345,6 +351,22 @@ public final class MaguArt {
         double sc = H[12];
         FireMesh.shell(sink, H[0] + (H[3] * a + H[6] * u + H[9] * r) * sc, H[1] + (H[4] * a + H[7] * u + H[10] * r) * sc,
             H[2] + (H[5] * a + H[8] * u + H[11] * r) * sc, radius * sc, rgb, centre, rim);
+    }
+
+    /**
+     * A cone of magma of the hound (an ear, a tongue of its mane) from (ahead, up, right) along (da, du, dr), {@code length} long and
+     * {@code radius} round at its base, hot {@code base} there to dark {@code tip} at its point.
+     */
+    static void spike(FireMesh.Sink sink, double a, double u, double r, double da, double du, double dr, double length, double radius, int base,
+                      int tip) {
+        double sc = H[12];
+        double dl = Math.sqrt(da * da + du * du + dr * dr);
+        double l = length * sc / dl;
+        double px = H[0] + (H[3] * a + H[6] * u + H[9] * r) * sc;
+        double py = H[1] + (H[4] * a + H[7] * u + H[10] * r) * sc;
+        double pz = H[2] + (H[5] * a + H[8] * u + H[11] * r) * sc;
+        FireMesh.tube(sink, px, py, pz, px + (H[3] * da + H[6] * du + H[9] * dr) * l, py + (H[4] * da + H[7] * du + H[10] * dr) * l,
+            pz + (H[5] * da + H[8] * du + H[11] * dr) * l, radius * sc, 0.004 * sc, base, tip, tip, 0.0, 1.0, 0.0, 0.0, 0);
     }
 
     /** A fang of the hound at (ahead, up, right), pointing along (da, du, dr). */

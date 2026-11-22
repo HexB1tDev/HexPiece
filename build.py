@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.1.4"
+VERSION = "3.1.5"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -99,6 +99,7 @@ PATCHED = {
     "com/hexhaki/client/render/HakiPhysiqueLayer.class",
     "com/hexhaki/client/render/HakiChestLayer.class",
     "com/hexhaki/gameplay/HakiServerController.class",
+    "com/hexhaki/devilfruit/gameplay/GearServerController.class",  # 3.1.5: its effects throw the Conqueror's lightning (gearLightning)
     # 2.9.4: Gear 5's and the thunderstorm's lightning through the 3D Haki lightning
     "com/hexhaki/client/devilfruit/GearVfx.class",
     "com/hexhaki/patch/ThunderstormImpact.class",
