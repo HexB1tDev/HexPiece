@@ -2,14 +2,14 @@ The Hie Hie no Mi's sounds (tools/hie_sounds.py). Every recording is CC0 1.0 (pu
 here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
 start). Nothing is made by hand. Thanks to every author named.
 
-freeze1.ogg: "Ice Spell Freeze" by Qvantor, https://freesound.org/people/Qvantor/sounds/880760/ (CC0 1.0), from 0.0 s, 2.43 s long, 4.0 dB quieter
-freeze2.ogg: "Freeze" by lori.mortimer, https://freesound.org/people/lori.mortimer/sounds/723875/ (CC0 1.0), from 0.9 s, 2.40 s long, 2.0 dB quieter
-form1.ogg: "Ice - Fracture, roots or growing plants" by Vrymaa, https://freesound.org/people/Vrymaa/sounds/735401/ (CC0 1.0), from 1.8 s, 2.60 s long, 3.0 dB quieter
-form2.ogg: "Ice / Frost cracking" by Sanderboah, https://freesound.org/people/Sanderboah/sounds/709137/ (CC0 1.0), from 2.8 s, 2.40 s long, 3.0 dB quieter
+freeze1.ogg: "ice_cracking_01.flac" by Mooe, https://freesound.org/people/Mooe/sounds/169897/ (CC0 1.0), from 32.5 s, 2.20 s long
+freeze2.ogg: "Ice Cracks" by karlis.stigis, https://freesound.org/people/karlis.stigis/sounds/168712/ (CC0 1.0), from 4.3 s, 2.20 s long
+form1.ogg: "Slow Cracking Ice" by PhilllChabbb, https://freesound.org/people/PhilllChabbb/sounds/268862/ (CC0 1.0), from 24.4 s, 2.40 s long, 5.0 dB quieter
+form2.ogg: "Ice cracking_northern87" by northern87, https://freesound.org/people/northern87/sounds/369982/ (CC0 1.0), from 54.6 s, 2.41 s long, compressed to sound louder
 crack1.ogg: "Ice Crack 1" by j_p_higgins, https://freesound.org/people/j_p_higgins/sounds/262635/ (CC0 1.0), from 0.0 s, 1.10 s long, compressed to sound louder
-crack2.ogg: "Ice / Frost cracking" by Sanderboah, https://freesound.org/people/Sanderboah/sounds/709137/ (CC0 1.0), from 47.8 s, 1.80 s long
+crack2.ogg: "ice_cracking_01.flac" by wwstudioswastaken, https://freesound.org/people/wwstudioswastaken/sounds/624163/ (CC0 1.0), from 0.0 s, 0.70 s long, compressed to sound louder
 shatter1.ogg: "ICEBrk_Break04_InMotionAudio_FREESampleSunday" by InMotionAudio, https://freesound.org/people/InMotionAudio/sounds/719973/ (CC0 1.0), from 0.0 s, 0.93 s long
 shatter2.ogg: "Break Ice" by davilca, https://freesound.org/people/davilca/sounds/677230/ (CC0 1.0), from 3.8 s, 2.00 s long, compressed to sound louder
-hit1.ogg: "Chill Hit" by JustInvoke, https://freesound.org/people/JustInvoke/sounds/138484/ (CC0 1.0), from 0.0 s, 0.55 s long
-age1.ogg: "S27-07 Ice avalanche sliding &amp; breaking up; weird.wav" by craigsmith, https://freesound.org/people/craigsmith/sounds/675734/ (CC0 1.0), from 0.0 s, 3.60 s long, 2.0 dB quieter
+hit1.ogg: "Ice Break Crunch Crack Foot 01" by JackMenhorn, https://freesound.org/people/JackMenhorn/sounds/213578/ (CC0 1.0), from 85.5 s, 0.90 s long, compressed to sound louder
+age1.ogg: "Slow Cracking Ice" by PhilllChabbb, https://freesound.org/people/PhilllChabbb/sounds/268862/ (CC0 1.0), from 9.7 s, 3.60 s long, 4.0 dB quieter
 frost.ogg: "Subzero Frost Loop" by qubodup, https://freesound.org/people/qubodup/sounds/844261/ (CC0 1.0), a loop from 0.0 s, 4.27 s long, 3.0 dB quieter

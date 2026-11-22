@@ -40,6 +40,21 @@ public final class HieShots {
         double a = move.length > 1 ? Double.parseDouble(move[1]) : 0.0;
         switch (move[0]) {
             case "hshatter" -> HieArt.shatter(sink, -ex, 1.0 - ey, -ez, 1.2, a, 6);
+            // 3.2.2: a body frozen in crystal (the owner: "in a crystal like you had before that then shatters"), its shattering, the
+            // frost a punch leaves (frost 0 to 1), the Ice Ball's crystal prison
+            case "hblock" -> {
+                body(sink, -ex, -ey, -ez);
+                HieArt.block(sink, -ex, -ey, -ez, 0.3, 1.9, a, move.length > 2 ? Double.parseDouble(move[2]) : 80, 5);
+            }
+            case "hcshatter" -> HieArt.crystalShatter(sink, -ex, 0.95 - ey, -ez, 1.3, a, 6);
+            case "hfrost" -> {
+                body(sink, -ex, -ey, -ez);
+                HieArt.frost(sink, -ex, -ey, -ez, 0.3, 1.9, move.length > 2 ? Double.parseDouble(move[2]) : 0.5, a, 7);
+            }
+            case "hprison" -> {
+                body(sink, -ex, -ey, -ez);
+                HieArt.prison(sink, -ex, 1.4 - ey, -ez, 2.6, a, move.length > 2 ? Double.parseDouble(move[2]) : 80, 12);
+            }
             case "hburst" -> HieArt.burst(sink, -ex, 0.6 - ey, 4.0 - ez, move.length > 2 ? Double.parseDouble(move[2]) : 3.0, 1.0, a, 7);
             case "hspear" -> HieArt.spear(sink, -ex, 1.6 - ey, 3.0 - ez, 1, 0, 0, HieArt.SPEAR_LENGTH, a, 1.0, 8);
             case "hspears" -> {

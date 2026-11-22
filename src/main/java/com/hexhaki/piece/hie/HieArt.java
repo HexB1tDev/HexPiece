@@ -638,4 +638,403 @@ public final class HieArt {
         }
         mist(sink, x, y, z, 0.6 + 0.6 * u, 0.35 * (1.0 - u), age, seed + 40);
     }
+
+    // ======================================================================================================== the crystal (3.2.2)
+    // The owner, after real ice blocks round frozen bodies (3.1.9): "I don't like ice time. I think like the entity should be like in a
+    // crystal like you had before that then shatters. Like I truly don't like ice time where it's like meant to be one of the most
+    // satisfying abilities." So a frozen body is held in the cut crystal of the first renders again (hard flat faces in the bands of
+    // ICE, white edge lines, a highlight here and there), and it shatters into crystal shards; the frost a punch leaves grows as crystal
+    // crusting over the body. Everything else stays smooth glassy ice.
+
+    /** The crystal by shade: deep blue, blue, cyan-blue, cyan, pale cyan, ice white, frost white, white. */
+    public static final int[] ICE = {0x14507F, 0x2475AE, 0x3D9DD6, 0x67C2EE, 0x9BDDF8, 0xCBEFFD, 0xEEFBFF, 0xFFFFFF};
+
+    /** A crystal face's colour: flat, by how much it looks up into the light, stepped into {@link #ICE}'s bands; now and then white. */
+    static int facet(double nx, double ny, double nz, int seed, int face, double alpha) {
+        double nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
+        double lit = nl < 1.0E-9 ? 0.0 : (nx * LX + ny * LY + nz * LZ) / nl;
+        double value = 0.52 + 0.36 * lit + 0.16 * (FireMesh.rand(seed, 50 + face) - 0.5);
+        int band = (int) Math.round(value * 6.0);
+        band = band < 1 ? 1 : band > 6 ? 6 : band;
+        if (FireMesh.rand(seed, 90 + face) > 0.88) {
+            band = 7;
+        }
+        return FireMesh.argb(alpha, ICE[band]);
+    }
+
+    /** A line from A to B {@code width} wide, turned to face the eye (at the origin): a crystal's edge, a crack in it. */
+    static void line(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double width, int ca, int cb) {
+        double dx = bx - ax;
+        double dy = by - ay;
+        double dz = bz - az;
+        double mx = (ax + bx) * 0.5;
+        double my = (ay + by) * 0.5;
+        double mz = (az + bz) * 0.5;
+        double wx = dy * mz - dz * my;
+        double wy = dz * mx - dx * mz;
+        double wz = dx * my - dy * mx;
+        double wl = Math.sqrt(wx * wx + wy * wy + wz * wz);
+        if (wl < 1.0E-9) {
+            return;
+        }
+        double h = width * 0.5 / wl;
+        wx *= h;
+        wy *= h;
+        wz *= h;
+        FireMesh.quad(sink, ax - wx, ay - wy, az - wz, ca, ax + wx, ay + wy, az + wz, ca, bx + wx, by + wy, bz + wz, cb, bx - wx, by - wy, bz - wz, cb);
+    }
+
+    static double edgeWidth(double radius, double x, double y, double z) {
+        return Math.max(radius * 0.07, Math.sqrt(x * x + y * y + z * z) * 0.0016);
+    }
+
+    static final double[] R0 = new double[8 * 3];
+    static final double[] R1 = new double[8 * 3];
+    static final double[] FOOT = new double[3];
+    static final double[] TIP = new double[3];
+    static final double[] KB = new double[6];
+
+    /**
+     * A cut crystal: from its foot ({@code x}, {@code y}, {@code z}) along ({@code ux}, {@code uy}, {@code uz}) (unit), {@code length} long,
+     * {@code radius} round ({@code flat} its second axis's share), {@code sides} faces round (3 to 8), the last {@code tip} of it cut to a
+     * point, the first {@code back} pointed back too (0: a flat foot); white lines along its edges when {@code edges}.
+     */
+    public static void crystal(FireMesh.Sink sink, double x, double y, double z, double ux, double uy, double uz, double length, double radius,
+                               double flat, int sides, double tip, double back, double alpha, boolean edges, int seed) {
+        if (alpha < 0.004 || length < 0.02 || radius < 0.004) {
+            return;
+        }
+        int n = Math.max(3, Math.min(8, sides));
+        FireMesh.basis(ux, uy, uz, KB);
+        double t0 = back * length;
+        double t1 = Math.max(t0, (1.0 - tip) * length);
+        double turn = FireMesh.rand(seed, 1) * 6.283;
+        for (int k = 0; k < n; k++) {
+            double a = turn + k * 6.283185307 / n + (FireMesh.rand(seed, 10 + k) - 0.5) * 0.5;
+            double ca = Math.cos(a);
+            double sa = Math.sin(a) * flat;
+            double r0 = radius * (0.9 + 0.2 * FireMesh.rand(seed, 20 + k));
+            double r1 = radius * (0.78 + 0.18 * FireMesh.rand(seed, 30 + k));
+            double ox = KB[0] * ca + KB[3] * sa;
+            double oy = KB[1] * ca + KB[4] * sa;
+            double oz = KB[2] * ca + KB[5] * sa;
+            R0[k * 3] = x + ux * t0 + ox * r0;
+            R0[k * 3 + 1] = y + uy * t0 + oy * r0;
+            R0[k * 3 + 2] = z + uz * t0 + oz * r0;
+            R1[k * 3] = x + ux * t1 + ox * r1;
+            R1[k * 3 + 1] = y + uy * t1 + oy * r1;
+            R1[k * 3 + 2] = z + uz * t1 + oz * r1;
+        }
+        double lean = radius * 0.25 * (FireMesh.rand(seed, 2) - 0.5);
+        TIP[0] = x + ux * length + KB[0] * lean;
+        TIP[1] = y + uy * length + KB[1] * lean;
+        TIP[2] = z + uz * length + KB[2] * lean;
+        FOOT[0] = x;
+        FOOT[1] = y;
+        FOOT[2] = z;
+        double cx = x + ux * length * 0.5;
+        double cy = y + uy * length * 0.5;
+        double cz = z + uz * length * 0.5;
+        for (int k = 0; k < n; k++) {
+            int j = (k + 1) % n;
+            if (t1 > t0 + 1.0E-6) {
+                face4(sink, R0, k, R0, j, R1, j, R1, k, cx, cy, cz, seed, k, alpha);
+            }
+            face3(sink, R1, k, R1, j, TIP, 0, cx, cy, cz, seed, 20 + k, alpha);
+            if (back > 0.0) {
+                face3(sink, R0, j, R0, k, FOOT, 0, cx, cy, cz, seed, 40 + k, alpha);
+            } else if (k > 0 && k < n - 1) {
+                face3(sink, R0, 0, R0, j, R0, k, cx, cy, cz, seed, 60 + k, alpha);
+            }
+        }
+        if (!edges) {
+            return;
+        }
+        double w = edgeWidth(radius, x, y, z);
+        int bright = FireMesh.argb(alpha * 0.95, RIM);
+        int dim = FireMesh.argb(alpha * 0.55, RIM);
+        for (int k = 0; k < n; k++) {
+            line(sink, R1[k * 3], R1[k * 3 + 1], R1[k * 3 + 2], TIP[0], TIP[1], TIP[2], w, bright, bright);
+            if (t1 > t0 + 1.0E-6) {
+                line(sink, R0[k * 3], R0[k * 3 + 1], R0[k * 3 + 2], R1[k * 3], R1[k * 3 + 1], R1[k * 3 + 2], w, dim, bright);
+            }
+            if (back > 0.0) {
+                line(sink, FOOT[0], FOOT[1], FOOT[2], R0[k * 3], R0[k * 3 + 1], R0[k * 3 + 2], w * 0.8, dim, dim);
+            }
+        }
+    }
+
+    static void face4(FireMesh.Sink sink, double[] pa, int a, double[] pb, int b, double[] pc, int c, double[] pd, int d, double cx, double cy,
+                      double cz, int seed, int index, double alpha) {
+        double ax = pa[a * 3];
+        double ay = pa[a * 3 + 1];
+        double az = pa[a * 3 + 2];
+        double e1x = pb[b * 3] - ax;
+        double e1y = pb[b * 3 + 1] - ay;
+        double e1z = pb[b * 3 + 2] - az;
+        double e2x = pd[d * 3] - ax;
+        double e2y = pd[d * 3 + 1] - ay;
+        double e2z = pd[d * 3 + 2] - az;
+        double nx = e1y * e2z - e1z * e2y;
+        double ny = e1z * e2x - e1x * e2z;
+        double nz = e1x * e2y - e1y * e2x;
+        if (nx * (ax - cx) + ny * (ay - cy) + nz * (az - cz) < 0.0) {
+            nx = -nx;
+            ny = -ny;
+            nz = -nz;
+        }
+        int col = facet(nx, ny, nz, seed, index, alpha);
+        FireMesh.quad(sink, ax, ay, az, col, pb[b * 3], pb[b * 3 + 1], pb[b * 3 + 2], col, pc[c * 3], pc[c * 3 + 1], pc[c * 3 + 2], col,
+            pd[d * 3], pd[d * 3 + 1], pd[d * 3 + 2], col);
+    }
+
+    static void face3(FireMesh.Sink sink, double[] pa, int a, double[] pb, int b, double[] pc, int c, double cx, double cy, double cz, int seed,
+                      int index, double alpha) {
+        double ax = pa[a * 3];
+        double ay = pa[a * 3 + 1];
+        double az = pa[a * 3 + 2];
+        double e1x = pb[b * 3] - ax;
+        double e1y = pb[b * 3 + 1] - ay;
+        double e1z = pb[b * 3 + 2] - az;
+        double e2x = pc[c * 3] - ax;
+        double e2y = pc[c * 3 + 1] - ay;
+        double e2z = pc[c * 3 + 2] - az;
+        double nx = e1y * e2z - e1z * e2y;
+        double ny = e1z * e2x - e1x * e2z;
+        double nz = e1x * e2y - e1y * e2x;
+        if (nx * (ax - cx) + ny * (ay - cy) + nz * (az - cz) < 0.0) {
+            nx = -nx;
+            ny = -ny;
+            nz = -nz;
+        }
+        int col = facet(nx, ny, nz, seed, index, alpha);
+        FireMesh.quad(sink, ax, ay, az, col, pb[b * 3], pb[b * 3 + 1], pb[b * 3 + 2], col, pc[c * 3], pc[c * 3 + 1], pc[c * 3 + 2], col,
+            pc[c * 3], pc[c * 3 + 1], pc[c * 3 + 2], col);
+    }
+
+    /** A little jagged white line: a crack running over ice ({@code steps} jags of {@code step}), {@code grown} 0 to 1 of it shown. */
+    static void crackLine(FireMesh.Sink sink, double x, double y, double z, double dx, double dy, double dz, double step, int steps, double grown,
+                          double width, double alpha, int seed) {
+        double px = x;
+        double py = y;
+        double pz = z;
+        int c = FireMesh.argb(alpha, RIM);
+        int shown = (int) Math.ceil(steps * clamp(grown));
+        for (int k = 0; k < shown; k++) {
+            double jx = dx + (FireMesh.rand(seed, 200 + k * 3) - 0.5) * 0.9;
+            double jy = dy + (FireMesh.rand(seed, 201 + k * 3) - 0.5) * 0.9;
+            double jz = dz + (FireMesh.rand(seed, 202 + k * 3) - 0.5) * 0.9;
+            double jl = Math.sqrt(jx * jx + jy * jy + jz * jz);
+            double s = step / Math.max(1.0E-6, jl);
+            double qx = px + jx * s;
+            double qy = py + jy * s;
+            double qz = pz + jz * s;
+            line(sink, px, py, pz, qx, qy, qz, width, c, c);
+            px = qx;
+            py = qy;
+            pz = qz;
+        }
+    }
+
+    /** How long before its end a frozen crystal cracks (ticks). */
+    public static final double CRACK_TIME = 24.0;
+
+    /**
+     * A body frozen solid in crystal (refs 09, 47, 51, 52, 77, 78; the first renders' look, at the owner's word): its feet at ({@code x},
+     * {@code y}, {@code z}), {@code half} its half width, {@code height} tall, {@code age} of {@code life} ticks: the crystal runs up the body
+     * in a few ticks and snaps into shape, see-through enough to show who is inside, a second great crystal grown into it, crystals out of
+     * its foot and shoulders, frost mist rolling off its foot; in its last {@link #CRACK_TIME} ticks white cracks run over it.
+     */
+    public static void block(FireMesh.Sink sink, double x, double y, double z, double half, double height, double age, double life, int seed) {
+        if (age < 0.0 || age > life + 1.0) {
+            return;
+        }
+        double grow = snap(age / 5.0);
+        double up = clamp(age / 4.0);
+        double r = half * 1.45 + 0.22;
+        double tall = (height + 0.45) * (0.25 + 0.75 * up);
+        double fade = clamp((life + 1.0 - age) / 2.0);
+        crystal(sink, x, y - 0.12, z, 0, 1, 0, tall, r * grow, 1.0, 6, 0.24, 0.0, 0.52 * fade, true, seed);
+        double la = 6.283 * FireMesh.rand(seed, 290);
+        double lx = Math.cos(la) * 0.32;
+        double lz = Math.sin(la) * 0.32;
+        double ll = Math.sqrt(lx * lx + 1.0 + lz * lz);
+        crystal(sink, x + Math.cos(la) * r * 0.35, y - 0.12, z + Math.sin(la) * r * 0.35, lx / ll, 1.0 / ll, lz / ll, tall * 0.82, r * 0.72 * grow,
+            1.0, 5, 0.3, 0.0, 0.5 * fade, true, seed + 3);
+        for (int k = 0; k < 7; k++) {
+            double a = 6.283 * (k + FireMesh.rand(seed, 300 + k) * 0.6) / 7.0;
+            double tiltOut = 0.45 + 0.6 * FireMesh.rand(seed, 310 + k);
+            double ox = Math.cos(a);
+            double oz = Math.sin(a);
+            double ul = Math.sqrt(1.0 + tiltOut * tiltOut);
+            double len = (0.45 + 0.6 * FireMesh.rand(seed, 320 + k)) * height * 0.55 * grow * up;
+            crystal(sink, x + ox * r * 0.75, y - 0.1, z + oz * r * 0.75, ox * tiltOut / ul, 1.0 / ul, oz * tiltOut / ul, len,
+                r * (0.16 + 0.12 * FireMesh.rand(seed, 330 + k)), 1.0, 5, 0.4, 0.0, 0.85 * fade, true, seed + 7 + k);
+        }
+        for (int k = 0; k < 3; k++) {
+            double a = 6.283 * (k + 0.3 + FireMesh.rand(seed, 340 + k) * 0.4) / 3.0;
+            double ox = Math.cos(a);
+            double oz = Math.sin(a);
+            double len = (0.35 + 0.35 * FireMesh.rand(seed, 350 + k)) * height * 0.4 * grow * clamp((age - 2.0) / 3.0);
+            crystal(sink, x + ox * r * 0.7, y + height * 0.62, z + oz * r * 0.7, ox * 0.75, 0.66, oz * 0.75, len, r * 0.14, 1.0, 5, 0.45, 0.0,
+                0.85 * fade, true, seed + 20 + k);
+        }
+        for (int k = 0; k < 2; k++) {
+            double a = 6.283 * FireMesh.rand(seed, 360 + k) + age * 0.02;
+            double rr = r * (1.1 + 0.25 * k);
+            mist(sink, x + Math.cos(a) * rr, y + 0.2, z + Math.sin(a) * rr, 0.4 + 0.1 * k + 0.003 * age, 0.3 * fade * clamp(age / 3.0), age, seed + 40 + k);
+        }
+        double cracking = clamp((age - (life - CRACK_TIME)) / CRACK_TIME);
+        if (cracking > 0.0) {
+            double w = edgeWidth(r * 0.2, x, y + height * 0.5, z);
+            for (int k = 0; k < 6; k++) {
+                double a = 6.283 * FireMesh.rand(seed, 400 + k);
+                double h = height * (0.2 + 0.6 * FireMesh.rand(seed, 410 + k));
+                double grown = clamp(cracking * 1.6 - k * 0.1);
+                crackLine(sink, x + Math.cos(a) * r * 1.02, y + h, z + Math.sin(a) * r * 1.02, -Math.sin(a) * (FireMesh.rand(seed, 420 + k) < 0.5 ? 1 : -1),
+                    0.6 - 1.2 * FireMesh.rand(seed, 430 + k), Math.cos(a), r * 0.35, 6, grown, w, 0.95 * fade, seed + 50 + k);
+            }
+        }
+    }
+
+    /** How long a crystal's shattering lasts (ticks). */
+    public static final double CRYSTAL_SHATTER_LIFE = 32.0;
+
+    /**
+     * A crystal shattering at ({@code x}, {@code y}, {@code z}) (a body's middle; {@code size} across; refs 09, 69: Garp breaking out of his
+     * block): a white flash and a cold glow, a ring of shards bursting out, crystal shards (and chunks of it) spinning out on arcs and
+     * falling, a ring of frost racing out along the ground, mist billowing.
+     */
+    public static void crystalShatter(FireMesh.Sink sink, double x, double y, double z, double size, double age, int seed) {
+        if (age < 0.0 || age > CRYSTAL_SHATTER_LIFE) {
+            return;
+        }
+        double u = age / CRYSTAL_SHATTER_LIFE;
+        if (age < 5.0) {
+            double f = 1.0 - age / 5.0;
+            FireMesh.shell(sink, x, y, z, size * (0.6 + 0.6 * age / 5.0), RIM, 0.65 * f, 0.0);
+            FireMesh.shell(sink, x, y, z, size * (1.1 + 1.2 * age / 5.0), GLOW, 0.3 * f, 0.0);
+            FireMesh.ring(sink, x, y, z, 0, 1, 0, size * (0.5 + 1.4 * age / 5.0), size * 0.3, size * 0.1, RIM, 0.7 * f);
+        }
+        int count = size > 1.5 ? 24 : 18;
+        double fade = 1.0 - clamp((age - CRYSTAL_SHATTER_LIFE * 0.6) / (CRYSTAL_SHATTER_LIFE * 0.4));
+        for (int k = 0; k < count; k++) {
+            double a = 6.283 * FireMesh.rand(seed, 500 + k);
+            double up = 0.1 + 0.9 * FireMesh.rand(seed, 510 + k);
+            double speed = size * (0.12 + 0.2 * FireMesh.rand(seed, 520 + k));
+            double vx = Math.cos(a) * speed;
+            double vz = Math.sin(a) * speed;
+            double vy = up * speed * 1.4;
+            double px = x + vx * age + (FireMesh.rand(seed, 525 + k) - 0.5) * size * 0.5;
+            double py = y + vy * age - 0.032 * age * age + (FireMesh.rand(seed, 526 + k) - 0.5) * size * 0.8;
+            double pz = z + vz * age + (FireMesh.rand(seed, 527 + k) - 0.5) * size * 0.5;
+            double spin = age * (0.25 + 0.3 * FireMesh.rand(seed, 530 + k));
+            double dx = Math.cos(spin + a);
+            double dy = Math.sin(spin * 1.3);
+            double dz = Math.sin(spin + a);
+            double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            double len = size * (0.18 + 0.28 * FireMesh.rand(seed, 540 + k));
+            crystal(sink, px - dx / dl * len * 0.5, py - dy / dl * len * 0.5, pz - dz / dl * len * 0.5, dx / dl, dy / dl, dz / dl, len, len * 0.3,
+                0.7, 4, 0.4, 0.3, 0.95 * fade, k % 2 == 0, seed + 60 + k);
+        }
+        FireMesh.ring(sink, x, y - size * 0.45, z, 0, 1, 0, size * (0.5 + 2.2 * ease(u * 2.0)), 0.25 + size * 0.25, size * 0.12, RIM,
+            0.55 * (1.0 - clamp(u * 2.0)));
+        for (int k = 0; k < 4; k++) {
+            double a = 6.283 * (k + FireMesh.rand(seed, 560 + k)) / 4.0;
+            double out = size * (0.3 + 1.0 * ease(u * 1.5));
+            mist(sink, x + Math.cos(a) * out, y - size * 0.2 + 0.4 * u, z + Math.sin(a) * out, size * (0.35 + 0.4 * u), 0.42 * (1.0 - u), age,
+                seed + 80 + k);
+        }
+    }
+
+    /**
+     * The frost a punch leaves (the owner: "freeze them slowly, and when we punch them a certain number of times, they get completely
+     * frozen"): crystal crusting over the body (feet at {@code x}, {@code y}, {@code z}, {@code half} its half width, {@code height}
+     * tall), {@code frost} 0 to 1 how far it has spread (its count of crystals and how high they reach), a cold blue cast over the body
+     * deepening with it, a little mist; {@code age} for the mist and its shimmer.
+     */
+    public static void frost(FireMesh.Sink sink, double x, double y, double z, double half, double height, double frost, double age, int seed) {
+        double f = clamp(frost);
+        if (f <= 0.0) {
+            return;
+        }
+        double r = half + 0.06;
+        // the cold cast: the body seen through a thin blue skin of ice
+        crystal(sink, x, y - 0.02, z, 0, 1, 0, height * (0.45 + 0.6 * f), r * 1.15, 1.0, 8, 0.1, 0.0, 0.16 + 0.22 * f, false, seed);
+        int count = (int) Math.round(4 + 14 * f);
+        for (int k = 0; k < count; k++) {
+            double a = 6.283 * FireMesh.rand(seed, 700 + k);
+            double h = height * FireMesh.rand(seed, 710 + k) * (0.35 + 0.65 * f);
+            double ox = Math.cos(a);
+            double oz = Math.sin(a);
+            double outward = 0.4 + 0.5 * FireMesh.rand(seed, 720 + k);
+            double ul = Math.sqrt(1.0 + outward * outward);
+            double len = (0.14 + 0.22 * FireMesh.rand(seed, 730 + k)) * (0.6 + 0.6 * f);
+            crystal(sink, x + ox * r * 0.95, y + h, z + oz * r * 0.95, ox * outward / ul, 1.0 / ul, oz * outward / ul, len, len * 0.32, 1.0, 4, 0.45,
+                0.0, 0.85, true, seed + 100 + k);
+        }
+        mist(sink, x, y + 0.2, z, r + 0.3, 0.12 + 0.15 * f, age, seed + 140);
+    }
+
+    /**
+     * The Ice Ball's prison in crystal (refs 09, 69, 76; the first renders' look): a faceted ball {@code radius} round snapping out in a few
+     * ticks, see-through enough to show who is inside, crystals out of it, mist at its foot; cracks over its last {@link #CRACK_TIME} ticks.
+     */
+    public static void prison(FireMesh.Sink sink, double x, double y, double z, double radius, double age, double life, int seed) {
+        if (age < 0.0 || age > life + 1.0) {
+            return;
+        }
+        double r = radius * snap(age / 6.0);
+        double fade = clamp((life + 1.0 - age) / 2.0);
+        double[] dirs = BALL_DIRS[1];
+        int[] faces = BALL_FACES[1];
+        int n = dirs.length / 3;
+        for (int i = 0; i < n; i++) {
+            double rr = r * (0.9 + 0.2 * FireMesh.rand(seed, 100 + i));
+            LP[i * 3] = x + dirs[i * 3] * rr;
+            LP[i * 3 + 1] = y + dirs[i * 3 + 1] * rr;
+            LP[i * 3 + 2] = z + dirs[i * 3 + 2] * rr;
+        }
+        double w = edgeWidth(r * 0.12, x, y, z);
+        int edge = FireMesh.argb(0.85 * fade, RIM);
+        for (int f = 0; f < faces.length; f += 3) {
+            face3(sink, LP, faces[f], LP, faces[f + 1], LP, faces[f + 2], x, y, z, seed, f / 3, 0.42 * fade);
+            for (int e = 0; e < 3; e++) {
+                int a = faces[f + e];
+                int b = faces[f + (e + 1) % 3];
+                if (a < b) { // each edge once (its two faces list it both ways)
+                    line(sink, LP[a * 3], LP[a * 3 + 1], LP[a * 3 + 2], LP[b * 3], LP[b * 3 + 1], LP[b * 3 + 2], w, edge, edge);
+                }
+            }
+        }
+        for (int k = 0; k < 12; k++) {
+            double b = Math.max(-0.7, Math.min(1.0, (FireMesh.rand(seed, 800 + k) - 0.3) * 1.3));
+            double a = 6.283 * (k + 0.5 * FireMesh.rand(seed, 810 + k)) / 12.0;
+            double c = Math.sqrt(1.0 - b * b);
+            double dx = Math.cos(a) * c;
+            double dz = Math.sin(a) * c;
+            double len = r * (0.35 + 0.45 * FireMesh.rand(seed, 820 + k)) * clamp((age - 2.0) / 4.0);
+            crystal(sink, x + dx * r * 0.85, y + b * r * 0.85, z + dz * r * 0.85, dx, b, dz, len, r * (0.09 + 0.05 * FireMesh.rand(seed, 830 + k)),
+                1.0, 5, 0.45, 0.0, 0.88 * fade, true, seed + 30 + k);
+        }
+        for (int k = 0; k < 3; k++) {
+            double a = 6.283 * (k + FireMesh.rand(seed, 840 + k)) / 3.0 + age * 0.015;
+            mist(sink, x + Math.cos(a) * r * 0.9, y - r * 0.85, z + Math.sin(a) * r * 0.9, r * 0.35 + 0.004 * age, 0.3 * fade * clamp(age / 4.0), age,
+                seed + 60 + k);
+        }
+        double cracking = clamp((age - (life - CRACK_TIME)) / CRACK_TIME);
+        if (cracking > 0.0) {
+            double cw = edgeWidth(r * 0.05, x, y, z);
+            for (int k = 0; k < 7; k++) {
+                double b = (FireMesh.rand(seed, 860 + k) - 0.5) * 1.6;
+                double a = 6.283 * FireMesh.rand(seed, 870 + k);
+                double c = Math.sqrt(Math.max(0.0, 1.0 - b * b * 0.6));
+                double px = Math.cos(a) * c;
+                double py = b * 0.6;
+                double pz = Math.sin(a) * c;
+                crackLine(sink, x + px * r * 1.02, y + py * r * 1.02, z + pz * r * 1.02, -pz, 0.5 - FireMesh.rand(seed, 880 + k), px, r * 0.18, 7,
+                    clamp(cracking * 1.5 - k * 0.08), cw, 0.95 * fade, seed + 70 + k);
+            }
+        }
+    }
 }
