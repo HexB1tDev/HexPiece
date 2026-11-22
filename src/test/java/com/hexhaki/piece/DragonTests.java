@@ -191,6 +191,52 @@ public final class DragonTests {
         }
         Check.that(com.hexhaki.piece.server.GuraUltimate.COOLDOWN == 6000 && com.hexhaki.piece.server.GuraUltimate.FULL >= 40,
             "the ultimate needs a full charge and takes five minutes to recover");
+        // 3.1.8: the Conqueror's lightning out of a blast is the release's own bolts (as wide), short-lived, within a phone's budget
+        int[] bq = {0};
+        com.hexhaki.piece.haki.BoltMesh.Sink boltSink = (glow, xyz, argb) -> bq[0]++;
+        java.util.List<com.hexhaki.piece.haki.Bolt> blast = com.hexhaki.piece.haki.ConquerorStorm.blast(9.0, 14, -0.5, 21L, 1.35);
+        int blastMost = 0;
+        float widest = 0;
+        for (com.hexhaki.piece.haki.Bolt b : blast) {
+            Check.that(b.duration <= 16, "a blast's bolt snaps quickly (" + b.duration + " ticks)");
+            for (float w : b.widths) {
+                widest = Math.max(widest, w);
+            }
+        }
+        for (double age = 0; age < 20; age += 1) {
+            bq[0] = 0;
+            for (com.hexhaki.piece.haki.Bolt b : blast) {
+                com.hexhaki.piece.haki.BoltMesh.build(b, com.hexhaki.piece.haki.BoltMesh.Frame.at(0, -1.6, -10), age, 0.002, boltSink);
+            }
+            blastMost = Math.max(blastMost, bq[0]);
+        }
+        Check.that(blastMost < 1600, "the biggest blast's lightning fits (" + blastMost + " quads)");
+        Check.that(widest > 0.9F && widest < 2.6F, "a blast's bolts are as wide as the release's near a player (" + widest + " blocks)");
+        // 3.1.8: the ground bent (Heave.bend): a deep bowl with a heaved rim, squares lifted and sunk, nothing outside it, a bounded area
+        for (double length : new double[] {com.hexhaki.piece.gura.Heave.REACH, com.hexhaki.piece.gura.Heave.BEND_MOST}) {
+            int deepest = 0;
+            int highest = 0;
+            int up = 0;
+            int down = 0;
+            int moved = 0;
+            boolean outside = false;
+            for (int x = -70; x <= 70; x++) {
+                for (int z = -70; z <= 70; z++) {
+                    int o = com.hexhaki.piece.gura.Heave.bend(z + 0.5, x + 0.5, x, z, length, com.hexhaki.piece.gura.Heave.CONE, 5);
+                    deepest = Math.min(deepest, o);
+                    highest = Math.max(highest, o);
+                    up += o > 0 ? 1 : 0;
+                    down += o < 0 ? 1 : 0;
+                    moved += o != 0 ? 1 : 0;
+                    outside |= o != 0 && (z + 0.5 < -6.0 || Math.hypot(x + 0.5, z + 0.5) > length + 8.0);
+                }
+            }
+            Check.that(deepest <= -4 && deepest >= -com.hexhaki.piece.gura.Heave.SINK_MOST && highest >= 2
+                && highest <= com.hexhaki.piece.gura.Heave.LIFT_MOST, "the ground sinks into a bowl and its rim heaves up at " + length + " ("
+                + deepest + " to " + highest + ")");
+            Check.that(up > 100 && down > 400, "parts of the ground lift and parts sink at " + length + " (" + up + " up, " + down + " down)");
+            Check.that(!outside && moved < 4200, "the bent ground stays in the cone and the bowl at " + length + " (" + moved + " columns)");
+        }
     }
 
     /**

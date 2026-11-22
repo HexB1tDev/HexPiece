@@ -76,6 +76,26 @@ public final class MaguFx {
         return level == null ? null : level.m_6815_(id);
     }
 
+    static boolean firstPerson(int id) {
+        return self(id) && Minecraft.m_91087_().f_91066_.m_92176_() == net.minecraft.client.CameraType.FIRST_PERSON;
+    }
+
+    /** 3.1.8 (client/HandPass): whether {@code id} has a swelling fist to draw on the first-person fist. */
+    public static boolean handWanted(int id) {
+        return SWELLS.containsKey(id);
+    }
+
+    /** 3.1.8 (client/HandPass): one's own swelling fist of magma, in the hand's pass, on the fist (small: it sits close to the eye). */
+    public static void handPass(FireMesh.Sink sink, int id, float partial) {
+        Long since = SWELLS.get(id);
+        if (since == null) {
+            return;
+        }
+        double age = clock - since + partial;
+        double[] v = com.hexhaki.piece.pika.LightArt.firstPersonFingertip(-0.05);
+        MaguArt.swell(sink, v[0], v[1], v[2], Math.min(0.22, 0.22 + 0.38 * Math.min(1.0, age / 40.0)), age, id);
+    }
+
     static boolean self(int id) {
         net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
         return self != null && self.m_19879_() == id;
@@ -427,8 +447,8 @@ public final class MaguFx {
             }
         }
         for (Map.Entry<Integer, Long> e : SWELLS.entrySet()) {
-            if (!(level.m_6815_(e.getKey()) instanceof Player player)) {
-                continue;
+            if (!(level.m_6815_(e.getKey()) instanceof Player player) || firstPerson(e.getKey())) {
+                continue; // 3.1.8: one's own, in first person, is drawn on the fist in the hand's pass (client/HandPass)
             }
             double age = clock - e.getValue() + partial;
             Vec3 fist = com.hexhaki.piece.client.FirstPersonLight.fist(player, partial);

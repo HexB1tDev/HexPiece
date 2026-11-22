@@ -57,6 +57,58 @@ public final class GuraShots {
         GuraArt.shock(sink, 0.3 - ex, 1.4 - ey, 1.0 - ez, 0, 0, 1, reach, 0.7, 1.0, com.hexhaki.piece.server.GuraMoves.SHOCK_SPEED, age + 3.0, 5);
     }
 
+    /** The bent ground's preview stands this high over the scene's own ground (so a sunk column is not hidden under it). */
+    static final double LIFT = 10.0;
+
+    /**
+     * 3.1.8: the ground the Gura ultimate bends (gura/Heave.bend, as server/GuraUltimate.Bend applies it, a column once the wave has
+     * reached it) {@code age} ticks after the strike, the player at the origin looking along +z: grass-topped dirt columns raised
+     * {@link #LIFT} over the scene's ground, flat round the bent area.
+     */
+    static void bent(FireMesh.Sink sink, double ex, double ey, double ez, double age, double boost) {
+        double length = Math.min(com.hexhaki.piece.gura.Heave.REACH * boost, com.hexhaki.piece.gura.Heave.BEND_MOST);
+        int r = (int) length + 8;
+        int[][] h = new int[2 * r + 1][r + 9];
+        for (int x = -r; x <= r; x++) {
+            for (int z = -8; z <= r; z++) {
+                double d = Math.hypot(x + 0.5, z + 0.5);
+                h[x + r][z + 8] = d <= age * com.hexhaki.piece.gura.Heave.WAVE
+                    ? com.hexhaki.piece.gura.Heave.bend(z + 0.5, -(x + 0.5), x, z, length, com.hexhaki.piece.gura.Heave.CONE, 9) : 0;
+            }
+        }
+        for (int x = -r; x <= r; x++) {
+            for (int z = -8; z <= r; z++) {
+                int o = h[x + r][z + 8];
+                double top = LIFT + o;
+                int grass = 0xFF5FA33A;
+                FireMesh.quad(sink, x - ex, top - ey, z - ez, grass, x + 1 - ex, top - ey, z - ez, grass, x + 1 - ex, top - ey, z + 1 - ez, grass,
+                    x - ex, top - ey, z + 1 - ez, grass);
+                int[][] nb = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+                for (int[] n : nb) {
+                    int nx = x + n[0];
+                    int nz = z + n[1];
+                    int no = nx < -r || nx > r || nz < -8 || nz > r ? 0 : h[nx + r][nz + 8];
+                    if (no >= o) {
+                        continue;
+                    }
+                    double y0 = LIFT + no;
+                    int dirt = shade(0x8A6642, n[0] != 0 ? 0.62 : 0.8);
+                    double fx = n[0] > 0 ? x + 1 : n[0] < 0 ? x : x;
+                    double fz = n[1] > 0 ? z + 1 : n[1] < 0 ? z : z;
+                    if (n[0] != 0) {
+                        FireMesh.quad(sink, fx - ex, y0 - ey, z - ez, dirt, fx - ex, top - ey, z - ez, dirt, fx - ex, top - ey, z + 1 - ez, dirt, fx - ex,
+                            y0 - ey, z + 1 - ez, dirt);
+                    } else {
+                        FireMesh.quad(sink, x - ex, y0 - ey, fz - ez, dirt, x - ex, top - ey, fz - ez, dirt, x + 1 - ex, top - ey, fz - ez, dirt, x + 1
+                            - ex, y0 - ey, fz - ez, dirt);
+                    }
+                }
+            }
+        }
+        GuraArt.heave(sink, -ex, LIFT - ey, -ez, 0, 1, com.hexhaki.piece.gura.Heave.CONE, com.hexhaki.piece.gura.Heave.REACH * boost,
+            com.hexhaki.piece.gura.Heave.WAVE, age, 9);
+    }
+
     /**
      * One block (unit cube from (bx, by, bz) relative to its plate's pivot (px, 0, pz) on top of the ground), lifted {@code lift},
      * turned {@code tip} about the flat axis (ax, az): its top {@code top}, its sides dirt, each face shaded as the game shades them.
@@ -145,6 +197,7 @@ public final class GuraShots {
                 }
             }
             case "gult" -> ultimate(sink, ex, ey, ez, a, move.length > 2 ? Double.parseDouble(move[2]) : 1.0);
+            case "gbend" -> bent(sink, ex, ey, ez, a, move.length > 2 ? Double.parseDouble(move[2]) : 1.0);
             case "gslam" -> {
                 GuraArt.crack(sink, -ex, 2.3 - ey, 4.0 - ez, 0, 0, -1, 2.4, a, 12);
                 GuraArt.quake(sink, -ex, -ey, 4.0 - ez, 7.0, 1.0, a, 13);

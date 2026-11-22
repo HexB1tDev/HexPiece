@@ -359,6 +359,26 @@ public final class PikaFx {
     }
 
     /** Whether {@code id} is the local player. */
+    static boolean firstPerson(int id) {
+        return self(id) && Minecraft.m_91087_().f_91066_.m_92176_() == net.minecraft.client.CameraType.FIRST_PERSON;
+    }
+
+    /** 3.1.8 (client/HandPass): whether {@code id} has the laser's light gathering to draw on the first-person fingertip. */
+    public static boolean handWanted(int id) {
+        return CHARGES.containsKey(id);
+    }
+
+    /** 3.1.8 (client/HandPass): one's own gathering laser light on the first-person fingertip, in the hand's pass. */
+    public static void handPass(FireMesh.Sink sink, int id, float partial) {
+        Long since = CHARGES.get(id);
+        if (since == null) {
+            return;
+        }
+        double age = clock - since + partial;
+        double[] v = LightArt.firstPersonFingertip(0.1);
+        LightArt.charge(sink, v[0], v[1], v[2], age, Math.min(1.0, age / 40.0), id);
+    }
+
     static boolean self(int id) {
         net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
         return self != null && self.m_19879_() == id;
@@ -892,7 +912,8 @@ public final class PikaFx {
             }
         }
         for (Map.Entry<Integer, Long> e : CHARGES.entrySet()) {
-            if (level.m_6815_(e.getKey()) instanceof Player player) {
+            // 3.1.8: one's own, in first person, is drawn on the fingertip in the hand's pass (client/HandPass)
+            if (level.m_6815_(e.getKey()) instanceof Player player && !firstPerson(e.getKey())) {
                 Vec3 tip = fingertip(player, partial);
                 double age = clock - e.getValue() + partial;
                 LightArt.charge(SINK, tip.f_82479_ - cx, tip.f_82480_ - cy, tip.f_82481_ - cz, age, Math.min(1.0, age / 40.0), e.getKey());

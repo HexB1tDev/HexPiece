@@ -625,21 +625,45 @@ public final class GuraFx {
             if (!(level.m_6815_(e.getKey()) instanceof Player player)) {
                 continue;
             }
+            if (ownView(e.getKey())) {
+                continue; // 3.1.8: one's own, in first person, is drawn on the fist in the hand's pass (client/HandPass)
+            }
             Bubble b = e.getValue();
             double age = clock - b.since + partial;
             Vec3 fist = fist(player, partial);
             if (far(fist, cam)) {
                 continue;
             }
-            double grow = Math.min(1.0, age / (b.which == 3 ? 80.0 : b.which == 1 ? 30.0 : 40.0));
-            // 3.1.6: the ultimate's (3) swelling "bigger and bigger" round the cocked fist
-            double radius = b.which == 3 ? 0.3 + 0.75 * grow * (2.0 - grow) : b.which == 2 ? 0.42 : b.which == 1 ? 0.26 + 0.34 * grow
-                : 0.2 + 0.26 * grow;
-            if (ownView(e.getKey())) {
-                radius = Math.min(radius, b.which == 3 ? 0.42 : 0.22);
-            }
-            GuraArt.bubble(SINK, fist.f_82479_ - cx, fist.f_82480_ - cy, fist.f_82481_ - cz, radius, age, e.getKey());
+            GuraArt.bubble(SINK, fist.f_82479_ - cx, fist.f_82480_ - cy, fist.f_82481_ - cz, radius(b, age, false), age, e.getKey());
         }
+    }
+
+    /** A bubble's radius {@code age} ticks in; {@code own}: one's own in first person (kept small, it sits close to the eye). */
+    static double radius(Bubble b, double age, boolean own) {
+        double grow = Math.min(1.0, age / (b.which == 3 ? 80.0 : b.which == 1 ? 30.0 : 40.0));
+        // 3.1.6: the ultimate's (3) swelling "bigger and bigger" round the cocked fist
+        double radius = b.which == 3 ? 0.3 + 0.75 * grow * (2.0 - grow) : b.which == 2 ? 0.42 : b.which == 1 ? 0.26 + 0.34 * grow
+            : 0.2 + 0.26 * grow;
+        return own ? Math.min(radius, b.which == 3 ? 0.42 : 0.22) : radius;
+    }
+
+    /** 3.1.8 (client/HandPass): whether {@code id} has a bubble to draw on the first-person fist. */
+    public static boolean handWanted(int id) {
+        return BUBBLES.containsKey(id);
+    }
+
+    /**
+     * 3.1.8 (client/HandPass): one's own bubble on the first-person fist, in the hand's pass (the hand's view space and projection:
+     * LightArt.firstPersonFingertip, the hand's move already on the pose).
+     */
+    public static void handPass(FireMesh.Sink sink, int id, float partial) {
+        Bubble b = BUBBLES.get(id);
+        if (b == null) {
+            return;
+        }
+        double age = clock - b.since + partial;
+        double[] v = com.hexhaki.piece.pika.LightArt.firstPersonFingertip(-0.05);
+        GuraArt.bubble(sink, v[0], v[1], v[2], radius(b, age, true), age, id);
     }
 
     /** The right fist where the clip's pose has it this frame, else out in front of the right shoulder. */

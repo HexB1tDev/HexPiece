@@ -6,10 +6,14 @@ import com.hexhaki.piece.gura.Heave;
 import com.hexhaki.piece.network.PieceNetwork;
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -199,11 +203,153 @@ public final class GuraUltimate {
         }
         // the wave front: the ground groaning along it, and (with the Conqueror's Haki) thick lightning out of the breaking ground
         GuraMoves.live(new Front(level, player, base, flat, reach, haki, seed));
+        // 3.1.8: the ground bent where it passes: sunk into a bowl with rings, its rim heaved up, squares lifted and sunk (gura/Heave.bend)
+        if (level.m_46469_().m_46207_(net.minecraft.world.level.GameRules.f_46132_)) {
+            GuraMoves.live(new Bend(level, player, base, flat, Math.min(reach, Heave.BEND_MOST), seed));
+        }
         Impact.quake(level, base, 70.0 * b, 1.0F, 30);
         GuraMoves.sound(player, fist, GuraSounds.BOOM, 2.6F, 0.6F);
         GuraMoves.sound(player, fist, GuraSounds.BOOM, 2.0F, 0.85F);
         GuraMoves.sound(player, fist, GuraSounds.CRACK, 1.8F, 0.75F);
         GuraMoves.sound(player, base, GuraSounds.QUAKE, 2.4F, 0.85F);
+    }
+
+    /** 3.1.8: how long the bent ground stays before it grows back (ticks; and up to 40 more, so it heals as a ripple). */
+    static final long BEND_BACK = 1200L;
+
+    /**
+     * 3.1.8 (the owner, with Blackbeard's "Tremor Crush!": "the ground should like subside ... parts of it should lift, other parts should
+     * like go down ... it should fucking bend the terrain where it passed"): the real ground bent as the wave reaches it, column by
+     * column ({@link Heave#bend}: sunk into a bowl with rings stepped into it, its rim heaved up, squares lifted or sunk), within
+     * Scars' blocks-a-tick budget (the rest the next tick), all of it growing back {@link #BEND_BACK} ticks later. A sunk column loses its
+     * top blocks and gets its own surface back at the bottom (the grass goes down with it); a lifted one is built up from the block
+     * under its top with its top on it; nothing is lifted into a body, under water, in a tree, or from sand and gravel (they would fall).
+     */
+    static final class Bend implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final int baseY;
+        final int[] columns;
+        final List<double[]> supports = new ArrayList<>();
+        int next;
+        int age;
+
+        Bend(ServerLevel level, ServerPlayer owner, Vec3 base, Vec3 flat, double length, int seed) {
+            this.level = level;
+            this.owner = owner;
+            this.baseY = (int) Math.floor(base.f_82480_ - 0.01);
+            double sx = -flat.f_82481_;
+            double sz = flat.f_82479_;
+            List<int[]> found = new ArrayList<>();
+            int x0 = (int) Math.floor(base.f_82479_ - length - 6);
+            int x1 = (int) Math.ceil(base.f_82479_ + length + 6);
+            int z0 = (int) Math.floor(base.f_82481_ - length - 6);
+            int z1 = (int) Math.ceil(base.f_82481_ + length + 6);
+            for (int x = x0; x <= x1; x++) {
+                for (int z = z0; z <= z1; z++) {
+                    double dx = x + 0.5 - base.f_82479_;
+                    double dz = z + 0.5 - base.f_82481_;
+                    int o = Heave.bend(dx * flat.f_82479_ + dz * flat.f_82481_, dx * sx + dz * sz, x, z, length, CONE, seed);
+                    if (o != 0) {
+                        found.add(new int[] {x, z, o, (int) (Math.sqrt(dx * dx + dz * dz) * 16.0)});
+                    }
+                }
+            }
+            found.sort((a, b) -> Integer.compare(a[3], b[3]));
+            this.columns = new int[found.size() * 4];
+            for (int i = 0; i < found.size(); i++) {
+                System.arraycopy(found.get(i), 0, this.columns, i * 4, 4);
+            }
+            for (net.minecraft.world.entity.decoration.HangingEntity hanging : level.m_6443_(
+                net.minecraft.world.entity.decoration.HangingEntity.class, new net.minecraft.world.phys.AABB(x0, this.baseY - 14, z0, x1, this.baseY + 14, z1),
+                e -> true)) {
+                Vec3 p = hanging.m_20182_();
+                this.supports.add(new double[] {p.f_82479_, p.f_82480_, p.f_82481_});
+            }
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            this.age++;
+            double front = this.age * WAVE * 16.0;
+            Scars scars = Scars.of(this.level);
+            int n = this.columns.length / 4;
+            while (this.next < n && this.columns[this.next * 4 + 3] <= front && scars.room()) {
+                int i = this.next * 4;
+                this.column(scars, this.columns[i], this.columns[i + 1], this.columns[i + 2]);
+                this.next++;
+            }
+            return this.next >= n || this.age > 400 || !this.owner.m_6084_();
+        }
+
+        /** The column at ({@code x}, {@code z}) moved {@code o} blocks. */
+        void column(Scars scars, int x, int z, int o) {
+            int top = -1;
+            BlockState state = null;
+            for (int y = this.baseY + 8; y >= this.baseY - 12; y--) {
+                BlockPos pos = new BlockPos(x, y, z);
+                if (!this.level.m_6425_(pos).m_76178_()) {
+                    return; // under water: left alone
+                }
+                BlockState here = this.level.m_8055_(pos);
+                if (here.m_60795_() || here.m_60812_(this.level, pos).m_83281_()) {
+                    continue;
+                }
+                if (here.m_60734_() instanceof LeavesBlock) {
+                    return; // trees stand
+                }
+                top = y;
+                state = here;
+                break;
+            }
+            if (state == null) {
+                return;
+            }
+            BlockPos below = new BlockPos(x, top - 1, z);
+            BlockState under = this.level.m_8055_(below);
+            if (under.m_60795_() || !under.m_60819_().m_76178_() || under.m_155947_()) {
+                under = state;
+            }
+            BlockPos above = new BlockPos(x, top + 1, z);
+            boolean plant = !this.level.m_8055_(above).m_60795_();
+            if (o < 0) {
+                if (plant) {
+                    scars.tear(this.owner, above, this.supports, BEND_BACK);
+                }
+                int k = -o;
+                for (int i = 0; i < k; i++) {
+                    if (scars.tear(this.owner, new BlockPos(x, top - i, z), this.supports, BEND_BACK) == Scars.REFUSED) {
+                        return;
+                    }
+                }
+                // the surface goes down with it: the bowl's floor is the ground's own top (grass stays grass)
+                BlockPos floor = new BlockPos(x, top - k, z);
+                if (!(state.m_60734_() instanceof FallingBlock) && !this.level.m_8055_(floor).m_60795_()) {
+                    scars.swap(this.owner, floor, state, this.supports, BEND_BACK);
+                }
+                return;
+            }
+            if (state.m_60734_() instanceof FallingBlock || under.m_60734_() instanceof FallingBlock || state.m_155947_()) {
+                return; // sand and gravel would fall out of a heaved column
+            }
+            if (!this.level.m_6443_(LivingEntity.class, new net.minecraft.world.phys.AABB(x, top + 1, z, x + 1, top + 1 + o, z + 1),
+                LivingEntity::m_6084_).isEmpty()) {
+                return; // never lifted into a body
+            }
+            if (under != state && scars.swap(this.owner, new BlockPos(x, top, z), under, this.supports, BEND_BACK) == Scars.REFUSED) {
+                return;
+            }
+            for (int i = 1; i <= o; i++) {
+                if (scars.swap(this.owner, new BlockPos(x, top + i, z), i == o ? state : under, this.supports, BEND_BACK) == Scars.REFUSED) {
+                    return;
+                }
+            }
+        }
     }
 
     /** The wave going out over the cone: lightning and the ground's sound along its front. */
@@ -236,9 +382,10 @@ public final class GuraUltimate {
         public boolean tick(long now) {
             this.age++;
             double d = Math.min(this.reach, this.age * WAVE);
-            if (this.haki && this.age % 2 == 0) {
-                // "the thick lightning, should like shoot everywhere from like where the floor is breaking"
-                for (int k = 0; k < 2; k++) {
+            if (this.haki && this.age % 3 == 0) {
+                // "the thick lightning, should like shoot everywhere from like where the floor is breaking" (3.1.8: the release's own
+                // bolts now, so one burst every 3 ticks: about 4 at once, within a phone's budget)
+                for (int k = 0; k < 1; k++) {
                     double a = Math.toRadians(CONE * (this.random.nextDouble() * 2.0 - 1.0));
                     double r = Math.max(4.0, d - this.random.nextDouble() * 6.0);
                     Vec3 dir = new Vec3(this.flat.f_82479_ * Math.cos(a) - this.flat.f_82481_ * Math.sin(a), 0,

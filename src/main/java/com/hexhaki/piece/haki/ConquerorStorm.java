@@ -87,6 +87,46 @@ public final class ConquerorStorm {
         return out;
     }
 
+    /**
+     * 3.1.8 (the owner: "the lightning from the explosions and all when Haki is activated is not the same as the one in Conqueror's
+     * Release. If you check, the one in Conqueror's Release is way thicker ... It should be the same size like as the one in Conquer"):
+     * the Conqueror's lightning out of a fruit's blast or strike (server/ConquerorAura.mixed, client/haki/ConquerorSparksClient) is now
+     * the release's very bolts ({@link #bolt}: the same ribbons, as wide, kinked and branching the same way, the same body and rim),
+     * out of the blast's point instead of the chest: {@code count} of them (the burst's 2 to 14 arcs make 1 to 6 bolts), each 8 to 40
+     * blocks long (2.5 times the blast's {@code radius}), two in three sent up and out of the ground, those aimed down striking the
+     * ground {@code floor} under it (relative, negative) and tearing along it; {@code size} the release's (1, its thickest 1.35). Points
+     * relative to the blast's point.
+     */
+    public static List<Bolt> blast(double radius, int count, double floor, long seed, double size) {
+        SplittableRandom random = new SplittableRandom(seed ^ 0x424C_4153_54L);
+        double height = Math.max(GROUND + 0.3, -floor);
+        int n = Math.max(1, Math.min(6, 1 + count / 3));
+        double[] directions = Sphere.directions(n, random);
+        List<Strand> strands = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            double[] dir = {directions[i * 3], directions[i * 3 + 1], directions[i * 3 + 2]};
+            if (i % 3 != 2 && dir[1] < 0.0) {
+                dir[1] = -dir[1] * 0.8;
+                dir = normalise(dir);
+            }
+            double length = Math.max(8.0, Math.min(40.0, radius * 2.5)) * (0.75 + 0.25 * random.nextDouble());
+            // as wide as the release's bolts are where they are seen near a player (about 1.4 blocks; the release's 3.6 is reached 30
+            // blocks out of a 90-block bolt), kinked as often for its length
+            bolt(strands, random, dir, length, (float) (random.nextDouble() * 0.8), size * 0.4, height, 0.4, STEP * 0.5);
+        }
+        List<Bolt> out = new ArrayList<>(strands.size() * 2);
+        for (Strand strand : strands) {
+            double[] p = strand.points().clone();
+            for (int i = 1; i < p.length; i += 3) {
+                p[i] -= height;
+            }
+            // a blast's strike snaps (about 11 ticks, the release's burn 27): as many on screen at once stay within a phone's budget
+            out.addAll(bolts(new Strand(p, strand.widths(), strand.tear(), strand.delay(), Math.max(8, (int) (strand.duration() * 0.42)),
+                strand.length(), strand.seed())));
+        }
+        return out;
+    }
+
     /** The stroke width at {@code t} (0 at the flash, 1 at the far end), times {@code size}: swelling out of the flash, tapering far out. */
     static float width(double t, double size) {
         // thin out of the flash (the player is never walled in by their own storm), full by a third of the way, tapering far out
@@ -145,6 +185,15 @@ public final class ConquerorStorm {
      * along it outward for the rest; now and then a branch (a strand of its own, from a point of this one).
      */
     static void bolt(List<Strand> out, SplittableRandom random, double[] dir, double length, float delay, double size) {
+        bolt(out, random, dir, length, delay, size, CHEST, START, STEP);
+    }
+
+    /** As above, out of a flash {@code chest} over the ground, the strands leaving it {@code start} blocks out (3.1.8: a blast's). */
+    static void bolt(List<Strand> out, SplittableRandom random, double[] dir, double length, float delay, double size, double chest,
+                     double start, double runs) {
+        final double CHEST = chest;
+        final double START = start;
+        final double STEP = runs;
         Builder b = new Builder();
         // 2.4.5 (the owner: "feels like the lightning is going always to the same spot"): a strand aimed down used to meet the ground
         // within two blocks of the feet (every one there) and tear outward from it; now it glides out low from the flash and strikes
@@ -196,7 +245,7 @@ public final class ConquerorStorm {
             double tear = grounded ? 1.0 - 0.8 * t : 0.0;
             b.add(mid, tear);
             b.add(next, tear);
-            if (walked > 10.0 && random.nextDouble() < 0.16) {
+            if (walked > Math.min(10.0, length * 0.35) && random.nextDouble() < (length < 40.0 ? 0.3 : 0.16)) {
                 branches.add(new Object[] {next.clone(), h.clone(), grounded, yaw, Math.min(length - walked, 8.0 + random.nextDouble() * 14.0),
                     delay + (float) ((walked + step) / SPEED), (double) width(t, size) * 0.45});
             }

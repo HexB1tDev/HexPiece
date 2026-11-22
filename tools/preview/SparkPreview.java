@@ -20,8 +20,8 @@ public final class SparkPreview {
     }
 
     public static void main(String[] args) throws Exception {
-        String[] rows = {"body 2", "body 6", "blade", "gura burst", "blast 9", "ultimate thick"};
-        double[] ages = {0.5, 2, 4, 6, 9, 12};
+        String[] rows = {"body 2", "body 6", "blade", "gura burst", "blast 9", "ultimate thick", "release"};
+        double[] ages = {1, 3, 6, 10, 16, 22};
         int cw = 300;
         int ch = 300;
         BufferedImage sheet = new BufferedImage(cw * ages.length + 4, (ch + 16) * rows.length + 4, BufferedImage.TYPE_INT_RGB);
@@ -34,10 +34,24 @@ public final class SparkPreview {
                 case 0 -> ConquerorSparks.body(2, 1.8, 0.6, 11L);
                 case 1 -> ConquerorSparks.body(6, 1.8, 0.6, 12L);
                 case 2 -> ConquerorSparks.blade(new double[] {-0.35, 1.15, 0.45}, new double[] {-0.35, 1.9, 2.5}, 11, 0.0, 13L);
+                case 6 -> {
+                    // 3.1.8: the Conqueror's release itself (mastery 500), its points from the feet as heights over flat ground, 8 ahead
+                    List<Bolt> moved = new ArrayList<>();
+                    for (com.hexhaki.piece.haki.ConquerorStorm.Strand strand : com.hexhaki.piece.haki.ConquerorStorm.release(500, 17L, false)) {
+                        for (Bolt bolt : com.hexhaki.piece.haki.ConquerorStorm.bolts(strand)) {
+                            double[] q = bolt.points.clone();
+                            for (int i = 0; i < q.length; i += 3) {
+                                q[i + 2] += 8.0;
+                            }
+                            moved.add(new Bolt(q, bolt.widths, bolt.color, bolt.kind, bolt.delay, bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                        }
+                    }
+                    yield moved;
+                }
                 case 5 -> {
                     // 3.1.6: the Gura ultimate's thick lightning out of the breaking ground (GuraUltimate.Front: 5 to 7 blocks, 9 arcs, x 2.2)
                     List<Bolt> moved = new ArrayList<>();
-                    for (Bolt bolt : ConquerorSparks.burst(6.0, 9, -0.4, 16L, 2.2)) {
+                    for (Bolt bolt : com.hexhaki.piece.haki.ConquerorStorm.blast(6.0, 9, -0.4, 16L, 1.35)) {
                         double[] q = bolt.points.clone();
                         for (int i = 0; i < q.length; i += 3) {
                             q[i + 1] += 0.4;
@@ -50,7 +64,7 @@ public final class SparkPreview {
                 case 4 -> {
                     // 3.1.5: ConquerorAura.exploded out of a radius 9 blast (the Light fruit's full beam): 0.8 of it, 11 arcs, 8 ahead
                     List<Bolt> moved = new ArrayList<>();
-                    for (Bolt bolt : ConquerorSparks.burst(7.2, 11, -0.5, 15L)) {
+                    for (Bolt bolt : com.hexhaki.piece.haki.ConquerorStorm.blast(7.2, 11, -0.5, 15L, 1.0)) {
                         double[] q = bolt.points.clone();
                         for (int i = 0; i < q.length; i += 3) {
                             q[i + 1] += 0.5;
@@ -63,7 +77,7 @@ public final class SparkPreview {
                 default -> {
                     // 3.1.2: the Conqueror's lightning mixed into a Gura quake (the fist's crack 1.5 ahead, 1.2 over the ground)
                     List<Bolt> moved = new ArrayList<>();
-                    for (Bolt bolt : ConquerorSparks.burst(4.0, 10, -1.2, 14L)) {
+                    for (Bolt bolt : com.hexhaki.piece.haki.ConquerorStorm.blast(4.0, 10, -1.2, 14L, 1.0)) {
                         double[] q = bolt.points.clone();
                         for (int i = 0; i < q.length; i += 3) {
                             q[i + 1] += 1.2;

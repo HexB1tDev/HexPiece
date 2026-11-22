@@ -922,6 +922,41 @@ is this session's (the owner gave none); say so if they ask.
   "[N]" move's key as N is bound. `PieceKeys.ULTIMATE` (End) and its lang line are gone. Nothing else changed.
 - Not tested in game.
 
+## 8za. The owner's requests still open (verbatim, in this order)
+
+**1. (3.1.8) The Gura ultimate and the Haki lightning size.** With a reference GIF (scratchpad only: Blackbeard's "Tremor Crush!", 68
+frames: he shouts it, a huge blue quake bubble with red-white lightning, the air shattering like glass round him, then the ground
+pressed down into a huge deep bowl with concentric rings, its rim heaved up, rock spires round it, lightning crackling over it):
+"Someone has said the end move being the ultimate of the tremor fruit. Like, it doesn't resemble the GIF. Also, the lightning from the
+explosions and all when Haki is activated is not the same as the one in Conqueror's Release. If you check, the one in Conqueror's
+Release is way thicker. Like, it's bigger than that one, than the one of the moves for some reason. It should be the same size like as
+the one in Conquer. And like, yeah, just adapt the ultimate. Like, keep the same looks and everything. Just make it more destructive.
+Like I said, the ground should like subside each other. It should like more than just break apart in fissures. It should like parts of
+it should lift, other parts should like go down. Like, it should fucking bend the terrain where it passed. You know what I mean?"
+
+**2. (after 3.1.8) The Hie Hie no Mi (Aokiji's ice fruit).** "Can you do the same as we did with light and magma? Can you create the
+ice fruit, the Aokiji one? Design the models, get the references, make sure this one is also equally as smooth. The ice is custom, not
+Minecraft ice shit. Like actually freeze them and like blocks of ice." / "Find against GARP and all into that, to just make it as
+accurate as possible." References: docs/handoff/hie-ref (README, sheets). The move set proposed (AskUserQuestion; the owner did not
+pick an option, they sent the messages above and below instead, which say to do it: "after all this is done, all the ice fruit and
+everything is done"): LMB punch; RMB Ice Block: Partisan (tap one spear, hold spears in the air, let go all fly); Z Ice Time (dash,
+grab, frozen solid); X Ice Ball (orb thrown, a ball of ice swallows them: Garp's prison); C Ice Block: Pheasant Beak; V Ice Age (a
+freezing wave in a wide cone, the ground and sea an ice sheet with ridges, all frozen); B Ice Road + ice fist (the Garp fight); N Ice
+Saber; passives: the ice body dodge (shards, reform; bare-handed attackers frostbitten), walking on water (the sea freezing under the
+feet, custom ice), no cold damage. Freezing: locked inside a custom faceted ice crystal block, cracking like glass and shattering.
+The fruit does not exist in the original: add it to the Fruit enum as PiecePatch.uoFruit adds UO (ordinal 5), its item hie_hie_no_mi
+(an icon made like tools/uo_icon.py's), CC0 sounds (tools/web_sounds.py), POINT ONE.
+
+**3. (after the ice fruit, "for the future") three things.** Verbatim: "Also, after all this is done, all the ice fruit and everything
+is done, we're going to need 3 things. And those things are going to be for the future. But first, we're going to need a tab in
+Creative for only the fruits. We're going to have to evaluate them in rarity, like in the name and everything. It's going to have like
+a rank, like between common, uncommon, rare, legendary, and mythical. And then we're going to need to have an energy bar for the
+fruits, appearing over the food bar with a custom good-looking bar, like not just a normal bar, you know what I mean? It should be as
+creative as the one in Tokyo Ghoul mod and the Hex Kagune mod. I'm not saying copy that one, absolutely not. Just make your own, just be
+creative and make it look good." (a Creative tab with only the fruits; each fruit a rarity rank common / uncommon / rare / legendary /
+mythical, shown in its name and tooltip; a fruit energy bar over the food bar, an original design, not a copy of HexGhoul's or
+HexKagune's.)
+
 ## 9. What to do next (3.1.8)
 
 1. Ask the owner how 3.1.5 (the hound, Ryusei Kazan, the Light beam's drag, the lightning on every fruit and Gear 5) and 3.1.6 (the

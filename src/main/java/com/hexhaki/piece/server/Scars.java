@@ -62,6 +62,8 @@ public final class Scars {
 
     private final ServerLevel level;
     private final ScarLedger<BlockState> ledger = new ScarLedger<>();
+    /** 3.1.8: the blocks {@link #swap} put in, by position: each is put back only while it is still the one put there. */
+    private final Map<Long, BlockState> swapped = new java.util.HashMap<>();
     private long budgetTick = Long.MIN_VALUE;
     private int destroyed;
     private int checked;
@@ -188,6 +190,52 @@ public final class Scars {
         return TORN;
     }
 
+    /**
+     * 3.1.8 (the Gura ultimate bending the ground: server/GuraUltimate.Bend): puts {@code to} at {@code pos} in place of what is there (air
+     * or a block {@link #tear} could take out; never a fluid), the same checks as {@link #tear} (protection, claims, paintings' walls),
+     * and puts the original back {@code restoreIn} ticks later, as long as {@code to} is still there (else whatever is there stays).
+     */
+    int swap(LivingEntity owner, BlockPos pos, BlockState to, List<double[]> supports, long restoreIn) {
+        this.refreshBudget();
+        long key = pos.m_121878_();
+        if (this.ledger.contains(key)) {
+            return LEFT;
+        }
+        this.checked++;
+        for (double[] support : supports) {
+            double dx = pos.m_123341_() + 0.5 - support[0];
+            double dy = pos.m_123342_() + 0.5 - support[1];
+            double dz = pos.m_123343_() + 0.5 - support[2];
+            if (dx * dx + dy * dy + dz * dz < HANGING_CLEARANCE * HANGING_CLEARANCE) {
+                return LEFT;
+            }
+        }
+        ServerPlayer player = owner instanceof ServerPlayer p ? p : null;
+        if (pos.m_123342_() <= this.level.m_141937_() || pos.m_123342_() >= this.level.m_151558_() - 1 || !this.level.m_46805_(pos)
+            || player != null && !this.level.m_7966_(player, pos)) {
+            return REFUSED;
+        }
+        BlockState state = this.level.m_8055_(pos);
+        if (!state.m_60819_().m_76178_() || !state.m_60795_() && !this.carvable(state, pos) || state == to) {
+            return LEFT;
+        }
+        if (player != null) {
+            BlockEvent.BreakEvent event = new BlockEvent.BreakEvent(this.level, pos, state, player);
+            MinecraftForge.EVENT_BUS.post(event);
+            if (event.isCanceled()) {
+                return REFUSED;
+            }
+        }
+        long now = this.level.m_46467_();
+        if (!this.ledger.record(key, state, now + Math.max(0L, restoreIn) + Math.floorMod(key * 0x9E3779B97F4A7C15L, 40L))) {
+            return LEFT;
+        }
+        this.swapped.put(key, to);
+        this.level.m_7731_(pos, to, SILENT);
+        this.destroyed++;
+        return TORN;
+    }
+
     private boolean carvable(BlockState state, BlockPos pos) {
         if (state.m_60795_() || !state.m_60819_().m_76178_() || state.m_155947_()) {
             return false;
@@ -213,6 +261,17 @@ public final class Scars {
                 continue;
             }
             BlockState current = this.level.m_8055_(pos);
+            BlockState put = this.swapped.remove(scar.position);
+            if (put != null) {
+                // 3.1.8: a swapped block goes back only while it is still the one put there (someone's own block stays); a swap only
+                // ever puts in a block, so putting back what was there (air, or another block) never traps anyone
+                if (current == put) {
+                    this.level.m_7731_(pos, scar.original, SILENT);
+                    restored++;
+                }
+                this.ledger.finish(scar);
+                continue;
+            }
             if (!replaceable(current)) {
                 // someone built here since: their block stays
                 this.ledger.finish(scar);
@@ -247,11 +306,14 @@ public final class Scars {
         all.sort((a, b) -> Integer.compare(BlockPos.m_122022_(a.position).m_123342_(), BlockPos.m_122022_(b.position).m_123342_()));
         for (ScarLedger.Scar<BlockState> scar : all) {
             BlockPos pos = BlockPos.m_122022_(scar.position);
-            if (replaceable(this.level.m_8055_(pos))) {
+            BlockState current = this.level.m_8055_(pos);
+            BlockState put = this.swapped.get(scar.position);
+            if (put != null ? current == put : replaceable(current)) {
                 this.level.m_7731_(pos, scar.original, SILENT);
             }
         }
         this.ledger.clear();
+        this.swapped.clear();
     }
 
     private static boolean replaceable(BlockState current) {

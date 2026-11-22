@@ -58,10 +58,12 @@ public final class ConquerorSparksClient {
                         y = fist.f_82480_;
                         z = fist.f_82481_;
                     }
-                    // 3.1.6: ax carries how thick (the Gura ultimate's "thick lightning"; 0 is the usual)
-                    double thick = m.ax() > 0.0F ? Math.min(3.0, m.ax()) : 1.0;
-                    HakiBolts.sparks(level, user, x, y, z, ConquerorSparks.burst(m.size(), Math.max(2, Math.min(14, m.id())), m.bx(), m.ticks(),
-                        thick), 0.0, 0.0F);
+                    // 3.1.8 (the owner: "It should be the same size like as the one in Conquer"): the release's own bolts out of it
+                    // (ConquerorStorm.blast); ax carries how thick (3.1.6, the Gura ultimate's "thick lightning": the release's thickest)
+                    // (the crackle round a charging fist, bz, two thirds as big: it bursts every few ticks next to the eye)
+                    double size = m.ax() >= 2.0F ? 1.35 : m.bz() > 0.0F ? 0.65 : 1.0;
+                    HakiBolts.sparks(level, user, x, y, z, com.hexhaki.piece.haki.ConquerorStorm.blast(m.size(), Math.max(2, Math.min(14, m.id())),
+                        m.bx(), m.ticks(), size), 0.0, 0.0F);
                 }
                 default -> {
                 }

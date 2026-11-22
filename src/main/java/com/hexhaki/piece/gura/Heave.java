@@ -96,6 +96,50 @@ public final class Heave {
         return h ^ (h >>> 29);
     }
 
+    // ------------------------------------------------------------------------------------------------------ 3.1.8: the ground bent
+
+    /** The farthest the ground is bent (blocks; the wave and the strikes still reach {@link #REACH} x 1.6 with Ryou on). */
+    public static final double BEND_MOST = 56.0;
+    /** The deepest and the highest a column moves (blocks). */
+    public static final int SINK_MOST = 9;
+    public static final int LIFT_MOST = 4;
+
+    /**
+     * 3.1.8 (the owner: "the ground should like subside ... parts of it should lift, other parts should like go down. Like, it should
+     * fucking bend the terrain where it passed"; their reference, Blackbeard's "Tremor Crush!": the ground pressed down into a huge
+     * deep bowl with concentric rings, its rim heaved up): how many blocks the column at ({@code along}, {@code side}) from the feet (in
+     * the cone's own frame; {@code x}, {@code z} its world block) moves, up (+) or down (-), for a bend {@code length} long (at most
+     * {@link #BEND_MOST}). A bowl ({@code length} / 2 across, its middle 0.55 of the way out) sunk 5 to 8 blocks, a ring stepped
+     * into it every five blocks, its rim heaved up about 3.5; everywhere in the cone the ground broken into 4 by 4 slabs, some lifted a
+     * block or two, some sunk (half as much inside the bowl).
+     */
+    public static int bend(double along, double side, int x, int z, double length, double cone, int seed) {
+        double rb = length * 0.5;
+        double ra = along - length * 0.55;
+        double r = Math.sqrt(ra * ra + side * side);
+        double d = Math.sqrt(along * along + side * side);
+        boolean inCone = d >= NEAREST && d <= length && along > 0.0 && along / d >= Math.cos(Math.toRadians(cone + 2.0));
+        if (!inCone && r > rb + 5.0) {
+            return 0;
+        }
+        double depth = Math.max(5.0, Math.min(8.0, length * 0.15));
+        double h = 0.0;
+        if (r < rb) {
+            double q = r / rb;
+            h -= depth * (1.0 - q * q);
+            h += 1.0 * Math.cos(2.0 * Math.PI * r / 5.0) * q; // the rings stepped into it, one every five blocks
+        }
+        h += 3.4 * Math.exp(-((r - rb) / 3.0) * ((r - rb) / 3.0)); // its rim heaved up
+        if (inCone) {
+            // slabs of the ground (4 by 4 on the world's grid) lifted or sunk, fewer inside the bowl (its shape must read)
+            double u = new SplittableRandom(mix(seed + 77, Math.floorDiv(x, 4), Math.floorDiv(z, 4))).nextDouble();
+            double fade = (1.0 - 0.4 * d / length) * (r < rb * 0.8 ? 0.5 : 1.0);
+            h += (u < 0.12 ? 2.0 : u < 0.3 ? 1.2 : u > 0.9 ? -2.0 : u > 0.74 ? -1.2 : 0.0) * fade;
+        }
+        int o = (int) Math.round(h);
+        return Math.max(-SINK_MOST, Math.min(LIFT_MOST, o));
+    }
+
     /** How high the plate is {@code t} ticks after the strike (blocks; under 0 it has sunk back into the ground). */
     public static double lift(Plate p, double t) {
         double u = t - p.delay;

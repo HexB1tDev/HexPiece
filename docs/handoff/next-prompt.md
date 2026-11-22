@@ -1,10 +1,10 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
-Read CLAUDE.md, then docs/handoff/next-ai-3.1.7.md whole: it holds every standing rule in one place (talking to the owner, the house
+Read CLAUDE.md, then docs/handoff/next-ai-3.1.8.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8z of next-ai-3.1.7.md
-(2.9.6 to 3.1.7); open the older next-ai-*.md only for a feature's detail. If freesound.org or tenor.com is refused, the session is on
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zb of next-ai-3.1.8.md
+(2.9.6 to 3.1.8); open the older next-ai-*.md only for a feature's detail. If freesound.org or tenor.com is refused, the session is on
 the Default environment: switch_environment to "HexPiece" (section 7).
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
@@ -20,7 +20,11 @@ bubble swelling on the cocked fist, the ground in a huge cone heaving and breaki
 gura/Heave + client/gura/HeaveDraw), five fissures, craters, a 5-minute cooldown, with Haki thick Conqueror's lightning out of the
 breaking ground and a 10-second stun.
 
-Next: section 9: ask the owner how 3.1.5 to 3.1.7 play (and whether the heaving ground lags on their phone), then whatever they ask.
+3.1.8 (8zb): the Gura ultimate really bends the ground (a bowl with rings, its rim heaved up, slabs up and down, all growing back),
+the Haki lightning on every fruit's moves is the Conqueror's release's own bolts, every charge on the first-person fist drawn in the
+hand's own pass. Next (8za, the owner's open requests verbatim, in order): 2. the Hie Hie no Mi (Aokiji's ice fruit) as 3.1.9
+(references in docs/handoff/hie-ref, the move set in 8za); 3. a Creative tab for the fruits only, rarity ranks (common, uncommon,
+rare, legendary, mythical) in the fruits' names, a custom fruit energy bar over the food bar (an original design).
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;
 render and judge every animation and effect yourself, third and first person; never key the head or unused limbs; keep every effect
