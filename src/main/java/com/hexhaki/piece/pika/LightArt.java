@@ -604,6 +604,24 @@ public final class LightArt {
             0.95 * (1.0 - t));
     }
 
+    /**
+     * 3.0.6 (the owner: "Ama no Murako is sending slashes in a weird way, like, it's going vertical its very strange"): the wave of light
+     * Ama no Murakumo's last cut throws, flying along ({@code wx}, {@code wz}) (level, unit), its middle at ({@code x}..): a crescent
+     * lying level, bowed out ahead the way it flies, its ends trailing (it stood upright across its way before, an arch), five bands
+     * deep so it reads from behind; {@code width} its half span, {@code fade} 1 to 0 over its flight.
+     */
+    public static void wave(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double width, double fade) {
+        double a = Math.atan2(-wx, -wz); // the way, as FireMesh.basis(0, 1, 0) turns it
+        double cx = x - wx * width;
+        double cz = z - wz * width; // the arc's middle passes through (x, y, z)
+        for (int k = -2; k <= 2; k++) {
+            double h = y + k * 0.15;
+            double core = k == 0 ? 1.0 : Math.abs(k) == 1 ? 0.7 : 0.4;
+            FireMesh.arc(sink, cx, h, cz, 0, 1, 0, width, width * 0.42 * fade + 0.12, a - 1.05, 2.1, 0.0, 0xFFD040, 0.75 * fade * core);
+            FireMesh.arc(sink, cx, h, cz, 0, 1, 0, width, width * 0.18 * fade + 0.06, a - 1.05, 2.1, 0.0, 0xFFFFFF, fade * core);
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ 2.9.6: going as light (Z)
 
     /**

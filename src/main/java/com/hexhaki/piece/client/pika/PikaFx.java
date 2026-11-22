@@ -818,14 +818,11 @@ public final class PikaFx {
             if (far(p, cam) || age > w.life) {
                 continue;
             }
-            Vec3 way = w.step.m_82541_();
-            Vec3 side = way.m_82537_(new Vec3(0, 1, 0)).m_82541_();
+            Vec3 flat = new Vec3(w.step.f_82479_, 0, w.step.f_82481_);
+            flat = flat.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : flat.m_82541_();
             double fade = 1.0 - age / w.life;
-            double yaw = Math.atan2(side.f_82479_, side.f_82481_);
-            FireMesh.arc(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, way.f_82479_, way.f_82480_, way.f_82481_, w.width,
-                w.width * 0.35 * fade + 0.1, yaw - 1.2, 2.4 + Math.PI * 0.0, -0.6, 0xFFD040, 0.6 * fade);
-            FireMesh.arc(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, way.f_82479_, way.f_82480_, way.f_82481_, w.width,
-                w.width * 0.15 * fade + 0.05, yaw - 1.2, 2.4, -0.6, 0xFFFFFF, 0.95 * fade);
+            // 3.0.6 (the owner: "it's going vertical its very strange"): a level crescent flying on (LightArt.wave), no longer an arch
+            LightArt.wave(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, flat.f_82479_, flat.f_82481_, w.width, fade);
         }
         for (Kicked k : KICKED) {
             if (k.count < 2) {

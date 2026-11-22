@@ -343,6 +343,10 @@ public final class FxPreview {
                 com.hexhaki.piece.pika.LightArt.blade(turned, 2.6, 0.032, 0.5);
             }
             case "zpath" -> zpath(sink, eye, Double.parseDouble(move[1]));
+            case "wave" -> {
+                double age = Double.parseDouble(move[1]);
+                com.hexhaki.piece.pika.LightArt.wave(sink, -eye[0], 1.0 - eye[1], 1.2 + 2.4 * age - eye[2], 0, 1, 3.0, 1.0 - age / 10.0);
+            }
             case "rush" -> com.hexhaki.piece.pika.LightArt.rush(sink, look[0], look[1], look[2], Double.parseDouble(move[1]), 9);
             case "palm" -> {
                 com.hexhaki.piece.pika.LightArt.palm(sink, -0.42 - eye[0], 1.6 - eye[1], 4.0 - eye[2], Double.parseDouble(move[1]), 1);
