@@ -652,6 +652,27 @@ Built as 3.1.1: section 8r.
 - Renders this session: the crack over time, the two walls, the new poses (docs/handoff/gura-fix-3.1.2.jpg).
 - Not tested in game.
 
+## 8t. Started (3.1.3, in progress): the Magu Magu no Mi after Akainu
+
+- The owner (verbatim): "Now do the same as you did with the Gurunomi for the Magunomi, the Magma fruit that is already in the game
+  but has no abilities as well. Search for Akainu's feats and gifts for reference and make his abilities. Make sure not to animate the
+  feet, like the legs, unless it's absolutely needed."
+- References: `docs/handoff/magu-ref/` (README: what each of 46 Tenor GIFs shows and which move it informs; sheets/). Tenor needed
+  tenor.com, media.tenor.com and media1.tenor.com added to the HexPiece environment (done this session, update_environment).
+- Asked (AskUserQuestion): **"Go ahead"** for: LMB the game's punch; RMB Dai Funka (tap: a magma fist shot forward, fire trail, black
+  smoke, bursting; hold: the fist swells into a giant black-crusted magma fist, let go: it flies and explodes, burning magma pools);
+  Z Meigo (a short dash, the magma fist through the one looked at, magma out of their back, set on fire, knocked down); X Ryusei Kazan
+  (hold: a fist punched at the sky, magma fists rain like meteors where he looks while held); C Inugami Guren (a giant magma hound's
+  head surging forward along the ground, jaws snapping, mauling and carrying those it bites, bursting into a flood of magma); V
+  Bakuretsu Kazan (fists into the ground: the ground round him bubbling magma, geysers launching foes, burning a few seconds); B Magma
+  Flow (melted into a stream of magma sliding along the ground where he looks, burning whoever it passes, rising in an eruption).
+  Passive: **"Add it"**: immune to fire and lava, bare-handed attackers without Haki set on fire. No clip keys a leg.
+- Plan (as the Gura fruit's, sections 8r and 8s): `server/MaguKit`, `server/MaguMoves`, `magu/MaguArt` (magma: flat cel bands orange to
+  yellow-white with a black crust, black-brown smoke), `magu/MaguSounds`, `client/magu/MaguFx`, `MaguClient`; S2CUoFx kinds 100 to 119
+  (UoFx routes them before the Conqueror's >= 80); `tools/magu_anims.py` (the Gura `write_parts`: no legs, body only yaw/roll/bend),
+  `tools/magu_sounds.py` (CC0 Freesound: lava bubbling, fire whoosh, magma explosion, sizzle/steam, rock crumble); `MaguShots` for
+  FxPreview; DragonTests budget; StandUp knows magu_ clips; PieceHooks fruitClip/firstPersonArms "magu_"; StylePoser MaguPoses.
+
 ## 9. What to do next (3.1.3)
 
 1. Check 3.1.2's runs (Build and Release HexPiece on claude/nice-bell-gam7qf).
