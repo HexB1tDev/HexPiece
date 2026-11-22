@@ -371,7 +371,7 @@ public final class StyleTests {
     static void hands() throws Exception {
         java.util.List<String> clips = new java.util.ArrayList<>();
         try (var files = Files.list(ANIMATIONS)) {
-            files.map(f -> f.getFileName().toString().replace(".json", "")).filter(n -> n.startsWith("gura_") || n.startsWith("magu_"))
+            files.map(f -> f.getFileName().toString().replace(".json", "")).filter(n -> n.startsWith("gura_") || n.startsWith("magu_") || n.startsWith("hie_"))
                 .sorted().forEach(clips::add);
         }
         Check.that(clips.size() >= 20, "hands: the Gura and Magma clips are found (" + clips.size() + ")");
@@ -394,7 +394,8 @@ public final class StyleTests {
                 rest &= Math.abs(v) < 0.2 || clip.endsWith("_end") || clip.equals("gura_slam") || clip.equals("gura_tilt")
                     || clip.equals("gura_release") || clip.equals("gura_gekishin") || clip.equals("magu_release") || clip.equals("magu_meigo")
                     || clip.equals("magu_rise") || clip.equals("pika_laser_fire") || clip.equals("gura_ult_release")
-                    || clip.equals("gura_ult_drop");
+                    || clip.equals("gura_ult_drop") || clip.equals("hie_partisan_launch") || clip.equals("hie_grab")
+                    || clip.equals("hie_ball_throw") || clip.equals("hie_road_punch");
             }
             Check.that(rest, "hands: " + clip + " starts from the hand's place or from the pose before it");
             boolean seen = true;

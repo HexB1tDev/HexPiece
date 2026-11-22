@@ -36,7 +36,7 @@ public final class HandPass {
     static boolean wanted(LocalPlayer self) {
         int id = self.m_19879_();
         return com.hexhaki.piece.client.gura.GuraFx.handWanted(id) || com.hexhaki.piece.client.magu.MaguFx.handWanted(id)
-            || com.hexhaki.piece.client.pika.PikaFx.handWanted(id);
+            || com.hexhaki.piece.client.pika.PikaFx.handWanted(id) || com.hexhaki.piece.client.hie.HieFx.handWanted(id);
     }
 
     /** The main hand's pose as the game draws it (after FirstPersonHand's move); after the off hand, the charges on it. */
@@ -69,6 +69,7 @@ public final class HandPass {
             com.hexhaki.piece.client.gura.GuraFx.handPass(SINK, id, partial);
             com.hexhaki.piece.client.magu.MaguFx.handPass(SINK, id, partial);
             com.hexhaki.piece.client.pika.PikaFx.handPass(SINK, id, partial);
+            com.hexhaki.piece.client.hie.HieFx.handPass(SINK, id, partial); // 3.1.9: the Ice Ball's orb, the ice fist
             FireMesh.palette(FireMesh.BAND);
             if (buffers instanceof MultiBufferSource.BufferSource source) {
                 source.m_109912_(type);

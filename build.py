@@ -134,6 +134,9 @@ NEW_PREFIXES = (
     "assets/hexhaki/textures/mob_effect/transformed.png",
     "assets/hexhaki/models/item/uo_uo_no_mi.json",
     "assets/hexhaki/textures/item/uo_uo_no_mi.png",
+    # 3.1.9: the Hie Hie no Mi's item (PiecePatch.uoFruit adds it to the original's fruits)
+    "assets/hexhaki/models/item/hie_hie_no_mi.json",
+    "assets/hexhaki/textures/item/hie_hie_no_mi.png",
     KATANA_MESHES,
     KATANA_TEXTURES,
     KATANA_MODELS,

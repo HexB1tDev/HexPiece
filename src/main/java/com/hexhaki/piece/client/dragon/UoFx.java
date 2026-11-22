@@ -119,6 +119,10 @@ public final class UoFx {
     }
 
     public static void accept(S2CUoFx m) {
+        if (m.kind() >= 120 && m.kind() < 140) {
+            com.hexhaki.piece.client.hie.HieFx.accept(m); // 3.1.9: the Ice fruit's moves (120 to 139)
+            return;
+        }
         if (m.kind() >= 100 && m.kind() < 120) {
             com.hexhaki.piece.client.magu.MaguFx.accept(m); // 3.1.3: the Magma fruit's moves (100 to 119)
             return;

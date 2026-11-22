@@ -69,7 +69,8 @@ public record S2CUoFx(int kind, int id, int user, double x, double y, double z, 
     }
 
     public static S2CUoFx decode(FriendlyByteBuf buffer) {
-        return new S2CUoFx(buffer.readByte(), buffer.readInt(), buffer.readInt(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
+        // 3.1.9: the kind read back unsigned (the Ice fruit's kinds run to 139, past a signed byte)
+        return new S2CUoFx(buffer.readByte() & 0xFF, buffer.readInt(), buffer.readInt(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
             buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(),
             buffer.readFloat(), buffer.readInt());
     }

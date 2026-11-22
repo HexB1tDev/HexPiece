@@ -196,6 +196,14 @@ public final class Scars {
      * and puts the original back {@code restoreIn} ticks later, as long as {@code to} is still there (else whatever is there stays).
      */
     int swap(LivingEntity owner, BlockPos pos, BlockState to, List<double[]> supports, long restoreIn) {
+        return this.swap(owner, pos, to, supports, restoreIn, false);
+    }
+
+    /**
+     * 3.1.9 (the Ice fruit: the owner, "The ground can also turn into like actual ice blocks"): as above; {@code water}: a still water
+     * source may be swapped too (the sea frozen into ice, put back as water; never a waterlogged block nor flowing water).
+     */
+    int swap(LivingEntity owner, BlockPos pos, BlockState to, List<double[]> supports, long restoreIn, boolean water) {
         this.refreshBudget();
         long key = pos.m_121878_();
         if (this.ledger.contains(key)) {
@@ -216,7 +224,8 @@ public final class Scars {
             return REFUSED;
         }
         BlockState state = this.level.m_8055_(pos);
-        if (!state.m_60819_().m_76178_() || !state.m_60795_() && !this.carvable(state, pos) || state == to) {
+        boolean sea = water && state.m_60734_() == net.minecraft.world.level.block.Blocks.f_49990_ && state.m_60819_().m_76170_();
+        if (!sea && (!state.m_60819_().m_76178_() || !state.m_60795_() && !this.carvable(state, pos)) || state == to) {
             return LEFT;
         }
         if (player != null) {

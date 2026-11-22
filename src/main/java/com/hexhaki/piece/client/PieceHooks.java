@@ -19,7 +19,7 @@ public final class PieceHooks {
      * (PiecePatch.fruitClips).
      */
     public static boolean fruitClip(String name) {
-        return name != null && (name.startsWith("pika_") || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_"));
+        return name != null && (name.startsWith("pika_") || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_") || name.startsWith("hie_"));
     }
 
     /**
@@ -57,7 +57,7 @@ public final class PieceHooks {
     public static dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration firstPersonArms(
         dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration config, String name) {
         if (name != null && (name.startsWith("style_") && !name.startsWith("style_swordsman") || name.startsWith("pika_")
-            || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_"))) {
+            || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_") || name.startsWith("hie_"))) {
             return config.setShowRightArm(true).setShowLeftArm(true);
         }
         return config;

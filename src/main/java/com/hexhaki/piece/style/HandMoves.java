@@ -132,6 +132,18 @@ public final class HandMoves {
             case "magu_hound" -> new Move(THROW, 0);
             case "magu_melt" -> new Move(MELT, 0);
             case "magu_rise" -> new Move(RISE, 0);
+            // 3.1.9: the Ice fruit
+            case "hie_partisan_raise" -> new Move(SIDE, 0.3);
+            case "hie_partisan_throw" -> new Move(THROW, 0);
+            case "hie_partisan_launch", "hie_ball_throw" -> new Move(PUSH_END, 0);
+            case "hie_grab_reach" -> new Move(POINT, 0.2);
+            case "hie_grab", "hie_road_punch" -> new Move(BIG, 0);
+            case "hie_ball_gather" -> new Move(DRAWN, 0.6);
+            case "hie_pheasant", "hie_saber_cut_1" -> new Move(SWEEP, 0);
+            case "hie_saber_cut_2" -> new Move(SWEEP_BACK, 0);
+            case "hie_ice_age" -> new Move(DOWN, 0);
+            case "hie_road_slide" -> new Move(COCKED, 0.3);
+            case "hie_saber_draw" -> new Move(SIDE_QUICK, 0);
             default -> null;
         };
     }
