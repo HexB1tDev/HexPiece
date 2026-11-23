@@ -3125,6 +3125,76 @@ key (tools/make_gif.py --captions). Remake: `java -cp build/preview:build/classe
 shots into a folder (--size=600x375), make_gif --ms 50 --captions captions.txt. **The camera holds still and cuts ahead** (a camera that
 follows every tick changes every pixel: 14 to 27 MB; still shots with cuts: 2.9 MB).
 
+## 8zzn. The owner's new request after 3.5.4 (verbatim): a Legendary fruit, the Mochi Mochi no Mi (Katakuri's)
+
+With one picture (kept only in the session's uploads: the series' fruit art never goes in the repository): the fruit, a cream-white
+gourd (a big round body over a narrow waist and a smaller round bottom), covered in grey swirls, a green T-shaped stem curling into a
+spiral at its left end and a hollow open tip at its right.
+"Next research katakuris mochi fruit and add it
+
+Legendary fruit
+
+Core Powers
+Mochi Generation and Manipulation: Katakuri produces vast amounts of adhesive mochi to trap opponents, block firearms, and construct objects
+like earplugs or body doubles.
+Body Transformation: As a Special Paramecia, he turns any part of his body into mochi to stretch his limbs, expand his mass, or alter his
+shape.
+Pseudo-Intangibility: Combining his body transformation with Future Sight Observation Haki, he manually shifts his mochi body around
+incoming attacks to mimic Logia-style invulnerability.
+Technique Mimicry: Because mochi shares elastic properties with rubber, Katakuri replicates and improves upon Monkey D. Luffy's Gomu Gomu
+no Mi attacks with greater size and power.
+Named Techniques
+Yanagi Mochi (Willow Mochi): Katakuri splits his mochi leg into multiple tendrils to deliver a rapid barrage of stomps.
+Mochi Tsuki (Mochi Thrust): He twists his mochi-transformed arm like a drill and thrusts it forward with his trident, Mogura.
+Kaku Mochi (Square Mochi): He compresses and hardens his mochi into dense, flat-edged blocks coated in Armament Haki to boost blunt-force
+impact.
+Yaki Mochi (Grilled Mochi): He inflates his forearm with pressure until it explodes, launching a flaming, Haki-imbued fist at high speed.
+Zan Giri Mochi (Sliced Mochi): He transforms his entire body into a giant spinning mochi wheel to rush his opponent, snag them with his
+sticky forearm, and slam them down with a massive spiked club.
+Mochi Anemone: He creates multiple floating rings of mochi around himself that sprout Haki-coated arms to unleash a multi-directional punch
+barrage.
+Awakened Abilities
+Environmental Conversion: Using his Devil Fruit Awakening, Katakuri transforms inorganic surroundings like walls and floors into
+controllable mochi.
+Nagare Mochi (Flowing Mochi): He turns the ground into a sweeping wave of mochi to engulf and immobilize targets.
+Kagami Mochi (Mirror Mochi): He converts surrounding structures into massive walls of mochi to crush opponents from multiple sides.
+Amadare Mochi (Raindrop Mochi): He shapes converted ceiling or wall mochi into dense tendrils that rain down onto enemies.
+Muso Donuts (Peerless Donuts): He creates floating donut-shaped rings of mochi in mid-air from which he manifests giant Haki-infused fists.
+Chikara Mochi (Power Mochi): Extending from his Muso Donuts, he launches gigantic, Armament Haki-hardened fists capable of overwhelming
+Luffy's Gear 3 attacks.
+Mochi Ginkaku (Mochi Silver Pavilion): He shapes large quantities of awakened mochi into a massive, dense dome or structure to trap and
+suffocate foes."
+Read as: a new fruit, LEGENDARY (four stars), after Ito; research it (reference GIFs from Tenor, kept in the scratchpad), plan the keys and
+ask the owner (AskUserQuestion) before building, as 8zw and 8zzc did; POINT ONE for everything (the house style, first-person hands, CC0
+sounds, the Conqueror's lightning out of every explosion with Haki and Ryou). S2CUoFx's kind is one byte and the Ito fruit took 240 to
+254: check UoFx's routes for free kinds (or widen the kind) before adding the Mochi fruit's.
+
+## 8zzo. The plan for the Mochi Mochi no Mi and the owner's answers (AskUserQuestion, this session)
+
+Research (Tenor, kept in the scratchpad only): his mochi is a soft cream-white with lilac-grey shading, puffy and glossy; the Haki fists
+are glossy black (the anime adds cyan shine streaks); Muso Donuts are white tori with black fists punching out of their holes; Zan Giri
+Mochi's club is a black spiked ball; Mochi Tsuki is a white drill spiralling round the trident Mogura; Amadare Mochi rains tendrils.
+
+Keys (the owner: the base kit as proposed, the Awakening **"M toggles a mode"**):
+- LMB **Mochi Punch**: stretchy mochi jabs, a combo by turns (technique mimicry).
+- RMB **Mochi Tsuki**: the arm twisted into a mochi drill round the trident Mogura, thrust forward; hold to charge (longer, harder).
+- Z **Yanagi Mochi**: a leg split into tendrils, a barrage of stomps ahead.
+- X **Kaku Mochi**: square block fists slammed down.
+- C **Yaki Mochi**: the forearm inflates, then bursts: a flaming fist launched fast and far, exploding where it lands (POINT ONE).
+- V **Zan Giri Mochi**: a spinning mochi wheel rush; the first body met snagged by a sticky arm and slammed down by a spiked club.
+- B **Mochi Anemone**: held: floating mochi rings round the user sprouting arms that punch every way.
+- N **Sticky Mochi**: adhesive mochi thrown: glues the bodies it hits in place 3 s, stops projectiles.
+- M **Awakening** (a toggle, 30 s): the ground round the user turns to mochi; while on, Z X C V B are **Nagare Mochi** (a ground wave
+  engulfs and holds), **Kagami Mochi** (walls rise either side of the target and crush), **Amadare Mochi** (tendrils rain down on an
+  area), **Muso Donuts + Chikara Mochi** (donut rings in the air fire giant fists), **Mochi Ginkaku** (a dome traps and crushes). M again
+  ends it.
+- Haki (the owner: **"Every fist and club"**): with Armament on every mochi fist, block, club and donut fist glossy Haki-black, 25 % more
+  damage; without it cream-white mochi.
+- Pseudo-Intangibility (the owner: **"Key window"**, on **"Double-tap Shift"**): 3 s in which every blow passes through holes opening in the
+  mochi body (no damage, a ring-hole closing back), then a 20 s cooldown.
+- Build (the owner: **"All at once"**): one version with everything. Legendary (four stars). The effect kinds: S2CUoFx's kind widened
+  to two bytes (PieceNetwork PROTOCOL bumped); the Mochi fruit's kinds 256 to 299.
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);
