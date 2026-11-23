@@ -80,12 +80,31 @@ public final class ItoFx {
     record Stream(long born, boolean coat, long until) {
     }
 
-    record Wave(Vec3 at, double reach, long born, int life, boolean coat) {
+    /** 3.5.0: the Awakening's string ground (its heights worked out once), or the Haki Awakening's round its user's feet (follow). */
+    record Field(Vec3 at, double radius, long born, int life, boolean coat, boolean follow, double[] heights) {
     }
 
-    record Thread(Vec3 target, Vec3 origin, long born, int flight) {
+    /** 3.5.0: a spike of string out of the string ground. */
+    record Spike(Vec3 at, double height, long born, int seed, boolean coat) {
     }
 
+    /** 3.5.0: a tentacle of string at the body it takes (its tip where it last was, for the sinking back). */
+    static final class Tentacle {
+        final int body;
+        final Vec3 root;
+        final boolean tree;
+        final long born;
+        final int life;
+        Vec3 tip;
+
+        Tentacle(int body, Vec3 root, boolean tree, long born, int life) {
+            this.body = body;
+            this.root = root;
+            this.tree = tree;
+            this.born = born;
+            this.life = life;
+        }
+    }
 
     /** A Black Knight drawn this frame (KnightRenderer tells): its feet, its height, coated; the strings it is woven of go over it. */
     record Seen(int id, Vec3 feet, double height, boolean coat) {
@@ -104,8 +123,9 @@ public final class ItoFx {
     static final Map<Integer, Held> HELD = new HashMap<>();
     static final Map<Integer, Web> WEBS = new HashMap<>();
     static final Map<Integer, Cage> CAGES = new HashMap<>();
-    private static final List<Wave> WAVES = new ArrayList<>();
-    private static final List<Thread> THREADS = new ArrayList<>();
+    static final Map<Integer, Field> FIELDS = new HashMap<>();
+    private static final List<Spike> SPIKES = new ArrayList<>();
+    private static final List<Tentacle> TENTACLES = new ArrayList<>();
     static final Map<Integer, long[]> STITCHES = new HashMap<>();
     static final double FAR = 160.0;
     static final int CAGE_FADE = 12;
@@ -157,13 +177,53 @@ public final class ItoFx {
                 }
             }
             case ItoMoves.CAGE -> cage(m, at, coat);
-            case ItoMoves.WAVE -> add(WAVES, new Wave(at, m.size(), clock, m.ticks(), coat));
-            case ItoMoves.THREAD -> add(THREADS, new Thread(at, a, clock, m.ticks()));
+            case ItoMoves.FIELD -> {
+                if (m.ticks() <= 0) {
+                    FIELDS.remove(m.user());
+                } else {
+                    boolean follow = m.bx() > 0.5F;
+                    put(FIELDS, m.user(), new Field(at, m.size(), clock, m.ticks(), coat, follow, follow ? null : heights(at, m.size())));
+                }
+            }
+            case ItoMoves.SPIKE -> add(SPIKES, new Spike(at, m.size(), clock, m.id(), coat));
+            case ItoMoves.TENTACLE -> add(TENTACLES, new Tentacle(m.id(), at, m.bx() > 0.5F, clock, m.ticks()));
             case ItoMoves.SKY -> SkyRoad.accept(m); // 3.4.3: Sky Road on or off
             case ItoMoves.STITCH -> put(STITCHES, m.user(), new long[] {clock, m.ticks()});
             default -> {
             }
         }
+    }
+
+    /**
+     * 3.5.0: the ground's height over {@code at} under each ray and ring of the string ground (ItoArt.stringGround), worked out once when
+     * it begins: each column's top solid block within 5 blocks up or 7 down of the middle (none: the middle's height).
+     */
+    static double[] heights(Vec3 at, double radius) {
+        net.minecraft.client.multiplayer.ClientLevel level = Minecraft.m_91087_().f_91073_;
+        double[] out = new double[ItoArt.FIELD_RAYS * ItoArt.FIELD_RINGS];
+        if (level == null) {
+            return out;
+        }
+        int foot = (int) Math.floor(at.f_82480_ - 0.01);
+        for (int k = 0; k < ItoArt.FIELD_RAYS; k++) {
+            double a = 2 * Math.PI * k / ItoArt.FIELD_RAYS + 0.13;
+            for (int j = 0; j < ItoArt.FIELD_RINGS; j++) {
+                double r = radius * (j + 1) / ItoArt.FIELD_RINGS;
+                int x = (int) Math.floor(at.f_82479_ + Math.cos(a) * r);
+                int z = (int) Math.floor(at.f_82481_ + Math.sin(a) * r);
+                double h = 0.0;
+                for (int y = foot + 5; y >= foot - 7; y--) {
+                    net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(x, y, z);
+                    net.minecraft.world.level.block.state.BlockState state = level.m_8055_(pos);
+                    if (!state.m_60795_() && !state.m_60812_(level, pos).m_83281_()) {
+                        h = y + 1 - at.f_82480_;
+                        break;
+                    }
+                }
+                out[k * ItoArt.FIELD_RINGS + j] = h;
+            }
+        }
+        return out;
     }
 
     static void heat(S2CUoFx m, Vec3 at, Vec3 a, boolean coat) {
@@ -237,15 +297,16 @@ public final class ItoFx {
         WEBS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().life + 1);
         CAGES.entrySet().removeIf(e -> clock - (e.getValue().closing >= 0 ? e.getValue().closing : e.getValue().born) > e.getValue().life + 2
             || e.getValue().ended >= 0 && clock - e.getValue().ended > CAGE_FADE);
-        WAVES.removeIf(w -> clock - w.born > w.life + 1);
-        THREADS.removeIf(t -> clock - t.born > t.flight + 5);
+        FIELDS.values().removeIf(f -> clock - f.born > f.life + 1);
+        SPIKES.removeIf(k -> clock - k.born > com.hexhaki.piece.ito.ItoAwaken.SPIKE_LIFE + 1);
+        TENTACLES.removeIf(t -> clock - t.born > t.life + 1);
         STITCHES.entrySet().removeIf(e -> clock - e.getValue()[0] > e.getValue()[1] + 1);
     }
 
     static boolean empty() {
         return LASHES.isEmpty() && BULLETS.isEmpty() && HITS.isEmpty() && GOSHIKIS.isEmpty() && KNOTS.isEmpty() && BEAMS.isEmpty()
             && SCATTERS.isEmpty() && STREAMS.isEmpty() && SEEN.isEmpty() && HELD.isEmpty() && WEBS.isEmpty() && CAGES.isEmpty()
-            && WAVES.isEmpty() && THREADS.isEmpty() && SkyRoad.empty() && STITCHES.isEmpty();
+            && FIELDS.isEmpty() && SPIKES.isEmpty() && TENTACLES.isEmpty() && SkyRoad.empty() && STITCHES.isEmpty();
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -388,11 +449,50 @@ public final class ItoFx {
                     feet.f_82481_ - cz, radius, age, st.coat, e.getKey());
             }
         }
-        for (Wave w : WAVES) {
-            if (!far(w.at, cam)) {
-                ItoArt.waves(SINK, w.at.f_82479_ - cx, w.at.f_82480_ - cy, w.at.f_82481_ - cz, w.reach, ItoMoves.WAVES, ItoMoves.WAVE_EVERY,
-                    ItoMoves.WAVE_SPEED, now - w.born, w.life, w.coat);
+        for (Map.Entry<Integer, Field> e : FIELDS.entrySet()) {
+            Field f = e.getValue();
+            Vec3 at = f.at;
+            if (f.follow) {
+                Entity user = level.m_6815_(e.getKey());
+                if (user == null || !user.m_20096_()) {
+                    continue; // round the feet only while they stand on the ground
+                }
+                at = user.m_20318_(partial);
             }
+            if (!far(at, cam)) {
+                ItoArt.stringGround(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, f.radius, f.follow ? 8 : ItoArt.FIELD_RAYS,
+                    f.follow ? 2 : ItoArt.FIELD_RINGS, f.heights, now - f.born, f.life, f.coat);
+            }
+        }
+        for (Spike k : SPIKES) {
+            if (!far(k.at, cam)) {
+                ItoArt.spike(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, k.height, now - k.born, k.coat, k.seed);
+            }
+        }
+        for (Tentacle t : TENTACLES) {
+            if (far(t.root, cam)) {
+                continue;
+            }
+            double age = now - t.born;
+            Entity body = level.m_6815_(t.body);
+            Vec3 mid = body == null ? t.tip : body.m_20318_(partial).m_82520_(0.0, body.m_20206_() * 0.55, 0.0);
+            Vec3 tip;
+            if (age < com.hexhaki.piece.ito.ItoAwaken.RISE + com.hexhaki.piece.ito.ItoAwaken.LIFT) {
+                if (mid == null) {
+                    continue;
+                }
+                double g = com.hexhaki.piece.ito.ItoAwaken.grow(age);
+                tip = t.root.m_82549_(mid.m_82546_(t.root).m_82490_(g));
+                t.tip = tip;
+            } else {
+                if (t.tip == null) {
+                    continue;
+                }
+                double w = com.hexhaki.piece.ito.ItoAwaken.withdraw(age);
+                tip = t.root.m_82549_(t.tip.m_82546_(t.root).m_82490_(w));
+            }
+            ItoArt.tentacle(SINK, t.root.f_82479_ - cx, t.root.f_82480_ - cy, t.root.f_82481_ - cz, tip.f_82479_ - cx, tip.f_82480_ - cy,
+                tip.f_82481_ - cz, age, t.tree, t.body);
         }
         for (Goshiki g : GOSHIKIS) {
             if (!far(g.at, cam)) {
@@ -503,12 +603,6 @@ public final class ItoFx {
             double alpha = Math.min(1.0, (h.until - now) / 6.0);
             ItoArt.parasite(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, p, now - h.born, Math.max(0.0, alpha), h.coat);
         }
-        for (Thread t : THREADS) {
-            if (!far(t.target, cam)) {
-                ItoArt.thread(SINK, t.target.f_82479_ - cx, t.target.f_82480_ - cy, t.target.f_82481_ - cz, t.origin.f_82479_ - cx, t.origin.f_82480_ - cy,
-                    t.origin.f_82481_ - cz, ItoMoves.SPEARS, now - t.born, t.flight);
-            }
-        }
         SkyRoad.draw(SINK, minecraft, level, cam, partial);
         for (Map.Entry<Integer, long[]> e : STITCHES.entrySet()) {
             Entity user = level.m_6815_(e.getKey());
@@ -552,8 +646,9 @@ public final class ItoFx {
         HELD.clear();
         WEBS.clear();
         CAGES.clear();
-        WAVES.clear();
-        THREADS.clear();
+        FIELDS.clear();
+        SPIKES.clear();
+        TENTACLES.clear();
         STITCHES.clear();
     }
 

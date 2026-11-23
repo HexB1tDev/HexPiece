@@ -195,6 +195,93 @@ def sky():
                "Ito Ito: Sky Road at rest: hanging easy on the strings, one leg slightly bent, the arms loose at the sides.")
 
 
+# 3.5.0 (the owner: "I don't want the player to just be attached to two strings in the air at all times. I want it to like do break
+# dances in the fucking sky ... jump from rope to rope ... backflip to another string, just skip to another one, jump from one to the
+# other, and like swing, just like grab a string from the sky and swing to the next line ... If the player is just, like, hanging in
+# midair, then we just make the player, like, grabbing onto a string with one hand ... animate it a little bit more"): the hang and the
+# tricks client/ito/SkyRoad plays between strides. The tricks turn the whole body (its pitch: the flip, the swing), so they key it.
+TRICK_PARTS = dict(SKY_PARTS, body=("pitch", "yaw", "roll", "bend"))
+# the right hand straight up, gripping a string over the head: raised out by the side (from the run's arms out it never crosses the face)
+UP_RIGHT = arm(-6, 0, 152, -4)
+
+
+def write_trick(name, duration, beats, description, loop=False):
+    moves = []
+    for tick, easing, q in beats:
+        for part, channels in TRICK_PARTS.items():
+            values = q.get(part, {})
+            for channel in channels:
+                moves.append({"tick": tick, "easing": easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
+    moves.sort(key=lambda m: m["tick"])
+    data = {"version": 3, "name": name, "author": "HexPiece 3.5.0", "description": description,
+            "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration + 3, "isLoop": loop, "returnTick": 0,
+                      "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
+    WRITTEN[name] = data
+    with open(os.path.join(ANIM_DIR, name + ".json"), "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=1)
+        handle.write("\n")
+
+
+def tricks():
+    run = p(rightLeg=leg(-40, 0, 30), leftLeg=mirror(leg(30, 0, 60)), rightArm=arm(0, 0, 50, -12), leftArm=mirror(arm(0, 0, 50, -12)),
+            body={"bend": 8})
+    # the hang: one hand up on a string, the other arm loose and swinging, the legs dangling and pedalling slowly, the body turning a
+    # little on the string and swaying
+    def hang(k):
+        return p(rightArm=UP_RIGHT, leftArm=mirror(arm(10 * k, 0, 14 + 4 * k, -16 + 6 * k)),
+                 rightLeg=leg(-14 * k, 0, 24 + 8 * k), leftLeg=mirror(leg(10 * k, 0, 10 - 6 * k)),
+                 body={"yaw": 7 * k, "roll": 2.5 * k, "bend": 2})
+    write_trick("ito_sky_hang", 48, [(0, "inoutsine", hang(1)), (12, "inoutsine", hang(0)), (24, "inoutsine", hang(-1)),
+                                     (36, "inoutsine", hang(0)), (48, "inoutsine", hang(1))],
+                "Ito Ito: Sky Road at rest: hanging by one hand from a string, the other arm and the legs swinging easy.", loop=True)
+    # the backflip to another string: tucked, a whole turn back, opening with the right hand thrown up to catch the next string; the
+    # turn stepped back to 0 on the last tick (360 is 0 seen: the fade out never unwinds it)
+    tuck = dict(rightLeg=leg(-112, 0, 118), leftLeg=mirror(leg(-108, 0, 122)), rightArm=arm(-46, 0, 14, -64), leftArm=mirror(arm(-46, 0, 14, -64)))
+    write_trick("ito_sky_backflip", 14, [
+        (0, "linear", run),
+        (2, "outsine", p(tuck, body={"pitch": 50, "bend": 14})),
+        (5, "linear", p(tuck, body={"pitch": 190, "bend": 16})),
+        (8, "linear", p(tuck, body={"pitch": 300, "bend": 10})),
+        (11, "outsine", p(rightLeg=leg(-8, 0, 14), leftLeg=mirror(leg(4, 0, 8)), rightArm=UP_RIGHT, leftArm=mirror(arm(-10, 0, 46, -10)),
+                          body={"pitch": 360, "bend": 0})),
+        (13, "linear", p(rightLeg=leg(-8, 0, 14), leftLeg=mirror(leg(4, 0, 8)), rightArm=UP_RIGHT, leftArm=mirror(arm(-10, 0, 46, -10)),
+                         body={"pitch": 360})),
+        (14, "constant", p(rightLeg=leg(-8, 0, 14), leftLeg=mirror(leg(4, 0, 8)), rightArm=UP_RIGHT, leftArm=mirror(arm(-10, 0, 46, -10)),
+                           body={"pitch": 0})),
+    ], "Ito Ito: Sky Road: a tucked backflip from one string to the next, the hand thrown up to catch it.")
+    # the leap: a flying split from string to string, the arms flung wide, the body arched; then gathered, the hand up for the next
+    split = p(rightLeg=leg(-96, 0, 0), leftLeg=mirror(leg(64, 0, 6)), rightArm=arm(-20, 0, 112, -6), leftArm=mirror(arm(-20, 0, 112, -6)),
+              body={"bend": -10})
+    write_trick("ito_sky_leap", 12, [
+        (0, "linear", run), (3, "outback", split), (8, "linear", p(split, body={"bend": -12})),
+        (12, "inoutsine", p(rightLeg=leg(-20, 0, 30), leftLeg=mirror(leg(10, 0, 20)), rightArm=UP_RIGHT, leftArm=mirror(arm(-20, 0, 40, -10)),
+                            body={"bend": 4})),
+    ], "Ito Ito: Sky Road: a flying split leap from one string to the next.")
+    # the skip: a knee driven high, the other foot kicked up behind, the opposite arm pumped up; then the other way round
+    def skip(k):
+        right = k > 0
+        high = leg(-102, 0, 96)
+        back = leg(28, 0, 104)
+        pump = arm(-18, 0, 138, -12)
+        low = arm(36, 0, 18, -20)
+        return p(rightLeg=high if right else back, leftLeg=mirror(back if right else high), rightArm=low if right else pump,
+                 leftArm=mirror(pump if right else low), body={"roll": 5 * k, "yaw": -8 * k, "bend": -4})
+    write_trick("ito_sky_skip", 10, [(0, "linear", run), (3, "outback", skip(1)), (6, "inoutsine", skip(-1)), (10, "inoutsine", run)],
+                "Ito Ito: Sky Road: a skip from string to string, a knee high, the other foot kicked up behind.")
+    # the swing: the right hand catches a string overhead and the body swings under it like a pendulum (back, then far forward, the feet
+    # leading), lets go at the top of the swing and flies on to the next
+    grip = dict(rightArm=UP_RIGHT, leftArm=mirror(arm(-10, 0, 70, -10)))
+    write_trick("ito_sky_swing", 20, [
+        (0, "linear", run),
+        (3, "outsine", p(grip, rightLeg=leg(10, 0, 30), leftLeg=mirror(leg(16, 0, 40)), body={"pitch": -28, "bend": -6})),
+        (10, "inoutsine", p(grip, rightLeg=leg(-40, 0, 8), leftLeg=mirror(leg(-34, 0, 12)), body={"pitch": 36, "bend": 6})),
+        (14, "outsine", p(grip, rightLeg=leg(-58, 0, 10), leftLeg=mirror(leg(-50, 0, 16)), body={"pitch": 44, "bend": 8})),
+        (17, "inoutsine", p(rightArm=arm(-60, 0, 40, -10), leftArm=mirror(arm(-40, 0, 56, -10)), rightLeg=leg(-30, 0, 30),
+                            leftLeg=mirror(leg(-10, 0, 40)), body={"pitch": 12, "bend": 4})),
+        (20, "inoutsine", run),
+    ], "Ito Ito: Sky Road: a string caught overhead, a swing under it like a pendulum, let go at the top to fly on.")
+
+
 def main():
     slash()
     goshiki()
@@ -202,6 +289,7 @@ def main():
     birdcage()
     knight()
     sky()
+    tricks()
     names = sorted(n for n in WRITTEN if n.startswith("ito_"))
     java_poses(names, "ItoPoses", "tools/ito_anims.py", "the String fruit's animations' keyframes, for the strings on the fist")
     print(f"wrote {len(names)} Ito animations and their poses")

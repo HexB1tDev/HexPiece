@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.4.9"
+VERSION = "3.5.0"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -657,6 +657,8 @@ def check_animations():
 
 # 3.3.1: the clips whose hands must never cover the face (the owner's target look: Gear 5's laughing skip)
 FACE_CLEAR_CLIPS = ("gear5_dawn_whip", "gear5_bounce", "gear5_jump", "gear5_land", "gear5_dawn_pop", "gear5_goof_spin",
+                    # 3.5.0: Sky Road's hang and tricks (the raised hand beside the head, the arms flung out by the side)
+                    "ito_sky_hang", "ito_sky_backflip", "ito_sky_leap", "ito_sky_skip", "ito_sky_swing",
                     "gear5_goof_dizzy")
 
 

@@ -37,8 +37,10 @@ public final class ItoKit extends FruitKit {
             + " Let go: the strings spread down into the Birdcage; its strings cut whoever touches them and no one gets out. Press again:"
             + " it slowly closes, cutting everything inside and pulling everyone to the middle; when it shuts they are cut and bleed.");
     public static final FruitMove AWAKEN = new FruitMove("Awakening", "[M]", 0, "ito_awaken",
-        "Break White: the ground round you turns to waves of white string rolling outward, throwing everyone they reach. With Armament"
-            + " on, God Thread: sixteen Haki-coated spears of string fired at once at what you look at.");
+        "The ground round you turns to string for 15 seconds: whoever stands on it is impaled by a spike of string shooting up under"
+            + " them, cut and bleeding. With Armament on, a toggle (M again: off): while it is on, huge tentacles of string rise out of"
+            + " the ground and the trees at every hostile creature near you; their Haki-black tips impale it, lift it into the sky and"
+            + " throw it.");
     public static final FruitMove SKY = new FruitMove("Sky Road", "passive", 0, null,
         "Jump again in the air: strings from your fingers catch on the sky and you run through the air on them, as far as you like for up"
             + " to thirty seconds. Move to run (sprint to run faster), jump and sneak to climb and sink, let go to hang still; touching the"

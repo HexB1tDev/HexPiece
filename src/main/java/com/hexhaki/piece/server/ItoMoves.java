@@ -5,6 +5,7 @@ import com.hexhaki.fruit.FruitMove;
 import com.hexhaki.fruit.FruitServer;
 import com.hexhaki.fx.Impact;
 import com.hexhaki.gameplay.HakiServerController;
+import com.hexhaki.piece.ito.ItoAwaken;
 import com.hexhaki.piece.ito.ItoSounds;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CUoFx;
@@ -87,10 +88,13 @@ public final class ItoMoves {
     public static final int CAGE_STANDING = 0;
     public static final int CAGE_CLOSING = 1;
     public static final int CAGE_CHARGING = 2;
-    /** Break White: id its seed, user, x, y, z its middle, size how far its waves roll, ticks how long. */
-    public static final int WAVE = 249;
-    /** God Thread: id its seed, user, x, y, z where the spears meet, a where they are fired from, ticks their flight. */
-    public static final int THREAD = 250;
+    /**
+     * 3.5.0: the Awakening's string ground (ito/ItoAwaken): id its seed, user, x, y, z its middle, size its radius, ticks how long (0:
+     * gone); bx 1: the Haki Awakening's, round the user's feet wherever they go, while it is on.
+     */
+    public static final int FIELD = 249;
+    /** 3.5.0: a tentacle of string (the Haki Awakening): id the body it takes, user, x, y, z its root, bx 1 out of a tree, ticks its life. */
+    public static final int TENTACLE = 250;
     /**
      * Sky Road (3.4.3, the owner: "Ito Ito No mi double jump tap now has a new move: Sky Road movement ability"; was 3.3.7's three air
      * steps): user; bx 1 on (ticks how long at the most, x, y, z the feet), 0 off. The runner's own client moves it (client/ito/SkyRoad),
@@ -99,6 +103,8 @@ public final class ItoMoves {
     public static final int SKY = 251;
     /** Self-Surgery: user, ticks how long the stitching shows. */
     public static final int STITCH = 252;
+    /** 3.5.0: a spike of string shooting up out of the string ground: id its seed, x, y, z its foot, size its height, ticks its life. */
+    public static final int SPIKE = 253;
 
     /** What a HIT is. */
     public static final int HIT_STRING = 0;
@@ -176,18 +182,12 @@ public final class ItoMoves {
     public static final int CAGE_FULL = 80;
     public static final int CAGE_HOLD_MOST = 96;
     public static final int CAGE_TICKS = 900;
-    public static final int CAGE_CLOSE = 100;
+    /** 3.5.0 (the owner: "the birdcage should close way slower ... it should come slowly, very slowly back. Like I mean, very slow"):
+     *  30 s to shut (was 5 s). */
+    public static final int CAGE_CLOSE = 600;
     public static final double CAGE_SHUT = 1.2;
     static final float CAGE_DAMAGE = 18.0F;
     /** Break White: three waves, born so many ticks apart, rolling so fast, so far. */
-    public static final int WAVES = 3;
-    public static final int WAVE_EVERY = 8;
-    public static final double WAVE_SPEED = 0.5;
-    public static final double WAVE_REACH = 18.0;
-    /** God Thread: sixteen spears, their flight, how far, the blast where they meet. */
-    public static final int SPEARS = 16;
-    public static final int THREAD_FLIGHT = 8;
-    static final double THREAD_RANGE = 40.0;
     /** Sky Road: the longest run (ticks), the rest after it, and how long on the ground ends it. */
     public static final int SKY_MOST = 600;
     static final int SKY_REST = 30;
@@ -215,6 +215,17 @@ public final class ItoMoves {
         long heatSince = -1;
         int heatSeed;
         com.hexhaki.piece.ito.StringKnight knight;
+        /** 3.5.0: the Awakening: the string ground's end and middle (no Haki), the bodies it spiked lately; the Haki toggle, the next
+         *  tentacle's earliest tick, the bodies taken lately. */
+        long fieldUntil = -1;
+        Vec3 fieldAt;
+        int fieldSeed;
+        final Map<Integer, Long> spiked = new HashMap<>();
+        boolean awakened;
+        long awakenedUntil;
+        long nextTentacle;
+        final Map<Integer, Long> taken = new HashMap<>();
+        int tentacles;
         long cageSince = -1;
         long cageUntil = -1;
         long cageFrom;
@@ -1043,8 +1054,8 @@ public final class ItoMoves {
         for (LivingEntity body : foes(player, c, Math.max(r, s.cageR) + 2.0)) {
             Vec3 m = StyleCombat.middle(body);
             Vec3 d = m.m_82546_(c);
-            // the dome: a hemisphere on the ground (below its middle, the wall goes straight down)
-            Vec3 dd = d.f_82480_ < 0 ? new Vec3(d.f_82479_, 0, d.f_82481_) : d;
+            // 3.5.0: the cage is a whole sphere round its middle (as drawn: its strings go on down into the ground)
+            Vec3 dd = d;
             double dist = dd.m_82553_();
             if (dist < 1.0E-4) {
                 continue;
@@ -1087,7 +1098,7 @@ public final class ItoMoves {
         Vec3 c = s.cageAt;
         for (LivingEntity body : foes(player, c, s.cageR + 1.0)) {
             Vec3 d = StyleCombat.middle(body).m_82546_(c);
-            if (Math.hypot(d.f_82479_, d.f_82481_) > s.cageR + 0.5) {
+            if (d.m_82553_() > s.cageR + 0.5) {
                 continue;
             }
             cut(player, body, CAGE_DAMAGE, new Vec3(0, 0.25, 0));
@@ -1112,50 +1123,192 @@ public final class ItoMoves {
 
     // ------------------------------------------------------------------------------------------------------ M: Awakening
 
-    /** Break White (waves of string rolling out over the ground), or with Armament God Thread (sixteen Haki spears at once). */
+    /**
+     * 3.5.0: the Awakening (ito/ItoAwaken): without Haki the ground round the user turns to string for a while, spiking whoever stands
+     * on it; with Armament a toggle: tentacles of string out of the ground and the trees at hostile bodies near, while it is on. M again
+     * (or Armament off) ends the toggle.
+     */
     static void awaken(ServerPlayer player, State s) {
+        if (s.awakened) {
+            awakenOff(player, s);
+            return;
+        }
         if (!ready(player, ItoKit.AWAKEN)) {
             return;
         }
-        cool(player, ItoKit.AWAKEN, 600);
-        s.busyUntil = now(player) + 14;
-        if (coated(player)) {
-            godThread(player);
-        } else {
-            breakWhite(player);
-        }
-    }
-
-    static void breakWhite(ServerPlayer player) {
         ServerLevel level = (ServerLevel) player.m_9236_();
+        long now = now(player);
+        s.busyUntil = now + 14;
         animate(player, "hie_ice_age");
+        if (coated(player)) {
+            cool(player, ItoKit.AWAKEN, 20);
+            s.awakened = true;
+            s.awakenedUntil = now + ItoAwaken.TOGGLE_MOST;
+            s.nextTentacle = now + 6;
+            fx(player, FIELD, ++seeds, player.m_20182_(), Vec3.f_82478_, 1, 0, 6.0, ItoAwaken.TOGGLE_MOST);
+            sound(player, player.m_20182_(), ItoSounds.WAVE, 2.0F, 0.7F);
+            return;
+        }
+        cool(player, ItoKit.AWAKEN, 600);
         Vec3 g = ground(level, player.m_20182_(), 0.5, 6.0);
-        Vec3 c = g != null ? g : player.m_20182_();
-        int seed = ++seeds;
-        int life = WAVE_EVERY * (WAVES - 1) + (int) Math.ceil(WAVE_REACH / WAVE_SPEED) + 10;
-        fx(player, WAVE, seed, c, Vec3.f_82478_, 0, 0, WAVE_REACH, life);
-        sound(player, c, ItoSounds.WAVE, 2.0F, 0.9F);
-        LIVE.add(new Waves(player, level, c, now(player), life));
+        s.fieldAt = g != null ? g : player.m_20182_();
+        s.fieldUntil = now + ItoAwaken.FIELD_TICKS;
+        s.fieldSeed = ++seeds;
+        s.spiked.clear();
+        fx(player, FIELD, s.fieldSeed, s.fieldAt, Vec3.f_82478_, 0, 0, ItoAwaken.FIELD_RADIUS, ItoAwaken.FIELD_TICKS);
+        sound(player, s.fieldAt, ItoSounds.WAVE, 2.0F, 0.9F);
     }
 
-    /** Break White's waves: each rolling outward, striking whoever its front passes once. */
-    static final class Waves implements UoMoves.Live {
-        final ServerPlayer user;
-        final ServerLevel level;
-        final Vec3 at;
-        final long born;
-        final int life;
-        final List<Set<Integer>> struck = new ArrayList<>();
+    static void awakenOff(ServerPlayer player, State s) {
+        if (!s.awakened) {
+            return;
+        }
+        s.awakened = false;
+        s.taken.clear();
+        fx(player, FIELD, ++seeds, player.m_20182_(), Vec3.f_82478_, 1, 0, 0, 0);
+        cool(player, ItoKit.AWAKEN, 300);
+    }
 
-        Waves(ServerPlayer user, ServerLevel level, Vec3 at, long born, int life) {
-            this.user = user;
-            this.level = level;
-            this.at = at;
-            this.born = born;
-            this.life = life;
-            for (int k = 0; k < WAVES; k++) {
-                struck.add(new HashSet<>());
+    static void awakenTick(ServerPlayer player, State s, long now) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        if (s.fieldUntil >= 0) {
+            if (now >= s.fieldUntil || !player.m_6084_()) {
+                s.fieldUntil = -1;
+                s.spiked.clear();
+            } else if (now % ItoAwaken.SPIKE_EVERY == 0) {
+                Vec3 c = s.fieldAt;
+                for (LivingEntity body : PikaMoves.foes(player, c, ItoAwaken.FIELD_RADIUS + 1.0)) {
+                    Vec3 d = body.m_20182_().m_82546_(c);
+                    if (!body.m_20096_() || Math.hypot(d.f_82479_, d.f_82481_) > ItoAwaken.FIELD_RADIUS || Math.abs(d.f_82480_) > 4.0) {
+                        continue;
+                    }
+                    Long last = s.spiked.get(body.m_19879_());
+                    if (last != null && now - last < ItoAwaken.SPIKE_REST) {
+                        continue;
+                    }
+                    s.spiked.put(body.m_19879_(), now);
+                    // a sharp spike of string out of the ground under it: cut, bleeding, thrown up
+                    fx(player, SPIKE, ++seeds, body.m_20182_(), Vec3.f_82478_, 0, 0, ItoAwaken.SPIKE_HEIGHT, ItoAwaken.SPIKE_LIFE);
+                    cut(player, body, ItoAwaken.SPIKE_DAMAGE, new Vec3(0, 0.9, 0));
+                    com.hexhaki.gore.Gore.bleed(player, body, 3, 120);
+                }
             }
+        }
+        if (!s.awakened) {
+            return;
+        }
+        if (now >= s.awakenedUntil || !player.m_6084_() || !coated(player)) {
+            awakenOff(player, s);
+            return;
+        }
+        if (now < s.nextTentacle || s.tentacles >= ItoAwaken.TENTACLES) {
+            return;
+        }
+        s.taken.values().removeIf(t -> now - t > ItoAwaken.TENTACLE_REST);
+        LivingEntity best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (LivingEntity body : PikaMoves.foes(player, player.m_20182_(), ItoAwaken.TENTACLE_RANGE)) {
+            if (s.taken.containsKey(body.m_19879_()) || !hostile(player, body)) {
+                continue;
+            }
+            double d = body.m_20280_(player);
+            if (d < bestDistance) {
+                bestDistance = d;
+                best = body;
+            }
+        }
+        if (best == null) {
+            s.nextTentacle = now + 4;
+            return;
+        }
+        s.nextTentacle = now + ItoAwaken.TENTACLE_GAP;
+        s.taken.put(best.m_19879_(), now);
+        Vec3 tree = tree(level, best);
+        Vec3 root;
+        if (tree != null) {
+            root = tree;
+        } else {
+            Vec3 toward = player.m_20182_().m_82546_(best.m_20182_());
+            Vec3 flat = new Vec3(toward.f_82479_, 0, toward.f_82481_);
+            flat = flat.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : flat.m_82541_();
+            Vec3 at = best.m_20182_().m_82549_(flat.m_82490_(ItoAwaken.GROUND_ROOT));
+            Vec3 g = ground(level, at, 3.0, 8.0);
+            root = g != null ? g : at;
+        }
+        s.tentacles++;
+        fx(player, TENTACLE, best.m_19879_(), root, Vec3.f_82478_, tree != null ? 1 : 0, 0, ItoAwaken.LIFT_HEIGHT, ItoAwaken.tentacleLife());
+        sound(player, root, ItoSounds.PULL, 1.8F, 0.6F);
+        LIVE.add(new Tentacle(player, s, level, best, root, now));
+    }
+
+    /** A body the Haki Awakening goes for: a monster, a mob after the user, or whoever last hurt the user. */
+    static boolean hostile(ServerPlayer player, LivingEntity body) {
+        if (body.m_6095_().m_20674_() == net.minecraft.world.entity.MobCategory.MONSTER) {
+            return true;
+        }
+        if (body instanceof net.minecraft.world.entity.Mob mob && mob.m_5448_() == player) {
+            return true;
+        }
+        return player.m_21188_() == body;
+    }
+
+    /**
+     * The top of a tree trunk within {@link ItoAwaken#TREE_REACH} blocks round {@code body} (a log, wood, stem or hyphae: its name), the
+     * nearest; null: none (the tentacle comes out of the ground).
+     */
+    static Vec3 tree(ServerLevel level, LivingEntity body) {
+        int fx = (int) Math.floor(body.m_20185_());
+        int fy = (int) Math.floor(body.m_20186_());
+        int fz = (int) Math.floor(body.m_20189_());
+        int reach = ItoAwaken.TREE_REACH;
+        double best = Double.MAX_VALUE;
+        int[] found = null;
+        for (int dx = -reach; dx <= reach; dx++) {
+            for (int dz = -reach; dz <= reach; dz++) {
+                int d2 = dx * dx + dz * dz;
+                if (d2 > reach * reach || d2 >= best) {
+                    continue;
+                }
+                for (int dy = -2; dy <= 6; dy++) {
+                    if (trunk(level, new net.minecraft.core.BlockPos(fx + dx, fy + dy, fz + dz))) {
+                        // up the trunk to its top
+                        int top = fy + dy;
+                        for (int k = 0; k < 12 && trunk(level, new net.minecraft.core.BlockPos(fx + dx, top + 1, fz + dz)); k++) {
+                            top++;
+                        }
+                        best = d2;
+                        found = new int[] {fx + dx, top, fz + dz};
+                        break;
+                    }
+                }
+            }
+        }
+        return found == null ? null : new Vec3(found[0] + 0.5, found[1] + 0.5, found[2] + 0.5);
+    }
+
+    static boolean trunk(ServerLevel level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.resources.ResourceLocation name = net.minecraftforge.registries.ForgeRegistries.BLOCKS.getKey(level.m_8055_(pos).m_60734_());
+        return name != null && ItoAwaken.trunk(name.m_135815_());
+    }
+
+    /** A tentacle at work: it grows to the body, impales it, lifts it into the sky, throws it away from the user and sinks back. */
+    static final class Tentacle implements UoMoves.Live {
+        final ServerPlayer user;
+        final State state;
+        final ServerLevel level;
+        final LivingEntity body;
+        final Vec3 root;
+        final long born;
+        Vec3 caught;
+        boolean thrown;
+
+        Tentacle(ServerPlayer user, State state, ServerLevel level, LivingEntity body, Vec3 root, long born) {
+            this.user = user;
+            this.state = state;
+            this.level = level;
+            this.body = body;
+            this.root = root;
+            this.born = born;
         }
 
         @Override
@@ -1165,44 +1318,42 @@ public final class ItoMoves {
 
         @Override
         public boolean tick(long now) {
-            double age = now - born;
-            if (age > life || !user.m_6084_()) {
+            long age = now - born;
+            boolean done = age >= ItoAwaken.tentacleLife() || !user.m_6084_();
+            if (done) {
+                state.tentacles = Math.max(0, state.tentacles - 1);
                 return true;
             }
-            List<LivingEntity> near = PikaMoves.foes(user, at, Math.min(WAVE_REACH, age * WAVE_SPEED) + 1.5);
-            for (int k = 0; k < WAVES; k++) {
-                double r = (age - k * WAVE_EVERY) * WAVE_SPEED;
-                if (r <= 0.0 || r > WAVE_REACH) {
-                    continue;
-                }
-                for (LivingEntity body : near) {
-                    Vec3 d = body.m_20182_().m_82546_(at);
-                    double dist = Math.hypot(d.f_82479_, d.f_82481_);
-                    if (dist > r - 1.2 && dist < r + 0.6 && Math.abs(d.f_82480_) < 4.0 && struck.get(k).add(body.m_19879_())) {
-                        Vec3 out = dist < 1.0E-4 ? Vec3.f_82478_ : new Vec3(d.f_82479_ / dist, 0, d.f_82481_ / dist);
-                        cut(user, body, 7.0F, out.m_82490_(0.6).m_82520_(0, 0.8, 0));
-                    }
-                }
+            if (!body.m_6084_() || body.m_213877_()) {
+                return false; // the tentacle finishes (sinks back) on its own
+            }
+            if (age == ItoAwaken.RISE) {
+                // the Haki-black tip impales it
+                caught = body.m_20182_();
+                cut(user, body, ItoAwaken.TENTACLE_DAMAGE, Vec3.f_82478_);
+                com.hexhaki.gore.Gore.bleed(user, body, 4, 160);
+                sound(user, StyleCombat.middle(body), ItoSounds.SLICE, 1.6F, 0.6F);
+            }
+            if (caught != null && age > ItoAwaken.RISE && age <= ItoAwaken.RISE + ItoAwaken.LIFT) {
+                // lifted into the sky on the tentacle's tip
+                double up = ItoAwaken.LIFT_HEIGHT * ItoAwaken.lift(age);
+                body.m_6021_(caught.f_82479_, caught.f_82480_ + up, caught.f_82481_);
+                body.m_20256_(Vec3.f_82478_);
+                body.f_19789_ = 0.0F;
+                body.f_19864_ = true;
+            }
+            if (caught != null && !thrown && age >= ItoAwaken.RISE + ItoAwaken.LIFT) {
+                // and thrown away from the user
+                thrown = true;
+                Vec3 away = body.m_20182_().m_82546_(user.m_20182_());
+                Vec3 flat = new Vec3(away.f_82479_, 0, away.f_82481_);
+                flat = flat.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : flat.m_82541_();
+                body.m_20256_(flat.m_82490_(2.2).m_82520_(0, 0.7, 0));
+                body.f_19864_ = true;
+                sound(user, StyleCombat.middle(body), ItoSounds.SWISH, 1.4F, 0.7F);
             }
             return false;
         }
-    }
-
-    static void godThread(ServerPlayer player) {
-        ServerLevel level = (ServerLevel) player.m_9236_();
-        animate(player, "hie_ball_throw");
-        LivingEntity aimed = PikaMoves.aimed(player, THREAD_RANGE, 0.08);
-        Vec3 target = aimed != null ? StyleCombat.middle(aimed) : looked(player, THREAD_RANGE);
-        Vec3 from = chest(player);
-        int seed = ++seeds;
-        fx(player, THREAD, seed, target, from, 0, 0, 0, THREAD_FLIGHT);
-        sound(player, from, ItoSounds.WAVE, 1.6F, 1.25F);
-        later(player, THREAD_FLIGHT, () -> {
-            UoMoves.explode(player, level, target, target.m_82546_(from).m_82541_(), 3.5, 14.0F, 0, 1.0);
-            fx(player, HIT, ++seeds, target, target.m_82546_(from).m_82541_(), HIT_STRING, 2, 2.2, 0);
-            sound(player, target, ItoSounds.SLICE, 1.6F, 0.7F);
-            Impact.quake(level, target, 20.0, 0.4F, 8);
-        });
     }
 
     // ------------------------------------------------------------------------------------------------------ the passives
@@ -1303,6 +1454,9 @@ public final class ItoMoves {
         }
         if (s.cageUntil >= 0) {
             cageTick(player, s, now);
+        }
+        if (s.fieldUntil >= 0 || s.awakened) {
+            awakenTick(player, s, now);
         }
         if (s.skyUntil >= 0) {
             skyTick(player, s, now);

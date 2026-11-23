@@ -244,6 +244,7 @@ m_20318_ (F)Leei;
 m_20334_ (DDD)V
 m_205070_ (Lanl;)Z
 m_20615_ (Lcmm;)Lbfj;
+m_20674_ ()Lbgc;
 m_20699_ (FF)Lbfn$a;
 m_20702_ (I)Lbfn$a;
 m_20704_ (Lbfn$b;Lbgc;)Lbfn$a;
@@ -251,6 +252,7 @@ m_20712_ (Ljava/lang/String;)Lbfn;
 m_20717_ (I)Lbfn$a;
 m_21023_ (Lbey;)Z
 m_21153_ (F)V
+m_21188_ ()Lbfz;
 m_21195_ (Lbey;)Z
 m_21205_ ()Lcfz;
 m_21206_ ()Lcfz;
@@ -443,6 +445,7 @@ m_60800_ (Lcls;Lgu;)F
 m_60812_ (Lcls;Lgu;)Lefb;
 m_60819_ ()Ldxe;
 m_6084_ ()Z
+m_6095_ ()Lbfn;
 m_6117_ ()Z
 m_6122_ (IIII)Lein;
 m_6147_ ()Z

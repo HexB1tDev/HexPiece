@@ -65,7 +65,23 @@ public final class SkyRoad {
     static final double FLASH = 4.0;
     static final int FEET = 8;
 
-    static final String HOVER = "ito_sky_hover";
+    /** 3.5.0 (the owner: "If the player is just, like, hanging in midair, then we just make the player, like, grabbing onto a string with
+     *  one hand"): hanging still is one hand up on one string overhead (ito_sky_hang); 3.4.3's two-string hover is no longer played. */
+    static final String HOVER = "ito_sky_hang";
+    /**
+     * 3.5.0 (the owner: "I want it to like do break dances in the fucking sky. Like I want it to like jump from rope to rope, like just
+     * without like any requirement from the player, just animation wise, like backflip to another string, just skip to another one,
+     * jump from one to the other, and like swing, just like grab a string from the sky and swing to the next line"): while it runs, every
+     * TRICK_GAP to TRICK_GAP + TRICK_SPREAD ticks a runner lets go of its strings and does a trick on its own (tools/ito_anims.tricks):
+     * a backflip, a flying split leap or a skip from string to string (no string held, both thrown again as it lands the trick), or a
+     * swing: one string caught overhead ahead, the body swinging under it like a pendulum, let go at the top. Animation only: the body
+     * moves as the keys move it. Every client picks them for itself (each runner's own random numbers).
+     */
+    static final String[] TRICKS = {"ito_sky_backflip", "ito_sky_leap", "ito_sky_skip", "ito_sky_swing"};
+    static final int[] TRICK_TICKS = {14, 12, 10, 20};
+    static final int SWING = 3;
+    static final int TRICK_GAP = 36;
+    static final int TRICK_SPREAD = 44;
     static final String RUN_CLIP = "ito_sky_run";
     static final String SPRINT_CLIP = "ito_sky_sprint";
 
@@ -95,6 +111,11 @@ public final class SkyRoad {
         int sling;
         String clip;
         long clipAt;
+        /** 3.5.0: the trick playing (an index into TRICKS, or -1), until when, the next one's earliest tick, how many so far. */
+        int trick = -1;
+        long trickUntil;
+        long nextTrick = -1;
+        int tricks;
         double phase;
         final Anchor[] anchors = new Anchor[2];
         final Anchor[] old = new Anchor[2];
@@ -329,6 +350,48 @@ public final class SkyRoad {
         r.bank += (bankTo - r.bank) * 0.18;
         double leanTo = 5.0 + 26.0 * Math.min(1.0, hs / SPRINT) + (r.sling > 0 ? 10.0 : 0.0);
         r.lean += (leanTo - r.lean) * 0.15;
+        // 3.5.0: a trick on its own now and then while it runs (its strings let go), the swing on one string caught overhead
+        if (r.trick >= 0 && clock >= r.trickUntil) {
+            r.trick = -1;
+            r.clip = null; // back to running: the clip and both strings come back below
+            for (int k = 0; k < 2; k++) {
+                if (r.anchors[k] != null) {
+                    r.anchors[k].dropped = clock;
+                    r.old[k] = r.anchors[k];
+                    r.anchors[k] = null;
+                }
+            }
+        }
+        if (r.nextTrick < 0) {
+            r.nextTrick = clock + TRICK_GAP + (long) (TRICK_SPREAD * FireMesh.rand(id * 31, 17));
+        }
+        if (r.trick < 0 && hs >= HOVER_BELOW * 1.6 && clock >= r.nextTrick) {
+            int t = (int) Math.min(TRICKS.length - 1, FireMesh.rand(id * 13 + r.tricks, 5) * TRICKS.length);
+            r.trick = t;
+            r.tricks++;
+            r.trickUntil = clock + TRICK_TICKS[t];
+            r.nextTrick = r.trickUntil + TRICK_GAP + (long) (TRICK_SPREAD * FireMesh.rand(id * 31 + r.tricks, 17));
+            com.hexhaki.client.anim.HakiAnimations.playRemote(id, TRICKS[t], 3);
+            r.clip = TRICKS[t];
+            r.clipAt = clock;
+            double dir0 = Double.isNaN(r.heading) ? Math.toRadians(-body.m_146908_()) : Math.toRadians(r.heading);
+            for (int k = 0; k < 2; k++) {
+                if (r.anchors[k] != null) {
+                    r.anchors[k].dropped = clock;
+                    r.old[k] = r.anchors[k];
+                    r.anchors[k] = null;
+                }
+            }
+            if (t == SWING) {
+                // the string caught for the swing: high over the way ahead, so the body swings under it and on
+                r.anchors[0] = new Anchor(pos.m_82520_(-Math.sin(dir0) * (2.0 + hs * 10.0), 9.0, Math.cos(dir0) * (2.0 + hs * 10.0)), clock);
+                r.flash[0] = clock + (long) THROW;
+            }
+        }
+        if (r.trick >= 0) {
+            feet(pos, hs, r);
+            return;
+        }
         // its clip: hanging, running, sprinting (a little hysteresis so it never flickers between two)
         String want;
         if (hs < HOVER_BELOW || HOVER.equals(r.clip) && hs < HOVER_BELOW * 1.6) {
@@ -354,8 +417,18 @@ public final class SkyRoad {
         double dir = Double.isNaN(r.heading) ? Math.toRadians(-body.m_146908_()) : Math.toRadians(r.heading);
         double hx = -Math.sin(dir);
         double hz = Math.cos(dir);
+        boolean hanging = HOVER.equals(r.clip);
         for (int k = 0; k < 2; k++) {
             Anchor a = r.anchors[k];
+            if (hanging && k == 1) {
+                // 3.5.0: one hand on one string while it hangs: the left lets go
+                if (a != null) {
+                    a.dropped = clock;
+                    r.old[k] = a;
+                    r.anchors[k] = null;
+                }
+                continue;
+            }
             boolean again;
             if (a == null) {
                 again = true;
@@ -370,7 +443,7 @@ public final class SkyRoad {
                     a.dropped = clock;
                     r.old[k] = a;
                 }
-                double side = k == 0 ? -1.0 : 1.0; // the right hand's anchor to the right of the way, the left's to the left
+                double side = hanging ? -0.25 : k == 0 ? -1.0 : 1.0; // the right hand's anchor to the right of the way, the left's to the left
                 double reach = hs >= HOVER_BELOW ? 6.0 + hs * 16.0 : 0.0;
                 double rise = 14.0 + 4.0 * FireMesh.rand(id * 7 + (int) clock, k);
                 Vec3 at = pos.m_82520_(hx * reach + hz * side * 2.6, rise, hz * reach - hx * side * 2.6);
@@ -378,7 +451,11 @@ public final class SkyRoad {
                 r.flash[k] = clock + (long) THROW;
             }
         }
-        // the feet's streak
+        feet(pos, hs, r);
+    }
+
+    /** The feet's streak, one place a tick. */
+    static void feet(Vec3 pos, double hs, Runner r) {
         if (hs > 0.15) {
             System.arraycopy(r.feet, 0, r.feet, 3, (FEET - 1) * 3);
             r.feet[0] = pos.f_82479_;
@@ -465,6 +542,13 @@ public final class SkyRoad {
             Vec3 right = look.m_82537_(new Vec3(0, 1, 0));
             right = right.m_82556_() < 1.0E-6 ? new Vec3(-1, 0, 0) : right.m_82541_();
             return body.m_20299_(partial).m_82549_(look.m_82490_(0.4)).m_82549_(right.m_82490_(-side * 0.55)).m_82520_(0.0, -0.3, 0.0);
+        }
+        if (k == 0 && (HOVER.equals(r.clip) || r.trick == SWING) && body instanceof net.minecraft.world.entity.player.Player player) {
+            // 3.5.0: the hand up on the string: where the clip holds it (the hang, the swing)
+            Vec3 fist = com.hexhaki.piece.client.FirstPersonLight.fist(player, partial);
+            if (fist != null) {
+                return fist;
+            }
         }
         double yaw = Math.toRadians(body instanceof LivingEntity l ? l.f_20883_ : body.m_146908_());
         double rx = -Math.cos(yaw);

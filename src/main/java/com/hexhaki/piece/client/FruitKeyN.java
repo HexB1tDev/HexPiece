@@ -35,6 +35,10 @@ public final class FruitKeyN {
     private static boolean down;
     private static boolean downM;
     private static boolean jumpWas;
+    /** 3.5.0: the client ticks counted here, and the tick of the last press of jump (Sky Road takes two within DOUBLE_TAP ticks). */
+    private static long clock;
+    private static long lastJump = Long.MIN_VALUE / 2;
+    static final int DOUBLE_TAP = 7;
 
     private FruitKeyN() {
     }
@@ -99,7 +103,15 @@ public final class FruitKeyN {
         // 3.3.7: the jump pressed again in the air (not flying, not swimming) with the Ito fruit; 3.4.3: Sky Road, started here at once
         // (client/ito/SkyRoad: the server's word follows); while it runs the jump key climbs instead
         boolean jump = minecraft.f_91074_ != null && minecraft.f_91066_.f_92089_.m_90857_();
-        if (jump && !jumpWas && minecraft.f_91080_ == null && PieceHooks.fruitKeysActive()
+        // 3.5.0 (the owner: Sky Road "should only happen when the player double clicks the jump ... right now I only have to click it once
+        // and instantly starts the flying"): only the second of two presses DOUBLE_TAP ticks apart or less, in the air
+        boolean pressed = jump && !jumpWas;
+        boolean twice = pressed && clock - lastJump <= DOUBLE_TAP;
+        if (pressed) {
+            lastJump = twice ? Long.MIN_VALUE / 2 : clock;
+        }
+        clock++;
+        if (twice && minecraft.f_91080_ == null && PieceHooks.fruitKeysActive()
             && FruitClient.fruit(minecraft.f_91074_.m_19879_()) == com.hexhaki.fruit.Fruit.ITO && !minecraft.f_91074_.m_20096_()
             && !minecraft.f_91074_.m_150110_().f_35935_ && !minecraft.f_91074_.m_20069_() && !minecraft.f_91074_.m_20159_()
             && !com.hexhaki.piece.client.ito.SkyRoad.active(minecraft.f_91074_.m_19879_())) {

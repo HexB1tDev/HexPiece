@@ -218,3 +218,6 @@ C net/minecraft/world/entity/projectile/AbstractHurtingProjectile   # [srg] join
 F net/minecraft/world/entity/projectile/AbstractHurtingProjectile f_36813_ D   # [srg] xPower: joined.tsrg byv b f_36813_ 36813; intermediary FIELD byv D b field_7601 (yarn powerX)
 F net/minecraft/world/entity/projectile/AbstractHurtingProjectile f_36814_ D   # [srg] yPower: joined.tsrg byv c f_36814_ 36814; intermediary FIELD byv D c field_7600 (yarn powerY)
 F net/minecraft/world/entity/projectile/AbstractHurtingProjectile f_36815_ D   # [srg] zPower: joined.tsrg byv d f_36815_ 36815; intermediary FIELD byv D d field_7599 (yarn powerZ)
+# --- 3.5.0: the Ito Ito no Mi's Awakening (tentacles out of the ground and out of trees at hostile creatures) ---------------------------
+F net/minecraftforge/registries/ForgeRegistries BLOCKS Lnet/minecraftforge/registries/IForgeRegistry;   # [forge] 1.20.1 registries/ForgeRegistries.java:68 "public static final IForgeRegistry<Block> BLOCKS" (a trunk known by its name: _log, _wood, _stem, _hyphae)
+M net/minecraft/world/entity/EntityType m_20674_ ()Lnet/minecraft/world/entity/MobCategory;   # [srg] getCategory: joined.tsrg bfn f ()Lbgc; m_20674_ 20674 (bfn = EntityType, bgc = MobCategory); intermediary METHOD bfn ()Lbgc; f method_5891 (yarn getSpawnGroup), the only EntityType method returning a MobCategory

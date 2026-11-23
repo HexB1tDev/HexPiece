@@ -2,6 +2,11 @@
 package net.minecraft.world.entity;
 
 public class EntityType<T extends Entity> {
+    /** 3.5.0: getCategory (the Ito Awakening's tentacles go for monsters) */
+    public MobCategory m_20674_() {
+        return null;
+    }
+
     /** create(level) */ public T m_20615_(net.minecraft.world.level.Level level) { throw new UnsupportedOperationException(); }
 
     public interface EntityFactory<T extends Entity> {

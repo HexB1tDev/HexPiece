@@ -6,7 +6,7 @@ import com.hexhaki.piece.server.ItoMoves;
  * 3.3.7: the Ito Ito no Mi's strings (ito/ItoArt) for FxPreview, round the scene's middle (the user standing there facing +z, their
  * right hand at (-0.36, 1.15, 0.35) as client/ito/ItoFx.hand puts it). Shots after the camera, an age, and "c" for Armament on:
  * {@code |islash:age} the lash, {@code |ibullet:age} a burst of bullets, {@code |ihit:age}, {@code |igoshiki:age} onto (0, 0, 7),
- * {@code |iheat:age} Overheat, {@code |iparasite:age} strings to a body at (0, 0, 5), {@code |iweb:age}, {@code |icage:age:radius}
+ * {@code |iheat:age} Overheat, {@code |iparasite:age} strings to a body at (0, 0, 5), {@code |iweb:age}, {@code |icage:age:radius}, 3.5.0 {@code |ifield:age}, {@code |ispike:age}, {@code |itentacle:age[:tree]}
  * (default the owner's 40 closing in), {@code |iwave:age}, {@code |ithread:age} at (0, 1, 12), {@code |isky:age}, {@code |istitch:age}.
  */
 public final class ItoShots {
@@ -127,19 +127,55 @@ public final class ItoShots {
                 double r = closing ? ItoMoves.cageRadius(radius, age, ItoMoves.CAGE_CLOSE) : radius;
                 double spread = closing ? 1.0 : Math.min(1.0, age / ItoArt.CAGE_SPREAD);
                 double tension = closing ? Math.min(1.0, age / ItoMoves.CAGE_CLOSE) : 0.0;
-                ItoArt.cage(sink, -ex, -ey, -ez, r, spread, tension, 1.0, coat);
+                // 3.5.0: |icage:age:c-or-b:radius:phase:hill the cage cast on a hilltop hill blocks over the ground round it (its strings
+                // go on down to the ground: the owner's gaps)
+                double hill = move.length > 5 ? Double.parseDouble(move[5]) : 0.0;
+                ItoArt.cage(sink, -ex, hill - ey, -ez, r, spread, tension, 1.0, coat);
             }
-            case "iwave" -> {
+            case "ifield" -> {
+                // 3.5.0: |ifield:age the Awakening's string ground (flat here) with three bodies on it, one spiked (its spike age - 30)
                 HieShots.body(sink, -ex, -ey, -ez);
-                for (int k = 0; k < 5; k++) {
-                    HieShots.body(sink, -6 + 3 * k - ex, -ey, 9 - ez);
+                double[] bodies = {5, 3, -4, 7, 1, -8};
+                for (int k = 0; k < 3; k++) {
+                    HieShots.body(sink, bodies[k * 2] - ex, -ey, bodies[k * 2 + 1] - ez);
                 }
-                ItoArt.waves(sink, -ex, -ey, -ez, ItoMoves.WAVE_REACH, ItoMoves.WAVES, ItoMoves.WAVE_EVERY, ItoMoves.WAVE_SPEED, age, 60, coat);
+                ItoArt.stringGround(sink, -ex, -ey, -ez, com.hexhaki.piece.ito.ItoAwaken.FIELD_RADIUS, ItoArt.FIELD_RAYS, ItoArt.FIELD_RINGS, null, age,
+                    com.hexhaki.piece.ito.ItoAwaken.FIELD_TICKS, coat);
+                ItoArt.spike(sink, 5 - ex, -ey, 3 - ez, com.hexhaki.piece.ito.ItoAwaken.SPIKE_HEIGHT, age - 30, coat, 7);
             }
-            case "ithread" -> {
+            case "ispike" -> {
+                // 3.5.0: |ispike:age one spike under a body, close
+                HieShots.body(sink, -ex, -ey + Math.max(0, com.hexhaki.piece.ito.ItoAwaken.spike(age) - 0.8) * 1.2, -ez);
+                ItoArt.spike(sink, -ex, -ey, -ez, com.hexhaki.piece.ito.ItoAwaken.SPIKE_HEIGHT, age, coat, 3);
+            }
+            case "itentacle" -> {
+                // 3.5.0: |itentacle:age[:tree] a tentacle from the ground 3.5 off (or a tree's top, 5 up, 6 off) taking a body at (0, 0, 8):
+                // grown to it, lifting it 12 up, throwing it on along +z, sinking back
+                boolean tree = move.length > 2 && move[2].equals("tree");
+                double rx = tree ? 5.0 : 3.5;
+                double ry = tree ? 5.5 : 0.0;
+                double rz = tree ? 8.0 : 6.0;
+                double up = com.hexhaki.piece.ito.ItoAwaken.LIFT_HEIGHT * com.hexhaki.piece.ito.ItoAwaken.lift(age);
+                double flung = Math.max(0, age - com.hexhaki.piece.ito.ItoAwaken.RISE - com.hexhaki.piece.ito.ItoAwaken.LIFT);
+                double by = up + (flung > 0 ? 0.7 * flung - 0.04 * flung * flung : 0);
+                double bz = 8 + 2.2 * flung;
                 HieShots.body(sink, -ex, -ey, -ez);
-                HieShots.body(sink, -ex, -ey, 12 - ez);
-                ItoArt.thread(sink, -ex, 1 - ey, 12 - ez, -ex, 1.25 - ey, -ez, ItoMoves.SPEARS, age, ItoMoves.THREAD_FLIGHT);
+                if (tree) {
+                    for (int k = 0; k < 6; k++) {
+                        FireMesh.tube(sink, rx - ex, k - ey, rz - ez, rx - ex, k + 1 - ey, rz - ez, 0.5, 0.5, 0x6B4A2B, 0x6B4A2B, 0x6B4A2B, 0, 1, 0, 0, 1);
+                    }
+                }
+                HieShots.body(sink, -ex, by - ey, bz - ez);
+                double mx = 0;
+                double my = by + 0.95;
+                double mz = bz;
+                double rise = com.hexhaki.piece.ito.ItoAwaken.RISE + com.hexhaki.piece.ito.ItoAwaken.LIFT;
+                double g = age < rise ? com.hexhaki.piece.ito.ItoAwaken.grow(age) : com.hexhaki.piece.ito.ItoAwaken.withdraw(age);
+                double tx0 = age < rise ? mx : 0;
+                double ty0 = age < rise ? my : up + 0.95;
+                double tz0 = age < rise ? mz : 8;
+                ItoArt.tentacle(sink, rx - ex, ry - ey, rz - ez, rx + (tx0 - rx) * g - ex, ry + (ty0 - ry) * g - ey, rz + (tz0 - rz) * g - ez, age,
+                    tree, 5);
             }
             case "isky" -> {
                 // 3.4.3: a Sky Road runner 4 up, running along +z: a string from each hand to its anchor high ahead (the right one

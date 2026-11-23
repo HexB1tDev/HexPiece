@@ -37,8 +37,9 @@ owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Buil
 Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is green (Build #188, Release #135). 3.4.5
 (8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136). 3.4.6 (8zzg: Goof Ball and Giant Gear 5 only, Dawn Whip's
 leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Giant's straight throw and our crash) is green (Build #192, Release #138). 3.4.8 (8zzg: /hexpiece style mastery,
-the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the owner's Gear 5 bug list) is pushed: check its runs. The
-owner's Ito list (8zzi) is next, as 3.5.0.**
+the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the owner's Gear 5 bug list) is green (Build #196,
+Release #140). 3.5.0 (8zzj: the owner's Ito list) was pushed at the owner's "Handoff and prompt asap" without a CI check: check its runs
+first; then the tentacle's look (8zzj, NOT DONE).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2962,13 +2963,57 @@ Then (verbatim): "Also, I forgot to add, but the birdcage should close way slowe
 like activates it again, it should come slowly, very slowly back. Like I mean, very slow." (7) The Birdcage's closing (N again) much,
 much slower than CAGE_CLOSE 100 ticks.
 
+## 8zzj. 3.5.0 as built (the owner's Ito list, 8zzi), pushed at the owner's "Handoff and prompt asap"
+
+3.4.9 was green (Build #196, Release #140). 3.5.0 was pushed at the owner's word WITHOUT a CI check: **first check the branch's Build
+and Release runs and fix anything red.** The last local build (before the version bump only) was EXIT 0 with 13 suites.
+- **Sky Road** (8zzi 1-3): client/FruitKeyN: only the second of two jump presses within DOUBLE_TAP 7 ticks, in the air, starts it.
+  tools/ito_anims.tricks(): ito_sky_hang (loop 48: the right hand up on a string beside the head, raised out by the side: UP_RIGHT
+  arm(-6, 0, 152, -4); the left arm and legs swinging, the body turning a little), ito_sky_backflip (14: tucked, body pitch 0 to 360,
+  a "constant" step back to 0 on the last tick), ito_sky_leap (12: a flying split, arms flung out by the sides), ito_sky_skip (10),
+  ito_sky_swing (20: one hand up, the body swinging as a pendulum: pitch -28 to +44, let go). TRICK_PARTS keys the body's pitch. All
+  lint clean and in build.py FACE_CLEAR_CLIPS (the first tries crossed the face while raising the arm forward: raise by the side).
+  client/ito/SkyRoad: HOVER is now ito_sky_hang (one string, the right hand's, straight overhead; the left let go); while running,
+  every TRICK_GAP 36 + up to TRICK_SPREAD 44 ticks a trick (each client its own random numbers, FireMesh.rand(id...)): both strings let go,
+  the clip played, the strings thrown again after it; the swing catches one string (anchor 9 up, ahead) for its length. SkyRoad.hand
+  takes the posed right fist (FirstPersonLight.fist) while hanging or swinging. Renders judged: the scratchpad's tricks3.png.
+- **Birdcage** (8zzi 4, 7): ItoArt.cage: every bar runs on round the whole sphere (7 pieces to the middle, 2 below: its pointed end in
+  the ground; the world hides the buried part), so on a slope the strings reach the ground (no gaps); a thin string (thinStrand: halo
+  and core, CAGE_THIN 0.45 of the width) between every two bars over the dome; the upper ring thin; CAGE_SPREAD 36 (the strings come
+  down the whole sphere). server/ItoMoves: the cage's wall is the same sphere (was a hemisphere with a straight wall under it), the
+  shut cage's catch a sphere; CAGE_CLOSE 600 (30 s, was 5 s: "very slow"). Budget: the cage 3,200 quads (DragonTests.itoStrings under
+  16,000). Preview ItoShots |icage:age:c-or-b:radius:phase:hill (hill: the cage on a hilltop). Renders: the scratchpad's cage.png, cage2.png.
+- **Awakening** (8zzi 5, 6; ito/ItoAwaken, pure, shared numbers): Break White and God Thread are gone (ItoArt.waves/thread deleted;
+  S2CUoFx 249 is FIELD, 250 TENTACLE, 253 SPIKE). Bare M: FIELD_RADIUS 14 of string ground for FIELD_TICKS 300 (ItoArt.stringGround:
+  FIELD_RAYS 24 radial strings and FIELD_RINGS 6 rings lying on the ground, heights worked out once by the client: ItoFx.heights); every
+  SPIKE_EVERY 4 ticks a foe standing in it (at most once per SPIKE_REST 24) gets a SPIKE (ItoArt.spike: five strings twisting up into a
+  point round a solid pointed core, SPIKE_HEIGHT 4.5, up in 3 ticks with an overshoot) and cut(5, thrown up) + Gore.bleed(3, 120).
+  Cooldown 600. With Armament: a toggle (M again, Armament off, death or TOGGLE_MOST ends it; 300 cooldown after): a small string ring
+  round the user's feet (FIELD bx 1, follows them); every TENTACLE_GAP 14 ticks, up to TENTACLES 3 at once, the nearest hostile body
+  within TENTACLE_RANGE 22 (MobCategory.MONSTER by EntityType.m_20674_, a Mob targeting the user, or the user's last attacker; each
+  once per TENTACLE_REST 80) gets a Tentacle (server Live): the root the top of a tree trunk within TREE_REACH 6 (a block whose registry
+  path ends _log/_wood/_stem/_hyphae: ForgeRegistries.BLOCKS.getKey) or the ground 3.5 from it toward the user; RISE 8 ticks it grows
+  to the body, impales it (cut 10 + Gore.bleed(4, 160); the lightning through cut()), LIFT 22 ticks lifts it LIFT_HEIGHT 12 up (m_6021_
+  every tick, motion zeroed), then throws it away from the user (2.2 out, 0.7 up), WITHDRAW 12 sinking back. Proven this session
+  (verify/api-allowlist.txt 3.5.0): ForgeRegistries.BLOCKS ([forge] ForgeRegistries.java:68), EntityType.m_20674_ ([srg] joined.tsrg bfn
+  f ()Lbgc;, intermediary method_5891); stubs added; srg-shapes regenerated (m_20674_, m_21188_, m_6095_). ItoKit's M text rewritten.
+  Previews ItoShots |ifield:age, |ispike:age, |itentacle:age[:tree]. Renders: the scratchpad's awaken1.png (the string ground, spikes:
+  good), awaken2.png (tentacles).
+- **NOT DONE, do first: the tentacle's look.** ItoArt.tentacle draws 7 strands twisted 2.5 turns round a quadratic spine plus a thin
+  core and a black spear tip: in the renders it reads as a thin lattice of crossing strings, NOT the "massive tentacles" the owner asked
+  for ("This should be a visual spectacle"). Rebuild its body as a thick banded tube of string (ItoArt.rope's way: the house's banded
+  tube, white-pink bands instead of HOT, radius about 0.8 at the root tapering to 0.15) with 4 to 6 strands wound tight round it (about
+  1 turn, close to the surface), the last 20 % Haki-black with the spear point and its violet glow; keep it under the budget
+  (DragonTests.itoStrings coated: three tentacles at once; the scene was at 16,000 with 800 quads a tentacle). Render |itentacle at 4,
+  9, 20, 32 and :tree beside awaken2.png and judge it massive before pushing. Also not previewed in game: the Sky Road tricks' strings
+  (SkyRoad.draw) and the hang's string from the posed fist.
+- Release notes 3.5.0 written (they say the tentacles' look is a first pass).
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.9 (8zzh: the owner's Gear 5 list: the giant's camera, arm, jump and ripples; the smoke aura; the M1 lock; Dawn Pistol
-   straight; the Bajrang Gun lower and its bend; cartoon sounds) is pushed: check its Build and Release runs. Then the owner's Ito
-   list (8zzi: Sky Road on a double tap with acrobatics and a one-hand hang; the Birdcage down to the ground, more thin strings,
-   closing very slowly; the Awakening's spikes, and with Haki a toggle of string tentacles out of the ground and trees) as 3.5.0. Ask the owner how Dawn Pistol
-   (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, Goof Ball and Dawn Whip (3.4.4) and Broken Bones (3.4.5) play, and work on what they say.
+1. 3.5.0 (8zzj) was pushed without a CI check: check the branch's Build and Release runs and fix anything red. Then the tentacle's
+   look (8zzj: a massive banded rope of string, not a lattice; render and judge it before pushing). Then wait for the owner's notes on
+   3.4.9 (Gear 5) and 3.5.0 (Ito), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

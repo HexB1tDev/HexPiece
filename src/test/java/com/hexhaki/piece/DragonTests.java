@@ -442,7 +442,7 @@ public final class DragonTests {
     /**
      * 3.3.7: the Ito fruit's strings at their busiest stay within a phone's budget: everything one user can have on screen at once (the
      * Birdcage round them, a burst of bullets, a lash, Overheat, Parasite, the web, hits, a sky step, stitches, the knight's light, and
-     * the Awakening: Break White bare or God Thread coated, one key), coated and not; every vertex finite; the cage closes from the owner's 40 to 10 over 45 seconds; a
+     * the Awakening: 3.5.0 the string ground and spikes bare or the tentacles coated, one key), coated and not; every vertex finite; the cage closes from the owner's 40 to 10 over 45 seconds; a
      * string ends in a point (the owner: "sharper in the end too not just square ends").
      */
     static void itoStrings() {
@@ -471,8 +471,13 @@ public final class DragonTests {
                     com.hexhaki.piece.ito.ItoArt.beam(sink, -0.36, -0.25, 1.0, 0, 0, 1, 40, 1.0, age % 20, 8, c, 3);
                 }
                 if (!c) {
-                    // the Awakening is one key: Break White bare, God Thread with Armament (below), never both at once
-                    com.hexhaki.piece.ito.ItoArt.waves(sink, 0, -1.6, 0, 18, 3, 8, 0.5, age, 60, c);
+                    // 3.5.0: the Awakening is one key: the string ground and its spikes bare, the tentacles with Armament (below)
+                    com.hexhaki.piece.ito.ItoArt.stringGround(sink, 0, -1.6, 0, com.hexhaki.piece.ito.ItoAwaken.FIELD_RADIUS,
+                        com.hexhaki.piece.ito.ItoArt.FIELD_RAYS, com.hexhaki.piece.ito.ItoArt.FIELD_RINGS, null, age + 20,
+                        com.hexhaki.piece.ito.ItoAwaken.FIELD_TICKS, c);
+                    for (int k = 0; k < 6; k++) {
+                        com.hexhaki.piece.ito.ItoArt.spike(sink, -5 + 2 * k, -1.6, 6, com.hexhaki.piece.ito.ItoAwaken.SPIKE_HEIGHT, (age + k * 3) % 16, c, k);
+                    }
                 }
                 for (int k = 0; k < 6; k++) {
                     com.hexhaki.piece.ito.ItoArt.bullet(sink, -0.3, -0.3, 1 + 2.4 * ((age + k * 4) % 16), 0, 0, 1, age, c);
@@ -486,7 +491,11 @@ public final class DragonTests {
                 com.hexhaki.piece.ito.ItoArt.parasite(sink, -0.36, -0.45, 0.35, at, age, 1.0, c);
                 com.hexhaki.piece.ito.ItoArt.web(sink, 0, -0.5, 2.2, 0, 0, 1, 2.4, age, 120, c, 1.0);
                 if (c) {
-                    com.hexhaki.piece.ito.ItoArt.thread(sink, 0, -0.6, 12, 0, -0.4, 0, 16, age % 12, 8);
+                    // 3.5.0: the Haki Awakening: its string round the feet and three tentacles at once, one out of a tree
+                    com.hexhaki.piece.ito.ItoArt.stringGround(sink, 0, -1.6, 0, 6.0, 8, 2, null, age + 20, 6000, c);
+                    for (int k = 0; k < com.hexhaki.piece.ito.ItoAwaken.TENTACLES; k++) {
+                        com.hexhaki.piece.ito.ItoArt.tentacle(sink, -6 + 6 * k, -1.6 + (k == 2 ? 5 : 0), 10, -6 + 6 * k, 6, 14, age, k == 2, k);
+                    }
                 }
                 for (int k = 0; k < 4; k++) {
                     com.hexhaki.piece.ito.ItoArt.hit(sink, -2 + k, -0.4, 4, 0, 0, -1, 1.0, (age + k * 2) % 10, c, k);

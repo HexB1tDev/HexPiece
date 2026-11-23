@@ -43,8 +43,10 @@ public final class ItoArt {
     }
 
     /** 3.4.2: let go, the Birdcage's strings spread down from its crown to the ground over this many ticks; its bars. */
-    public static final double CAGE_SPREAD = 20;
+    public static final double CAGE_SPREAD = 36;
     public static final int CAGE_BARS = 40;
+    /** 3.5.0: the thinner strings between the bars, as wide as this share of a bar. */
+    public static final double CAGE_THIN = 0.45;
 
     // ------------------------------------------------------------------------------------------------------ the strand
 
@@ -96,6 +98,17 @@ public final class ItoArt {
         layer(sink, w * 3.6, coat ? COAT_GLOW : t != null ? t[2] : GLOW, (t != null ? 0.3 : 0.14) * alpha, 0.0, 0.0, 0.0);
         layer(sink, w * 1.6, coat ? COAT_HALO : t != null ? t[1] : HALO, (t != null ? 0.7 : 0.45) * alpha, 0.0, 1.6, 0.002);
         layer(sink, w * 0.7, coat ? COAT_CORE : t != null ? t[0] : CORE, 1.0 * alpha, 1.0, 0.8, 0.004);
+    }
+
+    /** 3.5.0: a thin string (the Birdcage's in-between ones): the halo and the solid core only, no wide glow under them. */
+    static void thinStrand(FireMesh.Sink sink, double width, boolean coat, double alpha) {
+        if (count < 2 || alpha < 0.01) {
+            return;
+        }
+        sides();
+        double w = width * SLIM;
+        layer(sink, w * 1.6, coat ? COAT_HALO : HALO, 0.45 * alpha, 0.0, 1.6, 0.002);
+        layer(sink, w * 0.7, coat ? COAT_CORE : CORE, 1.0 * alpha, 1.0, 0.8, 0.004);
     }
 
     /** 3.4.2: the palette strands are drawn in while set ({core, halo, glow}; null: the string's own white and pink). */
@@ -986,31 +999,54 @@ public final class ItoArt {
     /**
      * The Birdcage: its middle on the ground (x, y, z), {@code radius} now: {@link #CAGE_BARS} strings from its crown down to the ground
      * all round, come down from the crown as far as {@code spread} (0 to 1: 3.4.2, let go they spread from the crown the stream reached
-     * down to the ground), a ring of light where they meet the ground; {@code tension} (0 to 1) while it closes: the strings pulled taut,
-     * brighter and thicker, quivering; {@code alpha} of it there.
+     * down to the ground), a ring of light round its middle; {@code tension} (0 to 1) while it closes: the strings pulled taut, brighter
+     * and thicker, quivering; {@code alpha} of it there.
+     *
+     * <p>3.5.0 (the owner, with a screenshot of the cage on a hill, its strings ending in the air over the falling ground: "we needed the
+     * strings to actually reach the floor and adapt to the environment. Otherwise, there's gaps that are left out of the birdcage. It
+     * should be a complete sphere, even on the floor ... But we want to add more strings to the middle of the birdcage so that it feels
+     * more solid. The thinner lines in the middle"): each string runs on round the whole sphere (under its middle too), so wherever the
+     * ground falls away the strings go on down into it (the world hides the buried part: depth-tested), never leaving a gap; and a
+     * thinner string between every two (CAGE_THIN of the width, a little fainter).
      */
     public static void cage(FireMesh.Sink sink, double x, double y, double z, double radius, double spread, double tension, double alpha,
                             boolean coat) {
         double dist = Math.sqrt(x * x + y * y + z * z);
-        // fewer pieces a bar when the cage is small on the screen
-        int pieces = dist - radius > 60 ? 5 : 8;
+        // fewer pieces a bar when the cage is small on the screen; the half under its middle (mostly in the ground) coarser
+        boolean far = dist - radius > 60;
+        int upper = far ? 5 : 7;
+        int lower = 2;
+        int thinPieces = far ? 3 : 4;
         double width = (0.08 + radius * 0.003) * (1.0 + 0.6 * tension);
-        double low = Math.PI / 2 * (1.0 - clamp(spread));
-        for (int k = 0; k < CAGE_BARS; k++) {
-            double a = 2 * Math.PI * k / CAGE_BARS + 0.05;
+        // down from the crown (elevation 90 degrees) as far as it has spread: to the bottom of the sphere (-90) when it is all down
+        double low = Math.PI / 2 - Math.PI * clamp(spread);
+        for (int k = 0; k < CAGE_BARS * 2; k++) {
+            boolean thin = k % 2 == 1;
+            double a = Math.PI * k / CAGE_BARS + 0.05;
             double ca = Math.cos(a);
             double sa = Math.sin(a);
             double quiver = tension * 0.012 * radius * Math.sin(k * 2.3 + tension * 40.0);
+            // a bar: the crown to the middle in its upper pieces, on down to the bottom in its lower ones (its pointed end in the ground);
+            // a thin string: the dome only (the half above the ground, where it shows)
+            int up = thin ? thinPieces : upper;
+            int down = thin ? 0 : lower;
             begin();
-            for (int j = 0; j <= pieces; j++) {
-                // down from the crown (elevation 90 degrees) as far as it has spread
-                double e = Math.PI / 2 - (Math.PI / 2 - low) * j / pieces;
-                double rr = radius * Math.cos(e) + quiver * Math.sin(Math.PI * j / pieces);
+            for (int j = 0; j <= up + down; j++) {
+                double f = j <= up ? 0.5 * j / up : 0.5 + 0.5 * (j - up) / (double) down;
+                double e = Math.max(low, Math.PI / 2 - Math.PI * f);
+                double rr = radius * Math.cos(e) + quiver * Math.sin(Math.PI * f);
                 point(x + ca * rr, y + radius * Math.sin(e), z + sa * rr, 0.75 + 0.25 * Math.sin(e) + 0.25 * tension);
+                if (e <= low) {
+                    break;
+                }
             }
-            strand(sink, width, coat, alpha);
+            if (thin) {
+                thinStrand(sink, width * CAGE_THIN, coat, alpha * 0.8);
+            } else {
+                strand(sink, width, coat, alpha);
+            }
         }
-        // two rings round it: where the bars meet the ground, and a third of the way up
+        // two rings round it: round its middle, and a third of the way up
         for (int ring = 0; ring < 2; ring++) {
             double e = ring == 0 ? 0.02 : 0.6;
             if (e < low) {
@@ -1022,7 +1058,13 @@ public final class ItoArt {
                 double a = 2 * Math.PI * k / CAGE_BARS + 0.05;
                 point(x + Math.cos(a) * rr, y + radius * Math.sin(e), z + Math.sin(a) * rr, ring == 0 ? 1.0 : 0.7);
             }
-            ring(sink, width * (ring == 0 ? 1.4 : 0.9), coat, alpha);
+            if (ring == 0) {
+                ring(sink, width * 1.4, coat, alpha);
+            } else {
+                round = true; // 3.5.0: the upper ring light (the phone's budget), a ring: no pointed ends
+                thinStrand(sink, width * 0.9, coat, alpha);
+                round = false;
+            }
         }
         if (spread < 1.0) {
             // the crown the stream reached, still glowing as the strings spread from it
@@ -1030,139 +1072,194 @@ public final class ItoArt {
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------ 3.5.0: the Awakening
+
+    /** The string ground's rays and rings (its heights are given per ray and ring: {@link #FIELD_RAYS} x {@link #FIELD_RINGS}). */
+    public static final int FIELD_RAYS = 24;
+    public static final int FIELD_RINGS = 6;
+
     /**
-     * Break White: waves of white string rolling out over the ground from its middle (x, y, z), {@code reach} far: each wave a ring of
-     * strings arching up and over as a breaker does, lower as it rolls out; {@code age} of {@code life}.
+     * 3.5.0 (the owner: "without hockey, the floor itself should be turned into string-like material"): the ground round (x, y, z) as a
+     * web of white string lying on it, {@code radius} round: {@code rays} strings out from the middle and {@code rings} rings
+     * across them, spreading out over {@link ItoAwaken#FIELD_SPREAD} ticks and fading over its last {@link ItoAwaken#FIELD_FADE};
+     * {@code heights} (ray by ray, ring by ring: the ground's height there over y, worked out once by the client) or null (flat). With
+     * Haki ({@code coat}) black-purple.
      */
-    public static void waves(FireMesh.Sink sink, double x, double y, double z, double reach, int waves, double every, double speed,
-                             double age, double life, boolean coat) {
-        if (age < 0 || age > life) {
+    public static void stringGround(FireMesh.Sink sink, double x, double y, double z, double radius, int rays, int rings, double[] heights,
+                                    double age, double life, boolean coat) {
+        if (age < 0 || age > life || radius <= 0.1) {
             return;
         }
-        int sheet = coat ? COAT_HALO : HALO;
-        for (int w = 0; w < waves; w++) {
-            double r = (age - w * every) * speed;
-            if (r <= 0.2 || r > reach) {
-                continue;
-            }
-            double u = r / reach;
-            double h = 1.9 * (1.0 - 0.6 * u) * ease(r / 1.5);
-            double fade = u > 0.8 ? (1.0 - u) / 0.2 : 1.0;
-            int seg = Math.max(24, Math.min(WAVE_SEG, (int) (r * 4)));
-            // the breaker's cross-section: up from behind its front, over the crest, curling forward and down
-            for (int j = 0; j < WAVE_PROFILE; j++) {
-                double t = j / (double) (WAVE_PROFILE - 1);
-                PR[j] = r - 1.0 + 1.6 * t;
-                PH[j] = h * Math.sin(Math.PI * Math.pow(t, 0.8)) + 0.05;
-                PA[j] = fade * (0.1 + 0.32 * Math.sin(Math.PI * t));
-            }
-            for (int i = 0; i <= seg; i++) {
-                double a = 2 * Math.PI * i / seg + 0.3 * w;
-                double ca = Math.cos(a);
-                double sa = Math.sin(a);
-                for (int j = 0; j < WAVE_PROFILE; j++) {
-                    int v = i * WAVE_PROFILE + j;
-                    WP[v * 3] = x + ca * PR[j];
-                    WP[v * 3 + 1] = y + PH[j];
-                    WP[v * 3 + 2] = z + sa * PR[j];
-                }
-            }
-            // the sheet of string, see-through, brightest along its crest
-            for (int i = 0; i < seg; i++) {
-                for (int j = 0; j + 1 < WAVE_PROFILE; j++) {
-                    int a = i * WAVE_PROFILE + j;
-                    int b = a + WAVE_PROFILE;
-                    int ca = FireMesh.argb(PA[j], sheet);
-                    int cb = FireMesh.argb(PA[j + 1], sheet);
-                    FireMesh.quad(sink, WP[a * 3], WP[a * 3 + 1], WP[a * 3 + 2], ca, WP[(a + 1) * 3], WP[(a + 1) * 3 + 1], WP[(a + 1) * 3 + 2], cb,
-                        WP[(b + 1) * 3], WP[(b + 1) * 3 + 1], WP[(b + 1) * 3 + 2], cb, WP[b * 3], WP[b * 3 + 1], WP[b * 3 + 2], ca);
-                }
-            }
-            // strings running over it, every third piece of the round (3.4.2: every other was the costliest thing the fruit drew)
-            for (int i = 0; i < seg; i += 3) {
-                begin();
-                for (int j = 0; j < WAVE_PROFILE; j++) {
-                    int v = i * WAVE_PROFILE + j;
-                    point(WP[v * 3], WP[v * 3 + 1], WP[v * 3 + 2], 0.6 + 0.4 * Math.sin(Math.PI * j / (WAVE_PROFILE - 1)));
-                }
-                strand(sink, 0.035, coat, fade);
-            }
-            // its crest, one bright string all the way round
-            int crest = WAVE_PROFILE / 2 + 1;
+        double shown = radius * ease(age / ItoAwaken.FIELD_SPREAD);
+        double fade = life - age < ItoAwaken.FIELD_FADE ? (life - age) / ItoAwaken.FIELD_FADE : 1.0;
+        double width = 0.09 + radius * 0.004;
+        for (int k = 0; k < rays; k++) {
+            double a = 2 * Math.PI * k / rays + 0.13;
+            double ca = Math.cos(a);
+            double sa = Math.sin(a);
             begin();
-            for (int i = 0; i <= seg; i++) {
-                int v = i * WAVE_PROFILE + crest;
-                point(WP[v * 3], WP[v * 3 + 1], WP[v * 3 + 2], 1.0);
+            point(x + ca * 0.4, y + 0.06 + height(heights, k, rays, rings, -1), z + sa * 0.4, 1.0);
+            for (int j = 0; j < rings; j++) {
+                double r = radius * (j + 1) / rings;
+                if (r > shown + 0.5) {
+                    break;
+                }
+                double rr = Math.min(r, shown);
+                point(x + ca * rr, y + 0.06 + height(heights, k, rays, rings, j), z + sa * rr, 1.0 - 0.4 * j / rings);
             }
-            ring(sink, 0.06, coat, fade);
-            // the white churned up where it meets the ground
-            FireMesh.ring(sink, x, y + 0.08, z, 0, 1, 0, r + 0.5, 0.9, 0.2, sheet, 0.35 * fade);
+            strand(sink, width, coat, fade);
+        }
+        for (int j = 0; j < rings; j++) {
+            double r = radius * (j + 1) / rings;
+            if (r > shown) {
+                break;
+            }
+            begin();
+            for (int k = 0; k <= rays; k++) {
+                double a = 2 * Math.PI * (k % rays) / rays + 0.13;
+                point(x + Math.cos(a) * r, y + 0.06 + height(heights, k % rays, rays, rings, j), z + Math.sin(a) * r, 0.8);
+            }
+            round = true;
+            thinStrand(sink, width * 0.8, coat, fade);
+            round = false;
         }
     }
 
-    static final int WAVE_SEG = 64;
-    static final int WAVE_PROFILE = 6;
-    static final double[] PR = new double[WAVE_PROFILE];
-    static final double[] PH = new double[WAVE_PROFILE];
-    static final double[] PA = new double[WAVE_PROFILE];
-    static final double[] WP = new double[(WAVE_SEG + 1) * WAVE_PROFILE * 3];
+    /** The ground's height over the field's middle at ray k, ring j (-1: the middle). */
+    static double height(double[] heights, int k, int rays, int rings, int j) {
+        if (heights == null || j < 0 || rays != FIELD_RAYS || rings != FIELD_RINGS) {
+            return 0.0;
+        }
+        return heights[k * FIELD_RINGS + j];
+    }
 
     /**
-     * God Thread: sixteen Haki-coated spears of string fired at once from round the user's chest (ox, oy, oz) to meet at (tx, ty, tz),
-     * arriving at {@code flight}: each a thick twisted spear, black at its core in a violet glow, its point leading.
+     * 3.5.0 (the owner: "sharp spikes from the floor that like rise up high whenever something steps on it, causing bleed"): a spike of
+     * string shooting up out of the ground at its foot (x, y, z), {@code height} high at the most ({@link ItoAwaken#spike}): five strings
+     * twisting up from a ring round its foot into one sharp point, a solid core with a pointed head through them.
      */
-    public static void thread(FireMesh.Sink sink, double tx, double ty, double tz, double ox, double oy, double oz, int spears, double age,
-                              double flight) {
-        if (age < 0 || age > flight + 4) {
+    public static void spike(FireMesh.Sink sink, double x, double y, double z, double height, double age, boolean coat, int seed) {
+        double h = height * ItoAwaken.spike(age);
+        if (h < 0.05) {
             return;
         }
-        double dx = tx - ox;
-        double dy = ty - oy;
-        double dz = tz - oz;
-        double l = Math.max(1.0E-6, Math.sqrt(dx * dx + dy * dy + dz * dz));
-        double ux = dx / l;
-        double uy = dy / l;
-        double uz = dz / l;
-        double[] b = T_BASIS;
-        FireMesh.basis(ux, uy, uz, b);
-        double t = clamp(age / flight);
-        double fade = age > flight ? 1.0 - (age - flight) / 4.0 : 1.0;
-        for (int k = 0; k < spears; k++) {
-            double a = 2 * Math.PI * k / spears;
-            double ring = 2.4 + 0.4 * (k % 2);
-            // from a ring round and behind the chest, curving in to the point
-            double sx0 = ox - ux * 1.0 + (b[0] * Math.cos(a) + b[3] * Math.sin(a)) * ring;
-            double sy0 = oy - uy * 1.0 + (b[1] * Math.cos(a) + b[4] * Math.sin(a)) * ring + 0.6;
-            double sz0 = oz - uz * 1.0 + (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * ring;
-            double head = ease(t);
-            double tail = Math.max(0.0, head - 0.35);
+        double fade = age > ItoAwaken.SPIKE_LIFE - 3 ? Math.max(0.0, (ItoAwaken.SPIKE_LIFE - age) / 3.0) : 1.0;
+        double turn = FireMesh.rand(seed, 3) * Math.PI;
+        for (int k = 0; k < 5; k++) {
+            double a = turn + 2 * Math.PI * k / 5;
             begin();
-            for (int j = 0; j <= 8; j++) {
-                double s = tail + (head - tail) * j / 8.0;
-                double bend = 1.0 - s;
-                double px = sx0 + (tx - sx0) * s + (sx0 - ox) * 0.4 * s * bend;
-                double py = sy0 + (ty - sy0) * s + (sy0 - oy) * 0.4 * s * bend;
-                double pz = sz0 + (tz - sz0) * s + (sz0 - oz) * 0.4 * s * bend;
-                point(px, py, pz, 0.4 + 0.6 * j / 8.0);
+            for (int j = 0; j <= 5; j++) {
+                double t = j / 5.0;
+                double r = 0.55 * (1.0 - t) * (1.0 - t * 0.3);
+                double b = a + t * 1.4;
+                point(x + Math.cos(b) * r, y + h * t, z + Math.sin(b) * r, 0.7 + 0.3 * t);
             }
-            strand(sink, 0.14, true, fade);
-            // its head: a thicker point of coated string, a violet glint on its tip
-            double hx = PX[(count - 1) * 3];
-            double hy = PX[(count - 1) * 3 + 1];
-            double hz = PX[(count - 1) * 3 + 2];
-            double kx = hx - PX[(count - 2) * 3];
-            double ky = hy - PX[(count - 2) * 3 + 1];
-            double kz = hz - PX[(count - 2) * 3 + 2];
-            double kl = Math.max(1.0E-6, Math.sqrt(kx * kx + ky * ky + kz * kz));
-            line(sink, hx - kx / kl * 1.4, hy - ky / kl * 1.4, hz - kz / kl * 1.4, hx + kx / kl * 0.3, hy + ky / kl * 0.3, hz + kz / kl * 0.3, 0.26,
-                true, fade, 1.0, 0.8, 8);
-            if (k % 2 == 0) {
-                // 3.4.2: the glow and glint on every other tip (they all meet at one point: sixteen balls of light cost more than
-                // the whole Birdcage)
-                FireMesh.shell(sink, hx, hy, hz, 0.55, COAT_GLOW, 0.5 * fade, 0.0);
-                FireMesh.shell(sink, hx, hy, hz, 0.14, 0xE8D4FF, 0.8 * fade, 0.2);
+            strand(sink, 0.16, coat, fade);
+        }
+        line(sink, x, y, z, x, y + h * 1.04, z, 0.34, coat, fade, 0.8, 1.0, 6);
+    }
+
+    /**
+     * 3.5.0 (the owner: "massive tentacles of strings with the tip coded in hockey that will like impale, lift the targets up into the
+     * sky, and just like throw them afterwards. This should be a visual spectacle"): a tentacle of string from its root (rx, ry, rz: the
+     * ground, or the top of a tree's trunk) to its tip (tx, ty, tz), rising up out of the root and arching over onto the tip: seven strings
+     * twisted round each other about a white core, thick at the root, narrowing to the tip; its last stretch Haki-black (black-purple
+     * strings, a black spear point in a violet glow). {@code age} turns the twist slowly; {@code seed} its own.
+     */
+    public static void tentacle(FireMesh.Sink sink, double rx, double ry, double rz, double tx, double ty, double tz, double age, boolean tree,
+                                int seed) {
+        double dx = tx - rx;
+        double dy = ty - ry;
+        double dz = tz - rz;
+        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.3) {
+            return;
+        }
+        // the spine: up out of the root, then over onto the tip (a quadratic curve)
+        double cx = rx + dx * 0.25;
+        double cy = ry + Math.max(dy, 0.0) * 0.5 + len * 0.45;
+        double cz = rz + dz * 0.25;
+        double base = tree ? 1.1 : 0.9;
+        double spin = age * 0.12 + FireMesh.rand(seed, 9) * 6.0;
+        int pieces = 10;
+        double coatFrom = 0.8;
+        for (int k = 0; k < TENTACLE_STRANDS; k++) {
+            double a0 = 2 * Math.PI * k / TENTACLE_STRANDS + spin;
+            for (int part = 0; part < 2; part++) {
+                // the white body, then the Haki-black tip
+                double s0 = part == 0 ? 0.0 : coatFrom;
+                double s1 = part == 0 ? coatFrom : 1.0;
+                int n = part == 0 ? pieces : 4;
+                begin();
+                for (int j = 0; j <= n; j++) {
+                    double s = s0 + (s1 - s0) * j / n;
+                    spine(rx, ry, rz, cx, cy, cz, tx, ty, tz, s);
+                    double r = base * Math.pow(1.0 - s, 0.8) + 0.06;
+                    double a = a0 + s * 2.5 * 2 * Math.PI;
+                    // round the spine: two axes square to its way (its way's sideways and the up-ish)
+                    point(SP[0] + (SP[3] * Math.cos(a) + SP[6] * Math.sin(a)) * r, SP[1] + (SP[4] * Math.cos(a) + SP[7] * Math.sin(a)) * r,
+                        SP[2] + (SP[5] * Math.cos(a) + SP[8] * Math.sin(a)) * r, 0.75 + 0.25 * s);
+                }
+                strand(sink, part == 0 ? 0.2 : 0.16, part == 1, 1.0);
             }
         }
+        // the core: thick white string along the body, then the black spear point
+        begin();
+        for (int j = 0; j <= pieces; j++) {
+            spine(rx, ry, rz, cx, cy, cz, tx, ty, tz, coatFrom * j / pieces);
+            point(SP[0], SP[1], SP[2], 0.9);
+        }
+        strand(sink, 0.55, false, 1.0);
+        spine(rx, ry, rz, cx, cy, cz, tx, ty, tz, coatFrom - 0.05);
+        double px = SP[0];
+        double py = SP[1];
+        double pz = SP[2];
+        double ux = tx - px;
+        double uy = ty - py;
+        double uz = tz - pz;
+        double ul = Math.max(1.0E-6, Math.sqrt(ux * ux + uy * uy + uz * uz));
+        line(sink, px, py, pz, tx + ux / ul * 0.9, ty + uy / ul * 0.9, tz + uz / ul * 0.9, 0.5, true, 1.0, 0.9, 1.0, 6);
+        FireMesh.shell(sink, tx, ty, tz, 0.7, COAT_GLOW, 0.35, 0.0);
+    }
+
+    /** The tentacles' strings. */
+    public static final int TENTACLE_STRANDS = 7;
+    /** The spine's point and its two axes across, worked out by {@link #spine} (no allocation a frame). */
+    static final double[] SP = new double[9];
+
+    /** The tentacle's spine at {@code s} (0 the root, 1 the tip) into SP: the point, then two unit axes square to its way. */
+    static void spine(double ax, double ay, double az, double bx, double by, double bz, double cx, double cy, double cz, double s) {
+        double u = 1.0 - s;
+        SP[0] = u * u * ax + 2 * u * s * bx + s * s * cx;
+        SP[1] = u * u * ay + 2 * u * s * by + s * s * cy;
+        SP[2] = u * u * az + 2 * u * s * bz + s * s * cz;
+        double wx = 2 * u * (bx - ax) + 2 * s * (cx - bx);
+        double wy = 2 * u * (by - ay) + 2 * s * (cy - by);
+        double wz = 2 * u * (bz - az) + 2 * s * (cz - bz);
+        double wl = Math.max(1.0E-6, Math.sqrt(wx * wx + wy * wy + wz * wz));
+        wx /= wl;
+        wy /= wl;
+        wz /= wl;
+        // sideways: the way x up (or x along x when it points straight up)
+        double sx = wz;
+        double sy = 0.0;
+        double sz = -wx;
+        double sl = Math.sqrt(sx * sx + sz * sz);
+        if (sl < 1.0E-4) {
+            sx = 0.0;
+            sy = -wz;
+            sz = wy;
+            sl = Math.max(1.0E-6, Math.sqrt(sy * sy + sz * sz));
+        }
+        sx /= sl;
+        sy /= sl;
+        sz /= sl;
+        SP[3] = sx;
+        SP[4] = sy;
+        SP[5] = sz;
+        SP[6] = wy * sz - wz * sy;
+        SP[7] = wz * sx - wx * sz;
+        SP[8] = wx * sy - wy * sx;
     }
 
     /**
