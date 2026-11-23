@@ -438,6 +438,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(GEAR_KEYS + ".class", transform(entries.get(GEAR_KEYS + ".class"), PiecePatch::nikaKeys));
         entries.put(REMOTE_GEAR + ".class", transform(entries.get(REMOTE_GEAR + ".class"), PiecePatch::gearFastClient));
         entries.put(BAJRANG_LAYER + ".class", transform(entries.get(BAJRANG_LAYER + ".class"), PiecePatch::nikaFist));
+        entries.put(GIANT_GRAB + ".class", transform(entries.get(GIANT_GRAB + ".class"), PiecePatch::giantHold));
         entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), node -> {
             gearLightning(node);
             gearDrums(node);
@@ -719,6 +720,14 @@ public final class PiecePatch implements Opcodes {
             next = next.getNext();
         }
         return next;
+    }
+
+    static AbstractInsnNode previousReal(AbstractInsnNode insn) {
+        AbstractInsnNode previous = insn.getPrevious();
+        while (previous != null && previous.getOpcode() < 0) {
+            previous = previous.getPrevious();
+        }
+        return previous;
     }
 
     /** Every {@code beam}/{@code rageBeam} call straight followed by {@code add} becomes one {@code HakiLightning} call. */
@@ -1178,6 +1187,69 @@ public final class PiecePatch implements Opcodes {
         }
         if (calls != 1) {
             throw new AssertionError("GearServerController.whip's clip is not as inspected: " + calls);
+        }
+    }
+
+    /** 3.2.8: the Giant's grab (server/GiantHold). */
+    static final String GIANT_GRAB = "com/hexhaki/patch/GiantGrab";
+    static final String GIANT_HOLD = "com/hexhaki/piece/server/GiantHold";
+
+    /**
+     * 3.2.8 (the owner: "Giant is not holding the creatures right. Sometimes they get off the player's hand. It's overall really junky"):
+     * {@code GiantGrab.tick} puts the body at {@code GiantHold.hand} (the fist as the model draws it) in place of its own hand(...), and
+     * after moving it calls {@code GiantHold.holding(player, held)}; {@code grab} calls {@code GiantHold.grabbed(player, held)} once it
+     * has taken the body; {@code clear} first calls {@code GiantHold.letGo(player)}. The clients keep the body in the fist themselves
+     * (client/gear/NikaHoldClient). Exactly one of each, in the locals inspected, or the build fails.
+     */
+    static void giantHold(ClassNode node) {
+        String player = "Lnet/minecraft/server/level/ServerPlayer;";
+        String living = "Lnet/minecraft/world/entity/LivingEntity;";
+        MethodNode tick = method(node, "tick", "(" + player + ")V");
+        int hands = 0;
+        int moved = 0;
+        for (AbstractInsnNode insn = tick.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (!(insn instanceof MethodInsnNode call) || !call.owner.equals(GIANT_GRAB)) {
+                continue;
+            }
+            if (call.name.equals("hand")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, GIANT_HOLD, "hand", call.desc, false);
+                tick.instructions.set(call, ours);
+                insn = ours;
+                hands++;
+            } else if (call.name.equals("syncMotion")) {
+                if (!(previousReal(call) instanceof VarInsnNode load) || load.getOpcode() != ALOAD || load.var != 2) {
+                    throw new AssertionError("GiantGrab.tick's held body is not in local 2");
+                }
+                InsnList after = new InsnList();
+                after.add(new VarInsnNode(ALOAD, 0));
+                after.add(new VarInsnNode(ALOAD, 2));
+                after.add(new MethodInsnNode(INVOKESTATIC, GIANT_HOLD, "holding", "(" + player + living + ")V", false));
+                tick.instructions.insert(call, after);
+                moved++;
+            }
+        }
+        MethodNode grab = method(node, "grab", "(" + player + ")V");
+        int grabbed = 0;
+        for (AbstractInsnNode insn = grab.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.owner.equals(GIANT_GRAB) && call.name.equals("syncMotion")) {
+                if (!(previousReal(call) instanceof VarInsnNode load) || load.getOpcode() != ALOAD || load.var != 7) {
+                    throw new AssertionError("GiantGrab.grab's body is not in local 7");
+                }
+                InsnList after = new InsnList();
+                after.add(new VarInsnNode(ALOAD, 0));
+                after.add(new VarInsnNode(ALOAD, 7));
+                after.add(new MethodInsnNode(INVOKESTATIC, GIANT_HOLD, "grabbed", "(" + player + living + ")V", false));
+                grab.instructions.insert(call, after);
+                grabbed++;
+            }
+        }
+        MethodNode clear = method(node, "clear", "(" + player + ")V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, 0));
+        head.add(new MethodInsnNode(INVOKESTATIC, GIANT_HOLD, "letGo", "(" + player + ")V", false));
+        clear.instructions.insert(head);
+        if (hands != 1 || moved != 1 || grabbed != 1) {
+            throw new AssertionError("GiantGrab is not as inspected: hand " + hands + ", syncMotion in tick " + moved + ", in grab " + grabbed);
         }
     }
 

@@ -30,6 +30,7 @@ public abstract class Entity {
     /** getId */ public int m_19879_() { throw new UnsupportedOperationException(); }
     /** level */ public net.minecraft.world.level.Level m_9236_() { throw new UnsupportedOperationException(); }
     /** position */ public net.minecraft.world.phys.Vec3 m_20182_() { throw new UnsupportedOperationException(); }
+    /** setPos(x, y, z) (3.2.8: a body held in the Giant's fist, client/gear/NikaHoldClient) */ public void m_6034_(double x, double y, double z) { throw new UnsupportedOperationException(); }
     /** getX */ public double m_20185_() { throw new UnsupportedOperationException(); }
     /** getY */ public double m_20186_() { throw new UnsupportedOperationException(); }
     /** getZ */ public double m_20189_() { throw new UnsupportedOperationException(); }

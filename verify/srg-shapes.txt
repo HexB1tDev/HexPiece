@@ -81,7 +81,6 @@ f_46132_
 f_46428_
 f_49990_
 f_50016_
-f_50126_
 f_50354_
 f_50449_
 f_50568_
@@ -197,7 +196,6 @@ m_188500_ ()D
 m_188501_ ()F
 m_188503_ (I)I
 m_188505_ ()J
-m_19385_ ()Ljava/lang/String;
 m_19879_ ()I
 m_20069_ ()Z
 m_20072_ ()Z
@@ -415,6 +413,7 @@ m_5752_ ()V
 m_5833_ ()Z
 m_5954_ (FFFFFFFFFIIFFF)V
 m_6021_ (DDD)V
+m_6034_ (DDD)V
 m_6047_ ()Z
 m_6060_ ()Z
 m_6069_ ()Z
@@ -437,7 +436,6 @@ m_6643_ ()I
 m_6662_ ()Leeg$a;
 m_6710_ (Lbfz;)V
 m_6761_ (I)Z
-m_6801_ (ILgu;I)V
 m_6815_ (I)Lbfj;
 m_6844_ (Lbfo;)Lcfz;
 m_6885_ ()V
@@ -546,7 +544,6 @@ m_82127_ (Ljava/lang/String;)Lcom/mojang/brigadier/builder/LiteralArgumentBuilde
 m_82129_ (Ljava/lang/String;Lcom/mojang/brigadier/arguments/ArgumentType;)Lcom/mojang/brigadier/builder/RequiredArgumentBuilder;
 m_82369_ (Leei;)Leed;
 m_82371_ (Leei;Leei;)Ljava/util/Optional;
-m_82381_ (Leed;)Z
 m_82383_ (Leei;)Leed;
 m_82390_ (Leei;)Z
 m_82400_ (D)Leed;

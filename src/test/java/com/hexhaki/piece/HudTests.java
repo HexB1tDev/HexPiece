@@ -223,6 +223,58 @@ public final class HudTests {
             Check.that(keyed(clip, tick, "body", fmt(body)), "nika: the slam's body pitch at " + tick + " is NikaSlam's (" + body + ")");
             Check.that(keyed(clip, tick, "rightArm", fmt(arm)), "nika: the slam's arm pitch at " + tick + " is NikaSlam's (" + arm + ")");
         }
+        giantHold();
+    }
+
+    /**
+     * 3.2.8: the Giant's hold (gear/NikaHold): the fist is the middle of the right arm's box 8 pixels down it, the arm held straight out,
+     * the model placed as PlayerRenderer places it (worked out here the long way, box corner by corner), for any turn and size; the
+     * body flies in from where it stood, all the way by the clip's reach.
+     */
+    static void giantHold() {
+        double[] fist = new double[3];
+        for (double yaw : new double[] {0, 37, 90, -150, 270}) {
+            for (double scale : new double[] {1, 2.5, 4}) {
+                com.hexhaki.piece.gear.NikaHold.fist(3, 64, -7, yaw, scale, scale, fist);
+                // the arm's box (pixels from its pivot -5, 2, 0): x -3 to 1, y -2 to 10, z -2 to 2; its middle line x -1, z 0
+                double[] arm = model(-5 - 1, 2 + 8, 0, yaw, scale);
+                double[] armRot = new double[3];
+                // pitched -90: the pivot's (0, 8, 0) goes to (0, 0, -8)
+                armRot[0] = -5 - 1;
+                armRot[1] = 2;
+                armRot[2] = -8;
+                double[] out = model(armRot[0], armRot[1], armRot[2], yaw, scale);
+                double gap = Math.abs(out[0] + 3 - fist[0]) + Math.abs(out[1] + 64 - fist[1]) + Math.abs(out[2] - 7 - fist[2]);
+                Check.that(gap < 1e-9, "nika: the Giant's fist (" + yaw + ", x" + scale + ") is the arm's, held out (" + gap + ")");
+                Check.that(Math.abs(arm[1] - out[1]) > 0.1 * scale, "nika: the arm held out raises the fist");
+                // the fist to the body's right and in front of it
+                double r = Math.toRadians(yaw);
+                double ahead = -(fist[0] - 3) * Math.sin(r) + (fist[2] + 7) * Math.cos(r);
+                double right = -(fist[0] - 3) * Math.cos(r) - (fist[2] + 7) * Math.sin(r);
+                Check.that(ahead > 0.4 * scale && right > 0.3 * scale, "nika: the fist ahead and to the right (" + ahead + ", " + right + ")");
+            }
+        }
+        Check.that(com.hexhaki.piece.gear.NikaHold.reach(0) == 0 && com.hexhaki.piece.gear.NikaHold.reach(com.hexhaki.piece.gear.NikaHold.REACH_FROM) == 0,
+            "nika: a grabbed body waits for the arm");
+        Check.that(com.hexhaki.piece.gear.NikaHold.reach(com.hexhaki.piece.gear.NikaHold.REACH) == 1
+            && com.hexhaki.piece.gear.NikaHold.reach(1000) == 1, "nika: in the fist by the reach");
+        for (double t = 0; t < 12; t += 0.25) {
+            Check.that(com.hexhaki.piece.gear.NikaHold.reach(t + 0.25) >= com.hexhaki.piece.gear.NikaHold.reach(t), "nika: the fly-in never goes back");
+        }
+        Check.that(com.hexhaki.piece.server.GiantHold.HOLD >= 160 && com.hexhaki.piece.server.GiantHold.LET_GO < 180,
+            "nika: the hold's kinds are the Nika fruit's (160 to 179, UoFx sends them to NikaHoldClient)");
+    }
+
+    /** A model point (pixels) to the world, relative to the feet: PlayerRenderer's 1.501 lift, 0.9375, flip, turn; then the giant's size. */
+    static double[] model(double px, double py, double pz, double yaw, double scale) {
+        double mx = px / 16.0;
+        double my = py / 16.0 - 1.501;
+        double mz = pz / 16.0;
+        double fx = -0.9375 * mx;
+        double fy = -0.9375 * my;
+        double fz = 0.9375 * mz;
+        double r = Math.toRadians(180 - yaw);
+        return new double[] {scale * (fx * Math.cos(r) + fz * Math.sin(r)), scale * fy, scale * (-fx * Math.sin(r) + fz * Math.cos(r))};
     }
 
     /** Whether {@code clip} keys {@code part}'s pitch at {@code tick} to {@code value} (whatever the indentation). */

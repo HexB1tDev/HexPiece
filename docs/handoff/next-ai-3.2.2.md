@@ -10,15 +10,15 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
 lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 (8zl: the Nika fruit's keys Z X C V B N M, Haki names,
 white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
 and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the move lightning the release's own again, after the
-owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed and green; 3.2.7 (8zp: Dawn Whip's cartoon spin) is pushed (check its runs:
-section 9). Next is the
+owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed and green; 3.2.7 (8zp: Dawn Whip's cartoon spin) is pushed and green; 3.2.8 (8zq: Giant holds
+what it grabs) is pushed (check its runs: section 9). Next is the
 rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
@@ -1554,13 +1554,39 @@ tick (docs/handoff/nika-dawn-whip-3.2.7.png).
   the clip's fade-out never unwinds the turns); both legs pedal through the spin (one forward bent 74, the other back straight, swapping
   every tick), then plant.
 
-## 9. What to do next (after 3.2.7)
+## 8zq. Done (3.2.8): the Nika fruit, part 5: Giant holds what it grabs
 
-1. Check 3.2.7's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika rework, part 5 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
-   Dawn Whip); Star Gun's struck
-   body more rubbery; Giant holding bodies properly; Rubber World bending the real ground in waves; Toon Force everywhere. Render every
-   clip in third person; first person stays.
+The owner (8zj 2): "Giant is not holding the creatures right. Sometimes they get off the player's hand. It's overall really junky."
+Nothing tested in game: build, tests, the hold rendered (docs/handoff/nika-giant-hold-3.2.8.png: the fly-in, tick 0 to 8).
+- The original (`com/hexhaki/patch/GiantGrab`, javap): right-click as the giant (GiantGrabClient, Gear 5 with targetScale >= 1.05) sends
+  GIANT_GRAB; `grab` takes the best living body within 6 x 4 blocks in a 0.35 cone (GearData "grabHeld" its id, "grabTicks" 0, clip
+  gear5_giant_grab looping from tick 10, the arm straight out from tick 8); `tick` (from GearServerController) holds it up to 300 ticks
+  and within 24 x 4 blocks: slowness, mining fatigue and weakness 255 for 6 ticks, fall reset, motion zeroed, then the body moved to
+  `hand(player, held)` (the eye times 4, 0.5 x 4 forward, 0.3125 x 4 right, 0.245 x 4 down, minus half its height) with teleportTo
+  (a player: connection.teleport), syncMotion; again throws it (`release`), `drop`/`clear` let go. Why it was junky: only the server
+  moved it; every client drew it from the position updates (every 3 ticks for mobs, smoothed over 3 more, after the trip from the
+  server), so it trailed the hand when the giant walked or turned, and it fell between updates.
+- `gear/NikaHold.fist` (pure): the middle of the right fist as the player model draws it, the arm straight out (pivot -5, 2 px; the box's
+  middle a pixel further out; 8 px down it; PlayerRenderer's 0.9375 and 1.501 lift; the giant's own across/up sizes round the feet).
+  `reach(age)`: the fly-in (0 until tick 2, ease-out to 1 at tick 8, the clip's arm). HudTests.giantHold checks the fist against the
+  model worked out box corner by corner for several turns and sizes.
+- `server/GiantHold` (patch/PiecePatch.giantHold: GiantGrab.tick's `hand` call, after its `syncMotion` in tick, after `syncMotion` in grab,
+  the head of `clear`; exact counts and locals asserted): `hand` = NikaHold.fist at the server's body turn, times 4; `grabbed`/`holding`
+  send S2CUoFx HOLD (160: user the giant, id the body, ticks since the grab, x y z where it stood) at the grab and every 10 ticks;
+  `letGo` sends LET_GO (161) when clear() drops a held body. 160 to 179 are the Nika fruit's kinds (client/dragon/UoFx routes them).
+- `client/gear/NikaHoldClient` (ClientTickEvent END, after every entity has moved): each hold puts the body in the giant's fist as drawn
+  this tick and last tick (both its places: xOld/xo and the position, so the frames between follow the fist exactly), the giant's sizes
+  from RemoteGearStates exactly as GearBodyDeformer scales the model (scale, squash, the presence wobble), motion and fall zeroed,
+  turned to face the giant; it flies in from where it stood (NikaHold.reach). The local player held is left to the server (their own
+  camera). The giant's own first person: the view's turn instead of the body's (PlayerAnimator's first-person arm turns with the view).
+  A hold not heard of for 30 ticks, or whose giant or body is gone, ends.
+
+## 9. What to do next (after 3.2.8)
+
+1. Check 3.2.8's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika rework, part 6 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
+   Dawn Whip, Giant's hold); Star Gun's struck body more rubbery; Rubber World bending the real ground in waves; better Haki versions;
+   Toon Force everywhere. Render every clip in third person; first person stays.
 3. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
    refill) and whether Gear 5 should spend energy too.
 4. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
