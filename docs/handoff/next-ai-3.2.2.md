@@ -33,7 +33,8 @@ the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green
 is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the body) is green (Build #181, Release #131); 3.4.1 (8zze:
 the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132); 3.4.2 (8zzf: the
 owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Build #184, Release #133); 3.4.3 (8zzf: Noro's held cone, Ito's
-Sky Road) is pushed: check its runs.**
+Sky Road) is pushed (Build #185 and Release #134 were running at the handoff: check them). 3.4.4 (Goof Ball, Dawn Whip) is planned in 8zzf,
+not started.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2647,10 +2648,44 @@ ito-sky-road-3.4.3.jpg, ito-sky-clips-3.4.3.jpg):
   out (the game's own hand in first person). The 3.3.7 air steps (Sora no Michi) are gone; ItoKit's passive is "Sky Road".
 - Stub: ViewportEvent.ComputeFov.setFOV (proven by HexGhoul's list); srg-shapes regenerated (keySprint f_92091_, isSprinting m_20142_).
 
+**3.4.4 (Goof Ball and the new Dawn Whip): found, planned, NOT started in code** (the owner said "Handoff + prompt, now" here):
+- The original: `GearServerController.whip(ServerPlayer)` is PRIVATE static (`dawn(ServerPlayer)` is public; `sendStretch`, `onCooldown`,
+  `setCooldown` private). whip(): `GearData.unlocked(player, WHIP)`, `onCooldown(player, "whip")`, `alternate(player, "whipSide")` (the
+  leg), dawn -> reach armReach(8.5) x 1.2, damage punchDamage(9) x dawnPower, "§6Dawn Whip" on the action bar, SoundEvents f_11874_,
+  `setCooldown(player, "whip", 60)`, `animate(player, "gear5_whip", 2)` (patched to NikaRules.whipClip: gear5_dawn_whip with dawn),
+  `sendStretch(player, leg, StretchStyle.WHIP, reach, width, FinalServerPatch.whipAim(flatten(look), player), dawn)`, then
+  `ServerTimeline.later(level, WHIP.impactTick() (10), lambda$whip$6)` (its own hit; NOT throwLimb, so NikaPistol.struck is never called).
+- The keys: client/gear/NikaKeys sends `GearAction.WHIP` on C's press only (`while (c().m_90859_()) send(GearAction.WHIP)`); Goof Ball is
+  held, so its let go needs a message of ours (a C2SNikaWhip(down) as network message 21, PieceNetwork PROTOCOL "15"; C2SNikaJump (20)
+  is the pattern).
+- Hook (no new branch): a CALL_REDIRECTS row in PiecePatch for whip's `GearData.unlocked(Player, GearAbility)` -> a server/NikaWhip
+  .unlocked that starts Goof Ball (no Haki: !GearServerController.dawn) or the new Dawn Whip (dawn) and returns false so the original
+  stops there; keep its own cooldowns. For Dawn Whip's stretched rubber leg, either make whip() public in the patch (MethodNode.access)
+  and call it at the release tick with a pass-through flag (the original then sends the leg stretch, its hit, its sound, its cooldown and
+  the clip through whipClip), or draw the leg ourselves.
+- S2CUoFx kinds of the Nika fruit in use: 160 HOLD, 161 LET_GO (GiantHold), 162 HOP, 163 LAND (NikaJump), 164 POW (NikaPistol: POW also
+  starts Dawn Pistol's stretched skin, client/gear/NikaSkinClient: never reuse it for the whip); 165 to 179 are free (UoFx routes 160-179
+  to the Nika fruit's client classes: check the route before adding).
+- Plan, Goof Ball (C without Haki, untransformed or in Gear 5, held up to ~5 s): a cartoon spin (a new gear5_ clip, Toon Force beats in
+  gear/ToonForce), then the body hidden (RenderPlayerEvent.Pre cancelled, as HoroFx.asSpirit) inside a spinning cartoon fight cloud (banded
+  grey-white puffs swirling, motion arcs) with the player's own skin in it: arms and legs (skin boxes through entityTranslucent, as
+  horo/AstralArt draws skins) punching out of it every way, small POW stars (NikaArt.pow, small); every 4 ticks everyone within ~2.6
+  blocks punched (small damage, pushed every which way); let go (or the time up): the ball pops, the user dizzy ~3 s (slowness; cartoon
+  stars circling over the head; a slight sway of one's own view), then the rest. Sounds: the mod's own CC0 clips (gear/dawn_pistol1
+  cartoon punch, quiet and capped; supa/spin loop for the ball) or new CC0 ones checked with tools/tonal_lines.py.
+- Plan, Dawn Whip (C with Haki in Gear 5), the owner's six phases: (1) wind-up ~12 ticks, rooted, body coiled (a long negative body yaw
+  wind and Toon Force squash), (2)+(3) the release: the rubber leg stretched out (the original's whip called at the release) and the
+  body unwinding in fast turns, (4) the lateral sweep hitting all round at the impact tick: struck bodies launched sideways (tangent)
+  through blocks as PikaMoves.Launch does (Dawn Pistol/Gekishin), a small comic flash (not POW 164), the Conqueror's lightning (POINT
+  ONE), (5) the overspin ~1.5 s (a fast spin clip, arms and legs flung out, Toon Force stretching, the body drifting uncontrolled), then
+  drilling down: a shaft ~3 deep torn under the user (Scars.tear, self-repairing; mobGriefing obeyed) and the user lowered into it with
+  dust, (6) after a moment underground, popped back up out of the hole with a rubber squash and bounce (never left inside the shaft
+  when Scars puts the blocks back). Render every clip (tools/anim_preview.py, face check from the front) and every effect.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.2 is green (Build #184, Release #133); 3.4.3 (Noro's held cone, Ito's Sky Road) is pushed: check its runs. Then, in the order
-   told to the owner: 3.4.4 Goof Ball (the owner: "Without Haki the leg whip move, becomes Goof Ball": a held cartoon
+1. 3.4.2 is green (Build #184, Release #133); 3.4.3 (Noro's held cone, Ito's Sky Road) is pushed: check Build #185 and Release #134
+   and fix anything red. Then, as told to the owner (the plan and every finding for it are in 8zzf, "3.4.4 ... NOT started"): 3.4.4 Goof Ball (the owner: "Without Haki the leg whip move, becomes Goof Ball": a held cartoon
    spin into a ball of smoke and skin punching every way, dizzy after with a symbol over the head) and the new Dawn Whip (with Haki;
    8zzf, the six phases verbatim). Dawn Pistol (3.3.9 to
    3.4.1) and Horo: still no word from the owner on how they play: ask once the new work is out.
