@@ -57,7 +57,9 @@ public final class PieceHooks {
     public static dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration firstPersonArms(
         dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration config, String name) {
         if (name != null && (name.startsWith("style_") && !name.startsWith("style_swordsman") || name.startsWith("pika_")
-            || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_") || name.startsWith("hie_"))) {
+            || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_") || name.startsWith("hie_")
+            // 3.2.7: Dawn Whip's own clip shows the whip's very arms in first person, as gear5_whip does (the owner: first person is fine)
+            || name.equals("gear5_dawn_whip"))) {
             return config.setShowRightArm(true).setShowLeftArm(true);
         }
         return config;

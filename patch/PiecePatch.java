@@ -443,6 +443,7 @@ public final class PiecePatch implements Opcodes {
             gearDrums(node);
             gearUntransformed(node);
             gearFast(node);
+            dawnWhip(node);
         }));
         // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
         // lightning themselves, past HakiBolts, and showed the original's flat beams
@@ -1156,6 +1157,27 @@ public final class PiecePatch implements Opcodes {
         }
         if (steps != 1) {
             throw new AssertionError("RemoteGearStates.advance's transformation step is not the one inspected: " + steps);
+        }
+    }
+
+    /**
+     * 3.2.7 (the owner: "Dawn Whip needs a complete rework ... he actually rotates like a cartoon character"): {@code
+     * GearServerController.whip}'s {@code HakiServerController.animate(player, "gear5_whip", 2)} becomes {@code NikaRules.whipClip} (the
+     * cartoon spin with Haki on in Gear 5). Exactly one call, or the build fails.
+     */
+    static void dawnWhip(ClassNode node) {
+        MethodNode whip = method(node, "whip", "(Lnet/minecraft/server/level/ServerPlayer;)V");
+        int calls = 0;
+        for (AbstractInsnNode insn = whip.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.owner.equals("com/hexhaki/gameplay/HakiServerController") && call.name.equals("animate")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, NIKA_RULES, "whipClip", call.desc, false);
+                whip.instructions.set(call, ours);
+                insn = ours;
+                calls++;
+            }
+        }
+        if (calls != 1) {
+            throw new AssertionError("GearServerController.whip's clip is not as inspected: " + calls);
         }
     }
 

@@ -10,14 +10,15 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
 lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 (8zl: the Nika fruit's keys Z X C V B N M, Haki names,
 white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
 and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the move lightning the release's own again, after the
-owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed (check its runs: section 9). Next is the
+owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed and green; 3.2.7 (8zp: Dawn Whip's cartoon spin) is pushed (check its runs:
+section 9). Next is the
 rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
@@ -1535,10 +1536,29 @@ in game: build, tests, renders (docs/handoff/nika-bajrang-3.2.6.jpg).
   of the hand and palm, four fingers (first joints in a row, a knuckle over each, the curled tips under), the thumb across their lower
   front and its ball at the side, the wrist; cel-shaded in four bands by NikaArt.light; ~1,000 quads (fine 1,260).
 
-## 9. What to do next (after 3.2.6)
+## 8zp. Done (3.2.7): the Nika fruit, part 4: Dawn Whip as a cartoon spin
 
-1. Check 3.2.6's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika rework, part 4 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun); Dawn Whip redone as a cartoon spin after Luffy vs Kizaru; Star Gun's struck
+The owner (8zj 2): "Dawn Whip needs a complete rework. That move has to be entirely scrapped and redone. I recommend you check and get your
+references for Luffy against Kizaru, where he uses that move with that name, Dawn Whip, and he actually rotates like a cartoon character. I
+think that the player's feet should also rotate like a cartoon character". (No GIFs fetched: this environment allows only freesound and
+opengameart; built from the description and the cartoon-run reference image 4.) Nothing tested in game: build, tests, rendered every
+tick (docs/handoff/nika-dawn-whip-3.2.7.png).
+- The original: C (WHIP) -> `GearServerController.whip`: a leg (alternating), dawn makes it Dawn Whip (more reach, damage, "Dawn Whip" on
+  the action bar), `animate(player, "gear5_whip", 2)` for both, the rubber leg's sweep (StretchStyle WHIP: windup 5, extend 5: it hits on
+  tick 10, hold 2, retract 7).
+- `server/NikaRules.whipClip` (patch/PiecePatch.dawnWhip: whip's one animate call): with the original's dawn condition (Gear 5 and
+  Armament or Ryou) the clip `gear5_dawn_whip`, else gear5_whip as before.
+- `gear5_dawn_whip` (tools/nika_anims.dawn_whip, 20 ticks): the arms are gear5_whip's very moves (first person: `client/PieceHooks
+  .firstPersonArms` shows its arms as the original shows gear5_whip's); the body coils (yaw -40), spins two whole turns (yaw to 690 by
+  tick 12, fastest at the hit on 10), overshoots to 738 and wobbles back to 720, then a "constant" step to 0 on tick 20 (720 is 0 seen:
+  the clip's fade-out never unwinds the turns); both legs pedal through the spin (one forward bent 74, the other back straight, swapping
+  every tick), then plant.
+
+## 9. What to do next (after 3.2.7)
+
+1. Check 3.2.7's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika rework, part 5 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
+   Dawn Whip); Star Gun's struck
    body more rubbery; Giant holding bodies properly; Rubber World bending the real ground in waves; Toon Force everywhere. Render every
    clip in third person; first person stays.
 3. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the

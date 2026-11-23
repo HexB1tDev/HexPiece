@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gura_anims import write_parts  # noqa: E402
 from style_anims import OUT as ANIM_DIR, PARTS, WRITTEN, arm, leg, mirror, p  # noqa: E402
 
-OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam"}
+OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam", "gear5_dawn_whip"}
 
 # the transformation's beats on the real clock (the original's 170-tick clock at double speed: patch/PiecePatch.gearFast)
 LENGTH = 85
@@ -209,10 +209,48 @@ def bajrang():
                "head-first after it, slammed straight down and held there.", BAJRANG_PARTS)
 
 
+# ------------------------------------------------------------------------------------------------------ 3.2.7: Dawn Whip
+
+def dawn_whip():
+    """Dawn Whip (the owner: "That move has to be entirely scrapped and redone ... he actually rotates like a cartoon character. I think
+    that the player's feet should also rotate like a cartoon character ... like a Bugs Bunny movie"): its own clip (server/NikaRules
+    .whipClip plays it with Haki on in Gear 5). The arms are gear5_whip's exactly (first person shows them: the owner, "The first person
+    is fine"); the whole body coils, then spins round twice like a cartoon top, fastest as the whip lands (StretchStyle WHIP: it hits on
+    tick 10), overshoots and wobbles back; the legs pedal in a blur all through the spin (a cartoon wheel of feet), then plant."""
+    whip = load("gear5_whip")["emote"]
+    arms = [m for m in whip["moves"] if "rightArm" in m or "leftArm" in m]
+    beats = []
+    coil = p(body={"yaw": -40, "pitch": 6, "bend": 10}, rightLeg=leg(-20, 0, 40), leftLeg=leg(10, 0, 20))
+    beats.append((0, "linear", p(body={"yaw": 0, "pitch": 0, "bend": 0}, rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0))))
+    beats.append((3, "outsine", coil))
+    # the spin: two whole turns from the coil, the feet pedalling (one forward and bent, the other back and straight, swapping every tick)
+    turn = {3: -40, 5: 110, 7: 290, 9: 470, 10: 560, 11: 640, 12: 690}
+    for t in range(4, 13):
+        yaw = turn.get(t)
+        if yaw is None:
+            continue
+        up = t % 2 == 0
+        forward, back = leg(-72, 0, 74), leg(38, 0, 6)
+        beats.append((t, "linear", p(body={"yaw": yaw, "pitch": -10, "bend": 6}, rightLeg=forward if up else back, leftLeg=back if up else forward)))
+    # overshoot past the second turn and wobble back like a top settling, the feet planted
+    beats.append((14, "outsine", p(body={"yaw": 738, "pitch": -4, "bend": 4}, rightLeg=leg(-10, 0, 12), leftLeg=leg(8, 0, 6))))
+    beats.append((16, "inoutsine", p(body={"yaw": 712, "pitch": 0, "bend": 2}, rightLeg=leg(4, 0, 4), leftLeg=leg(-4, 0, 4))))
+    beats.append((19, "inoutsine", p(body={"yaw": 720, "pitch": 0, "bend": 0}, rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0))))
+    # 720 is 0 seen: step there at once, so the clip's fade-out never unwinds the two turns
+    beats.append((20, "constant", p(body={"yaw": 0, "pitch": 0, "bend": 0}, rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0))))
+    parts = {"body": ("yaw", "pitch", "bend"), "rightLeg": ("pitch", "yaw", "roll", "bend"), "leftLeg": ("pitch", "yaw", "roll", "bend")}
+    write_clip("gear5_dawn_whip", whip["endTick"], beats, "Nika: Dawn Whip: the body spun round twice like a cartoon top, the feet pedalling "
+               "in a blur (the arms gear5_whip's).", parts)
+    data = load("gear5_dawn_whip")
+    data["emote"]["moves"] = sorted(data["emote"]["moves"] + arms, key=lambda m: m["tick"])
+    save("gear5_dawn_whip", data)
+
+
 def main():
     awaken()
     calmed()
     bajrang()
+    dawn_whip()
     print("wrote the Nika fruit's animations: " + ", ".join(sorted(OWNED)))
 
 

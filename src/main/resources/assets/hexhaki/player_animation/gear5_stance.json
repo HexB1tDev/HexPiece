@@ -65,7 +65,7 @@
     "tick": 6,
     "easing": "inoutsine",
     "torso": {
-     "roll": -0.025
+     "roll": -0.006
     }
    },
    {
@@ -93,7 +93,7 @@
     "tick": 12,
     "easing": "inoutsine",
     "torso": {
-     "roll": -0.035
+     "roll": -0.009
     }
    },
    {
@@ -121,7 +121,7 @@
     "tick": 18,
     "easing": "inoutsine",
     "torso": {
-     "roll": -0.025
+     "roll": -0.006
     }
    },
    {
@@ -177,7 +177,7 @@
     "tick": 30,
     "easing": "inoutsine",
     "torso": {
-     "roll": 0.025
+     "roll": 0.006
     }
    },
    {
@@ -205,7 +205,7 @@
     "tick": 36,
     "easing": "inoutsine",
     "torso": {
-     "roll": 0.035
+     "roll": 0.009
     }
    },
    {
@@ -233,7 +233,7 @@
     "tick": 42,
     "easing": "inoutsine",
     "torso": {
-     "roll": 0.025
+     "roll": 0.006
     }
    },
    {

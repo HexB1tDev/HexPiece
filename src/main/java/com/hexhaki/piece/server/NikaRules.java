@@ -32,6 +32,19 @@ public final class NikaRules {
     }
 
     /**
+     * 3.2.7 (the owner: "Dawn Whip needs a complete rework. That move has to be entirely scrapped and redone ... he actually rotates
+     * like a cartoon character. I think that the player's feet should also rotate like a cartoon character"): the whip's clip, in place of
+     * the original's {@code animate(player, "gear5_whip", priority)} in {@code GearServerController.whip}: with Haki on in Gear 5 (the
+     * original's {@code dawn}: Gear 5 with Armament or Ryou on) the cartoon spin {@code gear5_dawn_whip} (tools/nika_anims.py), else the
+     * whip as it was.
+     */
+    public static void whipClip(ServerPlayer player, String name, int priority) {
+        boolean dawn = GearData.flag(player, "gear5")
+            && (com.hexhaki.data.HakiData.flag(player, "armamentOn") || com.hexhaki.data.HakiData.flag(player, "acocOn"));
+        com.hexhaki.gameplay.HakiServerController.animate(player, dawn ? "gear5_dawn_whip" : name, priority);
+    }
+
+    /**
      * In Gatling's tick, Giant's and Coil Spring's start and Coil Spring's let go, in place of their "Gear 5 is up" check: they go ahead
      * for anyone with the fruit (transformed or not).
      */
