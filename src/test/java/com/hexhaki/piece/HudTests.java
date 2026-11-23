@@ -335,7 +335,17 @@ public final class HudTests {
         Check.that(com.hexhaki.piece.gear.RubberWave.rise(0.3, 0, 0.5, radius, inf) < 0.05, "nika: the user's own footing still at the release");
         double before = crest(6);
         double after = crest(14);
-        Check.that(after > before + 4, "nika: Rubber World's first ring goes outward (" + before + " to " + after + ")");
+        Check.that(after > before + 1.5 && after < before + 3.5, "nika: Rubber World's first ring goes outward, slowly (3.3.3: " + before
+            + " to " + after + ")");
+        // 3.3.3 (the owner: "different sizes some much bigger than others, and slower"): the waves differ, a few much bigger
+        double low = 9;
+        double high = 0;
+        for (int i = 0; i < 12; i++) {
+            low = Math.min(low, com.hexhaki.piece.gear.RubberWave.waveHeight(i));
+            high = Math.max(high, com.hexhaki.piece.gear.RubberWave.waveHeight(i));
+        }
+        Check.that(high > 2.5 * low && high > 1.2, "nika: Rubber World's waves of different sizes, some much bigger (" + low + " to " + high + ")");
+        Check.that(com.hexhaki.piece.gear.RubberWave.SPEED_HIGH <= 0.2, "nika: Rubber World's waves roll slowly");
         double most = 0;
         for (double r = 10; r < 30; r += 0.25) {
             most = Math.max(most, com.hexhaki.piece.gear.RubberWave.rise(r, 0.4, 80, radius, inf));

@@ -1860,10 +1860,25 @@ Supa Supa no Mi (Daz Bones, Uncommon; with Armament on the blades go black-purpl
   spinning blade, cutting all round.
 - Passive **Slashing Immunity**: swords, axes and blades cannot cut the user unless coated in Armament Haki.
 
-## 9. What to do next (after 3.3.2)
+## 8zx. Done (3.3.3): Rubber World's waves slow and of different sizes
 
-1. Check 3.3.2's runs ("Build HexPiece" and "Release HexPiece") on `claude/nice-bell-gam7qf` ended green; if not, fix and push.
-2. **The three new fruits (8zv, 8zw): 3.3.3 Noro Noro, 3.3.4 Supa Supa, 3.3.5 Horo Horo**, each following the Ice fruit file by file
+The owner, during the Noro fruit's start (verbatim): "Rubber world's rippes should  be different sizes some much bigger than others, and
+slower, they're too fast, going way too fast. they're meant to be like slow waves". Shipped at once as 3.3.3 (so **the fruits moved
+one version on: 3.3.4 Noro Noro, 3.3.5 Supa Supa, 3.3.6 Horo Horo**). Nothing tested in game: build, tests, renders over a field's life
+(docs/gifs/nika-rubber-world-3.3.3.gif, nika-rubber-world-others-3.3.3.gif at real speed).
+- gear/RubberWave.rise: the release's three rings each their own (born 0, 14, 30; heights 1.5, 0.6, 1.1; half widths 3, 2, 2.6;
+  0.3, 0.24, 0.27 blocks a tick: they went 0.75); then a wave born round the user about every WAVE_EVERY 45 ticks from tick 40 (jittered),
+  each its own height (WAVE_LOW 0.35 to WAVE_HIGH 1.9, squared so a few are much bigger: `waveHeight(i)`), half width (1.8 to 3.6) and
+  speed (0.12 to 0.2 a tick: the old rolling waves went 0.42), rising out of the feet over 10 ticks, rolling outward, wobbling round the
+  circle; none born after the field ends; MOST 2.0 (the two drawn blocks, no gap). The first try (a wave every 22 ticks, half widths
+  2 to 4.5) overlapped into one raised plateau by tick 180: spaced out. RubberChaos throws on the same waves (only the big swells rise
+  fast enough). HudTests.rubberWorld: the first ring moves 1.5 to 3.5 blocks in 8 ticks, heights differ more than 2.5 times, the waves
+  at most 0.2 a tick. The jump's ripples (RubberJump) unchanged (the owner named Rubber World).
+
+## 9. What to do next (after 3.3.3)
+
+1. Check 3.3.3's runs ("Build HexPiece" and "Release HexPiece") on `claude/nice-bell-gam7qf` ended green; if not, fix and push.
+2. **The three new fruits (8zv, 8zw): 3.3.4 Noro Noro, 3.3.5 Supa Supa, 3.3.6 Horo Horo** (one on since 3.3.3, 8zx), each following the Ice fruit file by file
    (8zc/8ze), animations reused from the mod's clips, POINT ONE for the rest. Ask the owner how 3.3.2 feels (the pose above all).
 3. The rest of the Nika rework (8zk; done: the keys, the transformation, the wobble, the Bajrang Gun, Dawn Whip, Giant's hold, Star
    Gun's rubber body, Rubber World's rolling ground and its throws, Toon Force, the skip, the jump): better Haki versions (Dawn Pistol;

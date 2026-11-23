@@ -24,9 +24,11 @@ body as rubber) is pushed and green. 3.3.0 (8zs: Rubber World's ground rolling i
 Force, Dawn Whip and the Gear 5 jump pose redone to the owner's target look) is pushed and green. 3.3.2 (8zu: Sky Bounce gone; every Gear 5
 jump about five blocks high with the laughing skip, the ground springing and rippling like rubber at the take-off and the landing, no
 fall damage; Rubber World throwing everyone but its user about; the skip pose redone from the owner's limb-by-limb description after
-they were furious it was still wrong) is pushed: first check its "Build HexPiece" and "Release HexPiece" runs.
+they were furious it was still wrong) is pushed and green. 3.3.3 (8zx: Rubber World's waves slow and of different sizes, at the
+owner's word) is pushed: first check its "Build HexPiece" and "Release HexPiece" runs.
 
-Next: ask the owner how 3.3.2 feels (the pose above all). Then the rest of the Nika rework (better Haki versions: Dawn Pistol; never touch the
+Next: the owner's three new fruits (8zv verbatim, 8zw the accepted keys): 3.3.4 Noro Noro, 3.3.5 Supa Supa, 3.3.6 Horo Horo, each
+built as the Ice fruit was (8zc, 8ze), animations reused from the mod's own clips. Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika rework (better Haki versions: Dawn Pistol; never touch the
 lightning lance). The owner's target look for the fruit is Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every new pose
 with a raised arm must keep the hand off the face from the front (tools/anim.face_covered) and be looked at beside the owner's
 pictures from every side, never passed on a 3D test alone (the owner: "how the FUCK is that a pass"); a raised fist the owner wants

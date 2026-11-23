@@ -8,35 +8,55 @@ package com.hexhaki.piece.gear;
  * standing in it.
  *
  * <ul>
- *   <li>The release: three rings of ground swell out from round the user's feet one after another ({@link #RING_SPEED} blocks a tick),
- *       each lower than the one before, fading toward the field's edge.</li>
- *   <li>Then, while the field lasts, rounded waves keep rolling outward ({@link #ROLL_LENGTH} apart), wobbling round the circle so the
- *       ground heaves like slime rather than a ripple tank; when the field ends they settle within {@link #FADE} ticks.</li>
+ *   <li>The release: three rings of ground swell out from round the user's feet one after another, each its own size and speed.</li>
+ *   <li>Then, while the field lasts, a wave is born round the user every {@link #WAVE_EVERY} ticks or so and rolls slowly outward, each
+ *       its own height ({@link #WAVE_LOW} to {@link #WAVE_HIGH}), width and speed: some swells much bigger than others, wobbling round
+ *       the circle so the ground heaves like slime rather than a ripple tank; when the field ends they settle within {@link #FADE}
+ *       ticks.</li>
  * </ul>
+ * 3.3.3 (the owner: "Rubber world's rippes should be different sizes some much bigger than others, and slower, they're too fast, going
+ * way too fast. they're meant to be like slow waves"): 3.3.0's rings went out at 0.75 blocks a tick and its waves at 0.42, all one
+ * height; now the rings go 0.24 to 0.3 and the waves 0.12 to 0.2 (2.4 to 4 blocks a second), each its own size.
  * The ground only ever rises (0 to {@link #MOST} blocks): drawn copies of its blocks lift out of it, the real ground stays.
  */
 public final class RubberWave {
-    /** The rings: how fast they go out, half their crest's width, when each starts, how high. */
-    public static final double RING_SPEED = 0.75;
-    public static final double RING_WIDTH = 2.3;
-    static final double[] RING_AT = {0, 9, 18};
-    static final double[] RING_AMP = {1.3, 0.9, 0.6};
-    /** Where the rings start (blocks from the middle): round the user, not under their feet. */
+    /** The release's rings: when each starts, how high, half their width, how fast they go out (blocks a tick). */
+    static final double[] RING_AT = {0, 14, 30};
+    static final double[] RING_AMP = {1.5, 0.6, 1.1};
+    static final double[] RING_HALF = {3.0, 2.0, 2.6};
+    static final double[] RING_SPEED = {0.3, 0.24, 0.27};
+    /** Where the rings and waves start (blocks from the middle): round the user, not under their feet. */
     static final double RING_FROM = 1.5;
-    /** The rolling waves: their length, speed (blocks a tick), height; they grow in from {@link #ROLL_FROM} over {@link #ROLL_IN} ticks. */
-    public static final double ROLL_LENGTH = 9.0;
-    public static final double ROLL_SPEED = 0.42;
-    public static final double ROLL_AMP = 0.6;
-    static final double ROLL_FROM = 8.0;
-    static final double ROLL_IN = 24.0;
+    /** The waves: the first born at {@link #WAVE_FROM}, then one about every {@link #WAVE_EVERY} ticks; their heights, half widths and
+     * speeds between these (each wave its own, the same on the server and every client). */
+    public static final double WAVE_FROM = 40.0;
+    public static final double WAVE_EVERY = 45.0;
+    public static final double WAVE_LOW = 0.35;
+    public static final double WAVE_HIGH = 1.9;
+    static final double HALF_LOW = 1.8;
+    static final double HALF_HIGH = 3.6;
+    public static final double SPEED_LOW = 0.12;
+    public static final double SPEED_HIGH = 0.2;
     /** How long the ground takes to settle after the field ends. */
     public static final double FADE = 20.0;
-    /** The highest it ever rises. */
-    public static final double MOST = 1.6;
+    /** The highest it ever rises (two blocks: the drawn top block and the one under it, no gap under them). */
+    public static final double MOST = 2.0;
     /** The rim where it flattens to the field's edge. */
     static final double EDGE = 5.0;
 
     private RubberWave() {
+    }
+
+    /** A wave's own number in 0 to 1, the same everywhere (its {@code k}-th draw). */
+    static double pick(int wave, int k) {
+        double v = Math.sin(wave * 12.9898 + k * 78.233) * 43758.5453;
+        return v - Math.floor(v);
+    }
+
+    /** Wave {@code i}'s height: mostly middling, every few a much bigger swell. */
+    public static double waveHeight(int i) {
+        double p = pick(i, 0);
+        return WAVE_LOW + (WAVE_HIGH - WAVE_LOW) * p * p;
     }
 
     /**
@@ -57,21 +77,32 @@ public final class RubberWave {
         // the user's own footing stays still: the rings rise round it
         double hollow = Math.min(1, Math.max(0, (r - 0.9) / 1.4));
         for (int i = 0; i < RING_AT.length; i++) {
-            double front = RING_FROM + RING_SPEED * (t - RING_AT[i]);
+            double front = RING_FROM + RING_SPEED[i] * (t - RING_AT[i]);
             double d = r - front;
-            if (t >= RING_AT[i] && Math.abs(d) < RING_WIDTH && front < radius) {
-                double c = Math.cos(Math.PI * d / (2 * RING_WIDTH));
+            if (t >= RING_AT[i] && Math.abs(d) < RING_HALF[i] && front < radius + RING_HALF[i]) {
+                double c = Math.cos(Math.PI * d / (2 * RING_HALF[i]));
                 h += RING_AMP[i] * c * c * fall * hollow;
             }
         }
-        double grow = Math.max(0, Math.min(1, (t - ROLL_FROM) / ROLL_IN));
-        if (grow > 0 && r > RING_FROM) {
-            double u = r / ROLL_LENGTH - (t - ROLL_FROM) * ROLL_SPEED / ROLL_LENGTH;
-            double s = Math.sin(2 * Math.PI * u);
-            if (s > 0) {
-                double wobble = 0.72 + 0.28 * Math.sin(3 * angle + t * 0.11) * Math.cos(2 * angle - t * 0.07);
-                double near = Math.min(1, (r - RING_FROM) / 3);
-                h += ROLL_AMP * grow * Math.pow(s, 1.6) * wobble * near;
+        if (t > WAVE_FROM && r > RING_FROM) {
+            double wobble = 0.72 + 0.28 * Math.sin(3 * angle + t * 0.05) * Math.cos(2 * angle - t * 0.03);
+            double near = Math.min(1, (r - RING_FROM) / 3);
+            int born = (int) Math.floor((Math.min(t, end) - WAVE_FROM) / WAVE_EVERY);
+            for (int i = 0; i <= born; i++) {
+                double at = WAVE_FROM + WAVE_EVERY * (i + 0.6 * (pick(i, 1) - 0.5));
+                if (t < at) {
+                    continue;
+                }
+                double half = HALF_LOW + (HALF_HIGH - HALF_LOW) * pick(i, 2);
+                double speed = SPEED_LOW + (SPEED_HIGH - SPEED_LOW) * pick(i, 3);
+                double front = RING_FROM + speed * (t - at);
+                double d = r - front;
+                if (Math.abs(d) < half && front < radius + half) {
+                    // a swell rising out of the user's feet as it is born (over 10 ticks), then rolling out
+                    double born10 = Math.min(1, (t - at) / 10);
+                    double c = Math.cos(Math.PI * d / (2 * half));
+                    h += waveHeight(i) * born10 * c * c * fall * wobble * near;
+                }
             }
         }
         return Math.min(MOST, h * edge * Math.max(0, settle));
