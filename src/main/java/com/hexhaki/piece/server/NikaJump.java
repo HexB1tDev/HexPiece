@@ -31,6 +31,11 @@ import net.minecraftforge.fml.common.Mod;
  * .tickBouncyWalk); patch/PiecePatch has those two clips ask {@link #walkClip} first, which holds them back while the jump's clip plays
  * (the landing puts the right one back). Any other clip (a move thrown in the air) takes over: the head of HakiServerController.animate
  * tells {@link #played}, and the landing then leaves it alone.
+ *
+ * <p>3.3.8 (the owner: "falling from Bajarang gun doesnt make the body ripple when the player falls (every fall should make the floor
+ * ripple)"): every landing in Gear 5 from {@link RubberJump#FALL_MIN} blocks or more over the feet ripples the ground round them
+ * ({@link #LAND}), however the body got up there: the Bajrang Gun's fall, the original's bounding run, a ledge, a throw ({@link #FALLS}:
+ * each airborne Gear 5 player's highest point). A jump's own landing still ripples once, from its {@link Jump}.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class NikaJump {
@@ -55,6 +60,8 @@ public final class NikaJump {
     }
 
     static final Map<UUID, Jump> JUMPS = new HashMap<>();
+    /** 3.3.8: each Gear 5 player in the air, the highest their feet have been since they left the ground. */
+    static final Map<UUID, Double> FALLS = new HashMap<>();
 
     private NikaJump() {
     }
@@ -103,7 +110,15 @@ public final class NikaJump {
 
     @SubscribeEvent
     public static void tick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || JUMPS.isEmpty() || !(event.player instanceof ServerPlayer player)) {
+        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player)) {
+            return;
+        }
+        boolean ground = player.m_20096_();
+        if (ground && FALLS.isEmpty() && JUMPS.isEmpty()) {
+            return;
+        }
+        falls(player, ground);
+        if (JUMPS.isEmpty()) {
             return;
         }
         Jump jump = JUMPS.get(player.m_20148_());
@@ -141,6 +156,39 @@ public final class NikaJump {
         }
     }
 
+    /**
+     * 3.3.8: a Gear 5 player in the air is followed to their highest point; landing {@link RubberJump#FALL_MIN} or more under it, the
+     * ground ripples round the feet (unless a jump of theirs is landing now: it ripples on its own). Flying, riding or water forget it.
+     */
+    static void falls(ServerPlayer player, boolean ground) {
+        UUID id = player.m_20148_();
+        double y = player.m_20186_();
+        if (!ground) {
+            Double peak = FALLS.get(id);
+            if (player.m_150110_().f_35935_ || player.m_20159_() || player.m_20069_() || !player.m_6084_()) {
+                if (peak != null) {
+                    FALLS.remove(id);
+                }
+            } else if (peak != null) {
+                if (y > peak) {
+                    FALLS.put(id, y);
+                }
+            } else if (!player.m_5833_() && GearData.flag(player, "gear5")) {
+                FALLS.put(id, y);
+            }
+            return;
+        }
+        Double peak = FALLS.remove(id);
+        if (peak == null || peak - y < RubberJump.FALL_MIN || !GearData.flag(player, "gear5")) {
+            return;
+        }
+        Jump jump = JUMPS.get(id);
+        if (jump != null && !jump.landed) {
+            return;
+        }
+        ripple(player, LAND, RubberJump.LAND_RADIUS);
+    }
+
     /** No fall damage from a Gear 5 jump (the body is rubber; the landing ripples instead). */
     @SubscribeEvent
     public static void fall(LivingFallEvent event) {
@@ -152,6 +200,18 @@ public final class NikaJump {
     @SubscribeEvent
     public static void loggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         JUMPS.remove(event.getEntity().m_20148_());
+        FALLS.remove(event.getEntity().m_20148_());
+    }
+
+    /** 3.3.8: a death or another dimension forgets the height (no ripple where they come back). */
+    @SubscribeEvent
+    public static void respawned(PlayerEvent.PlayerRespawnEvent event) {
+        FALLS.remove(event.getEntity().m_20148_());
+    }
+
+    @SubscribeEvent
+    public static void changedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        FALLS.remove(event.getEntity().m_20148_());
     }
 
     /** patch/PiecePatch, at the head of HakiServerController.animate: {@code player} was set playing {@code name}. */

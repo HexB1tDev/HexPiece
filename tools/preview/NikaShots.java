@@ -93,8 +93,8 @@ public final class NikaShots {
                         if (h < 0.03) {
                             continue;
                         }
-                        double tilt = Math.atan(RubberWave.slope(r, angle, t, radius, end)) * 0.6;
-                        grass(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt);
+                        double tilt = RubberWave.tilt(RubberWave.slope(r, angle, t, radius, end));
+                        column(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt, h);
                     }
                 }
                 for (double[] b : new double[][] {{5.5, 3.5}, {-3.5, 9.5}}) {
@@ -116,8 +116,8 @@ public final class NikaShots {
                         if (h < 0.03) {
                             continue;
                         }
-                        double tilt = Math.atan(RubberJump.slope(r, angle, t, landing)) * 0.6;
-                        grass(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt);
+                        double tilt = RubberWave.tilt(RubberJump.slope(r, angle, t, landing));
+                        column(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt, h);
                     }
                 }
                 // the jumper: up as the lifted jump goes (0.9 a tick, the game's gravity and drag), or standing after the landing
@@ -150,8 +150,8 @@ public final class NikaShots {
                         if (h < 0.03) {
                             continue;
                         }
-                        double tilt = Math.atan(RubberWave.slope(r, angle, t, radius, inf)) * 0.6;
-                        grass(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt);
+                        double tilt = RubberWave.tilt(RubberWave.slope(r, angle, t, radius, inf));
+                        column(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt, h);
                     }
                 }
                 HieShots.body(sink, -ex, -ey, -ez);
@@ -300,12 +300,28 @@ public final class NikaShots {
      * its top's middle (a positive tilt faces its top inward, as the client turns it).
      */
     static void grass(FireMesh.Sink sink, double x, double y, double z, double rx, double rz, double tilt) {
+        box(sink, x, y, z, rx, rz, tilt, 0, -1, true);
+    }
+
+    /**
+     * 3.3.8: a risen column as client/gear/RubberWorldDraw draws it: the grass block lifted {@code h} (its top at {@code y}) and, past 0.6,
+     * the block under it stretched down to the real ground (gear/RubberWave.underTall).
+     */
+    static void column(FireMesh.Sink sink, double x, double y, double z, double rx, double rz, double tilt, double h) {
+        box(sink, x, y, z, rx, rz, tilt, 0, -1, true);
+        if (h > 0.6) {
+            box(sink, x, y, z, rx, rz, tilt, -1, -1 - RubberWave.underTall(h), false);
+        }
+    }
+
+    /** A block from {@code top} to {@code bottom} below the lifted top middle (x + 0.5, y, z + 0.5), tilted about the flat axis across. */
+    static void box(FireMesh.Sink sink, double x, double y, double z, double rx, double rz, double tilt, double top, double bottom, boolean grassy) {
         double c = Math.cos(tilt);
         double sn = Math.sin(tilt);
         double[][] corner = new double[8][3];
         for (int i = 0; i < 8; i++) {
             double vx = ((i & 1) != 0 ? 1 : 0) - 0.5;
-            double vy = ((i & 2) != 0 ? 0 : -1);
+            double vy = ((i & 2) != 0 ? top : bottom);
             double vz = ((i & 4) != 0 ? 1 : 0) - 0.5;
             // about the tangent (-rz, 0, rx): the radial part and the height turn, the tangent part stays
             double radial = vx * rx + vz * rz;
@@ -318,7 +334,7 @@ public final class NikaShots {
         }
         int[][] order = {{0, 1, 3, 2}, {4, 6, 7, 5}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 5, 7, 3}};
         // faces: the two across z, the bottom, the top (grass), the two across x (dirt)
-        int[] colour = {0x7A5634, 0x7A5634, 0x6B4A2E, 0x6FB043, 0x7A5634, 0x7A5634};
+        int[] colour = {0x7A5634, 0x7A5634, 0x6B4A2E, grassy ? 0x6FB043 : 0x7A5634, 0x7A5634, 0x7A5634};
         double[] shade = {0.8, 0.8, 0.5, 1.0, 0.62, 0.62};
         for (int k = 0; k < 6; k++) {
             int col = FireMesh.argb(1.0, FireMesh.mix(0, colour[k], shade[k]));

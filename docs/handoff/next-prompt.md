@@ -3,8 +3,8 @@ Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetc
 Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzd of next-ai-3.2.2.md
-(2.9.6 to 3.3.7); open the older next-ai-*.md only for a feature's detail.
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zze of next-ai-3.2.2.md
+(2.9.6 to 3.3.8); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -13,25 +13,26 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.3.6 everything is pushed and green (sections 8zl to 8zzb; 3.3.6 Build #175, Release #127); 3.3.7, the
-Ito Ito no Mi (8zzc the plan, 8zzd as built), is pushed; its Build #177 and Release #128 were still running when the owner stopped
-the session ("Stop handoff + prompt NOW"): check both are green first and fix anything red. 3.3.6 is the Horo Horo no Mi: the owner said "The ghosts are meant to be cute" (redone: big shining
-eyes, rosy cheeks, docs/handoff/horo-cute-3.3.6.jpg) and asked for Gloom as its own effect (blind, slow, 8 in 10 attacks of every kind
-miss, 8 seconds after a short fall: their answers, 8zzb). Read 8zz and 8zzb before any art: the owner called Supa's first flat blades
-"really poor and poorly made"; judge every effect against the Light, Gura and Magma art before showing it; thin pale lines and flat
-polygons are not acceptable.
+Where things stand: up to 3.3.7 everything is pushed and green (3.3.7 the Ito Ito no Mi: Build #177, Release #128). 3.3.8 (section
+8zze: Rubber World's waves and Gear 5's jump/landing ripples twice as high, the owner's "About 2x"; every Gear 5 landing from 2+ blocks
+ripples the ground, the Bajrang Gun's fall included) is pushed: check its Build and Release runs are green first and fix anything red.
+Next is 3.3.9, the Dawn Pistol exactly as the owner accepted it ("Build as proposed", 8zze: a quick cartoon wind-up clip in third person,
+first person left alone; the stretched arm ending in a black Haki-coated balloon fist like the Bajrang Gun's, smaller; a cartoon POW
+burst and shock ring on hit; the struck body bent like rubber as Star Gun's and knocked far back; the Conqueror's lightning out of the
+impact; a new CC0 punch sound). 8zze lists what the original's pistol does and where to hook it. Read 8zz and 8zzb before any art: the
+owner called Supa's first flat blades "really poor and poorly made"; judge every effect against the Light, Gura and Magma art before
+showing it; thin pale lines and flat polygons are not acceptable.
 
-Next: the owner tests at home ("Ima only test when I get home"): ask how the Horo (3.3.6) and Ito (3.3.7) fruits play. Their word
-on the strings (8zzd, verbatim): "it looks like dust", "its meant to be slimmer, they're too thick", "sharper in the end too not just
+Next after that: the owner has not tested Horo (3.3.6) or Ito (3.3.7) yet ("Not tested yet"): ask again how they play. Their word on
+the strings (8zzd, verbatim): "it looks like dust", "its meant to be slimmer, they're too thick", "sharper in the end too not just
 square ends..", "where are the sharp ends?": keep every string slim, solid (no coplanar glow layers: they speckle) and pointed at both
-ends; judge strings at 840 pixels wide or more. Ask how 3.3.2 and 3.3.3 feel (asked, not yet answered). Then
-the rest of the Nika rework (better Haki versions: Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika
-fruit is Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every pose with a raised arm keeps the hand off the face from the front
-(tools/anim.face_covered) and is looked at beside the owner's pictures from every side; a raised fist the owner wants forward stays
-forward.
+ends; judge strings at 840 pixels wide or more. Then the rest of the Nika rework (better Haki versions; never touch the lightning
+lance). The owner's target look for the Nika fruit is Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every pose with a raised
+arm keeps the hand off the face from the front (tools/anim.face_covered) and is looked at beside the owner's pictures from every side;
+a raised fist the owner wants forward stays forward.
 
 The cloud environment is the personal "HexPiece" (freesound.org, cdn.freesound.org, opengameart.org); if freesound.org is refused, the
-session is on Default: get_environment, then switch_environment to it. Freesound also rate-limits its pages for a minute or two (403):
+session is on Default: get_environment, then switch_environment to it (network_only). Freesound also rate-limits its pages for a minute or two (403):
 wait and retry. Check every new sound AS CUT with tools/tonal_lines.py against plain noise of the same length (8zzb).
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;

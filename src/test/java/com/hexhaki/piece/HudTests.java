@@ -252,7 +252,7 @@ public final class HudTests {
                 for (double r = 0; r < 8; r += 0.25) {
                     for (double a = 0; a < 6.3; a += 0.7) {
                         double h = com.hexhaki.piece.gear.RubberJump.hop(r, a, t, landing);
-                        Check.that(h >= 0 && h < 1.2, "rubberJump: the ground rises 0 to 1.2 (" + h + " at r " + r + ", t " + t + ")");
+                        Check.that(h >= 0 && h < 2.4, "rubberJump: the ground rises 0 to 2.4 (" + h + " at r " + r + ", t " + t + ")");
                         most = Math.max(most, h);
                         if (t > com.hexhaki.piece.gear.RubberJump.LIFE || t < 0
                             || r > (landing ? com.hexhaki.piece.gear.RubberJump.LAND_RADIUS : com.hexhaki.piece.gear.RubberJump.HOP_RADIUS)) {
@@ -262,7 +262,11 @@ public final class HudTests {
                 }
             }
             Check.that(most > 0.4, "rubberJump: the ground visibly rises (" + most + ")");
+            // 3.3.8 (the owner: "should be higher like lift more"; asked, "About 2x"): the first ring lifts about twice 3.3.2's
+            Check.that(most > (landing ? 0.85 : 1.0), "rubberJump: 3.3.8's ripples lift about twice as high (" + most + ")");
         }
+        Check.that(com.hexhaki.piece.gear.RubberJump.FALL_MIN >= 1.5 && com.hexhaki.piece.gear.RubberJump.FALL_MIN <= 2.5,
+            "rubberJump: a real fall ripples the landing, a step down does not");
         Check.that(com.hexhaki.piece.gear.RubberJump.hop(0, 0, 1.5, false) > 0.4, "rubberJump: the take-off's ground springs up under the feet");
         Check.that(com.hexhaki.piece.gear.RubberJump.hop(0.3, 0, 1, true) < 0.05, "rubberJump: the landing feet's own footing stays still");
         Check.that(com.hexhaki.piece.gear.RubberWave.toss(0.01) == 0, "rubberJump: a still ground throws nothing");
@@ -345,6 +349,10 @@ public final class HudTests {
             high = Math.max(high, com.hexhaki.piece.gear.RubberWave.waveHeight(i));
         }
         Check.that(high > 2.5 * low && high > 1.2, "nika: Rubber World's waves of different sizes, some much bigger (" + low + " to " + high + ")");
+        // 3.3.8 (the owner: "Rippes from world of rubber should be higher like lift more"; asked, "About 2x"): twice 3.3.3's 0.35 to 1.9
+        Check.that(com.hexhaki.piece.gear.RubberWave.WAVE_HIGH > 3.5 && com.hexhaki.piece.gear.RubberWave.WAVE_LOW > 0.6
+            && com.hexhaki.piece.gear.RubberWave.MOST >= com.hexhaki.piece.gear.RubberWave.WAVE_HIGH,
+            "nika: Rubber World's waves twice as high as 3.3.3's, and room for the biggest");
         Check.that(com.hexhaki.piece.gear.RubberWave.SPEED_HIGH <= 0.2, "nika: Rubber World's waves roll slowly");
         double most = 0;
         for (double r = 10; r < 30; r += 0.25) {

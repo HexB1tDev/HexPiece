@@ -28,12 +28,16 @@ import net.minecraftforge.fml.common.Mod;
  *       damage), and the ground under it springs up and ripples at once on this screen (client/gear/RubberWorldDraw), and again where
  *       it lands.</li>
  * </ul>
+ * 3.3.8 (the owner: "every fall should make the floor ripple"): any landing in Gear 5 from {@link RubberJump#FALL_MIN} blocks or more
+ * over the feet ripples here at once, as server/NikaJump has everyone else see it (the Bajrang Gun's fall, a ledge, the bounding run).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class NikaJumpClient {
     /** A jump in the air, its ticks so far (its landing ripples here at once). */
     private static boolean airborne;
     private static int airTicks;
+    /** 3.3.8: in the air in Gear 5, the highest the feet have been (NaN on the ground). */
+    private static double peak = Double.NaN;
 
     private NikaJumpClient() {
     }
@@ -68,18 +72,40 @@ public final class NikaJumpClient {
 
     @SubscribeEvent
     public static void tick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !airborne) {
+        if (event.phase != TickEvent.Phase.END) {
             return;
         }
         LocalPlayer player = Minecraft.m_91087_().f_91074_;
-        airTicks++;
-        if (player == null || airTicks > 200) {
+        if (player == null) {
             airborne = false;
+            peak = Double.NaN;
             return;
         }
-        if (airTicks >= 3 && player.m_20096_()) {
-            airborne = false;
-            RubberWorldDraw.hop(player.m_20185_(), player.m_20186_(), player.m_20189_(), true);
+        boolean ground = player.m_20096_();
+        double y = player.m_20186_();
+        if (!ground) {
+            if (!GearClientState.gearFive || player.m_150110_().f_35935_ || player.m_20159_() || player.m_20069_()) {
+                peak = Double.NaN;
+            } else {
+                peak = Double.isNaN(peak) ? y : Math.max(peak, y);
+            }
+        }
+        if (airborne) {
+            airTicks++;
+            if (airTicks > 200) {
+                airborne = false;
+            } else if (airTicks >= 3 && ground) {
+                airborne = false;
+                peak = Double.NaN;
+                RubberWorldDraw.hop(player.m_20185_(), y, player.m_20189_(), true);
+                return;
+            }
+        }
+        if (ground && !Double.isNaN(peak)) {
+            if (peak - y >= RubberJump.FALL_MIN && GearClientState.gearFive && !airborne) {
+                RubberWorldDraw.hop(player.m_20185_(), y, player.m_20189_(), true);
+            }
+            peak = Double.NaN;
         }
     }
 }

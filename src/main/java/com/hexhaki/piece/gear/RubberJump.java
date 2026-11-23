@@ -13,8 +13,13 @@ package com.hexhaki.piece.gear;
  *       at the landing two rings ripple out round the feet (the footing itself stays still). Only ever up, like the Rubber World's own
  *       ground (gear/RubberWave): client/gear/RubberWorldDraw draws copies of the ground's blocks lifted out of the real ground.</li>
  * </ul>
+ * 3.3.8 (the owner: the ripples "should be higher like lift more"; asked, "Both" and "About 2x"): the take-off's spring and every ring
+ * twice as high (a landing's first ring about 1.6 blocks), and a landing after any fall of {@link #FALL_MIN} blocks or more ripples too
+ * (server/NikaJump, client/gear/NikaJumpClient: "every fall should make the floor ripple", the Bajrang Gun's fall included).
  */
 public final class RubberJump {
+    /** A fall from at least this high above the landing (blocks) ripples the ground round the feet. */
+    public static final double FALL_MIN = 2.0;
     /** The upward speed added to a Gear 5 jump (blocks a tick). */
     public static final double LIFT = 0.48;
     /** How far the ripples reach at the take-off and at the landing (blocks). */
@@ -23,7 +28,7 @@ public final class RubberJump {
     /** How long either lasts (ticks): every ring has left its field by then. */
     public static final double LIFE = 18;
     /** The rebound under the feet at the take-off: how high, how long, how wide. */
-    static final double SPRING = 0.55;
+    static final double SPRING = 1.1;
     static final double SPRING_TICKS = 3.0;
     static final double SPRING_WIDE = 1.7;
     /** The rings: where they start, how fast they go out (blocks a tick), half their width, when each starts, how high. */
@@ -31,9 +36,9 @@ public final class RubberJump {
     static final double RING_SPEED = 0.55;
     static final double RING_WIDTH = 1.3;
     static final double[] HOP_AT = {0.5, 5};
-    static final double[] HOP_AMP = {0.7, 0.35};
+    static final double[] HOP_AMP = {1.4, 0.7};
     static final double[] LAND_AT = {0, 4};
-    static final double[] LAND_AMP = {0.8, 0.4};
+    static final double[] LAND_AMP = {1.6, 0.8};
 
     private RubberJump() {
     }

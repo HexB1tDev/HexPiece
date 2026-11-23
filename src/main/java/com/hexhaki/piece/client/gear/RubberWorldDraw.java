@@ -53,8 +53,6 @@ public final class RubberWorldDraw {
     static final int LOOKUPS = 360;
     /** A field not heard of for this long has ended (the original says it again every 20 ticks). */
     static final int QUIET = 30;
-    /** The share of the wave's slope the blocks tilt by. */
-    static final double TILT = 0.6;
     /** The most jump ripples kept at once (the oldest goes first). */
     static final int MOST_HOPS = 10;
     /** A field's kind: Rubber World's, a jump's take-off, a jump's landing. */
@@ -298,7 +296,7 @@ public final class RubberWorldDraw {
             }
             boolean deep = h > 0.6 && c.under != null;
             drawn += deep ? 2 : 1;
-            double tilt = Math.atan(slope(f, r, angle, t)) * TILT;
+            double tilt = RubberWave.tilt(slope(f, r, angle, t));
             double rx = r > 1.0E-6 ? dx / r : 1.0;
             double rz = r > 1.0E-6 ? dz / r : 0.0;
             pose.m_85836_();
@@ -308,7 +306,12 @@ public final class RubberWorldDraw {
             pose.m_85837_(-0.5, -1.0, -0.5);
             blocks.m_110912_(c.top, pose, buffers, c.light, OverlayTexture.f_118083_);
             if (deep) {
-                pose.m_85837_(0.0, -1.0, 0.0);
+                // 3.3.8: risen past two blocks, the block under it stretches down to the real ground like rubber (no gap under it)
+                double tall = RubberWave.underTall(h);
+                pose.m_85837_(0.0, -tall, 0.0);
+                if (tall > 1.0) {
+                    pose.m_85841_(1.0F, (float) tall, 1.0F);
+                }
                 blocks.m_110912_(c.under, pose, buffers, c.light, OverlayTexture.f_118083_);
             }
             pose.m_85849_();

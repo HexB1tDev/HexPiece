@@ -13,7 +13,8 @@ built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; th
 owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground), 8zt 3.3.1 (Toon Force, Dawn Whip and the jump pose redone; the owner's jump request),
 8zu 3.3.2 (the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's description: read it), 8zv the
 owner's three new fruits (verbatim), 8zw their accepted keys, 8zx 3.3.3 (Rubber World's slow waves), 8zy 3.3.4 (Noro), 8zz 3.3.5 (Supa),
-8zza the owner's Rare fruit request (the Ito Ito no Mi, verbatim), 8zzb 3.3.6 (Horo: cute ghosts, the Gloom effect, the astral spirit).
+8zza the owner's Rare fruit request (the Ito Ito no Mi, verbatim), 8zzb 3.3.6 (Horo: cute ghosts, the Gloom effect, the astral spirit),
+8zzc/8zzd 3.3.7 (Ito), 8zze 3.3.8 and 3.3.9 (the owner's answers, the rubber ripples, the Dawn Pistol accepted).
 
 Branch `claude/nice-bell-gam7qf` since 3.3.2 (fetch it first: it is the newest; it continues claude/pensive-heisenberg-mkr9cl). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -27,8 +28,8 @@ look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone
 description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is
 pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed and green (Build
 #172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); 3.3.7
-(8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed; its Build #177 and Release #128 were still running
-when the owner stopped the session ("Stop handoff + prompt NOW"): check them first (section 9).**
+(8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed and green (Build #177, Release #128); 3.3.8 (8zze:
+the rubber ripples twice as high, every Gear 5 fall ripples) is pushed: check its runs (section 9); 3.3.9 the Dawn Pistol (8zze).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2258,14 +2259,50 @@ Built (nothing tested in game: build EXIT 0, 13 suites, every effect rendered an
   model, itoStrings: the busiest moment one user can make under 16,000 quads coated and bare; the Awakening is one key, Break White bare
   or God Thread coated, never both; the cage closing 40 to 10; a string ends in a point). Panel (UiPreview hud-10). Release notes 3.3.7.
 
+## 8zze. This session (3.3.8, 3.3.9): the owner's answers, the rubber ripples, the Dawn Pistol accepted
+
+3.3.7's Build #177 and Release #128 were green (and the handoff's Build #178). This session started on Default: switch_environment to
+HexPiece (env_01DEzkwiWiBUXF6hnQ29v2S5 now) for Freesound. Asked (AskUserQuestion), the owner answered:
+- Horo (3.3.6): **"Not tested yet"**. Ito (3.3.7): **"Not tested yet"**. Ask again next time.
+- 3.3.2 / 3.3.3 (the jump, Rubber World), verbatim: **"Rippes from world of rubber should be higher like lift more, falling from Bajarang
+  gun doesnt make the body ripple when the player falls (every fall should make the floor ripple)."** Asked which and how much: **"Both"**
+  (Rubber World's waves and the jump/landing ripples) and **"About 2x"**.
+- Dawn Pistol: **"Build as proposed"** (the proposal, as asked: a quick cartoon wind-up in third person (arm yanked far back, body
+  twisting, the whole body thrown into the punch; first person left alone), the stretched arm ending in a big ballooned rubber fist like
+  the Bajrang Gun's (smaller) coated black by Haki, a cartoon "POW" burst on hit (a bold star-shaped flash and shock ring), the struck
+  body bent like rubber as Star Gun does and knocked far back, the Conqueror's lightning out of the impact with the Conqueror's Haki and
+  Ryou on, and a new CC0 punch sound from the web (the original's unused gear5_dawn_pistol.ogg hums at 59 Hz: +10 dB over noise)).
+
+**3.3.8 as built** (nothing tested in game: build, 13 suites, rendered: docs/gifs/nika-rubber-world-3.3.8.gif, nika-landing-3.3.8.gif):
+- gear/RubberWave: RING_AMP {3.0, 1.2, 2.2}, WAVE_LOW 0.7, WAVE_HIGH 3.8, MOST 4.0 (widths and speeds as 3.3.3). `underTall(h)` =
+  max(1, h - 0.75): client/gear/RubberWorldDraw draws the block under a risen column stretched (PoseStack scale y) down a quarter into the
+  real ground, so a 4-block swell has no gap and still costs 2 blocks a column (MOST_DRAWN 520 kept); `tilt(slope)` = atan(slope) x 0.6
+  capped at TILT_MOST 0.61 (3.3.3's steepest: twice as high is twice as steep). tools/preview/NikaShots draws the same columns.
+- gear/RubberJump: SPRING 1.1, HOP_AMP {1.4, 0.7}, LAND_AMP {1.6, 0.8} (a landing's visible peak 0.94, was 0.47); `FALL_MIN` 2.0.
+- Every fall ripples: server/NikaJump.falls (PlayerTickEvent END; returns at once on the ground with nothing tracked): FALLS keeps each
+  airborne Gear 5 player's highest feet (flying, riding, water, death forget it; respawn and dimension change too); landing FALL_MIN or
+  more under it sends LAND to everyone near, unless one of their jumps is landing (it ripples once on its own). The original zeroes the
+  fall distance in the Bajrang Gun and its bounding walk, so the height is tracked, not fallDistance. client/gear/NikaJumpClient does the
+  same for one's own landing at once (the server's LAND skips the user). The original's bounding run lands from its big bounds: each
+  ripples now (the owner: "every fall").
+- HudTests: ripples about twice 3.3.2's, Rubber World's waves twice 3.3.3's, FALL_MIN between 1.5 and 2.5.
+
+**3.3.9 (Dawn Pistol), found for the build:** the original's `GearServerController.pistol` (javap): PISTOL unlocked, M1 cooldown 20,
+`HakiServerController.animate(player, "gear5_pistol", 2)`, `dawn` -> no GEAR5_PISTOL sound, "§6Dawn Pistol" on the action bar and
+SoundEvents.f_11874_ (0.9, 0.75); `throwLimb(player, limb (alternating), StretchStyle.PISTOL (windup 6, extend 4, hold 3, retract 7),
+reach x 1.15, width 1.25, damage x dawnPower, knock 1.25 (0.85 bare), 5)`; the hit is `lambda$throwLimb$11` (nearestOnSegment, `hit`,
+fx IMPACT at the body, a sound) after impactTick. `sendStretch` sends S2CGearStretch with dawn; the client's
+`RubberLimbLayer.draw(..., Stretch, dawn, ...)` emits the arm through GearOutfitLayer.emitWithCuff (skin), RubberLimbMesh.emit (sleeve)
+and, with dawn, RubberLimbMesh.emit again with DAWN_FIRE (textures/effect/gear5_aura.png); `renderFirstPerson` is first person (leave
+it). client/gear/NikaFist shows how the Bajrang fist replaced the hand cube (HIDE, NikaArt.fist through Bulk).
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.3.6 is pushed and green (Build #175, Release #127); 3.3.7 (8zzd, the Ito Ito no Mi) is pushed (commit d6581a7) and its Build #177
-   and Release #128 were in progress when the owner said "Stop handoff + prompt NOW" (the local build was EXIT 0, 13 suites): check
-   both are green before anything else, and fix anything red. The session pushed to both `ccr-cacd1493-6rdwwy` (the session's branch)
-   and `claude/nice-bell-gam7qf` (the owner's; only claude/** branches run the workflows).
-2. The owner tests at home ("Ima only test when I get home"): ask how the Horo fruit (3.3.6) and the Ito fruit (3.3.7) play, and how
-   3.3.2 and 3.3.3 feel. Strings: keep them slim, solid and pointed at both ends (8zzd).
+1. 3.3.7 is green (Build #177, Release #128). 3.3.8 (8zze: the ripples twice as high, every fall ripples) is pushed: check its Build
+   and Release runs are green. Then 3.3.9: the Dawn Pistol as the owner accepted it (8zze), rendered third person (and the fist, the
+   POW, the bent body) before pushing; first person left alone.
+2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
+   at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are
    (8zy, 8zz, 8zzb), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
    CC0 web sounds, the Conqueror's lightning out of every explosion). Its strings are thin by nature: make them read as the Light,
