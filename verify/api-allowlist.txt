@@ -168,6 +168,8 @@ C com/mojang/blaze3d/platform/InputConstants$Key                                
 M net/minecraft/world/effect/MobEffect m_19472_ (Lnet/minecraft/world/entity/ai/attributes/Attribute;Ljava/lang/String;DLnet/minecraft/world/entity/ai/attributes/AttributeModifier$Operation;)Lnet/minecraft/world/effect/MobEffect;   # [srg] addAttributeModifier: joined.tsrg bey a (Lbhb;Ljava/lang/String;DLbhe$a;)Lbey; m_19472_ (bey = MobEffect, bhb = Attribute, bhe$a = AttributeModifier.Operation, as the allowlisted MULTIPLY_BASE)
 C net/minecraft/world/effect/MobEffectCategory                                      # [srg] joined.tsrg bez (C_497_: a BENEFICIAL, b HARMFUL, c NEUTRAL: enum constants keep their names)
 F net/minecraft/world/effect/MobEffectCategory BENEFICIAL Lnet/minecraft/world/effect/MobEffectCategory;   # [srg] joined.tsrg bez a BENEFICIAL
+F net/minecraft/world/effect/MobEffectCategory HARMFUL Lnet/minecraft/world/effect/MobEffectCategory;   # [srg] joined.tsrg bez b HARMFUL (3.3.6: Gloom is a bad effect)
+F net/minecraft/world/entity/ai/attributes/AttributeModifier$Operation MULTIPLY_TOTAL Lnet/minecraft/world/entity/ai/attributes/AttributeModifier$Operation;   # [srg] enum constant kept by name: joined.tsrg bhe$a (C_555_$C_556_) c MULTIPLY_TOTAL (3.3.6: Gloom's slowness)
 M net/minecraft/world/effect/MobEffect <init> (Lnet/minecraft/world/effect/MobEffectCategory;I)V   # [srg] joined.tsrg bey <init> (Lbez;I)V 19450 (protected: a subclass's super call)
 
 # --- 2.9.0: a sound lasting as long as its move (client/LoopSound: the dragon's charge, the Light fruit's charges and sword hum) -----

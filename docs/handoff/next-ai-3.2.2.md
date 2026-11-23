@@ -2101,6 +2101,15 @@ Freesound answered 403 at the start of the session (the HexPiece environment, en
 The owner, on the ghosts, verbatim: "The ghosts are meant to be cute. I mean," (cut off). Proposed to them: rounder puffier heads, big
 round shiny eyes (the Negative Hollow's droopy but round), pink blush cheeks, a short rounded tongue, a shorter tail with a curl; the
 Toku Hollow a wide cartoon grin instead of rows of teeth and heavy brows. Waiting for the rest of their message before changing HoroArt.
+The owner, next (verbatim): "also make sure gloom is it's own custom effect, causes blindness and slowness, attacks of all kinds, haki,
+fruit , style, m1s, etc, miss often (miss the Horo Horo user and any other entity the player tries to hit." Asked (AskUserQuestion), they
+chose: **a short fall, then Gloom** (the Negative Hollow knocks down for 40 ticks, StunFall's least), **8 in 10 attacks miss**, **8
+seconds**. Built: server/Gloom (PieceEffects.GLOOM "gloom", "Gloom" in en_us, icon tools/gloom_icon.py: a dark raincloud with three blue
+gloom lines, textures/mob_effect/gloom.png): HARMFUL, its own MULTIPLY_TOTAL -0.45 movement-speed modifier (as Slowness III), Blindness
+renewed every 20 ticks for 45 (its icon hidden; m_6584_ isDurationEffectTick and m_6742_ applyEffectTick overridden: both checked in
+joined.tsrg's MobEffect, bey), and Gloom.miss (LivingAttackEvent HIGH): any attack whose source entity is a gloomed LivingEntity is
+cancelled 80 % of the time, whoever it is aimed at. HoroMoves.despair: knockDown 40 ticks then Gloom.put 160 (the old weakness and
+slowness gone); the Negative Hollow's book text says so.
 
 Left for 3.3.6:
 1. **client/horo/HoroFx** (as client/noro/NoroFx and client/supa/SupaFx): accept the kinds above; put client/horo/HoroClient (a

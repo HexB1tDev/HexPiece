@@ -103,6 +103,24 @@ public final class Tumbles {
         FALLEN.put(message.id(), new Fallen(message.dx() / length, message.dz() / length, now, message.down(), message.seed()));
     }
 
+    /**
+     * 3.3.6: how far over the body {@code id} is from a Haki stun's fall this frame (radians from upright, as {@link #fallBefore} turns
+     * it; 0 when it is not down), the way it fell into {@code way} (x, z, unit), how far it slid that way and how far it is lifted (blocks,
+     * way[2] and way[3]): client/horo/HoroFx hangs despair's cloud over a body lying down.
+     */
+    public static double lying(int id, float partial, double[] way) {
+        Fallen fallen = FALLEN.get(id);
+        if (fallen == null) {
+            return 0.0;
+        }
+        StunFall.Frame frame = StunFall.at(clock(partial) - fallen.at(), fallen.down(), fallen.seed());
+        way[0] = fallen.x();
+        way[1] = fallen.z();
+        way[2] = frame.slide();
+        way[3] = frame.flat();
+        return frame.angle();
+    }
+
     static double clock(float partial) {
         ClientLevel level = Minecraft.m_91087_().f_91073_;
         return level == null ? 0.0 : level.m_46467_() + partial;

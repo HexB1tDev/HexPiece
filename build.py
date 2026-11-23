@@ -147,6 +147,7 @@ NEW_PREFIXES = (
     "data/hexhaki/",
     "assets/hexhaki/dragon/",
     "assets/hexhaki/textures/mob_effect/transformed.png",
+    "assets/hexhaki/textures/mob_effect/gloom.png",
     "assets/hexhaki/models/item/uo_uo_no_mi.json",
     "assets/hexhaki/textures/item/uo_uo_no_mi.png",
     # 3.1.9: the Hie Hie no Mi's item (PiecePatch.uoFruit adds it to the original's fruits)

@@ -19,6 +19,8 @@ public final class PieceEffects {
     /** The modifier's fixed id (so the game finds and removes the same one). */
     static final String HEALTH_ID = "6f2b1d34-6c5e-4f1a-9a3e-7b1f0d2c7e41";
     public static final RegistryObject<MobEffect> TRANSFORMED = EFFECTS.register("transformed", Transformed::new);
+    /** 3.3.6: Gloom (server/Gloom), what a Negative Hollow leaves in whoever it passes through. */
+    public static final RegistryObject<MobEffect> GLOOM = EFFECTS.register("gloom", com.hexhaki.piece.server.Gloom::new);
 
     private PieceEffects() {
     }

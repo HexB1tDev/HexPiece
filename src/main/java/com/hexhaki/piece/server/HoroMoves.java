@@ -73,8 +73,9 @@ public final class HoroMoves {
     public static final int GHOST_FLIGHT = 45;
     public static final double GHOST_SIZE = 0.75;
     static final double GHOST_REACH = 1.1;
-    /** Despair: how long. */
-    public static final int DESPAIR_TICKS = 120;
+    /** Despair: how long the body is down (the owner chose a short fall, then Gloom: server/Gloom), and the Gloom's length. */
+    public static final int DOWN_TICKS = 40;
+    public static final int DESPAIR_TICKS = Gloom.TICKS;
     /** Mini Hollows: how many, how far they look for foes, their life, their burst. */
     static final int MINIS = 4;
     static final double MINI_RANGE = 16.0;
@@ -336,12 +337,14 @@ public final class HoroMoves {
         }
     }
 
-    /** {@code body} passed through by a Negative Hollow: down in despair, unable to fight, for {@link #DESPAIR_TICKS}. */
+    /**
+     * {@code body} passed through by a Negative Hollow: down in despair for a moment ({@link #DOWN_TICKS}), then in Gloom (server/Gloom:
+     * blind, slow, its attacks missing 8 times in 10) for {@link #DESPAIR_TICKS} (the owner's choices).
+     */
     static void despair(ServerPlayer user, LivingEntity body) {
         ServerLevel level = (ServerLevel) user.m_9236_();
-        HakiFalls.knockDown(level, body, DESPAIR_TICKS, false);
-        body.m_7292_(new MobEffectInstance(MobEffects.f_19613_, DESPAIR_TICKS, 4, false, false, false));
-        body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, DESPAIR_TICKS, 3, false, false, false));
+        HakiFalls.knockDown(level, body, DOWN_TICKS, false);
+        Gloom.put(body, DESPAIR_TICKS);
         if (body instanceof Mob mob) {
             mob.m_6710_(null);
         }

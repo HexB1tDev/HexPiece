@@ -382,15 +382,47 @@ public final class HoroArt {
         FireMesh.shell(sink, x, y - height * 0.5, z, height * 0.75, GLOOM, 0.12 * a, 0.0);
     }
 
-    /** Ghost Network's link: a faint line of white light from (ax..) to (bx..), shimmering along. */
-    public static void link(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double age, double alpha) {
-        double dx = bx - ax;
-        double dy = by - ay;
-        double dz = bz - az;
-        double l = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (l < 0.1 || alpha < 0.01) {
-            return;
-        }
-        FireMesh.ray(sink, ax, ay, az, dx / l, dy / l, dz / l, l, 0.05, 5, (age * 0.05) % 1.0, BODY, 0.35 * alpha);
+    // ------------------------------------------------------------------------------------------------------ where they go (the game's
+    // client/horo/HoroFx and the previews place them by the very same numbers)
+
+    /** How long a Mini Hollow takes to fly from the user to whom it clings (ticks). */
+    public static final double MINI_FLY = 10.0;
+
+    /**
+     * Where Mini Hollow {@code seed} clings round a body {@code width} across and {@code height} tall, {@code age} ticks old: into
+     * {@code out} its head's place from the body's feet (x, y, z) and the way it faces (out from the body: x, y, z), bobbing as it holds on.
+     */
+    public static void cling(int seed, double age, double width, double height, double[] out) {
+        double a = seed * 2.39996 + 0.25 * Math.sin(age * 0.07 + seed);
+        double r = width * 0.5 + 0.3;
+        double up = height * (0.42 + 0.4 * ((seed * 0.618034) % 1.0)) + 0.07 * Math.sin(age * 0.2 + seed * 1.3);
+        out[0] = Math.cos(a) * r;
+        out[1] = up;
+        out[2] = Math.sin(a) * r;
+        out[3] = Math.cos(a);
+        out[4] = 0.15;
+        out[5] = Math.sin(a);
+    }
+
+    /** Ghost Network: how many ghosts keep watch, how big their heads are. */
+    public static final int WATCHERS = 6;
+    public static final double WATCHER_SIZE = 0.6;
+
+    /**
+     * Where Ghost Network's watcher {@code k} floats round its user {@code age} ticks in: into {@code out} its head's place from the
+     * user's feet (x, y, z) and the way it faces (along its circle: x, y, z). They spread out from the user over the first 16 ticks and
+     * circle slowly, each at its own height and distance, bobbing.
+     */
+    public static void watch(int k, double age, double[] out) {
+        double spread = Math.min(1.0, age / 16.0);
+        spread = spread * spread * (3.0 - 2.0 * spread);
+        double a = k * 2 * Math.PI / WATCHERS + age * 0.03;
+        double r = (0.6 + 2.2 * spread) * (1.0 + 0.16 * Math.sin(age * 0.05 + k * 1.3));
+        out[0] = Math.cos(a) * r;
+        out[1] = 1.2 + 0.6 * spread + 0.3 * Math.sin(age * 0.1 + k);
+        out[2] = Math.sin(a) * r;
+        out[3] = -Math.sin(a);
+        out[4] = 0.0;
+        out[5] = Math.cos(a);
     }
 }

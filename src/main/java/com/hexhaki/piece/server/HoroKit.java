@@ -14,7 +14,8 @@ import net.minecraft.server.level.ServerPlayer;
 public final class HoroKit extends FruitKit {
     public static final FruitMove NEGATIVE = new FruitMove("Negative Hollow", "[RMB]", 0, "horo_negative",
         "Tap to send a Negative Hollow, hold to send a stream of up to five. They float through walls and bodies, and whoever they pass"
-            + " through sinks into despair: down on the ground, unable to fight, for six seconds.");
+            + " through falls down in despair for a moment, then is in Gloom for eight seconds: blind, slow, and eight in ten of their"
+            + " attacks miss.");
     public static final FruitMove MINI = new FruitMove("Mini Hollow", "[Z]", 0, "horo_mini",
         "Four little ghosts fly to the nearest foes and cling to them. Press again to burst them all (they burst by themselves after six"
             + " seconds).");
