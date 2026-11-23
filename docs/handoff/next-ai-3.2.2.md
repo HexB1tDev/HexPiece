@@ -41,7 +41,8 @@ leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Gia
 the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the owner's Gear 5 bug list) is green (Build #196,
 Release #140). 3.5.0 (8zzj: the owner's Ito list) is green (Build #197, Release #141). 3.5.1 (8zzk: the Awakening's tentacles made
 massive) is green (Build #198, Release #142). 3.5.2 (8zzl: Sky Road rebuilt to the owner's rework request: one string at a time,
-a Spider-Man swing, leaps, climbing on string steps) is pushed: check its Build and Release runs.**
+a Spider-Man swing, leaps, climbing on string steps) is green (Build #200, Release #143); 3.5.3 (8zzl: one thin string a step, the
+owner's word) is pushed: check its Build and Release runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -3098,9 +3099,15 @@ first person; render docs/handoff/ito-sky-walk-3.5.2.jpg, sent to the owner):
   round a pivot as SkyRoad.lean turns it). The preview camera e:90 sees +z to the LEFT (checked with a tentacle shot).
 - Not previewed: the real camera in motion, the remote runner's interpolation, sounds in place.
 
+**3.5.3**: the owner, on the 3.5.2 render (verbatim): "For the stairs its only 1 string not more", then "No its a normal string. Not a
+thick one". ItoArt.tread is one normal string now (3.5.2 wove three side by side; TREAD_DEPTH gone): TREAD_STRING 0.032, as thin as a taut
+Sky Road string (ItoArt.sky), across the step, giving under the foot, a tiny flash (0.12 shell) where the foot lands, gone by TREAD_LIFE.
+**Sky Road's strings, steps included, stay thin.**
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.5.2 (8zzl: Sky Road rebuilt) is pushed: check its Build and Release runs. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito), 3.5.1
+1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is pushed: check its Build and
+   Release runs. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito), 3.5.1
    (the tentacles) and 3.5.2 (Sky Road), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).

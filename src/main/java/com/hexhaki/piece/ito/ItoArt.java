@@ -1622,11 +1622,11 @@ public final class ItoArt {
     /** 3.5.2: how long a climbing step of string shows (ticks), how wide it is. */
     public static final double TREAD_LIFE = 18.0;
     public static final double TREAD_WIDTH = 1.5;
-    /** How far apart (along the way it faces) a step's three strings lie. */
-    public static final double TREAD_DEPTH = 0.2;
+    /** 3.5.3: a step's string as thin as a taut Sky Road string (ItoArt.sky: 0.022 + 0.01). */
+    public static final double TREAD_STRING = 0.032;
 
     /**
-     * 3.5.2 (the owner: "I wanna climb up like stairs when I hold Space"): a step of string under a climbing foot at (x, y, z), across the
+     * 3.5.2 (the owner: "I wanna climb up like stairs when I hold Space"): a step of string (one string) under a climbing foot at (x, y, z), across the
      * way {@code yaw} faces (degrees, the game's): shot out from the middle to both sides in 2 ticks with a flash where the foot comes down,
      * giving under the foot (a sag at 3 to 6 ticks), then fading by {@link #TREAD_LIFE}. Pointed at both ends as every string.
      */
@@ -1641,27 +1641,18 @@ public final class ItoArt {
         double out = TREAD_WIDTH * 0.5 * ease(age / 2.0);
         double sag = 0.08 * Math.sin(Math.PI * clamp((age - 2.0) / 5.0));
         double fade = 1.0 - clamp((age - 9.0) / (TREAD_LIFE - 9.0));
-        // a woven step: three strings side by side, a stride deep (the middle one under the foot, sagging most)
-        double fx = -Math.sin(r);
-        double fz = Math.cos(r);
-        for (int row = -1; row <= 1; row++) {
-            double d = row * TREAD_DEPTH;
-            double give = row == 0 ? 1.0 : 0.6;
-            begin();
-            for (int k = 0; k <= 6; k++) {
-                double t = k / 6.0 * 2.0 - 1.0;
-                point(x + cx * out * t + fx * d, y - sag * give * (1.0 - t * t), z + cz * out * t + fz * d, 1.0);
-            }
-            // the middle string glows; the two beside it are a halo and a core (cheap: a climber leaves several steps showing)
-            if (row == 0) {
-                strand(sink, 0.13, coat, fade);
-            } else {
-                thinStrand(sink, 0.1, coat, fade);
-            }
+        // 3.5.3 (the owner: "For the stairs its only 1 string not more"): one string under the foot (3.5.2 wove three)
+        begin();
+        for (int k = 0; k <= 6; k++) {
+            double t = k / 6.0 * 2.0 - 1.0;
+            point(x + cx * out * t, y - sag * (1.0 - t * t), z + cz * out * t, 1.0);
         }
+        // (the owner, next: "No its a normal string. Not a thick one"): as thin as Sky Road's other strings (ItoArt.sky's, taut), and
+        // only a tiny flash where the foot comes down
+        strand(sink, TREAD_STRING, coat, fade);
         if (age < 4.0) {
             double f = 1.0 - age / 4.0;
-            FireMesh.shell(sink, x, y, z, 0.28 + 0.2 * (1.0 - f), coat ? COAT_GLOW : GLOW, 0.5 * f, 0.0);
+            FireMesh.shell(sink, x, y, z, 0.12 + 0.06 * (1.0 - f), coat ? COAT_HALO : CORE, 0.6 * f, 0.2);
         }
     }
 

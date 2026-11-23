@@ -19,8 +19,8 @@ rope of three thick twisted plies of white string shading lilac-purple, a Haki-b
 from its foot; rooted beside a near body so it never comes up under the user) is green (Build #198, Release #142). 3.5.2 (section
 8zzl: Sky Road rebuilt at the owner's "Sky walk needs a rework ... make sky walk insanely epic": one string at a time, W/A/S/D a Spider-Man
 swing that holds its height, a tap of Space a leap to a string further away, Space held a climb on woven steps of string like stairs,
-Shift a drop, still one hand hanging; multiplayer through network/C2SItoSky and S2CUoFx 254) is pushed: check its Build and Release runs
-first and fix anything red.
+Shift a drop, still one hand hanging; multiplayer through network/C2SItoSky and S2CUoFx 254) is green (Build #200, Release #143); 3.5.3 (the owner: "For the stairs its
+only 1 string not more", "No its a normal string. Not a thick one": one thin string a step) is pushed: check its Build and Release runs first and fix anything red.
 
 Next: wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0, 3.5.1 and 3.5.2 (Ito) and their lists for the other fruits. The fist is a right fist
 on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
