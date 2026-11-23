@@ -2,6 +2,9 @@ package com.hexhaki.piece.client.ito;
 
 import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.ito.ItoArt;
+import com.hexhaki.piece.ito.SkyPhysics;
+import com.hexhaki.piece.network.C2SItoSky;
+import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2CUoFx;
 import com.hexhaki.piece.server.ItoMoves;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -14,6 +17,9 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.MovementInputUpdateEvent;
@@ -25,76 +31,52 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * 3.4.3 (the owner: "Ito Ito No mi double jump tap now has a new move: Sky Road movement ability ... It should NOT resemble ordinary
- * creative-mode flight, elytra flight, or a player simply floating through the air ... they begin running through the sky ... Directional
- * movement must be completely fluid ... Sudden acceleration should produce a brief, powerful forward slingshot ... stop dramatically in
- * midair ... Create a dedicated aerial locomotion system with proper animations, procedural string rendering, momentum-aware body
- * positioning, and smooth transitions. All movement must remain responsive and multiplayer-safe"): Doflamingo's Sora no Michi.
+ * Sky Road, Doflamingo's Sora no Michi. 3.5.2 reworked (the owner: "Sky walk needs a rework, I dont want 2 constant lines holding me up
+ * I wanna climb up like stairs when I hold Space, I wanna jump from 1 string to another further away, I want to swing like spiderman,
+ * come on man make sky walk insanely epic"; the keys they chose: W/A/S/D swing, a tap of Space leaps, Space held climbs, Shift drops;
+ * still, one hand hangs on one string; a trick as a swing lets go). Still started by a double tap of jump in the air (client/FruitKeyN).
  *
- * <p>Movement: the runner's own client moves its body (as the Light fruit's glide does, so it is smooth on screen and the server's own
- * movement check agrees): every tick, after the game has moved it, the velocity for the next is set from the keys it took from the game
- * ({@link #input}): toward where the keys point (the camera's way; looking up or down climbs or sinks as it runs; jump and sneak go
- * straight up and down), its heading turned toward it at most a few degrees a tick (sharp turns sweep in arcs), its speed easing up to
- * the run's or the sprint's; from a standstill, or breaking into a sprint, a slingshot (the strings taut: a burst forward); no key: it
- * glides to a stop and hangs, bobbing. The server keeps only what it must (server/ItoMoves.sky: the player may fly, no fall counted, the
- * end on the ground or at the time limit).
+ * <p>One string at a time, never two: hanging, one string straight up (ito_sky_hang); moving, a Spider-Man swing: one string shot ahead
+ * into the sky, the body swinging under it like a pendulum (the whole body turned along the string round the hand, ito_sky_swinging),
+ * let go as it rises ahead of the anchor with a kick and a backflip or a split leap (ito_sky_backflip, ito_sky_leap), flying free until
+ * the next string catches it; a tap of Space a leap along the look to a string caught further away; Space held, steps of string under the
+ * feet like stairs (ito_sky_climb, a step every 5 ticks); Shift, every string let go (ito_sky_drop). The numbers are ito/SkyPhysics'.
  *
- * <p>Every client, for every runner it sees: its momentum from its own movement (the speed, the heading, how fast it turns) leans the
- * body forward with the speed and banks it into turns round its hips ({@link #lean}), picks its clip (tools/ito_anims.py: ito_sky_hover,
- * ito_sky_run, ito_sky_sprint, through the original's HakiAnimations.playRemote) and draws its strings ({@link #draw}): one from each
- * hand to an anchor high in the sky ahead, let go and thrown again further ahead as it passes under it, a tiny flash where a string
- * catches and on every stride as it tightens, faint streaks behind the feet. One's own view: a slight roll into turns, the view a
- * little wider at speed; no shaking.
+ * <p>The runner's own client moves its body (as the Light fruit's glide does, so it is smooth on screen and the server's own movement
+ * check agrees) and tells the server each string it throws, lets go or steps on (network/C2SItoSky); the server passes them to everyone
+ * near (ItoMoves.SKY_STRING), so every client draws the same strings and poses every runner the same way. The server keeps only what it
+ * must (server/ItoMoves.sky: the player may fly, no fall counted, the end on the ground or at the time limit).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class SkyRoad {
-    /** Speeds (blocks a tick): running, sprinting; climbing and sinking; the slingshot's burst (times the speed). */
-    static final double RUN = 0.62;
-    static final double SPRINT = 1.15;
-    static final double CLIMB = 0.42;
-    static final double SLING = 1.5;
-    /** The most the heading turns a tick (degrees): running, sprinting. */
-    static final double TURN_RUN = 11.0;
-    static final double TURN_SPRINT = 7.0;
-    /** Below this speed a runner hangs (the hover), above this it sprints. */
-    static final double HOVER_BELOW = 0.07;
-    static final double SPRINT_ABOVE = 0.82;
-    /** How long a string takes to shoot up to its anchor, how long one let go fades, how long a flash shows. */
-    static final double THROW = 3.0;
-    static final double DROP = 5.0;
-    static final double FLASH = 4.0;
+    /** The runner's states. */
+    static final int HANG = 0;
+    static final int SWING = 1;
+    static final int FLY = 2;
+    static final int LEAP = 3;
+    static final int CLIMB = 4;
+    static final int DROP = 5;
+    /** How long a string let go fades, how many steps of string show at once, the streak's length. */
+    static final double DROP_FADE = 6.0;
+    static final int TREADS = 6;
     static final int FEET = 8;
+    /** A dropping body falls as the game's own bodies do. */
+    static final double DROP_GRAVITY = 0.08;
+    /** Where the hand on the string is over the feet (to the body's right, the arm straight up): the body turns round it on a string. */
+    static final double HAND_OUT = 0.42;
+    /** The most the body leans along its string. */
+    static final double TILT_MOST = 75.0;
+    /** A remote runner's climb lasts this long after its last step (its next string or let go comes on its own). */
+    static final int CLIMB_HOLD = 9;
 
-    /** 3.5.0 (the owner: "If the player is just, like, hanging in midair, then we just make the player, like, grabbing onto a string with
-     *  one hand"): hanging still is one hand up on one string overhead (ito_sky_hang); 3.4.3's two-string hover is no longer played. */
-    static final String HOVER = "ito_sky_hang";
-    /**
-     * 3.5.0 (the owner: "I want it to like do break dances in the fucking sky. Like I want it to like jump from rope to rope, like just
-     * without like any requirement from the player, just animation wise, like backflip to another string, just skip to another one,
-     * jump from one to the other, and like swing, just like grab a string from the sky and swing to the next line"): while it runs, every
-     * TRICK_GAP to TRICK_GAP + TRICK_SPREAD ticks a runner lets go of its strings and does a trick on its own (tools/ito_anims.tricks):
-     * a backflip, a flying split leap or a skip from string to string (no string held, both thrown again as it lands the trick), or a
-     * swing: one string caught overhead ahead, the body swinging under it like a pendulum, let go at the top. Animation only: the body
-     * moves as the keys move it. Every client picks them for itself (each runner's own random numbers).
-     */
-    static final String[] TRICKS = {"ito_sky_backflip", "ito_sky_leap", "ito_sky_skip", "ito_sky_swing"};
-    static final int[] TRICK_TICKS = {14, 12, 10, 20};
-    static final int SWING = 3;
-    static final int TRICK_GAP = 36;
-    static final int TRICK_SPREAD = 44;
-    static final String RUN_CLIP = "ito_sky_run";
-    static final String SPRINT_CLIP = "ito_sky_sprint";
-
-    static final class Anchor {
-        final Vec3 at;
-        final long born;
-        long dropped = -1;
-
-        Anchor(Vec3 at, long born) {
-            this.at = at;
-            this.born = born;
-        }
-    }
+    static final String HANG_CLIP = "ito_sky_hang";
+    static final String SWING_CLIP = "ito_sky_swinging";
+    static final String CLIMB_CLIP = "ito_sky_climb";
+    static final String DROP_CLIP = "ito_sky_drop";
+    static final String BACKFLIP_CLIP = "ito_sky_backflip";
+    static final String LEAP_CLIP = "ito_sky_leap";
+    static final int BACKFLIP_TICKS = 14;
+    static final int LEAP_TICKS = 12;
 
     /** One runner as this client sees it. */
     static final class Runner {
@@ -102,24 +84,31 @@ public final class SkyRoad {
         long until;
         boolean confirmed;
         boolean coat;
+        int mode = FLY;
         Vec3 last;
         Vec3 vel = Vec3.f_82478_;
         double heading = Double.NaN;
-        double bank;
-        double lean;
         double speed;
-        int sling;
+        double turn;
+        /** The string held (its anchor), when it was thrown, its length; the one let go and when. */
+        Vec3 rope;
+        long ropeBorn;
+        double ropeLength;
+        Vec3 old;
+        long oldDropped = -100;
         String clip;
         long clipAt;
-        /** 3.5.0: the trick playing (an index into TRICKS, or -1), until when, the next one's earliest tick, how many so far. */
-        int trick = -1;
-        long trickUntil;
-        long nextTrick = -1;
-        int tricks;
-        double phase;
-        final Anchor[] anchors = new Anchor[2];
-        final Anchor[] old = new Anchor[2];
-        final long[] flash = {-100, -100};
+        long trickUntil = -1;
+        long lastStep = -100;
+        /** The body's lean along its string (or forward and into turns), this tick and the last; the pivot's height and reach out. */
+        double pitch;
+        double roll;
+        double pitchWas;
+        double rollWas;
+        double pivotY = 0.9;
+        double pivotOut;
+        final double[] treads = new double[TREADS * 5];
+        int treadNext;
         final double[] feet = new double[FEET * 3];
         int feetCount;
     }
@@ -131,9 +120,26 @@ public final class SkyRoad {
     static float left;
     static boolean up;
     static boolean down;
-    static Vec3 own = Vec3.f_82478_;
-    static boolean wasSprint;
+    /** One's own runner: its velocity, the height its swings hold, its swing's flat way, ticks in its state, its leap's landing. */
+    static final double[] V = new double[3];
+    static double cruise;
+    static double swingX;
+    static double swingZ;
+    static int since;
+    static int stepK;
+    static int foot;
+    static double ropeTarget;
+    static final double[] LEAP_AT = new double[3];
+    /** Space: when it was last pressed, whether it was down, and the press that started it all (ignored until let go). */
+    static long jumpAt;
+    static boolean jumpWas;
+    static boolean ignoreJump;
     static double fovSpeed;
+    static final double[] H = new double[3];
+    static final double[] A = new double[3];
+    static final double[] OUT = new double[5];
+    static final double[] PUSH = new double[3];
+    static final double[] STILL = new double[3];
 
     private SkyRoad() {
     }
@@ -166,7 +172,41 @@ public final class SkyRoad {
         }
     }
 
-    /** One's own air jump sent (client/FruitKeyN): started at once (the server's word follows; unanswered, it stops in 10 ticks). */
+    /** A runner's string thrown, let go or stepped on (ItoMoves.SKY_STRING; one's own client already has its own). */
+    static void string(S2CUoFx m) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        Runner r = RUNNERS.get(m.user());
+        if (r == null || minecraft.f_91074_ != null && m.user() == minecraft.f_91074_.m_19879_()) {
+            return;
+        }
+        r.coat = m.bz() > 0.5F;
+        Vec3 at = new Vec3(m.x(), m.y(), m.z());
+        switch (m.id()) {
+            case ItoMoves.ROPE_SWING, ItoMoves.ROPE_HANG -> {
+                letGo(r);
+                r.rope = at;
+                r.ropeBorn = clock;
+                r.ropeLength = m.by();
+                r.mode = m.id() == ItoMoves.ROPE_SWING ? SWING : HANG;
+                clip(m.user(), r, r.mode == SWING ? SWING_CLIP : HANG_CLIP, 4);
+            }
+            case ItoMoves.SKY_FLY -> {
+                letGo(r);
+                trick(m.user(), r, (int) m.bx());
+            }
+            case ItoMoves.SKY_STEP -> {
+                letGo(r);
+                r.mode = CLIMB;
+                r.lastStep = clock;
+                tread(r, at.f_82479_, at.f_82480_, at.f_82481_, m.by());
+                clip(m.user(), r, CLIMB_CLIP, 3);
+            }
+            default -> {
+            }
+        }
+    }
+
+    /** One's own double tap of jump sent (client/FruitKeyN): started at once (the server's word follows; unanswered, it stops in 10 ticks). */
     public static void startLocal(LocalPlayer self) {
         if (RUNNERS.containsKey(self.m_19879_())) {
             return;
@@ -174,9 +214,18 @@ public final class SkyRoad {
         Runner r = new Runner();
         r.born = clock;
         r.until = clock + ItoMoves.SKY_MOST;
+        r.mode = FLY;
         RUNNERS.put(self.m_19879_(), r);
-        own = self.m_20184_();
-        wasSprint = false;
+        Vec3 v = self.m_20184_();
+        V[0] = v.f_82479_;
+        V[1] = Math.max(v.f_82480_, 0.0);
+        V[2] = v.f_82481_;
+        // the first string at once (a hang, or a swing if a key is held)
+        since = SkyPhysics.NEXT_LATEST;
+        cruise = self.m_20186_() + SkyPhysics.GRIP;
+        // the jump press that started it is no tap and no climb: ignored until let go
+        ignoreJump = true;
+        jumpWas = true;
     }
 
     static void end(int id) {
@@ -250,84 +299,283 @@ public final class SkyRoad {
         }
     }
 
-    /** One's own runner: the next tick's velocity from the keys (momentum, arcs, the slingshot, the hover). */
+    /** One's own runner: the state from the keys, then the next tick's velocity by ito/SkyPhysics. */
     static void drive(Minecraft minecraft, LocalPlayer self, Runner r) {
-        double yaw = Math.toRadians(self.m_146908_());
-        double pitch = Math.toRadians(self.m_146909_());
-        double fx = -Math.sin(yaw);
-        double fz = Math.cos(yaw);
-        double lx = Math.cos(yaw);
-        double lz = Math.sin(yaw);
-        double wx = fx * forward + lx * left;
-        double wz = fz * forward + lz * left;
+        int id = self.m_19879_();
+        double yawDeg = self.m_146908_();
+        double pitchDeg = self.m_146909_();
+        double yaw = Math.toRadians(yawDeg);
+        double wx = -Math.sin(yaw) * forward + Math.cos(yaw) * left;
+        double wz = Math.cos(yaw) * forward + Math.sin(yaw) * left;
         double wl = Math.sqrt(wx * wx + wz * wz);
+        boolean moving = wl > 0.01;
+        if (moving) {
+            wx /= wl;
+            wz /= wl;
+        }
         boolean sprint = minecraft.f_91066_.f_92091_.m_90857_() || self.m_20142_();
-        double top = sprint ? SPRINT : RUN;
-        double vx = own.f_82479_;
-        double vy = own.f_82480_;
-        double vz = own.f_82481_;
-        double speed = Math.sqrt(vx * vx + vz * vz);
-        if (wl > 0.01) {
-            double dx = wx / wl;
-            double dz = wz / wl;
-            double want = top * Math.min(1.0, wl);
-            if (speed < 0.12) {
-                // from a standstill: the strings snap taut and fling the body forward
-                vx = dx * want * SLING;
-                vz = dz * want * SLING;
-                r.sling = 8;
-                r.flash[0] = clock;
-                r.flash[1] = clock;
-            } else {
-                double cur = Math.atan2(vz, vx);
-                double turn = Math.atan2(dz, dx) - cur;
-                while (turn > Math.PI) {
-                    turn -= 2 * Math.PI;
-                }
-                while (turn < -Math.PI) {
-                    turn += 2 * Math.PI;
-                }
-                double most = Math.toRadians(sprint ? TURN_SPRINT : TURN_RUN);
-                cur += Math.max(-most, Math.min(most, turn));
-                double next = speed + Math.max(-0.1, Math.min(0.07, want - speed));
-                if (sprint && !wasSprint && speed > 0.2) {
-                    next = Math.max(next, top * 1.35); // breaking into a sprint: another slingshot
-                    r.sling = 6;
-                    r.flash[0] = clock;
-                    r.flash[1] = clock;
-                }
-                vx = Math.cos(cur) * next;
-                vz = Math.sin(cur) * next;
+        // Space: a tap leaps, held it climbs (the press that started Sky Road is neither)
+        if (up && !jumpWas) {
+            jumpAt = clock;
+        }
+        boolean tap = !up && jumpWas && !ignoreJump && clock - jumpAt < SkyPhysics.TAP;
+        boolean climb = up && !ignoreJump && clock - jumpAt >= SkyPhysics.TAP;
+        if (!up) {
+            ignoreJump = false;
+        }
+        jumpWas = up;
+        Vec3 pos = self.m_20182_();
+        H[0] = pos.f_82479_;
+        H[1] = pos.f_82480_ + SkyPhysics.GRIP;
+        H[2] = pos.f_82481_;
+        // what the game stopped stays stopped (a wall, a ceiling)
+        LivingEntity living = self;
+        if (living.f_19862_) {
+            V[0] *= 0.3;
+            V[2] *= 0.3;
+        }
+        if (living.f_19863_ && V[1] > 0.0) {
+            V[1] = 0.0;
+        }
+        since++;
+        if (tap) {
+            leap(id, r, yawDeg, pitchDeg);
+        } else if (climb) {
+            if (r.mode != CLIMB) {
+                letGo(r);
+                r.mode = CLIMB;
+                stepK = 0;
+                clip(id, r, CLIMB_CLIP, 3);
             }
-        } else {
-            vx *= 0.84;
-            vz *= 0.84;
+        } else if (down) {
+            if (r.mode != DROP) {
+                letGo(r);
+                r.mode = DROP;
+                clip(id, r, DROP_CLIP, 4);
+                send(ItoMoves.SKY_FLY, pos, 0.0, ItoMoves.SKY_DROP);
+            }
+        } else if (r.mode == CLIMB || r.mode == DROP) {
+            // Space or Shift let go: the swings hold this height now; the next string at once
+            cruise = H[1];
+            next(minecraft, self, r, moving, wx, wz);
         }
-        double wantY = ((up ? 1.0 : 0.0) - (down ? 1.0 : 0.0)) * CLIMB;
-        if (forward > 0.0F) {
-            wantY += -Math.sin(pitch) * forward * Math.min(top, Math.max(speed, 0.2)) * 0.6; // looking up as it runs climbs
+        switch (r.mode) {
+            case CLIMB -> {
+                SkyPhysics.step(stepK, moving ? wx : 0.0, moving ? wz : 0.0, V);
+                if (stepK == 0) {
+                    // the step the foot comes down on: where the feet will be at its end
+                    double sx = pos.f_82479_ + (moving ? wx * SkyPhysics.STEP_ALONG : 0.0);
+                    double sy = pos.f_82480_ + SkyPhysics.STEP_RISE - 0.02;
+                    double sz = pos.f_82481_ + (moving ? wz * SkyPhysics.STEP_ALONG : 0.0);
+                    tread(r, sx, sy, sz, yawDeg);
+                    r.lastStep = clock;
+                    send(ItoMoves.SKY_STEP, new Vec3(sx, sy, sz), yawDeg, foot);
+                    foot ^= 1;
+                }
+                stepK = (stepK + 1) % SkyPhysics.STEP_TICKS;
+            }
+            case DROP -> SkyPhysics.fly(V, DROP_GRAVITY);
+            case LEAP -> {
+                if (since > 0) {
+                    SkyPhysics.fly(V, SkyPhysics.FLY_GRAVITY);
+                }
+                if (since == SkyPhysics.LEAP_TICKS - (int) SkyPhysics.THROW) {
+                    // the string to land on, thrown up over the landing so it holds as the body gets there
+                    Vec3 hand = new Vec3(LEAP_AT[0], LEAP_AT[1], LEAP_AT[2]);
+                    Vec3 at = clipped(self, hand, hand.m_82520_(V[0] * 3.0, SkyPhysics.HANG_RISE, V[2] * 3.0));
+                    throwString(id, r, at, Math.max(SkyPhysics.SHORTEST, at.m_82554_(hand)), moving);
+                    if (moving) {
+                        swingX = wx;
+                        swingZ = wz;
+                    }
+                }
+            }
+            case FLY -> {
+                SkyPhysics.fly(V, SkyPhysics.FLY_GRAVITY);
+                if (since >= SkyPhysics.NEXT_LATEST || since >= SkyPhysics.NEXT_SOONEST && V[1] < 0.05) {
+                    next(minecraft, self, r, moving, wx, wz);
+                }
+            }
+            default -> {
+                boolean held = r.rope != null && clock - r.ropeBorn >= SkyPhysics.THROW;
+                if (r.mode == HANG && moving && held) {
+                    next(minecraft, self, r, true, wx, wz);
+                    held = false;
+                }
+                if (!held) {
+                    SkyPhysics.fly(V, SkyPhysics.FLY_GRAVITY);
+                } else {
+                    A[0] = r.rope.f_82479_;
+                    A[1] = r.rope.f_82480_;
+                    A[2] = r.rope.f_82481_;
+                    if (r.mode == SWING && moving) {
+                        double pump = sprint ? SkyPhysics.PUMP_SPRINT : SkyPhysics.PUMP;
+                        PUSH[0] = wx * pump;
+                        PUSH[1] = 0.0;
+                        PUSH[2] = wz * pump;
+                        r.ropeLength = SkyPhysics.reel(r.ropeLength, ropeTarget);
+                        SkyPhysics.swing(H, V, A, r.ropeLength, PUSH, SkyPhysics.SWING_DRAG);
+                        // looking up or down as it swings raises or lowers the height the swings hold, a little
+                        cruise += Math.max(-1.0, Math.min(1.0, -Math.sin(Math.toRadians(pitchDeg)))) * 0.03;
+                        if (SkyPhysics.letGo(H, A, V, swingX, swingZ)) {
+                            release(id, r, pos);
+                        }
+                    } else {
+                        // no key: the swing dies away and it hangs under its string, bobbing
+                        if (r.mode == SWING) {
+                            r.mode = HANG;
+                            clip(id, r, HANG_CLIP, 6);
+                        }
+                        SkyPhysics.swing(H, V, A, r.ropeLength, STILL, SkyPhysics.HANG_DRAG);
+                        V[1] += 0.006 * Math.sin(clock * 0.12);
+                    }
+                }
+            }
         }
-        vy += (wantY - vy) * 0.25;
-        if (wantY == 0.0 && wl < 0.01) {
-            vy = vy * 0.8 + 0.012 * Math.sin(clock * 0.12); // hanging: a gentle bob on the strings
+        if (self.m_20096_() && r.mode != CLIMB) {
+            V[1] = Math.min(V[1], 0.0) - 0.08; // on the ground: it settles (and the server ends the run)
         }
-        if (self.m_20096_() && !up) {
-            vy = Math.min(vy, 0.0) - 0.08; // on the ground: it settles (and the server ends the run)
-        }
-        if (r.sling > 0) {
-            r.sling--;
-        }
-        self.m_20334_(vx, vy, vz);
+        self.m_20334_(V[0], V[1], V[2]);
         self.f_19789_ = 0.0F;
         if (!self.m_7500_() && self.m_150110_().f_35935_) {
             self.m_150110_().f_35935_ = false; // never the game's own flight (a double tap of jump while the strings hold it)
         }
-        own = new Vec3(vx, vy, vz);
-        wasSprint = sprint;
-        fovSpeed += (Math.min(1.0, Math.sqrt(vx * vx + vz * vz) / SPRINT) - fovSpeed) * 0.15;
+        fovSpeed += (Math.min(1.0, Math.sqrt(V[0] * V[0] + V[2] * V[2]) / 1.2) - fovSpeed) * 0.15;
     }
 
-    /** Every runner: its momentum from its movement, its lean and bank, its clip, its strings' anchors, its feet's streak. */
+    /** The next string: a swing's ahead along the keys' way (or the drift) when a key is held, else a hang's straight up. */
+    static void next(Minecraft minecraft, LocalPlayer self, Runner r, boolean moving, double wx, double wz) {
+        int id = self.m_19879_();
+        Vec3 hand = new Vec3(H[0], H[1], H[2]);
+        double speed = Math.sqrt(V[0] * V[0] + V[2] * V[2]);
+        if (moving) {
+            // the ground under the hand and under where the swing bottoms out (ahead, under the anchor): the higher (a hill ahead)
+            double r01 = FireMesh.rand(id + (int) clock, 3);
+            SkyPhysics.anchor(H, wx, wz, speed, r01, cruise, Double.NaN, OUT);
+            double ground = ground(self, hand);
+            double ahead = ground(self, new Vec3(OUT[0], H[1] + 2.0, OUT[2]));
+            if (Double.isNaN(ground) || !Double.isNaN(ahead) && ahead > ground) {
+                ground = ahead;
+            }
+            SkyPhysics.anchor(H, wx, wz, speed, r01, cruise, ground, OUT);
+            Vec3 want = new Vec3(OUT[0], OUT[1], OUT[2]);
+            Vec3 at = clipped(self, hand, want);
+            double length = at == want ? OUT[4] : Math.max(SkyPhysics.SHORTEST, at.m_82554_(hand));
+            swingX = wx;
+            swingZ = wz;
+            throwString(id, r, at, length, true);
+            if (at == want) {
+                ropeTarget = OUT[3];
+            }
+        } else {
+            SkyPhysics.hangAnchor(H, V[0], V[2], OUT);
+            Vec3 want = new Vec3(OUT[0], OUT[1], OUT[2]);
+            Vec3 at = clipped(self, hand, want);
+            throwString(id, r, at, at == want ? OUT[3] : Math.max(SkyPhysics.SHORTEST, at.m_82554_(hand)), false);
+        }
+    }
+
+    /** One's own string thrown: held (and its length) once it gets there in THROW ticks; the server told. */
+    static void throwString(int id, Runner r, Vec3 at, double length, boolean swing) {
+        letGo(r);
+        r.rope = at;
+        r.ropeBorn = clock;
+        r.ropeLength = length;
+        ropeTarget = length;
+        r.mode = swing ? SWING : HANG;
+        since = 0;
+        clip(id, r, swing ? SWING_CLIP : HANG_CLIP, 4);
+        send(swing ? ItoMoves.ROPE_SWING : ItoMoves.ROPE_HANG, at, length, 0);
+    }
+
+    /** A swing let go: kicked on and up, flying free with a backflip or a split leap until the next string. */
+    static void release(int id, Runner r, Vec3 pos) {
+        SkyPhysics.kick(V);
+        letGo(r);
+        int trick = FireMesh.rand(id * 7 + (int) clock, 9) < 0.5 ? ItoMoves.SKY_BACKFLIP : ItoMoves.SKY_LEAP;
+        trick(id, r, trick);
+        since = 0;
+        send(ItoMoves.SKY_FLY, pos, 0.0, trick);
+    }
+
+    /** A tap of Space: every string let go, a leap along the look to a string caught further away. */
+    static void leap(int id, Runner r, double yawDeg, double pitchDeg) {
+        SkyPhysics.leap(H, yawDeg, pitchDeg, LEAP_AT, V);
+        cruise = LEAP_AT[1];
+        letGo(r);
+        trick(id, r, ItoMoves.SKY_LEAP);
+        r.mode = LEAP;
+        since = 0;
+        send(ItoMoves.SKY_FLY, new Vec3(H[0], H[1] - SkyPhysics.GRIP, H[2]), 0.0, ItoMoves.SKY_LEAP);
+    }
+
+    /** A runner's string let go (it fades where it held). */
+    static void letGo(Runner r) {
+        if (r.rope != null) {
+            r.old = r.rope;
+            r.oldDropped = clock;
+            r.rope = null;
+        }
+    }
+
+    /** No string held: let go (a backflip or a split leap), leaping (the split leap) or dropping (arms up). */
+    static void trick(int id, Runner r, int trick) {
+        if (trick == ItoMoves.SKY_DROP) {
+            r.mode = DROP;
+            clip(id, r, DROP_CLIP, 4);
+            return;
+        }
+        r.mode = FLY;
+        boolean flip = trick == ItoMoves.SKY_BACKFLIP;
+        clip(id, r, flip ? BACKFLIP_CLIP : LEAP_CLIP, 2);
+        r.trickUntil = clock + (flip ? BACKFLIP_TICKS : LEAP_TICKS);
+    }
+
+    /** A step of string under a climbing foot (x, y, z), across the way {@code yaw} faces. */
+    static void tread(Runner r, double x, double y, double z, double yaw) {
+        int o = r.treadNext * 5;
+        r.treads[o] = x;
+        r.treads[o + 1] = y;
+        r.treads[o + 2] = z;
+        r.treads[o + 3] = yaw;
+        r.treads[o + 4] = clock;
+        r.treadNext = (r.treadNext + 1) % TREADS;
+    }
+
+    /** The ground's height under the hand (NaN: none within 48 blocks). */
+    static double ground(LocalPlayer self, Vec3 hand) {
+        ClientLevel level = Minecraft.m_91087_().f_91073_;
+        if (level == null) {
+            return Double.NaN;
+        }
+        BlockHitResult hit = level.m_45547_(new ClipContext(hand, hand.m_82520_(0.0, -48.0, 0.0), ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.ANY, self));
+        return hit.m_6662_() == HitResult.Type.BLOCK ? hit.m_82450_().f_82480_ : Double.NaN;
+    }
+
+    /** Where a string thrown from the hand toward {@code want} holds: there, or on the first block in the way (a ceiling, a wall). */
+    static Vec3 clipped(LocalPlayer self, Vec3 hand, Vec3 want) {
+        ClientLevel level = Minecraft.m_91087_().f_91073_;
+        if (level == null) {
+            return want;
+        }
+        BlockHitResult hit = level.m_45547_(new ClipContext(hand, want, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, self));
+        return hit.m_6662_() == HitResult.Type.BLOCK ? hit.m_82450_() : want;
+    }
+
+    static void send(int mode, Vec3 at, double length, int extra) {
+        PieceNetwork.toServer(new C2SItoSky(mode, at.f_82479_, at.f_82480_, at.f_82481_, (float) length, extra));
+    }
+
+    static void clip(int id, Runner r, String name, int fade) {
+        if (!name.equals(r.clip)) {
+            com.hexhaki.client.anim.HakiAnimations.playRemote(id, name, fade);
+            r.clip = name;
+            r.clipAt = clock;
+        }
+    }
+
+    /** Every runner: its momentum from its movement, the clip after a trick, its lean (along its string, or with its speed), its streak. */
     static void follow(int id, Entity body, Runner r) {
         Vec3 pos = body.m_20182_();
         if (r.last != null) {
@@ -337,126 +585,66 @@ public final class SkyRoad {
         r.last = pos;
         double hs = Math.sqrt(r.vel.f_82479_ * r.vel.f_82479_ + r.vel.f_82481_ * r.vel.f_82481_);
         r.speed = hs;
-        double turn = 0.0;
+        r.turn = 0.0;
         if (hs > 0.05) {
             double heading = Math.toDegrees(Math.atan2(-r.vel.f_82479_, r.vel.f_82481_));
             if (!Double.isNaN(r.heading)) {
-                turn = wrap(heading - r.heading);
+                r.turn = wrap(heading - r.heading);
             }
             r.heading = heading;
         }
-        // momentum: banked into the turn (turning right leans right), leaned forward the faster it goes, harder in a slingshot
-        double bankTo = Math.max(-35.0, Math.min(35.0, turn * 3.0)) * Math.min(1.0, hs / 0.4);
-        r.bank += (bankTo - r.bank) * 0.18;
-        double leanTo = 5.0 + 26.0 * Math.min(1.0, hs / SPRINT) + (r.sling > 0 ? 10.0 : 0.0);
-        r.lean += (leanTo - r.lean) * 0.15;
-        // 3.5.0: a trick on its own now and then while it runs (its strings let go), the swing on one string caught overhead
-        if (r.trick >= 0 && clock >= r.trickUntil) {
-            r.trick = -1;
-            r.clip = null; // back to running: the clip and both strings come back below
-            for (int k = 0; k < 2; k++) {
-                if (r.anchors[k] != null) {
-                    r.anchors[k].dropped = clock;
-                    r.old[k] = r.anchors[k];
-                    r.anchors[k] = null;
-                }
-            }
+        // a trick over with no string yet: arms up, falling on to the next
+        if ((r.mode == FLY || r.mode == LEAP) && r.trickUntil >= 0 && clock >= r.trickUntil) {
+            r.trickUntil = -1;
+            clip(id, r, DROP_CLIP, 4);
         }
-        if (r.nextTrick < 0) {
-            r.nextTrick = clock + TRICK_GAP + (long) (TRICK_SPREAD * FireMesh.rand(id * 31, 17));
+        // another's climb ends when its steps stop (its next string, or a let go, follows)
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (r.mode == CLIMB && body != minecraft.f_91074_ && clock - r.lastStep > CLIMB_HOLD) {
+            r.mode = FLY;
+            clip(id, r, DROP_CLIP, 4);
         }
-        if (r.trick < 0 && hs >= HOVER_BELOW * 1.6 && clock >= r.nextTrick) {
-            int t = (int) Math.min(TRICKS.length - 1, FireMesh.rand(id * 13 + r.tricks, 5) * TRICKS.length);
-            r.trick = t;
-            r.tricks++;
-            r.trickUntil = clock + TRICK_TICKS[t];
-            r.nextTrick = r.trickUntil + TRICK_GAP + (long) (TRICK_SPREAD * FireMesh.rand(id * 31 + r.tricks, 17));
-            com.hexhaki.client.anim.HakiAnimations.playRemote(id, TRICKS[t], 3);
-            r.clip = TRICKS[t];
+        // the clip came off (something else played): played again
+        if (r.clip != null && clock - r.clipAt > 40 && !r.clip.equals(com.hexhaki.fruit.client.FruitAnimations.clip(body))) {
+            com.hexhaki.client.anim.HakiAnimations.playRemote(id, r.clip, 5);
             r.clipAt = clock;
-            double dir0 = Double.isNaN(r.heading) ? Math.toRadians(-body.m_146908_()) : Math.toRadians(r.heading);
-            for (int k = 0; k < 2; k++) {
-                if (r.anchors[k] != null) {
-                    r.anchors[k].dropped = clock;
-                    r.old[k] = r.anchors[k];
-                    r.anchors[k] = null;
-                }
-            }
-            if (t == SWING) {
-                // the string caught for the swing: high over the way ahead, so the body swings under it and on
-                r.anchors[0] = new Anchor(pos.m_82520_(-Math.sin(dir0) * (2.0 + hs * 10.0), 9.0, Math.cos(dir0) * (2.0 + hs * 10.0)), clock);
-                r.flash[0] = clock + (long) THROW;
-            }
         }
-        if (r.trick >= 0) {
-            feet(pos, hs, r);
-            return;
-        }
-        // its clip: hanging, running, sprinting (a little hysteresis so it never flickers between two)
-        String want;
-        if (hs < HOVER_BELOW || HOVER.equals(r.clip) && hs < HOVER_BELOW * 1.6) {
-            want = HOVER;
-        } else if (hs > SPRINT_ABOVE || SPRINT_CLIP.equals(r.clip) && hs > SPRINT_ABOVE * 0.85) {
-            want = SPRINT_CLIP;
+        // the lean: on a held string the whole body along it, turned round the hand; else forward with the speed, banked into turns
+        r.pitchWas = r.pitch;
+        r.rollWas = r.roll;
+        double yaw = Math.toRadians(body instanceof LivingEntity l ? l.f_20883_ : body.m_146908_());
+        boolean held = r.rope != null && clock - r.ropeBorn >= SkyPhysics.THROW && (r.mode == SWING || r.mode == HANG);
+        double pitchTo;
+        double rollTo;
+        if (held) {
+            Vec3 hand = pos.m_82520_(-Math.cos(yaw) * HAND_OUT, SkyPhysics.GRIP, -Math.sin(yaw) * HAND_OUT);
+            Vec3 d = r.rope.m_82546_(hand);
+            double dl = Math.max(1.0E-6, d.m_82553_());
+            double dx = (d.f_82479_ * Math.cos(yaw) + d.f_82481_ * Math.sin(yaw)) / dl;
+            double dz = (-d.f_82479_ * Math.sin(yaw) + d.f_82481_ * Math.cos(yaw)) / dl;
+            double dy = d.f_82480_ / dl;
+            pitchTo = Math.max(-TILT_MOST, Math.min(TILT_MOST, Math.toDegrees(Math.atan2(dz, Math.max(0.05, dy)))));
+            rollTo = Math.max(-TILT_MOST, Math.min(TILT_MOST, Math.toDegrees(Math.asin(Math.max(-1.0, Math.min(1.0, -dx))))));
+        } else if (r.mode == CLIMB) {
+            pitchTo = 8.0;
+            rollTo = 0.0;
+        } else if (r.mode == DROP) {
+            pitchTo = 0.0;
+            rollTo = 0.0;
         } else {
-            want = RUN_CLIP;
+            pitchTo = 4.0 + 22.0 * Math.min(1.0, hs / 1.2);
+            rollTo = Math.max(-30.0, Math.min(30.0, r.turn * 3.0)) * Math.min(1.0, hs / 0.4);
         }
-        if (!want.equals(r.clip) || clock - r.clipAt > 40 && !want.equals(com.hexhaki.fruit.client.FruitAnimations.clip(body))) {
-            com.hexhaki.client.anim.HakiAnimations.playRemote(id, want, 5);
-            r.clip = want;
-            r.clipAt = clock;
-            r.phase = 0.0;
-        }
-        // every stride the strings tighten (a flash where they hold)
-        double before = r.phase;
-        r.phase += RUN_CLIP.equals(r.clip) ? 1.0 / 16.0 : SPRINT_CLIP.equals(r.clip) ? 1.0 / 10.0 : 0.0;
-        if (Math.floor(before * 2.0) != Math.floor(r.phase * 2.0)) {
-            r.flash[(int) Math.floor(r.phase * 2.0) % 2] = clock;
-        }
-        // the strings' anchors: high above, ahead along the way it goes; passed under (or too far), let go and thrown again ahead
-        double dir = Double.isNaN(r.heading) ? Math.toRadians(-body.m_146908_()) : Math.toRadians(r.heading);
-        double hx = -Math.sin(dir);
-        double hz = Math.cos(dir);
-        boolean hanging = HOVER.equals(r.clip);
-        for (int k = 0; k < 2; k++) {
-            Anchor a = r.anchors[k];
-            if (hanging && k == 1) {
-                // 3.5.0: one hand on one string while it hangs: the left lets go
-                if (a != null) {
-                    a.dropped = clock;
-                    r.old[k] = a;
-                    r.anchors[k] = null;
-                }
-                continue;
-            }
-            boolean again;
-            if (a == null) {
-                again = true;
-            } else {
-                Vec3 to = a.at.m_82546_(pos);
-                double ahead = to.f_82479_ * hx + to.f_82481_ * hz;
-                double flat = Math.sqrt(to.f_82479_ * to.f_82479_ + to.f_82481_ * to.f_82481_);
-                again = hs >= HOVER_BELOW ? ahead < 1.5 || to.m_82553_() > 36.0 : flat > 9.0 || clock - a.born > 200;
-            }
-            if (again) {
-                if (a != null) {
-                    a.dropped = clock;
-                    r.old[k] = a;
-                }
-                double side = hanging ? -0.25 : k == 0 ? -1.0 : 1.0; // the right hand's anchor to the right of the way, the left's to the left
-                double reach = hs >= HOVER_BELOW ? 6.0 + hs * 16.0 : 0.0;
-                double rise = 14.0 + 4.0 * FireMesh.rand(id * 7 + (int) clock, k);
-                Vec3 at = pos.m_82520_(hx * reach + hz * side * 2.6, rise, hz * reach - hx * side * 2.6);
-                r.anchors[k] = new Anchor(at, clock);
-                r.flash[k] = clock + (long) THROW;
-            }
-        }
+        r.pitch += (pitchTo - r.pitch) * (held ? 0.4 : 0.18);
+        r.roll += (rollTo - r.roll) * (held ? 0.4 : 0.18);
+        r.pivotY += ((held ? SkyPhysics.GRIP : 0.9) - r.pivotY) * 0.3;
+        r.pivotOut += ((held ? HAND_OUT : 0.0) - r.pivotOut) * 0.3;
         feet(pos, hs, r);
     }
 
     /** The feet's streak, one place a tick. */
     static void feet(Vec3 pos, double hs, Runner r) {
-        if (hs > 0.15) {
+        if (hs > 0.15 && r.mode != CLIMB) {
             System.arraycopy(r.feet, 0, r.feet, 3, (FEET - 1) * 3);
             r.feet[0] = pos.f_82479_;
             r.feet[1] = pos.f_82480_ + 0.12;
@@ -480,7 +668,10 @@ public final class SkyRoad {
 
     // ------------------------------------------------------------------------------------------------------ the body
 
-    /** The body leaned forward with its speed and banked into its turns round its hips (the clip moves the limbs). */
+    /**
+     * The body turned along its string round the hand that holds it (a swing's pendulum, the hang settling), or leaned forward with its
+     * speed and banked into its turns round its hips (flying, leaping, climbing); the clip moves the limbs.
+     */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void lean(RenderPlayerEvent.Pre event) {
         Runner r = RUNNERS.isEmpty() ? null : RUNNERS.get(event.getEntity().m_19879_());
@@ -490,15 +681,19 @@ public final class SkyRoad {
         LivingEntity body = event.getEntity();
         float partial = event.getPartialTick();
         float yaw = body.f_20884_ + (float) wrap(body.f_20883_ - body.f_20884_) * partial;
-        double sway = r.speed < HOVER_BELOW ? 1.5 * Math.sin((clock + partial) * 0.09) : 0.0;
+        double pitch = r.pitchWas + (r.pitch - r.pitchWas) * partial;
+        double roll = r.rollWas + (r.roll - r.rollWas) * partial;
+        double y = Math.toRadians(yaw);
+        float px = (float) (-Math.cos(y) * r.pivotOut);
+        float pz = (float) (-Math.sin(y) * r.pivotOut);
         PoseStack pose = event.getPoseStack();
         pose.m_85836_();
-        pose.m_252880_(0.0F, 0.9F, 0.0F);
+        pose.m_252880_(px, (float) r.pivotY, pz);
         pose.m_252781_(Axis.f_252436_.m_252977_(-yaw));
-        pose.m_252781_(Axis.f_252529_.m_252977_((float) r.lean));
-        pose.m_252781_(Axis.f_252403_.m_252977_((float) (r.bank + sway)));
+        pose.m_252781_(Axis.f_252529_.m_252977_((float) pitch));
+        pose.m_252781_(Axis.f_252403_.m_252977_((float) roll));
         pose.m_252781_(Axis.f_252436_.m_252977_(yaw));
-        pose.m_252880_(0.0F, -0.9F, 0.0F);
+        pose.m_252880_(-px, (float) -r.pivotY, -pz);
         LEANED.add(event.getEntity().m_19879_());
     }
 
@@ -513,51 +708,49 @@ public final class SkyRoad {
 
     // ------------------------------------------------------------------------------------------------------ one's own view
 
-    /** A slight roll into turns (never a shake). */
+    /** A slight roll as the string swings one sideways (never a shake). */
     @SubscribeEvent
     public static void roll(ViewportEvent.ComputeCameraAngles event) {
         Minecraft minecraft = Minecraft.m_91087_();
         Runner r = minecraft.f_91074_ == null || RUNNERS.isEmpty() ? null : RUNNERS.get(minecraft.f_91074_.m_19879_());
         if (r != null && minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON) {
-            event.setRoll(event.getRoll() + (float) (r.bank * 0.22));
+            event.setRoll(event.getRoll() + (float) (r.roll * 0.15));
         }
     }
 
-    /** The view a little wider the faster one runs. */
+    /** The view a little wider the faster one goes. */
     @SubscribeEvent
     public static void fov(ViewportEvent.ComputeFov event) {
         if (fovSpeed > 0.01 && event.usedConfiguredFov()) {
-            event.setFOV(event.getFOV() * (1.0 + 0.09 * fovSpeed));
+            event.setFOV(event.getFOV() * (1.0 + 0.1 * fovSpeed));
         }
     }
 
     // ------------------------------------------------------------------------------------------------------ the strings
 
-    /** Where a runner's hand is (0 the right, 1 the left), the arms spread out: at its sides, a little forward. */
-    static Vec3 hand(Minecraft minecraft, Entity body, Runner r, int k, float partial) {
-        Vec3 feet = body.m_20318_(partial);
-        double side = k == 0 ? -1.0 : 1.0;
+    /** Where a runner's hand on its string is: one's own in first person low right of the view; else the posed fist, or over the shoulder. */
+    static Vec3 hand(Minecraft minecraft, Entity body, Runner r, float partial) {
         if (body == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON) {
             Vec3 look = body.m_20252_(partial);
             Vec3 right = look.m_82537_(new Vec3(0, 1, 0));
             right = right.m_82556_() < 1.0E-6 ? new Vec3(-1, 0, 0) : right.m_82541_();
-            return body.m_20299_(partial).m_82549_(look.m_82490_(0.4)).m_82549_(right.m_82490_(-side * 0.55)).m_82520_(0.0, -0.3, 0.0);
+            return body.m_20299_(partial).m_82549_(look.m_82490_(0.4)).m_82549_(right.m_82490_(0.45)).m_82520_(0.0, -0.25, 0.0);
         }
-        if (k == 0 && (HOVER.equals(r.clip) || r.trick == SWING) && body instanceof net.minecraft.world.entity.player.Player player) {
-            // 3.5.0: the hand up on the string: where the clip holds it (the hang, the swing)
+        Vec3 feet = body.m_20318_(partial);
+        double yaw = Math.toRadians(body instanceof LivingEntity l ? l.f_20883_ : body.m_146908_());
+        boolean held = r.mode == SWING || r.mode == HANG;
+        if (held && body instanceof net.minecraft.world.entity.player.Player player && Math.abs(r.pitch) < 3.0 && Math.abs(r.roll) < 3.0) {
+            // hanging upright: the hand where the clip holds it
             Vec3 fist = com.hexhaki.piece.client.FirstPersonLight.fist(player, partial);
             if (fist != null) {
                 return fist;
             }
         }
-        double yaw = Math.toRadians(body instanceof LivingEntity l ? l.f_20883_ : body.m_146908_());
-        double rx = -Math.cos(yaw);
-        double rz = -Math.sin(yaw);
-        double out = r.speed < HOVER_BELOW ? 0.45 : 0.75;
-        return feet.m_82520_(-rx * side * out - Math.sin(yaw) * 0.1, r.speed < HOVER_BELOW ? 0.85 : 1.05, -rz * side * out + Math.cos(yaw) * 0.1);
+        // turned along the string round the hand: the hand stays at the pivot
+        return feet.m_82520_(-Math.cos(yaw) * HAND_OUT, held ? SkyPhysics.GRIP : 1.3, -Math.sin(yaw) * HAND_OUT);
     }
 
-    /** Every runner's strings, flashes and streaks (ItoFx draws them in its batch). */
+    /** Every runner's string (one at most), the one let go fading, its steps of string, its streak (ItoFx draws them in its batch). */
     static void draw(FireMesh.Sink sink, Minecraft minecraft, ClientLevel level, Vec3 cam, float partial) {
         double now = clock + partial;
         for (Map.Entry<Integer, Runner> e : RUNNERS.entrySet()) {
@@ -566,27 +759,31 @@ public final class SkyRoad {
             if (body == null || body.m_20182_().m_82554_(cam) > 160.0) {
                 continue;
             }
-            for (int k = 0; k < 2; k++) {
-                Vec3 hand = hand(minecraft, body, r, k, partial);
-                Anchor a = r.anchors[k];
-                if (a != null) {
-                    double grow = Math.min(1.0, (now - a.born) / THROW);
-                    Vec3 tip = hand.m_82549_(a.at.m_82546_(hand).m_82490_(grow));
-                    double taut = Math.max(0.0, 1.0 - (now - r.flash[k]) / FLASH);
-                    ItoArt.sky(sink, hand.f_82479_ - cam.f_82479_, hand.f_82480_ - cam.f_82480_, hand.f_82481_ - cam.f_82481_, tip.f_82479_ - cam.f_82479_,
-                        tip.f_82480_ - cam.f_82480_, tip.f_82481_ - cam.f_82481_, 0.55 + 0.35 * taut, taut, grow >= 1.0, r.coat);
-                }
-                Anchor o = r.old[k];
-                if (o != null && o.dropped >= 0 && now - o.dropped < DROP) {
-                    // let go: it slackens and fades, hanging from where it held
-                    double f = (now - o.dropped) / DROP;
-                    Vec3 low = hand.m_82549_(o.at.m_82546_(hand).m_82490_(0.35 + 0.65 * f));
-                    ItoArt.sky(sink, low.f_82479_ - cam.f_82479_, low.f_82480_ - cam.f_82480_, low.f_82481_ - cam.f_82481_, o.at.f_82479_ - cam.f_82479_,
-                        o.at.f_82480_ - cam.f_82480_, o.at.f_82481_ - cam.f_82481_, 0.45 * (1.0 - f), 0.0, false, r.coat);
+            Vec3 hand = hand(minecraft, body, r, partial);
+            if (r.rope != null) {
+                double grow = Math.min(1.0, (now - r.ropeBorn) / SkyPhysics.THROW);
+                Vec3 tip = hand.m_82549_(r.rope.m_82546_(hand).m_82490_(grow));
+                // taut as it catches (a flash where it holds), easing after
+                double taut = grow >= 1.0 ? Math.max(0.25, 1.0 - (now - r.ropeBorn - SkyPhysics.THROW) / 6.0) : 0.0;
+                ItoArt.sky(sink, hand.f_82479_ - cam.f_82479_, hand.f_82480_ - cam.f_82480_, hand.f_82481_ - cam.f_82481_, tip.f_82479_ - cam.f_82479_,
+                    tip.f_82480_ - cam.f_82480_, tip.f_82481_ - cam.f_82481_, 0.75 + 0.25 * taut, taut, grow >= 1.0, r.coat);
+            }
+            if (r.old != null && now - r.oldDropped < DROP_FADE) {
+                // let go: it slackens and fades, hanging from where it held
+                double f = (now - r.oldDropped) / DROP_FADE;
+                Vec3 low = hand.m_82549_(r.old.m_82546_(hand).m_82490_(0.35 + 0.65 * f));
+                ItoArt.sky(sink, low.f_82479_ - cam.f_82479_, low.f_82480_ - cam.f_82480_, low.f_82481_ - cam.f_82481_, r.old.f_82479_ - cam.f_82479_,
+                    r.old.f_82480_ - cam.f_82480_, r.old.f_82481_ - cam.f_82481_, 0.45 * (1.0 - f), 0.0, false, r.coat);
+            }
+            for (int k = 0; k < TREADS; k++) {
+                int o = k * 5;
+                double age = now - r.treads[o + 4];
+                if (r.treads[o + 4] > 0 && age >= 0 && age <= ItoArt.TREAD_LIFE) {
+                    ItoArt.tread(sink, r.treads[o] - cam.f_82479_, r.treads[o + 1] - cam.f_82480_, r.treads[o + 2] - cam.f_82481_, r.treads[o + 3], age, r.coat);
                 }
             }
             if (r.feetCount >= 3 && !(body == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON)) {
-                ItoArt.streak(sink, r.feet, r.feetCount, cam.f_82479_, cam.f_82480_, cam.f_82481_, Math.min(1.0, r.speed / SPRINT), r.coat);
+                ItoArt.streak(sink, r.feet, r.feetCount, cam.f_82479_, cam.f_82480_, cam.f_82481_, Math.min(1.0, r.speed / 1.2), r.coat);
             }
         }
     }

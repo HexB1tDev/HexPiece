@@ -188,6 +188,7 @@ public final class ItoFx {
             case ItoMoves.SPIKE -> add(SPIKES, new Spike(at, m.size(), clock, m.id(), coat));
             case ItoMoves.TENTACLE -> add(TENTACLES, new Tentacle(m.id(), at, m.bx() > 0.5F, clock, m.ticks()));
             case ItoMoves.SKY -> SkyRoad.accept(m); // 3.4.3: Sky Road on or off
+            case ItoMoves.SKY_STRING -> SkyRoad.string(m); // 3.5.2: a runner's string thrown, let go or stepped on
             case ItoMoves.STITCH -> put(STITCHES, m.user(), new long[] {clock, m.ticks()});
             default -> {
             }

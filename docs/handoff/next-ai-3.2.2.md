@@ -40,7 +40,8 @@ Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new D
 leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Giant's straight throw and our crash) is green (Build #192, Release #138). 3.4.8 (8zzg: /hexpiece style mastery,
 the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the owner's Gear 5 bug list) is green (Build #196,
 Release #140). 3.5.0 (8zzj: the owner's Ito list) is green (Build #197, Release #141). 3.5.1 (8zzk: the Awakening's tentacles made
-massive) is green (Build #198, Release #142).**
+massive) is green (Build #198, Release #142). 3.5.2 (8zzl: Sky Road rebuilt to the owner's rework request: one string at a time,
+a Spider-Man swing, leaps, climbing on string steps) is pushed: check its Build and Release runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -3043,10 +3044,64 @@ ages 1 to 39; render docs/handoff/ito-tentacle-3.5.1.jpg, sent to the owner):
   of the body (square to the way; the side by the body's id). DragonTests: the foot over 1.5 blocks across; the root rule.
 - Preview: ItoShots `|itentaclefp:age` (the user's own body not drawn) for a first-person camera `fp:pitch`.
 
+## 8zzl. The owner's Sky Road ("Sky walk") rework request after 3.5.1 (verbatim) and their answers
+
+"Sky walk needs a rework, I dont want 2 constant lines holding me up I wanna climb up like stairs when I hold Space, I wanna jump from 1
+string to another further away, I want to swing like spiderman, come on man make sky walk insanely epic"
+Asked (AskUserQuestion), the owner chose:
+- Controls **"W swings, tap Space leaps"**: still started by a double tap of Space in the air; hold W/A/S/D = a Spider-Man swing (ONE
+  string shot to a point in the clouds ahead, a real pendulum swing with momentum, let go at the top of the arc, fly, the next string
+  catches); tap Space = leap to a string further away where you look; hold Space = climb up like stairs (a string step under each foot);
+  Shift = drop down.
+- Standing still: **"Hang one-handed"** (3.5.0's hang kept: one hand on one string overhead).
+- Tricks: **"On swing releases"** (a backflip or split leap while flying after letting go of a swing; no more random tricks).
+
+**3.5.2 as built** (nothing tested in game: build EXIT 0 with 13 suites, the movement simulated, every pose and string rendered third and
+first person; render docs/handoff/ito-sky-walk-3.5.2.jpg, sent to the owner):
+- **ito/SkyPhysics** (pure; HudTests.skyRoad): the grip GRIP 2.0 over the feet; `swing` (gravity 0.085, a push, drag, put back on the
+  string's sphere when taut: a string pulls, never pushes), `fly` (FLY_GRAVITY 0.07, DRAG 0.995, the fall at most 1.4), `anchor` (REACH
+  5 to 12 ahead by speed, RISE 10 (+2 random) over the **cruise height**, at least ABOVE 3 over the grip; out[3] the length it reels to:
+  the swing's bottom DIP 3 under the cruise and never within CLEAR 1.3 of the ground under the hand or under the anchor (the client checks
+  both); out[4] the length it catches at, never shorter than the gap), `reel` (longer than the target it yanks in PULL 0.45 a tick, then
+  tightens REEL 0.992 to REEL_MOST 0.92: the swing gains), `letGo` (rising past LET_GO 30 degrees ahead of the anchor, past 60 whatever,
+  or a weak swing's top past 10), `kick` (x1.08, +0.1 up), `hangAnchor` (HANG_RISE 8 up, ahead along the drift), `leap` (LEAP 13 along the
+  look, up to +6 / -5 by the pitch, landing in LEAP_TICKS 14 flying free, the drag counted), `step` (STEP_TICKS 5, STEP_RISE 1.0,
+  STEP_ALONG 0.55 with a key). TOP 1.6 a tick. Why the cruise: without it every swing climbed ~8 blocks (a fast body's momentum carries
+  it up past the anchor); with it, held forward the swings hold their height within -2 / +5 (sim: 14 swings, 300 blocks in 20 s, 0.76 a
+  tick; sprinting 0.87).
+- **client/ito/SkyRoad** rewritten: states HANG, SWING, FLY (let go), LEAP, CLIMB, DROP; one string (`rope`) at a time and the one let go
+  fading (`old`). Keys (taken from the game as before): W/A/S/D swing (a new string ahead along the keys' way; with none, the swing dies
+  away into the hang under its string, HANG_DRAG 0.93); Space tapped (let go within TAP 5 ticks) leaps, held past it climbs (the press
+  that started Sky Road is ignored until let go); Shift drops (DROP_GRAVITY 0.08) and its let go catches a string. After a let go, the
+  next string at NEXT_SOONEST 9 ticks once falling, or NEXT_LATEST 18. A string takes THROW 3 ticks to get there; a ceiling or wall in
+  the way holds it (`clipped`). A leap throws its landing string 3 ticks before it lands. Clips: ito_sky_hang, ito_sky_swinging,
+  ito_sky_backflip or ito_sky_leap as a swing lets go (each client its own pick), ito_sky_leap for a leap, ito_sky_climb, ito_sky_drop
+  (after a trick with no string yet too). **The body on a held string is turned along it round the hand** (RenderPlayerEvent.Pre: pivot
+  HAND_OUT 0.42 to the right and GRIP up, pitch = atan2 of the string's way forward over up, roll from its way sideways, at most 75,
+  eased; else leaned with the speed round the hips as before). First person: the string from low right of the view; a roll of 0.15 x the
+  lean sideways; the view wider with the speed.
+- **Multiplayer**: network/C2SItoSky (message 22, PieceNetwork PROTOCOL "16"): the runner's client tells each string thrown (ROPE_SWING /
+  ROPE_HANG: the anchor and length), let go (SKY_FLY with the trick: SKY_BACKFLIP, SKY_LEAP, SKY_DROP) and step (SKY_STEP: the step,
+  the way it faces, the foot); server/ItoMoves.skyString checks it (Sky Road running, within SKY_REACH 48, at most SKY_PER_TICK 2 a tick)
+  and passes it on as S2CUoFx SKY_STRING 254 (**the last free Ito kind: 255 is the only one left**), with the fruit's own sounds (STEP on a
+  throw, SWISH on a let go, a faint STEP under a step; capped). Other clients draw the same string, steps and clips from it.
+- **ito/ItoArt.tread** (a climbing step: three strings side by side TREAD_DEPTH 0.2 apart, TREAD_WIDTH 1.5 across, shot out from the
+  middle, giving under the foot, a flash, gone by TREAD_LIFE 18; the middle one a full strand, the two beside it halo and core only:
+  cheap). DragonTests.itoStrings now models a runner as one string and the one let go, or climbing on four steps (never both).
+- **tools/ito_anims.py swing_climb_drop()**: ito_sky_swinging (24-tick loop: the right hand straight up on the string, the left reaching
+  ahead, the legs pumping), ito_sky_climb (10: a knee driven up onto each step, the other leg pushing off, the arms swinging loose),
+  ito_sky_drop (16: the arms flung up, the legs dangling); ito_sky_backflip and ito_sky_leap now start from the string's grip. All in
+  build.py FACE_CLEAR_CLIPS (they pass). ito_sky_run, ito_sky_sprint, ito_sky_hover, ito_sky_skip and ito_sky_swing are no longer played
+  (their files are still written).
+- ItoKit's Sky Road text describes the new keys. Previews: ItoShots |iarc (one swing seen whole), |iswing:angle[:tick], |iswingfp:angle
+  (camera fp:pitch), |ihang:tick, |iclimb:tick, |ileap:tick, |iflip:tick (ItoShots.posed: the skinned body posed by a clip and turned
+  round a pivot as SkyRoad.lean turns it). The preview camera e:90 sees +z to the LEFT (checked with a tentacle shot).
+- Not previewed: the real camera in motion, the remote runner's interpolation, sounds in place.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito) and 3.5.1
-   (the tentacles), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
+1. 3.5.2 (8zzl: Sky Road rebuilt) is pushed: check its Build and Release runs. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito), 3.5.1
+   (the tentacles) and 3.5.2 (Sky Road), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

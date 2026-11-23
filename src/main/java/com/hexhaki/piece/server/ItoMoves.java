@@ -105,6 +105,23 @@ public final class ItoMoves {
     public static final int STITCH = 252;
     /** 3.5.0: a spike of string shooting up out of the string ground: id its seed, x, y, z its foot, size its height, ticks its life. */
     public static final int SPIKE = 253;
+    /**
+     * 3.5.2: Sky Road's string or step (the runner's own client throws it: network/C2SItoSky): user; id ROPE_SWING or ROPE_HANG (x, y, z the
+     * anchor, by the string's length), SKY_FLY (no string held: bx the trick, SKY_LET_GO, SKY_LEAP, SKY_DROP) or SKY_STEP (x, y, z the
+     * step, by the way it faces, bx the foot). Its own client already has it.
+     */
+    public static final int SKY_STRING = 254;
+    public static final int ROPE_SWING = 1;
+    public static final int ROPE_HANG = 2;
+    public static final int SKY_FLY = 3;
+    public static final int SKY_STEP = 4;
+    public static final int SKY_LET_GO = 0;
+    public static final int SKY_LEAP = 1;
+    public static final int SKY_DROP = 2;
+    public static final int SKY_BACKFLIP = 3;
+    /** How far from the runner a string's anchor or a step may be; at most this many a runner a tick (anything past it is dropped). */
+    static final double SKY_REACH = 48.0;
+    static final int SKY_PER_TICK = 2;
 
     /** What a HIT is. */
     public static final int HIT_STRING = 0;
@@ -238,6 +255,8 @@ public final class ItoMoves {
         int skyGrounded;
         boolean skyMayfly;
         boolean skyFall;
+        long skyHeardAt;
+        int skyHeard;
         long surgeryNext;
     }
 
@@ -1397,6 +1416,39 @@ public final class ItoMoves {
             skyEnd(player, s);
         }
     }
+
+    /**
+     * 3.5.2: a runner's own client threw a string, let one go or stepped on one (network/C2SItoSky): only while its Sky Road runs, near it,
+     * at most {@link #SKY_PER_TICK} a tick; passed to everyone near (SKY_STRING), with a soft sound: a string's flick as one is thrown, a
+     * swish as a swing lets go or a leap leaves, a faint swish under a step.
+     */
+    public static void skyString(ServerPlayer player, int mode, double x, double y, double z, float length, int extra) {
+        State s = STATES.get(player.m_20148_());
+        if (s == null || s.skyUntil < 0 || mode < ROPE_SWING || mode > SKY_STEP || !Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)
+            || !Float.isFinite(length)) {
+            return;
+        }
+        long now = now(player);
+        if (s.skyHeardAt != now) {
+            s.skyHeardAt = now;
+            s.skyHeard = 0;
+        }
+        Vec3 at = new Vec3(x, y, z);
+        if (++s.skyHeard > SKY_PER_TICK || at.m_82554_(player.m_20182_()) > SKY_REACH) {
+            return;
+        }
+        fx(player, SKY_STRING, mode, at, Vec3.f_82478_, Math.max(0, Math.min(3, extra)), Math.max(-360.0F, Math.min(360.0F, length)), 0, 0);
+        Vec3 by = player.m_20182_();
+        if (mode == ROPE_SWING || mode == ROPE_HANG) {
+            sounds(player, by, STEP_SOUND, 0.7F, 1.25F, 1, 4);
+        } else if (mode == SKY_FLY && extra != SKY_DROP) {
+            sounds(player, by, ItoSounds.SWISH, 0.55F, 1.1F, 1, 6);
+        } else if (mode == SKY_STEP) {
+            sounds(player, by, STEP_SOUND, 0.3F, 1.5F, 1, 4);
+        }
+    }
+
+    static final String STEP_SOUND = ItoSounds.STEP;
 
     /** Sky Road over: the player's own flight given back as it was; the fall from here never hurts (until they land). */
     static void skyEnd(ServerPlayer player, State s) {

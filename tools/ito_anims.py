@@ -225,6 +225,10 @@ def write_trick(name, duration, beats, description, loop=False):
 def tricks():
     run = p(rightLeg=leg(-40, 0, 30), leftLeg=mirror(leg(30, 0, 60)), rightArm=arm(0, 0, 50, -12), leftArm=mirror(arm(0, 0, 50, -12)),
             body={"bend": 8})
+    # 3.5.2: the backflip and the leap play as a swing lets go of its string or a leap leaves the hang: they start from the grip (the right
+    # hand still up on the string, the left reaching ahead, the knees bent)
+    letgo = p(rightArm=UP_RIGHT, leftArm=mirror(arm(-64, 0, 28, -16)), rightLeg=leg(-24, 0, 42), leftLeg=mirror(leg(-12, 0, 30)),
+              body={"bend": 2})
     # the hang: one hand up on a string, the other arm loose and swinging, the legs dangling and pedalling slowly, the body turning a
     # little on the string and swaying
     def hang(k):
@@ -238,7 +242,7 @@ def tricks():
     # turn stepped back to 0 on the last tick (360 is 0 seen: the fade out never unwinds it)
     tuck = dict(rightLeg=leg(-112, 0, 118), leftLeg=mirror(leg(-108, 0, 122)), rightArm=arm(-46, 0, 14, -64), leftArm=mirror(arm(-46, 0, 14, -64)))
     write_trick("ito_sky_backflip", 14, [
-        (0, "linear", run),
+        (0, "linear", letgo),
         (2, "outsine", p(tuck, body={"pitch": 50, "bend": 14})),
         (5, "linear", p(tuck, body={"pitch": 190, "bend": 16})),
         (8, "linear", p(tuck, body={"pitch": 300, "bend": 10})),
@@ -253,7 +257,7 @@ def tricks():
     split = p(rightLeg=leg(-96, 0, 0), leftLeg=mirror(leg(64, 0, 6)), rightArm=arm(-20, 0, 112, -6), leftArm=mirror(arm(-20, 0, 112, -6)),
               body={"bend": -10})
     write_trick("ito_sky_leap", 12, [
-        (0, "linear", run), (3, "outback", split), (8, "linear", p(split, body={"bend": -12})),
+        (0, "linear", letgo), (3, "outback", split), (8, "linear", p(split, body={"bend": -12})),
         (12, "inoutsine", p(rightLeg=leg(-20, 0, 30), leftLeg=mirror(leg(10, 0, 20)), rightArm=UP_RIGHT, leftArm=mirror(arm(-20, 0, 40, -10)),
                             body={"bend": 4})),
     ], "Ito Ito: Sky Road: a flying split leap from one string to the next.")
@@ -282,6 +286,45 @@ def tricks():
     ], "Ito Ito: Sky Road: a string caught overhead, a swing under it like a pendulum, let go at the top to fly on.")
 
 
+# 3.5.2 (the owner: "Sky walk needs a rework, I dont want 2 constant lines holding me up I wanna climb up like stairs when I hold Space,
+# I wanna jump from 1 string to another further away, I want to swing like spiderman"): the swing on one string (client/ito/SkyRoad turns
+# the whole body along the string round the hand, so the clip keeps the body upright: the hand straight up on the string, the left hand
+# reaching ahead for the next one, the legs pumping), the climb up steps of string like stairs (a step every 5 ticks: the knee driven up
+# onto the next step, the other leg pushing off, the arms swinging loose), and the drop (Shift: arms flung up, legs dangling).
+def swing_climb_drop():
+    def swinging(k):
+        return p(rightArm=UP_RIGHT, leftArm=mirror(arm(-70 - 8 * k, 0, 26 + 4 * k, -14)),
+                 rightLeg=leg(-26 * k if k > 0 else 14, 0, 44 if k > 0 else 22), leftLeg=mirror(leg(-16 if k > 0 else 20, 0, 30 if k > 0 else 36)),
+                 body={"bend": 4 * k, "roll": 2 * k})
+    write_loop("ito_sky_swinging", 24, [(0, "inoutsine", swinging(1)), (12, "inoutsine", swinging(-1)), (24, "inoutsine", swinging(1))],
+               "Ito Ito: Sky Road: swinging on one string like a pendulum, the hand straight up on it, the other reaching for the next.")
+
+    def stepping(right):
+        up = leg(-78, 0, 92)
+        push = leg(14, 0, 8)
+        back = arm(30, 0, 18, -8)
+        front = arm(-46, 0, 20, -26)
+        k = 1 if right else -1
+        return p(rightLeg=up if right else push, leftLeg=mirror(push if right else up), rightArm=back if right else front,
+                 leftArm=mirror(front if right else back), body={"yaw": 6 * k, "bend": 10})
+
+    def planting(right):
+        down = leg(-26, 0, 30)
+        lift = leg(26, 0, 50)
+        k = 1 if right else -1
+        return p(rightLeg=down if right else lift, leftLeg=mirror(lift if right else down), rightArm=arm(14, 0, 18, -10),
+                 leftArm=mirror(arm(-14, 0, 18, -16)) if right else mirror(arm(14, 0, 18, -10)), body={"yaw": 3 * k, "bend": 12})
+    write_loop("ito_sky_climb", 10, [(0, "outsine", stepping(True)), (3, "inoutsine", planting(True)), (5, "outsine", stepping(False)),
+                                     (8, "inoutsine", planting(False)), (10, "outsine", stepping(True))],
+               "Ito Ito: Sky Road: climbing up steps of string like stairs, a knee driven up onto each step.")
+
+    def dropping(k):
+        return p(rightArm=arm(-12 - 6 * k, 0, 128 + 8 * k, -10), leftArm=mirror(arm(-12 + 6 * k, 0, 128 - 8 * k, -10)),
+                 rightLeg=leg(-10 - 6 * k, 0, 18 + 8 * k), leftLeg=mirror(leg(8 + 6 * k, 0, 8)), body={"bend": -5})
+    write_loop("ito_sky_drop", 16, [(0, "inoutsine", dropping(1)), (8, "inoutsine", dropping(-1)), (16, "inoutsine", dropping(1))],
+               "Ito Ito: Sky Road: dropping through the air, the arms flung up, the legs dangling.")
+
+
 def main():
     slash()
     goshiki()
@@ -290,6 +333,7 @@ def main():
     knight()
     sky()
     tricks()
+    swing_climb_drop()
     names = sorted(n for n in WRITTEN if n.startswith("ito_"))
     java_poses(names, "ItoPoses", "tools/ito_anims.py", "the String fruit's animations' keyframes, for the strings on the fist")
     print(f"wrote {len(names)} Ito animations and their poses")

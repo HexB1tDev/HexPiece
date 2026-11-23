@@ -500,10 +500,16 @@ public final class DragonTests {
                 for (int k = 0; k < 4; k++) {
                     com.hexhaki.piece.ito.ItoArt.hit(sink, -2 + k, -0.4, 4, 0, 0, -1, 1.0, (age + k * 2) % 10, c, k);
                 }
-                // 3.4.3: a Sky Road runner's two strings to the sky, an old one let go, its feet's streak
-                com.hexhaki.piece.ito.ItoArt.sky(sink, 1.4, -0.6, 2, 6, 16, 12, 0.8, (age % 8) / 8.0, true, c);
-                com.hexhaki.piece.ito.ItoArt.sky(sink, 0.0, -0.6, 2, -6, 15, 12, 0.8, 0.0, true, c);
-                com.hexhaki.piece.ito.ItoArt.sky(sink, 0.4, -0.6, 2, 2, 15, -6, 0.3, 0.0, false, c);
+                // 3.5.2: a Sky Road runner holds one string at a time (a swing or the hang) with the one it let go fading, or climbs on
+                // steps of string with none (one every 5 ticks, each showing 18); its feet's streak
+                if ((age / 4) % 2 == 0) {
+                    com.hexhaki.piece.ito.ItoArt.sky(sink, 1.4, -0.6, 2, 6, 16, 12, 0.8, (age % 8) / 8.0, true, c);
+                    com.hexhaki.piece.ito.ItoArt.sky(sink, 0.4, -0.6, 2, 2, 15, -6, 0.3, 0.0, false, c);
+                } else {
+                    for (int k = 0; k < 4; k++) {
+                        com.hexhaki.piece.ito.ItoArt.tread(sink, 0.5, -1.6 - k, 2 - 0.55 * k, 0.0, (age % 5) + 5 * k, c);
+                    }
+                }
                 double[] feet = {0.7, -1.5, 2, 0.7, -1.5, 1.2, 0.7, -1.5, 0.4, 0.7, -1.5, -0.4, 0.7, -1.5, -1.2, 0.7, -1.5, -2.0, 0.7, -1.5, -2.8,
                     0.7, -1.5, -3.6};
                 com.hexhaki.piece.ito.ItoArt.streak(sink, feet, 8, 0, 0, 0, 1.0, c);

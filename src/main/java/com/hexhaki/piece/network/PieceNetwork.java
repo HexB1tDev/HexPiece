@@ -21,7 +21,7 @@ public final class PieceNetwork {
      * player's alignment. 10 (2.7.0): S2CDragon (16), the Uo Uo no Mi's dragon form. 11 (2.7.1):
      * S2CDragon carries the dragon's colour. 12 (2.7.2): S2CUoFx (17), C2SDragon (18), the Uo Uo no Mi's moves. 13 (3.2.0): S2CEnergy
      * (19). 14 (3.3.2): C2SNikaJump (20), Gear 5's jump. 15 (3.4.4): C2SNikaWhip (21), Goof Ball let go. */
-    private static final String PROTOCOL = "15";
+    private static final String PROTOCOL = "16";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -59,6 +59,8 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(20, C2SNikaJump.class, C2SNikaJump::encode, C2SNikaJump::decode, C2SNikaJump::handle);
         // 3.4.4: Goof Ball's let go (client/gear/NikaKeys -> server/NikaWhip)
         CHANNEL.registerMessage(21, C2SNikaWhip.class, C2SNikaWhip::encode, C2SNikaWhip::decode, C2SNikaWhip::handle);
+        // 3.5.2: Sky Road's strings and steps (client/ito/SkyRoad -> server/ItoMoves.skyString -> everyone near)
+        CHANNEL.registerMessage(22, C2SItoSky.class, C2SItoSky::encode, C2SItoSky::decode, C2SItoSky::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

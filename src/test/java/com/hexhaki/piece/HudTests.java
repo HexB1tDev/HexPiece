@@ -852,6 +852,7 @@ public final class HudTests {
             && com.hexhaki.piece.server.ItoKit.MOVES.size() == 11, "the Ito keys as accepted");
         Check.that(com.hexhaki.piece.client.FruitKeyN.ABILITY_M == 41 && com.hexhaki.piece.client.FruitKeyN.ABILITY_SKY == 42,
             "the M key and the air step reach the kit");
+        skyRoad();
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.HORO) == com.hexhaki.piece.FruitRanks.Rank.COMMON,
             "ranks: the Horo fruit Common (the owner: \"Horo Horo No Mi (common)\")");
         // 3.3.6 (the owner: "make sure gloom is it's own custom effect ... miss often"; they chose 8 in 10 and 8 seconds)
@@ -873,5 +874,107 @@ public final class HudTests {
                 }
             }
         }
+    }
+
+    /**
+     * 3.5.2 (the owner: "Sky walk needs a rework, I dont want 2 constant lines holding me up I wanna climb up like stairs when I hold Space,
+     * I wanna jump from 1 string to another further away, I want to swing like spiderman"): held forward, swings one string at a time
+     * hold their height and carry the body far and fast (never past the game's movement check), each let go ahead of its anchor; a leap
+     * lands where it aims; a climb's step rises a step; a string never yanks the body in nor swings the feet into the ground.
+     */
+    static void skyRoad() {
+        double[] h = {0, 30, 0};
+        double[] v = {0, 0, 0};
+        double[] an = new double[5];
+        double[] a = new double[3];
+        double[] push = {0, 0, com.hexhaki.piece.ito.SkyPhysics.PUMP};
+        double cruise = 30;
+        int swings = 0;
+        double low = 1e9;
+        double high = -1e9;
+        double fastest = 0;
+        int mode = 0;
+        int since = 0;
+        double length = 0;
+        double first = 0;
+        for (int t = 0; t < 400; t++) {
+            since++;
+            if (mode == 0) {
+                com.hexhaki.piece.ito.SkyPhysics.anchor(h, 0, 1, Math.hypot(v[0], v[2]), 0.5, cruise, Double.NaN, an);
+                double gap = Math.sqrt((an[0] - h[0]) * (an[0] - h[0]) + (an[1] - h[1]) * (an[1] - h[1]) + (an[2] - h[2]) * (an[2] - h[2]));
+                Check.that(an[4] >= gap - 1.0E-9, "Sky Road: a string catches no shorter than the gap (never a snap)");
+                a[0] = an[0];
+                a[1] = an[1];
+                a[2] = an[2];
+                length = an[4];
+                first = an[3];
+                mode = 1;
+                since = 0;
+            }
+            if (mode == 1) {
+                com.hexhaki.piece.ito.SkyPhysics.fly(v, com.hexhaki.piece.ito.SkyPhysics.FLY_GRAVITY);
+                if (since >= com.hexhaki.piece.ito.SkyPhysics.THROW) {
+                    mode = 2;
+                    since = 0;
+                    swings++;
+                }
+            } else if (mode == 2) {
+                length = com.hexhaki.piece.ito.SkyPhysics.reel(length, first);
+                com.hexhaki.piece.ito.SkyPhysics.swing(h, v, a, length, push, com.hexhaki.piece.ito.SkyPhysics.SWING_DRAG);
+                if (com.hexhaki.piece.ito.SkyPhysics.letGo(h, a, v, 0, 1)) {
+                    Check.that(h[2] > a[2], "Sky Road: a swing lets go ahead of its anchor");
+                    com.hexhaki.piece.ito.SkyPhysics.kick(v);
+                    mode = 3;
+                    since = 0;
+                }
+                Check.that(since < 60, "Sky Road: every swing lets go");
+            } else {
+                com.hexhaki.piece.ito.SkyPhysics.fly(v, com.hexhaki.piece.ito.SkyPhysics.FLY_GRAVITY);
+                if (since >= com.hexhaki.piece.ito.SkyPhysics.NEXT_LATEST
+                    || since >= com.hexhaki.piece.ito.SkyPhysics.NEXT_SOONEST && v[1] < 0.05) {
+                    mode = 0;
+                }
+            }
+            h[0] += v[0];
+            h[1] += v[1];
+            h[2] += v[2];
+            low = Math.min(low, h[1]);
+            high = Math.max(high, h[1]);
+            fastest = Math.max(fastest, Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]));
+        }
+        Check.that(swings >= 10 && h[2] > 250, "Sky Road: swinging carries the body far: " + swings + " swings, " + h[2] + " blocks in 20 s");
+        Check.that(low > cruise - 5 && high < cruise + 6, "Sky Road: a swing holds its height: " + low + " to " + high);
+        Check.that(fastest <= com.hexhaki.piece.ito.SkyPhysics.TOP + 1.0E-9 && com.hexhaki.piece.ito.SkyPhysics.TOP < 3.0,
+            "Sky Road: never faster than the movement check allows");
+        // near the ground the anchor is raised so the swing's bottom keeps the feet off it
+        double[] g = {0, 3.5, 0};
+        com.hexhaki.piece.ito.SkyPhysics.anchor(g, 1, 0, 0.5, 0.0, 3.5, 0.0, an);
+        Check.that(an[1] - an[3] >= com.hexhaki.piece.ito.SkyPhysics.GRIP + com.hexhaki.piece.ito.SkyPhysics.CLEAR - 1.0E-9,
+            "Sky Road: a swing's bottom keeps the feet off the ground");
+        // low over the ground the string catches long and reels the body up to it, a little a tick
+        Check.that(an[4] > an[3] && com.hexhaki.piece.ito.SkyPhysics.reel(an[4], an[3]) == an[4] - com.hexhaki.piece.ito.SkyPhysics.PULL,
+            "Sky Road: low down the string reels the body up, never snapping it");
+        // a leap lands on the string it aims at
+        double[] from = {5, 40, -3};
+        double[] at = new double[3];
+        double[] lv = new double[3];
+        com.hexhaki.piece.ito.SkyPhysics.leap(from, 30, -15, at, lv);
+        for (int t = 0; t < com.hexhaki.piece.ito.SkyPhysics.LEAP_TICKS; t++) {
+            from[0] += lv[0];
+            from[1] += lv[1];
+            from[2] += lv[2];
+            com.hexhaki.piece.ito.SkyPhysics.fly(lv, com.hexhaki.piece.ito.SkyPhysics.FLY_GRAVITY);
+        }
+        Check.that(Math.abs(from[0] - at[0]) < 0.05 && Math.abs(from[1] - at[1]) < 0.05 && Math.abs(from[2] - at[2]) < 0.05,
+            "Sky Road: a leap lands where it aims");
+        Check.that(Math.hypot(at[0] - 5, at[2] + 3) > 10.0, "Sky Road: a leap reaches a string further away");
+        // a climbing step rises a step
+        double up = 0;
+        double[] sv = new double[3];
+        for (int k = 0; k < com.hexhaki.piece.ito.SkyPhysics.STEP_TICKS; k++) {
+            com.hexhaki.piece.ito.SkyPhysics.step(k, 0, 1, sv);
+            up += sv[1];
+        }
+        Check.that(Math.abs(up - com.hexhaki.piece.ito.SkyPhysics.STEP_RISE) < 1.0E-9, "Sky Road: a step climbs one step");
     }
 }

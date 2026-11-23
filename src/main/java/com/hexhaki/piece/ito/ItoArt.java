@@ -1619,6 +1619,52 @@ public final class ItoArt {
         }
     }
 
+    /** 3.5.2: how long a climbing step of string shows (ticks), how wide it is. */
+    public static final double TREAD_LIFE = 18.0;
+    public static final double TREAD_WIDTH = 1.5;
+    /** How far apart (along the way it faces) a step's three strings lie. */
+    public static final double TREAD_DEPTH = 0.2;
+
+    /**
+     * 3.5.2 (the owner: "I wanna climb up like stairs when I hold Space"): a step of string under a climbing foot at (x, y, z), across the
+     * way {@code yaw} faces (degrees, the game's): shot out from the middle to both sides in 2 ticks with a flash where the foot comes down,
+     * giving under the foot (a sag at 3 to 6 ticks), then fading by {@link #TREAD_LIFE}. Pointed at both ends as every string.
+     */
+    public static void tread(FireMesh.Sink sink, double x, double y, double z, double yaw, double age, boolean coat) {
+        if (age < 0 || age > TREAD_LIFE) {
+            return;
+        }
+        double r = Math.toRadians(yaw);
+        // across the way it faces: the step's string runs side to side
+        double cx = Math.cos(r);
+        double cz = Math.sin(r);
+        double out = TREAD_WIDTH * 0.5 * ease(age / 2.0);
+        double sag = 0.08 * Math.sin(Math.PI * clamp((age - 2.0) / 5.0));
+        double fade = 1.0 - clamp((age - 9.0) / (TREAD_LIFE - 9.0));
+        // a woven step: three strings side by side, a stride deep (the middle one under the foot, sagging most)
+        double fx = -Math.sin(r);
+        double fz = Math.cos(r);
+        for (int row = -1; row <= 1; row++) {
+            double d = row * TREAD_DEPTH;
+            double give = row == 0 ? 1.0 : 0.6;
+            begin();
+            for (int k = 0; k <= 6; k++) {
+                double t = k / 6.0 * 2.0 - 1.0;
+                point(x + cx * out * t + fx * d, y - sag * give * (1.0 - t * t), z + cz * out * t + fz * d, 1.0);
+            }
+            // the middle string glows; the two beside it are a halo and a core (cheap: a climber leaves several steps showing)
+            if (row == 0) {
+                strand(sink, 0.13, coat, fade);
+            } else {
+                thinStrand(sink, 0.1, coat, fade);
+            }
+        }
+        if (age < 4.0) {
+            double f = 1.0 - age / 4.0;
+            FireMesh.shell(sink, x, y, z, 0.28 + 0.2 * (1.0 - f), coat ? COAT_GLOW : GLOW, 0.5 * f, 0.0);
+        }
+    }
+
     /**
      * Sky Road's faint streak behind the feet: through the feet's last places {@code feet} (world: x, y, z each, the newest first),
      * {@code count} of them, less of it the slower ({@code speed} 0 to 1), fading toward its tail.
