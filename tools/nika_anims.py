@@ -28,7 +28,7 @@ from gura_anims import write_parts  # noqa: E402
 from style_anims import OUT as ANIM_DIR, PARTS, WRITTEN, arm, leg, mirror, p  # noqa: E402
 
 OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam", "gear5_dawn_whip",
-         "gear5_bounce"}
+         "gear5_bounce", "gear5_jump", "gear5_land"}
 
 # the transformation's beats on the real clock (the original's 170-tick clock at double speed: patch/PiecePatch.gearFast)
 LENGTH = 85
@@ -212,21 +212,35 @@ def bajrang():
 
 # ------------------------------------------------------------------------------------------------------ 3.3.2: the target look
 
-def target(fist="right", lean=14, knee=-78):
-    """Gear 5 Luffy's skip (the owner's target picture, 3.3.2): arched back laughing, one fist pumped up by the head, the other arm swung
-    down and back with its fist clenched, the opposite knee driven up in front, the other leg kicked up behind. PlayerAnimator: the body's
-    pitch positive leans back, its bend negative arches the chest out; an arm's pitch negative raises it forward, its bend the elbow; a
-    leg's pitch negative swings it forward, its bend the knee."""
-    # the fist pumped up beside the head (the owner on the first tries, the fist drawn over the face: "the arm bro, look at the arm",
-    # "how the FUCK is that a pass"): the arm raised up and out to the side, a little back, the elbow a little bent; searched so that
-    # tools/anim.face_covered finds no forearm over the head from the front or three-quarter, nor over the face from the side
-    up = arm(30, 0, 135, -30)
-    back = arm(66, 0, 30, -30)          # swung down and back, the elbow a little bent
-    front_leg = leg(knee, 0, 34)        # the knee high in front, the foot reaching forward
-    back_leg = leg(34, 0, 96)           # the thigh back, the foot kicked up behind
+def target(fist="right", lean=10, knee=-100, back=110, pump=0):
+    """Gear 5 Luffy's skip, the owner's target look. 3.3.1's and 3.3.2's first tries were wrong (the owner: "THE POSE IS STILL WRONG,
+    how are you messing this shit up", "Even a fucking stick figure is easy to make dammit", "the right arm is meant to be pointing
+    forward NOT THE SIDE"); then the owner described the picture limb by limb (docs/handoff 8zu has it verbatim):
+    - the RIGHT arm raised high, bent sharply at the elbow: the upper arm diagonally up and FORWARD from the shoulder, the forearm up,
+      the clenched fist up by the top of the head (a celebratory pump); turned 8 degrees out from straight ahead so the fist
+      stays beside the head from the front through Dawn Whip's last turn;
+    - the LEFT arm out and back from the shoulder, the elbow jutting back, the forearm hanging almost straight down, the fist at the waist;
+    - the chest pushed out, the back arched, leaning back a little;
+    - the RIGHT leg (the raised fist's side) thrown forward and up, the thigh about level (the knee above the hip), the shin angled down
+      and further forward;
+    - the LEFT leg trailing under and behind, the thigh down and back, the knee bent deep, the shin curled up behind, the sole near
+      vertical.
+    PlayerAnimator, as tools/anim draws it: an arm's pitch negative raises it forward (-90 level, -180 straight up), its bend folds the
+    forearm on forward (the forearm's angle from straight down is the upper arm's plus the bend); a leg's pitch negative swings it forward,
+    its bend the knee (the shin back). The body's pitch positive leans back, its bend negative arches the chest out. {lean}, {knee} (the
+    front thigh), {back} (the back knee) and {pump} (the fist's upper arm raised further) bob the pose in the clips. From the front the
+    raised fist is beside the head (build.py checks it there); from the side and three-quarters it is up in front of the head by design."""
+    up = arm(-135 - pump, 8, 0, -50)
+    down = arm(60, 0, 18, -60)
+    front_leg = leg(knee, 0, 60)
+    back_leg = leg(30, 0, back)
     if fist == "right":
-        return p(body={"pitch": lean, "bend": -12, "yaw": 0}, rightArm=up, leftArm=mirror(back), leftLeg=mirror(front_leg), rightLeg=back_leg)
-    return p(body={"pitch": lean, "bend": -12, "yaw": 0}, leftArm=mirror(up), rightArm=back, rightLeg=front_leg, leftLeg=mirror(back_leg))
+        return p(body={"pitch": lean, "bend": -12, "yaw": 0}, rightArm=up, leftArm=mirror(down), rightLeg=front_leg, leftLeg=mirror(back_leg))
+    return p(body={"pitch": lean, "bend": -12, "yaw": 0}, leftArm=mirror(up), rightArm=down, leftLeg=mirror(front_leg), rightLeg=back_leg)
+
+
+# the right arm coming down out of the skip: still forward, the forearm folding down (never swung across the body)
+LOWERED = arm(-40, 0, 0, -30)
 
 
 TARGET_PARTS = {"body": ("pitch", "yaw", "bend"), "rightArm": ("pitch", "yaw", "roll", "bend"), "leftArm": ("pitch", "yaw", "roll", "bend"),
@@ -249,14 +263,14 @@ def dawn_whip():
         beats.append((t, "linear", p(spin, body={"yaw": yaw, "pitch": pitch, "bend": -4})))
     # past the second turn, wobbling back, then the skip pose: a pop (outback), held a beat, released
     beats.append((14, "outsine", p(spin, body={"yaw": 742, "pitch": 4, "bend": -4})))
-    # the fist goes up by the side (out at the shoulder first), never across the face
-    beats.append((15, "inoutsine", p(target("right"), rightArm=arm(34, 0, 82, -10), body={"yaw": 722})))
+    # the right arm swings round to the front, level and a little out, then comes up into the skip
+    beats.append((15, "inoutsine", p(target("right"), rightArm=arm(-90, 20, 0, -20), body={"yaw": 722})))
     beats.append((16, "outback", p(target("right"), body={"yaw": 716})))
-    beats.append((18, "inoutsine", p(target("right", lean=10, knee=-70), body={"yaw": 720})))
-    # and comes down by the side before the clip lets go (its fade then only lowers it)
-    beats.append((19, "inoutsine", p(target("right", lean=6, knee=-40), rightArm=arm(36, 0, 62, -10), body={"yaw": 720})))
+    beats.append((18, "inoutsine", p(target("right", lean=8, knee=-94), body={"yaw": 720})))
+    # and comes down in front before the clip lets go (its fade then only lowers it)
+    beats.append((19, "inoutsine", p(target("right", lean=4, knee=-60, back=80), rightArm=LOWERED, body={"yaw": 720})))
     # 720 is 0 seen: a step there at once (the clip's fade-out never unwinds the two turns)
-    beats.append((20, "constant", p(target("right", lean=6, knee=-40), rightArm=arm(36, 0, 62, -10), body={"yaw": 0})))
+    beats.append((20, "constant", p(target("right", lean=4, knee=-60, back=80), rightArm=LOWERED, body={"yaw": 0})))
     write_clip("gear5_dawn_whip", 20, beats, "Nika: Dawn Whip: wound up, spun round twice like a top with the arms flung out, popping "
                "into Gear 5's laughing skip.", TARGET_PARTS)
 
@@ -269,14 +283,50 @@ def sky_bounce():
     crouch = p(body={"pitch": -6, "bend": 22}, rightArm=arm(44, 0, 18, -26), leftArm=mirror(arm(44, 0, 18, -26)),
                rightLeg=leg(-34, 0, 62), leftLeg=leg(-34, 0, 62))
     # flung up by the sides like a star jump (up the front they would sweep across the face)
-    launch = p(body={"pitch": 4, "bend": -8}, rightArm=arm(24, 0, 150, -8), leftArm=mirror(arm(24, 0, 150, -8)),
+    # the right arm shot up, a little out (it comes down in front into the skip: up by the side it swung across the face),
+    # the left flung up by its side
+    launch = p(body={"pitch": 4, "bend": -8}, rightArm=arm(-160, 0, -20, -8), leftArm=mirror(arm(24, 0, 150, -8)),
                rightLeg=leg(10, 0, 6), leftLeg=leg(6, 0, 10))
     beats = [(0, "linear", REST), (2, "outsine", crouch), (4, "outexpo", launch), (7, "outback", target("right")),
-             (10, "inoutsine", target("right", lean=12, knee=-70)),
-             (12, "inoutsine", p(target("right", lean=8, knee=-40), rightArm=arm(36, 0, 62, -10))),
+             (10, "inoutsine", target("right", lean=12, knee=-106, pump=6)),
+             (12, "inoutsine", p(target("right", lean=4, knee=-60, back=80), rightArm=LOWERED)),
              (14, "inoutsine", p(REST, body={"pitch": 2, "bend": 0}))]
     write_clip("gear5_bounce", 14, beats, "Nika: Sky Bounce: a squash crouch, launched straight up with the arms flung high, then "
                "Gear 5's laughing skip in the air.", TARGET_PARTS)
+
+
+def jump():
+    """3.3.2's jump (the owner: "shift + space ability is removed, default jumping is much higher and always does the jump animation
+    we're doing"; asked: Gear 5 only, about 5 blocks): every jump in Gear 5 (server/NikaJump). The body is already leaving the ground on
+    tick 0 (the client launched it), so no crouch before it: pushed off squashed, stretched straight up with both arms flung high by the
+    sides (gear5_bounce's launch), then Gear 5's laughing skip (the owner's target look) popping open, held through the air with a
+    rubbery bob (a loop from tick 5) until the landing replaces it. No arm crosses the face (tools/anim.face_covered, build.py)."""
+    push = p(body={"pitch": -4, "bend": 14}, rightArm=arm(40, 0, 22, -24), leftArm=mirror(arm(40, 0, 22, -24)),
+             rightLeg=leg(-20, 0, 34), leftLeg=leg(-20, 0, 34))
+    # the right arm shot up, a little out (it comes down in front into the skip: up by the side it swung across the face),
+    # the left flung up by its side
+    launch = p(body={"pitch": 4, "bend": -8}, rightArm=arm(-160, 0, -20, -8), leftArm=mirror(arm(24, 0, 150, -8)),
+               rightLeg=leg(10, 0, 6), leftLeg=leg(6, 0, 10))
+    skip = target("right")
+    # the bob: leaning back a little more, the front knee higher, the back shin curled further up, the fist pumped higher, then back
+    bob = target("right", lean=14, knee=-108, back=120, pump=8)
+    beats = [(0, "outsine", push), (2, "outexpo", launch), (5, "outback", skip), (9, "inoutsine", bob), (13, "inoutsine", skip)]
+    write_clip("gear5_jump", 13, beats, "Nika: Gear 5's jump: pushed off the rubber ground, stretched up with the arms flung high, then "
+               "the laughing skip held through the air.", TARGET_PARTS, loop=True, return_tick=5)
+
+
+def land():
+    """3.3.2: the landing after a Gear 5 jump (server/NikaJump plays it as the feet touch down, unless the body is bounding on: then
+    its run): squashed flat like a cartoon, the arms flung out low to the sides, knees buckled; a rubbery spring back up past standing;
+    settled by tick 8 (then Gear 5's stance)."""
+    squash = p(body={"pitch": -6, "bend": 26}, rightArm=arm(10, 0, 70, -24), leftArm=mirror(arm(10, 0, 70, -24)),
+               rightLeg=leg(-44, 0, 78), leftLeg=leg(-40, 0, 72))
+    spring = p(body={"pitch": 3, "bend": -6}, rightArm=arm(6, 0, 44, -10), leftArm=mirror(arm(6, 0, 44, -10)),
+               rightLeg=leg(-4, 0, 6), leftLeg=leg(-4, 0, 6))
+    settle = p(body={"pitch": 0, "bend": 4}, rightArm=arm(2, 0, 14, -8), leftArm=mirror(arm(2, 0, 14, -8)),
+               rightLeg=leg(-8, 0, 14), leftLeg=leg(-8, 0, 14))
+    beats = [(0, "outexpo", squash), (2, "outsine", squash), (5, "outback", spring), (8, "inoutsine", settle)]
+    write_clip("gear5_land", 8, beats, "Nika: Gear 5's landing: squashed flat with the arms flung out, springing back up.", TARGET_PARTS)
 
 
 def main():
@@ -285,6 +335,8 @@ def main():
     bajrang()
     dawn_whip()
     sky_bounce()
+    jump()
+    land()
     print("wrote the Nika fruit's animations: " + ", ".join(sorted(OWNED)))
 
 

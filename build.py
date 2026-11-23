@@ -612,20 +612,22 @@ def check_animations():
     if broken:
         raise RuntimeError(f"Animations that come apart ({len(broken)}): {broken}")
     # 3.3.1 (the owner, on a fist drawn over the face that the check above passed: "how the FUCK is that a pass"): these clips' hands
-    # are never drawn over the face, from the front, either three-quarter or either side, at any quarter tick (tools/anim.face_covered)
+    # are never drawn over the face from the front at any quarter tick (tools/anim.face_covered). 3.3.2: the front only, since the
+    # owner wants the skip's right fist raised FORWARD ("the right arm is meant to be pointing forward NOT THE SIDE"), up in front of
+    # the head from the side and three-quarters by design; from the front it stays beside the head
     with zipfile.ZipFile(OUTPUT) as jar:
         for key in FACE_CLEAR_CLIPS:
             a = anim.Anim(json.loads(jar.read(ANIMATIONS + key + ".json")))
             tick = 0.0
             while tick <= a.length() + 1e-9:
-                covered = anim.face_covered(a.pose(tick))
+                covered = anim.face_covered(a.pose(tick), views=("front",))
                 if covered:
                     raise RuntimeError(f"{key}: a hand drawn over the face at tick {tick} ({covered})")
                 tick += 0.25
 
 
 # 3.3.1: the clips whose hands must never cover the face (the owner's target look: Gear 5's laughing skip)
-FACE_CLEAR_CLIPS = ("gear5_dawn_whip", "gear5_bounce")
+FACE_CLEAR_CLIPS = ("gear5_dawn_whip", "gear5_bounce", "gear5_jump", "gear5_land")
 
 
 # 2.3.2: sword animations allowed a named problem the clearance check finds (none: every one must pass)

@@ -1657,6 +1657,8 @@ The owner during this session (verbatim, in order):
    by the crests, their movement scrambled, nausea-like confusion; the user unaffected). Not decided: Gear 5 only or any time with the
    fruit (Sky Bounce was Gear 5 only; "for the player using the fruit"): ask in one short question if unsure, or take Gear 5 only and
    say so. Then 3.3.3 and on: the rest (better Haki versions: Dawn Pistol; never touch the lightning lance; GIFs).
+   **Asked in 3.3.2's session (AskUserQuestion), the owner chose: "Gear 5 only" (untransformed the jump stays normal) and "About 5
+   blocks" for one tap of Space (holding Space keeps bouncing on every landing).** 3.3.2 is written up in 8zu.
 - Toon Force (gear/ToonForce, client/gear/NikaToon, patch/PiecePatch.toonClips: the head of HakiAnimations.playRemote(id, clip,
   priority) tells NikaToon.clip): each Gear 5 clip's beats (tick, kick: + squashes short and wide, - stretches tall and thin) kick a
   per-player spring (PULL 0.3, DAMP 0.2 a tick, within +-1.2); RenderPlayerEvent.Pre (LOWEST) scales the body round the feet (tall
@@ -1678,9 +1680,79 @@ The owner during this session (verbatim, in order):
   poses the owner circled. build.py checks FACE_CLEAR_CLIPS (gear5_dawn_whip, gear5_bounce) at every quarter tick. Mod-wide it would
   flag 183 clips (guards and charges hold arms before the face on purpose): use it for any new pose with a raised arm.
 
+## 8zu. IN PROGRESS (3.3.2, not released): the jump; the skip pose redone after the owner said it was STILL wrong
+
+Asked first (AskUserQuestion), the owner chose for the new jump: "Gear 5 only" and "About 5 blocks" (8zt item 5). Then, while the jump's
+clips were being made, the owner (verbatim, in order):
+1. "THE POSE IS STILL WRONG, how are you messing this shit up" (the same anime picture again: Gear 5 Luffy mid-skip, see 8zt item 3).
+2. "Even a fucking stick figure is easy to make dammit", with a stick figure (docs/handoff/nika-skip-stick-3.3.2.png, the owner's own
+   drawing): a box head; a level shoulder line; on one side the upper arm level and the forearm straight UP (the fist at about mid-head
+   height, beside the head); on the other side the arm hanging straight DOWN with the hand hooked in; on the raised arm's side the thigh
+   level forward and the shin straight down; the other thigh straight down and its shin straight back, level. Body upright.
+3. After the session rendered a right-angle version (front: the upper arm level out to the side, a little back, forearm up beside the
+   head; side: front thigh level, shin down, back shin kicked straight back) and began reworking Dawn Whip's way into the skip:
+   "NO NO NO NO NO NO NO NO NO FUCK, JESUS fuck off."
+4. "the  right arm is meant to be pointing forward NOT THE SIDE"
+5. A silhouette of Gear 5 Luffy skipping across a full moon, the anime picture again, and the owner's description of it, limb by limb
+   (verbatim): "suspended high in mid-air in an extremely dynamic, playful, and exaggerated jumping pose, as though joyfully skipping or
+   running through the sky. His entire body forms a loose, asymmetrical, almost S-shaped silhouette, with his chest pushed forward, his
+   back slightly arched, and his limbs spread dramatically in different directions. Head and expression: His head is tilted slightly
+   backward and turned toward the left side of the image, with his chin lifted. ... Right arm (upper-left of image): His right arm is
+   raised high above his head, bent sharply at the elbow. His upper arm extends diagonally upward from his shoulder toward the left side
+   of the image, while his forearm angles upward and toward the right, ending in a tightly clenched fist above his forehead. The raised
+   arm creates a powerful, celebratory pumping motion, resembling someone triumphantly dancing or running. Left arm (right side of
+   image): His left arm extends outward and backward from his shoulder, with the elbow projecting prominently toward the right side of
+   the image. His forearm then bends downward almost vertically, ending in a relaxed but clenched fist hanging approximately at waist
+   level. This produces an exaggerated running-arm silhouette that counterbalances his raised right fist. Torso and waist: His chest is
+   pushed outward and slightly upward, with his shoulders thrown back and his abdomen exposed. His upper body is twisted subtly toward
+   the viewer, allowing a clear view of his chest despite his head turning sideways. His spine curves naturally backward, while his hips
+   rotate slightly in the opposite direction, creating a springy, elastic sense of motion. ... Right leg (left side of image): His right
+   leg is thrown dramatically forward and upward toward the left side of the frame. His thigh rises high, nearly horizontal, while his
+   knee bends prominently. His lower leg angles downward and farther left, with his sandal-covered foot extending toward the
+   bottom-left corner. The leg forms a huge, exaggerated kicking or skipping motion, with the knee raised higher than the hips. Left leg
+   (lower-right of image): His other leg trails underneath and behind his body, with the thigh descending diagonally from the hips. His
+   knee bends deeply, and his lower leg curls backward toward the right side of the image. His foot is lifted upward behind him, with
+   the sandal hanging at an angle and the sole nearly vertical. This leg forms a loose, bouncing curve that counterbalances the
+   forward-raised leg. Overall silhouette and motion: The pose resembles a single frozen frame of an impossibly energetic cartoon dance.
+   One fist is thrust triumphantly upward, the opposite fist hangs downward, one knee is kicked high forward, and the opposite leg curls
+   backward. His limbs are asymmetrical rather than mirrored, creating the impression that he is skipping through the air rather than
+   flying or performing a conventional jump."
+   What 3.3.1 (and the first 3.3.2 tries) had wrong: the raised arm went out to the SIDE (it goes up and FORWARD), the LEFT leg was the
+   front one (it is the RIGHT, the raised fist's side), the low arm was swung down-back with the elbow soft (the elbow juts back, the
+   forearm hangs straight down to the waist), the back shin did not curl up behind.
+   Built (tools/nika_anims.target, used by gear5_dawn_whip, gear5_bounce, gear5_jump): rightArm arm(-135 - pump, 8, 0, -50) (upper arm
+   45 degrees up and forward, 8 out so the fist stays beside the head from the front even through Dawn Whip's last turn; forearm
+   straight up; the fist at the head's top: a Minecraft arm cannot reach above the head with the elbow bent), leftArm
+   mirror(arm(60, 0, 18, -60)), rightLeg leg(-100, 0, 60), leftLeg mirror(leg(30, 0, 110)), body pitch 10 (back), bend -12 (chest out).
+   Into the skip: the launch shoots the right arm up, a little out (arm(-160, 0, -20, -8): up by the side it swung across the face);
+   Dawn Whip goes through arm(-90, 20, 0, -20) at 15; out of it the arm comes down in front (LOWERED arm(-40, 0, 0, -30)). build.py's
+   face check is the front view only now (from the side and three-quarters the fist is up in front of the head, as the owner wants).
+   Rendered beside the owner's pictures (front, both three-quarters, side): shown to the owner for a yes before the jump's code.
+
+State of the working tree (committed as work in progress so nothing is lost; the jar's behaviour is 3.3.1's):
+- tools/nika_anims.py: target() as in item 5 above; gear5_dawn_whip.json, gear5_bounce.json regenerated with it.
+- New clips gear5_jump.json (loop from 5: push-off, the right arm shot up, then the skip held with a bob) and gear5_land.json (squash
+  with the arms out, spring back, settle by 8); no code plays them yet. build.py FACE_CLEAR_CLIPS lists them.
+- None of the jump's code is written. The plan (from reading the original): Sky Bounce off on the client (redirect GearMovement
+  .movementInput's GearClientState.usable(SKY_BOUNCE) to a hook answering false) and the server (mechanicsAction's and skyBounce's
+  GearData.unlocked(SKY_BOUNCE) answering false); the panel row and the Logbook entry gone; GearUpgrade BUOYANCY's text ("Extra Sky
+  Bounces per airtime ...") reworded. The jump detected on the CLIENT (LivingJumpEvent of the local player in Gear 5: not transforming,
+  not the giant, no Bajrang phase, not flying, in water or riding: vy + 0.48, about 4.9 blocks), which sends a new C2S message (the
+  server cannot tell a jump from the original's Gear 5 walk hops: tickBouncyWalk sets vy about 0.975 with hurtMarked every 3 ticks while
+  moving, and handleMovePlayer then fires LivingJumpEvent for those too). Server: no fall damage until the landing, the jump clip unless a
+  move is busy (gatling, rocketing, coilHeld, lanceHolding, giantHeld, gigante, rubberWorldHeld, bajrangPhase, the transformation), a
+  rubber ripple round the take-off and the landing (S2CUoFx 162/163, drawn by RubberWorldDraw as small short fields; the jumper's own
+  client draws its own at once), on landing the landing clip (or gear5_run when bounding) then the idle track (gear5_stance/gear5_run
+  as the original's idleTrack). HakiServerController.animate's head (beside ConquerorAura.moved) tells the jump when another clip takes
+  over; tickBouncyWalk's two animate calls go through a hook that holds the run/stance switch while the jump's clip plays. Rubber World
+  on everyone else: releaseRubberWorld's GearFields.add call gets the player (a RubberChaos registry), GearFields.bounceWithin emptied
+  (it bounced everyone, the user too), every other body in the field tossed up and outward (and randomly sideways) when a wave's crest
+  rises under it (RubberWave.rise, the clients' own waves), mobs' paths stopped and turned, players given nausea; the user untouched.
+
 ## 9. What to do next (after 3.3.1)
 
-1. Check 3.3.1's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+1. 3.3.1's runs are green. **First read 8zu: the owner was furious the skip pose was still wrong; it is redone to their limb-by-limb
+   description (8zu item 5) and was shown to them: their verdict decides whether the jump's code goes on.** The work continues on `claude/nice-bell-gam7qf` (it carries 3.3.1 and the work in progress).
 2. **The owner's insisted jump change (8zt item 5), as 3.3.2**: Shift+Space Sky Bounce removed; the fruit user's jump much higher,
    always with gear5_bounce; rubber ground under every jump (the user only); Rubber World throwing everyone else about ("confuse the
    target, displace them and overwhelm"). Render it (FxPreview |nworld, tools/clip_gif.py), make its GIF.

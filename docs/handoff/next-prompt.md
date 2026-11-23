@@ -1,10 +1,10 @@
-Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/pensive-heisenberg-mkr9cl: fetch it first, it is the newest).
+Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
 Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zt of next-ai-3.2.2.md
-(2.9.6 to 3.3.1); open the older next-ai-*.md only for a feature's detail.
+(2.9.6 to 3.3.1) and 8zu (3.3.2, in progress); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -21,16 +21,20 @@ in about 4 s with a new animation, the punch's wobble gone) is pushed and green.
 is pushed and green. 3.2.6 (8zo: the Bajrang Gun's rounded fist, swept down as the body turns head-first) is pushed and green. 3.2.7 (8zp: Dawn Whip as a
 cartoon spin) is pushed and green. 3.2.8 (8zq: Giant holds what it grabs, in the drawn fist on every client) is pushed and green. 3.2.9 (8zr: Star Gun's struck
 body as rubber) is pushed and green. 3.3.0 (8zs: Rubber World's ground rolling in rubber waves) is pushed and green. 3.3.1 (8zt: Toon
-Force, Dawn Whip and the Gear 5 jump pose redone to the owner's target look) is pushed unchecked: first check its "Build HexPiece"
-and "Release HexPiece" runs.
+Force, Dawn Whip and the Gear 5 jump pose redone to the owner's target look) is pushed and green. 3.3.2 is IN PROGRESS (8zu,
+committed as work in progress, no version bump): the owner was furious that the skip pose was still wrong and described the picture
+limb by limb (8zu item 5, verbatim); the pose is redone to that description (the right fist raised FORWARD, never to the side; the right
+knee forward) and was shown to the owner for a yes. Read 8zu first.
 
-Next: the owner's insisted jump change, as 3.3.2 (section 8zt item 5 has the words verbatim and how to read them): the Shift+Space
-Sky Bounce removed; the fruit user's normal jump much higher and always playing gear5_bounce (3.3.1's laughing skip); every jump turns
+Next: the owner's insisted jump change, as 3.3.2 (section 8zt item 5 has the words verbatim and how to read them; asked, the owner
+chose Gear 5 only and about 5 blocks; 8zu has the plan from the original's code): the Shift+Space Sky Bounce removed; the Gear 5 normal
+jump much higher and always playing gear5_jump (the laughing skip, held through the air; gear5_land at the landing); every jump turns
 the ground under the user to rubber (a small Rubber World, for the user only); and Rubber World (M) then works on everyone else, "to
 confuse the target, displace them and overwhelm". Then the rest of the Nika rework (better Haki versions: Dawn Pistol; never touch the
-lightning lance). The owner's target look for the fruit is Gear 5 Luffy's laughing skip (8zt item 3): every new pose with a raised arm
-must pass tools/anim.face_covered (no hand drawn over the face from the front, three-quarters or the side) and be looked at, never
-passed on a 3D test alone (the owner: "how the FUCK is that a pass").
+lightning lance). The owner's target look for the fruit is Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every new pose
+with a raised arm must keep the hand off the face from the front (tools/anim.face_covered) and be looked at beside the owner's
+pictures from every side, never passed on a 3D test alone (the owner: "how the FUCK is that a pass"); a raised fist the owner wants
+forward stays forward.
 
 The cloud environment is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 (freesound.org, cdn.freesound.org, opengameart.org); if
 freesound.org is refused, the session is on Default: get_environment, then switch_environment to it.
