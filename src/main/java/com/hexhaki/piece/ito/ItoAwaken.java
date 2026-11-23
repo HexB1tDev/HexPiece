@@ -45,10 +45,27 @@ public final class ItoAwaken {
     /** How far from a body (blocks) a tree trunk may be to throw the tentacle; the ground's root otherwise this far from it. */
     public static final int TREE_REACH = 6;
     public static final double GROUND_ROOT = 3.5;
+    /**
+     * 3.5.1: the tentacle is massive now (ItoArt.tentacle: a giant rope 1.6 blocks across at its foot): out of the ground toward the user
+     * only while the user is at least this far (flat) from the body; nearer, it bursts out beside the body instead, never under the user.
+     */
+    public static final double ROOT_CLEAR = 7.0;
     /** The longest the Haki Awakening stays on (a safety: M again ends it). */
     public static final int TOGGLE_MOST = 6000;
 
     private ItoAwaken() {
+    }
+
+    /**
+     * 3.5.1: where out of the ground a tentacle bursts, from the body it takes: (ux, uz) the flat way from the body to the user and
+     * {@code far} how far the user is (flat); {@code side} 1 or -1. {@link #GROUND_ROOT} toward the user while they are {@link #ROOT_CLEAR}
+     * or more away, else as far to the side (square to that way): {x, z} from the body.
+     */
+    public static double[] root(double ux, double uz, double far, int side) {
+        if (far >= ROOT_CLEAR) {
+            return new double[] {ux * GROUND_ROOT, uz * GROUND_ROOT};
+        }
+        return new double[] {-uz * side * GROUND_ROOT, ux * side * GROUND_ROOT};
     }
 
     /** A tentacle's whole life (ticks). */

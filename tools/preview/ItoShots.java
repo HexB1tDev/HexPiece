@@ -150,7 +150,8 @@ public final class ItoShots {
             }
             case "itentacle" -> {
                 // 3.5.0: |itentacle:age[:tree] a tentacle from the ground 3.5 off (or a tree's top, 5 up, 6 off) taking a body at (0, 0, 8):
-                // grown to it, lifting it 12 up, throwing it on along +z, sinking back
+                // grown to it, lifting it 12 up, throwing it on along +z, sinking back (|itentaclefp: the user's own body not drawn, for
+                // a first-person camera fp:pitch)
                 boolean tree = move.length > 2 && move[2].equals("tree");
                 double rx = tree ? 5.0 : 3.5;
                 double ry = tree ? 5.5 : 0.0;
@@ -159,7 +160,9 @@ public final class ItoShots {
                 double flung = Math.max(0, age - com.hexhaki.piece.ito.ItoAwaken.RISE - com.hexhaki.piece.ito.ItoAwaken.LIFT);
                 double by = up + (flung > 0 ? 0.7 * flung - 0.04 * flung * flung : 0);
                 double bz = 8 + 2.2 * flung;
-                HieShots.body(sink, -ex, -ey, -ez);
+                if (!fp) {
+                    HieShots.body(sink, -ex, -ey, -ez);
+                }
                 if (tree) {
                     for (int k = 0; k < 6; k++) {
                         FireMesh.tube(sink, rx - ex, k - ey, rz - ez, rx - ex, k + 1 - ey, rz - ez, 0.5, 0.5, 0x6B4A2B, 0x6B4A2B, 0x6B4A2B, 0, 1, 0, 0, 1);

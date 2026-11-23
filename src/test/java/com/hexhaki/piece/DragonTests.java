@@ -527,6 +527,26 @@ public final class DragonTests {
         com.hexhaki.piece.ito.ItoArt.line(tip, 0, 0, 5, 0, 0, 9, 0.05, false, 1.0, 1.0, 1.0, 6);
         Check.that(Math.abs(last[3] - last[6]) < 1.0E-9 && Math.abs(last[4] - last[7]) < 1.0E-9 && Math.abs(last[5] - last[8]) < 1.0E-9,
             "a string ends in a point, not a square end");
+        // 3.5.1: the tentacle is massive (a giant rope, not a lattice): its widest point well over a block across; and it never bursts
+        // out under the user: toward them only while they are far, beside a near body otherwise
+        double[] box = {Double.MAX_VALUE, -Double.MAX_VALUE};
+        com.hexhaki.piece.dragon.FireMesh.Sink foot = (xyz, argb) -> {
+            for (int v = 0; v < 4; v++) {
+                if (xyz[v * 3 + 1] > -1.6 && xyz[v * 3 + 1] < 0.0) {
+                    box[0] = Math.min(box[0], xyz[v * 3]);
+                    box[1] = Math.max(box[1], xyz[v * 3]);
+                }
+            }
+        };
+        com.hexhaki.piece.ito.ItoArt.tentacle(foot, 0, -1.6, 10, 0, 6, 14, 20, false, 0);
+        Check.that(box[1] - box[0] > 1.5, "the tentacle is massive at its foot: " + (box[1] - box[0]));
+        double[] far = com.hexhaki.piece.ito.ItoAwaken.root(1, 0, 12, 1);
+        double[] near = com.hexhaki.piece.ito.ItoAwaken.root(1, 0, 4, 1);
+        Check.that(Math.abs(far[0] - com.hexhaki.piece.ito.ItoAwaken.GROUND_ROOT) < 1.0E-9 && Math.abs(far[1]) < 1.0E-9,
+            "a far user's tentacle bursts out between them and the body");
+        Check.that(Math.hypot(near[0] - 4, near[1]) >= com.hexhaki.piece.ito.ItoAwaken.GROUND_ROOT
+            && Math.abs(Math.hypot(near[0], near[1]) - com.hexhaki.piece.ito.ItoAwaken.GROUND_ROOT) < 1.0E-9,
+            "a near body's tentacle bursts out beside it, never under the user");
     }
 
     static void supaCuts() throws Exception {

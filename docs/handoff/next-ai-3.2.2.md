@@ -15,7 +15,8 @@ owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (th
 owner's three new fruits (verbatim), 8zw their accepted keys, 8zx 3.3.3 (Rubber World's slow waves), 8zy 3.3.4 (Noro), 8zz 3.3.5 (Supa),
 8zza the owner's Rare fruit request (the Ito Ito no Mi, verbatim), 8zzb 3.3.6 (Horo: cute ghosts, the Gloom effect, the astral spirit),
 8zzc/8zzd 3.3.7 (Ito), 8zze 3.3.8 and 3.3.9 (the owner's answers, the rubber ripples, the Dawn Pistol accepted), 8zzf 3.4.0 to
-3.4.3, 8zzg 3.4.4 (Goof Ball, Dawn Whip) and the owner's Broken Bones request (3.4.5).
+3.4.3, 8zzg 3.4.4 (Goof Ball, Dawn Whip) and the owner's Broken Bones request (3.4.5), 8zzh the owner's Gear 5 list (3.4.9), 8zzi
+the owner's Ito list and 8zzj 3.5.0 as built, 8zzk 3.5.1 (the Awakening's tentacles made massive).
 
 Branch `claude/nice-bell-gam7qf` since 3.3.2 (fetch it first: it is the newest; it continues claude/pensive-heisenberg-mkr9cl). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -38,8 +39,8 @@ Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new D
 (8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136). 3.4.6 (8zzg: Goof Ball and Giant Gear 5 only, Dawn Whip's
 leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Giant's straight throw and our crash) is green (Build #192, Release #138). 3.4.8 (8zzg: /hexpiece style mastery,
 the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the owner's Gear 5 bug list) is green (Build #196,
-Release #140). 3.5.0 (8zzj: the owner's Ito list) was pushed at the owner's "Handoff and prompt asap" without a CI check: check its runs
-first; then the tentacle's look (8zzj, NOT DONE).**
+Release #140). 3.5.0 (8zzj: the owner's Ito list) is green (Build #197, Release #141). 3.5.1 (8zzk: the Awakening's tentacles made
+massive) is pushed: check its Build and Release runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2999,7 +3000,7 @@ and Release runs and fix anything red.** The last local build (before the versio
   f ()Lbgc;, intermediary method_5891); stubs added; srg-shapes regenerated (m_20674_, m_21188_, m_6095_). ItoKit's M text rewritten.
   Previews ItoShots |ifield:age, |ispike:age, |itentacle:age[:tree]. Renders: the scratchpad's awaken1.png (the string ground, spikes:
   good), awaken2.png (tentacles).
-- **NOT DONE, do first: the tentacle's look.** ItoArt.tentacle draws 7 strands twisted 2.5 turns round a quadratic spine plus a thin
+- **Done in 3.5.1 (8zzk): the tentacle's look.** (As 3.5.0 left it:) ItoArt.tentacle draws 7 strands twisted 2.5 turns round a quadratic spine plus a thin
   core and a black spear tip: in the renders it reads as a thin lattice of crossing strings, NOT the "massive tentacles" the owner asked
   for ("This should be a visual spectacle"). Rebuild its body as a thick banded tube of string (ItoArt.rope's way: the house's banded
   tube, white-pink bands instead of HOT, radius about 0.8 at the root tapering to 0.15) with 4 to 6 strands wound tight round it (about
@@ -3009,11 +3010,43 @@ and Release runs and fix anything red.** The last local build (before the versio
   (SkyRoad.draw) and the hang's string from the posed fist.
 - Release notes 3.5.0 written (they say the tentacles' look is a first pass).
 
+## 8zzk. Done (3.5.1): the Awakening's tentacles made massive
+
+3.5.0's runs were green (Build #197, Release #141). The session started on the HexPiece environment; the owner's usage limit cut the
+session once (they wrote, in Portuguese, that it had reset and to carry on).
+
+Built (nothing tested in game: build EXIT 0, 13 suites, rendered and judged third and first person, out of the ground and a tree,
+ages 1 to 39; render docs/handoff/ito-tentacle-3.5.1.jpg, sent to the owner):
+- **ito/ItoArt.tentacle** rebuilt (the 3.5.0 lattice of seven thin strings gone; TENTACLE_STRANDS and `spine` deleted): a cubic spine
+  (TS stations, TENTACLE_PIECES 20) from its foot TENTACLE_SUNK 0.5 under the ground (the world hides it: it bursts out), up leaning back
+  0.1 and ASIDE 0.2 of its length (never back over the user), arching over onto the tip from above and behind (`back` 0.3 x flat + 0.22 x
+  length), writhing across its arch (writhe min(1.4, 0.09 x length) x sin(pi s), never at the root or the tip). Frames (TF) square to the
+  way with the first axis along the arch's square (`frame`): it never twists as it bends. `radius`: TENTACLE_ROOT 0.8 (out of a tree
+  TENTACLE_TRUNK 0.58, no flare) narrowing (power 0.85) to TENTACLE_NECK 0.24 at TENTACLE_COAT_FROM 0.8, the foot flared TENTACLE_FLARE
+  0.55 more.
+- **The body is a rope of TENTACLE_PLIES 3 plies** (`ply`: each a round opaque cord PLY_OUT 0.5 of the radius off the spine, PLY_ROUND
+  0.62 of it round (they overlap: no gaps), PLY_TURNS 2.2 turns along it, PLY_AROUND 8 sides), banded by facing in TENTACLE_BANDS (white,
+  lilac-white, lilac, purple rim: "white strings shading purple", the Overheat reference). The tried and rejected steps, so nobody
+  repeats them: one smooth banded tube with ply stripes in its vertex colours (read as creased paper/meringue up close), with five
+  bright strands wound round it as see-through ribbons (they punched holes in the solid body and read as white shards), and as solid
+  cords (still creased). **Never lay a see-through ribbon over or through an opaque body: drawn first in the sort it writes the depth and
+  punches a hole** (also why the root strands are solid cords now).
+- The black tip: `tube` (TENTACLE_AROUND 12, TENTACLE_COAT_BANDS black, rim-lit 7A48C0) from 0.8 to the tip, then `spear`: a flat black
+  diamond blade (2.6 x the neck wide, 0.7 thin) driven TENTACLE_PIERCE 1.2 on through the body, a violet glow shell (pulsing) round it.
+- `glow`: a soft pink (violet on the black) ribbon round it, **pushed back from the eye past the tube's far side** (else it punched holes).
+- Its foot: TENTACLE_ROOTS 6 solid cords (`cord`, `cordPoint`: opaque banded cords through points, framed by an axis out at each)
+  splaying out and into the ground; out of a tree, winding half round the trunk down 3.4 blocks.
+- `thinStrand` takes the `tint` now (the Birdcage passes none: unchanged).
+- Cost: 740 quads out of the ground, 884 out of a tree (3.5.0: 800 and 944); DragonTests.itoStrings passes.
+- **The root moved on the server** (ito/ItoAwaken.root, ROOT_CLEAR 7; server/ItoMoves): the massive body would come up under the user
+  (and fill their view) when the body is near: 3.5 toward the user only while the user is 7 or more away (flat), else 3.5 to the side
+  of the body (square to the way; the side by the body's id). DragonTests: the foot over 1.5 blocks across; the root rule.
+- Preview: ItoShots `|itentaclefp:age` (the user's own body not drawn) for a first-person camera `fp:pitch`.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.5.0 (8zzj) was pushed without a CI check: check the branch's Build and Release runs and fix anything red. Then the tentacle's
-   look (8zzj: a massive banded rope of string, not a lattice; render and judge it before pushing). Then wait for the owner's notes on
-   3.4.9 (Gear 5) and 3.5.0 (Ito), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
+1. 3.5.1 (8zzk) is pushed: check its Build and Release runs. Then wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito) and 3.5.1
+   (the tentacles), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

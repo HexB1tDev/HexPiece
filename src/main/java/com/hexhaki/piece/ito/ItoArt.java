@@ -107,8 +107,10 @@ public final class ItoArt {
         }
         sides();
         double w = width * SLIM;
-        layer(sink, w * 1.6, coat ? COAT_HALO : HALO, 0.45 * alpha, 0.0, 1.6, 0.002);
-        layer(sink, w * 0.7, coat ? COAT_CORE : CORE, 1.0 * alpha, 1.0, 0.8, 0.004);
+        // 3.5.1: in a palette while one is set (the tentacle's strands wound round it); the Birdcage's set none
+        int[] t = coat || tint == null ? null : tint;
+        layer(sink, w * 1.6, coat ? COAT_HALO : t != null ? t[1] : HALO, (t != null ? 0.7 : 0.45) * alpha, 0.0, 1.6, 0.002);
+        layer(sink, w * 0.7, coat ? COAT_CORE : t != null ? t[0] : CORE, 1.0 * alpha, 1.0, 0.8, 0.004);
     }
 
     /** 3.4.2: the palette strands are drawn in while set ({core, halo, glow}; null: the string's own white and pink). */
@@ -1162,9 +1164,13 @@ public final class ItoArt {
     /**
      * 3.5.0 (the owner: "massive tentacles of strings with the tip coded in hockey that will like impale, lift the targets up into the
      * sky, and just like throw them afterwards. This should be a visual spectacle"): a tentacle of string from its root (rx, ry, rz: the
-     * ground, or the top of a tree's trunk) to its tip (tx, ty, tz), rising up out of the root and arching over onto the tip: seven strings
-     * twisted round each other about a white core, thick at the root, narrowing to the tip; its last stretch Haki-black (black-purple
-     * strings, a black spear point in a violet glow). {@code age} turns the twist slowly; {@code seed} its own.
+     * ground, or the top of a tree's trunk) to its tip (tx, ty, tz). 3.5.1: the first pass (seven strings twisted about a thin core) read as
+     * a thin lattice; now it is massive: a thick tube of string banded as the house's tubes are (Overheat's rope: bands by how square it
+     * faces the eye), {@link #TENTACLE_ROOT} round where it bursts out (flaring into the ground or round the trunk) narrowing to
+     * {@link #TENTACLE_NECK}, made of {@link #TENTACLE_PLIES} thick plies twisted round each other as a rope's strands are; it rises
+     * straight out of its root, arches over and comes down onto the tip, writhing slowly; its last {@link #TENTACLE_COAT_FROM} onward
+     * Haki-black (rim-lit violet), ending in a flat black spear head driven {@link #TENTACLE_PIERCE} through the body, in a violet glow.
+     * {@code age} writhes it and turns its strands; {@code seed} its own.
      */
     public static void tentacle(FireMesh.Sink sink, double rx, double ry, double rz, double tx, double ty, double tz, double age, boolean tree,
                                 int seed) {
@@ -1175,92 +1181,421 @@ public final class ItoArt {
         if (len < 0.3) {
             return;
         }
-        // the spine: up out of the root, then over onto the tip (a quadratic curve)
-        double cx = rx + dx * 0.25;
-        double cy = ry + Math.max(dy, 0.0) * 0.5 + len * 0.45;
-        double cz = rz + dz * 0.25;
-        double base = tree ? 1.1 : 0.9;
-        double spin = age * 0.12 + FireMesh.rand(seed, 9) * 6.0;
-        int pieces = 10;
-        double coatFrom = 0.8;
-        for (int k = 0; k < TENTACLE_STRANDS; k++) {
-            double a0 = 2 * Math.PI * k / TENTACLE_STRANDS + spin;
-            for (int part = 0; part < 2; part++) {
-                // the white body, then the Haki-black tip
-                double s0 = part == 0 ? 0.0 : coatFrom;
-                double s1 = part == 0 ? coatFrom : 1.0;
-                int n = part == 0 ? pieces : 4;
-                begin();
-                for (int j = 0; j <= n; j++) {
-                    double s = s0 + (s1 - s0) * j / n;
-                    spine(rx, ry, rz, cx, cy, cz, tx, ty, tz, s);
-                    double r = base * Math.pow(1.0 - s, 0.8) + 0.06;
-                    double a = a0 + s * 2.5 * 2 * Math.PI;
-                    // round the spine: two axes square to its way (its way's sideways and the up-ish)
-                    point(SP[0] + (SP[3] * Math.cos(a) + SP[6] * Math.sin(a)) * r, SP[1] + (SP[4] * Math.cos(a) + SP[7] * Math.sin(a)) * r,
-                        SP[2] + (SP[5] * Math.cos(a) + SP[8] * Math.sin(a)) * r, 0.75 + 0.25 * s);
+        // the way it leans over, flat (root to tip), and the square to it across (the arch's plane is up and along)
+        double hl = Math.hypot(dx, dz);
+        double hx = hl > 1.0E-4 ? dx / hl : 1.0;
+        double hz = hl > 1.0E-4 ? dz / hl : 0.0;
+        double px = -hz;
+        double pz = hx;
+        // a cubic spine: up out of the root leaning back and aside (a cobra before it strikes: never back over the user, who may stand
+        // behind the root), arching over, down onto the tip from above and behind it
+        double aside = (seed & 1) == 0 ? 1.0 : -1.0;
+        double c1x = rx - hx * len * 0.1 + px * aside * len * 0.2;
+        double c1y = ry + len * 0.6;
+        double c1z = rz - hz * len * 0.1 + pz * aside * len * 0.2;
+        double back = 0.3 * hl + 0.22 * len;
+        double c2x = tx - hx * back;
+        double c2y = ty + len * 0.32;
+        double c2z = tz - hz * back;
+        double phase = age * 0.3 + FireMesh.rand(seed, 3) * 6.0;
+        // out of the ground its foot starts under it (the world hides that part): it bursts out, its flare cut by the ground
+        double sunk = tree ? 0.2 : TENTACLE_SUNK;
+        double fy = ry - sunk;
+        double writhe = Math.min(1.4, 0.09 * len);
+        int n = TENTACLE_PIECES;
+        for (int j = 0; j <= n; j++) {
+            double s = j / (double) n;
+            double u = 1.0 - s;
+            double b0 = u * u * u;
+            double b1 = 3 * u * u * s;
+            double b2 = 3 * u * s * s;
+            double b3 = s * s * s;
+            // it writhes across its arch (never at its root or its tip: the body is held there)
+            double w = writhe * Math.sin(Math.PI * s) * Math.sin(phase + s * 4.0);
+            TS[j * 3] = b0 * rx + b1 * c1x + b2 * c2x + b3 * tx + px * w;
+            TS[j * 3 + 1] = b0 * fy + b1 * c1y + b2 * c2y + b3 * ty + 0.3 * w * Math.cos(phase * 0.7 + s * 3.0);
+            TS[j * 3 + 2] = b0 * rz + b1 * c1z + b2 * c2z + b3 * tz + pz * w;
+        }
+        // each station's way and two axes across it (the arch's square, so the tube never twists as it bends over)
+        for (int j = 0; j <= n; j++) {
+            int a = Math.max(0, j - 1);
+            int b = Math.min(n, j + 1);
+            frame(j, TS[b * 3] - TS[a * 3], TS[b * 3 + 1] - TS[a * 3 + 1], TS[b * 3 + 2] - TS[a * 3 + 2], px, pz);
+        }
+        // out of a tree it is the trunk's own top turned to string (as wide as the trunk, no flare); out of the ground it bursts, flared
+        double r0 = tree ? TENTACLE_TRUNK : TENTACLE_ROOT;
+        double flare = tree ? 0.0 : TENTACLE_FLARE;
+        int coat = (int) Math.round(n * TENTACLE_COAT_FROM);
+        for (int j = 0; j <= n; j++) {
+            TR[j] = radius(j / (double) n, r0, flare);
+        }
+        // its soft pink glow round it, then the white body, then the black (its rings shared where they meet)
+        glow(sink, 0, coat, GLOW, 0.2);
+        glow(sink, coat, n, COAT_GLOW, 0.3);
+        for (int p = 0; p < TENTACLE_PLIES; p++) {
+            ply(sink, 0, Math.min(n, coat + 1), p, seed);
+        }
+        tube(sink, coat, n, TENTACLE_COAT_BANDS, age, seed);
+        // where it bursts out: cords of string splaying from its foot over the ground and into it, or wound down the trunk
+        for (int k = 0; k < TENTACLE_ROOTS; k++) {
+            double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, 20 + k)) / TENTACLE_ROOTS;
+            double ca = Math.cos(a);
+            double sa = Math.sin(a);
+            cordBegin();
+            for (int j = 0; j <= 4; j++) {
+                double f = j / 4.0;
+                if (tree) {
+                    // down the trunk, winding half round it
+                    double b = a + f * Math.PI;
+                    double rr = 0.5;
+                    cordPoint(rx + Math.cos(b) * rr, ry - 0.1 - f * 3.4, rz + Math.sin(b) * rr, Math.cos(b), 0.0, Math.sin(b), 0.13 * (1.0 - 0.6 * f));
+                } else {
+                    double rr = r0 * (0.8 + flare) + r0 * 2.2 * f;
+                    cordPoint(rx + ca * rr, ry + 0.06 - 0.3 * f * f, rz + sa * rr, 0.0, 1.0, 0.0, 0.2 * (1.0 - 0.75 * f));
                 }
-                strand(sink, part == 0 ? 0.2 : 0.16, part == 1, 1.0);
             }
+            cord(sink, TENTACLE_BANDS, 5);
         }
-        // the core: thick white string along the body, then the black spear point
-        begin();
-        for (int j = 0; j <= pieces; j++) {
-            spine(rx, ry, rz, cx, cy, cz, tx, ty, tz, coatFrom * j / pieces);
-            point(SP[0], SP[1], SP[2], 0.9);
-        }
-        strand(sink, 0.55, false, 1.0);
-        spine(rx, ry, rz, cx, cy, cz, tx, ty, tz, coatFrom - 0.05);
-        double px = SP[0];
-        double py = SP[1];
-        double pz = SP[2];
-        double ux = tx - px;
-        double uy = ty - py;
-        double uz = tz - pz;
-        double ul = Math.max(1.0E-6, Math.sqrt(ux * ux + uy * uy + uz * uz));
-        line(sink, px, py, pz, tx + ux / ul * 0.9, ty + uy / ul * 0.9, tz + uz / ul * 0.9, 0.5, true, 1.0, 0.9, 1.0, 6);
-        FireMesh.shell(sink, tx, ty, tz, 0.7, COAT_GLOW, 0.35, 0.0);
+        spear(sink, n, age);
     }
 
-    /** The tentacles' strings. */
-    public static final int TENTACLE_STRANDS = 7;
-    /** The spine's point and its two axes across, worked out by {@link #spine} (no allocation a frame). */
-    static final double[] SP = new double[9];
+    /** The tentacle's thickness: round where it bursts out (at s 0), its neck at the black, flaring into its root. */
+    static double radius(double s, double r0, double flareBy) {
+        double r = TENTACLE_NECK + (r0 - TENTACLE_NECK) * Math.pow(Math.max(0.0, 1.0 - s / TENTACLE_COAT_FROM), 0.85);
+        if (s > TENTACLE_COAT_FROM) {
+            r = TENTACLE_NECK * (1.0 - 0.35 * (s - TENTACLE_COAT_FROM) / (1.0 - TENTACLE_COAT_FROM));
+        }
+        double flare = Math.max(0.0, 1.0 - s / 0.09);
+        return r * (1.0 + flareBy * flare * flare);
+    }
 
-    /** The tentacle's spine at {@code s} (0 the root, 1 the tip) into SP: the point, then two unit axes square to its way. */
-    static void spine(double ax, double ay, double az, double bx, double by, double bz, double cx, double cy, double cz, double s) {
-        double u = 1.0 - s;
-        SP[0] = u * u * ax + 2 * u * s * bx + s * s * cx;
-        SP[1] = u * u * ay + 2 * u * s * by + s * s * cy;
-        SP[2] = u * u * az + 2 * u * s * bz + s * s * cz;
-        double wx = 2 * u * (bx - ax) + 2 * s * (cx - bx);
-        double wy = 2 * u * (by - ay) + 2 * s * (cy - by);
-        double wz = 2 * u * (bz - az) + 2 * s * (cz - bz);
-        double wl = Math.max(1.0E-6, Math.sqrt(wx * wx + wy * wy + wz * wz));
+    /** Station {@code j}'s frame into TF: its way, then two unit axes square to it (the first along the arch's square px, pz). */
+    static void frame(int j, double wx, double wy, double wz, double px, double pz) {
+        double wl = Math.max(1.0E-9, Math.sqrt(wx * wx + wy * wy + wz * wz));
         wx /= wl;
         wy /= wl;
         wz /= wl;
-        // sideways: the way x up (or x along x when it points straight up)
-        double sx = wz;
-        double sy = 0.0;
-        double sz = -wx;
-        double sl = Math.sqrt(sx * sx + sz * sz);
-        if (sl < 1.0E-4) {
-            sx = 0.0;
-            sy = -wz;
-            sz = wy;
-            sl = Math.max(1.0E-6, Math.sqrt(sy * sy + sz * sz));
+        double d = px * wx + pz * wz;
+        double sx = px - d * wx;
+        double sy = -d * wy;
+        double sz = pz - d * wz;
+        double sl = Math.sqrt(sx * sx + sy * sy + sz * sz);
+        if (sl < 1.0E-6) {
+            sx = 1;
+            sy = 0;
+            sz = 0;
+            sl = 1;
         }
         sx /= sl;
         sy /= sl;
         sz /= sl;
-        SP[3] = sx;
-        SP[4] = sy;
-        SP[5] = sz;
-        SP[6] = wy * sz - wz * sy;
-        SP[7] = wz * sx - wx * sz;
-        SP[8] = wx * sy - wy * sx;
+        int o = j * 9;
+        TF[o] = wx;
+        TF[o + 1] = wy;
+        TF[o + 2] = wz;
+        TF[o + 3] = sx;
+        TF[o + 4] = sy;
+        TF[o + 5] = sz;
+        TF[o + 6] = wy * sz - wz * sy;
+        TF[o + 7] = wz * sx - wx * sz;
+        TF[o + 8] = wx * sy - wy * sx;
     }
+
+    /**
+     * The tube through stations {@code from} to {@code to}: {@link #TENTACLE_AROUND} sides, opaque, each vertex in {@code bands} (its
+     * heart to its rim) by how square it faces the eye, its three plies twisting round it (a ply's middle a band lighter, its grooves a
+     * band darker) as a rope of wound string is.
+     */
+    static void tube(FireMesh.Sink sink, int from, int to, int[] bands, double age, int seed) {
+        int around = TENTACLE_AROUND;
+        double twist = FireMesh.rand(seed, 5) * 6.0;
+        for (int j = from; j <= to; j++) {
+            double s = j / (double) TENTACLE_PIECES;
+            int o = j * 9;
+            for (int i = 0; i <= around; i++) {
+                double a = 2 * Math.PI * i / around;
+                double ox = TF[o + 3] * Math.cos(a) + TF[o + 6] * Math.sin(a);
+                double oy = TF[o + 4] * Math.cos(a) + TF[o + 7] * Math.sin(a);
+                double oz = TF[o + 5] * Math.cos(a) + TF[o + 8] * Math.sin(a);
+                double x = TS[j * 3] + ox * TR[j];
+                double y = TS[j * 3 + 1] + oy * TR[j];
+                double z = TS[j * 3 + 2] + oz * TR[j];
+                int v = (j - from) * (around + 1) + i;
+                RING[v * 3] = x;
+                RING[v * 3 + 1] = y;
+                RING[v * 3 + 2] = z;
+                double el = Math.max(1.0E-6, Math.sqrt(x * x + y * y + z * z));
+                double facing = Math.abs((ox * x + oy * y + oz * z) / el);
+                int band = facing > 0.8 ? 0 : facing > 0.55 ? 1 : facing > 0.3 ? 2 : 3;
+                // the plies: three strands of the rope twisting round it two turns along its length
+                double ply = Math.cos(3.0 * (a - s * 4.0 * Math.PI - twist));
+                if (ply > 0.6 && band > 0) {
+                    band--;
+                } else if (ply < -0.6) {
+                    band = Math.min(3, band + 2);
+                }
+                RING_C[v] = FireMesh.argb(1.0, bands[band]);
+            }
+        }
+        for (int j = 0; j + from < to; j++) {
+            for (int i = 0; i < around; i++) {
+                int a = j * (around + 1) + i;
+                int c = a + around + 1;
+                FireMesh.quad(sink, RING[a * 3], RING[a * 3 + 1], RING[a * 3 + 2], RING_C[a], RING[(a + 1) * 3], RING[(a + 1) * 3 + 1],
+                    RING[(a + 1) * 3 + 2], RING_C[a + 1], RING[(c + 1) * 3], RING[(c + 1) * 3 + 1], RING[(c + 1) * 3 + 2], RING_C[c + 1], RING[c * 3],
+                    RING[c * 3 + 1], RING[c * 3 + 2], RING_C[c]);
+            }
+        }
+    }
+
+    /**
+     * 3.5.1: one of the tentacle's {@link #TENTACLE_PLIES} plies (a rope's strands): a thick round cord through stations {@code from} to
+     * {@code to}, {@link #PLY_OUT} of the tentacle's radius off its spine and {@link #PLY_ROUND} of it round (the plies overlap: no gap
+     * between them), twisting round the others {@link #PLY_TURNS} times along it; opaque, banded by how square it faces the eye (the house's
+     * bands: the grooves between the plies fall in their rim bands, dark), so the tentacle reads as a giant rope of string.
+     */
+    static void ply(FireMesh.Sink sink, int from, int to, int p, int seed) {
+        int around = PLY_AROUND;
+        double twist = FireMesh.rand(seed, 5) * 6.0 + 2 * Math.PI * p / TENTACLE_PLIES;
+        for (int j = from; j <= to; j++) {
+            double s = j / (double) TENTACLE_PIECES;
+            int o = j * 9;
+            double th = twist + s * PLY_TURNS * 2 * Math.PI;
+            double off = TR[j] * PLY_OUT;
+            double cx = TS[j * 3] + (TF[o + 3] * Math.cos(th) + TF[o + 6] * Math.sin(th)) * off;
+            double cy = TS[j * 3 + 1] + (TF[o + 4] * Math.cos(th) + TF[o + 7] * Math.sin(th)) * off;
+            double cz = TS[j * 3 + 2] + (TF[o + 5] * Math.cos(th) + TF[o + 8] * Math.sin(th)) * off;
+            double r = TR[j] * PLY_ROUND;
+            for (int i = 0; i <= around; i++) {
+                double a = 2 * Math.PI * i / around;
+                double ox = TF[o + 3] * Math.cos(a) + TF[o + 6] * Math.sin(a);
+                double oy = TF[o + 4] * Math.cos(a) + TF[o + 7] * Math.sin(a);
+                double oz = TF[o + 5] * Math.cos(a) + TF[o + 8] * Math.sin(a);
+                double x = cx + ox * r;
+                double y = cy + oy * r;
+                double z = cz + oz * r;
+                int v = (j - from) * (around + 1) + i;
+                RING[v * 3] = x;
+                RING[v * 3 + 1] = y;
+                RING[v * 3 + 2] = z;
+                double el = Math.max(1.0E-6, Math.sqrt(x * x + y * y + z * z));
+                double facing = Math.abs((ox * x + oy * y + oz * z) / el);
+                RING_C[v] = FireMesh.argb(1.0, TENTACLE_BANDS[facing > 0.8 ? 0 : facing > 0.55 ? 1 : facing > 0.3 ? 2 : 3]);
+            }
+        }
+        for (int j = 0; j + from < to; j++) {
+            for (int i = 0; i < around; i++) {
+                int a = j * (around + 1) + i;
+                int c = a + around + 1;
+                FireMesh.quad(sink, RING[a * 3], RING[a * 3 + 1], RING[a * 3 + 2], RING_C[a], RING[(a + 1) * 3], RING[(a + 1) * 3 + 1],
+                    RING[(a + 1) * 3 + 2], RING_C[a + 1], RING[(c + 1) * 3], RING[(c + 1) * 3 + 1], RING[(c + 1) * 3 + 2], RING_C[c + 1], RING[c * 3],
+                    RING[c * 3 + 1], RING[c * 3 + 2], RING_C[c]);
+            }
+        }
+    }
+
+    /** The plies: how many, how far off the spine and how round (shares of the tentacle's radius), turns along it, sides round each. */
+    public static final int TENTACLE_PLIES = 3;
+    static final double PLY_OUT = 0.5;
+    static final double PLY_ROUND = 0.62;
+    static final double PLY_TURNS = 2.2;
+    static final int PLY_AROUND = 8;
+
+    /** A soft glow round the tube from station {@code from} to {@code to}: a ribbon turned to the eye, 2.2 times as wide, clear at its edges. */
+    static void glow(FireMesh.Sink sink, int from, int to, int rgb, double alpha) {
+        for (int j = from; j < to; j++) {
+            int k = j + 1;
+            double ha = TR[j] * 2.2;
+            double hb = TR[k] * 2.2;
+            // the side square to the way and to the line of sight at each end
+            double ax = TF[j * 9 + 1] * TS[j * 3 + 2] - TF[j * 9 + 2] * TS[j * 3 + 1];
+            double ay = TF[j * 9 + 2] * TS[j * 3] - TF[j * 9] * TS[j * 3 + 2];
+            double az = TF[j * 9] * TS[j * 3 + 1] - TF[j * 9 + 1] * TS[j * 3];
+            double al = Math.max(1.0E-9, Math.sqrt(ax * ax + ay * ay + az * az));
+            double bx = TF[k * 9 + 1] * TS[k * 3 + 2] - TF[k * 9 + 2] * TS[k * 3 + 1];
+            double by = TF[k * 9 + 2] * TS[k * 3] - TF[k * 9] * TS[k * 3 + 2];
+            double bz = TF[k * 9] * TS[k * 3 + 1] - TF[k * 9 + 1] * TS[k * 3];
+            double bl = Math.max(1.0E-9, Math.sqrt(bx * bx + by * by + bz * bz));
+            int ca = FireMesh.argb(alpha, rgb);
+            int ce = FireMesh.argb(0.0, rgb);
+            // a translucent ribbon through the tube's middle writes the depth and punches holes in the body drawn after it: pushed back
+            // from the eye past its far side, every face of the tube lies in front of it
+            double da = 1.15 * TR[j] / Math.max(1.0E-6, Math.sqrt(TS[j * 3] * TS[j * 3] + TS[j * 3 + 1] * TS[j * 3 + 1] + TS[j * 3 + 2] * TS[j * 3 + 2]));
+            double db = 1.15 * TR[k] / Math.max(1.0E-6, Math.sqrt(TS[k * 3] * TS[k * 3] + TS[k * 3 + 1] * TS[k * 3 + 1] + TS[k * 3 + 2] * TS[k * 3 + 2]));
+            double jx = TS[j * 3] * (1.0 + da);
+            double jy = TS[j * 3 + 1] * (1.0 + da);
+            double jz = TS[j * 3 + 2] * (1.0 + da);
+            double kx = TS[k * 3] * (1.0 + db);
+            double ky = TS[k * 3 + 1] * (1.0 + db);
+            double kz = TS[k * 3 + 2] * (1.0 + db);
+            for (int side = -1; side <= 1; side += 2) {
+                FireMesh.quad(sink, jx, jy, jz, ca, kx, ky, kz, ca, kx + bx / bl * hb * side, ky + by / bl * hb * side, kz + bz / bl * hb * side, ce,
+                    jx + ax / al * ha * side, jy + ay / al * ha * side, jz + az / al * ha * side, ce);
+            }
+        }
+    }
+
+    /**
+     * The spear head at the tentacle's tip (station {@code n}): a flat black blade, a long diamond driven on {@link #TENTACLE_PIERCE}
+     * through the body along the tip's way, rim-lit violet as the black body, in a violet glow; its two flats and two edges.
+     */
+    static void spear(FireMesh.Sink sink, int n, double age) {
+        int o = n * 9;
+        double nx = TS[n * 3];
+        double ny = TS[n * 3 + 1];
+        double nz = TS[n * 3 + 2];
+        double wx = TF[o];
+        double wy = TF[o + 1];
+        double wz = TF[o + 2];
+        // the blade's flat lies along the first axis across (wide), its edges along the second (thin)
+        double sx = TF[o + 3];
+        double sy = TF[o + 4];
+        double sz = TF[o + 5];
+        double qx = TF[o + 6];
+        double qy = TF[o + 7];
+        double qz = TF[o + 8];
+        double wide = TENTACLE_NECK * 2.6;
+        double thin = TENTACLE_NECK * 0.7;
+        double at = TENTACLE_PIERCE * 0.3;
+        // the neck (behind), the widest (shoulders), the point
+        double bx = nx - wx * 0.25;
+        double by = ny - wy * 0.25;
+        double bz = nz - wz * 0.25;
+        double mx = nx + wx * at;
+        double my = ny + wy * at;
+        double mz = nz + wz * at;
+        double ex = nx + wx * TENTACLE_PIERCE;
+        double ey = ny + wy * TENTACLE_PIERCE;
+        double ez = nz + wz * TENTACLE_PIERCE;
+        int[] c = TENTACLE_COAT_BANDS;
+        for (int side = -1; side <= 1; side += 2) {
+            for (int face = -1; face <= 1; face += 2) {
+                double fx = mx + sx * wide * side;
+                double fy = my + sy * wide * side;
+                double fz = mz + sz * wide * side;
+                double gx = mx + qx * thin * face;
+                double gy = my + qy * thin * face;
+                double gz = mz + qz * thin * face;
+                double el = Math.max(1.0E-6, Math.sqrt(gx * gx + gy * gy + gz * gz));
+                double facing = Math.abs((qx * face * gx + qy * face * gy + qz * face * gz) / el);
+                int flat = facing > 0.6 ? c[0] : facing > 0.3 ? c[1] : c[2];
+                int rim = c[3];
+                // the back half (neck to shoulders) and the front (shoulders to the point): each a quad with its edge vertex rim-lit
+                FireMesh.quad(sink, bx, by, bz, FireMesh.argb(1.0, flat), gx, gy, gz, FireMesh.argb(1.0, flat), fx, fy, fz, FireMesh.argb(1.0, rim),
+                    fx, fy, fz, FireMesh.argb(1.0, rim));
+                FireMesh.quad(sink, gx, gy, gz, FireMesh.argb(1.0, flat), ex, ey, ez, FireMesh.argb(1.0, rim), ex, ey, ez, FireMesh.argb(1.0, rim), fx,
+                    fy, fz, FireMesh.argb(1.0, rim));
+            }
+        }
+        // the violet glow round the blade, pulsing a little
+        double pulse = 0.85 + 0.15 * Math.sin(age * 0.9);
+        FireMesh.shell(sink, mx, my, mz, 0.75 * pulse, COAT_GLOW, 0.32, 0.0);
+    }
+
+    /** A cord's points (x, y, z each), an axis out from what it lies on at each, its radius at each (no allocation a frame). */
+    static final double[] CP = new double[16 * 3];
+    static final double[] CO = new double[16 * 3];
+    static final double[] CR = new double[16];
+    static int cords;
+
+    static void cordBegin() {
+        cords = 0;
+    }
+
+    static void cordPoint(double x, double y, double z, double ox, double oy, double oz, double r) {
+        if (cords >= CR.length) {
+            return;
+        }
+        CP[cords * 3] = x;
+        CP[cords * 3 + 1] = y;
+        CP[cords * 3 + 2] = z;
+        CO[cords * 3] = ox;
+        CO[cords * 3 + 1] = oy;
+        CO[cords * 3 + 2] = oz;
+        CR[cords] = r;
+        cords++;
+    }
+
+    /**
+     * 3.5.1: a solid cord of string through the points given since {@link #cordBegin}: {@code around} sides, opaque, banded by how square
+     * it faces the eye ({@code bands} its heart to its rim), its frame turned by the axis out at each point (it never twists), narrowing to
+     * a point at its end.
+     */
+    static void cord(FireMesh.Sink sink, int[] bands, int around) {
+        if (cords < 2) {
+            return;
+        }
+        for (int j = 0; j < cords; j++) {
+            int a = Math.max(0, j - 1);
+            int b = Math.min(cords - 1, j + 1);
+            double tx = CP[b * 3] - CP[a * 3];
+            double ty = CP[b * 3 + 1] - CP[a * 3 + 1];
+            double tz = CP[b * 3 + 2] - CP[a * 3 + 2];
+            double tl = Math.max(1.0E-9, Math.sqrt(tx * tx + ty * ty + tz * tz));
+            tx /= tl;
+            ty /= tl;
+            tz /= tl;
+            double d = CO[j * 3] * tx + CO[j * 3 + 1] * ty + CO[j * 3 + 2] * tz;
+            double ux = CO[j * 3] - d * tx;
+            double uy = CO[j * 3 + 1] - d * ty;
+            double uz = CO[j * 3 + 2] - d * tz;
+            double ul = Math.max(1.0E-9, Math.sqrt(ux * ux + uy * uy + uz * uz));
+            ux /= ul;
+            uy /= ul;
+            uz /= ul;
+            double vx = ty * uz - tz * uy;
+            double vy = tz * ux - tx * uz;
+            double vz = tx * uy - ty * ux;
+            double r = j == cords - 1 ? 0.0 : CR[j];
+            for (int i = 0; i <= around; i++) {
+                double an = 2 * Math.PI * i / around;
+                double ox = ux * Math.cos(an) + vx * Math.sin(an);
+                double oy = uy * Math.cos(an) + vy * Math.sin(an);
+                double oz = uz * Math.cos(an) + vz * Math.sin(an);
+                double x = CP[j * 3] + ox * r;
+                double y = CP[j * 3 + 1] + oy * r;
+                double z = CP[j * 3 + 2] + oz * r;
+                int v = j * (around + 1) + i;
+                RING[v * 3] = x;
+                RING[v * 3 + 1] = y;
+                RING[v * 3 + 2] = z;
+                double el = Math.max(1.0E-6, Math.sqrt(x * x + y * y + z * z));
+                double facing = Math.abs((ox * x + oy * y + oz * z) / el);
+                RING_C[v] = FireMesh.argb(1.0, bands[facing > 0.8 ? 0 : facing > 0.55 ? 1 : facing > 0.3 ? 2 : 3]);
+            }
+        }
+        for (int j = 0; j + 1 < cords; j++) {
+            for (int i = 0; i < around; i++) {
+                int a = j * (around + 1) + i;
+                int c = a + around + 1;
+                FireMesh.quad(sink, RING[a * 3], RING[a * 3 + 1], RING[a * 3 + 2], RING_C[a], RING[(a + 1) * 3], RING[(a + 1) * 3 + 1],
+                    RING[(a + 1) * 3 + 2], RING_C[a + 1], RING[(c + 1) * 3], RING[(c + 1) * 3 + 1], RING[(c + 1) * 3 + 2], RING_C[c + 1], RING[c * 3],
+                    RING[c * 3 + 1], RING[c * 3 + 2], RING_C[c]);
+            }
+        }
+    }
+
+    /** 3.5.1: the tentacle's size: round where it bursts out, its neck where the black begins, how far its spear goes through the body. */
+    public static final double TENTACLE_ROOT = 0.8;
+    /** Out of a tree: as round as the trunk where it starts; how much wider the foot flares out of the ground. */
+    public static final double TENTACLE_TRUNK = 0.58;
+    public static final double TENTACLE_FLARE = 0.55;
+    /** How far under the ground its foot starts (it bursts out of it). */
+    public static final double TENTACLE_SUNK = 0.5;
+    public static final double TENTACLE_NECK = 0.24;
+    public static final double TENTACLE_PIERCE = 1.2;
+    /** Where along it the Haki-black begins; its pieces along and the black tip's sides round; the cords splaying at its root. */
+    public static final double TENTACLE_COAT_FROM = 0.8;
+    public static final int TENTACLE_PIECES = 20;
+    public static final int TENTACLE_AROUND = 12;
+    public static final int TENTACLE_ROOTS = 6;
+    /** The white body's bands, its heart (square to the eye) to its rim; the black tip's, rim-lit violet. */
+    static final int[] TENTACLE_BANDS = {0xFFFFFF, 0xF2E4F6, 0xD6BCEA, 0x9C7EC4};
+    static final int[] TENTACLE_COAT_BANDS = {0x3E2462, 0x281640, 0x180B26, 0x7A48C0};
+    /** The spine's stations, their frames (way, across, across) and radii (no allocation a frame). */
+    static final double[] TS = new double[(TENTACLE_PIECES + 1) * 3];
+    static final double[] TF = new double[(TENTACLE_PIECES + 1) * 9];
+    static final double[] TR = new double[TENTACLE_PIECES + 1];
 
     /**
      * Sky Road (3.4.3, the owner: "Extremely thin, semi-transparent white strings shoot upward from the player's fingertips, extending

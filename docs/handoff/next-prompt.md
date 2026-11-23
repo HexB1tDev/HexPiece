@@ -3,8 +3,8 @@ Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetc
 Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzj of next-ai-3.2.2.md
-(2.9.6 to 3.5.0); open the older next-ai-*.md only for a feature's detail.
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzk of next-ai-3.2.2.md
+(2.9.6 to 3.5.1); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -14,16 +14,15 @@ never fat tubes, never re-scaled, never any other lightning; section 8zn has the
 render any lightning change beside the release from the same camera before pushing).
 
 Where things stand: 3.4.9 (section 8zzh: the owner's Gear 5 list) is green (Build #196, Release #140). 3.5.0 (section 8zzj: the owner's
-Ito list, 8zzi verbatim: Sky Road on a double tap with tricks and a one-hand hang; the Birdcage a whole sphere reaching the ground, thin
-strings between, a 30 s close; the Awakening's string ground and spikes, and with Haki a toggle of tentacles out of the ground and trees)
-was pushed at the owner's "Handoff and prompt asap" WITHOUT a CI check: check its Build and Release runs first and fix anything red.
+Ito list, 8zzi verbatim) is green (Build #197, Release #141). 3.5.1 (section 8zzk: the Awakening's tentacles rebuilt massive: a giant
+rope of three thick twisted plies of white string shading lilac-purple, a Haki-black spear tip driven through the body, cords bursting
+from its foot; rooted beside a near body so it never comes up under the user) is pushed: check its Build and Release runs first and fix
+anything red.
 
-Next: the tentacle's look is NOT done (8zzj): in the renders it is a thin lattice of crossing strings; the owner asked for "massive
-tentacles ... a visual spectacle": rebuild ItoArt.tentacle's body as a thick banded tube of string (ItoArt.rope's way) with a few strands
-wound tight round it and the Haki-black spear tip, under the budget, render it (ItoShots |itentacle:age[:tree]) and judge it before
-pushing. Then wait for the owner's notes on 3.4.9 and 3.5.0 and their lists for the other fruits. The fist is a right fist on the right
-arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any art: thin pale lines and flat polygons are not
-acceptable; hot strings use ItoArt's HOT tint.
+Next: wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 and 3.5.1 (Ito) and their lists for the other fruits. The fist is a right fist
+on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
+polygons are not acceptable; hot strings use ItoArt's HOT tint; never lay a see-through ribbon over or through an opaque body (it punches
+holes in it: 8zzk).
 
 The cloud environment is the personal "HexPiece" (freesound.org, cdn.freesound.org, opengameart.org); if freesound.org is refused, the
 session is on Default: get_environment, then switch_environment to it (network_only). Freesound also rate-limits its pages for a minute or two (403):

@@ -1230,8 +1230,11 @@ public final class ItoMoves {
         } else {
             Vec3 toward = player.m_20182_().m_82546_(best.m_20182_());
             Vec3 flat = new Vec3(toward.f_82479_, 0, toward.f_82481_);
+            double far = Math.sqrt(flat.m_82556_());
             flat = flat.m_82556_() < 1.0E-6 ? new Vec3(1, 0, 0) : flat.m_82541_();
-            Vec3 at = best.m_20182_().m_82549_(flat.m_82490_(ItoAwaken.GROUND_ROOT));
+            // 3.5.1: a near body's tentacle bursts out beside it, never under the user (it is massive now)
+            double[] off = ItoAwaken.root(flat.f_82479_, flat.f_82481_, far, (best.m_19879_() & 1) == 0 ? 1 : -1);
+            Vec3 at = best.m_20182_().m_82520_(off[0], 0.0, off[1]);
             Vec3 g = ground(level, at, 3.0, 8.0);
             root = g != null ? g : at;
         }
