@@ -2,6 +2,7 @@ import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.gear.NikaArt;
 import com.hexhaki.piece.gear.NikaBend;
 import com.hexhaki.piece.gear.NikaHold;
+import com.hexhaki.piece.gear.RubberWave;
 
 /**
  * 3.2.6: the Nika fruit's drawn shapes (gear/NikaArt) for FxPreview, round the scene's middle (the ground at 0, a body standing at the
@@ -14,6 +15,10 @@ import com.hexhaki.piece.gear.NikaHold;
  *
  * <p>3.2.9: {@code |nbend:t[:strength]} a body Star Gun struck {@code t} ticks ago (gear/NikaBend: held 26, let go over 17, as the
  * original's starHit sends), the blow toward +x; a faint outline of the body at rest beside it.
+ *
+ * <p>3.3.0: {@code |nworld:t[:radius[:end]]} Rubber World's ground {@code t} ticks after the release (gear/RubberWave), the field's
+ * middle at the scene's middle: each grass block whose ground rises drawn lifted and tilted with the wave (as client/gear/RubberWorldDraw
+ * draws the world's own blocks), within 22 blocks; two bodies standing in it ride the waves.
  */
 public final class NikaShots {
     private NikaShots() {
@@ -61,6 +66,33 @@ public final class NikaShots {
                 bent(sink, -ex, -ey, -ez, Math.PI / 2, shape);
                 double[] rest = {1, 1, 1, 0, 0};
                 bent(sink, -ex, -ey, -ez - 2.2, Math.PI / 2, rest);
+            }
+            case "nworld" -> {
+                double t = move.length > 1 ? Double.parseDouble(move[1]) : 20;
+                double radius = move.length > 2 ? Double.parseDouble(move[2]) : 40;
+                double end = move.length > 3 ? Double.parseDouble(move[3]) : Double.POSITIVE_INFINITY;
+                for (int x = -22; x < 22; x++) {
+                    for (int z = -22; z < 22; z++) {
+                        double cx = x + 0.5;
+                        double cz = z + 0.5;
+                        double r = Math.sqrt(cx * cx + cz * cz);
+                        if (r > 22) {
+                            continue;
+                        }
+                        double angle = Math.atan2(cz, cx);
+                        double h = RubberWave.rise(r, angle, t, radius, end);
+                        if (h < 0.03) {
+                            continue;
+                        }
+                        double tilt = Math.atan(RubberWave.slope(r, angle, t, radius, end)) * 0.6;
+                        grass(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt);
+                    }
+                }
+                for (double[] b : new double[][] {{5.5, 3.5}, {-3.5, 9.5}}) {
+                    double r = Math.hypot(b[0], b[1]);
+                    double h = RubberWave.rise(r, Math.atan2(b[1], b[0]), t, radius, end);
+                    HieShots.body(sink, b[0] - ex, h - ey, b[1] - ez);
+                }
             }
             default -> {
                 return false;
@@ -158,6 +190,41 @@ public final class NikaShots {
                 }
                 sink.quad(q, new int[] {col, col, col, col});
             }
+        }
+    }
+
+    /**
+     * One grass block (its top at y), from x, z, turned about the flat axis across the way out (rx, rz) by {@code tilt} radians round
+     * its top's middle (a positive tilt faces its top inward, as the client turns it).
+     */
+    static void grass(FireMesh.Sink sink, double x, double y, double z, double rx, double rz, double tilt) {
+        double c = Math.cos(tilt);
+        double sn = Math.sin(tilt);
+        double[][] corner = new double[8][3];
+        for (int i = 0; i < 8; i++) {
+            double vx = ((i & 1) != 0 ? 1 : 0) - 0.5;
+            double vy = ((i & 2) != 0 ? 0 : -1);
+            double vz = ((i & 4) != 0 ? 1 : 0) - 0.5;
+            // about the tangent (-rz, 0, rx): the radial part and the height turn, the tangent part stays
+            double radial = vx * rx + vz * rz;
+            double tangent = -vx * rz + vz * rx;
+            double radial2 = radial * c - vy * sn;
+            double up2 = radial * sn + vy * c;
+            corner[i][0] = x + 0.5 + radial2 * rx - tangent * rz;
+            corner[i][1] = y + up2;
+            corner[i][2] = z + 0.5 + radial2 * rz + tangent * rx;
+        }
+        int[][] order = {{0, 1, 3, 2}, {4, 6, 7, 5}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 5, 7, 3}};
+        // faces: the two across z, the bottom, the top (grass), the two across x (dirt)
+        int[] colour = {0x7A5634, 0x7A5634, 0x6B4A2E, 0x6FB043, 0x7A5634, 0x7A5634};
+        double[] shade = {0.8, 0.8, 0.5, 1.0, 0.62, 0.62};
+        for (int k = 0; k < 6; k++) {
+            int col = FireMesh.argb(1.0, FireMesh.mix(0, colour[k], shade[k]));
+            double[] q = new double[12];
+            for (int i = 0; i < 4; i++) {
+                System.arraycopy(corner[order[k][i]], 0, q, i * 3, 3);
+            }
+            sink.quad(q, new int[] {col, col, col, col});
         }
     }
 }

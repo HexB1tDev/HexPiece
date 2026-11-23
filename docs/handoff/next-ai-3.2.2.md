@@ -10,7 +10,7 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -18,7 +18,8 @@ lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 
 white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
 and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the move lightning the release's own again, after the
 owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed and green; 3.2.7 (8zp: Dawn Whip's cartoon spin) is pushed and green; 3.2.8 (8zq: Giant holds
-what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber) is pushed (check its runs: section 9). Next is the
+what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber) is pushed and green; 3.3.0 (8zs: Rubber World's ground
+rolling in rubber waves) is pushed (check its runs: section 9). Next is the
 rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
@@ -1602,12 +1603,40 @@ docs/gifs/nika-star-gun-rubber-3.2.9.gif. They are previews, not the game: say s
   body replaced by `return NikaBendClient.apply(pose, entity)`): its own hits by entity (ms clock, pruned), the pose turned to the
   blow, pushed back, leaned (one static Matrix4f, only m12 set), scaled, turned back. FxPreview `|nbend:t[:strength]`.
 
-## 9. What to do next (after 3.2.9)
+## 8zs. Done (3.3.0): the Nika fruit, part 7: Rubber World's ground rolling like rubber
 
-1. Check 3.2.9's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika rework, part 7 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
-   Dawn Whip, Giant's hold, Star Gun's rubber body); Rubber World bending the real ground in waves; better Haki versions; Toon Force
-   everywhere. Render every clip in third person; first person stays.
+The owner (8zh 8): "Rubber world, we need the world to actually physically bounce like rubber. This is going to be the most challenging
+thing in the mod. We need to actually make the world behave like rubber, like the ground itself be manipulated so that it behaves like
+it's made of like pure slime, sort of, as in like actually wave and all, like bend to the user's will." Reference image 5: a tiny Gear 5
+Luffy jumping over ground rolling in soft rubbery waves. Nothing tested in game: build, tests, rendered (docs/gifs/nika-rubber-world-
+3.3.0.gif: the release's rings, the rolling waves, two bodies riding them, the field ending at tick 100 and settling).
+- The original: M (RUBBER_WORLD_START/RELEASE) `beginRubberWorld` (clip gear5_coil_charge, "rubberWorldHeld", charge to 60 ticks),
+  `releaseRubberWorld`: c = charge / 60; radius lerp(c, 2.5, 42 + 36 x the REACH upgrade); lasting lerp(c, 100, 240) ticks; cooldown
+  lerp(c, 200, 600); `GearFields.add(level, feet, radius, ticks)` (everything in it bounces: RESTITUTION 1.15, IDLE_BOUNCE 0.92,
+  MAX_REBOUND 2.6; no fall damage), clip gear5_coil_release, `S2CGearFx` RUBBER_FIELD at the feet (power = the radius; GearFields sends
+  it again every 20 ticks while the field lasts: GearVfx.rubberField, a photon ground ring), the sound GEAR5_RUBBER_WORLD.
+- Not through Scars (the plan in 8zk said so): moving real blocks every tick would rebuild chunks on every client (the phone). The ground
+  is drawn instead, as the Gura ultimate's heave draws it: copies of the world's own blocks (BlockRenderDispatcher.renderSingleBlock),
+  rising out of the real ground, which never changes.
+- `gear/RubberWave.rise(r, angle, t, radius, end)` (pure, 0 to 1.6 blocks, only ever up): three rings from 1.5 blocks out at ticks 0, 9,
+  18 (0.75 blocks a tick, half width 2.3, heights 1.3, 0.9, 0.6, fading outward; the user's own footing within 0.9 stays still), then
+  rounded waves rolling outward (length 9, 0.42 a tick, 0.6 high, sin^1.6 crests) growing in from tick 8 over 24 ticks, wobbling round
+  the circle (3 and 2 lobes drifting); a 5-block rim to the edge; settles over FADE 20 ticks once ended. `slope` for the tilt.
+  HudTests.rubberWorld.
+- `client/gear/RubberWorldDraw` (patch/PiecePatch.rubberWorld: the head of GearVfx.play(S2CGearFx)): `play` keeps each field (a new
+  middle: born; the same one again: heard; not heard for 30 ticks: ended, then settling); RenderLevelStageEvent AFTER_PARTICLES: round
+  the camera nearest first (AROUND: 28 blocks, sorted once), where the ground rises, the column's top solid block (and the one under it
+  above 0.6) drawn lifted and tilted about the flat axis across the way out by 0.6 x atan(slope) (a rise outward faces its top inward);
+  at most MOST_DRAWN 520 blocks a frame, at most 360 new column lookups a frame, the columns kept on a grid round the field (no
+  allocation a frame). RenderLivingEvent.Pre (LOWEST): every living body within 6 blocks of the field's height is drawn lifted by the
+  ground under it (not one's own first-person pass); a translation only, inside the dispatcher's own push. FxPreview `|nworld:t[:radius[:end]]`.
+
+## 9. What to do next (after 3.3.0)
+
+1. Check 3.3.0's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika rework, part 8 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
+   Dawn Whip, Giant's hold, Star Gun's rubber body, Rubber World's rolling ground); better Haki versions; Toon Force everywhere.
+   Render every clip in third person; first person stays.
 3. The owner: "I want gifs when it's all done" (8zr): a GIF of each move changed (tools/make_gif.py), sent at the end; previews, not
    the game.
 4. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the

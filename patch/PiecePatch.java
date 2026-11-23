@@ -450,8 +450,10 @@ public final class PiecePatch implements Opcodes {
         }));
         // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
         // lightning themselves, past HakiBolts, and showed the original's flat beams
-        entries.put(GEAR_VFX + ".class", transform(entries.get(GEAR_VFX + ".class"), node -> playHook(method(node, "playAt",
-            "(DDDLcom/lowdragmc/photon/client/fx/FX;)V"), "playedGear", "(Lcom/lowdragmc/photon/client/fx/FX;DDD)Z")));
+        entries.put(GEAR_VFX + ".class", transform(entries.get(GEAR_VFX + ".class"), node -> {
+            playHook(method(node, "playAt", "(DDDLcom/lowdragmc/photon/client/fx/FX;)V"), "playedGear", "(Lcom/lowdragmc/photon/client/fx/FX;DDD)Z");
+            rubberWorld(node);
+        }));
         entries.put(THUNDERSTORM + ".class", transform(entries.get(THUNDERSTORM + ".class"), PiecePatch::thunderstormBolts));
         entries.put(STORM_LANCE + ".class", transform(entries.get(STORM_LANCE + ".class"), PiecePatch::lanceBolts));
         entries.put(FRUIT_ANIMATIONS + ".class", transform(entries.get(FRUIT_ANIMATIONS + ".class"), PiecePatch::fruitClips));
@@ -1288,6 +1290,20 @@ public final class PiecePatch implements Opcodes {
             apply.localVariables.clear();
         }
         apply.instructions.add(body);
+    }
+
+    /**
+     * 3.3.0 (the owner: "Rubber world, we need the world to actually physically bounce like rubber"): the head of {@code GearVfx.play
+     * (S2CGearFx)} tells {@code client/gear/RubberWorldDraw.play(message)} first (it keeps the RUBBER_FIELD fields and draws their ground
+     * rolling in waves).
+     */
+    static void rubberWorld(ClassNode node) {
+        MethodNode play = method(node, "play", "(Lcom/hexhaki/network/msg/S2CGearFx;)V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, 0));
+        head.add(new MethodInsnNode(INVOKESTATIC, "com/hexhaki/piece/client/gear/RubberWorldDraw", "play", "(Lcom/hexhaki/network/msg/S2CGearFx;)V",
+            false));
+        play.instructions.insert(head);
     }
 
     /** 3.2.6: the Bajrang Gun's giant fist (client/gear/NikaFist). */

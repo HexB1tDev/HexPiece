@@ -225,6 +225,57 @@ public final class HudTests {
         }
         giantHold();
         starRubber();
+        rubberWorld();
+    }
+
+    /**
+     * 3.3.0: Rubber World's ground (gear/RubberWave): only ever up and never past its most, nothing outside the field or before the
+     * release, the rings going outward, the ground under the user's feet left still at the release, waves rolling while it lasts and
+     * settled once it has ended.
+     */
+    static void rubberWorld() {
+        double inf = Double.POSITIVE_INFINITY;
+        double radius = 40;
+        for (double t = -2; t < 140; t += 1.5) {
+            for (double r = 0; r < 46; r += 0.7) {
+                for (double a = -3; a < 3.2; a += 1.1) {
+                    double h = com.hexhaki.piece.gear.RubberWave.rise(r, a, t, radius, inf);
+                    Check.that(h >= 0 && h <= com.hexhaki.piece.gear.RubberWave.MOST, "nika: Rubber World's ground within 0 and its most (" + h + ")");
+                    if (r > radius || t < 0) {
+                        Check.that(h == 0, "nika: no rubber ground outside the field or before the release");
+                    }
+                }
+            }
+        }
+        Check.that(com.hexhaki.piece.gear.RubberWave.rise(0.3, 0, 0.5, radius, inf) < 0.05, "nika: the user's own footing still at the release");
+        double before = crest(6);
+        double after = crest(14);
+        Check.that(after > before + 4, "nika: Rubber World's first ring goes outward (" + before + " to " + after + ")");
+        double most = 0;
+        for (double r = 10; r < 30; r += 0.25) {
+            most = Math.max(most, com.hexhaki.piece.gear.RubberWave.rise(r, 0.4, 80, radius, inf));
+        }
+        Check.that(most > 0.3, "nika: the ground still rolling in waves while the field lasts (" + most + ")");
+        double settled = 0;
+        for (double r = 0; r < radius; r += 0.25) {
+            settled = Math.max(settled, com.hexhaki.piece.gear.RubberWave.rise(r, 0.4, 100 + com.hexhaki.piece.gear.RubberWave.FADE + 0.01, radius, 100));
+        }
+        Check.that(settled == 0, "nika: the ground settled once the field has ended");
+        Check.that(com.hexhaki.piece.client.gear.RubberWorldDraw.MOST_DRAWN <= 520, "nika: Rubber World draws at most 520 blocks a frame");
+    }
+
+    /** Where the release's first ring is highest along one way at {@code t}. */
+    static double crest(double t) {
+        double best = 0;
+        double at = 0;
+        for (double r = 0; r < 30; r += 0.1) {
+            double h = com.hexhaki.piece.gear.RubberWave.rise(r, 0, t, 40, Double.POSITIVE_INFINITY);
+            if (h > best) {
+                best = h;
+                at = r;
+            }
+        }
+        return at;
     }
 
     /**
