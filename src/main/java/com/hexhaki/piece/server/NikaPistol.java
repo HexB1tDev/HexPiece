@@ -125,9 +125,16 @@ public final class NikaPistol {
             LAUNCH_SPEED * (0.55 + 0.45 * share)));
     }
 
-    /** 3.4.0: the launch: blocks a tick at first (a body that takes the whole blow), and the hardest block it tears through (obsidian). */
-    public static final double LAUNCH_SPEED = 3.6;
+    /**
+     * 3.4.0: the launch: blocks a tick (a body that takes the whole blow) and the hardest block it tears through (obsidian). 3.4.1 (the
+     * owner: "the entity is projected in a straight line FAST. adding a dust explosion on landing (and making a crater)"): faster, flown in a
+     * straight line for {@link #STRAIGHT} ticks, then falling; where it comes down a crater ({@link #CRATER}, self-repairing) and a dust
+     * explosion (the Gura fruit's quake: dust, rings, rocks, cracks), the ground shaking, the Conqueror's lightning out of it.
+     */
+    public static final double LAUNCH_SPEED = 5.0;
     public static final float LAUNCH_HARDEST = 50.0F;
+    public static final int STRAIGHT = 8;
+    public static final double CRATER = 2.4;
 
     static final java.util.List<UoMoves.Live> LIVE = new java.util.ArrayList<>();
 
@@ -182,6 +189,15 @@ public final class NikaPistol {
                 1.15F);
             PikaMoves.Launch launch = new PikaMoves.Launch(this.level, this.owner, this.body, this.carry, this.speed);
             launch.hardest = LAUNCH_HARDEST;
+            launch.straight = STRAIGHT;
+            launch.landed = (owner, where) -> {
+                Craters.open(this.level, owner, where, CRATER);
+                GuraMoves.fx(owner, GuraMoves.QUAKE, 2, where, new Vec3(0, 1, 0), 1.0, 0, 0, 3.2, (int) (this.level.m_46467_() & 0xFFFF));
+                ConquerorAura.exploded(owner, this.level, where, 3.2);
+                com.hexhaki.fx.Impact.quake(this.level, where, 22.0, 0.7F, 12);
+                com.hexhaki.piece.PieceSounds.playAt(owner, where.f_82479_, where.f_82480_, where.f_82481_, com.hexhaki.piece.gura.GuraSounds.BOOM,
+                    1.6F, 0.9F);
+            };
             launch.stopped = (owner, where) -> {
                 com.hexhaki.fx.Impact.quake(this.level, where, 16.0, 0.5F, 8);
                 com.hexhaki.piece.PieceSounds.playAt(owner, where.f_82479_, where.f_82480_, where.f_82481_, com.hexhaki.piece.gura.GuraSounds.HIT,

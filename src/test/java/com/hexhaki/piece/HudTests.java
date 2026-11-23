@@ -282,8 +282,15 @@ public final class HudTests {
         // is launched; through every block up to obsidian
         Check.that(com.hexhaki.piece.gear.NikaSkin.out(-0.1) == 0 && com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.life()) == 0,
             "dawnPistol: no skin before the blow or after it snaps back");
-        Check.that(com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.GROW) > 0.95
-            && com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.PIN - 0.5) > 0.9, "dawnPistol: stretched out while pinned");
+        // 3.4.1 (the owner: "the skin streches to the limit slower and slower (the further it gets)"): fast at first, slowing, at its
+        // limit when the body is launched
+        double first = com.hexhaki.piece.gear.NikaSkin.out(1) - com.hexhaki.piece.gear.NikaSkin.out(0);
+        double lastTick = com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.PIN - 0.01)
+            - com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.PIN - 1);
+        Check.that(first > 5 * lastTick && com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.PIN - 0.01) > 0.98,
+            "dawnPistol: the skin stretches slower and slower to its limit (" + first + " then " + lastTick + ")");
+        Check.that(com.hexhaki.piece.server.NikaPistol.STRAIGHT >= 5 && com.hexhaki.piece.server.NikaPistol.LAUNCH_SPEED >= 4.5
+            && com.hexhaki.piece.server.NikaPistol.LAUNCH_SPEED < 10, "dawnPistol: launched in a straight line, fast (and under the game's check)");
         Check.that(com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.PIN + com.hexhaki.piece.gear.NikaSkin.SNAP * 0.6) < 0.3,
             "dawnPistol: snapped back as the body is launched");
         Check.that(com.hexhaki.piece.gear.NikaSkin.LENGTH >= 5.0, "dawnPistol: the skin stretched to insane amounts (" + com.hexhaki.piece.gear.NikaSkin.LENGTH + ")");

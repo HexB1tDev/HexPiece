@@ -9,9 +9,8 @@ import com.hexhaki.piece.horo.AstralArt;
  * knockback that destroys all blocks in it's way"; their frames from Egghead: Luffy's arm driven through Lucci, Lucci's own spotted skin
  * stretched out along the arm to the fist, red-hot then white-hot at its end). Pure, previewable (FxPreview {@code |nskin:t}).
  * <ul>
- *   <li>{@link #out}: how far the skin is stretched out of the body, {@code t} ticks after the hit: shot out past its length in
- *       {@link #GROW} ticks, held quivering while the server pins the body ({@link #PIN}), then snapping back into it in {@link #SNAP}
- *       as the body is launched.</li>
+ *   <li>{@link #out}: how far the skin is stretched out of the body, {@code t} ticks after the hit: slower and slower to its limit while
+ *       the server holds the body ({@link #PIN}), then snapping back into it in {@link #SNAP} as the body is launched.</li>
  *   <li>{@link #skin}: the body's own skin (its texture's region, stretched along: the client's texture) pulled out of the far side of
  *       the body along the blow into a long funnel, thinning to a neck and swelling round the fist at its end.</li>
  *   <li>{@link #heat}: in flat bands over it, see-through: nothing at the body, red, orange, then yellow-white at the fist, the fist a
@@ -20,10 +19,15 @@ import com.hexhaki.piece.horo.AstralArt;
  * Everything about a base (the body's middle) along a unit way, eye-centred.
  */
 public final class NikaSkin {
-    /** Ticks to stretch out, the ticks the body is pinned (the server launches it then), ticks to snap back. */
-    public static final double GROW = 2.0;
-    public static final int PIN = 5;
-    public static final double SNAP = 2.5;
+    /**
+     * The ticks the body is held while its skin stretches (3.4.1, the owner: "when it lands and stuns (the skin streches to the limit
+     * slower and slower (the further it gets) and when it reaches the max, the entity is projected in a straight line FAST"): out to its
+     * limit over PIN, fast at first and slower and slower (a cubic ease out), launched the moment it is there; then {@link #SNAP} ticks to
+     * snap back. GROW: how soon it is half out.
+     */
+    public static final int PIN = 10;
+    public static final double GROW = PIN * 0.2063;
+    public static final double SNAP = 2.0;
     /** How far past the body's middle the fist stretches the skin at full stretch (blocks). */
     public static final double LENGTH = 7.0;
     /** The funnel's neck and the swelling round the fist (blocks). */
@@ -44,23 +48,19 @@ public final class NikaSkin {
         return PIN + SNAP;
     }
 
-    /** How far the skin is stretched out (0 to about 1.15) {@code t} ticks after the hit. */
+    /** How far the skin is stretched out (0 to 1) {@code t} ticks after the hit: slower and slower to its limit at {@link #PIN}, then
+     * snapping back as the body is launched. */
     public static double out(double t) {
         if (t < 0 || t >= life()) {
             return 0;
         }
-        if (t < GROW) {
-            double u = t / GROW;
-            // out-back: past full and back
-            return 1.0 + 2.4 * Math.pow(u - 1, 3) + 1.3 * Math.pow(u - 1, 2);
-        }
         if (t < PIN) {
-            double tau = t - GROW;
-            return 1.0 + 0.05 * Math.sin(tau * 3.1) * Math.exp(-tau / 3.0);
+            double u = 1 - t / PIN;
+            // a little quiver on the rubber as it strains toward its limit
+            return (1 - u * u * u) * (1 + 0.025 * Math.sin(t * 2.6) * u);
         }
-        // snapped back into the body as it is launched
         double u = (t - PIN) / SNAP;
-        return Math.max(0, (1 - u) * (1 - u)) * Math.cos(u * 1.2);
+        return Math.max(0, (1 - u) * (1 - u));
     }
 
     static final double[] B = new double[6];

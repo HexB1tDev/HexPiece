@@ -45,6 +45,8 @@ public final class NikaSkinClient {
 
     static final class Through {
         int id;
+        /** 3.4.1: who threw it (their arm reaches through the body to the fist at the skin's end). */
+        int user;
         float wx;
         float wy;
         float wz;
@@ -57,7 +59,7 @@ public final class NikaSkinClient {
     }
 
     /** From client/gear/NikaPow: Dawn Pistol has struck body {@code id} along the unit way (wx, wy, wz). */
-    public static void start(int id, float wx, float wy, float wz, double born) {
+    public static void start(int id, int user, float wx, float wy, float wz, double born) {
         for (int i = THROUGH.size() - 1; i >= 0; i--) {
             if (THROUGH.get(i).id == id) {
                 THROUGH.remove(i);
@@ -68,6 +70,7 @@ public final class NikaSkinClient {
         }
         Through t = new Through();
         t.id = id;
+        t.user = user;
         double l = Math.sqrt(wx * wx + wy * wy + wz * wz);
         if (l < 1.0E-6) {
             return;
@@ -197,6 +200,28 @@ public final class NikaSkinClient {
             HEAT.buffer = null;
         }
     }
+
+    /**
+     * 3.4.1: how far past the struck body's middle thrower {@code user}'s fist is now (blocks: the skin's stretch), and that body into
+     * {@link #BODY}; -1 when none of theirs is stretching.
+     */
+    static double reach(ClientLevel level, int user, double now) {
+        for (int i = THROUGH.size() - 1; i >= 0; i--) {
+            Through t = THROUGH.get(i);
+            if (t.user != user) {
+                continue;
+            }
+            double age = now - t.born;
+            if (age < 0 || age >= NikaSkin.life() || !(level.m_6815_(t.id) instanceof LivingEntity body)) {
+                return -1;
+            }
+            BODY = body;
+            return NikaSkin.LENGTH * NikaSkin.out(age) - NikaSkin.BULB;
+        }
+        return -1;
+    }
+
+    static LivingEntity BODY;
 
     /** How round the skin is where it leaves the body (blocks). */
     static double radius(LivingEntity body) {

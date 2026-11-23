@@ -1153,6 +1153,10 @@ public final class PikaMoves {
         java.util.function.BiConsumer<ServerPlayer, Vec3> stopped;
         /** 3.4.0: the hardest block it tears through (the Light fruit's and Gekishin's: iron; Dawn Pistol's: obsidian). */
         float hardest = V_HARDEST;
+        /** 3.4.1: its first ticks flown in a straight line along {@code carry}, no gravity (Dawn Pistol's); 0: the Light fruit's arc. */
+        int straight;
+        /** 3.4.1: what is seen and heard where it comes to rest (Dawn Pistol's crater and dust); null: nothing more. */
+        java.util.function.BiConsumer<ServerPlayer, Vec3> landed;
 
         Launch(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 carry, double speed) {
             this.level = level;
@@ -1174,12 +1178,13 @@ public final class PikaMoves {
                 return true;
             }
             this.flown++;
-            if (this.flown > 2 && this.body.m_20096_() || this.flown > V_FLIGHT || this.speed < 0.7) {
+            boolean line = this.flown <= this.straight;
+            if (this.flown > 2 && !line && this.body.m_20096_() || this.flown > V_FLIGHT || this.speed < 0.7) {
                 return this.down(now);
             }
             Vec3 was = this.body.m_20184_();
-            Vec3 velocity = new Vec3(this.carry.f_82479_ * this.speed, Math.max(was.f_82480_, this.flown <= 1 ? V_UP : -1.0),
-                this.carry.f_82481_ * this.speed);
+            Vec3 velocity = line ? this.carry.m_82490_(this.speed) : new Vec3(this.carry.f_82479_ * this.speed,
+                Math.max(was.f_82480_, this.flown <= 1 ? V_UP : -1.0), this.carry.f_82481_ * this.speed);
             net.minecraft.world.phys.AABB box = this.body.m_20191_();
             net.minecraft.world.phys.AABB path = box.m_82369_(velocity).m_82400_(0.05);
             Scars scars = Scars.of(this.level);
@@ -1243,6 +1248,9 @@ public final class PikaMoves {
 
         /** Come to rest: knocked down, ragdolled, for the rest of the stun. */
         boolean down(long now) {
+            if (this.landed != null) {
+                this.landed.accept(this.owner, this.body.m_20182_());
+            }
             HakiFalls.knockDown(this.level, this.body, (int) Math.max(40L, Z_KICK_STUN - (now - this.start)), false);
             return true;
         }

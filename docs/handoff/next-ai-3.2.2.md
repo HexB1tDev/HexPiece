@@ -30,8 +30,8 @@ pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, it
 #172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); 3.3.7
 (8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed and green (Build #177, Release #128); 3.3.8 (8zze:
 the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green (Build #179, Release #129); 3.3.9 (8zze: Dawn Pistol)
-is green (Build #180, Release #130); 3.4.0 (8zze: Dawn Pistol's final blow, the skin stretched through the body, the launch through
-blocks) is pushed: check its runs (section 9).**
+is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the body) is green (Build #181, Release #131); 3.4.1 (8zze:
+the looping arm, the slowing stretch, the straight launch, the crater) is pushed: check its runs (section 9).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2363,10 +2363,35 @@ spotted skin stretched along Luffy's arm to the glowing fist, then smashed down 
 - NikaBend.dawn (3.3.9's taffy pull), NikaBendClient.dawn and their tests and previews are gone. The POW is three-fifths of 3.3.9's size
   (it hid the body). Previews: NikaShots `|nskin:t`, `|ndawn:t` (the whole move: arm, skin, POW, launch).
 
+**3.4.1 (Dawn Pistol: the arm, the timing, the landing)**. 3.4.0 was green (Build #181, Release #131). The owner, verbatim, in order:
+"does the arm bend? I dont want it to be a straight line"; "Excuse me??? How IS THIS IN HELL STRAIGHT" (their Egghead frame with Luffy's arm
+traced in green: from Luffy it hooks down and back, runs along Lucci, hooks round past him and comes back through him to the funnel);
+"It also has to be FAST,  but when it lands and stuns (the skin streches to the limit slower and slower (the further it gets) and when it
+reaches the max, the entity is projected in a straight line FAST. adding a dust explosion on landing (and making a crater)."
+- gear/NikaArc (pure): the arm's path, KNOTS 14 points of a looping trochoid in the plane of the way and up-and-out (0.8 up, 0.6 to the
+  arm's outside): progress u L - A sin(3 pi u), offset A (1 - cos(3 pi u)) - 2 A u, A = 0.18 L (grown in over 2 blocks): it leaves the
+  shoulder going back, loops once, arrives going forward fast. client/gear/NikaPistolArm draws a Dawn Pistol's arm (all three passes) as
+  a quadratic B-spline of 12 pieces through those points, each piece the original's own RubberLimbMesh.emit (the skin's first piece
+  through GearOutfitLayer.emitWithCuff, written LAST: the cuff may switch batches), each piece's mesh side square to the loop's plane,
+  `per` max(3, segments / 4); the fist along the last stretch. (3.4.1's first try lifted the original's single control point: still one
+  bow; a single quadratic cannot loop.)
+- Through the body: NikaSkinClient keeps the thrower (POW's user); `NikaSkinClient.reach(level, user, now)` gives the skin's stretch;
+  NikaPistolArm.through (the skin's pass, which has the player) lays the loop out to the body (BODY_AT: the shoulder's world distance to
+  the body's middle / 0.9375 along the arm's own way) and runs a straight piece on to REACH (+ the stretch) where the fist is, so the loop
+  holds still while the arm goes on through; the sleeve and dawn fire passes reuse it (`reaching`).
+- gear/NikaSkin: PIN 10 (the stretch = the hold): out(t) = 1 - (1 - t/PIN)^3 (slower and slower to its limit, a faint quiver), launched at
+  PIN, SNAP 2. The original's limb lives windup 6 + extend 4 + hold 3 + retract 7 = 20 ticks: it lands at 10 and ends at 20, as the
+  launch.
+- server: PikaMoves.Launch gained `straight` (its first ticks along carry x speed, no gravity, ground ignored) and `landed` (called in
+  down()); NikaPistol: LAUNCH_SPEED 5.0, STRAIGHT 8, landed: Craters.open CRATER 2.4, GuraMoves.fx QUAKE (bx 1.0 strength, size 3.2: dust,
+  rings, rocks, cracks), ConquerorAura.exploded 3.2, Impact.quake, the Gura boom.
+- HudTests.dawnPistol: the stretch's first tick over 5x its last, at its limit at PIN, a straight fast launch under the game's movement
+  check. Previews: NikaShots `|ndawn:t` (the loop, through the body, the launch), `|ndland:age` (the landing).
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.3.9 is green (Build #180, Release #130). 3.4.0 (8zze: Dawn Pistol's final blow: the skin stretched through the body, the
-   launch through blocks) is pushed: check its Build and Release runs are green. Then ask the owner how Dawn Pistol looks in game.
+1. 3.4.0 is green (Build #181, Release #131). 3.4.1 (8zze: Dawn Pistol's looping arm, the slowing stretch, the straight launch, the
+   crater) is pushed: check its Build and Release runs are green. Then ask the owner how Dawn Pistol looks in game.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

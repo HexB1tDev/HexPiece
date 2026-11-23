@@ -68,7 +68,7 @@ public final class NikaPow {
         p.born = level.m_46467_();
         POWS.add(p);
         // 3.4.0: the fist through the body: its skin stretched out to the fist, then snapping back as it is launched
-        NikaSkinClient.start(m.id(), m.ax(), m.ay(), m.az(), p.born);
+        NikaSkinClient.start(m.id(), m.user(), m.ax(), m.ay(), m.az(), p.born);
     }
 
     static final class Writer implements FireMesh.Sink {

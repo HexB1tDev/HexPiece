@@ -97,15 +97,10 @@ public final class NikaShots {
                 double land = 4.0;
                 double tl = t - land;
                 double bz0 = 4.6;
-                double reach = t < land ? 0.6 + (bz0 - 0.6) * (1 - Math.pow(1 - t / land, 3)) : tl < 3 ? bz0
-                    : Math.max(0.0, bz0 - (tl - 3) * 0.75);
-                double flown = 0;
-                for (int k = NikaSkin.PIN; k < (int) tl; k++) {
-                    flown += 3.6;
-                }
-                if (tl > NikaSkin.PIN) {
-                    flown += 3.6 * Math.min(1, tl - Math.max(NikaSkin.PIN, (int) tl));
-                }
+                // 3.4.1: fast out; then through the body to the fist at the skin's end while it stretches; gone as the body is launched
+                double reach = t < land ? 0.6 + (bz0 - 0.6) * (1 - Math.pow(1 - t / land, 3))
+                    : tl < NikaSkin.PIN ? bz0 + Math.max(0, NikaSkin.LENGTH * NikaSkin.out(tl) - NikaSkin.BULB) : 0;
+                double flown = tl > NikaSkin.PIN ? 5.0 * (tl - NikaSkin.PIN) : 0;
                 double bz = bz0 + flown;
                 HieShots.body(sink, -ex, -ey, -ez);
                 HieShots.body(sink, -ex, -ey, bz - ez);
@@ -114,16 +109,17 @@ public final class NikaShots {
                 double sx = -0.37;
                 double sy = 1.3;
                 if (reach > 0.3) {
-                    FireMesh.tube(sink, sx - ex, sy - ey, -ez, -ex, 1.15 - ey, reach - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
-                    double r = 0.125 * 3.0 * (0.4 + 0.6 * Math.min(1.0, reach / 2.5));
-                    double dx = -sx;
-                    double dy = 1.15 - sy;
-                    double dz = reach;
-                    double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                    NikaArt.tint = mulRgb(skin, 0x3A3248);
-                    NikaArt.light(-0.33, 0.79, -0.51);
-                    NikaArt.fist(sink, dx / dl * r - ex, 1.15 + dy / dl * r - ey, reach + dz / dl * r - ez, dx, dy, dz, 0, 1, 0, r, true, true);
-                    NikaArt.tint = 0xFFFFFF;
+                    // through the body: the loop laid out to the body, the arm straight on to the fist (client/gear/NikaPistolArm)
+                    double to = Math.min(reach, bz0);
+                    curvedArm(sink, ex, ey, ez, sx, sy, 0, 0, 1.15, to, coat, reach > bz0 + 0.05 ? -1 : mulRgb(skin, 0x3A3248));
+                    if (reach > bz0 + 0.05) {
+                        FireMesh.tube(sink, -ex, 1.15 - ey, to - ez, -ex, 1.15 - ey, reach - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
+                        NikaArt.tint = mulRgb(skin, 0x3A3248);
+                        NikaArt.light(-0.33, 0.79, -0.51);
+                        double r = 0.375;
+                        NikaArt.fist(sink, -ex, 1.15 - ey, reach + r - ez, 0, 0, 1, 0, 1, 0, r, true, true);
+                        NikaArt.tint = 0xFFFFFF;
+                    }
                 }
                 if (tl >= 0) {
                     double len = NikaSkin.LENGTH * NikaSkin.out(tl);
@@ -137,6 +133,12 @@ public final class NikaShots {
                     NikaSkin.heat(sink, -ex, 1.05 - ey, bz - ez, 0, 0, 1, len, 0.42, NikaSkin.BULB, Math.min(1.0, NikaSkin.out(tl) * 1.2), tl);
                     NikaArt.pow(sink, -ex, 0.95 - ey, bz0 - ez, 0, 0, 1, tl, 1.9, 7);
                 }
+            }
+            case "ndland" -> {
+                // 3.4.1: where a Dawn Pistol's body comes down: |ndland:age (the crater's dust explosion: the Gura fruit's quake, 3.2)
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 3;
+                HieShots.body(sink, 0.8 - ex, -ey, -ez);
+                com.hexhaki.piece.gura.GuraArt.quake(sink, -ex, -ey, -ez, 3.2, 1.0, age, 7);
             }
             case "npistol" -> {
                 // 3.3.9: the Dawn Pistol's arm at its reach: |npistol:reach[:pow age] (the arm Haki-black as the original draws it, the
@@ -416,6 +418,60 @@ public final class NikaShots {
      * One grass block (its top at y), from x, z, turned about the flat axis across the way out (rx, rz) by {@code tilt} radians round
      * its top's middle (a positive tilt faces its top inward, as the client turns it).
      */
+    /**
+     * 3.4.1: Dawn Pistol's arm as client/gear/NikaPistolArm draws it: gear/NikaArc's looping path (up and out to the right: the thrower's
+     * right is -x facing +z) as a quadratic B-spline, each piece 4 tube lengths, and the ballooned right fist on its end facing along the
+     * path's last stretch.
+     */
+    static void curvedArm(FireMesh.Sink sink, double ex, double ey, double ez, double sx, double sy, double sz, double tx, double ty, double tz,
+                          int coat, int fistTint) {
+        double[] h = new double[3];
+        double[] k = new double[com.hexhaki.piece.gear.NikaArc.KNOTS * 3];
+        if (!com.hexhaki.piece.gear.NikaArc.plane(tx - sx, ty - sy, tz - sz, 0, 1, 0, -1, 0, 0, h)) {
+            return;
+        }
+        com.hexhaki.piece.gear.NikaArc.path(sx, sy, sz, tx, ty, tz, h[0], h[1], h[2], k);
+        int n = com.hexhaki.piece.gear.NikaArc.KNOTS;
+        double px = sx;
+        double py = sy;
+        double pz = sz;
+        for (int p = 0; p <= n - 2; p++) {
+            double[] a0 = p == 0 ? new double[] {k[0], k[1], k[2]} : mid(k, p, p + 1);
+            double[] c0 = {k[(p + 1) * 3], k[(p + 1) * 3 + 1], k[(p + 1) * 3 + 2]};
+            double[] b0 = p == n - 2 ? new double[] {k[(n - 1) * 3], k[(n - 1) * 3 + 1], k[(n - 1) * 3 + 2]} : mid(k, p + 1, p + 2);
+            for (int i = 1; i <= 4; i++) {
+                double u = i / 4.0;
+                double qa = (1 - u) * (1 - u);
+                double qb = 2 * u * (1 - u);
+                double qc = u * u;
+                double qx = qa * a0[0] + qb * c0[0] + qc * b0[0];
+                double qy = qa * a0[1] + qb * c0[1] + qc * b0[1];
+                double qz = qa * a0[2] + qb * c0[2] + qc * b0[2];
+                FireMesh.tube(sink, px - ex, py - ey, pz - ez, qx - ex, qy - ey, qz - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
+                px = qx;
+                py = qy;
+                pz = qz;
+            }
+        }
+        if (fistTint < 0) {
+            return; // the fist is further on (through the body)
+        }
+        double len = Math.sqrt((tx - sx) * (tx - sx) + (ty - sy) * (ty - sy) + (tz - sz) * (tz - sz));
+        double r = 0.125 * 3.0 * (0.4 + 0.6 * Math.min(1.0, len / 2.5));
+        double fx = tx - k[(n - 2) * 3];
+        double fy = ty - k[(n - 2) * 3 + 1];
+        double fz = tz - k[(n - 2) * 3 + 2];
+        double fl = Math.max(1.0E-6, Math.sqrt(fx * fx + fy * fy + fz * fz));
+        NikaArt.tint = fistTint;
+        NikaArt.light(-0.33, 0.79, -0.51);
+        NikaArt.fist(sink, tx + fx / fl * r - ex, ty + fy / fl * r - ey, tz + fz / fl * r - ez, fx, fy, fz, 0, 1, 0, r, true, true);
+        NikaArt.tint = 0xFFFFFF;
+    }
+
+    static double[] mid(double[] k, int i, int j) {
+        return new double[] {(k[i * 3] + k[j * 3]) * 0.5, (k[i * 3 + 1] + k[j * 3 + 1]) * 0.5, (k[i * 3 + 2] + k[j * 3 + 2]) * 0.5};
+    }
+
     /** Two colours multiplied (a texel times a vertex colour, as the game draws it). */
     static int mulRgb(int a, int b) {
         int r = ((a >> 16) & 255) * ((b >> 16) & 255) / 255;

@@ -4,7 +4,7 @@ Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standin
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zze of next-ai-3.2.2.md
-(2.9.6 to 3.4.0); open the older next-ai-*.md only for a feature's detail.
+(2.9.6 to 3.4.1); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -13,13 +13,13 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.3.9 everything is pushed and green (3.3.8 the rubber ripples: Build #179, Release #129; 3.3.9 Dawn Pistol:
-Build #180, Release #130). 3.4.0 (section 8zze: Dawn Pistol's final blow, the owner's words: "the fist goes through the body, stretching
-the skin to insane amounts and then causes a catastrophic knockback that destroys all blocks in it's way": the struck body held while its
-own skin is dragged out of it into a 7-block funnel to the white-hot fist, then launched through every block up to obsidian) is pushed:
-check its Build and Release runs are green first and fix anything red, then ask how Dawn Pistol plays. The owner corrected the fist while
-watching the renders ("thats the left hand on the right arm", "the fist is too big, way too big"): it is a right fist on the right arm,
-three-quarters of a block across. Read 8zz and 8zzb before any art: the owner called Supa's first flat blades "really poor and poorly
+Where things stand: up to 3.4.0 everything is pushed and green (3.4.0 Dawn Pistol's skin stretched through the body: Build #181,
+Release #131). 3.4.1 (section 8zze: Dawn Pistol after the owner's "How IS THIS IN HELL STRAIGHT" and "It also has to be FAST, but when it
+lands and stuns (the skin streches to the limit slower and slower ...) ... projected in a straight line FAST. adding a dust explosion on
+landing (and making a crater)": the arm a looping rubber curve, through the body to the fist inside the stretched skin, slower and slower
+to its limit, then a straight fast launch through blocks, a crater and dust where it lands) is pushed: check its Build and Release runs
+are green first and fix anything red, then ask how Dawn Pistol plays. The fist is a right fist on the right arm, three-quarters of a
+block across (the owner: "thats the left hand on the right arm", "the fist is too big, way too big"). Read 8zz and 8zzb before any art: the owner called Supa's first flat blades "really poor and poorly
 made"; judge every effect against the Light, Gura and Magma art before showing it; thin pale lines and flat polygons are not acceptable.
 
 Next after that: the owner has not tested Horo (3.3.6) or Ito (3.3.7) yet ("Not tested yet"): ask again how they play. Their word on
