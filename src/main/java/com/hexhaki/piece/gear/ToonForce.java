@@ -60,6 +60,9 @@ public final class ToonForce {
         // anchored and hauled: squashed down, yanked long, landing squash
         put("gear5_rocket", 18, 0, false, 0, 0.6, 4, -1.0, 9, 0.5);
         put("gear5_whip", 20, 0, false, 0, 0.35, 10, -0.6, 13, 0.25);
+        // 3.3.9: Dawn Pistol: squashed as it winds up, stretched long as the whole body is thrown, squashed by the landing
+        put("gear5_dawn_pistol", 22, 0, false, 2, 0.55, 6, -0.9, 10, 0.4);
+        put("gear5_dawn_pistol_left", 22, 0, false, 2, 0.55, 6, -0.9, 10, 0.4);
         // 3.3.2's cartoon spin: wound up, stretched by the spin, squashed by the stop, popping tall into the skip
         put("gear5_dawn_whip", 20, 0, false, 2, 0.45, 6, -0.5, 10, -0.6, 14, 0.55, 16, -0.5, 19, 0.2);
         put("gear5_giant_charge", 30, 8, true, 0, 0.4, 15, -0.18, 30, 0.18);

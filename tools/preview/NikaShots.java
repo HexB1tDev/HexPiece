@@ -51,6 +51,98 @@ public final class NikaShots {
                 }
                 NikaArt.tint = 0xFFFFFF;
             }
+            case "npow" -> {
+                // 3.3.9: Dawn Pistol landing: |npow:age[:size] (the struck body 5 ahead, its POW, the thrower at the middle)
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 2;
+                double size = move.length > 2 ? Double.parseDouble(move[2]) : 1.9;
+                double back = 0.9 * Math.max(0, age);
+                HieShots.body(sink, -ex, -ey, -ez);
+                HieShots.body(sink, -ex, -ey, 5.0 + back - ez);
+                NikaArt.pow(sink, -ex, 0.95 - ey, 5.0 + back - ez, 0, 0, 1, age, size, 7);
+            }
+            case "ndbend" -> {
+                // 3.3.9: a body Dawn Pistol strikes, pulled out lengthways (gear/NikaBend.dawn): |ndbend:t[:strength], the blow along +z
+                double t = move.length > 1 ? Double.parseDouble(move[1]) : 3;
+                double strength = move.length > 2 ? Double.parseDouble(move[2]) : 1;
+                double[] shape = new double[5];
+                NikaBend.dawn(t, strength, shape);
+                HieShots.body(sink, -ex, -ey, -ez);
+                bent(sink, -ex, -ey, 4.0 - ez, 0.0, shape);
+            }
+            case "ndawn" -> {
+                // 3.3.9: Dawn Pistol over time, |ndawn:t (t ticks after the arm leaves; this scene's arm lands on tick 4): the Haki-black
+                // arm and ballooned fist reaching out and coming back, the POW, the struck body pulled out like rubber and knocked back
+                double t = move.length > 1 ? Double.parseDouble(move[1]) : 5;
+                double land = 4.0;
+                double tl = t - land;
+                double full = 4.5;
+                double reach = t < land ? 0.6 + (full - 0.6) * (1 - Math.pow(1 - t / land, 3)) : tl < 3 ? full
+                    : Math.max(0.0, full - (tl - 3) * 0.75);
+                HieShots.body(sink, -ex, -ey, -ez);
+                int skin = 0xE7B48F;
+                int coat = FireMesh.mix(0, skin, 0.12);
+                double sx = -0.37;
+                double sy = 1.3;
+                double knock = 0;
+                double v = 2.5;
+                for (int k = 0; k < (int) Math.max(0, tl); k++) {
+                    knock += v;
+                    v *= 0.91;
+                }
+                if (tl > 0) {
+                    knock += v * (tl - (int) tl);
+                }
+                double bodyZ = full + 0.9 + knock;
+                if (reach > 0.3) {
+                    FireMesh.tube(sink, sx - ex, sy - ey, -ez, -ex, 1.15 - ey, reach - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
+                    double r = 0.125 * 3.0 * (0.4 + 0.6 * Math.min(1.0, reach / 2.5));
+                    double dx = -sx;
+                    double dy = 1.15 - sy;
+                    double dz = reach;
+                    double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    NikaArt.tint = mulRgb(skin, 0x3A3248);
+                    NikaArt.light(-0.33, 0.79, -0.51);
+                    NikaArt.fist(sink, dx / dl * r - ex, 1.15 + dy / dl * r - ey, reach + dz / dl * r - ez, dx, dy, dz, 0, 1, 0, r, true, true);
+                    NikaArt.tint = 0xFFFFFF;
+                }
+                double[] shape = new double[5];
+                NikaBend.dawn(tl, 1, shape);
+                double lift = tl > 0 ? Math.min(1.2, 0.45 * tl - 0.04 * tl * tl) : 0;
+                bent(sink, -ex, Math.max(0, lift) - ey, bodyZ - ez, 0.0, shape);
+                if (tl >= 0) {
+                    NikaArt.pow(sink, -ex, 0.95 - ey, full + 0.9 - ez, 0, 0, 1, tl, 1.9, 7);
+                }
+            }
+            case "npistol" -> {
+                // 3.3.9: the Dawn Pistol's arm at its reach: |npistol:reach[:pow age] (the arm Haki-black as the original draws it, the
+                // ballooned fist round its end as client/gear/NikaPistolArm draws it, the struck body and the POW when it has landed)
+                double reach = move.length > 1 ? Double.parseDouble(move[1]) : 4.5;
+                double age = move.length > 2 ? Double.parseDouble(move[2]) : -1;
+                HieShots.body(sink, -ex, -ey, -ez);
+                int skin = 0xE7B48F;
+                int coat = FireMesh.mix(0, skin, 0.12); // the original's dawn arm: the skin times 0.11, 0.11, 0.14
+                double sx = -0.37;
+                double sy = 1.3;
+                double tx = 0.0;
+                double ty = 1.15;
+                double tz = reach;
+                FireMesh.tube(sink, sx - ex, sy - ey, -ez, tx - ex, ty - ey, tz - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
+                double grow = 0.4 + 0.6 * Math.min(1.0, reach / 2.5);
+                double r = 0.125 * (move.length > 3 ? Double.parseDouble(move[3]) : 3.0) * grow;
+                double dx = tx - sx;
+                double dy = ty - sy;
+                double dz = tz;
+                double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                NikaArt.tint = mulRgb(skin, 0x3A3248);
+                NikaArt.light(-0.33, 0.79, -0.51);
+                // the thrower's right arm (x -0.37: facing +z, the right is -x): a right hand, its thumb on the inside
+                NikaArt.fist(sink, tx + dx / dl * r - ex, ty + dy / dl * r - ey, tz + dz / dl * r - ez, dx, dy, dz, 0, 1, 0, r, true, true);
+                NikaArt.tint = 0xFFFFFF;
+                if (age >= 0) {
+                    HieShots.body(sink, -ex, -ey, tz + 2 * r + 0.3 - ez);
+                    NikaArt.pow(sink, -ex, 0.95 - ey, tz + 2 * r + 0.3 - ez, 0, 0, 1, age, 1.9, 7);
+                }
+            }
             case "ngrab" -> {
                 double yaw = move.length > 1 ? Double.parseDouble(move[1]) : 0;
                 double age = move.length > 2 ? Double.parseDouble(move[2]) : 20;
@@ -299,6 +391,14 @@ public final class NikaShots {
      * One grass block (its top at y), from x, z, turned about the flat axis across the way out (rx, rz) by {@code tilt} radians round
      * its top's middle (a positive tilt faces its top inward, as the client turns it).
      */
+    /** Two colours multiplied (a texel times a vertex colour, as the game draws it). */
+    static int mulRgb(int a, int b) {
+        int r = ((a >> 16) & 255) * ((b >> 16) & 255) / 255;
+        int g = ((a >> 8) & 255) * ((b >> 8) & 255) / 255;
+        int bl = (a & 255) * (b & 255) / 255;
+        return (r << 16) | (g << 8) | bl;
+    }
+
     static void grass(FireMesh.Sink sink, double x, double y, double z, double rx, double rz, double tilt) {
         box(sink, x, y, z, rx, rz, tilt, 0, -1, true);
     }

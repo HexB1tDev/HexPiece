@@ -45,6 +45,15 @@ public final class NikaArt {
      */
     public static void fist(FireMesh.Sink sink, double x, double y, double z, double fx, double fy, double fz, double ux, double uy, double uz,
                             double r, boolean fine) {
+        fist(sink, x, y, z, fx, fy, fz, ux, uy, uz, r, fine, false);
+    }
+
+    /**
+     * 3.3.9 (the owner, on Dawn Pistol's first fist: "thats the left hand on the right arm"): the fist as above, built as a left hand
+     * (its thumb on the side of knuckles x back of the hand) or, {@code right}, mirrored into a right hand (the thumb on the other side).
+     */
+    public static void fist(FireMesh.Sink sink, double x, double y, double z, double fx, double fy, double fz, double ux, double uy, double uz,
+                            double r, boolean fine, boolean right) {
         if (r < 0.01) {
             return;
         }
@@ -72,9 +81,10 @@ public final class NikaArt {
         U[0] /= ul;
         U[1] /= ul;
         U[2] /= ul;
-        S[0] = F[1] * U[2] - F[2] * U[1];
-        S[1] = F[2] * U[0] - F[0] * U[2];
-        S[2] = F[0] * U[1] - F[1] * U[0];
+        double hand = right ? -1.0 : 1.0;
+        S[0] = (F[1] * U[2] - F[2] * U[1]) * hand;
+        S[1] = (F[2] * U[0] - F[0] * U[2]) * hand;
+        S[2] = (F[0] * U[1] - F[1] * U[0]) * hand;
         int n = fine ? 14 : 10;
         int m = fine ? 9 : 7;
         // the back of the hand and the palm: the main mass, a little boxy
@@ -139,6 +149,110 @@ public final class NikaArt {
 
     static final double[] QUAD = new double[12];
     static final int[] COL = new int[4];
+
+    // ------------------------------------------------------------------------------------------------------ 3.3.9: Dawn Pistol's POW
+
+    /** How long the POW lasts (ticks), and its look: the Haki's black-violet ink outline, a white burst, a warm heart. */
+    public static final double POW_LIFE = 12.0;
+    static final int POW_SPIKES = 10;
+    public static final int POW_INK = 0x1C1426;
+    public static final int POW_WHITE = 0xFFFFFF;
+    public static final int POW_CORE = 0xFFE7A0;
+    static final double[] POW_B = new double[6];
+    static final double[] POW_PTS = new double[POW_SPIKES * 2 * 3];
+
+    /**
+     * 3.3.9 (the owner accepted "a cartoon 'POW' burst on hit (a bold star-shaped flash and shock ring)"): where a Dawn Pistol lands, a
+     * comic-book starburst facing the eye, held just in front of the body struck (middle at {@code x y z}, eye-centred; {@code size} its
+     * height): a jagged star of {@link #POW_SPIKES} long and short spikes in three flat bands (the Haki-black ink outline, white, a warm
+     * heart), each a hair nearer the eye than the one under it (one plane would speckle: the Ito strings' lesson); it pops out past its
+     * size in two ticks, settles, holds and shrinks away; two white shock rings race out round the punch's line ({@code wx wy wz}) and
+     * eight impact lines shoot out from the star's edge. About 270 quads.
+     */
+    public static void pow(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, double size, int seed) {
+        if (age < 0 || age > POW_LIFE) {
+            return;
+        }
+        double dist = Math.sqrt(x * x + y * y + z * z);
+        if (dist < 0.3) {
+            return;
+        }
+        double vx = x / dist;
+        double vy = y / dist;
+        double vz = z / dist;
+        // the pop: out past its size in two ticks, settling to it by four, held, then shrinking and fading from seven
+        double scale;
+        if (age < 2.0) {
+            scale = 1.3 * Math.sin(Math.PI * 0.5 * age / 2.0);
+        } else if (age < 4.0) {
+            scale = 1.3 - 0.3 * (age - 2.0) / 2.0;
+        } else if (age < 7.0) {
+            scale = 1.0 + 0.04 * Math.sin((age - 4.0) * 2.4);
+        } else {
+            scale = 1.0 - 0.45 * (age - 7.0) / (POW_LIFE - 7.0);
+        }
+        double alpha = age < 7.0 ? 1.0 : Math.max(0.0, 1.0 - (age - 7.0) / (POW_LIFE - 7.0));
+        double radius = (0.5 + 0.3 * Math.max(0.5, Math.min(3.0, size))) * Math.max(0.05, scale);
+        // just in front of the body, toward the eye
+        double front = Math.min(dist * 0.5, 0.35 + 0.12 * size);
+        double cx = x - vx * front;
+        double cy = y - vy * front;
+        double cz = z - vz * front;
+        FireMesh.basis(vx, vy, vz, POW_B);
+        double turn = FireMesh.rand(seed, 1) * Math.PI;
+        int n = POW_SPIKES * 2;
+        for (int k = 0; k < n; k++) {
+            double a = turn + k * Math.PI / POW_SPIKES;
+            double r = k % 2 == 0 ? 0.92 + 0.2 * FireMesh.rand(seed, k + 2) : 0.46 + 0.1 * FireMesh.rand(seed, k + 40);
+            double ca = Math.cos(a) * r;
+            double sa = Math.sin(a) * r;
+            POW_PTS[k * 3] = POW_B[0] * ca + POW_B[3] * sa;
+            POW_PTS[k * 3 + 1] = POW_B[1] * ca + POW_B[4] * sa;
+            POW_PTS[k * 3 + 2] = POW_B[2] * ca + POW_B[5] * sa;
+        }
+        // the three bands, far to near: the ink outline, the white burst, the warm heart
+        star(sink, cx, cy, cz, vx, vy, vz, dist, 0, radius * 1.16, FireMesh.argb(0.95 * alpha, POW_INK));
+        star(sink, cx, cy, cz, vx, vy, vz, dist, 1, radius, FireMesh.argb(0.95 * alpha, POW_WHITE));
+        star(sink, cx, cy, cz, vx, vy, vz, dist, 2, radius * 0.5, FireMesh.argb(0.9 * alpha, POW_CORE));
+        // impact lines from the star's edge, between its long spikes
+        double lines = radius * (0.6 + 0.5 * Math.min(1.0, age / 3.0));
+        for (int k = 0; k < 8; k++) {
+            double a = turn + (k + 0.5) * Math.PI * 2.0 / 8.0 + 0.2 * FireMesh.rand(seed, k + 80);
+            double ox = POW_B[0] * Math.cos(a) + POW_B[3] * Math.sin(a);
+            double oy = POW_B[1] * Math.cos(a) + POW_B[4] * Math.sin(a);
+            double oz = POW_B[2] * Math.cos(a) + POW_B[5] * Math.sin(a);
+            double from = radius * 1.12;
+            FireMesh.ray(sink, cx + ox * from - vx * dist * 0.006, cy + oy * from - vy * dist * 0.006, cz + oz * from - vz * dist * 0.006,
+                ox, oy, oz, lines, radius * 0.07, 0, 0.0, POW_WHITE, 0.9 * alpha);
+        }
+        // the shock rings round the punch's line, racing out (the second two ticks behind)
+        double wl = Math.sqrt(wx * wx + wy * wy + wz * wz);
+        if (wl > 1.0E-6) {
+            for (int k = 0; k < 2; k++) {
+                double t = age - k * 2.0;
+                if (t < 0 || t > 9.0) {
+                    continue;
+                }
+                double ring = 0.35 + 0.36 * t * (1.0 + 0.25 * size);
+                FireMesh.ring(sink, x, y, z, wx / wl, wy / wl, wz / wl, ring, 0.45 - 0.15 * k, 0.3, POW_WHITE, (0.85 - 0.3 * k) * (1.0 - t / 9.0));
+            }
+        }
+    }
+
+    /** One band of the star: {@link #POW_PTS} at {@code radius}, lifted {@code layer} hairs toward the eye, a fan from its middle. */
+    static void star(FireMesh.Sink sink, double cx, double cy, double cz, double vx, double vy, double vz, double dist, int layer, double radius,
+                     int argb) {
+        double lift = dist * 0.003 * layer;
+        double mx = cx - vx * lift;
+        double my = cy - vy * lift;
+        double mz = cz - vz * lift;
+        int n = POW_SPIKES * 2;
+        for (int k = 0; k < n; k++) {
+            int j = (k + 1) % n;
+            FireMesh.quad(sink, mx, my, mz, argb, mx + POW_PTS[k * 3] * radius, my + POW_PTS[k * 3 + 1] * radius, mz + POW_PTS[k * 3 + 2] * radius,
+                argb, mx + POW_PTS[j * 3] * radius, my + POW_PTS[j * 3 + 1] * radius, mz + POW_PTS[j * 3 + 2] * radius, argb, mx, my, mz, argb);
+        }
+    }
 
     static void corner(int k, double p, double l, double power, double ka, double kb, double kc, double cx, double cy, double cz) {
         double cp = Math.cos(p);

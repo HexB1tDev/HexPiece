@@ -29,7 +29,8 @@ description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is push
 pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed and green (Build
 #172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); 3.3.7
 (8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed and green (Build #177, Release #128); 3.3.8 (8zze:
-the rubber ripples twice as high, every Gear 5 fall ripples) is pushed: check its runs (section 9); 3.3.9 the Dawn Pistol (8zze).**
+the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green (Build #179, Release #129); 3.3.9 (8zze: Dawn Pistol,
+the wind-up, the black ballooned fist, the POW, the body pulled like taffy) is pushed: check its runs (section 9).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2296,11 +2297,52 @@ fx IMPACT at the body, a sound) after impactTick. `sendStretch` sends S2CGearStr
 and, with dawn, RubberLimbMesh.emit again with DAWN_FIRE (textures/effect/gear5_aura.png); `renderFirstPerson` is first person (leave
 it). client/gear/NikaFist shows how the Bajrang fist replaced the hand cube (HIDE, NikaArt.fist through Bulk).
 
+**3.3.9 as built** (Dawn Pistol; nothing tested in game: build, 13 suites, every part rendered, the sound measured; GIFs
+docs/gifs/nika-dawn-pistol-3.3.9.gif, nika-dawn-pistol-pull-3.3.9.gif, nika-dawn-pistol-windup-3.3.9.gif). The owner, verbatim, while it
+was built (they watched the renders): on the fist at 5.5 times the hand, "thats the left hand on the right arm..." and "and the fist is
+too big, way too big"; then "make sure it bends the entities a ton more and looks better than the current one" with a frame of Luffy vs
+Lucci (Cap 1101: Lucci's leopard body pulled out like taffy, several times its length, along Luffy's stretched arm).
+- server/NikaPistol + patch/PiecePatch.dawnPistol: GearServerController.pistol's animate -> `NikaPistol.clip` (with `dawn`:
+  gear5_dawn_pistol or gear5_dawn_pistol_left by GearData "pistolSide", true = the right arm, set by alternate() just before; the throw
+  remembered); after `hit` in the `lambda$throwLimb$` landing, `NikaPistol.struck(player, target, way, award)` (the hit's own locals; the
+  lambda's last argument is the award: the Pistol's 5, the Gatling's 1): within WINDOW 24 ticks of a Dawn throw, the hit's own throw
+  (it already weighs knockback resistance) x FAR 2.0 and lifted to LIFT 0.45, f_19864_; S2CUoFx POW 164 (id the body, user the thrower,
+  the body's middle, ax ay az the way, bx the pull's strength max(0.4, thrown / 1.25), size its height); piece.gear.dawn_pistol at the
+  body. The original's fx(IMPACT) (and so ConquerorAura.gear's lightning) still comes.
+- client/gear/NikaPistolArm + PiecePatch.pistolArm (build.py PATCHED: RubberLimbLayer): `RubberLimbLayer.draw` tells `begin(stretch)`
+  (its ninth local); its GearOutfitLayer.emitWithCuff -> `emitSkin`, its two RubberLimbMesh.emit -> `emitOther`. For PISTOL with
+  `variant` 1 (the original's dawn; it already draws the arm Haki-black, 0.11 0.11 0.14, with the gear5_aura fire round it) the hand
+  cube is hidden (NikaFist.HIDE) and the ballooned fist drawn FIRST into the skin's batch (emitWithCuff may switch buffers for the cuff):
+  NikaFist.fistAt -> NikaArt.fist(..., right) at BALLOON 3.0 x the hand's half size (5.5 was "way too big"), inflating from FROM 0.4 by
+  FULL_AT 2.5 blocks out, tint COAT 0x3A3248 over the skin texel, the back of the hand up (model -y), **a right hand on the right arm**:
+  NikaArt.fist builds a LEFT hand (thumb on F x U); `right` mirrors the thumb (3.3.9's first render had a left hand on the right arm).
+  The Bajrang Gun's fist is unchanged (also built as NikaArt's left hand: check it if the owner asks). Stub added:
+  dev/kosmx/playerAnim/impl/IUpperPartHelper (GearOutfitLayer implements it).
+- First person exactly the Pistol's: PiecePatch.firstPersonArms redirects playRemote's `OWN_FIRST_PERSON_ARM.contains(name)` to
+  `PieceHooks.ownFirstPerson` (adds the two Dawn clips: FirstPersonMode NONE, the original's own first-person arm).
+- tools/nika_anims.dawn_pistol: both clips are gear5_pistol's arm moves exactly plus DAWN_PISTOL's **body** yaw and bend (a torso yaw
+  turns the torso mesh alone in PlayerAnimator: the arms would come off), wind-up yaw -42 (the rig: -z is forward, a negative body yaw
+  puts the right shoulder back), snapped to +6 at 7 and square (within 6) while the arm is out, ticks 6 to 13 (the original draws the
+  stretched arm in the turned body's frame). ToonForce beats (2 squash, 6 stretch, 10 squash). No head, no leg.
+- gear/NikaArt.pow (POW_LIFE 12: a comic starburst facing the eye, 10 spikes, ink 0x1C1426 / white / warm core 0xFFE7A0, each band a
+  hair nearer the eye; 8 impact lines; two shock rings round the punch line; under 400 quads), client/gear/NikaPow (MOST 16, debugQuads,
+  AFTER_PARTICLES; UoFx routes POW before the 160-179 hold route) which also starts the pull: client/gear/NikaBendClient.dawn ->
+  gear/NikaBend.dawn: the body pulled out lengthways (shear DAWN_PULL 2.8 blocks along per block up, across 1/(1+0.7e), up 1-0.18e,
+  along 1+0.8e; smack 2, hold 9 quivering, snap back 10 through a squash, wobble 10). The first try (4.5, up 1-0.38e) lay flat as a
+  plank. Star Gun's bend (NikaBend.shape) unchanged.
+- Sound: tools/gear_sounds.py "cartoon_punch" modusmogulus "Cartoon Punch Cassette F" 785936 -> gear/dawn_pistol1.ogg (3 dB down: -13.6
+  LUFS, +2.9 dB over noise in tools/tonal_lines.py); GearSounds.DAWN_PISTOL, sounds.json, en_us "A rubber fist pounds"; SwordTests
+  webSounds("gear", ..., 3). Rejected (pitched): CartoonPunch 563356 (980 Hz +11), Punch 2 Heavy 490769 (54 Hz +14), 535362 (183 Hz),
+  heroiclobber 645864 (221 Hz).
+- verify/srg-shapes.txt: AABB.getCenter m_82399_ (joined.tsrg from MCPConfig on GitHub raw).
+- HudTests.dawnPistol: the clips' arms equal gear5_pistol's, no head or leg, square while the arm is out, wound up 30+; POW's kind; the
+  POW cheap and gone after its life; the pull at rest at both ends, the top flung 3.5 to 6 blocks, more than 3 x Star Gun's, a squash,
+  no jumps, a heavy body pulled less. Previews: NikaShots `|npow:age`, `|npistol:reach[:pow age[:balloon]]`, `|ndbend:t`, `|ndawn:t`.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.3.7 is green (Build #177, Release #128). 3.3.8 (8zze: the ripples twice as high, every fall ripples) is pushed: check its Build
-   and Release runs are green. Then 3.3.9: the Dawn Pistol as the owner accepted it (8zze), rendered third person (and the fist, the
-   POW, the bent body) before pushing; first person left alone.
+1. 3.3.8 (8zze: the ripples twice as high, every fall ripples) is green (Build #179, Release #129). 3.3.9 (8zze: Dawn Pistol) is
+   pushed: check its Build and Release runs are green. Then ask the owner how Dawn Pistol looks in game (the fist's size, the pull).
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

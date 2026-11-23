@@ -116,6 +116,25 @@ public final class NikaFist {
         }
     };
 
+    /**
+     * 3.3.9: a fist of radius {@code r} whose middle is at (cx, cy, cz), knuckles toward (fx, fy, fz), the back of the hand toward (ux,
+     * uy, uz), a right hand or a left one, in the skin's colour (client/gear/NikaPistolArm: Dawn Pistol's).
+     */
+    static void fistAt(PoseStack.Pose pose, VertexConsumer out, int light, float cx, float cy, float cz, float fx, float fy, float fz, float ux,
+                       float uy, float uz, float r, boolean slim, boolean right) {
+        if (r < 0.02F) {
+            return;
+        }
+        Bulk.read(pose, M, N);
+        target = out;
+        packed = light;
+        u = (slim ? 48.5F : 50.0F) / 64.0F;
+        v = 18.0F / 64.0F;
+        NikaArt.light(0.33, -0.79, -0.51); // the model's frame: y down, z behind
+        NikaArt.fist(SINK, cx, cy, cz, fx, fy, fz, ux, uy, uz, r, r > 1.5F, right);
+        target = null;
+    }
+
     static void fist(PoseStack.Pose pose, VertexConsumer out, int light, Vector3f start, Vector3f end, Vector3f side, float hand, boolean slim) {
         float r = hand * 0.125F; // the hand cube's half size: the fist's own radius
         float dx = end.x - start.x;

@@ -474,6 +474,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(GEAR_KEYS + ".class", transform(entries.get(GEAR_KEYS + ".class"), PiecePatch::nikaKeys));
         entries.put(REMOTE_GEAR + ".class", transform(entries.get(REMOTE_GEAR + ".class"), PiecePatch::gearFastClient));
         entries.put(BAJRANG_LAYER + ".class", transform(entries.get(BAJRANG_LAYER + ".class"), PiecePatch::nikaFist));
+        entries.put(RUBBER_LIMB_LAYER + ".class", transform(entries.get(RUBBER_LIMB_LAYER + ".class"), PiecePatch::pistolArm));
         entries.put(GIANT_GRAB + ".class", transform(entries.get(GIANT_GRAB + ".class"), PiecePatch::giantHold));
         entries.put(RUBBER_BEND_STATES + ".class", transform(entries.get(RUBBER_BEND_STATES + ".class"), PiecePatch::starRubberStates));
         entries.put(RUBBER_BEND_DEFORMER + ".class", transform(entries.get(RUBBER_BEND_DEFORMER + ".class"), PiecePatch::starRubberDeformer));
@@ -483,6 +484,7 @@ public final class PiecePatch implements Opcodes {
             gearUntransformed(node);
             gearFast(node);
             dawnWhip(node);
+            dawnPistol(node);
             rubberChaos(node);
         }));
         entries.put(GEAR_FIELDS + ".class", transform(entries.get(GEAR_FIELDS + ".class"), PiecePatch::fieldsQuiet));
@@ -972,6 +974,23 @@ public final class PiecePatch implements Opcodes {
         if (hooks != 1) {
             throw new AssertionError("expected one setFirstPersonConfiguration in HakiAnimations.playRemote, found " + hooks);
         }
+        // 3.3.9: the original's OWN_FIRST_PERSON_ARM (gear5_pistol and the other stretches: PlayerAnimator left out of first person,
+        // the original's own stretched arm drawn there) is asked through PieceHooks.ownFirstPerson, which adds Dawn Pistol's clips: its
+        // first person stays exactly the Pistol's (the owner: "The first person is fine")
+        int owns = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.getOpcode() == INVOKEINTERFACE && call.owner.equals("java/util/Set")
+                && call.name.equals("contains") && call.getPrevious() instanceof VarInsnNode name && name.var == 1
+                && name.getPrevious() instanceof FieldInsnNode set && set.name.equals("OWN_FIRST_PERSON_ARM")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, HOOKS, "ownFirstPerson", "(Ljava/util/Set;Ljava/lang/Object;)Z", false);
+                method.instructions.set(call, ours);
+                insn = ours;
+                owns++;
+            }
+        }
+        if (owns != 1) {
+            throw new AssertionError("expected one OWN_FIRST_PERSON_ARM.contains in HakiAnimations.playRemote, found " + owns);
+        }
         // 2.9.0: every clip a player is told to play goes past PieceHooks.played(id, name) first (no branch: no frame needed), so the
         // client knows which of the Light fruit's moves each player is in and since when (its first person, its fingertip)
         InsnList told = new InsnList();
@@ -1239,6 +1258,79 @@ public final class PiecePatch implements Opcodes {
         }
     }
 
+    static final String NIKA_PISTOL = "com/hexhaki/piece/server/NikaPistol";
+
+    /**
+     * 3.3.9 (the owner: "We need to better the hotkey [Haki] versions"; asked, "Build as proposed"): Dawn Pistol. {@code
+     * GearServerController.pistol}'s {@code HakiServerController.animate(player, "gear5_pistol", 2)} becomes {@code NikaPistol.clip} (the
+     * cartoon wind-up with Haki on); in the throw's landing (the {@code lambda$throwLimb$} that calls {@code hit}), right after that
+     * {@code hit(player, target, damage, knock, way)}, {@code NikaPistol.struck(player, target, way, award)} is called with the very
+     * locals the hit was given and the lambda's last argument (the Pistol's award 5; the Gatling's is 1). No branch, no frame. Exactly one
+     * clip and one hit, or the build fails.
+     */
+    static void dawnPistol(ClassNode node) {
+        MethodNode pistol = method(node, "pistol", "(Lnet/minecraft/server/level/ServerPlayer;)V");
+        int calls = 0;
+        for (AbstractInsnNode insn = pistol.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.owner.equals("com/hexhaki/gameplay/HakiServerController") && call.name.equals("animate")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, NIKA_PISTOL, "clip", call.desc, false);
+                pistol.instructions.set(call, ours);
+                insn = ours;
+                calls++;
+            }
+        }
+        if (calls != 1) {
+            throw new AssertionError("GearServerController.pistol's clip is not as inspected: " + calls);
+        }
+        String hitDesc = "(Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/world/entity/LivingEntity;FFLnet/minecraft/world/phys/Vec3;)V";
+        int hits = 0;
+        for (MethodNode lambda : node.methods) {
+            if (!lambda.name.startsWith("lambda$throwLimb$")) {
+                continue;
+            }
+            Type[] args = Type.getArgumentTypes(lambda.desc);
+            for (AbstractInsnNode insn = lambda.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+                if (!(insn instanceof MethodInsnNode call) || call.getOpcode() != INVOKESTATIC || !call.owner.equals(GEAR_SERVER)
+                    || !call.name.equals("hit") || !call.desc.equals(hitDesc)) {
+                    continue;
+                }
+                // the hit's own arguments: player, target, damage, knock, way
+                AbstractInsnNode[] loads = new AbstractInsnNode[5];
+                AbstractInsnNode back = call.getPrevious();
+                for (int k = 4; k >= 0; k--) {
+                    loads[k] = back;
+                    back = back == null ? null : back.getPrevious();
+                }
+                int[] ops = {ALOAD, ALOAD, FLOAD, FLOAD, ALOAD};
+                for (int k = 0; k < 5; k++) {
+                    if (!(loads[k] instanceof VarInsnNode load) || load.getOpcode() != ops[k]) {
+                        throw new AssertionError("the Pistol's hit is not given plain locals as inspected");
+                    }
+                }
+                if (args.length == 0 || args[args.length - 1].getSort() != Type.INT) {
+                    throw new AssertionError("the throw's landing has no award as its last argument: " + lambda.desc);
+                }
+                int award = 0;
+                for (Type arg : args) {
+                    award += arg.getSize();
+                }
+                award -= 1;
+                InsnList after = new InsnList();
+                after.add(new VarInsnNode(ALOAD, ((VarInsnNode) loads[0]).var));
+                after.add(new VarInsnNode(ALOAD, ((VarInsnNode) loads[1]).var));
+                after.add(new VarInsnNode(ALOAD, ((VarInsnNode) loads[4]).var));
+                after.add(new VarInsnNode(ILOAD, award));
+                after.add(new MethodInsnNode(INVOKESTATIC, NIKA_PISTOL, "struck", "(Lnet/minecraft/server/level/ServerPlayer;"
+                    + "Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/phys/Vec3;I)V", false));
+                lambda.instructions.insert(call, after);
+                hits++;
+            }
+        }
+        if (hits != 1) {
+            throw new AssertionError("the Pistol's landing hit is not as inspected: " + hits);
+        }
+    }
+
     static final String GEAR_FIELDS = "com/hexhaki/devilfruit/gameplay/GearFields";
 
     /**
@@ -1449,6 +1541,69 @@ public final class PiecePatch implements Opcodes {
         }
         if (centres != 1 || emits != 3) {
             throw new AssertionError("BajrangFistLayer.render is not as inspected: " + centres + " centres, " + emits + " emits");
+        }
+    }
+
+    static final String RUBBER_LIMB_LAYER = "com/hexhaki/client/devilfruit/render/RubberLimbLayer";
+    static final String PISTOL_ARM = "com/hexhaki/piece/client/gear/NikaPistolArm";
+
+    /**
+     * 3.3.9 (Dawn Pistol, the owner: "Build as proposed"): {@code RubberLimbLayer.draw} first tells {@code NikaPistolArm.begin(stretch)}
+     * which stretch it draws (its ninth local, the RubberLimbStates.Stretch parameter); its one {@code GearOutfitLayer.emitWithCuff} (the
+     * skin) becomes {@code NikaPistolArm.emitSkin} and its two {@code RubberLimbMesh.emit} (the sleeve, the dawn fire) become {@code
+     * NikaPistolArm.emitOther}: a Dawn Pistol's hand hidden in a ballooned Haki-black fist, anything else as before. Exactly one and two,
+     * or the build fails.
+     */
+    static void pistolArm(ClassNode node) {
+        String stretch = "Lcom/hexhaki/client/devilfruit/RubberLimbStates$Stretch;";
+        MethodNode draw = null;
+        for (MethodNode m : node.methods) {
+            if (m.name.equals("draw") && m.desc.contains(stretch)) {
+                if (draw != null) {
+                    throw new AssertionError("RubberLimbLayer has more than one draw with a stretch");
+                }
+                draw = m;
+            }
+        }
+        if (draw == null || (draw.access & ACC_STATIC) != 0) {
+            throw new AssertionError("RubberLimbLayer.draw is not as inspected");
+        }
+        Type[] args = Type.getArgumentTypes(draw.desc);
+        int slot = 1;
+        int at = -1;
+        for (Type arg : args) {
+            if (arg.getDescriptor().equals(stretch)) {
+                at = slot;
+            }
+            slot += arg.getSize();
+        }
+        if (at != 9) {
+            throw new AssertionError("RubberLimbLayer.draw's stretch is not its ninth local: " + at);
+        }
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, at));
+        head.add(new MethodInsnNode(INVOKESTATIC, PISTOL_ARM, "begin", "(" + stretch + ")V", false));
+        draw.instructions.insert(head);
+        int skins = 0;
+        int others = 0;
+        for (AbstractInsnNode insn = draw.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (!(insn instanceof MethodInsnNode call) || call.getOpcode() != INVOKESTATIC) {
+                continue;
+            }
+            if (call.owner.equals("com/hexhaki/client/devilfruit/render/GearOutfitLayer") && call.name.equals("emitWithCuff")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, PISTOL_ARM, "emitSkin", call.desc, false);
+                draw.instructions.set(call, ours);
+                insn = ours;
+                skins++;
+            } else if (call.owner.equals("com/hexhaki/client/devilfruit/render/RubberLimbMesh") && call.name.equals("emit")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, PISTOL_ARM, "emitOther", call.desc, false);
+                draw.instructions.set(call, ours);
+                insn = ours;
+                others++;
+            }
+        }
+        if (skins != 1 || others != 2) {
+            throw new AssertionError("RubberLimbLayer.draw is not as inspected: " + skins + " skins, " + others + " other passes");
         }
     }
 

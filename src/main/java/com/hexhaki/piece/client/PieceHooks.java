@@ -54,6 +54,16 @@ public final class PieceHooks {
      * style's blows, the Light fruit's and the Uo Uo no Mi's human moves showed nothing there. Those now show the arms as they move (as
      * the Swordsman's swings do); the kicks' legs are drawn by client/FirstPersonLegs. Everything else keeps the original's choice.
      */
+    /**
+     * 3.3.9: the original's {@code HakiAnimations.OWN_FIRST_PERSON_ARM.contains(name)} (its stretching moves: first person is the
+     * original's own stretched arm, PlayerAnimator left out of it), with Dawn Pistol's two clips added: their first person is exactly
+     * the Pistol's (the owner: "The first person is fine").
+     */
+    public static boolean ownFirstPerson(java.util.Set<?> own, Object name) {
+        return own.contains(name) || com.hexhaki.piece.server.NikaPistol.CLIP_RIGHT.equals(name)
+            || com.hexhaki.piece.server.NikaPistol.CLIP_LEFT.equals(name);
+    }
+
     public static dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration firstPersonArms(
         dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration config, String name) {
         if (name != null && (name.startsWith("style_") && !name.startsWith("style_swordsman") || name.startsWith("pika_")

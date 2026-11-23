@@ -989,6 +989,15 @@
       }
     ]
   },
+  "piece.gear.dawn_pistol": {
+    "subtitle": "subtitles.hexhaki.piece.gear.dawn_pistol",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/dawn_pistol1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
   "piece.noro.photon": {
     "subtitle": "subtitles.hexhaki.piece.noro.photon",
     "sounds": [

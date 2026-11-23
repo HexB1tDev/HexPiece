@@ -228,6 +228,109 @@ public final class HudTests {
         rubberWorld();
         toonForce();
         rubberJump();
+        dawnPistol();
+    }
+
+    /**
+     * 3.3.9: Dawn Pistol (the owner: "Build as proposed"; first person left alone): its two clips keep every arm move of gear5_pistol
+     * exactly (first person is the original's own, and the third-person arms match it), key no head and no leg, and hold the body square
+     * (within 6 degrees, no overshooting easing) while the stretched arm is out (ticks 6 to 13: the original draws it in the turned body's
+     * frame); the POW is a Nika kind of its own, cheap, and gone after its life.
+     */
+    static void dawnPistol() {
+        java.util.regex.Pattern arms = java.util.regex.Pattern.compile("\\{\"tick\":[^{}]*\"(?:rightArm|leftArm)\":\\{[^{}]*\\}\\}");
+        java.util.regex.Pattern yaw = java.util.regex.Pattern.compile("\\{\"tick\":([0-9.]+),\"easing\":\"(\\w+)\",\"body\":\\{\"yaw\":(-?[0-9.]+)\\}\\}");
+        java.util.List<String> pistol = matches(arms, clipText("gear5_pistol"));
+        Check.that(pistol.size() >= 16, "dawnPistol: gear5_pistol's arm moves read (" + pistol.size() + ")");
+        for (String name : new String[] {com.hexhaki.piece.server.NikaPistol.CLIP_RIGHT, com.hexhaki.piece.server.NikaPistol.CLIP_LEFT}) {
+            String text = clipText(name);
+            Check.that(matches(arms, text).equals(pistol), "dawnPistol: " + name + "'s arms are gear5_pistol's exactly");
+            Check.that(!text.contains("\"head\"") && !text.contains("Leg\""), "dawnPistol: " + name + " keys no head and no leg");
+            java.util.regex.Matcher m = yaw.matcher(text);
+            int keys = 0;
+            double wound = 0;
+            while (m.find()) {
+                double tick = Double.parseDouble(m.group(1));
+                double value = Double.parseDouble(m.group(3));
+                wound = Math.max(wound, Math.abs(value));
+                keys++;
+                if (tick >= 6 && tick <= 13) {
+                    Check.that(Math.abs(value) <= 6 && !m.group(2).contains("back") && !m.group(2).contains("elastic"),
+                        "dawnPistol: " + name + " square while the arm is out (" + value + " at " + tick + ")");
+                }
+            }
+            Check.that(keys >= 6 && wound >= 30, "dawnPistol: " + name + " winds the body up (" + wound + ")");
+        }
+        int pow = com.hexhaki.piece.server.NikaPistol.POW;
+        Check.that(pow >= 160 && pow < 180 && pow != com.hexhaki.piece.server.NikaJump.HOP && pow != com.hexhaki.piece.server.NikaJump.LAND
+            && pow != com.hexhaki.piece.server.GiantHold.HOLD && pow != com.hexhaki.piece.server.GiantHold.LET_GO, "dawnPistol: the POW's own Nika kind");
+        int[] quads = new int[1];
+        com.hexhaki.piece.dragon.FireMesh.Sink count = (xyz, argb) -> quads[0]++;
+        int most = 0;
+        for (double age = 0; age <= com.hexhaki.piece.gear.NikaArt.POW_LIFE; age += 0.5) {
+            quads[0] = 0;
+            com.hexhaki.piece.gear.NikaArt.pow(count, 0.3, 1.0, 5.0, 0, 0, 1, age, 1.9, 7);
+            most = Math.max(most, quads[0]);
+        }
+        Check.that(most > 60 && most < 400, "dawnPistol: the POW drawn, cheaply (" + most + " quads at most)");
+        quads[0] = 0;
+        com.hexhaki.piece.gear.NikaArt.pow(count, 0.3, 1.0, 5.0, 0, 0, 1, com.hexhaki.piece.gear.NikaArt.POW_LIFE + 0.5, 1.9, 7);
+        Check.that(quads[0] == 0, "dawnPistol: the POW gone after its life");
+        Check.that(com.hexhaki.piece.server.NikaPistol.PISTOL_AWARD == 5, "dawnPistol: the Pistol's landing (the original's award 5)");
+        // the owner: "make sure it bends the entities a ton more and looks better than the current one" (gear/NikaBend.dawn)
+        double[] shape = new double[5];
+        double[] star = new double[5];
+        Check.that(!com.hexhaki.piece.gear.NikaBend.dawn(-0.1, 1, shape) && shape[com.hexhaki.piece.gear.NikaBend.SHEAR] == 0,
+            "dawnPistol: the body at rest before the blow");
+        Check.that(!com.hexhaki.piece.gear.NikaBend.dawn(com.hexhaki.piece.gear.NikaBend.dawnLength() + 0.1, 1, shape)
+            && shape[com.hexhaki.piece.gear.NikaBend.UP] == 1, "dawnPistol: the body at rest after the pull");
+        double pulled = 0;
+        double squashed = 1;
+        double starMost = 0;
+        double last = 0;
+        double jump = 0;
+        for (double t = 0; t < com.hexhaki.piece.gear.NikaBend.dawnLength(); t += 0.25) {
+            com.hexhaki.piece.gear.NikaBend.dawn(t, 1, shape);
+            // how far the top of a body 1.8 high is flung along the blow
+            double top = shape[com.hexhaki.piece.gear.NikaBend.SHEAR] * shape[com.hexhaki.piece.gear.NikaBend.UP] * 1.8;
+            pulled = Math.max(pulled, top);
+            if (t > 1) {
+                jump = Math.max(jump, Math.abs(top - last));
+            }
+            last = top;
+            squashed = Math.min(squashed, shape[com.hexhaki.piece.gear.NikaBend.UP]);
+            Check.that(shape[com.hexhaki.piece.gear.NikaBend.ACROSS] > 0.3 && shape[com.hexhaki.piece.gear.NikaBend.UP] > 0.4,
+                "dawnPistol: the body never folds to nothing");
+            com.hexhaki.piece.gear.NikaBend.shape(t, 26, 17, 1, star);
+            starMost = Math.max(starMost, Math.abs(star[com.hexhaki.piece.gear.NikaBend.SHEAR] * star[com.hexhaki.piece.gear.NikaBend.UP] * 1.8));
+        }
+        Check.that(pulled > 3.5 && pulled < 6, "dawnPistol: the top flung far along the blow (" + pulled + " blocks)");
+        Check.that(pulled > 3 * starMost, "dawnPistol: a ton more than Star Gun's bend (" + pulled + " against " + starMost + ")");
+        Check.that(squashed < 0.85, "dawnPistol: it snaps back through a squash (" + squashed + ")");
+        Check.that(jump < 1.6, "dawnPistol: no jumps past the smack (" + jump + " a quarter tick)");
+        com.hexhaki.piece.gear.NikaBend.dawn(5, 0.4, shape);
+        double weak = shape[com.hexhaki.piece.gear.NikaBend.SHEAR];
+        com.hexhaki.piece.gear.NikaBend.dawn(5, 1, shape);
+        Check.that(weak < 0.5 * shape[com.hexhaki.piece.gear.NikaBend.SHEAR], "dawnPistol: a heavy body pulled less");
+    }
+
+    static String clipText(String name) {
+        try {
+            return java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/assets/hexhaki/player_animation/" + name + ".json"))
+                .replaceAll("\\s+", "");
+        } catch (java.io.IOException failure) {
+            throw new AssertionError(failure);
+        }
+    }
+
+    static java.util.List<String> matches(java.util.regex.Pattern pattern, String text) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        java.util.regex.Matcher m = pattern.matcher(text);
+        while (m.find()) {
+            out.add(m.group());
+        }
+        java.util.Collections.sort(out);
+        return out;
     }
 
     /**
@@ -285,7 +388,8 @@ public final class HudTests {
      * spring rings and settles within bounds, a loop's beats come again, and the body never folds to nothing.
      */
     static void toonForce() {
-        for (String clip : new String[] {"gear5_pistol", "gear5_gatling", "gear5_rocket", "gear5_whip", "gear5_dawn_whip", "gear5_giant_grab",
+        for (String clip : new String[] {"gear5_pistol", "gear5_dawn_pistol", "gear5_dawn_pistol_left", "gear5_gatling", "gear5_rocket",
+            "gear5_whip", "gear5_dawn_whip", "gear5_giant_grab",
             "gear5_giant_throw", "gear5_gigante_laugh", "gear5_coil_charge", "gear5_coil_release", "gear5_bounce", "gear5_bajrang_slam",
             "gear5_dodge_backflip", "gear5_stance"}) {
             Check.that(com.hexhaki.piece.gear.ToonForce.score(clip) != null, "nika: " + clip + " has Toon Force beats");

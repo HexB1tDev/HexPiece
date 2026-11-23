@@ -4,7 +4,7 @@ Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standin
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zze of next-ai-3.2.2.md
-(2.9.6 to 3.3.8); open the older next-ai-*.md only for a feature's detail.
+(2.9.6 to 3.3.9); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -13,15 +13,15 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.3.7 everything is pushed and green (3.3.7 the Ito Ito no Mi: Build #177, Release #128). 3.3.8 (section
-8zze: Rubber World's waves and Gear 5's jump/landing ripples twice as high, the owner's "About 2x"; every Gear 5 landing from 2+ blocks
-ripples the ground, the Bajrang Gun's fall included) is pushed: check its Build and Release runs are green first and fix anything red.
-Next is 3.3.9, the Dawn Pistol exactly as the owner accepted it ("Build as proposed", 8zze: a quick cartoon wind-up clip in third person,
-first person left alone; the stretched arm ending in a black Haki-coated balloon fist like the Bajrang Gun's, smaller; a cartoon POW
-burst and shock ring on hit; the struck body bent like rubber as Star Gun's and knocked far back; the Conqueror's lightning out of the
-impact; a new CC0 punch sound). 8zze lists what the original's pistol does and where to hook it. Read 8zz and 8zzb before any art: the
-owner called Supa's first flat blades "really poor and poorly made"; judge every effect against the Light, Gura and Magma art before
-showing it; thin pale lines and flat polygons are not acceptable.
+Where things stand: up to 3.3.8 everything is pushed and green (3.3.8, section 8zze: Rubber World's waves and Gear 5's jump/landing
+ripples twice as high, every Gear 5 landing from 2+ blocks ripples: Build #179, Release #129). 3.3.9 (8zze: Dawn Pistol, built as the
+owner accepted and corrected it while watching the renders: a cartoon wind-up in third person, first person exactly the Pistol's; a
+Haki-black ballooned RIGHT fist on the right arm about three-quarters of a block across ("thats the left hand on the right arm", "the
+fist is too big, way too big"); a comic POW; the struck body pulled out lengthways like taffy, the owner's Luffy vs Lucci frame ("make
+sure it bends the entities a ton more and looks better than the current one"); knocked twice as far; a CC0 cartoon punch) is pushed:
+check its Build and Release runs are green first and fix anything red, then ask how Dawn Pistol plays. Read 8zz and 8zzb before any
+art: the owner called Supa's first flat blades "really poor and poorly made"; judge every effect against the Light, Gura and Magma art
+before showing it; thin pale lines and flat polygons are not acceptable.
 
 Next after that: the owner has not tested Horo (3.3.6) or Ito (3.3.7) yet ("Not tested yet"): ask again how they play. Their word on
 the strings (8zzd, verbatim): "it looks like dust", "its meant to be slimmer, they're too thick", "sharper in the end too not just

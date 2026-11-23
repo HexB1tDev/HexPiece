@@ -562,6 +562,7 @@ m_82369_ (Leei;)Leed;
 m_82371_ (Leei;Leei;)Ljava/util/Optional;
 m_82383_ (Leei;)Leed;
 m_82390_ (Leei;)Z
+m_82399_ ()Leei;
 m_82400_ (D)Leed;
 m_82425_ ()Lgu;
 m_82450_ ()Leei;

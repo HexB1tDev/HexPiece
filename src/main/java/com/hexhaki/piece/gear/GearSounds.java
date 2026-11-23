@@ -15,8 +15,11 @@ public final class GearSounds {
     /** The last, heaviest beat (a heavy cinematic drum hit). */
     public static final String DRUM_BIG = "piece.gear.drum_big";
 
+    /** 3.3.9: Dawn Pistol's cartoon punch where it lands (server/NikaPistol; "Cartoon Punch Cassette F" by modusmogulus). */
+    public static final String DAWN_PISTOL = "piece.gear.dawn_pistol";
+
     /** Every event and its clips (assets/hexhaki/sounds/piece/gear/{clip}.ogg). */
     public static final String[][] EVENTS = {
-        {DRUM, "drum1"}, {DRUM_BIG, "drum2"},
+        {DRUM, "drum1"}, {DRUM_BIG, "drum2"}, {DAWN_PISTOL, "dawn_pistol1"},
     };
 }

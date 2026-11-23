@@ -655,7 +655,7 @@ public final class SwordTests {
         // 3.1.9: the Hie Hie no Mi's (tools/hie_sounds.py)
         webSounds("hie", com.hexhaki.piece.hie.HieSounds.EVENTS, 11);
         // 3.2.3: the Nika fruit's transformation drums (tools/gear_sounds.py)
-        webSounds("gear", com.hexhaki.piece.gear.GearSounds.EVENTS, 2);
+        webSounds("gear", com.hexhaki.piece.gear.GearSounds.EVENTS, 3);
         // 3.3.4: the Noro Noro no Mi's (tools/noro_sounds.py; the first 3.3.4 push borrowed the mod's own clips: replaced)
         webSounds("noro", com.hexhaki.piece.noro.NoroSounds.EVENTS, 11);
         // 3.3.5: the Supa Supa no Mi's (tools/supa_sounds.py)

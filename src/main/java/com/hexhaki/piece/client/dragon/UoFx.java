@@ -147,6 +147,10 @@ public final class UoFx {
             com.hexhaki.piece.client.gear.RubberWorldDraw.accept(m); // 3.3.2: Gear 5's jump turning the ground to rubber
             return;
         }
+        if (m.kind() == com.hexhaki.piece.server.NikaPistol.POW) {
+            com.hexhaki.piece.client.gear.NikaPow.accept(m); // 3.3.9: Dawn Pistol's cartoon POW where it lands
+            return;
+        }
         if (m.kind() >= 160 && m.kind() < 180) {
             com.hexhaki.piece.client.gear.NikaHoldClient.accept(m); // 3.2.8: the Nika fruit's (160 to 179): the Giant's hold
             return;

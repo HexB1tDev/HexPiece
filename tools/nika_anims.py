@@ -28,7 +28,7 @@ from gura_anims import write_parts  # noqa: E402
 from style_anims import OUT as ANIM_DIR, PARTS, WRITTEN, arm, leg, mirror, p  # noqa: E402
 
 OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam", "gear5_dawn_whip",
-         "gear5_bounce", "gear5_jump", "gear5_land"}
+         "gear5_bounce", "gear5_jump", "gear5_land", "gear5_dawn_pistol", "gear5_dawn_pistol_left"}
 
 # the transformation's beats on the real clock (the original's 170-tick clock at double speed: patch/PiecePatch.gearFast)
 LENGTH = 85
@@ -275,6 +275,37 @@ def dawn_whip():
                "into Gear 5's laughing skip.", TARGET_PARTS)
 
 
+# 3.3.9: Dawn Pistol's wind-up: (tick, easing, body yaw for the right arm thrown, body bend). The whole body (PlayerAnimator turns
+# the torso mesh alone on a torso yaw: the arms would come off it) twists the throwing shoulder far back as it leans back (negative yaw:
+# tools/anim's rig puts the right shoulder 3.2 px behind at -40), then snaps through and is thrown forward into the punch. The original
+# draws the stretched arm in the turned body's frame, so the body is square again (within 6 degrees) while the arm is out: StretchStyle
+# PISTOL's wind-up 6, reach 4 (it lands on tick 10), hold 3, retract 7.
+DAWN_PISTOL = ((0, "linear", 0, 0), (3, "outsine", -36, -10), (5, "insine", -42, -12), (7, "outexpo", 6, 18), (9, "outsine", 0, 16),
+               (13, "linear", 0, 12), (17, "inoutsine", 0, 4), (22, "inoutsine", 0, 0))
+
+
+def dawn_pistol():
+    """3.3.9 (the owner: "We need to better the hotkey [Haki] versions"; asked, "Build as proposed": "a quick cartoon wind-up in third
+    person (arm yanked far back, body twisting, then the whole body thrown into the punch; first person left alone)"): Dawn Pistol,
+    gear5_dawn_pistol (the right arm thrown) and gear5_dawn_pistol_left (the left: server/NikaPistol picks the arm the original chose).
+    Every arm track is gear5_pistol's exactly (its first person is the original's own: client/PieceHooks.ownFirstPerson); the torso and
+    the body carry the wind-up (DAWN_PISTOL), the left clip's twist mirrored. No head, no leg (the punch is thrown on the run)."""
+    pistol = load("gear5_pistol")
+    arms = [m for m in pistol["emote"]["moves"] if any(part in m for part in ("rightArm", "leftArm"))]
+    for name, sign in (("gear5_dawn_pistol", 1), ("gear5_dawn_pistol_left", -1)):
+        moves = [json.loads(json.dumps(m)) for m in arms]
+        for tick, easing, yaw, bend in DAWN_PISTOL:
+            moves.append({"tick": tick, "easing": easing, "body": {"yaw": round(float(sign * yaw), 3)}})
+            moves.append({"tick": tick, "easing": easing, "body": {"bend": round(float(bend), 3)}})
+        moves.sort(key=lambda m: m["tick"])
+        data = {"version": 3, "name": name, "author": "HexPiece 3.3.9",
+                "description": "Nika: Dawn Pistol: the shoulder wound far back, then the whole body thrown into the stretching punch "
+                               "(the Pistol's own arms).",
+                "emote": dict(pistol["emote"], moves=moves)}
+        WRITTEN[name] = data
+        save(name, data)
+
+
 def sky_bounce():
     """Sky Bounce (Shift+Space in Gear 5; the owner: "not a fan" of the old one, which hunched over with the arms folded across the chest;
     the target: Gear 5 Luffy's skip): a squash crouch with the arms swung back, the launch stretched straight with both arms flung up,
@@ -334,6 +365,7 @@ def main():
     calmed()
     bajrang()
     dawn_whip()
+    dawn_pistol()
     sky_bounce()
     jump()
     land()
