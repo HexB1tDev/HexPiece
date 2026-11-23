@@ -10,13 +10,15 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
 lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 (8zl: the Nika fruit's keys Z X C V B N M, Haki names,
 white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
-and its new animation, the punch's wobble) is pushed (check its runs: section 9). Next is the rest of the Nika rework (section 9).** The cloud environment
+and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the move lightning the release's own again, after the
+owner's anger) is pushed (check its runs: section 9). Next is the rest of the Nika rework (section 9; the Bajrang Gun's fist and
+slam are half built in the scratchpad's bajrang-wip, written up in 9.2).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -36,6 +38,17 @@ Default is refused freesound.org: get_environment lists it under saved_for_sessi
    explosions and all this hockey [Haki] thing on the explosions is not optional. It is like if the move has an explosion at the end, the
    explosion is what gets the lightning like blowing from outwards of it." Use `ConquerorAura.mixed` (gated on the Conqueror's Haki
    awakened and Ryou on) at each explosion, outward from it; a move with no explosion throws it at its strike point.
+3. **That lightning is EXACTLY the Conqueror's release's lightning, and nothing else** (the owner, 3.2.5, furious: "I don't know how many
+   times I have to fucking say this ... The lightning is to be exactly the same as the one in Conqueror's hockey release. The one that
+   you added for the fruits is the old lightning effects. They are not meant to be in use anymore. In fact, they should be gone from
+   the game entirely ... This has happened over 10 times by now."). `haki/ConquerorStorm.blast` IS the release's `bolt()` cut short:
+   the width at each point is the release's own at that distance from where the bolt starts (`RELEASE_SPAN` 80: thin where it leaves,
+   swelling as it goes, tapering at its end), the release's kinks (`STEP`), branches, black body and Ryou-coloured rim. **Never scale a
+   blast's width on its own** (3.1.8 squeezed the release's width curve into short bolts: "ridiculously fat"; 3.2.2 drew them a fifth as
+   wide: thin black lines, "the old lightning effects"). Never use any other lightning look for a move (the old thin burst of arcs is
+   deleted). Before changing anything that draws lightning, render it beside the release from the same camera (the scratchpad's
+   Compare.java pattern: SparkPreview.render with `far` true, the release round the player, a blast 1.5 and 8 ahead) and judge them
+   the same.
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -161,6 +174,8 @@ Mods beside HexPiece: geckolib, fdlib, architectury, playeranimator, ldlib, phot
 
 ## 6. Haki and lightning
 
+- **A move's Haki lightning is the Conqueror's release's lightning, exactly** (POINT ONE 3; 8zn): the release's own bolts cut short
+  (ConquerorStorm.blast, RELEASE_SPAN). Never thin lines, never fat tubes, never any other lightning look; never re-scale its width.
 - **Every Haki lightning is the 3D lightning of the Advanced Conqueror's Haki** (client/haki/HakiBolts, BoltMesh, BoltPainter): black
   body, rim in **the user's Ryou colour** (HakiBolts.colorOf). Never the original's flat beams, never its red-black, anywhere, Gear 5
   included (2.9.4 routed GearVfx.playAt, ThunderstormImpact and StormLanceVfx through it).
@@ -1464,9 +1479,37 @@ Nothing tested in game: build, tests, every clip rendered (tools/anim_preview.py
   7 steady and torso yaw ±3; the stance its own bend, y bob and torso yaw, half its torso roll. tools/anim_polish.py's GENERATED skips
   these four (run nika_anims.py after it).
 
-## 9. What to do next (after 3.2.4)
+## 8zn. Done (3.2.5): the Haki lightning on moves is the release's own again; the owner's anger about it (verbatim)
 
-1. Check 3.2.4's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+The owner, after 3.2.4 (two screenshots: (1) in third person on a hill, the player with a pale blue ball at the fist (Gear 5's lance or
+a charge) and two long THIN black lines zig-zagging up into the sky from him, crossed out in red with "???"; (2) the Conqueror's release:
+thick black bolts with a pale blue-white rim, kinked and branching, one tearing along the ground, ticked in green):
+"Okay, this is really testing my patience. I don't know how many times I have to say this. I truly don't know how many times I have to
+fucking say this. Every time you're adding lightning to my fucking abilities with the hockey on, you do the same fucking shit I tell you
+not to do and you keep ignoring it. Let's see if we get this shit straight again. The lightning is to be exactly the same as the one in
+Conqueror's hockey release. The one that you added for the fruits is the old lightning effects. They are not meant to be in use anymore.
+In fact, they should be gone from the game entirely. And yet here they are again. But no, you keep fucking adding it. Like, I don't
+understand what's the deal with you. Like, I keep telling you to add to the handoff that this lightning is not meant to be used
+anymore. And yet here it is again. This has happened over 10 times by now.
+I also don't understand why you replaced the fucking lightning lens [lance]. That was perfect how it was, mind you. And no one mentioned
+that move to you, yet you just felt entitled to just get rid of the lightning it had and just, just fucking remove it. ... And my user
+wanted the lightning for the abilities that use hotkey [Haki]. You know what? I'm just gonna give him the old piece of shit. ..."
+- What it was: 3.2.2's `ConquerorStorm.BLAST_WIDTH` 0.08 (8zi) made every move's Haki lightning (ConquerorAura.mixed/exploded/gear ->
+  ConquerorSparksClient -> ConquerorStorm.blast) a fifth as wide: thin black lines with no rim to see. The lance itself
+  (client/haki/LanceLightning, the original's lance through it since 2.9.4) was never changed; what the owner saw at the lance is the
+  move lightning every Gear 5 effect throws (ConquerorAura.gear), which had become those thin lines. Its key moved from H to N in 3.2.3
+  only because the owner chose N for Coil Spring / Lightning Lance (8zk); it still fires from N with Haki in Gear 5.
+- Fix (`haki/ConquerorStorm`): `BLAST_WIDTH` gone; `blast` calls the release's `bolt()` with the release's `size` and `STEP` and a `span`
+  (`RELEASE_SPAN` 80): `spanWidth(walked, total, span, size)` = the release's `width(walked / span)` (so a blast bolt is the first
+  stretch of a release bolt: 0.43 x size where it leaves, ~0.9 at 6 blocks, ~2 at 15) x a taper to a quarter over its last third;
+  branches the same. The release itself (span 0) is unchanged. The old thin `ConquerorSparks.burst` (3.1.2's arcs, unused since 3.1.8)
+  is deleted. DragonTests: a blast's bolts leave it under 0.75 blocks wide and swell past 1.0, never past the release's 3.6 x 1.35.
+  Rendered from one third-person camera: the release round the player, a punch's blast 1.5 ahead and a big one 8 ahead: the same bolts
+  (docs/handoff/lightning-same-3.2.5.png).
+
+## 9. What to do next (after 3.2.5)
+
+1. Check 3.2.5's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
 2. The Nika rework, part 3 on (8zk's list, in its own versions; the transformation and the wobble are done, 8zm): Bajrang Gun from
    above with the body turning in the air and a big rounded fist; Dawn Whip redone as a cartoon spin after Luffy vs Kizaru; Star Gun's struck
    body more rubbery; Giant holding bodies properly; Rubber World bending the real ground in waves; Toon Force everywhere. Render every

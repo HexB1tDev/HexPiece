@@ -197,11 +197,13 @@ public final class DragonTests {
         java.util.List<com.hexhaki.piece.haki.Bolt> blast = com.hexhaki.piece.haki.ConquerorStorm.blast(9.0, 14, -0.5, 21L, 1.35);
         int blastMost = 0;
         float widest = 0;
+        float leaving = 0;
         for (com.hexhaki.piece.haki.Bolt b : blast) {
             Check.that(b.duration <= 16, "a blast's bolt snaps quickly (" + b.duration + " ticks)");
             for (float w : b.widths) {
                 widest = Math.max(widest, w);
             }
+            leaving = Math.max(leaving, b.widths[0]);
         }
         for (double age = 0; age < 20; age += 1) {
             bq[0] = 0;
@@ -211,8 +213,11 @@ public final class DragonTests {
             blastMost = Math.max(blastMost, bq[0]);
         }
         Check.that(blastMost < 1600, "the biggest blast's lightning fits (" + blastMost + " quads)");
-        // 3.2.2 (the owner: "ridiculously fat compared to" the release's): thin lines, as the release's look from the player (under 0.6)
-        Check.that(widest > 0.2F && widest < 0.6F, "a blast's bolts are as thin as the release's look (" + widest + " blocks)");
+        // 3.2.5 (the owner: "The lightning is to be exactly the same as the one in Conqueror's Haki release"): a release bolt cut short:
+        // as thin where it leaves the blast as the release's leaves the player (3.6 x 0.12 x 1.35 = 0.58), never wider than the release's
+        // widest (3.6 x 1.35), and not the thin lines of 3.2.2 (it swells as it goes)
+        Check.that(leaving < 0.75F, "a blast's bolts leave it as thin as the release's leave the player (" + leaving + " blocks)");
+        Check.that(widest > 1.0F && widest <= 3.6F * 1.35F + 0.01F, "a blast's bolts swell as the release's do (" + widest + " blocks)");
         // 3.1.8: the ground bent (Heave.bend); 3.2.2: in the cone (the owner: "in a cone ... you made a sphere, like a circle"): a trench
         // deepening forward with heaved sides, squares lifted and sunk, nothing behind the feet or out past the cone's sides
         for (double length : new double[] {com.hexhaki.piece.gura.Heave.REACH, com.hexhaki.piece.gura.Heave.BEND_MOST}) {

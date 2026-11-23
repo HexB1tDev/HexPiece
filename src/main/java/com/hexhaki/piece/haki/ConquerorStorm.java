@@ -98,13 +98,16 @@ public final class ConquerorStorm {
      * relative to the blast's point.
      */
     /**
-     * 3.2.2 (the owner: "the lightning is too thick. If you compare the two lightnings of the Conqueror's release and the one you just
-     * added, the one you added is ridiculously fat compared to the other one"): a blast's bolts' width, as a share of the release's.
-     * The release's bolts leave the player thin (0.43 blocks) and reach their 3.6 only some 30 blocks out, so they are seen as thin black
-     * lines; a blast's bolts are seen from a few blocks off, so they are drawn thinner in the world to look as thin (3.1.8's 0.4 made them
-     * 1.4 blocks wide beside the player: fat tubes).
+     * 3.2.5 (the owner, after 3.2.2 made them a fifth as wide: "The lightning is to be exactly the same as the one in Conqueror's Haki
+     * release. The one that you added for the fruits is the old lightning effects. They are not meant to be in use anymore"; before, after
+     * 3.1.8: "ridiculously fat compared to the other one"): a blast's bolt is a release bolt cut short. Its width is the release's own at
+     * the same distance from where it starts, as along a release bolt {@link #RELEASE_SPAN} blocks long (0.43 blocks where it leaves,
+     * swelling as it goes), tapering to a quarter at its own end as the release's do; its kinks, branches, black body and rim the
+     * release's. (3.1.8 squeezed the release's whole width curve into the short bolt: it swelled to its widest within a few blocks of the
+     * player, fat tubes; 3.2.2 drew it a fifth as wide: thin black lines, the old look. Both are gone: never scale a blast's width on its
+     * own again.)
      */
-    public static final double BLAST_WIDTH = 0.08;
+    public static final double RELEASE_SPAN = 80.0;
 
     public static List<Bolt> blast(double radius, int count, double floor, long seed, double size) {
         SplittableRandom random = new SplittableRandom(seed ^ 0x424C_4153_54L);
@@ -119,8 +122,8 @@ public final class ConquerorStorm {
                 dir = normalise(dir);
             }
             double length = Math.max(8.0, Math.min(40.0, radius * 2.5)) * (0.75 + 0.25 * random.nextDouble());
-            // kinked as often for its length as the release's; as thin as the release's look (BLAST_WIDTH)
-            bolt(strands, random, dir, length, (float) (random.nextDouble() * 0.8), size * BLAST_WIDTH, height, 0.4, STEP * 0.5);
+            // the release's very bolt, cut short: its width by the distance from the blast as along a release bolt, its kinks the release's
+            bolt(strands, random, dir, length, (float) (random.nextDouble() * 0.8), size, height, 0.4, STEP, RELEASE_SPAN);
         }
         List<Bolt> out = new ArrayList<>(strands.size() * 2);
         for (Strand strand : strands) {
@@ -133,6 +136,18 @@ public final class ConquerorStorm {
                 strand.length(), strand.seed())));
         }
         return out;
+    }
+
+    /**
+     * The width {@code walked} blocks along a bolt {@code total} long: the release's at that share of its length ({@code span} 0), or (a
+     * blast's) the release's at that distance along a release bolt {@code span} long, tapering to a quarter over its own last third.
+     */
+    static float spanWidth(double walked, double total, double span, double size) {
+        if (span <= 0.0) {
+            return width(walked / Math.max(1.0E-6, total), size);
+        }
+        double left = Math.max(0.0, total - walked) / Math.max(1.0E-6, total * 0.35);
+        return (float) (width(Math.min(1.0, walked / span), size) * (0.25 + 0.75 * Math.min(1.0, left)));
     }
 
     /** The stroke width at {@code t} (0 at the flash, 1 at the far end), times {@code size}: swelling out of the flash, tapering far out. */
@@ -164,6 +179,11 @@ public final class ConquerorStorm {
         }
 
         Strand build(float delay, int duration, double size, double widthShare, long seed) {
+            return build(delay, duration, size, widthShare, seed, 0.0);
+        }
+
+        /** As above; {@code span} over 0: the width by the distance walked as along a release bolt that long (a blast's). */
+        Strand build(float delay, int duration, double size, double widthShare, long seed, double span) {
             int n = this.points.size();
             double[] p = new double[n * 3];
             float[] w = new float[n];
@@ -181,7 +201,7 @@ public final class ConquerorStorm {
                 p[i * 3 + 2] = q[2];
                 tear[i] = this.tears.get(i);
                 // on the ground the bolt is a tear, lower and narrower than in the sky
-                w[i] = width(walked / total, size) * (float) widthShare * (tear[i] > 0 ? 0.5F : 1.0F);
+                w[i] = spanWidth(walked, total, span, size) * (float) widthShare * (tear[i] > 0 ? 0.5F : 1.0F);
             }
             return new Strand(p, w, tear, delay, duration, total, seed);
         }
@@ -193,12 +213,12 @@ public final class ConquerorStorm {
      * along it outward for the rest; now and then a branch (a strand of its own, from a point of this one).
      */
     static void bolt(List<Strand> out, SplittableRandom random, double[] dir, double length, float delay, double size) {
-        bolt(out, random, dir, length, delay, size, CHEST, START, STEP);
+        bolt(out, random, dir, length, delay, size, CHEST, START, STEP, 0.0);
     }
 
     /** As above, out of a flash {@code chest} over the ground, the strands leaving it {@code start} blocks out (3.1.8: a blast's). */
     static void bolt(List<Strand> out, SplittableRandom random, double[] dir, double length, float delay, double size, double chest,
-                     double start, double runs) {
+                     double start, double runs, double span) {
         final double CHEST = chest;
         final double START = start;
         final double STEP = runs;
@@ -255,12 +275,12 @@ public final class ConquerorStorm {
             b.add(next, tear);
             if (walked > Math.min(10.0, length * 0.35) && random.nextDouble() < (length < 40.0 ? 0.3 : 0.16)) {
                 branches.add(new Object[] {next.clone(), h.clone(), grounded, yaw, Math.min(length - walked, 8.0 + random.nextDouble() * 14.0),
-                    delay + (float) ((walked + step) / SPEED), (double) width(t, size) * 0.45});
+                    delay + (float) ((walked + step) / SPEED), (double) spanWidth(walked + step, length, span, size) * 0.45});
             }
             walked += step;
             a = next;
         }
-        out.add(b.build(delay, 24 + random.nextInt(6), size, 1.0, random.nextLong()));
+        out.add(b.build(delay, 24 + random.nextInt(6), size, 1.0, random.nextLong(), span));
         for (Object[] branch : branches) {
             branch(out, random, (double[]) branch[0], (double[]) branch[1], (Boolean) branch[2], (Double) branch[3], (Double) branch[4],
                 (Float) branch[5], (Double) branch[6]);
