@@ -493,11 +493,14 @@ public final class HudTests {
             Check.that(rank != null, "ranks: " + fruit + " has a rank");
             Check.that(lang.contains("\"item.hexhaki." + fruit.id + "_" + fruit.id + "_no_mi\": \"" + rank.code), "ranks: " + fruit + "'s name in its colour");
         }
+        Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.NORO) == com.hexhaki.piece.FruitRanks.Rank.COMMON,
+            "ranks: the Noro fruit Common (the owner: \"New common Fruits\")");
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.UO) == com.hexhaki.piece.FruitRanks.Rank.MYTHICAL
             && com.hexhaki.piece.FruitRanks.NIKA == com.hexhaki.piece.FruitRanks.Rank.MYTHICAL, "ranks: the Uo Uo and Nika fruits Mythical");
         Check.that(lang.contains("\"item.hexhaki.nika_fruit\": \"" + com.hexhaki.piece.FruitRanks.NIKA.code), "ranks: the Nika fruit's name in its colour");
         for (java.util.List<com.hexhaki.fruit.FruitMove> moves : java.util.List.of(com.hexhaki.piece.server.GuraKit.MOVES,
-            com.hexhaki.piece.server.HieKit.MOVES, com.hexhaki.piece.server.MaguKit.MOVES, com.hexhaki.piece.server.PikaKit.MOVES,
+            com.hexhaki.piece.server.HieKit.MOVES, com.hexhaki.piece.server.MaguKit.MOVES, com.hexhaki.piece.server.NoroKit.MOVES,
+            com.hexhaki.piece.server.PikaKit.MOVES,
             com.hexhaki.piece.server.UoKit.MOVES)) {
             for (com.hexhaki.fruit.FruitMove move : moves) {
                 if (move.cooldown() != null) {

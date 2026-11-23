@@ -48,6 +48,9 @@ public final class FruitRanks {
         if (fruit == Fruit.UO) {
             return Rank.MYTHICAL;
         }
+        if (fruit == Fruit.NORO) {
+            return Rank.COMMON; // 3.3.4 (the owner: "New common Fruits ... Noro Noro No Mi (Common)")
+        }
         return Rank.LEGENDARY; // Gura, Pika, Magu, Hie
     }
 }

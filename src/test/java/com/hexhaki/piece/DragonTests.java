@@ -318,6 +318,45 @@ public final class DragonTests {
      * round the eye and eight flying with their trails and bursts; the pheasant close by with its big burst; the Ice Ball's orb, its mist
      * and its breaking; Ice Age's mist row; a saber cut, the ice fist and the body of ice scattering; every vertex finite.
      */
+    /**
+     * 3.3.4: the Noro fruit's photons at their busiest stay within a phone's budget: the beam its whole length off the mirror, a fan of
+     * seven bursts, twenty slowed bodies, the dome, releases; and the mirror bounces a way back as a mirror does.
+     */
+    static void noroPhotons() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        for (int age = 0; age <= 40; age += 4) {
+            count[0] = 0;
+            com.hexhaki.piece.noro.NoroArt.beam(sink, 0, -0.4, 0.7, 0, -0.4, com.hexhaki.piece.server.NoroMoves.BEAM_RANGE, age);
+            for (int k = 0; k < 7; k++) {
+                com.hexhaki.piece.noro.NoroArt.shot(sink, -3 + k, 0, 4 + age, 0, 0, 1, age);
+                com.hexhaki.piece.noro.NoroArt.pop(sink, -3 + k, 0, 20, age % 10, true);
+            }
+            for (int b = 0; b < 20; b++) {
+                com.hexhaki.piece.noro.NoroArt.aura(sink, -10 + b, 0, 12, 0.6, 1.9, age, 1.0);
+            }
+            com.hexhaki.piece.noro.NoroArt.dome(sink, 0, -1.6, 0, com.hexhaki.piece.server.NoroMoves.FIELD_RADIUS, age, 160);
+            com.hexhaki.piece.noro.NoroArt.mirror(sink, 0, 0, 2.2, new com.hexhaki.piece.noro.NoroMirror(0, 0, 2.2, 0, 0, -1), age, 100);
+            for (int r = 0; r < 4; r++) {
+                com.hexhaki.piece.noro.NoroArt.release(sink, -4 + r * 2, 0, 10, 1.0, (age + r * 3) % 18);
+            }
+            check(count[0], finite[0], "Noro photons", age);
+        }
+        com.hexhaki.piece.noro.NoroMirror m = new com.hexhaki.piece.noro.NoroMirror(0, 0, 5, 0, 0, -1);
+        double t = m.hit(0, 0, 0, 0, 0, 1, 20);
+        Check.that(Math.abs(t - 5) < 1.0E-9, "the mirror is met where it stands (" + t + ")");
+        Check.that(m.hit(3, 0, 0, 0, 0, 1, 20) < 0, "a way past the mirror's edge misses it");
+        double[] d = {0.3, 0, 0.95};
+        m.reflect(d);
+        Check.that(Math.abs(d[2] + 0.95) < 1.0E-9 && Math.abs(d[0] - 0.3) < 1.0E-9, "the mirror turns a way back as a mirror does");
+    }
+
     static void hieIce() {
         int[] count = {0};
         boolean[] finite = {true};
@@ -411,6 +450,8 @@ public final class DragonTests {
             Check.that(zip.getEntry("assets/hexhaki/textures/item/uo_uo_no_mi.png") != null, "and the fruit's icon");
             Check.that(zip.getEntry("assets/hexhaki/textures/item/hie_hie_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/hie_hie_no_mi.json") != null, "the Ice fruit's icon and model");
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/noro_noro_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/noro_noro_no_mi.json") != null, "the Noro fruit's icon and model");
             try (InputStream in = zip.getInputStream(entry)) {
                 model = DragonModel.read(in);
             }
@@ -423,6 +464,7 @@ public final class DragonTests {
         guraUltimate();
         maguMagma();
         hieIce();
+        noroPhotons();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

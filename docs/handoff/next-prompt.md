@@ -4,7 +4,7 @@ Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standin
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zt of next-ai-3.2.2.md
-(2.9.6 to 3.3.2); open the older next-ai-*.md only for a feature's detail.
+(2.9.6 to 3.3.4); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -13,28 +13,24 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: 3.2.2 (the Ice fruit's crystal and frost punches, Ice World's field, the Gura cone, thin Haki lightning, no ground
-art in midair, the Magma X fix) is pushed and green. 3.2.3 (section 8zl: the Nika fruit part 1: Z Gear 5, X Rocket / Star Gun, C
-Whip, V Gatling, B Giant / Bajrang Gun, N Coil Spring / Lightning Lance, M Rubber World; the panel renaming them with Haki in Gear 5,
-white; the stretch moves untransformed; drums instead of the transformation music) is pushed and green. 3.2.4 (8zm: the transformation
-in about 4 s with a new animation, the punch's wobble gone) is pushed and green. 3.2.5 (8zn: the move lightning the release's own again)
-is pushed and green. 3.2.6 (8zo: the Bajrang Gun's rounded fist, swept down as the body turns head-first) is pushed and green. 3.2.7 (8zp: Dawn Whip as a
-cartoon spin) is pushed and green. 3.2.8 (8zq: Giant holds what it grabs, in the drawn fist on every client) is pushed and green. 3.2.9 (8zr: Star Gun's struck
-body as rubber) is pushed and green. 3.3.0 (8zs: Rubber World's ground rolling in rubber waves) is pushed and green. 3.3.1 (8zt: Toon
-Force, Dawn Whip and the Gear 5 jump pose redone to the owner's target look) is pushed and green. 3.3.2 (8zu: Sky Bounce gone; every Gear 5
-jump about five blocks high with the laughing skip, the ground springing and rippling like rubber at the take-off and the landing, no
-fall damage; Rubber World throwing everyone but its user about; the skip pose redone from the owner's limb-by-limb description after
-they were furious it was still wrong) is pushed and green. 3.3.3 (8zx: Rubber World's waves slow and of different sizes, at the
-owner's word) is pushed: first check its "Build HexPiece" and "Release HexPiece" runs.
+Where things stand: up to 3.3.1 everything is pushed and green (sections 8zl to 8zt). 3.3.2 (8zu: Sky Bounce gone; every Gear 5
+jump about five blocks high with the laughing skip, the ground springing and rippling like rubber, no fall damage; Rubber World
+throwing everyone but its user about; the skip pose redone from the owner's limb-by-limb description after they were furious it was
+still wrong: the right fist raised FORWARD, never to the side) is pushed and green. 3.3.3 (8zx: Rubber World's waves slow and of
+different sizes, at the owner's word) is pushed and green. **3.3.4, the Noro Noro no Mi, is IN PROGRESS (8zy)**: pushed at the owner's
+word ("Enough, handoff and prompt, now") without a local build or a CI check: first check the branch's "Build HexPiece" run and fix
+anything red, then finish it as 8zy lists.
 
-Next: the owner's three new fruits (8zv verbatim, 8zw the accepted keys): 3.3.4 Noro Noro, 3.3.5 Supa Supa, 3.3.6 Horo Horo, each
-built as the Ice fruit was (8zc, 8ze), animations reused from the mod's own clips. Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika rework (better Haki versions: Dawn Pistol; never touch the
-lightning lance). The owner's target look for the fruit is Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every new pose
-with a raised arm must keep the hand off the face from the front (tools/anim.face_covered) and be looked at beside the owner's
-pictures from every side, never passed on a 3D test alone (the owner: "how the FUCK is that a pass"); a raised fist the owner wants
-forward stays forward.
+Next: the owner's three new fruits (8zv verbatim, 8zw the keys the owner accepted): finish 3.3.4 Noro Noro, then 3.3.5 Supa Supa
+(Uncommon; with Armament the blades black-purple like the katanas), then 3.3.6 Horo Horo, each built as the Ice fruit was (8zc, 8ze)
+and Noro is, with "simple reused animations already in the mod". Freesound refused the last session (403): Noro's sounds borrow the
+mod's own CC0 recordings for now; try Freesound again and give it its own. Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika
+rework (better Haki versions: Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika fruit is Gear 5
+Luffy's laughing skip (8zt item 3, 8zu item 5): every pose with a raised arm keeps the hand off the face from the front
+(tools/anim.face_covered) and is looked at beside the owner's pictures from every side; a raised fist the owner wants forward stays
+forward.
 
-The cloud environment is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 (freesound.org, cdn.freesound.org, opengameart.org); if
+The cloud environment is the personal "HexPiece", env_016v9rNSffz2fds2ha514nhY (freesound.org, cdn.freesound.org, opengameart.org); if
 freesound.org is refused, the session is on Default: get_environment, then switch_environment to it.
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;

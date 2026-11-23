@@ -11,7 +11,8 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
 owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground), 8zt 3.3.1 (Toon Force, Dawn Whip and the jump pose redone; the owner's jump request),
-8zu 3.3.2 (the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's description: read it).
+8zu 3.3.2 (the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's description: read it), 8zv the
+owner's three new fruits (verbatim), 8zw their accepted keys, 8zx 3.3.3 (Rubber World's slow waves), 8zy 3.3.4 in progress (Noro).
 
 Branch `claude/nice-bell-gam7qf` since 3.3.2 (fetch it first: it is the newest; it continues claude/pensive-heisenberg-mkr9cl). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -22,8 +23,9 @@ owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam)
 what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber) is pushed and green; 3.3.0 (8zs: Rubber World's ground
 rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip and the jump pose redone to the owner's target
 look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's
-description) is pushed: check its runs first, section 9. Next: the owner's verdict, then the rest of the Nika rework (section 9).** The cloud environment
-is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
+description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is IN PROGRESS,
+pushed unchecked at the owner's word: check its build first, section 9.** The cloud environment
+is the personal "HexPiece", env_016v9rNSffz2fds2ha514nhY since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
 ## POINT ONE (the owner, 3.1.4: always keep this first in every handoff and pass it on to every AI after you)
@@ -1457,7 +1459,7 @@ The owner's answers are in 8zk. Nothing tested in game: build, tests, the panel 
   tribal floor tom, 1.5 s, -14.5 LUFS; pitch 0.94 rising 0.025 a beat) and `GearDrums.under` (nothing); the last beat piece.gear.drum_big
   (drum2, "crdn_cinematic_heavy_drums - 14.wav" by choomaque-crispydinner 577408, -13.1 LUFS). Rejected: "taiko.wav" 486140 (a roll),
   "Mystic Power Taiko ... Bass Kick" 347126 (sounds processed). A drum has a body pitch by nature: the owner asked for drums.
-- The session started on Default (freesound.org refused): the personal HexPiece environment is env_01DEzkwiWiBUXF6hnQ29v2S5 now
+- The session started on Default (freesound.org refused): the personal HexPiece environment is env_016v9rNSffz2fds2ha514nhY now
   (switch_environment to it; env_01PmnEXrwDhxzij8M5q6P6bL no longer exists).
 
 ## 8zm. Done (3.2.4): the Nika fruit, part 2: the four-second transformation, its new animation, the punch's wobble
@@ -1875,21 +1877,65 @@ one version on: 3.3.4 Noro Noro, 3.3.5 Supa Supa, 3.3.6 Horo Horo**). Nothing te
   fast enough). HudTests.rubberWorld: the first ring moves 1.5 to 3.5 blocks in 8 ticks, heights differ more than 2.5 times, the waves
   at most 0.2 a tick. The jump's ripples (RubberJump) unchanged (the owner named Rubber World).
 
-## 9. What to do next (after 3.3.3)
+## 8zy. IN PROGRESS (3.3.4, not released): the Noro Noro no Mi; the owner stopped the session ("Enough, handoff and prompt, now")
 
-1. Check 3.3.3's runs ("Build HexPiece" and "Release HexPiece") on `claude/nice-bell-gam7qf` ended green; if not, fix and push.
-2. **The three new fruits (8zv, 8zw): 3.3.4 Noro Noro, 3.3.5 Supa Supa, 3.3.6 Horo Horo** (one on since 3.3.3, 8zx), each following the Ice fruit file by file
-   (8zc/8ze), animations reused from the mod's clips, POINT ONE for the rest. Ask the owner how 3.3.2 feels (the pose above all).
-3. The rest of the Nika rework (8zk; done: the keys, the transformation, the wobble, the Bajrang Gun, Dawn Whip, Giant's hold, Star
-   Gun's rubber body, Rubber World's rolling ground and its throws, Toon Force, the skip, the jump): better Haki versions (Dawn Pistol;
-   the lightning lance never touched). Any raised arm: the hand off the face from the front (tools/anim.face_covered views front), and
-   look at it beside the owner's pictures from every side.
-4. The owner: "I want gifs when it's all done" (8zr, 8zt): a GIF of each move changed (tools/make_gif.py, tools/clip_gif.py), sent with
-   SendUserFile at the end; previews, not the game.
-5. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the refill)
-   and whether Gear 5 should spend energy too.
-6. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
-   first-person hands (3.1.4), 3.1.2's Gura fixes, the Light fruit and katana fixes (3.0.x to 3.1.0), 2.9.5's Conqueror sounds.
-7. POINT ONE for any new fruit: same style (meshes, clips without legs or head, first-person hands, CC0 sounds), the Conqueror's
-   lightning out of its explosions with Haki (UoMoves.explode does it for free; else ConquerorAura.exploded/mixed at the strike).
+3.3.3 (8zx) is pushed and green (Build #169, Release #124). The session then moved onto the personal HexPiece environment
+(env_016v9rNSffz2fds2ha514nhY: get_environment, switch_environment, network_only) and began the Noro fruit (8zw's keys). Pushed at the
+owner's word WITHOUT a final local build or a CI check: **first check the branch's "Build HexPiece" run; if red, fix it.** The last
+local build that passed (EXIT 0, 13 suites) was before these were changed: HudTests.ranks (NoroKit.MOVES, the Noro fruit Common),
+DragonTests.noroPhotons (budget, mirror geometry), SwordTests (Noro's sounds: the "registered" list and a check of each borrowed clip),
+sounds.json and en_us.json (Noro's events and subtitles), NoroArt's bolder rings. build.py VERSION is already 3.3.4; no release notes
+yet (so only the build-<branch> pre-release changes).
+
+Built (all in the tree):
+- **Enum** (PiecePatch.uoFruit): NORO {"noro", "Noro Noro no Mi", "Slow", "C77DE0", lore}, ordinal 6, not a Logia. FruitRanks: COMMON.
+  HexPiece.init registers NoroKit. en_us "§fNoro Noro no Mi". Item model and icon (tools/noro_icon.py: a tilted purple oval with
+  swirls and a green figure-8 stem, after the owner's reference; judged against it). build.py lists both; DragonTests checks them.
+- **server/NoroKit** (RMB Noroma Photon, Z Noroma Spread, X Noroma Mirror, C Time's Up, V Slow Field, passive Delayed Kinetic Force),
+  **server/NoroMoves** (S2CUoFx kinds 180-192: SHOT, POP, BEAM_ON/OFF, SLOW, UNSLOW, STORE, RELEASE, MIRROR/MIRROR_OFF, FIELD, REFLECT,
+  SNAP; client/dragon/UoFx routes 180-199 to client/noro/NoroFx): RMB tapped (< 5 ticks) a burst (1.8 a tick, 36 blocks, the first
+  body or other's projectile it passes slowed, POP; bounces off mirrors), held the beam (up to 70 ticks, 30 blocks, off mirrors,
+  everything along it slowed; clients trace it themselves from the user's look); Z seven bursts across 70 degrees; X a mirror 2.2 ahead
+  facing the user for 100 ticks (noro/NoroMirror, pure: projectiles crossing it reflected and slowed); C Time's Up (every slowdown the
+  user put on ends, the stored blows land); V a dome radius 6 for 160 ticks slowing whatever enters. Clips reused (the owner: "simple
+  reused animations already in the mod"): hie_partisan_launch (tap), pika_laser_charge / pika_laser_end (beam), hie_pheasant (spread),
+  hie_ball_gather (mirror), hie_partisan_raise (time's up), hie_ice_age (field). FruitEnergy COSTS noro_photon 20, noro_spread 25,
+  noro_mirror 25, noro_timesup 20, noro_field 40. The Conqueror's lightning: ConquerorAura.exploded at every burst's catch, each newly
+  slowed body on the beam, and every release (POINT ONE).
+- **server/NoroSlow**: 600 ticks (30 s); a living body's motion cut to 0.2 every tick at LivingTickEvent (crawls, falls slowly), plus
+  slowness 5, weakness 1, slow falling (a player moves themself); a Projectile (proven: getOwner, motion, setNoGravity, setPos) hangs,
+  crawling at 0.04 of its speed without gravity, then flies on at full speed; Delayed Kinetic Force: LivingAttackEvent (HIGH) on a
+  slowed body with an attacker is cancelled and stored (damage, push 0.35 a blow, a STORE flash and a thud); at the end or Time's Up
+  all land at once (capped at 60 % of its most health and 40, push at most 2.6), RELEASE drawn, the release sound. At most 64 slowed.
+- **noro/NoroArt** (FireMesh rings, shells, rays: shot, pop, beam with rings swelling toward the far end, aura, slowShot, store,
+  release, mirror, dome, snap, reflect), **client/noro/NoroFx** (draws all of it; the slowed shots' crawl kept on every client; the beam's
+  hum through LoopSound; the punch given back), **client/noro/NoroClient** (ClientKits). FxPreview shots in tools/preview/NoroShots
+  (|nshot |nbeam |naura |npop |nstore |nrelease |nmirror |ndome |nsnap), judged: docs/gifs/noro-photons-3.3.4.gif.
+- **Sounds**: Freesound refused this session (HTTP 403 from freesound.org itself through the proxy; the web-fetch reader could not
+  resolve it either). So noro/NoroSounds' seven events play CC0 recordings the mod already has, each at its own pitch in sounds.json:
+  photon pika/zap1-2 (0.8), beam gura/charge loop (1.3), slow uo/air2 (0.7), store pika/hit1-2 (0.7, volume 0.6), release pika/pop1
+  (0.9), mirror pika/sparkle1 (1.15), field pika/travel1 (0.8). Nothing made or mixed by hand. **When Freesound answers, give the fruit
+  recordings of its own** (tools/noro_sounds.py as tools/hie_sounds.py, a sounds/piece/noro folder with SOURCES.txt, SwordTests
+  webSounds("noro", ...)), and tell the owner the borrowed ones were a stopgap.
+
+Left for 3.3.4: a full build (fix anything red), first-person look at the reused clips (they carry their own hand moves), the Ability
+Book and panel rows (they come from NoroClient's moves: render UiPreview to check), release notes .github/release-notes-3.3.4.md (plain
+words; say the sounds are borrowed for now and nothing was tested in game), push, both runs green, send the GIF. Then 3.3.5 Supa Supa
+and 3.3.6 Horo Horo (8zw) the same way.
+
+## 9. What to do next (after 3.3.3, with 3.3.4 in progress)
+
+1. **Check the branch's last "Build HexPiece" run** (`claude/nice-bell-gam7qf`): the Noro work was pushed at the owner's word without a
+   local build. Fix whatever is red first.
+2. **Finish 3.3.4, the Noro Noro no Mi (8zy "Left for 3.3.4")**, then **3.3.5 Supa Supa** and **3.3.6 Horo Horo** (8zv verbatim, 8zw
+   the accepted keys), each built as the Ice fruit was (8zc, 8ze) and Noro is, animations reused from the mod's own clips, POINT ONE for
+   the rest (3D art in the house style, first-person hands, CC0 web sounds, the Conqueror's lightning out of every explosion). Supa's
+   blades go black-purple with Armament on, like the katanas.
+3. Sounds: try Freesound again (get_environment: the session must be on HexPiece); give Noro its own recordings (8zy).
+4. Ask the owner how 3.3.2 (the jump, the skip pose) and 3.3.3 (Rubber World's slow waves) feel.
+5. The rest of the Nika rework: better Haki versions (Dawn Pistol; the lightning lance never touched). Any raised arm: the hand off
+   the face from the front (tools/anim.face_covered views front), and look at it beside the owner's pictures from every side.
+6. The owner: "I want gifs when it's all done" (8zr, 8zt): a GIF of each move changed, sent with SendUserFile; previews, not the game.
+7. Still unanswered: the Ice fruit after 3.2.2, the Nika keys (3.2.3), the energy (FruitEnergy.COSTS, Gear 5 spending energy?),
+   3.1.5 to 3.1.8, the first-person hands (3.1.4), 3.1.2's Gura fixes, the Light fruit and katana fixes, 2.9.5's Conqueror sounds.
 8. Lag: the dragon's per-frame CPU skinning; ask the owner where they still see lag.

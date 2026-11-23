@@ -33,6 +33,7 @@ public final class HexPiece {
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.MAGU, com.hexhaki.piece.server.MaguKit::new);
         // 3.1.9: the Hie Hie no Mi after Aokiji (a fruit the original never had: PiecePatch.uoFruit adds it to the enum)
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.HIE, com.hexhaki.piece.server.HieKit::new);
+        com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.NORO, com.hexhaki.piece.server.NoroKit::new); // 3.3.4
         LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, the katanas, pirates and marines, the Uo Uo no Mi");
     }
 }

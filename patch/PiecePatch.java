@@ -141,6 +141,10 @@ public final class PiecePatch implements Opcodes {
     static final String[] HIE = {"hie", "Hie Hie no Mi", "Ice", "9FE6FF",
         "A Logia that makes its eater an Ice Human: to become ice and freeze anything it touches solid, to freeze the very sea into a field"
             + " of ice. Admiral Aokiji's fruit."};
+    /** 3.3.4: the Noro Noro no Mi (the owner: "New common Fruits ... Noro Noro No Mi"): a Paramecia, Foxy's. */
+    static final String[] NORO = {"noro", "Noro Noro no Mi", "Slow", "C77DE0",
+        "A Paramecia that lets its eater shoot Noroma photons: whatever they touch moves in extreme slow motion for thirty seconds, and"
+            + " every blow it takes meanwhile lands all at once when the time is up. Foxy the Silver Fox's fruit."};
     static final String HAND = "com/hexhaki/client/render/HakiHandLayer";
     static final String RYOU_HANDS = "com/hexhaki/piece/client/haki/RyouHands";
     static final String RYOU_FX = "com/hexhaki/piece/client/haki/RyouFx";
@@ -823,10 +827,11 @@ public final class PiecePatch implements Opcodes {
      * HexPiece's (server/UoKit, client/dragon/UoClient).
      */
     static void uoFruit(ClassNode node) {
-        // 3.1.9 (the owner: "Can you create the ice fruit, the Aokiji one?"): the Hie Hie no Mi joins after it (ordinal 5)
-        String[][] extra = {UO, HIE};
-        String[] names = {"UO", "HIE"};
-        boolean[] logia = {false, true};
+        // 3.1.9 (the owner: "Can you create the ice fruit, the Aokiji one?"): the Hie Hie no Mi joins after it (ordinal 5); 3.3.4: the
+        // Noro Noro no Mi (ordinal 6)
+        String[][] extra = {UO, HIE, NORO};
+        String[] names = {"UO", "HIE", "NORO"};
+        boolean[] logia = {false, true, false};
         String type = "L" + FRUIT + ";";
         for (String name : names) {
             node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, name, type, null, null));
