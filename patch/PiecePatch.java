@@ -284,6 +284,11 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/devilfruit/gameplay/GearServerController", "whip", "com/hexhaki/devilfruit/data/GearData", "unlocked",
             "(Lnet/minecraft/world/entity/player/Player;Lcom/hexhaki/devilfruit/data/GearAbility;)Z", "com/hexhaki/piece/server/NikaWhip",
             "unlocked", 1},
+        // 3.4.7 (the owner: the Giant's throw "on a ... horizontal line, similar to the others ... our own custom effect whenever the
+        // entity crashes against something"): GiantGrab.release's two GearData.integer calls ask server/GiantThrow, which never keeps
+        // "grabThrown" (the original's arc and vanilla explosion never follow) and launches the body flat in a straight line instead
+        {"com/hexhaki/patch/GiantGrab", "release", "com/hexhaki/devilfruit/data/GearData", "integer",
+            "(Lnet/minecraft/world/entity/player/Player;Ljava/lang/String;I)V", "com/hexhaki/piece/server/GiantThrow", "integer", 2},
         // 3.3.2: Gear 5's walk switches its run and its stance as the body leaves and touches the ground: through server/NikaJump, which
         // holds them back while the jump's laughing skip plays
         {"com/hexhaki/devilfruit/gameplay/GearServerController", "tickBouncyWalk", "com/hexhaki/gameplay/HakiServerController", "animate",

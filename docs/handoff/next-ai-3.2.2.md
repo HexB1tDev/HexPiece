@@ -36,7 +36,7 @@ the looping arm, the slowing stretch, the straight launch, the crater) is pushed
 owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Build #184, Release #133); 3.4.3 (8zzf: Noro's held cone, Ito's
 Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is green (Build #188, Release #135). 3.4.5
 (8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136). 3.4.6 (8zzg: Goof Ball and Giant Gear 5 only, Dawn Whip's
-leg drawn by HexPiece) is pushed: check its runs.**
+leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Giant's straight throw and our crash) is pushed: check its runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2804,9 +2804,28 @@ showed a stand-in body and no leg: the original drew the leg, which no preview c
   Preview: NikaShots |ndwhip:t[:fp] (the user posed by client/npc/StylePoser.sample("gear5_dawn_whip"), AstralArt.left in the skin, the
   leg, the glow, the smear, the coil or arcs, two bodies struck and thrown); the preview's skin takes the coat's tint.
 
+**The owner after 3.4.6 (verbatim)**: "Also, the giant, whenever it throws someone, it should be on a vertical line as well. No, sorry, not
+vertical, horizontal line, similar to the others. And it should have our own custom effect whenever the entity crashes against
+something. Currently, it's very outdated. It's like, you gotta give it your special touch." Found: the original's GiantGrab.release
+throws along the look with an upward arc (velocity look x (7.25 + 2.2 REACH + 1.8 IMPACT) x scale, + 0.9 + 0.35 look.y up), remembers
+"grabThrown", and its tickThrown sets off a vanilla explosion (2.2, BLOCK interaction: real, permanent block damage) where it hits.
+
+**3.4.7 as built** (nothing tested in game: build EXIT 0 with 13 suites; render docs/handoff/nika-giant-throw-3.4.7.jpg). 3.4.6 was green
+(Build #191, Release #137).
+- PiecePatch CALL_REDIRECTS row: GiantGrab.release's two `GearData.integer(Player, String, int)` -> server/GiantThrow.integer: "grabThrown"
+  set to 0 (the original's tickThrown and its explosion never follow) and the body launched (PikaMoves.Launch, SPEED 3.5 a tick, STRAIGHT
+  10, through up to obsidian, Scars self-repairing, NikaPistol.LIVE ticks it) flat along the giant's look; "grabThrownTicks" as before.
+  The original's throw damage, clip (gear5_giant_throw), whip sound and "Thrown." stay.
+- S2CUoFx FLY 173 (id the body, a the way, size its height, ticks STRAIGHT) and CRASH 174 (the crash point, a the way, size); UoFx routes
+  165 to 174 to client/gear/NikaWhipClient (marks: FLY follows the body by id). gear/NikaThrow: `trail` (eight white speed lines streaming
+  back from round the body, a ring of wind every 3 ticks; TRAIL_LIFE 16), `crash` (NikaArt.pow at 1.4x the body's height, NikaDawn.pop's
+  earth burst and dust ring; CRASH_LIFE 14). Server crash (landed and stopped): Craters.open 2.6, GuraMoves QUAKE (dust, rings, rocks,
+  cracks), ConquerorAura.exploded 3.0, Impact.quake, the Gura boom and the cartoon punch. Previews NikaShots |nthrow:age, |ngcrash:age.
+  HudTests.giantThrow.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.6 (8zzg: Gear 5 only, the drawn leg) is pushed: check its runs. Ask the owner how Dawn Pistol
+1. 3.4.7 (8zzg: the Giant's throw) is pushed: check its runs. Ask the owner how Dawn Pistol
    (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, Goof Ball and Dawn Whip (3.4.4) and Broken Bones (3.4.5) play, and work on what they say.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).

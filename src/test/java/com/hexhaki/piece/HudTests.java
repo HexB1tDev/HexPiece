@@ -232,6 +232,7 @@ public final class HudTests {
         dawnPistol();
         goofAndDawnWhip();
         brokenBones();
+        giantThrow();
     }
 
     /**
@@ -451,6 +452,35 @@ public final class HudTests {
         Check.that(text("src/main/java/com/hexhaki/piece/client/gura/BonesOverlay.java").contains("FRAMES = 12;")
             && text("src/main/java/com/hexhaki/piece/client/gura/BonesOverlay.java").contains("FRAME_MS = 240L;"),
             "brokenBones: the GIF's own timing (12 frames of 240 ms)");
+    }
+
+    /**
+     * 3.4.7 (the owner: the Giant's throw "on a ... horizontal line, similar to the others ... our own custom effect whenever the entity
+     * crashes against something"): the flight flat and straight (well under the game's movement check), its own message kinds (none of
+     * the Nika fruit's others), the trail and the crash cheap and gone after their life, the patch row in place.
+     */
+    static void giantThrow() {
+        Check.that(com.hexhaki.piece.server.GiantThrow.SPEED > 2.0 && com.hexhaki.piece.server.GiantThrow.SPEED < 10.0
+            && com.hexhaki.piece.server.GiantThrow.STRAIGHT >= 8, "giantThrow: a fast, long, straight flight");
+        int fly = com.hexhaki.piece.server.GiantThrow.FLY;
+        int crash = com.hexhaki.piece.server.GiantThrow.CRASH;
+        Check.that(fly == 173 && crash == 174 && fly > com.hexhaki.piece.server.NikaWhip.STOP, "giantThrow: its own kinds after Dawn Whip's");
+        int[] quads = new int[1];
+        com.hexhaki.piece.dragon.FireMesh.Sink count = (xyz, argb) -> quads[0]++;
+        int most = 0;
+        for (double age = 0; age <= 16; age += 0.5) {
+            quads[0] = 0;
+            com.hexhaki.piece.gear.NikaThrow.trail(count, 0.3, 4.0, 6.0, 0, 1, age, 1.9, 5);
+            com.hexhaki.piece.gear.NikaThrow.crash(count, 0.3, 1.0, 6.0, 0, 1, age, 1.9, 5);
+            most = Math.max(most, quads[0]);
+        }
+        Check.that(most > 200 && most < 6000, "giantThrow: the trail and crash drawn, cheaply (" + most + ")");
+        quads[0] = 0;
+        com.hexhaki.piece.gear.NikaThrow.trail(count, 0.3, 4.0, 6.0, 0, 1, com.hexhaki.piece.gear.NikaThrow.TRAIL_LIFE + 0.5, 1.9, 5);
+        com.hexhaki.piece.gear.NikaThrow.crash(count, 0.3, 1.0, 6.0, 0, 1, com.hexhaki.piece.gear.NikaThrow.CRASH_LIFE + 0.5, 1.9, 5);
+        Check.that(quads[0] == 0, "giantThrow: gone after their life");
+        Check.that(text("patch/PiecePatch.java").contains("\"com/hexhaki/piece/server/GiantThrow\", \"integer\", 2}"),
+            "giantThrow: GiantGrab.release's two GearData.integer calls go through GiantThrow");
     }
 
     static String text(String path) {

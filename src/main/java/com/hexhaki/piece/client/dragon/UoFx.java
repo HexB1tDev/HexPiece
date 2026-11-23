@@ -151,8 +151,9 @@ public final class UoFx {
             com.hexhaki.piece.client.gear.NikaPow.accept(m); // 3.3.9: Dawn Pistol's cartoon POW where it lands
             return;
         }
-        if (m.kind() >= com.hexhaki.piece.server.NikaWhip.GOOF && m.kind() <= com.hexhaki.piece.server.NikaWhip.STOP) {
-            com.hexhaki.piece.client.gear.NikaWhipClient.accept(m); // 3.4.4: Goof Ball and Dawn Whip (165 to 172)
+        if (m.kind() >= com.hexhaki.piece.server.NikaWhip.GOOF && m.kind() <= com.hexhaki.piece.server.GiantThrow.CRASH) {
+            // 3.4.4: Goof Ball and Dawn Whip (165 to 172); 3.4.7: the Giant's throw, its flight and its crash (173, 174)
+            com.hexhaki.piece.client.gear.NikaWhipClient.accept(m);
             return;
         }
         if (m.kind() >= 160 && m.kind() < 180) {

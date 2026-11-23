@@ -376,6 +376,21 @@ public final class NikaShots {
                 double fz = Math.cos(pr);
                 NikaDawn.firstPerson(sink, age, 5, 0, fy, fz, 0, fz, -fy, -1, 0, 0);
             }
+            // 3.4.7: the Giant's throw. |nthrow:age a body flown flat along +z from the giant's fist (age ticks after the throw, 3.5 a
+            // tick) with its trail; |ngcrash:age:size the crash against a wall 6 ahead
+            case "nthrow" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 4;
+                double z = 2.0 + 3.5 * Math.min(age, 4.0); // server/GiantThrow.SPEED
+                HieShots.body(sink, -ex, 4.0 - ey, z - ez);
+                com.hexhaki.piece.gear.NikaThrow.trail(sink, -ex, 4.95 - ey, z - ez, 0, 1, age, 1.9, 5);
+            }
+            case "ngcrash" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 3;
+                double size = move.length > 2 ? Double.parseDouble(move[2]) : 1.9;
+                HieShots.box(sink, -3.5 - ex, -ey, 7.0 - ez, 3.5 - ex, 4.0 - ey, 8.0 - ez, 0x8A8279);
+                HieShots.body(sink, -ex, -ey, 6.4 - ez);
+                com.hexhaki.piece.gear.NikaThrow.crash(sink, -ex, 0.95 - ey, 6.6 - ez, 0, 1, age, size, 5);
+            }
             case "nchaos" -> {
                 double t = move.length > 1 ? Double.parseDouble(move[1]) : 30;
                 double radius = move.length > 2 ? Double.parseDouble(move[2]) : 16;

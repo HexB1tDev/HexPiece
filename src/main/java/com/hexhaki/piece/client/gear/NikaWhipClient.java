@@ -79,6 +79,7 @@ public final class NikaWhipClient {
     /** A thing left in the world for a while: a burst, a crack, a pop, the hole's pop. */
     static final class Mark {
         int kind;
+        int id;
         double x;
         double y;
         double z;
@@ -162,6 +163,12 @@ public final class NikaWhipClient {
                 DAWNS.remove(m.user());
                 mark(m, now, 0.0);
             }
+            case com.hexhaki.piece.server.GiantThrow.FLY -> {
+                // 3.4.7: the Giant's throw: the streaks follow the body (its id) for the trail's life
+                mark(m, now, m.size());
+                MARKS.get(MARKS.size() - 1).id = m.id();
+            }
+            case com.hexhaki.piece.server.GiantThrow.CRASH -> mark(m, now, m.size());
             case NikaWhip.STOP -> {
                 stopSound(GOOFS.remove(m.user()));
                 DAWNS.remove(m.user());
@@ -504,6 +511,16 @@ public final class NikaWhipClient {
                 case NikaWhip.GOOF_POP -> NikaGoof.pop(SINK, x, y, z, age, k.seed);
                 case NikaWhip.DAWN_HIT -> NikaDawn.crack(SINK, x, y, z, k.wx, k.wz, age, k.size, k.seed);
                 case NikaWhip.DAWN_POP -> NikaDawn.pop(SINK, x, y, z, age, k.seed);
+                case com.hexhaki.piece.server.GiantThrow.FLY -> {
+                    net.minecraft.world.entity.Entity body = level.m_6815_(k.id);
+                    if (body != null) {
+                        Vec3 at = body.m_20318_(partial);
+                        com.hexhaki.piece.gear.NikaThrow.trail(SINK, at.f_82479_ - cx, at.f_82480_ + body.m_20206_() * 0.5 - cy,
+                            at.f_82481_ - cz, k.wx, k.wz, age, k.size, k.seed);
+                    }
+                }
+                case com.hexhaki.piece.server.GiantThrow.CRASH -> com.hexhaki.piece.gear.NikaThrow.crash(SINK, x, y, z, k.wx, k.wz, age, k.size,
+                    k.seed);
                 default -> {
                 }
             }
@@ -514,7 +531,9 @@ public final class NikaWhipClient {
         for (Iterator<Mark> it = MARKS.iterator(); it.hasNext(); ) {
             Mark k = it.next();
             double life = k.kind == NikaWhip.DAWN_HIT ? NikaDawn.CRACK_LIFE : k.kind == NikaWhip.DAWN_POP ? NikaDawn.POP_LIFE
-                : k.kind == NikaWhip.GOOF_POP ? NikaGoof.POP_LIFE : 6.0;
+                : k.kind == NikaWhip.GOOF_POP ? NikaGoof.POP_LIFE : k.kind == com.hexhaki.piece.server.GiantThrow.FLY
+                ? com.hexhaki.piece.gear.NikaThrow.TRAIL_LIFE : k.kind == com.hexhaki.piece.server.GiantThrow.CRASH
+                ? com.hexhaki.piece.gear.NikaThrow.CRASH_LIFE : 6.0;
             if (now - k.born > life || now < k.born - 40) {
                 it.remove();
             }
