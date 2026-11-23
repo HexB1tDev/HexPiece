@@ -347,7 +347,7 @@ public final class HoroMoves {
         }
         Vec3 top = body.m_20182_().m_82520_(0.0, body.m_20206_(), 0.0);
         PieceNetwork.around(body, new S2CUoFx(DESPAIR, body.m_19879_(), user.m_19879_(), top.f_82479_, top.f_82480_, top.f_82481_, 0, 0, 0, 0,
-            (float) body.m_20206_(), 0, body.m_20205_(), DESPAIR_TICKS));
+            body.m_20206_(), 0, body.m_20205_(), DESPAIR_TICKS));
         sounds(user, top, HoroSounds.DESPAIR, 0.9F, 1.0F, 2, 6);
         lightning(user, StyleCombat.middle(body));
     }

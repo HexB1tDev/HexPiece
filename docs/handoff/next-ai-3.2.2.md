@@ -2095,6 +2095,13 @@ Done in the tree:
   (HoroMoves.clear before the save): teleported back to the body, abilities and invisibility restored. V Ghost Network 600 ticks
   (magu_rise): every 20 ticks every living thing within 48 gets GLOWING (f_19619_, proven) for 40 ticks.
 
+Next session (3.3.6, session 2): the unchecked push's Build HexPiece #173 was red (HoroMoves.despair's redundant `(float)` cast under
+-Werror; f_19619_, f_268738_ and m_5448_ missing from verify/srg-shapes.txt). Both fixed: the local build is EXIT 0 with 13 suites.
+Freesound answered 403 at the start of the session (the HexPiece environment, env_01PmnEXrwDhxzij8M5q6P6bL, is the current one).
+The owner, on the ghosts, verbatim: "The ghosts are meant to be cute. I mean," (cut off). Proposed to them: rounder puffier heads, big
+round shiny eyes (the Negative Hollow's droopy but round), pink blush cheeks, a short rounded tongue, a shorter tail with a curl; the
+Toku Hollow a wide cartoon grin instead of rows of teeth and heavy brows. Waiting for the rest of their message before changing HoroArt.
+
 Left for 3.3.6:
 1. **client/horo/HoroFx** (as client/noro/NoroFx and client/supa/SupaFx): accept the kinds above; put client/horo/HoroClient (a
    ClientKit: HoroKit.MOVES, no stance) in ClientKits.KITS on the first tick; give the attack button back to the game's punch (NoroFx.punch);
