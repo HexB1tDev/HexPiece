@@ -15,8 +15,8 @@ render any lightning change beside the release from the same camera before pushi
 
 Where things stand: up to 3.4.4 everything is pushed and green (3.4.4: Build #188, Release #135: the Nika fruit's C, untransformed the
 plain whip, in Gear 5 Goof Ball, with Haki the new Dawn Whip; 8zzg). 3.4.5 (8zzg: the Gura ultimate's Broken Bones: the owner's GIF as
-an X-ray over a struck player's screen, a new 20 s effect with Slowness I and random ragdoll falls) was pushed: check its Build and
-Release runs first and fix anything red.
+an X-ray over a struck player's screen, a new 20 s effect with Slowness I and random ragdoll falls) is green too (Build #189, Release
+#136).
 
 Next: ask the owner how Dawn Pistol (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, 3.4.4 and 3.4.5 play (they have not said), and work on what
 they answer. The fist is a right fist on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any

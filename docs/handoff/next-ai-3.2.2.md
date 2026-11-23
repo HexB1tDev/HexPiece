@@ -35,7 +35,7 @@ is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the
 the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132); 3.4.2 (8zzf: the
 owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Build #184, Release #133); 3.4.3 (8zzf: Noro's held cone, Ito's
 Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is green (Build #188, Release #135). 3.4.5
-(8zzg: the Gura ultimate's Broken Bones) is pushed: check its runs.**
+(8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2781,7 +2781,7 @@ screen: docs/handoff/gura-broken-bones-3.4.5.jpg). 3.4.4's runs were green (Buil
 
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.5 (8zzg: Broken Bones) is pushed: check its Build and Release runs and fix anything red. Then ask the owner how Dawn Pistol
+1. 3.4.5 (8zzg: Broken Bones) is green (Build #189, Release #136). Ask the owner how Dawn Pistol
    (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, Goof Ball and Dawn Whip (3.4.4) and Broken Bones (3.4.5) play, and work on what they say.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
