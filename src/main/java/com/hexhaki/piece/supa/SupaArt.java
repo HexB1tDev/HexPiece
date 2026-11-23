@@ -9,15 +9,11 @@ import com.hexhaki.piece.dragon.FireMesh;
  * style (POINT ONE: flat banded colours, alpha blended, depth tested, never additive; FireMesh's arcs, rings, rays and streaks for what
  * flies), pure so the previews draw the very same (tools/preview/SupaShots).
  *
- * <p>Two kinds of drawing:
- * <ul>
- *   <li><b>On the body</b>, in a limb's own model frame (client/supa/SupaClient puts the pose on the arm, the leg or the body; 1 a block,
- *       y down the limb from its joint, the limb's front at -z): the arm blade ({@link #armBlade}), the finger blades ({@link #claws}), the
- *       drill ({@link #drill}), the foot blade ({@link #footBlade}) and Spider's steel skin ({@link #steelBox}).</li>
- *   <li><b>In the world</b>, eye-centred (x, y, z from the eye) as every fruit's art: the flying slash ({@link #slash}), the X
- *       ({@link #cross}), the claw marks ({@link #clawMarks}), sparks ({@link #sparks}), a blow glancing off ({@link #glance}), the drill's
- *       and the lunge's trails, the spinning blades of Spar Break ({@link #spin}) and the skate marks ({@link #mark}).</li>
- * </ul>
+ * <p>The blades on the body are the owner's katana steel (supa/SupaBlades, client/supa/SupaClient: the owner called this file's first
+ * flat blades "really poor and poorly made" and chose katana steel). Here is what flies and flashes, eye-centred (x, y, z from the eye)
+ * as every fruit's art: the flying slash ({@link #slash}), the X ({@link #cross}), the claw marks ({@link #clawMarks}), sparks
+ * ({@link #sparks}), a blow glancing off ({@link #glance}), the drill's and the lunge's trails, Spar Break's spinning blades
+ * ({@link #spin}) and the skate marks ({@link #mark}).
  * With Armament Haki on the steel is multiplied toward the katanas' own very dark purple ({@link #coat}: client/sword/KatanaRenderer's
  * COAT_R/G/B 62, 34, 88), its bright edge kept as a violet glint so the blade still reads.
  */
@@ -44,9 +40,6 @@ public final class SupaArt {
     public static final double GLANCE_LIFE = 8;
     public static final double TRAIL_LIFE = 12;
     public static final double CROSS_LIFE = 10;
-    /** The arm blade's length past its root on the forearm, and how far up the forearm it grows from (blocks, the arm's frame). */
-    public static final double BLADE_LENGTH = 1.05;
-    public static final double BLADE_ROOT = 0.28;
 
     private SupaArt() {
     }
@@ -73,243 +66,6 @@ public final class SupaArt {
 
     static int solid(int rgb) {
         return 0xFF000000 | rgb;
-    }
-
-    // ------------------------------------------------------------------------------------------------------ on the body
-
-    /** The blade's outline: the edge's distance out from the spine at {@code t} (0 root, 1 tip) along it. */
-    static double width(double t) {
-        double body = t < 0.12 ? 0.07 + t / 0.12 * 0.15 : t < 0.74 ? 0.22 - (t - 0.12) * 0.05 : 0.19 * (1.0 - (t - 0.74) / 0.26);
-        return Math.max(0.0, body);
-    }
-
-    static final int BLADE_STEPS = 12;
-    /** The blade's cross-section turned this far round the arm (radians): never quite edge-on from the side or the front. */
-    static final double BLADE_TURN = Math.toRadians(35);
-    static final double TURN_C = Math.cos(BLADE_TURN);
-    static final double TURN_S = Math.sin(BLADE_TURN);
-    static final double[] P4 = new double[12];
-    static final int[] C4 = new int[4];
-
-    /** A quad given in the blade's own section (u across toward the edge, y along the arm, v through its thickness), turned. */
-    static void bq(FireMesh.Sink sink, double cu, double u0, double y0, double v0, int c0, double u1, double y1, double v1, int c1, double u2,
-                   double y2, double v2, int c2, double u3, double y3, double v3, int c3) {
-        double[] u = {u0, u1, u2, u3};
-        double[] y = {y0, y1, y2, y3};
-        double[] v = {v0, v1, v2, v3};
-        for (int k = 0; k < 4; k++) {
-            double a = u[k] - cu;
-            P4[k * 3] = cu + a * TURN_C - v[k] * TURN_S;
-            P4[k * 3 + 1] = y[k];
-            P4[k * 3 + 2] = a * TURN_S + v[k] * TURN_C;
-        }
-        C4[0] = c0;
-        C4[1] = c1;
-        C4[2] = c2;
-        C4[3] = c3;
-        sink.quad(P4, C4);
-    }
-
-    /**
-     * Daz Bones' arm blade in the right arm's frame (the left arm: the caller mirrors x): a broad blade grown out of the outside of the
-     * forearm from {@link #BLADE_ROOT} and running {@code length} down past the fist, its back along the arm, its cutting edge toward the
-     * thumb side (+x, where a swipe leads), its section turned {@link #BLADE_TURN} round the arm; a thick spine of darker steel, a flat,
-     * a bright bevel cut by a wavy temper line (the reference's waves), a white edge. {@code shimmer} (0..1) slides a glint along it.
-     */
-    public static void armBlade(FireMesh.Sink sink, double length, double coat, double shimmer) {
-        double spine = -0.19;
-        double half = 0.032; // half its thickness at the spine
-        int dark = solid(coat(DARK, coat));
-        int flat = solid(coat(FLAT, coat));
-        int bevel = solid(coat(BEVEL, coat));
-        int shine = solid(coat(SHINE, coat));
-        int line = solid(edge(coat));
-        for (int i = 0; i < BLADE_STEPS; i++) {
-            double t0 = i / (double) BLADE_STEPS;
-            double t1 = (i + 1) / (double) BLADE_STEPS;
-            double x0 = spine + t0 * 0.05;
-            double x1 = spine + t1 * 0.05;
-            double y0 = BLADE_ROOT + t0 * length;
-            double y1 = BLADE_ROOT + t1 * length;
-            double w0 = width(t0);
-            double w1 = width(t1);
-            // the wavy temper: where the flat turns to the bevel, rolling as the reference's edge does
-            double h0 = w0 * (0.5 + 0.13 * Math.sin(t0 * 21.0));
-            double h1 = w1 * (0.5 + 0.13 * Math.sin(t1 * 21.0));
-            int b0 = Math.abs(t0 - shimmer) < 0.09 ? shine : bevel;
-            int b1 = Math.abs(t1 - shimmer) < 0.09 ? shine : bevel;
-            double th0 = half * (1.0 - 0.6 * t0);
-            double th1 = half * (1.0 - 0.6 * t1);
-            for (int side = -1; side <= 1; side += 2) {
-                // the flat (spine to temper), then the bevel (temper to edge) thinning to nothing
-                bq(sink, spine, x0, y0, side * th0, dark, x0 + h0, y0, side * th0 * 0.8, flat, x1 + h1, y1, side * th1 * 0.8, flat, x1, y1,
-                    side * th1, dark);
-                bq(sink, spine, x0 + h0, y0, side * th0 * 0.8, b0, x0 + w0, y0, 0.0, b0, x1 + w1, y1, 0.0, b1, x1 + h1, y1, side * th1 * 0.8, b1);
-            }
-            // the back of the blade (its spine, square) and the white edge line along the front
-            bq(sink, spine, x0, y0, -th0, dark, x0, y0, th0, dark, x1, y1, th1, dark, x1, y1, -th1, dark);
-            bq(sink, spine, x0 + w0 - 0.016, y0, 0.004, line, x0 + w0 + 0.008, y0, 0.0, line, x1 + w1 + 0.008, y1, 0.0, line, x1 + w1 - 0.016,
-                y1, 0.004, line);
-            bq(sink, spine, x0 + w0 - 0.016, y0, -0.004, line, x0 + w0 + 0.008, y0, 0.0, line, x1 + w1 + 0.008, y1, 0.0, line,
-                x1 + w1 - 0.016, y1, -0.004, line);
-        }
-    }
-
-    /**
-     * The finger blades (Spar Claw) in the right arm's frame: four thin curved blades out of the fingertips, side by side across the hand,
-     * {@code out} (0..1) of their length grown, curling toward the palm (+x).
-     */
-    public static void claws(FireMesh.Sink sink, double coat, double out) {
-        if (out <= 0.01) {
-            return;
-        }
-        int dark = solid(coat(FLAT, coat));
-        int bright = solid(coat(SHINE, coat));
-        int line = solid(edge(coat));
-        double hand = 0.6;
-        for (int f = 0; f < 4; f++) {
-            double z = -0.09 + f * 0.06;
-            double length = (f == 0 || f == 3 ? 0.4 : 0.5) * out;
-            double px = -0.07;
-            double py = hand;
-            int steps = 4;
-            for (int i = 0; i < steps; i++) {
-                double t0 = i / (double) steps;
-                double t1 = (i + 1) / (double) steps;
-                double ax = -0.07 + 0.09 * t0 * t0;
-                double bx = -0.07 + 0.09 * t1 * t1;
-                double ay = hand + length * t0;
-                double by = hand + length * t1;
-                double w0 = 0.03 * (1.0 - t0) + 0.006;
-                double w1 = 0.03 * (1.0 - t1) + 0.006;
-                FireMesh.quad(sink, ax - w0, ay, z, dark, ax + w0, ay, z, bright, bx + w1, by, z, bright, bx - w1, by, z, dark);
-                FireMesh.quad(sink, ax + w0, ay, z - 0.008, line, ax + w0, ay, z + 0.008, line, bx + w1, by, z + 0.008, line, bx + w1, by,
-                    z - 0.008, line);
-                px = bx;
-                py = by;
-            }
-            FireMesh.quad(sink, px - 0.004, py, z - 0.004, line, px + 0.004, py, z - 0.004, line, px + 0.004, py, z + 0.004, line, px - 0.004, py,
-                z + 0.004, line);
-        }
-    }
-
-    static final int DRILL_SIDES = 10;
-    static final int DRILL_RINGS = 6;
-
-    /**
-     * Spiral Hollow's drill round the right forearm (the reference: white drill blades round the forearms): a cone from round the
-     * forearm to a point past the fist, banded in a spiral that turns with {@code spin} (radians), white steel edged in grey.
-     */
-    public static void drill(FireMesh.Sink sink, double coat, double spin) {
-        double top = 0.22;
-        double tip = 1.2;
-        double base = 0.19;
-        int white = solid(coat(SHINE, coat));
-        int grey = solid(coat(FLAT, coat));
-        int dark = solid(coat(DARK, coat));
-        for (int r = 0; r < DRILL_RINGS; r++) {
-            double t0 = r / (double) DRILL_RINGS;
-            double t1 = (r + 1) / (double) DRILL_RINGS;
-            double y0 = top + (tip - top) * t0;
-            double y1 = top + (tip - top) * t1;
-            double r0 = base * (1.0 - t0 * t0 * 0.15 - t0 * 0.85);
-            double r1 = base * (1.0 - t1 * t1 * 0.15 - t1 * 0.85);
-            for (int k = 0; k < DRILL_SIDES; k++) {
-                double a0 = k * 2.0 * Math.PI / DRILL_SIDES;
-                double a1 = (k + 1) * 2.0 * Math.PI / DRILL_SIDES;
-                // the spiral: a band's twist grows down the cone, the whole turning with the spin
-                double tw0 = spin + t0 * 4.0;
-                double tw1 = spin + t1 * 4.0;
-                int band = ((k + r) % 2 == 0) ? white : grey;
-                int edgeColour = (k + r) % 2 == 0 ? grey : dark;
-                FireMesh.quad(sink, -0.06 + Math.cos(a0 + tw0) * r0, y0, Math.sin(a0 + tw0) * r0, band,
-                    -0.06 + Math.cos(a1 + tw0) * r0, y0, Math.sin(a1 + tw0) * r0, edgeColour,
-                    -0.06 + Math.cos(a1 + tw1) * r1, y1, Math.sin(a1 + tw1) * r1, edgeColour,
-                    -0.06 + Math.cos(a0 + tw1) * r1, y1, Math.sin(a0 + tw1) * r1, band);
-            }
-        }
-        // the flange where it meets the arm
-        for (int k = 0; k < DRILL_SIDES; k++) {
-            double a0 = k * 2.0 * Math.PI / DRILL_SIDES + spin;
-            double a1 = (k + 1) * 2.0 * Math.PI / DRILL_SIDES + spin;
-            FireMesh.quad(sink, -0.06 + Math.cos(a0) * 0.12, top - 0.02, Math.sin(a0) * 0.12, dark, -0.06 + Math.cos(a1) * 0.12, top - 0.02,
-                Math.sin(a1) * 0.12, dark, -0.06 + Math.cos(a1) * base, top, Math.sin(a1) * base, grey, -0.06 + Math.cos(a0) * base, top,
-                Math.sin(a0) * base, grey);
-        }
-    }
-
-    /**
-     * Atomic Spurt's skate blade under a foot, in the leg's frame (the sole at 0.75 down the leg): a thin steel runner from the heel to
-     * past the toes, its front curled up, its bottom edge white.
-     */
-    public static void footBlade(FireMesh.Sink sink, double coat) {
-        int flat = solid(coat(FLAT, coat));
-        int bevel = solid(coat(BEVEL, coat));
-        int line = solid(edge(coat));
-        double sole = 0.75;
-        double depth = 0.11;
-        int steps = 6;
-        for (int i = 0; i < steps; i++) {
-            double t0 = i / (double) steps;
-            double t1 = (i + 1) / (double) steps;
-            double z0 = 0.16 - 0.5 * t0;
-            double z1 = 0.16 - 0.5 * t1;
-            // the runner's bottom curls up at the toes (z most negative: the front)
-            double lift0 = t0 > 0.72 ? (t0 - 0.72) / 0.28 * depth * 0.9 : 0.0;
-            double lift1 = t1 > 0.72 ? (t1 - 0.72) / 0.28 * depth * 0.9 : 0.0;
-            double b0 = sole + depth - lift0;
-            double b1 = sole + depth - lift1;
-            for (int side = -1; side <= 1; side += 2) {
-                double x = side * 0.012;
-                FireMesh.quad(sink, x, sole, z0, flat, x, b0, z0, bevel, x, b1, z1, bevel, x, sole, z1, flat);
-            }
-            FireMesh.quad(sink, -0.012, b0, z0, line, 0.012, b0, z0, line, 0.012, b1, z1, line, -0.012, b1, z1, line);
-        }
-        // the mount under the sole
-        FireMesh.quad(sink, -0.1, sole, 0.14, flat, 0.1, sole, 0.14, flat, 0.1, sole, -0.3, flat, -0.1, sole, -0.3, flat);
-    }
-
-    /**
-     * Spider's steel skin over one body part's box (its model frame, blocks): the box a little larger than the part, its faces steel with
-     * a bright rim, {@code shimmer} (0..1) a glint sliding down it; see-through enough that the skin's shape shows, as the body turned to
-     * steel.
-     */
-    public static void steelBox(FireMesh.Sink sink, double x0, double y0, double z0, double x1, double y1, double z1, double coat,
-                                double shimmer, double alpha) {
-        double grow = 0.035;
-        x0 -= grow;
-        y0 -= grow;
-        z0 -= grow;
-        x1 += grow;
-        y1 += grow;
-        z1 += grow;
-        int top = FireMesh.argb(alpha, coat(BEVEL, coat));
-        int mid = FireMesh.argb(alpha, coat(SHINE, coat));
-        int low = FireMesh.argb(alpha, coat(DARK, coat));
-        int side = FireMesh.argb(alpha, coat(FireMesh.mix(DARK, 0x1C232C, 0.4), coat));
-        double g = y0 + (y1 - y0) * shimmer;
-        // each face banded from bright at its top (y0, the joint) to dark at its bottom, a glint where the shimmer is
-        face(sink, x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0, top, low, g, mid);
-        face(sink, x1, y0, z1, x0, y0, z1, x0, y1, z1, x1, y1, z1, mid, side, g, top);
-        face(sink, x0, y0, z1, x0, y0, z0, x0, y1, z0, x0, y1, z1, mid, side, g, top);
-        face(sink, x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0, top, low, g, mid);
-        FireMesh.quad(sink, x0, y0, z0, top, x1, y0, z0, top, x1, y0, z1, top, x0, y0, z1, top);
-        FireMesh.quad(sink, x0, y1, z1, side, x1, y1, z1, side, x1, y1, z0, side, x0, y1, z0, side);
-    }
-
-    /** A box face a, b (top), c, d (bottom): {@code topColour} to {@code lowColour}, cut at {@code glintY} by a band of {@code glint}. */
-    static void face(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double cx, double cy, double cz,
-                     double dx, double dy, double dz, int topColour, int lowColour, double glintY, int glint) {
-        double span = cy - by;
-        double t = span == 0 ? 0 : Math.max(0.0, Math.min(1.0, (glintY - by) / span));
-        double mx0 = ax + (dx - ax) * t;
-        double my0 = ay + (dy - ay) * t;
-        double mz0 = az + (dz - az) * t;
-        double mx1 = bx + (cx - bx) * t;
-        double my1 = by + (cy - by) * t;
-        double mz1 = bz + (cz - bz) * t;
-        FireMesh.quad(sink, ax, ay, az, topColour, bx, by, bz, topColour, mx1, my1, mz1, glint, mx0, my0, mz0, glint);
-        FireMesh.quad(sink, mx0, my0, mz0, glint, mx1, my1, mz1, glint, cx, cy, cz, lowColour, dx, dy, dz, lowColour);
     }
 
     // ------------------------------------------------------------------------------------------------------ in the world
@@ -491,38 +247,17 @@ public final class SupaArt {
     }
 
     /**
-     * Spar Break round a body (its middle at x, y, z): eight blades standing out of it, whirling round, and the white blur of their cuts
-     * (two rings of arcs), {@code radius} out; fades in over its first ticks.
+     * Spar Break's blur round a body (its middle at x, y, z): the white smear of the blades' cuts as they whirl (the blades themselves
+     * are the owner's katana steel, client/supa/SupaClient), two rings of arcs chasing round and a pale glow, {@code radius} out; fades
+     * in over its first ticks.
      */
     public static void spin(FireMesh.Sink sink, double x, double y, double z, double radius, double age, double coat) {
         double grow = Math.min(1.0, age / 3.0);
-        double turn = age * 1.1;
-        int flat = solid(coat(FLAT, coat));
-        int bright = solid(coat(SHINE, coat));
-        int line = solid(edge(coat));
-        for (int k = 0; k < 8; k++) {
-            double a = turn + k * Math.PI / 4.0;
-            double ca = Math.cos(a);
-            double sa = Math.sin(a);
-            double ta = -sa;
-            double tb = ca;
-            double inner = 0.35;
-            double outer = inner + (radius - inner) * grow * 0.75;
-            double h = k % 2 == 0 ? 0.25 : -0.2;
-            // a blade: wide at its root, a point at its tip, leaning back against the spin
-            double rx = x + ca * inner;
-            double rz = z + sa * inner;
-            double tx = x + ca * outer - ta * 0.35;
-            double tz = z + sa * outer - tb * 0.35;
-            FireMesh.quad(sink, rx + ta * 0.12, y + h - 0.06, rz + tb * 0.12, flat, rx - ta * 0.12, y + h - 0.06, rz - tb * 0.12, bright,
-                tx, y + h, tz, line, tx, y + h, tz, line);
-            FireMesh.quad(sink, rx + ta * 0.12, y + h + 0.06, rz + tb * 0.12, flat, rx - ta * 0.12, y + h + 0.06, rz - tb * 0.12, bright,
-                tx, y + h, tz, line, tx, y + h, tz, line);
-        }
+        double turn = age * 1.4;
         int blur = coat(CUT_CORE, coat);
-        FireMesh.arc(sink, x, y + 0.25, z, 0, 1, 0, radius * grow * 0.85, 0.3, turn * 1.3, Math.PI * 1.3, 0.0, blur, 0.5 * grow);
-        FireMesh.arc(sink, x, y - 0.2, z, 0, 1, 0, radius * grow * 0.8, 0.25, turn * 1.3 + Math.PI, Math.PI * 1.3, 0.0, blur, 0.45 * grow);
-        FireMesh.arc(sink, x, y, z, 0, 1, 0, radius * grow, 0.6, turn * 1.3 + 0.8, Math.PI * 1.6, 0.0, CUT_GLOW, 0.25 * grow);
+        FireMesh.arc(sink, x, y + 0.25, z, 0, 1, 0, radius * grow * 0.85, 0.3, turn, Math.PI * 1.3, 0.0, blur, 0.5 * grow);
+        FireMesh.arc(sink, x, y - 0.2, z, 0, 1, 0, radius * grow * 0.8, 0.25, turn + Math.PI, Math.PI * 1.3, 0.0, blur, 0.45 * grow);
+        FireMesh.arc(sink, x, y, z, 0, 1, 0, radius * grow, 0.6, turn + 0.8, Math.PI * 1.6, 0.0, CUT_GLOW, 0.25 * grow);
     }
 
     /** One stretch of a skate mark on the ground from A to B: a thin bright line lying flat, {@code alpha} its fade. */

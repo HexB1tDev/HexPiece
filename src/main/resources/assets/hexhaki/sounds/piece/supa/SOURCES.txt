@@ -1,0 +1,11 @@
+The Supa Supa no Mi's sounds (tools/supa_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+swish1.ogg: "Swish Swipe Short" by Qvantor, https://freesound.org/people/Qvantor/sounds/877976/ (CC0 1.0), from 0.0 s, 0.60 s long
+draw1.ogg: "knife sharpening.wav" by mywhats, https://freesound.org/people/mywhats/sounds/175520/ (CC0 1.0), from 0.6 s, 0.28 s long, compressed to sound louder
+cut1.ogg: "Sword stab 1" by ihitokage, https://freesound.org/people/ihitokage/sounds/395370/ (CC0 1.0), from 0.1 s, 0.25 s long
+glance1.ogg: "Sword Impact" by velcronator, https://freesound.org/people/velcronator/sounds/733887/ (CC0 1.0), from 0.0 s, 0.70 s long
+rip1.ogg: "cloth_ripping.wav" by reg7783, https://freesound.org/people/reg7783/sounds/133440/ (CC0 1.0), from 0.3 s, 1.00 s long
+skate.ogg: "Skating.wav" by 13FPanska_Marval_Lukas, https://freesound.org/people/13FPanska_Marval_Lukas/sounds/379329/ (CC0 1.0), a loop from 1.0 s, 3.00 s long, compressed to sound louder
+spin.ogg: "Whoosh Swirl Spinning" by Qvantor, https://freesound.org/people/Qvantor/sounds/877983/ (CC0 1.0), a loop from 0.5 s, 2.00 s long, 6.0 dB quieter

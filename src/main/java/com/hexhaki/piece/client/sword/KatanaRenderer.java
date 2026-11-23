@@ -139,6 +139,81 @@ public final class KatanaRenderer {
         pose.m_85849_();
     }
 
+    /** 3.3.5: the shaped steels (KatanaMesh.shaped, KatanaMesh.box), made once each: katana, level of detail, shape. */
+    private static final Map<String, KatanaMesh> SHAPED = new java.util.HashMap<>();
+
+    /**
+     * 3.3.5 (the Supa Supa no Mi, supa/SupaBlades; the owner chose "Katana steel", then "Yes, build it"): {@code katana}'s steel alone,
+     * reshaped by {@code shape}, in the current pose's frame (katana model px, the guard at 0, scaled by {@link #SCALE}), drawn as the
+     * katana's own steel is: its texture lit by the game's entity light, coated {@code coat} toward the very dark purple with Armament
+     * ({@link #coated}), the sky's glint over it ({@link #highlight}, dimmed on coated steel).
+     */
+    public static void steel(PoseStack pose, MultiBufferSource buffers, Katana katana, com.hexhaki.piece.supa.SupaBlades.Shape shape, int light,
+                             float shine, float coat) {
+        pose.m_85836_();
+        pose.m_85841_(SCALE, SCALE, SCALE);
+        PoseStack.Pose last = pose.m_85850_();
+        String lod = lod(last);
+        String name = katana.key() + lod + "#" + shape.id();
+        KatanaMesh mesh = SHAPED.get(name);
+        if (mesh == null && !FAILED.contains(name)) {
+            KatanaMesh src = mesh(katana, false, lod);
+            mesh = src == null ? null : KatanaMesh.shaped(src, shape);
+            if (mesh != null) {
+                SHAPED.put(name, mesh);
+            } else {
+                FAILED.add(name);
+            }
+        }
+        if (mesh != null) {
+            paint(last, buffers, katana, mesh, light, shine, coat, Math.max(1.0F, katana.tip() * shape.length()));
+        }
+        pose.m_85849_();
+    }
+
+    /**
+     * 3.3.5 (Spider: the whole body turned to steel): a box (model px, the current pose's frame scaled by {@link #SCALE}) skinned with
+     * {@code katana}'s steel (KatanaMesh.box), lit, coated and shining as {@link #steel}. {@code key} names the box (made once).
+     */
+    public static void steelBox(PoseStack pose, MultiBufferSource buffers, Katana katana, String key, float[] box, int light, float shine,
+                                float coat) {
+        pose.m_85836_();
+        pose.m_85841_(SCALE, SCALE, SCALE);
+        PoseStack.Pose last = pose.m_85850_();
+        String name = katana.key() + "#box#" + key;
+        KatanaMesh mesh = SHAPED.get(name);
+        if (mesh == null && !FAILED.contains(name)) {
+            KatanaMesh src = mesh(katana, false, "_far");
+            mesh = src == null ? null : KatanaMesh.box(src, box[0], box[1], box[2], box[3], box[4], box[5]);
+            if (mesh != null) {
+                SHAPED.put(name, mesh);
+            } else {
+                FAILED.add(name);
+            }
+        }
+        if (mesh != null) {
+            paint(last, buffers, katana, mesh, light, shine, coat, Math.max(1.0F, box[4] - box[1]));
+        }
+        pose.m_85849_();
+    }
+
+    /** A steel-only mesh: textured and lit, coated when {@code coat} > 0, the glint over it. */
+    static void paint(PoseStack.Pose last, MultiBufferSource buffers, Katana katana, KatanaMesh mesh, int light, float shine, float coat, float tip) {
+        VertexConsumer solid = buffers.m_6299_(RenderType.m_110458_(texture(katana)));
+        if (coat <= 0.0F) {
+            quads(last, solid, mesh, 0, mesh.quadCount(), light);
+        } else {
+            try {
+                coated(last, solid, mesh, 0, mesh.quadCount(), light, coat, tip);
+            } catch (RuntimeException | LinkageError failure) {
+                quads(last, solid, mesh, 0, mesh.quadCount(), light);
+            }
+        }
+        if (shine > 0.0F) {
+            highlight(last, buffers.m_6299_(RenderType.m_269166_()), mesh, shine * (1.0F - 0.75F * Math.max(0.0F, Math.min(1.0F, coat))));
+        }
+    }
+
     /** 2.6.4: the fully coated steel's multiplier (0..255): a very dark purple. */
     static final int COAT_R = 62;
     static final int COAT_G = 34;

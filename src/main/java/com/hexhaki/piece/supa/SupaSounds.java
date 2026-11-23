@@ -27,7 +27,7 @@ public final class SupaSounds {
 
     /** Every event and its clips (assets/hexhaki/sounds/piece/supa/{clip}.ogg). */
     public static final String[][] EVENTS = {
-        {SWISH, "swish1", "swish2"}, {DRAW, "draw1"}, {CUT, "cut1", "cut2"}, {GLANCE, "glance1"}, {RIP, "rip1"}, {SKATE, "skate"},
+        {SWISH, "swish1"}, {DRAW, "draw1"}, {CUT, "cut1"}, {GLANCE, "glance1"}, {RIP, "rip1"}, {SKATE, "skate"},
         {SPIN, "spin"},
     };
 }

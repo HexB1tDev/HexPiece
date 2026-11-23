@@ -4,10 +4,8 @@ import com.hexhaki.piece.supa.SupaArt;
 /**
  * 3.3.5: the Supa Supa no Mi's steel (supa/SupaArt) for FxPreview. A stand-in player built as the game builds one (its feet at the
  * scene's middle facing +z, every limb at the player model's own pivot, turned Z then Y then X as ModelPart.translateAndRotate turns it,
- * model y down), so the blades drawn in a limb's frame sit where client/supa/SupaClient puts them. Shots after the camera:
- * {@code |sblade:age[:coat]} both arm blades (the right arm forward, the left hanging), {@code |sclaw:age[:coat]} the finger blades and a
- * swipe's marks, {@code |sdrill:age} both drills (arms forward), {@code |sskate:age} the foot blades and skate marks,
- * {@code |sspider:age[:coat]} the steel body, {@code |sslash:age:scale[:coat]} a flying slash 3 blocks ahead, {@code |scross:age} the X,
+ * model y down). The blades on the body are the owner's katana steel: tools/supa_view.py draws those. Shots after the camera:
+ * {@code |sclaws:age} a swipe's marks, {@code |sslash:age:scale[:coat]} a flying slash 3 blocks ahead, {@code |scross:age} the X,
  * {@code |sspark:age}, {@code |sglance:age}, {@code |strail:age} Spiral Hollow's wake, {@code |sdaisy:age} Sparkling Daisy's cut,
  * {@code |sspin:age[:coat]} Spar Break.
  */
@@ -103,44 +101,9 @@ public final class SupaShots {
         double age = move.length > 1 ? Double.parseDouble(move[1]) : 4;
         double coat = 0;
         switch (move[0]) {
-            case "sblade" -> {
-                coat = move.length > 2 ? Double.parseDouble(move[2]) : 0;
-                player(sink, eye, -90, 0, -10, -8, 0, 0);
-                SupaArt.armBlade(FRAME.at(eye, -5, 2, 0, -90, 0, 0, false), SupaArt.BLADE_LENGTH, coat, (age * 0.05) % 1.0);
-                SupaArt.armBlade(FRAME.at(eye, 5, 2, 0, -10, 0, -8, true), SupaArt.BLADE_LENGTH, coat, (age * 0.05) % 1.0);
-            }
-            case "sclaw" -> {
-                coat = move.length > 2 ? Double.parseDouble(move[2]) : 0;
+            case "sclaws" -> {
                 player(sink, eye, -80, 25, 0, -5, 0, 0);
-                SupaArt.claws(FRAME.at(eye, -5, 2, 0, -80, 0, 25, false), coat, Math.min(1.0, age / 2.0));
-                SupaArt.clawMarks(sink, -ex, 1.25 - ey, -ez, 0, 1, 0, 1.5, age, coat);
-            }
-            case "sdrill" -> {
-                player(sink, eye, -90, 0, -90, 0, 0, 0);
-                SupaArt.drill(FRAME.at(eye, -5, 2, 0, -90, 0, 0, false), 0, age * 0.9);
-                SupaArt.drill(FRAME.at(eye, 5, 2, 0, -90, 0, 0, true), 0, -age * 0.9);
-            }
-            case "sskate" -> {
-                player(sink, eye, -20, 10, 20, -10, -25, 20);
-                SupaArt.footBlade(FRAME.at(eye, -1.9, 12, 0, -25, 0, 0, false), 0);
-                SupaArt.footBlade(FRAME.at(eye, 1.9, 12, 0, 20, 0, 0, false), 0);
-                for (int i = 0; i < 12; i++) {
-                    double a = 1.0 - i / 12.0;
-                    SupaArt.mark(sink, -0.12 - ex, 0.01 - ey, -i * 0.5 - ez, -0.12 - ex, 0.01 - ey, -(i + 1) * 0.5 - ez, a);
-                    SupaArt.mark(sink, 0.12 - ex, 0.01 - ey, -i * 0.5 - ez, 0.12 - ex, 0.01 - ey, -(i + 1) * 0.5 - ez, a);
-                }
-            }
-            case "sspider" -> {
-                coat = move.length > 2 ? Double.parseDouble(move[2]) : 0;
-                player(sink, eye, -15, 20, -15, -20, 0, 0);
-                double sh = (age * 0.04) % 1.0;
-                double al = 0.85;
-                SupaArt.steelBox(FRAME.at(eye, 0, 0, 0, 0, 0, 0, false), -0.25, -0.5, -0.25, 0.25, 0, 0.25, coat, sh, al);
-                SupaArt.steelBox(FRAME.at(eye, 0, 0, 0, 0, 0, 0, false), -0.25, 0, -0.125, 0.25, 0.75, 0.125, coat, sh, al);
-                SupaArt.steelBox(FRAME.at(eye, -5, 2, 0, -15, 0, 20, false), -0.1875, -0.125, -0.125, 0.0625, 0.625, 0.125, coat, sh, al);
-                SupaArt.steelBox(FRAME.at(eye, 5, 2, 0, -15, 0, -20, false), -0.0625, -0.125, -0.125, 0.1875, 0.625, 0.125, coat, sh, al);
-                SupaArt.steelBox(FRAME.at(eye, -1.9, 12, 0, 0, 0, 0, false), -0.125, 0, -0.125, 0.125, 0.75, 0.125, coat, sh, al);
-                SupaArt.steelBox(FRAME.at(eye, 1.9, 12, 0, 0, 0, 0, false), -0.125, 0, -0.125, 0.125, 0.75, 0.125, coat, sh, al);
+                SupaArt.clawMarks(sink, -ex, 1.25 - ey, -ez, 0, 1, 0, 1.5, age, 0);
             }
             case "sslash" -> {
                 double scale = move.length > 2 ? Double.parseDouble(move[2]) : 1.0;

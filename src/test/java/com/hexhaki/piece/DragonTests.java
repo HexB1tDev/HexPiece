@@ -357,6 +357,47 @@ public final class DragonTests {
         Check.that(Math.abs(d[2] + 0.95) < 1.0E-9 && Math.abs(d[0] - 0.3) < 1.0E-9, "the mirror turns a way back as a mirror does");
     }
 
+    /**
+     * 3.3.5: the Supa fruit's cuts in the air (supa/SupaArt) under the budget at every moment (a crowd of slashes, Xs, sparks, glances,
+     * wakes and a spin at once), finite; the katana steel's reshape (supa/SupaBlades.Shape) keeps the spine where it is, widens the edge
+     * out, and tools/supa_view.py draws the arm blade by the very same numbers.
+     */
+    static void supaCuts() throws Exception {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        for (int age = 0; age <= 40; age += 4) {
+            count[0] = 0;
+            for (int k = 0; k < 6; k++) {
+                com.hexhaki.piece.supa.SupaArt.slash(sink, -3 + k, 0, 4 + age * 0.5, 0, 0, 1, 0, 1.0 + 0.3 * k, age, k % 2);
+                com.hexhaki.piece.supa.SupaArt.sparks(sink, -3 + k, 0, 8, 0, 0, -1, 1.0, age % 10, k);
+                com.hexhaki.piece.supa.SupaArt.glance(sink, -3 + k, 0, 6, 0, -1, age % 8, k);
+            }
+            for (int k = 0; k < 3; k++) {
+                com.hexhaki.piece.supa.SupaArt.cross(sink, -2 + 2 * k, 0, 6 + age * 0.4, 0, 0, 1, 1.6, age, 0);
+                com.hexhaki.piece.supa.SupaArt.clawMarks(sink, -2 + 2 * k, 0, 3, 0, 1, k % 2, 1.6, age % 6, 0);
+            }
+            com.hexhaki.piece.supa.SupaArt.drillTrail(sink, 0, 0, -12, 0, 0, 0, age % 12, 0);
+            com.hexhaki.piece.supa.SupaArt.daisyTrail(sink, 2, 0, -14, 2, 0, 0, age % 12, 0);
+            com.hexhaki.piece.supa.SupaArt.spin(sink, 0, 0, 3, com.hexhaki.piece.server.SupaMoves.BREAK_REACH, age, 0);
+            for (int m = 0; m < 80; m++) {
+                com.hexhaki.piece.supa.SupaArt.mark(sink, m * 0.3, -1.6, 2, m * 0.3 + 0.3, -1.6, 2, 0.5);
+            }
+            check(count[0], finite[0], "Supa cuts", age);
+        }
+        com.hexhaki.piece.supa.SupaBlades.Shape arm = com.hexhaki.piece.supa.SupaBlades.ARM;
+        Check.that(Math.abs(arm.x(1.0F, 5.0F, 1.0F, -0.5F) - arm.curve()) < 1.0E-5F, "the steel's spine stays on its (eased) curve");
+        Check.that(arm.x(-0.5F, 5.0F, 1.0F, -0.5F) < -0.5F * arm.widen() + 1.0F * arm.curve() + 0.5F, "the edge widened out past the katana's");
+        String view = java.nio.file.Files.readString(java.nio.file.Path.of("tools/supa_view.py"));
+        Check.that(view.contains("ARM = dict(widen=" + arm.widen() + ", thick=" + arm.thick() + ", length=" + arm.length() + ", wave="
+            + arm.wave() + ", period=" + arm.period() + ", curve=" + arm.curve() + ")"), "tools/supa_view.py draws the arm blade by SupaBlades.ARM");
+    }
+
     static void hieIce() {
         int[] count = {0};
         boolean[] finite = {true};
@@ -452,6 +493,8 @@ public final class DragonTests {
                 && zip.getEntry("assets/hexhaki/models/item/hie_hie_no_mi.json") != null, "the Ice fruit's icon and model");
             Check.that(zip.getEntry("assets/hexhaki/textures/item/noro_noro_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/noro_noro_no_mi.json") != null, "the Noro fruit's icon and model");
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/supa_supa_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/supa_supa_no_mi.json") != null, "the Supa fruit's icon and model");
             try (InputStream in = zip.getInputStream(entry)) {
                 model = DragonModel.read(in);
             }
@@ -465,6 +508,7 @@ public final class DragonTests {
         maguMagma();
         hieIce();
         noroPhotons();
+        supaCuts();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

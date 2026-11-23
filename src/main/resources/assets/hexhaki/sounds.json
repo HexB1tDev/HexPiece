@@ -1067,5 +1067,68 @@
         "attenuation_distance": 40
       }
     ]
+  },
+  "piece.supa.swish": {
+    "subtitle": "subtitles.hexhaki.piece.supa.swish",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/swish1",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.supa.draw": {
+    "subtitle": "subtitles.hexhaki.piece.supa.draw",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/draw1",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.supa.cut": {
+    "subtitle": "subtitles.hexhaki.piece.supa.cut",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/cut1",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.supa.glance": {
+    "subtitle": "subtitles.hexhaki.piece.supa.glance",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/glance1",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.supa.rip": {
+    "subtitle": "subtitles.hexhaki.piece.supa.rip",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/rip1",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.supa.skate": {
+    "subtitle": "subtitles.hexhaki.piece.supa.skate",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/skate",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.supa.spin": {
+    "subtitle": "subtitles.hexhaki.piece.supa.spin",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/spin",
+        "attenuation_distance": 40
+      }
+    ]
   }
 }

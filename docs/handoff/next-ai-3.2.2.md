@@ -1972,10 +1972,63 @@ copy, cached) and a public KatanaRenderer.steel (the katana's own quads, coated 
 blades go; the other blades (claws, drills of blades round the forearm, the skate blades, Spider's steel) made the same way and judged
 the same way; then the moves (8zw).
 
+## 8zza. The owner's new request during 3.3.5 (verbatim): a Rare fruit, the Ito Ito no Mi (on the to-do list, not started)
+
+With four pictures (kept only in the session's uploads: anime frames and the series' fruit art never go in the repository): the fruit
+(a white pear-shaped fruit covered in black-outlined swirls, a curly pink stem), Doflamingo's Overheat (huge waves of white string
+shading purple at their heart, rising behind him on both sides), and two more of Doflamingo slicing with his strings and of Overheat.
+
+"Add to the todo-list:
+
+New Rare Fruit:
+
+Ito Ito No Mi (Rare):
+The Strings Fruit
+
+Core Devil Fruit Abilities
+
+* Slicing & Whipping. Doflamingo generates nearly invisible, razor-sharp white strings from his body to slice targets at long range
+  (e.g., Overheat, Goshikito, Fretsaw).
+* Puppet Manipulation (Parasite). He attaches thin threads to a victim's spine to control their body against their will like a
+  marionette.
+* Aerial Travel (Sora no Michi). He shoots strings into clouds to swing and fly across the sky.
+* String Clones (Black Knight). He weaves compressed strings into a physical, controllable duplicate of himself that can speak and
+  fight.
+* Internal Self-Surgery. He uses strings inside his body to stitch together damaged organs as emergency first aid.
+* Defense & Area Denial (Spider's Web & Birdcage). He creates dense defensive webs to block attacks and forms a massive, shrinking dome
+  (Torikago) that slices everything in its path and blocks communication signals.
+
+Awakened Abilities
+
+* Environmental Transmutation. Upon Awakening, Doflamingo turns surrounding inorganic matter—such as buildings and the ground—into
+  massive waves of controllable strings.
+* Large-Scale Assaults. He uses awakened terrain to overwhelm opponents with techniques like Break White (crushing waves of string) and
+  Ever White.
+
+Haki-Enhanced Versions & Techniques
+
+* Busoshoku (Armament) Imbuement. Doflamingo coats his strings in invisible or hardened black Busoshoku Haki, drastically increasing
+  their durability and cutting power so they can bypass Logia defenses and withstand Admiral-level attacks.
+* Haki-Infused Awakened Attacks (God Thread / Sixteen Holy Bullets). He gathers awakened strings into sixteen massive, Haki-coated
+  spears fired simultaneously to pierce high-level defenses.
+* Reinforced Birdcage & Spider's Web. Infusing defensive strings and the Birdcage with Haki makes them nearly uncuttable, requiring
+  overwhelming Haki or extreme physical force (like Luffy's Gear Fourth) to break.
+* Haoshoku (Conqueror's) Clash. While not directly infused into strings like Armament, Doflamingo combines his string strikes with
+  Haoshoku Haki clashes during close-quarters combat.
+
+Research Do Flamingo's Devil fruit, get reference gifs, reuse already in the game first person and third person animations."
+
+(The owner's message carried source links: fandom wikis, a YouTube video, a TikTok, a Facebook post, a CBR article.) Read as: a fourth
+new fruit, RARE (three stars), after Supa (3.3.5) and Horo (3.3.6) unless the owner says otherwise; research Doflamingo's fruit and get
+reference GIFs (the HexPiece environment allows tenor.com and media.tenor.com); reuse the mod's own first- and third-person animations;
+POINT ONE for everything else (the house style, the Conqueror's lightning out of every explosion with Haki and Ryou). Plan the keys
+and ask the owner (AskUserQuestion) before building, as 8zw did for the other three. Lessons from Supa (8zz): judge the art against the
+Light/Gura/Magma art before showing it; a flat single-colour mesh is not acceptable.
+
 ## 9. What to do next (after 3.3.4)
 
 1. **Check the branch's last "Build HexPiece" and "Release HexPiece" runs** (`claude/nice-bell-gam7qf`) and fix whatever is red.
-2. **3.3.5 Supa Supa (IN PROGRESS: 8zz)**, then **3.3.6 Horo Horo** (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
+2. **3.3.5 Supa Supa (IN PROGRESS: 8zz)**, then **3.3.6 Horo Horo**, then the **Ito Ito no Mi (Rare: 8zza, plan and ask first)**, (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
    Noro is (8zy), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
    CC0 web sounds, the Conqueror's lightning out of every explosion). Supa's blades go black-purple with Armament on, like the katanas.
 3. Sounds: Freesound needs the HexPiece environment (the session started on Default again: get_environment lists HexPiece,
