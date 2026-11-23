@@ -252,6 +252,20 @@ public final class PiecePatch implements Opcodes {
         {CONTROLLER, "lambda$delayedSound$26", "com/hexhaki/patch/SoundBalance", "pos",
             "(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/core/BlockPos;Lnet/minecraft/sounds/SoundEvent;Lnet/minecraft/sounds/SoundSource;FF)V",
             "com/hexhaki/piece/server/ConquerorSounds", "pos", 1},
+        // 3.3.2 (the owner: "shift + space ability is removed"): Shift + Space's own check (GearMovement.movementInput asks whether Sky
+        // Bounce may go) and the server's (mechanicsAction and skyBounce ask whether it is unlocked) never let it: it is a plain jump
+        {"com/hexhaki/client/devilfruit/GearMovement", "movementInput", "com/hexhaki/client/devilfruit/GearClientState", "usable",
+            "(Lcom/hexhaki/devilfruit/data/GearAbility;)Z", "com/hexhaki/piece/client/gear/NikaJumpClient", "usable", 1},
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "mechanicsAction", "com/hexhaki/devilfruit/data/GearData", "unlocked",
+            "(Lnet/minecraft/world/entity/player/Player;Lcom/hexhaki/devilfruit/data/GearAbility;)Z", "com/hexhaki/piece/server/NikaRules",
+            "unlocked", 1},
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "skyBounce", "com/hexhaki/devilfruit/data/GearData", "unlocked",
+            "(Lnet/minecraft/world/entity/player/Player;Lcom/hexhaki/devilfruit/data/GearAbility;)Z", "com/hexhaki/piece/server/NikaRules",
+            "unlocked", 1},
+        // 3.3.2: Gear 5's walk switches its run and its stance as the body leaves and touches the ground: through server/NikaJump, which
+        // holds them back while the jump's laughing skip plays
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "tickBouncyWalk", "com/hexhaki/gameplay/HakiServerController", "animate",
+            ANIMATE, "com/hexhaki/piece/server/NikaJump", "walkClip", 2},
     };
     /**
      * 2.4.9: instance calls made static: class, method, call owner, name, descriptor, new owner, new name, how many. The new method takes
@@ -334,6 +348,9 @@ public final class PiecePatch implements Opcodes {
     static final Object[][] TEXTS = {
         // 2.7.1: the fourth quick slot is H now (was M): the Pika fruit's move declared on it stays on it
         {"com/hexhaki/fruit/pika/LightMoves", "[M] hold", "[H] hold", 1},
+        // 3.3.2: Sky Bounce is gone (the owner: "shift + space ability is removed"); Buoyancy still raises Gear 5's bounding steps
+        {"com/hexhaki/devilfruit/data/GearUpgrade", "Extra Sky Bounces per airtime and a softer, floatier descent.",
+            "Gear 5's bounding steps spring higher, with a softer, floatier descent.", 1},
         {"com/hexhaki/data/HakiTechnique", "Advanced Haki", "Ryou", 1},
         {"com/hexhaki/data/HakiTechnique", "[J] Late-game multiplier. Requires ARM 850 + HAO 850 and active Armament; upgrades nearly every major technique.",
             "Late-game multiplier. Requires ARM 850 + HAO 850. Once unlocked it replaces your Armament (Ctrl + R): blackened hands outlined in your own glow colour, and nearly every major technique upgraded.", 1},
@@ -450,7 +467,9 @@ public final class PiecePatch implements Opcodes {
             gearUntransformed(node);
             gearFast(node);
             dawnWhip(node);
+            rubberChaos(node);
         }));
+        entries.put(GEAR_FIELDS + ".class", transform(entries.get(GEAR_FIELDS + ".class"), PiecePatch::fieldsQuiet));
         // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
         // lightning themselves, past HakiBolts, and showed the original's flat beams
         entries.put(GEAR_VFX + ".class", transform(entries.get(GEAR_VFX + ".class"), node -> {
@@ -1043,6 +1062,11 @@ public final class PiecePatch implements Opcodes {
         moved.add(new VarInsnNode(ALOAD, 0));
         moved.add(new VarInsnNode(ALOAD, 1));
         moved.add(new MethodInsnNode(INVOKESTATIC, CONQUEROR_AURA, "moved", "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;)V", false));
+        // 3.3.2: and Gear 5's jump hears of every clip (another one taking over in the air: its landing leaves that one alone)
+        moved.add(new VarInsnNode(ALOAD, 0));
+        moved.add(new VarInsnNode(ALOAD, 1));
+        moved.add(new MethodInsnNode(INVOKESTATIC, "com/hexhaki/piece/server/NikaJump", "played",
+            "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;)V", false));
         animate.instructions.insert(moved);
     }
 
@@ -1195,6 +1219,50 @@ public final class PiecePatch implements Opcodes {
         if (calls != 1) {
             throw new AssertionError("GearServerController.whip's clip is not as inspected: " + calls);
         }
+    }
+
+    static final String GEAR_FIELDS = "com/hexhaki/devilfruit/gameplay/GearFields";
+
+    /**
+     * 3.3.2 (the owner: "world of rubber makes it so for everyone else, it's main goal is to confuse the target, displace them and
+     * overwhelm"): {@code GearServerController.releaseRubberWorld}'s {@code GearFields.add(level, centre, radius, ticks)} becomes
+     * {@code RubberChaos.add(level, centre, radius, ticks, player)} (which still calls it): the field knows its user. Exactly one call.
+     */
+    static void rubberChaos(ClassNode node) {
+        MethodNode release = method(node, "releaseRubberWorld", "(Lnet/minecraft/server/level/ServerPlayer;)V");
+        int calls = 0;
+        for (AbstractInsnNode insn = release.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof MethodInsnNode call && call.getOpcode() == INVOKESTATIC && call.owner.equals(GEAR_FIELDS) && call.name.equals("add")
+                && call.desc.equals("(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/phys/Vec3;DI)V")) {
+                release.instructions.insertBefore(call, new VarInsnNode(ALOAD, 0));
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, "com/hexhaki/piece/server/RubberChaos", "add",
+                    "(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/phys/Vec3;DILnet/minecraft/server/level/ServerPlayer;)V", false);
+                release.instructions.set(call, ours);
+                insn = ours;
+                calls++;
+            }
+        }
+        if (calls != 1) {
+            throw new AssertionError("GearServerController.releaseRubberWorld's field is not as inspected: " + calls);
+        }
+    }
+
+    /**
+     * 3.3.2: the original's field bounced every body on the ground in it every tick, its user too ({@code GearFields.bounceWithin}): it
+     * does nothing now (server/RubberChaos throws everyone but the user about on the waves). The field itself stays: no fall damage in it,
+     * the clients told of it every second.
+     */
+    static void fieldsQuiet(ClassNode node) {
+        MethodNode bounce = method(node, "bounceWithin", "(Lnet/minecraft/server/level/ServerLevel;Lcom/hexhaki/devilfruit/gameplay/GearFields$Field;J)V");
+        InsnList body = new InsnList();
+        body.add(new InsnNode(RETURN));
+        bounce.instructions = body;
+        bounce.tryCatchBlocks.clear();
+        if (bounce.localVariables != null) {
+            bounce.localVariables.clear();
+        }
+        bounce.visibleLocalVariableAnnotations = null;
+        bounce.invisibleLocalVariableAnnotations = null;
     }
 
     /** 3.2.8: the Giant's grab (server/GiantHold). */

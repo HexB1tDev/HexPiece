@@ -243,8 +243,7 @@ public class UiPreview {
                     new com.hexhaki.piece.ui.AbilityPanel.Move("V hold", "Gum-Gum Gatling", "", 0, 0),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("B hold", "Gum-Gum Gigante", "", 0, 0),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("N hold", "Gum-Gum Coil Spring", "", 0, 0),
-                    new com.hexhaki.piece.ui.AbilityPanel.Move("M hold", "Gum-Gum Rubber World", "Gear 5", 0, 0),
-                    new com.hexhaki.piece.ui.AbilityPanel.Move("Shift+Space", "Gum-Gum Sky Bounce", "Gear 5", 0, 0)), true, false, false, false,
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("M hold", "Gum-Gum Rubber World", "Gear 5", 0, 0)), true, false, false, false,
                 java.util.List.of(), 64, 100)},
             {"Gear 5, Armament on", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
                 java.util.List.of(), null, "Gear 5", 0xFFF2F0E6, true, java.util.List.of(
@@ -255,8 +254,7 @@ public class UiPreview {
                     new com.hexhaki.piece.ui.AbilityPanel.Move("V hold", "Gum-Gum Gatling", "", 0, 0),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("B hold", "Bajrang Gun", "", 0, 0),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("N hold", "Lightning Lance", "", 0, 0),
-                    new com.hexhaki.piece.ui.AbilityPanel.Move("M hold", "Gum-Gum Rubber World", "", 0, 0),
-                    new com.hexhaki.piece.ui.AbilityPanel.Move("Shift+Space", "Gum-Gum Sky Bounce", "", 0, 0)), true, true, false, false,
+                    new com.hexhaki.piece.ui.AbilityPanel.Move("M hold", "Gum-Gum Rubber World", "", 0, 0)), true, true, false, false,
                 java.util.List.of(), 64, 100)}};
         for (int i = 0; i < huds.length; i++) {
             com.hexhaki.piece.ui.AbilityPanel.Input input = (com.hexhaki.piece.ui.AbilityPanel.Input)huds[i][1];

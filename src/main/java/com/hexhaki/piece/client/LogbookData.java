@@ -267,8 +267,7 @@ final class LogbookData {
             {GearAbility.GATLING, AbilityHud.name(HakiKeys.SLOT_8) + " hold"},
             {GearAbility.GIANT, AbilityHud.name(HakiKeys.STAR_GUN) + " hold (Bajrang Gun with Haki in Gear 5)"},
             {GearAbility.COIL, AbilityHud.name(com.hexhaki.piece.client.PieceKeys.FRUIT_N) + " hold (the lightning lance with Haki in Gear 5)"},
-            {GearAbility.RUBBER_WORLD, AbilityHud.name(com.hexhaki.piece.client.PieceKeys.FRUIT_M) + " hold"},
-            {GearAbility.SKY_BOUNCE, "Shift+Space"}};
+            {GearAbility.RUBBER_WORLD, AbilityHud.name(com.hexhaki.piece.client.PieceKeys.FRUIT_M) + " hold"}};
         List<Entry> entries = new ArrayList<>();
         for (Object[] row : rows) {
             GearAbility ability = (GearAbility) row[0];
@@ -285,13 +284,14 @@ final class LogbookData {
         return new Section(NIKA, "Mastery " + GearClientState.mastery, AbilityHud.NIKA_WHITE, Math.min(1F, into / (float) cost), List.of(
             "Mastery " + GearClientState.mastery + "/" + GearMastery.MAX_LEVEL + ", " + into + "/" + cost + " XP to the next level.",
             "R swaps between your fighting style and Devil Fruit mode, where the fruit has the keys: Z for Gear 5, X C V B N M its moves.",
-            "Ctrl + R is Armament: with it (or Ryou) on in Gear 5 the moves become their Haki versions. Levels earn points for the upgrades below."),
+            "Ctrl + R is Armament: with it (or Ryou) on in Gear 5 the moves become their Haki versions. Levels earn points for the upgrades below.",
+            "In Gear 5 every jump bounces about five blocks high off ground that turns to rubber under you, and lands without fall damage."),
             entries);
     }
 
     /** 3.2.3 (the owner, asked: "All stretch moves" untransformed): the Nika moves only Gear 5 has (server/NikaRules). */
     static boolean gearFiveOnly(GearAbility ability) {
-        return ability == GearAbility.STAR_GUN || ability == GearAbility.RUBBER_WORLD || ability == GearAbility.SKY_BOUNCE;
+        return ability == GearAbility.STAR_GUN || ability == GearAbility.RUBBER_WORLD;
     }
 
     static Section upgrades() {

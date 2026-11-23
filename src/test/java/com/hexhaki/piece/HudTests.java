@@ -194,8 +194,8 @@ public final class HudTests {
      */
     /**
      * 3.2.3 (the owner, asked: "All stretch moves" work untransformed): the stretching punch, Rocket, Whip, Gatling, Giant and Coil
-     * Spring (press and let go) go ahead out of Gear 5; Rubber World, Star Gun, Sky Bounce and the transformation's own toggle are
-     * left to the original's rules.
+     * Spring (press and let go) go ahead out of Gear 5; Rubber World, Star Gun and the transformation's own toggle are left to the
+     * original's rules (3.3.2: Sky Bounce is gone).
      */
     static void nika() {
         java.util.Set<String> stretch = java.util.Set.of("PISTOL", "ROCKET_START", "ROCKET_RELEASE", "WHIP", "GATLING_START", "GATLING_RELEASE",
@@ -227,6 +227,53 @@ public final class HudTests {
         starRubber();
         rubberWorld();
         toonForce();
+        rubberJump();
+    }
+
+    /**
+     * 3.3.2 (the owner: "default jumping is much higher ... it always turns the ground into rubber"; asked, Gear 5 only, about 5 blocks):
+     * the jump goes about five blocks up, its ground only ever rises, springs up under the take-off and not under the landing feet,
+     * settles within its life and its reach; Rubber World throws what stands where a crest rises, harder for a faster rise.
+     */
+    static void rubberJump() {
+        double y = 0;
+        double v = com.hexhaki.piece.gear.RubberJump.lifted(0.42);
+        double peak = 0;
+        for (int t = 0; t < 60 && y >= 0; t++) {
+            y += v;
+            v = (v - 0.08) * 0.98;
+            peak = Math.max(peak, y);
+        }
+        Check.that(peak > 4.5 && peak < 5.5, "rubberJump: a Gear 5 jump goes about five blocks up (" + peak + ")");
+        Check.that(com.hexhaki.piece.gear.RubberJump.lifted(-0.1) == -0.1, "rubberJump: a body not going up is not lifted");
+        for (boolean landing : new boolean[] {false, true}) {
+            double most = 0;
+            for (double t = -1; t <= com.hexhaki.piece.gear.RubberJump.LIFE + 2; t += 0.5) {
+                for (double r = 0; r < 8; r += 0.25) {
+                    for (double a = 0; a < 6.3; a += 0.7) {
+                        double h = com.hexhaki.piece.gear.RubberJump.hop(r, a, t, landing);
+                        Check.that(h >= 0 && h < 1.2, "rubberJump: the ground rises 0 to 1.2 (" + h + " at r " + r + ", t " + t + ")");
+                        most = Math.max(most, h);
+                        if (t > com.hexhaki.piece.gear.RubberJump.LIFE || t < 0
+                            || r > (landing ? com.hexhaki.piece.gear.RubberJump.LAND_RADIUS : com.hexhaki.piece.gear.RubberJump.HOP_RADIUS)) {
+                            Check.that(h == 0, "rubberJump: still outside its life and reach (" + h + " at r " + r + ", t " + t + ")");
+                        }
+                    }
+                }
+            }
+            Check.that(most > 0.4, "rubberJump: the ground visibly rises (" + most + ")");
+        }
+        Check.that(com.hexhaki.piece.gear.RubberJump.hop(0, 0, 1.5, false) > 0.4, "rubberJump: the take-off's ground springs up under the feet");
+        Check.that(com.hexhaki.piece.gear.RubberJump.hop(0.3, 0, 1, true) < 0.05, "rubberJump: the landing feet's own footing stays still");
+        Check.that(com.hexhaki.piece.gear.RubberWave.toss(0.01) == 0, "rubberJump: a still ground throws nothing");
+        Check.that(com.hexhaki.piece.gear.RubberWave.toss(0.3) > com.hexhaki.piece.gear.RubberWave.toss(0.08)
+            && com.hexhaki.piece.gear.RubberWave.toss(0.08) > 0, "rubberJump: a faster crest throws harder");
+        // the very waves every client draws throw bodies: a ring's front rising under a body standing in its way
+        double rise = com.hexhaki.piece.gear.RubberWave.rise(5, 0, 5, 40, Double.POSITIVE_INFINITY)
+            - com.hexhaki.piece.gear.RubberWave.rise(5, 0, 4, 40, Double.POSITIVE_INFINITY);
+        Check.that(com.hexhaki.piece.gear.RubberWave.toss(rise) > 0, "rubberJump: Rubber World's first ring throws a body 5 blocks out (" + rise + ")");
+        Check.that(com.hexhaki.piece.gear.ToonForce.score("gear5_jump") != null && com.hexhaki.piece.gear.ToonForce.score("gear5_land") != null,
+            "rubberJump: the jump and the landing have Toon Force beats");
     }
 
     /**

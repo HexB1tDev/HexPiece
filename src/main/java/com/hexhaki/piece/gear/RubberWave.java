@@ -77,6 +77,39 @@ public final class RubberWave {
         return Math.min(MOST, h * edge * Math.max(0, settle));
     }
 
+    /**
+     * 3.3.2 (the owner: Rubber World "makes it so for everyone else, it's main goal is to confuse the target, displace them and
+     * overwhelm"): a body standing where the ground rises at least this much in a tick is thrown by it (server/RubberChaos).
+     */
+    public static final double TOSS_RISE = 0.04;
+    /** Ticks between two throws of one body (it lands and the next crest comes). */
+    public static final int TOSS_GAP = 6;
+
+    /** How hard a crest rising {@code dh} blocks this tick throws what stands on it: 0 (none) to 1. */
+    public static double toss(double dh) {
+        return dh < TOSS_RISE ? 0 : Math.min(1, 0.35 + (dh - TOSS_RISE) * 3.0);
+    }
+
+    /**
+     * A throw of strength {@code s}: up (blocks a tick), outward from the field's middle (thrown back in, {@link #BACK} times as hard,
+     * one throw in {@link #BACK_CHANCE}^-1: they tumble about in the field instead of being swept out of it), and sideways at most (its
+     * sign random).
+     */
+    public static double tossUp(double s) {
+        return 0.5 + 0.45 * s;
+    }
+
+    public static double tossOut(double s) {
+        return 0.1 + 0.2 * s;
+    }
+
+    public static double tossSide(double s) {
+        return 0.2 + 0.3 * s;
+    }
+
+    public static final double BACK = 0.8;
+    public static final double BACK_CHANCE = 0.35;
+
     /** How steeply it rises outward there (blocks up a block out), for tilting the blocks with the wave. */
     public static double slope(double r, double angle, double t, double radius, double end) {
         return (rise(r + 0.5, angle, t, radius, end) - rise(Math.max(0, r - 0.5), angle, t, radius, end)) / (r >= 0.5 ? 1.0 : 0.5 + r);

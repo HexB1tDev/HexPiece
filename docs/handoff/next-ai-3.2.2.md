@@ -10,10 +10,10 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground), 8zt 3.3.1 (Toon Force, Dawn Whip and the jump pose redone; THE OWNER'S NEW JUMP
-REQUEST: read it).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground), 8zt 3.3.1 (Toon Force, Dawn Whip and the jump pose redone; the owner's jump request),
+8zu 3.3.2 (the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's description: read it).
 
-Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
+Branch `claude/nice-bell-gam7qf` since 3.3.2 (fetch it first: it is the newest; it continues claude/pensive-heisenberg-mkr9cl). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
 lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 (8zl: the Nika fruit's keys Z X C V B N M, Haki names,
 white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
@@ -21,8 +21,8 @@ and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the 
 owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed and green; 3.2.7 (8zp: Dawn Whip's cartoon spin) is pushed and green; 3.2.8 (8zq: Giant holds
 what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber) is pushed and green; 3.3.0 (8zs: Rubber World's ground
 rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip and the jump pose redone to the owner's target
-look) is pushed unchecked (the owner asked for the handoff at once: check its runs first, section 9). Next is the
-rest of the Nika rework (section 9).** The cloud environment
+look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's
+description) is pushed: check its runs first, section 9. Next: the owner's verdict, then the rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -1680,7 +1680,7 @@ The owner during this session (verbatim, in order):
   poses the owner circled. build.py checks FACE_CLEAR_CLIPS (gear5_dawn_whip, gear5_bounce) at every quarter tick. Mod-wide it would
   flag 183 clips (guards and charges hold arms before the face on purpose): use it for any new pose with a raised arm.
 
-## 8zu. IN PROGRESS (3.3.2, not released): the jump; the skip pose redone after the owner said it was STILL wrong
+## 8zu. Done (3.3.2): Gear 5's rubber jump, Rubber World on everyone else, the skip pose redone after the owner said it was STILL wrong
 
 Asked first (AskUserQuestion), the owner chose for the new jump: "Gear 5 only" and "About 5 blocks" (8zt item 5). Then, while the jump's
 clips were being made, the owner (verbatim, in order):
@@ -1729,40 +1729,52 @@ clips were being made, the owner (verbatim, in order):
    face check is the front view only now (from the side and three-quarters the fist is up in front of the head, as the owner wants).
    Rendered beside the owner's pictures (front, both three-quarters, side): shown to the owner for a yes before the jump's code.
 
-State of the working tree (committed as work in progress so nothing is lost; the jar's behaviour is 3.3.1's):
-- tools/nika_anims.py: target() as in item 5 above; gear5_dawn_whip.json, gear5_bounce.json regenerated with it.
-- New clips gear5_jump.json (loop from 5: push-off, the right arm shot up, then the skip held with a bob) and gear5_land.json (squash
-  with the arms out, spring back, settle by 8); no code plays them yet. build.py FACE_CLEAR_CLIPS lists them.
-- None of the jump's code is written. The plan (from reading the original): Sky Bounce off on the client (redirect GearMovement
-  .movementInput's GearClientState.usable(SKY_BOUNCE) to a hook answering false) and the server (mechanicsAction's and skyBounce's
-  GearData.unlocked(SKY_BOUNCE) answering false); the panel row and the Logbook entry gone; GearUpgrade BUOYANCY's text ("Extra Sky
-  Bounces per airtime ...") reworded. The jump detected on the CLIENT (LivingJumpEvent of the local player in Gear 5: not transforming,
-  not the giant, no Bajrang phase, not flying, in water or riding: vy + 0.48, about 4.9 blocks), which sends a new C2S message (the
-  server cannot tell a jump from the original's Gear 5 walk hops: tickBouncyWalk sets vy about 0.975 with hurtMarked every 3 ticks while
-  moving, and handleMovePlayer then fires LivingJumpEvent for those too). Server: no fall damage until the landing, the jump clip unless a
-  move is busy (gatling, rocketing, coilHeld, lanceHolding, giantHeld, gigante, rubberWorldHeld, bajrangPhase, the transformation), a
-  rubber ripple round the take-off and the landing (S2CUoFx 162/163, drawn by RubberWorldDraw as small short fields; the jumper's own
-  client draws its own at once), on landing the landing clip (or gear5_run when bounding) then the idle track (gear5_stance/gear5_run
-  as the original's idleTrack). HakiServerController.animate's head (beside ConquerorAura.moved) tells the jump when another clip takes
-  over; tickBouncyWalk's two animate calls go through a hook that holds the run/stance switch while the jump's clip plays. Rubber World
-  on everyone else: releaseRubberWorld's GearFields.add call gets the player (a RubberChaos registry), GearFields.bounceWithin emptied
-  (it bounced everyone, the user too), every other body in the field tossed up and outward (and randomly sideways) when a wave's crest
-  rises under it (RubberWave.rise, the clients' own waves), mobs' paths stopped and turned, players given nausea; the user untouched.
+The owner then said "Continue" (the pose render had been sent; no other verdict). 3.3.2 as built (nothing tested in game: build, tests,
+every clip and the ground rendered; GIFs docs/gifs/nika-jump-3.3.2.gif, nika-toon-force-3.3.2.gif, nika-rubber-jump-3.3.2.gif,
+nika-rubber-world-others-3.3.2.gif):
+- **Sky Bounce gone**: patch CALL_REDIRECTS: GearMovement.movementInput's GearClientState.usable(SKY_BOUNCE) -> client/gear/NikaJumpClient
+  .usable (never Sky Bounce: Shift + Space is a plain jump); GearServerController.mechanicsAction's and skyBounce's GearData.unlocked ->
+  server/NikaRules.unlocked (never Sky Bounce). The panel row (AbilityHud.gearKeys), the Ability Book row (LogbookData.nika, plus a line
+  on the jump), UiPreview, gearFiveOnly updated; TEXTS rewords GearUpgrade BUOYANCY ("Gear 5's bounding steps spring higher, with a
+  softer, floatier descent."; it still raises the original's walk hops). build.py PATCHED: GearMovement, GearFields, GearUpgrade.
+- **The jump** (gear/RubberJump pure: LIFT 0.48, `lifted(vy)`; HudTests.rubberJump: about 4.9 blocks): client/gear/NikaJumpClient on
+  LivingEvent.LivingJumpEvent (new stub + allowlist line, [forge] 1.20.1: posted by ForgeHooks.onLivingJump inside jumpFromGround after
+  the speed is set) for the local player in Gear 5 (not transforming, giant scale < 1.05, no Bajrang phase, not flying, riding or in
+  water): vy + LIFT, C2SNikaJump (network message 20, PROTOCOL 14) and its own take-off ripple at once; its own landing ripple from a
+  ClientTickEvent once on the ground. server/NikaJump.jumped (Gear 5, not transforming, not flying or riding; one per 5 ticks): HOP
+  (S2CUoFx 162) to everyone near, gear5_jump unless busy (gatling, rocketing, coilHeld, lanceHolding, giantHeld, gigante,
+  rubberWorldHeld, bajrangPhase, grabHeld), a JUMPS entry; PlayerTickEvent: on the ground 3+ ticks after: LAND (163), then gear5_land
+  (or gear5_run when "bounding"), after LAND_TICKS 8 the idle track (gear5_stance / gear5_run / __clear__, the original's idleTrack);
+  LivingFallEvent cancelled while an entry lasts. HakiServerController.animate's head calls NikaJump.played (another clip took over:
+  the landing leaves it alone); tickBouncyWalk's two animate calls go through NikaJump.walkClip (run/stance/clear held back while the
+  jump's clip plays). ToonForce beats for gear5_jump (loop) and gear5_land.
+- **The rubber ground** (gear/RubberJump.hop, only up, 0 to ~1): take-off: the ground under the feet springs up 0.55 for 3 ticks, two
+  rings (0.7 and 0.35 high, from 0.7 blocks at 0.55 a tick) to HOP_RADIUS 5.5; landing: two rings (0.8, 0.4) to LAND_RADIUS 4.5, the
+  feet's footing still; LIFE 18 ticks. client/gear/RubberWorldDraw: HOPS (MOST_HOPS 10) beside Rubber World's FIELDS, drawn first, the
+  same block copies (height/slope by kind); `accept` ignores one's own (drawn at once); bodies ride only when on the ground now.
+  client/dragon/UoFx routes 162/163 there. FxPreview `|nhop:t[:1]` (about 400 quads at most).
+- **Rubber World on everyone else** (server/RubberChaos): releaseRubberWorld's GearFields.add -> RubberChaos.add(level, centre, radius,
+  ticks, player) (PiecePatch.rubberChaos; it still calls GearFields.add: no fall damage in the field, the clients' RUBBER_FIELD every
+  20 ticks); GearFields.bounceWithin emptied (PiecePatch.fieldsQuiet: it bounced everyone, the user too). LevelTickEvent: per field one
+  box query; a body (not the user, on the ground, not riding or flying) where RubberWave.rise climbs at least TOSS_RISE 0.04 in a tick
+  is thrown (RubberWave.toss/tossUp/tossOut/tossSide: up 0.5-0.95, out 0.1-0.3 but back toward the middle 0.8 as hard one time in
+  BACK_CHANCE 0.35, sideways 0.2-0.5 at random; one throw per TOSS_GAP 6 ticks), its fall reset; a Mob stops, forgets its target and
+  spins 90-180 degrees; a Player gets nausea 140 ticks. FxPreview `|nchaos:t[:radius]` runs the same rule on eight bodies (the first try
+  threw them outward only: a 16-block field was empty in 50 ticks; now they tumble about inside it).
+- First person: the jump and landing clips hide the arms as every non-listed Gear 5 clip does (the stance already does).
 
-## 9. What to do next (after 3.3.1)
+## 9. What to do next (after 3.3.2)
 
-1. 3.3.1's runs are green. **First read 8zu: the owner was furious the skip pose was still wrong; it is redone to their limb-by-limb
-   description (8zu item 5) and was shown to them: their verdict decides whether the jump's code goes on.** The work continues on `claude/nice-bell-gam7qf` (it carries 3.3.1 and the work in progress).
-2. **The owner's insisted jump change (8zt item 5), as 3.3.2**: Shift+Space Sky Bounce removed; the fruit user's jump much higher,
-   always with gear5_bounce; rubber ground under every jump (the user only); Rubber World throwing everyone else about ("confuse the
-   target, displace them and overwhelm"). Render it (FxPreview |nworld, tools/clip_gif.py), make its GIF.
-3. Then the rest of the Nika rework (8zk; done: the keys, the transformation, the wobble, the Bajrang Gun, Dawn Whip, Giant's hold,
-   Star Gun's rubber body, Rubber World's rolling ground, Toon Force, the target-look skip): better Haki versions (Dawn Pistol; the
-   lightning lance never touched). Any raised arm: tools/anim.face_covered must find nothing, and look at the picture yourself.
-4. The owner: "I want gifs when it's all done" (8zr, 8zt): a GIF of each move changed (tools/make_gif.py, tools/clip_gif.py), sent
-   with SendUserFile at the end; previews, not the game.
-5. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
-   refill) and whether Gear 5 should spend energy too.
+1. Check 3.3.2's runs ("Build HexPiece" and "Release HexPiece") on `claude/nice-bell-gam7qf` ended green; if not, fix and push.
+2. Ask the owner how the skip pose (8zu item 5), the jump, the rubber ground and Rubber World's throws feel; quote their words.
+3. The rest of the Nika rework (8zk; done: the keys, the transformation, the wobble, the Bajrang Gun, Dawn Whip, Giant's hold, Star
+   Gun's rubber body, Rubber World's rolling ground and its throws, Toon Force, the skip, the jump): better Haki versions (Dawn Pistol;
+   the lightning lance never touched). Any raised arm: the hand off the face from the front (tools/anim.face_covered views front), and
+   look at it beside the owner's pictures from every side.
+4. The owner: "I want gifs when it's all done" (8zr, 8zt): a GIF of each move changed (tools/make_gif.py, tools/clip_gif.py), sent with
+   SendUserFile at the end; previews, not the game.
+5. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the refill)
+   and whether Gear 5 should spend energy too.
 6. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
    first-person hands (3.1.4), 3.1.2's Gura fixes, the Light fruit and katana fixes (3.0.x to 3.1.0), 2.9.5's Conqueror sounds.
 7. POINT ONE for any new fruit: same style (meshes, clips without legs or head, first-person hands, CC0 sounds), the Conqueror's

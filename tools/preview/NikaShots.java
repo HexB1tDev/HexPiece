@@ -2,6 +2,7 @@ import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.gear.NikaArt;
 import com.hexhaki.piece.gear.NikaBend;
 import com.hexhaki.piece.gear.NikaHold;
+import com.hexhaki.piece.gear.RubberJump;
 import com.hexhaki.piece.gear.RubberWave;
 
 /**
@@ -19,6 +20,14 @@ import com.hexhaki.piece.gear.RubberWave;
  * <p>3.3.0: {@code |nworld:t[:radius[:end]]} Rubber World's ground {@code t} ticks after the release (gear/RubberWave), the field's
  * middle at the scene's middle: each grass block whose ground rises drawn lifted and tilted with the wave (as client/gear/RubberWorldDraw
  * draws the world's own blocks), within 22 blocks; two bodies standing in it ride the waves.
+ *
+ * <p>3.3.2: {@code |nhop:t[:land]} Gear 5's jump {@code t} ticks after the take-off (gear/RubberJump.hop; {@code land} 1: after the
+ * landing): the ground springing up and rippling round the middle, the jumper (rising as the lifted jump does, or standing there when
+ * landed) and a bystander 2.6 blocks off riding the ripple.
+ *
+ * <p>3.3.2: {@code |nchaos:t[:radius]} Rubber World on everyone else {@code t} ticks after the release: the ground as {@code |nworld},
+ * the user standing untouched at the middle, and eight bodies run tick by tick as server/RubberChaos throws them (gear/RubberWave.toss
+ * where a crest rises under one standing on the real, flat ground; the game's gravity and drag; a fixed seed for the sideways throw).
  */
 public final class NikaShots {
     private NikaShots() {
@@ -92,6 +101,99 @@ public final class NikaShots {
                     double r = Math.hypot(b[0], b[1]);
                     double h = RubberWave.rise(r, Math.atan2(b[1], b[0]), t, radius, end);
                     HieShots.body(sink, b[0] - ex, h - ey, b[1] - ez);
+                }
+            }
+            case "nhop" -> {
+                double t = move.length > 1 ? Double.parseDouble(move[1]) : 1;
+                boolean landing = move.length > 2 && move[2].equals("1");
+                for (int x = -7; x < 7; x++) {
+                    for (int z = -7; z < 7; z++) {
+                        double cx = x + 0.5;
+                        double cz = z + 0.5;
+                        double r = Math.sqrt(cx * cx + cz * cz);
+                        double angle = Math.atan2(cz, cx);
+                        double h = RubberJump.hop(r, angle, t, landing);
+                        if (h < 0.03) {
+                            continue;
+                        }
+                        double tilt = Math.atan(RubberJump.slope(r, angle, t, landing)) * 0.6;
+                        grass(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt);
+                    }
+                }
+                // the jumper: up as the lifted jump goes (0.9 a tick, the game's gravity and drag), or standing after the landing
+                double y = 0;
+                if (!landing) {
+                    double v = RubberJump.lifted(0.42);
+                    for (int k = 0; k < (int) t; k++) {
+                        y += v;
+                        v = (v - 0.08) * 0.98;
+                    }
+                    y += v * (t - (int) t);
+                }
+                HieShots.body(sink, -ex, y - ey, -ez);
+                double bx = 2.6;
+                double bz = 0.9;
+                double bh = RubberJump.hop(Math.hypot(bx, bz), Math.atan2(bz, bx), t, landing);
+                HieShots.body(sink, bx - ex, bh - ey, bz - ez);
+            }
+            case "nchaos" -> {
+                double t = move.length > 1 ? Double.parseDouble(move[1]) : 30;
+                double radius = move.length > 2 ? Double.parseDouble(move[2]) : 16;
+                double inf = Double.POSITIVE_INFINITY;
+                for (int x = -18; x < 18; x++) {
+                    for (int z = -18; z < 18; z++) {
+                        double cx = x + 0.5;
+                        double cz = z + 0.5;
+                        double r = Math.sqrt(cx * cx + cz * cz);
+                        double angle = Math.atan2(cz, cx);
+                        double h = RubberWave.rise(r, angle, t, radius, inf);
+                        if (h < 0.03) {
+                            continue;
+                        }
+                        double tilt = Math.atan(RubberWave.slope(r, angle, t, radius, inf)) * 0.6;
+                        grass(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt);
+                    }
+                }
+                HieShots.body(sink, -ex, -ey, -ez);
+                java.util.Random random = new java.util.Random(7);
+                for (int b = 0; b < 8; b++) {
+                    double a0 = b * Math.PI / 4 + 0.3;
+                    double r0 = 3.2 + 1.3 * (b % 3);
+                    double[] q = {Math.cos(a0) * r0, 0, Math.sin(a0) * r0};
+                    double[] v = {0, 0, 0};
+                    long next = 0;
+                    for (int k = 1; k <= (int) t; k++) {
+                        boolean ground = q[1] <= 0;
+                        double r = Math.hypot(q[0], q[2]);
+                        double angle = Math.atan2(q[2], q[0]);
+                        double s = r <= radius ? RubberWave.toss(RubberWave.rise(r, angle, k, radius, inf) - RubberWave.rise(r, angle, k - 1, radius, inf)) : 0;
+                        if (ground && s > 0 && k >= next) {
+                            next = k + RubberWave.TOSS_GAP;
+                            double ox = q[0] / Math.max(r, 1e-6);
+                            double oz = q[2] / Math.max(r, 1e-6);
+                            double side = RubberWave.tossSide(s) * (random.nextDouble() < 0.5 ? -1 : 1) * (0.5 + random.nextDouble());
+                            double out = RubberWave.tossOut(s) * (random.nextDouble() < RubberWave.BACK_CHANCE ? -RubberWave.BACK : 1);
+                            v[0] = v[0] * 0.3 + ox * out - oz * side;
+                            v[1] = RubberWave.tossUp(s);
+                            v[2] = v[2] * 0.3 + oz * out + ox * side;
+                        }
+                        q[0] += v[0];
+                        q[1] += v[1];
+                        q[2] += v[2];
+                        if (q[1] <= 0) {
+                            q[1] = 0;
+                            v[0] *= 0.55;
+                            v[2] *= 0.55;
+                            v[1] = 0;
+                        } else {
+                            v[1] = (v[1] - 0.08) * 0.98;
+                            v[0] *= 0.91;
+                            v[2] *= 0.91;
+                        }
+                    }
+                    double r = Math.hypot(q[0], q[2]);
+                    double lift = q[1] <= 0 ? RubberWave.rise(r, Math.atan2(q[2], q[0]), t, radius, inf) : 0;
+                    HieShots.body(sink, q[0] - ex, q[1] + lift - ey, q[2] - ez);
                 }
             }
             default -> {

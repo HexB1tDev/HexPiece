@@ -10,8 +10,8 @@ import java.util.Map;
  * wide, negative stretches it tall and thin), the spring, and the sizes it gives; client/gear/NikaToon plays them when a clip starts and
  * draws the body so.
  *
- * <p>The original has a squash of its own (RemoteGearStates: the transformation, Gigante, the Bajrang Gun's impact, Coil Spring, Sky
- * Bounce, the dodges, the bouncy walk), which only fades; this one rings like rubber and adds to it. Left alone: the transformation (the
+ * <p>The original has a squash of its own (RemoteGearStates: the transformation, Gigante, the Bajrang Gun's impact, Coil Spring, the old
+ * Sky Bounce, the dodges, the bouncy walk), which only fades; this one rings like rubber and adds to it. Left alone: the transformation (the
  * owner loves it) and the lightning lance ("That was perfect how it was").
  */
 public final class ToonForce {
@@ -69,8 +69,12 @@ public final class ToonForce {
         put("gear5_gigante_laugh", 32, 0, false, 4, 0.35, 9, -0.3, 13, 0.35, 17, -0.3, 21, 0.35, 25, -0.3, 29, 0.2);
         put("gear5_coil_charge", 40, 10, true, 0, 0.6, 10, 0.15, 20, 0.15, 30, 0.15, 40, 0.15);
         put("gear5_coil_release", 18, 0, false, 0, -0.6, 10, 0.4);
-        // 3.3.2's Sky Bounce: the crouch, the launch, the skip popping open at the top, the landing
+        // the old Sky Bounce's clip (the original's long running leap still plays it): the crouch, the launch, the skip, the landing
         put("gear5_bounce", 14, 0, false, 1, 0.55, 4, -0.9, 7, -0.3, 13, 0.35);
+        // 3.3.2: Gear 5's jump: squashed as it pushes off the rubber, stretched tall as it shoots up, the skip popping open, then a
+        // rubbery bob through the air (the loop's); the landing squashed flat and springing back
+        put("gear5_jump", 13, 5, true, 0, 0.5, 2, -0.9, 5, -0.3, 9, 0.12, 13, -0.12);
+        put("gear5_land", 8, 0, false, 0, 0.8, 5, -0.35, 8, 0.1);
         put("gear5_bajrang_charge", 26, 0, true, 0, 0.3, 13, -0.15, 26, 0.15);
         put("gear5_bajrang_slam", 142, 0, false, 0, -0.5, 13, 0.3);
         put("gear5_dodge_backflip", 18, 0, false, 0, 0.5, 3, -0.8, 15, 0.4);

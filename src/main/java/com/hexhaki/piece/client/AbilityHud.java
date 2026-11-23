@@ -223,8 +223,8 @@ public final class AbilityHud {
             {GearAbility.GATLING, name(HakiKeys.SLOT_8) + " hold", GearAbility.GATLING.display, false},
             {GearAbility.GIANT, name(HakiKeys.STAR_GUN) + " hold", haki ? "Bajrang Gun" : GearAbility.GIANT.display, false},
             {GearAbility.COIL, name(PieceKeys.FRUIT_N) + " hold", haki ? "Lightning Lance" : GearAbility.COIL.display, false},
-            {GearAbility.RUBBER_WORLD, name(PieceKeys.FRUIT_M) + " hold", GearAbility.RUBBER_WORLD.display, true},
-            {GearAbility.SKY_BOUNCE, "Shift+Space", GearAbility.SKY_BOUNCE.display, true}};
+            // 3.3.2: Sky Bounce (Shift + Space) is gone (the owner: "shift + space ability is removed"): Gear 5's own jump bounces now
+            {GearAbility.RUBBER_WORLD, name(PieceKeys.FRUIT_M) + " hold", GearAbility.RUBBER_WORLD.display, true}};
     }
 
     /** The player's name for each key the panel names, as bound in Controls (Forge's modifier included). */

@@ -7,4 +7,8 @@ public class LivingEvent extends net.minecraftforge.event.entity.EntityEvent {
     /** 1.3.21: fired each tick of every living entity (a sleeper's night, HomeLife). */
     public static class LivingTickEvent extends LivingEvent {
     }
+
+    /** 3.3.2: a living body jumping off the ground (posted from LivingEntity.jumpFromGround after its speed is set: Gear 5's jump). */
+    public static class LivingJumpEvent extends LivingEvent {
+    }
 }

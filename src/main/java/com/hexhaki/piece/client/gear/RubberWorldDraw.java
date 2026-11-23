@@ -1,12 +1,16 @@
 package com.hexhaki.piece.client.gear;
 
 import com.hexhaki.network.msg.S2CGearFx;
+import com.hexhaki.piece.gear.RubberJump;
 import com.hexhaki.piece.gear.RubberWave;
+import com.hexhaki.piece.network.S2CUoFx;
+import com.hexhaki.piece.server.NikaJump;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -34,6 +38,11 @@ import net.minecraftforge.fml.common.Mod;
  * {@link #MOST_DRAWN} blocks, within {@link #NEAR} blocks; the real ground stays and the copies rise out of it. Every living body
  * standing in a field is drawn lifted by the ground under it (it rides the waves). Columns are found once each (at most
  * {@link #LOOKUPS} new a frame) and kept, on a grid round the field, while it lasts.
+ *
+ * <p>3.3.2: Gear 5's jump turns the ground to rubber for a moment ({@link #hop}: gear/RubberJump.hop): under the take-off it springs up
+ * after the feet and ripples out, and ripples again round the landing. One's own jumps come from client/gear/NikaJumpClient at once,
+ * everyone else's from the server (server/NikaJump.HOP and LAND); each is a small field of its own, drawn first, kept apart from Rubber
+ * World's ({@link #MOST_HOPS} at most).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class RubberWorldDraw {
@@ -46,6 +55,12 @@ public final class RubberWorldDraw {
     static final int QUIET = 30;
     /** The share of the wave's slope the blocks tilt by. */
     static final double TILT = 0.6;
+    /** The most jump ripples kept at once (the oldest goes first). */
+    static final int MOST_HOPS = 10;
+    /** A field's kind: Rubber World's, a jump's take-off, a jump's landing. */
+    static final int WORLD = 0;
+    static final int TAKE_OFF = 1;
+    static final int LANDING = 2;
 
     /** One column: its top solid block, the one under it (or null), where, how it is lit. */
     record Column(BlockState top, BlockState under, int x, int y, int z, int light) {
@@ -62,6 +77,7 @@ public final class RubberWorldDraw {
         double born;
         double heard;
         double end = Double.POSITIVE_INFINITY;
+        int kind = WORLD;
         /** The columns found, on a grid round the middle (no allocation a frame): from (minX, minZ), size by size. */
         int minX;
         int minZ;
@@ -70,6 +86,7 @@ public final class RubberWorldDraw {
     }
 
     static final List<Field> FIELDS = new ArrayList<>();
+    static final List<Field> HOPS = new ArrayList<>();
     /** The columns round the camera, nearest first (dx, dz pairs). */
     static final int[] AROUND;
     private static final org.joml.Quaternionf TURN = new org.joml.Quaternionf();
@@ -125,6 +142,54 @@ public final class RubberWorldDraw {
         FIELDS.add(f);
     }
 
+    /** A Gear 5 jump's take-off (or landing) at the feet (x, y, z): the ground there turns to rubber for a moment. */
+    public static void hop(double x, double y, double z, boolean landing) {
+        if (Minecraft.m_91087_().f_91073_ == null) {
+            return;
+        }
+        if (HOPS.size() >= MOST_HOPS) {
+            HOPS.remove(0);
+        }
+        Field f = new Field();
+        f.kind = landing ? LANDING : TAKE_OFF;
+        f.x = x;
+        f.y = y;
+        f.z = z;
+        f.radius = landing ? RubberJump.LAND_RADIUS : RubberJump.HOP_RADIUS;
+        f.size = 2 * (int) Math.ceil(f.radius) + 3;
+        f.minX = (int) Math.floor(f.x) - f.size / 2;
+        f.minZ = (int) Math.floor(f.z) - f.size / 2;
+        f.columns = new Column[f.size * f.size];
+        f.born = clock(0.0F);
+        f.heard = f.born;
+        f.end = f.born + RubberJump.LIFE;
+        HOPS.add(f);
+    }
+
+    /** server/NikaJump's HOP and LAND (from client/dragon/UoFx): someone else's jump (one's own rippled already, at once). */
+    public static void accept(S2CUoFx m) {
+        LocalPlayer self = Minecraft.m_91087_().f_91074_;
+        if (self != null && self.m_19879_() == m.user()) {
+            return;
+        }
+        hop(m.x(), m.y(), m.z(), m.kind() == NikaJump.LAND);
+    }
+
+    /** How high the ground rises {@code r} from field {@code f}'s middle at {@code angle}, {@code t} ticks after it began. */
+    static double height(Field f, double r, double angle, double t) {
+        if (f.kind == WORLD) {
+            return RubberWave.rise(r, angle, t, f.radius, f.end - f.born);
+        }
+        return RubberJump.hop(r, angle, t, f.kind == LANDING);
+    }
+
+    static double slope(Field f, double r, double angle, double t) {
+        if (f.kind == WORLD) {
+            return RubberWave.slope(r, angle, t, f.radius, f.end - f.born);
+        }
+        return RubberJump.slope(r, angle, t, f.kind == LANDING);
+    }
+
     static double clock(float partial) {
         ClientLevel level = Minecraft.m_91087_().f_91073_;
         return level == null ? 0.0 : level.m_46467_() + partial;
@@ -134,18 +199,19 @@ public final class RubberWorldDraw {
     static double rise(Field f, double x, double z, double now) {
         double dx = x - f.x;
         double dz = z - f.z;
-        return RubberWave.rise(Math.sqrt(dx * dx + dz * dz), Math.atan2(dz, dx), now - f.born, f.radius, f.end - f.born);
+        return height(f, Math.sqrt(dx * dx + dz * dz), Math.atan2(dz, dx), now - f.born);
     }
 
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || FIELDS.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || FIELDS.isEmpty() && HOPS.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
         ClientLevel level = minecraft.f_91073_;
         if (level == null) {
             FIELDS.clear();
+            HOPS.clear();
             return;
         }
         double now = clock(event.getPartialTick());
@@ -155,12 +221,22 @@ public final class RubberWorldDraw {
             }
             return now > f.end + RubberWave.FADE + 1;
         });
+        HOPS.removeIf(f -> now > f.end + 1 || now < f.born - 40);
         Vec3 cam = event.getCamera().m_90583_();
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = minecraft.m_91269_().m_110104_();
         try {
             BlockRenderDispatcher blocks = minecraft.m_91289_();
             int budget = MOST_DRAWN;
+            // the jumps' ripples first: small, and where the players are
+            for (Field f : HOPS) {
+                double fx = f.x - cam.f_82479_;
+                double fz = f.z - cam.f_82481_;
+                if (budget <= 0 || Math.sqrt(fx * fx + fz * fz) > f.radius + NEAR) {
+                    continue;
+                }
+                budget -= draw(level, f, pose, buffers, blocks, cam, now, budget);
+            }
             for (Field f : FIELDS) {
                 double fx = f.x - cam.f_82479_;
                 double fz = f.z - cam.f_82481_;
@@ -175,6 +251,7 @@ public final class RubberWorldDraw {
         } catch (RuntimeException failure) {
             com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: Rubber World's ground could not be drawn", failure);
             FIELDS.clear();
+            HOPS.clear();
         }
         buffers.m_109911_();
     }
@@ -186,7 +263,6 @@ public final class RubberWorldDraw {
         int cz = (int) Math.floor(cam.f_82481_);
         int foot = (int) Math.floor(f.y - 0.01);
         double t = now - f.born;
-        double end = f.end - f.born;
         int drawn = 0;
         int lookups = 0;
         for (int i = 0; i < AROUND.length && drawn < budget; i += 2) {
@@ -199,7 +275,7 @@ public final class RubberWorldDraw {
                 continue;
             }
             double angle = Math.atan2(dz, dx);
-            double h = RubberWave.rise(r, angle, t, f.radius, end);
+            double h = height(f, r, angle, t);
             if (h < 0.03) {
                 continue;
             }
@@ -222,7 +298,7 @@ public final class RubberWorldDraw {
             }
             boolean deep = h > 0.6 && c.under != null;
             drawn += deep ? 2 : 1;
-            double tilt = Math.atan(RubberWave.slope(r, angle, t, f.radius, end)) * TILT;
+            double tilt = Math.atan(slope(f, r, angle, t)) * TILT;
             double rx = r > 1.0E-6 ? dx / r : 1.0;
             double rz = r > 1.0E-6 ? dz / r : 0.0;
             pose.m_85836_();
@@ -264,13 +340,19 @@ public final class RubberWorldDraw {
         return NONE;
     }
 
-    /** Every living body standing in a field is drawn lifted by the ground under it: it rides the waves (not one's own first person). */
+    /**
+     * Every living body standing in a field (or a jump's ripple) is drawn lifted by the ground under it: it rides the waves (not one's
+     * own first person; not a body in the air, 3.3.2).
+     */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void ride(RenderLivingEvent.Pre<?, ?> event) {
-        if (FIELDS.isEmpty() || FirstPersonMode.isFirstPersonPass()) {
+        if (FIELDS.isEmpty() && HOPS.isEmpty() || FirstPersonMode.isFirstPersonPass()) {
             return;
         }
         LivingEntity entity = event.getEntity();
+        if (!entity.m_20096_()) {
+            return;
+        }
         float partial = event.getPartialTick();
         double x = entity.f_19790_ + (entity.m_20185_() - entity.f_19790_) * partial;
         double y = entity.f_19791_ + (entity.m_20186_() - entity.f_19791_) * partial;
@@ -279,6 +361,11 @@ public final class RubberWorldDraw {
         double lift = 0.0;
         for (Field f : FIELDS) {
             if (Math.abs(y - f.y) < 6.0) {
+                lift = Math.max(lift, rise(f, x, z, now));
+            }
+        }
+        for (Field f : HOPS) {
+            if (Math.abs(y - f.y) < 2.0) {
                 lift = Math.max(lift, rise(f, x, z, now));
             }
         }

@@ -127,6 +127,10 @@ public final class UoFx {
             com.hexhaki.piece.client.magu.MaguFx.accept(m); // 3.1.3: the Magma fruit's moves (100 to 119)
             return;
         }
+        if (m.kind() == com.hexhaki.piece.server.NikaJump.HOP || m.kind() == com.hexhaki.piece.server.NikaJump.LAND) {
+            com.hexhaki.piece.client.gear.RubberWorldDraw.accept(m); // 3.3.2: Gear 5's jump turning the ground to rubber
+            return;
+        }
         if (m.kind() >= 160 && m.kind() < 180) {
             com.hexhaki.piece.client.gear.NikaHoldClient.accept(m); // 3.2.8: the Nika fruit's (160 to 179): the Giant's hold
             return;

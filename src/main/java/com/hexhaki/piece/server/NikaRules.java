@@ -10,7 +10,7 @@ import net.minecraft.world.entity.player.Player;
  * asked, "All stretch moves"): which of the Nika fruit's moves work without Gear 5. The original refused every move but the
  * transformation unless Gear 5 was up ({@code GearServerController.onAction}) and checked it again in Gatling, Giant and Coil Spring;
  * patch/PiecePatch.gearUntransformed asks here instead. Untransformed: the stretching punch (Pistol), Rocket, Whip, Gatling, Giant
- * (Gigante) and Coil Spring. Gear 5 only: Rubber World, Sky Bounce, Star Gun, and the Haki versions (Dawn Pistol, Dawn Whip, the
+ * (Gigante) and Coil Spring. Gear 5 only: Rubber World, Star Gun, and the Haki versions (Dawn Pistol, Dawn Whip, the
  * Bajrang Gun, the lightning lance), which the original only ever gives in Gear 5 ({@code GearServerController.dawn}).
  */
 public final class NikaRules {
@@ -42,6 +42,14 @@ public final class NikaRules {
         boolean dawn = GearData.flag(player, "gear5")
             && (com.hexhaki.data.HakiData.flag(player, "armamentOn") || com.hexhaki.data.HakiData.flag(player, "acocOn"));
         com.hexhaki.gameplay.HakiServerController.animate(player, dawn ? "gear5_dawn_whip" : name, priority);
+    }
+
+    /**
+     * 3.3.2 (the owner: "shift + space ability is removed"): in GearServerController's mechanicsAction (Shift + Space's press) and
+     * skyBounce, in place of {@code GearData.unlocked(player, ability)}: Sky Bounce is never unlocked; anything else as it was.
+     */
+    public static boolean unlocked(Player player, com.hexhaki.devilfruit.data.GearAbility ability) {
+        return ability != com.hexhaki.devilfruit.data.GearAbility.SKY_BOUNCE && GearData.unlocked(player, ability);
     }
 
     /**
