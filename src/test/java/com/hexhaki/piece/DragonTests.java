@@ -362,6 +362,83 @@ public final class DragonTests {
      * wakes and a spin at once), finite; the katana steel's reshape (supa/SupaBlades.Shape) keeps the spine where it is, widens the edge
      * out, and tools/supa_view.py draws the arm blade by the very same numbers.
      */
+    /**
+     * 3.3.6: the Horo fruit's ghosts at their busiest stay within a phone's budget: everything one user can have on screen at once (a
+     * stream of five Negative Hollows, gloom over eight bodies, Ghost Network's watchers, an astral spirit's light, and either the four
+     * Mini Hollows clinging and the Toku Hollow drifting, or their bursts: a burst takes its ghost's place); every vertex finite; the
+     * Minis cling round a body and the watchers spread out from their user.
+     */
+    static void horoGhosts() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        float[][] pose = new float[8][8];
+        double[] out = new double[6];
+        for (int age = 0; age <= 40; age += 4) {
+            count[0] = 0;
+            for (int k = 0; k < com.hexhaki.piece.server.HoroMoves.STREAM_MOST; k++) {
+                com.hexhaki.piece.horo.HoroArt.ghost(sink, -2 + k, 0, 3 + k, 0, 0, 1, com.hexhaki.piece.server.HoroMoves.GHOST_SIZE,
+                    com.hexhaki.piece.horo.HoroArt.NEGATIVE, age, 1.0, k);
+            }
+            int ghosts = count[0];
+            for (int k = 0; k < 4; k++) {
+                com.hexhaki.piece.horo.HoroArt.cling(k, age, 0.6, 1.8, out);
+                com.hexhaki.piece.horo.HoroArt.ghost(sink, out[0], out[1] - 1.6, 6 + out[2], out[3], out[4], out[5], 0.32,
+                    com.hexhaki.piece.horo.HoroArt.MINI, age, 1.0, k);
+            }
+            com.hexhaki.piece.horo.HoroArt.ghost(sink, 0, 0.6, 5, 0, 0, 1, com.hexhaki.piece.server.HoroMoves.TOKU_SIZE,
+                com.hexhaki.piece.horo.HoroArt.TOKU, age, 1.0, 9);
+            int whole = count[0] - ghosts;
+            count[0] = ghosts;
+            com.hexhaki.piece.horo.HoroArt.burst(sink, 0, 0, 12, com.hexhaki.piece.server.HoroMoves.TOKU_RADIUS, age % 30, 3);
+            for (int k = 0; k < 4; k++) {
+                com.hexhaki.piece.horo.HoroArt.burst(sink, -3 + 2 * k, 0, 8, 1.0, (age + 3 * k) % 16, k);
+            }
+            count[0] = Math.max(count[0], ghosts + whole);
+            for (int b = 0; b < 8; b++) {
+                com.hexhaki.piece.horo.HoroArt.gloom(sink, -8 + 2 * b, 0.3, 10, 0.6, 1.8, age, 1.0);
+            }
+            for (int k = 0; k < com.hexhaki.piece.horo.HoroArt.WATCHERS; k++) {
+                com.hexhaki.piece.horo.HoroArt.watch(k, age, out);
+                com.hexhaki.piece.horo.HoroArt.ghost(sink, out[0], out[1] - 1.6, out[2], out[3], out[4], out[5],
+                    com.hexhaki.piece.horo.HoroArt.WATCHER_SIZE, com.hexhaki.piece.horo.HoroArt.MINI, age, 0.9, k);
+            }
+            com.hexhaki.piece.horo.AstralArt.floating(age, 10, 20, pose);
+            com.hexhaki.piece.horo.AstralArt.spirit(null, sink, pose, new com.hexhaki.piece.style.StyleShow.Place(2, -1.2, 4, 0.3), 1.0);
+            check(count[0], finite[0], "Horo ghosts", age);
+        }
+        for (int k = 0; k < 4; k++) {
+            com.hexhaki.piece.horo.HoroArt.cling(k, 30, 0.6, 1.8, out);
+            double r = Math.hypot(out[0], out[2]);
+            Check.that(r > 0.3 && r < 0.9 && out[1] > 0.5 && out[1] < 1.8, "a Mini Hollow clings round the body (" + r + ", " + out[1] + ")");
+        }
+        com.hexhaki.piece.horo.HoroArt.watch(0, 0, out);
+        double near = Math.hypot(out[0], out[2]);
+        com.hexhaki.piece.horo.HoroArt.watch(0, 40, out);
+        Check.that(Math.hypot(out[0], out[2]) > near + 1.5, "Ghost Network's watchers spread out from their user");
+        // the spirit's skin: only the faces turned to the eye (a see-through body shows one skin, not its far side through its near
+        // one): seen from in front and from behind, at most about half of its 112 faces (56 boxes' faces, inner and outer layer) each
+        // time, every one of them turned to the eye
+        int[] faces = {0};
+        boolean[] toward = {true};
+        com.hexhaki.piece.horo.AstralArt.Skin skin = (xyz, uv, argb, nx, ny, nz) -> {
+            faces[0]++;
+            toward[0] &= nx * (xyz[0] + xyz[6]) + ny * (xyz[1] + xyz[7]) + nz * (xyz[2] + xyz[8]) <= 0.0;
+        };
+        com.hexhaki.piece.horo.AstralArt.asleep(pose);
+        com.hexhaki.piece.horo.AstralArt.spirit(skin, null, pose, new com.hexhaki.piece.style.StyleShow.Place(0, -1, 4, 0), 1.0);
+        int behind = faces[0];
+        faces[0] = 0;
+        com.hexhaki.piece.horo.AstralArt.spirit(skin, null, pose, new com.hexhaki.piece.style.StyleShow.Place(0, -1, -4, 0), 1.0);
+        Check.that(toward[0] && behind > 30 && faces[0] > 30 && behind <= 60 && faces[0] <= 60,
+            "the spirit shows only the faces turned to the eye (" + behind + " from behind, " + faces[0] + " from in front)");
+    }
+
     static void supaCuts() throws Exception {
         int[] count = {0};
         boolean[] finite = {true};
@@ -495,6 +572,9 @@ public final class DragonTests {
                 && zip.getEntry("assets/hexhaki/models/item/noro_noro_no_mi.json") != null, "the Noro fruit's icon and model");
             Check.that(zip.getEntry("assets/hexhaki/textures/item/supa_supa_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/supa_supa_no_mi.json") != null, "the Supa fruit's icon and model");
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/horo_horo_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/horo_horo_no_mi.json") != null, "the Horo fruit's icon and model");
+            Check.that(zip.getEntry("assets/hexhaki/textures/mob_effect/gloom.png") != null, "Gloom's icon");
             try (InputStream in = zip.getInputStream(entry)) {
                 model = DragonModel.read(in);
             }
@@ -509,6 +589,7 @@ public final class DragonTests {
         hieIce();
         noroPhotons();
         supaCuts();
+        horoGhosts();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

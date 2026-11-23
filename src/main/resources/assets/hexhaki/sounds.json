@@ -1130,5 +1130,59 @@
         "attenuation_distance": 40
       }
     ]
+  },
+  "piece.horo.ghost": {
+    "subtitle": "subtitles.hexhaki.piece.horo.ghost",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/horo/ghost1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.horo.despair": {
+    "subtitle": "subtitles.hexhaki.piece.horo.despair",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/horo/despair1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.horo.pop": {
+    "subtitle": "subtitles.hexhaki.piece.horo.pop",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/horo/pop1",
+        "attenuation_distance": 32
+      }
+    ]
+  },
+  "piece.horo.boom": {
+    "subtitle": "subtitles.hexhaki.piece.horo.boom",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/horo/boom1",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.horo.spirit": {
+    "subtitle": "subtitles.hexhaki.piece.horo.spirit",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/horo/spirit1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.horo.network": {
+    "subtitle": "subtitles.hexhaki.piece.horo.network",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/horo/network1",
+        "attenuation_distance": 32
+      }
+    ]
   }
 }

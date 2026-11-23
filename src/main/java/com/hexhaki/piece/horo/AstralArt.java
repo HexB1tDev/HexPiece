@@ -27,13 +27,13 @@ public final class AstralArt {
 
     /** The spirit's wash (a ghost's white, a breath of lavender) and how much of the skin shows through it. */
     public static final int WASH = 0xF2EEFF;
-    public static final double WASH_ALPHA = 0.55;
+    public static final double WASH_ALPHA = 0.62;
     /** The spirit's shells of light round every box (px out, opacity) and their colours, palest outermost. */
-    static final double[][] SHELLS = {{0.35, 0.26}, {1.4, 0.12}, {3.2, 0.05}};
+    static final double[][] SHELLS = {{0.35, 0.14}, {1.4, 0.11}, {3.2, 0.05}};
     static final int[] SHELL = {0xFFFFFF, 0xE6DEFF, 0xCFC4F2};
     /** How much of the spirit's legs show: the thighs, the shins (a ghost fades toward its feet). */
-    static final double THIGH = 0.75;
-    static final double SHIN = 0.3;
+    static final double THIGH = 0.6;
+    static final double SHIN = 0.16;
 
     static final int[] PARTS = {StyleRig.RIGHT_ARM, StyleRig.LEFT_ARM, StyleRig.RIGHT_LEG, StyleRig.LEFT_LEG};
     static final SkinBox.Part[] SKINS = {SkinBox.RIGHT_ARM, SkinBox.LEFT_ARM, SkinBox.RIGHT_LEG, SkinBox.LEFT_LEG};
@@ -57,12 +57,12 @@ public final class AstralArt {
         clear(pose);
         double bob = Math.sin(age * 0.1);
         double sway = Math.sin(age * 0.067);
-        set(pose, StyleRig.BODY, 0.0, 0.07 * bob, 0.0, 0.0, 0.0, 2.0 * sway, 6.0);
+        set(pose, StyleRig.BODY, 0.0, 0.07 * bob, 0.0, 0.0, 0.0, 2.0 * sway, 4.0);
         set(pose, StyleRig.HEAD, 0.0, 0.0, 0.0, headPitch, headYaw, 0.0, 0.0);
-        set(pose, StyleRig.RIGHT_ARM, 0.0, 0.0, 0.0, -78.0 + 4.0 * bob, 6.0, 4.0, 48.0 + 6.0 * bob);
-        set(pose, StyleRig.LEFT_ARM, 0.0, 0.0, 0.0, -78.0 + 4.0 * bob, -6.0, -4.0, 48.0 + 6.0 * bob);
-        set(pose, StyleRig.RIGHT_LEG, 0.0, 0.0, 0.0, 16.0 + 5.0 * sway, 0.0, 3.0, 18.0 + 4.0 * bob);
-        set(pose, StyleRig.LEFT_LEG, 0.0, 0.0, 0.0, 24.0 - 5.0 * sway, 0.0, -3.0, 22.0 - 4.0 * bob);
+        set(pose, StyleRig.RIGHT_ARM, 0.0, 0.0, 0.0, -90.0 + 4.0 * bob, 8.0, 0.0, 34.0 + 6.0 * bob);
+        set(pose, StyleRig.LEFT_ARM, 0.0, 0.0, 0.0, -90.0 + 4.0 * bob, -8.0, 0.0, 34.0 + 6.0 * bob);
+        set(pose, StyleRig.RIGHT_LEG, 0.0, 0.0, 0.0, 9.0 + 3.0 * sway, 0.0, 2.0, 6.0 + 3.0 * bob);
+        set(pose, StyleRig.LEFT_LEG, 0.0, 0.0, 0.0, 13.0 - 3.0 * sway, 0.0, -2.0, 8.0 - 3.0 * bob);
     }
 
     /** The body left behind: standing, arms hanging, its head dropped forward as if asleep, into {@code pose}. */

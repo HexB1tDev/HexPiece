@@ -1,0 +1,10 @@
+The Horo Horo no Mi's sounds (tools/horo_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+ghost1.ogg: "Mouth-swoosh-01.wav" by newagesoup, https://freesound.org/people/newagesoup/sounds/372520/ (CC0 1.0), from 0.4 s, 0.60 s long, 5.0 dB quieter
+despair1.ogg: "bass rumble - deepwhoosh 1" by Logicogonist, https://freesound.org/people/Logicogonist/sounds/807976/ (CC0 1.0), from 0.1 s, 1.30 s long, 3.0 dB quieter
+pop1.ogg: "Poof of Smoke" by Planman, https://freesound.org/people/Planman/sounds/208111/ (CC0 1.0), from 0.1 s, 0.60 s long, compressed to sound louder
+boom1.ogg: "Deep Boom" by Za-Games, https://freesound.org/people/Za-Games/sounds/539968/ (CC0 1.0), from 0.0 s, 2.40 s long, compressed to sound louder
+spirit1.ogg: "Woosh" by florianreichelt, https://freesound.org/people/florianreichelt/sounds/683096/ (CC0 1.0), from 0.1 s, 1.30 s long
+network1.ogg: "magical rising wind or  sea .wav" by martian, https://freesound.org/people/martian/sounds/403003/ (CC0 1.0), from 6.9 s, 2.00 s long, 4.0 dB quieter

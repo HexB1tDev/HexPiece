@@ -497,12 +497,19 @@ public final class HudTests {
             "ranks: the Noro fruit Common (the owner: \"New common Fruits\")");
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.SUPA) == com.hexhaki.piece.FruitRanks.Rank.UNCOMMON,
             "ranks: the Supa fruit Uncommon (the owner: \"Supa Supa No Mi (UnCommon)\")");
+        Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.HORO) == com.hexhaki.piece.FruitRanks.Rank.COMMON,
+            "ranks: the Horo fruit Common (the owner: \"Horo Horo No Mi (common)\")");
+        // 3.3.6 (the owner: "make sure gloom is it's own custom effect ... miss often"; they chose 8 in 10 and 8 seconds)
+        Check.that(com.hexhaki.piece.server.Gloom.MISS == 0.8 && com.hexhaki.piece.server.Gloom.TICKS == 160
+            && com.hexhaki.piece.server.HoroMoves.DESPAIR_TICKS == com.hexhaki.piece.server.Gloom.TICKS
+            && com.hexhaki.piece.server.HoroMoves.DOWN_TICKS <= 40, "Gloom: 8 in 10 attacks miss, 8 seconds, after a short fall");
+        Check.that(lang.contains("\"effect.hexhaki.gloom\": \"Gloom\""), "Gloom: its name");
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.UO) == com.hexhaki.piece.FruitRanks.Rank.MYTHICAL
             && com.hexhaki.piece.FruitRanks.NIKA == com.hexhaki.piece.FruitRanks.Rank.MYTHICAL, "ranks: the Uo Uo and Nika fruits Mythical");
         Check.that(lang.contains("\"item.hexhaki.nika_fruit\": \"" + com.hexhaki.piece.FruitRanks.NIKA.code), "ranks: the Nika fruit's name in its colour");
         for (java.util.List<com.hexhaki.fruit.FruitMove> moves : java.util.List.of(com.hexhaki.piece.server.GuraKit.MOVES,
             com.hexhaki.piece.server.HieKit.MOVES, com.hexhaki.piece.server.MaguKit.MOVES, com.hexhaki.piece.server.NoroKit.MOVES,
-            com.hexhaki.piece.server.PikaKit.MOVES, com.hexhaki.piece.server.SupaKit.MOVES,
+            com.hexhaki.piece.server.PikaKit.MOVES, com.hexhaki.piece.server.SupaKit.MOVES, com.hexhaki.piece.server.HoroKit.MOVES,
             com.hexhaki.piece.server.UoKit.MOVES)) {
             for (com.hexhaki.fruit.FruitMove move : moves) {
                 if (move.cooldown() != null) {

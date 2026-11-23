@@ -22,6 +22,8 @@ public final class HoroArt {
     public static final int EYE = 0x241C2E;
     public static final int TONGUE = 0xF2919F;
     public static final int TEETH = 0xFFFFF4;
+    /** 3.3.6: rosy cheeks. */
+    public static final int BLUSH = 0xFF8FAE;
     /** The banded smoke of a ghost's burst (FireMesh.puff's palette while it is drawn): deep violet to white. */
     public static final int[] SMOKE = {0x2E2048, 0x47336C, 0x654E92, 0x8670B6, 0xA897D4, 0xC9BEEA, 0xE6E0F8, 0xFFFFFF};
     /** Despair: the gloom lines' blue, the cloud's grey. */
@@ -42,8 +44,13 @@ public final class HoroArt {
     private HoroArt() {
     }
 
-    static final int SIDES = 14;
-    static final int HEAD_RINGS = 6;
+    static final int SIDES = 18;
+    static final int HEAD_RINGS = 7;
+    /** A ghost under this size on the screen (its head across over its distance) is drawn with the lighter mesh below. */
+    static final double LIGHT_SIZE = 0.09;
+    static final int LIGHT_SIDES = 11;
+    static final int LIGHT_HEAD = 4;
+    static final int LIGHT_TAIL = 6;
     static final int TAIL_RINGS = 9;
     static final double[] RING = new double[(HEAD_RINGS + TAIL_RINGS + 1) * (SIDES + 1) * 3];
     static final int[] SHADE = new int[(HEAD_RINGS + TAIL_RINGS + 1) * (SIDES + 1)];
@@ -101,9 +108,14 @@ public final class HoroArt {
         }
         frame(fx, fy, fz);
         double r = size * 0.5;
-        double tail = r * (kind == TOKU ? 2.0 : 2.6);
+        double tail = r * (kind == TOKU ? 1.7 : 2.0);
         double sway = age * 0.18 + seed * 1.7;
-        int rings = HEAD_RINGS + TAIL_RINGS;
+        // 3.3.6: a ghost small on the screen (far off, or the player's particles turned down) has a lighter mesh: its outline stays
+        // round at that size with far fewer faces (a crowd of ghosts on the owner's phone)
+        boolean light = size / Math.max(0.5, Math.sqrt(x * x + y * y + z * z)) * FireMesh.quality < LIGHT_SIZE;
+        int sides = light ? LIGHT_SIDES : SIDES;
+        int headRings = light ? LIGHT_HEAD : HEAD_RINGS;
+        int rings = headRings + (light ? LIGHT_TAIL : TAIL_RINGS);
         // the rings: the head's front half (a pole at its face to its widest), then the tail narrowing to its curled point
         for (int i = 0; i <= rings; i++) {
             double cx;
@@ -111,8 +123,8 @@ public final class HoroArt {
             double cz;
             double rad;
             double fade;
-            if (i <= HEAD_RINGS) {
-                double th = Math.PI / 2 * i / HEAD_RINGS;
+            if (i <= headRings) {
+                double th = Math.PI / 2 * i / headRings;
                 double along = r * Math.cos(th);
                 cx = x + F[0] * along;
                 cy = y + F[1] * along;
@@ -120,7 +132,7 @@ public final class HoroArt {
                 rad = r * Math.sin(th);
                 fade = 1.0;
             } else {
-                double t = (i - HEAD_RINGS) / (double) TAIL_RINGS;
+                double t = (i - headRings) / (double) (rings - headRings);
                 double back = tail * t;
                 double down = r * (0.55 * t * t + 0.25 * Math.sin(Math.PI * 1.3 * t + sway) * t);
                 double side = r * 0.4 * Math.sin(2 * Math.PI * t + sway * 0.8) * t;
@@ -130,8 +142,8 @@ public final class HoroArt {
                 rad = r * Math.pow(1.0 - t, 1.25) * (1.0 + 0.08 * Math.sin(3 * Math.PI * t + sway)) + 0.004;
                 fade = 1.0 - 0.75 * t;
             }
-            for (int k = 0; k <= SIDES; k++) {
-                double a = 2 * Math.PI * k / SIDES;
+            for (int k = 0; k <= sides; k++) {
+                double a = 2 * Math.PI * k / sides;
                 double ca = Math.cos(a);
                 double sa = Math.sin(a);
                 double nx = F[3] * ca + F[6] * sa;
@@ -140,14 +152,14 @@ public final class HoroArt {
                 double px = cx + nx * rad;
                 double py = cy + ny * rad;
                 double pz = cz + nz * rad;
-                int v = i * (SIDES + 1) + k;
+                int v = i * (sides + 1) + k;
                 RING[v * 3] = px;
                 RING[v * 3 + 1] = py;
                 RING[v * 3 + 2] = pz;
                 // the head's normal from its middle; the tail's from its ring's middle
-                double qx = i <= HEAD_RINGS ? px - x : px - cx;
-                double qy = i <= HEAD_RINGS ? py - y : py - cy;
-                double qz = i <= HEAD_RINGS ? pz - z : pz - cz;
+                double qx = i <= headRings ? px - x : px - cx;
+                double qy = i <= headRings ? py - y : py - cy;
+                double qz = i <= headRings ? pz - z : pz - cz;
                 double ql = Math.max(1.0E-6, Math.sqrt(qx * qx + qy * qy + qz * qz));
                 double el = Math.max(1.0E-6, Math.sqrt(px * px + py * py + pz * pz));
                 double facing = Math.abs((qx * px + qy * py + qz * pz) / (ql * el));
@@ -158,11 +170,11 @@ public final class HoroArt {
             }
         }
         for (int i = 0; i < rings; i++) {
-            for (int k = 0; k < SIDES; k++) {
-                int a = i * (SIDES + 1) + k;
+            for (int k = 0; k < sides; k++) {
+                int a = i * (sides + 1) + k;
                 int b = a + 1;
-                int c = a + SIDES + 2;
-                int d = a + SIDES + 1;
+                int c = a + sides + 2;
+                int d = a + sides + 1;
                 FireMesh.quad(sink, RING[a * 3], RING[a * 3 + 1], RING[a * 3 + 2], SHADE[a], RING[b * 3], RING[b * 3 + 1], RING[b * 3 + 2], SHADE[b],
                     RING[c * 3], RING[c * 3 + 1], RING[c * 3 + 2], SHADE[c], RING[d * 3], RING[d * 3 + 1], RING[d * 3 + 2], SHADE[d]);
             }
@@ -194,13 +206,19 @@ public final class HoroArt {
      */
     static void patch(FireMesh.Sink sink, double x, double y, double z, double r, double h, double v, double w, double t, double from,
                       double to, int argb) {
-        on(x, y, z, r, h, v, 1.015);
+        patch(sink, x, y, z, r, h, v, w, t, from, to, argb, 1.015);
+    }
+
+    /** {@link #patch} {@code out} radii from the head's middle (a shine over an eye sits a little further out than the eye). */
+    static void patch(FireMesh.Sink sink, double x, double y, double z, double r, double h, double v, double w, double t, double from,
+                      double to, int argb, double out) {
+        on(x, y, z, r, h, v, out);
         double mx = P[0];
         double my = P[1];
         double mz = P[2];
         for (int k = 0; k <= FAN; k++) {
             double a = from + (to - from) * k / FAN;
-            on(x, y, z, r, h + w * Math.cos(a), v + t * Math.sin(a), 1.015);
+            on(x, y, z, r, h + w * Math.cos(a), v + t * Math.sin(a), out);
             FAN_XYZ[k * 3] = P[0];
             FAN_XYZ[k * 3 + 1] = P[1];
             FAN_XYZ[k * 3 + 2] = P[2];
@@ -211,50 +229,69 @@ public final class HoroArt {
         }
     }
 
-    /** The face on the head's front, by kind. */
+    /** An eye's shine: a small white dot up and to one side of it (what makes a cartoon eye look alive and cute). */
+    static void shine(FireMesh.Sink sink, double x, double y, double z, double r, double h, double v, double size, double alpha) {
+        patch(sink, x, y, z, r, h, v, size, size, 0.0, 2 * Math.PI, FireMesh.argb(0.95 * alpha, 0xFFFFFF), 1.03);
+    }
+
+    /** Rosy cheeks under the eyes. */
+    static void blush(FireMesh.Sink sink, double x, double y, double z, double r, double h, double v, double w, double alpha) {
+        for (int side = -1; side <= 1; side += 2) {
+            patch(sink, x, y, z, r, side * h, v, w, w * 0.55, 0.0, 2 * Math.PI, FireMesh.argb(0.5 * alpha, BLUSH), 1.01);
+        }
+    }
+
+    /**
+     * The face on the head's front, by kind (3.3.6, the owner: "The ghosts are meant to be cute"): big shining cartoon eyes, rosy cheeks,
+     * a small mouth. The Negative Hollow's eyes droop sleepily (round, under a soft lid) over a little open mouth, its pink tongue
+     * poking out; the Mini Hollow's are big and round over a small happy smile; the Toku Hollow's round over a wide happy grin, a pink
+     * tongue in it and two little fangs.
+     */
     static void face(FireMesh.Sink sink, double x, double y, double z, double r, int kind, double age, double alpha) {
         int eye = FireMesh.argb(0.95 * alpha, EYE);
         int mouth = FireMesh.argb(0.92 * alpha, MOUTH);
         if (kind == NEGATIVE) {
-            // droopy, half-shut eyes: the lower halves of two wide ellipses, a heavy lid line over each
+            // big sleepy eyes: round below, a soft lid across their tops, a shine in each
             for (int side = -1; side <= 1; side += 2) {
-                patch(sink, x, y, z, r, side * 0.38, 0.2, 0.2, 0.15, Math.PI, 2 * Math.PI, eye);
-                patch(sink, x, y, z, r, side * 0.38, 0.215, 0.23, 0.03, 0.0, 2 * Math.PI, eye);
+                patch(sink, x, y, z, r, side * 0.33, 0.12, 0.16, 0.16, Math.PI, 2 * Math.PI, eye);
+                patch(sink, x, y, z, r, side * 0.33, 0.12, 0.165, 0.035, 0.0, 2 * Math.PI, eye);
+                shine(sink, x, y, z, r, side * 0.33 + 0.06, 0.06, 0.04, alpha);
             }
-            // a wide drooping mouth, open
-            patch(sink, x, y, z, r, 0.0, -0.17, 0.3, 0.16, Math.PI, 2 * Math.PI, mouth);
-            patch(sink, x, y, z, r, 0.0, -0.17, 0.3, 0.04, 0.0, Math.PI, mouth);
-            // the tongue lolling out of it, swinging a little
+            blush(sink, x, y, z, r, 0.52, -0.06, 0.11, alpha);
+            // a little open mouth, the tongue poking out of it and swinging a little
+            patch(sink, x, y, z, r, 0.0, -0.2, 0.15, 0.12, Math.PI, 2 * Math.PI, mouth);
+            patch(sink, x, y, z, r, 0.0, -0.2, 0.15, 0.03, 0.0, Math.PI, mouth);
             on(x, y, z, r, 0.0, -0.27, 0.98);
             double tx = P[0];
             double ty = P[1];
             double tz = P[2];
             double swing = 0.15 * Math.sin(age * 0.25);
-            double wx = F[0] * 0.55 - F[6] * 0.8 + F[3] * swing;
-            double wy = F[1] * 0.55 - F[7] * 0.8 + F[4] * swing;
-            double wz = F[2] * 0.55 - F[8] * 0.8 + F[5] * swing;
-            tongue(sink, tx, ty, tz, wx, wy, wz, r * 0.5, r * 0.13, alpha);
+            double wx = F[0] * 0.6 - F[6] * 0.75 + F[3] * swing;
+            double wy = F[1] * 0.6 - F[7] * 0.75 + F[4] * swing;
+            double wz = F[2] * 0.6 - F[8] * 0.75 + F[5] * swing;
+            tongue(sink, tx, ty, tz, wx, wy, wz, r * 0.36, r * 0.12, alpha);
         } else if (kind == MINI) {
+            // big round eyes with shines, rosy cheeks, a small happy smile
             for (int side = -1; side <= 1; side += 2) {
-                patch(sink, x, y, z, r, side * 0.32, 0.16, 0.11, 0.15, 0.0, 2 * Math.PI, eye);
+                patch(sink, x, y, z, r, side * 0.3, 0.1, 0.13, 0.17, 0.0, 2 * Math.PI, eye);
+                shine(sink, x, y, z, r, side * 0.3 + 0.045, 0.16, 0.045, alpha);
             }
-            patch(sink, x, y, z, r, 0.0, -0.2, 0.22, 0.09, Math.PI, 2 * Math.PI, mouth);
+            blush(sink, x, y, z, r, 0.5, -0.1, 0.11, alpha);
+            patch(sink, x, y, z, r, 0.0, -0.17, 0.14, 0.09, Math.PI, 2 * Math.PI, mouth);
+            patch(sink, x, y, z, r, 0.0, -0.17, 0.14, 0.02, 0.0, Math.PI, mouth);
         } else {
-            // the Toku Hollow: round staring eyes under heavy brows, a grin from cheek to cheek, a row of teeth along each lip
+            // the Toku Hollow: round eyes with shines, rosy cheeks, a wide happy grin with a pink tongue in it and two little fangs
             for (int side = -1; side <= 1; side += 2) {
-                patch(sink, x, y, z, r, side * 0.3, 0.2, 0.13, 0.16, 0.0, 2 * Math.PI, eye);
-                patch(sink, x, y, z, r, side * 0.32, 0.4, 0.17, 0.035, 0.0, 2 * Math.PI, eye);
+                patch(sink, x, y, z, r, side * 0.27, 0.18, 0.12, 0.15, 0.0, 2 * Math.PI, eye);
+                shine(sink, x, y, z, r, side * 0.27 + 0.04, 0.24, 0.04, alpha);
             }
-            patch(sink, x, y, z, r, 0.0, -0.12, 0.62, 0.28, Math.PI, 2 * Math.PI, mouth);
-            patch(sink, x, y, z, r, 0.0, -0.12, 0.62, 0.035, 0.0, Math.PI, mouth);
-            int teeth = FireMesh.argb(0.95 * alpha, TEETH);
-            for (int k = -4; k <= 4; k++) {
-                double h = k * 0.12;
-                double drop = 0.28 * Math.sqrt(Math.max(0.0, 1.0 - (h / 0.62) * (h / 0.62)));
-                patch(sink, x, y, z, r, h, -0.14, 0.045, 0.06, Math.PI, 2 * Math.PI, teeth);
-                if (Math.abs(k) < 4) {
-                    patch(sink, x, y, z, r, h, -0.12 - drop + 0.03, 0.04, 0.05, 0.0, Math.PI, teeth);
-                }
+            blush(sink, x, y, z, r, 0.48, -0.02, 0.1, alpha);
+            patch(sink, x, y, z, r, 0.0, -0.11, 0.42, 0.27, Math.PI, 2 * Math.PI, mouth);
+            patch(sink, x, y, z, r, 0.0, -0.11, 0.42, 0.03, 0.0, Math.PI, mouth);
+            patch(sink, x, y, z, r, 0.0, -0.31, 0.2, 0.07, 0.0, 2 * Math.PI, FireMesh.argb(0.95 * alpha, TONGUE), 1.022);
+            int teeth = FireMesh.argb(0.97 * alpha, TEETH);
+            for (int side = -1; side <= 1; side += 2) {
+                patch(sink, x, y, z, r, side * 0.17, -0.128, 0.05, 0.075, Math.PI, 2 * Math.PI, teeth, 1.026);
             }
         }
     }
@@ -325,7 +362,7 @@ public final class HoroArt {
         FireMesh.ring(sink, x, y, z, 0, 1, 0, size * (0.3 + 1.1 * grow), size * 0.18, size * 0.05, BODY, 0.6 * (1.0 - t));
         FireMesh.ring(sink, x, y - size * 0.1, z, 0, 1, 0, size * (0.2 + 0.8 * grow), size * 0.1, 0.0, CORE, 0.5 * (1.0 - t));
         FireMesh.palette(SMOKE);
-        int puffs = size > 2.5 ? 14 : 6;
+        int puffs = size > 2.5 ? 10 : 4;
         for (int i = 0; i < puffs; i++) {
             double a = FireMesh.rand(seed, i) * 2 * Math.PI;
             double up = FireMesh.rand(seed, i + 30) * 0.8 - 0.1;
@@ -359,8 +396,8 @@ public final class HoroArt {
         double w = Math.max(0.5, width);
         // a dark blue-grey raincloud of gloom over the head
         FireMesh.palette(RAINCLOUD);
-        for (int i = 0; i < 4; i++) {
-            double ox = (i - 1.5) * w * 0.26;
+        for (int i = 0; i < 3; i++) {
+            double ox = (i - 1.0) * w * 0.3;
             double bob = 0.05 * Math.sin(age * 0.15 + i);
             FireMesh.puff(sink, x + ox, y + 0.6 + bob + 0.06 * (i % 2), z + 0.08 * Math.sin(i * 2.1), w * 0.3, 0, 0, 0, 0.0, 0.25, 0.22, 0.2, false,
                 0.9 * a, age, 7 + i);
