@@ -50,17 +50,29 @@ public final class AstralArt {
     /**
      * The spirit's pose {@code age} ticks in, its head turned as the player looks ({@code headPitch} down, {@code headYaw} from its body,
      * degrees, as the game turns a player's head), into {@code pose} ({@code [part][x, y, z, pitch, yaw, roll, bend, weight]}): a
-     * Japanese ghost's float, both arms out in front with the hands hanging from the wrists, the legs trailing behind, bobbing and
-     * swaying gently.
+     * ghost's float, the legs trailing behind, bobbing and swaying gently; the arms at rest (3.4.2: no longer held out in front).
      */
     public static void floating(double age, double headPitch, double headYaw, float[][] pose) {
+        floating(age, headPitch, headYaw, 0.0, 0.0, pose);
+    }
+
+    /**
+     * 3.4.2 (the owner: "the projections arms are NOT TO BE ANIMATED, in this form the user can do everything normal from minecraft"):
+     * the spirit's arms are the game's own: hanging at its sides, swinging with its {@code speed} (0 to 1) as a player's do when it
+     * moves, the right one swung by its punch ({@code attack}, the game's own 0 to 1); the body still floats as a ghost (its bob and sway,
+     * its legs trailing).
+     */
+    public static void floating(double age, double headPitch, double headYaw, double speed, double attack, float[][] pose) {
         clear(pose);
         double bob = Math.sin(age * 0.1);
         double sway = Math.sin(age * 0.067);
         set(pose, StyleRig.BODY, 0.0, 0.07 * bob, 0.0, 0.0, 0.0, 2.0 * sway, 4.0);
         set(pose, StyleRig.HEAD, 0.0, 0.0, 0.0, headPitch, headYaw, 0.0, 0.0);
-        set(pose, StyleRig.RIGHT_ARM, 0.0, 0.0, 0.0, -90.0 + 4.0 * bob, 8.0, 0.0, 34.0 + 6.0 * bob);
-        set(pose, StyleRig.LEFT_ARM, 0.0, 0.0, 0.0, -90.0 + 4.0 * bob, -8.0, 0.0, 34.0 + 6.0 * bob);
+        double s = Math.max(0.0, Math.min(1.0, speed));
+        double swing = 40.0 * s * Math.sin(age * 0.6662);
+        double punch = Math.sin(Math.PI * Math.max(0.0, Math.min(1.0, attack)));
+        set(pose, StyleRig.RIGHT_ARM, 0.0, 0.0, 0.0, -swing - 75.0 * punch, -18.0 * punch, 3.0, 0.0);
+        set(pose, StyleRig.LEFT_ARM, 0.0, 0.0, 0.0, swing, 0.0, -3.0, 0.0);
         set(pose, StyleRig.RIGHT_LEG, 0.0, 0.0, 0.0, 9.0 + 3.0 * sway, 0.0, 2.0, 6.0 + 3.0 * bob);
         set(pose, StyleRig.LEFT_LEG, 0.0, 0.0, 0.0, 13.0 - 3.0 * sway, 0.0, -2.0, 8.0 - 3.0 * bob);
     }

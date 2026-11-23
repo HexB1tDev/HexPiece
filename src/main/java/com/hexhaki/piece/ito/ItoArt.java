@@ -34,15 +34,17 @@ public final class ItoArt {
     public static final double LASH_LIFE = 8;
     public static final double HIT_LIFE = 10;
     public static final double SKY_LIFE = 14;
-    /** The Birdcage's radius at {@code age} ticks of {@code life}: closing in steadily from {@code radius} to {@code end} (the server
-     *  cuts at it and every client draws it from the same numbers). */
-    public static double cageRadius(double radius, double end, double age, double life) {
-        double t = Math.max(0.0, Math.min(1.0, age / Math.max(1.0, life)));
-        return radius + (end - radius) * t;
+    /**
+     * 3.4.2: the Birdcage's radius {@code age} ticks into closing over {@code close} ticks: from {@code radius} to {@code shut}, slowly
+     * at first, fastest in the middle, slowing as it shuts (the server cuts and pulls at it, every client draws it from the same numbers).
+     */
+    public static double closing(double radius, double shut, double age, double close) {
+        double t = clamp(age / Math.max(1.0, close));
+        return radius + (shut - radius) * t * t * (3.0 - 2.0 * t);
     }
 
-    /** The Birdcage's strings rise from the ground over this many ticks; its bars. */
-    public static final double CAGE_RISE = 24;
+    /** 3.4.2: let go, the Birdcage's strings spread down from its crown to the ground over this many ticks; its bars. */
+    public static final double CAGE_SPREAD = 20;
     public static final int CAGE_BARS = 40;
 
     // ------------------------------------------------------------------------------------------------------ the strand
@@ -89,10 +91,21 @@ public final class ItoArt {
         // still solid and never under about a pixel and a half; ("sharper in the end too not just square ends"): its last stretch
         // narrows to a point (a ring, {@link #ring}, has no end and does not)
         double w = width * SLIM;
-        layer(sink, w * 3.6, coat ? COAT_GLOW : GLOW, 0.14 * alpha, 0.0, 0.0, 0.0);
-        layer(sink, w * 1.6, coat ? COAT_HALO : HALO, 0.45 * alpha, 0.0, 1.6, 0.002);
-        layer(sink, w * 0.7, coat ? COAT_CORE : CORE, 1.0 * alpha, 1.0, 0.8, 0.004);
+        // 3.4.2: a strand may be drawn in another palette for a while (Overheat's red-hot strands, cooling as they scatter)
+        int[] t = coat || tint == null ? null : tint;
+        // a hot strand glows harder (a red-hot string, never a pale wisp)
+        layer(sink, w * 3.6, coat ? COAT_GLOW : t != null ? t[2] : GLOW, (t != null ? 0.3 : 0.14) * alpha, 0.0, 0.0, 0.0);
+        layer(sink, w * 1.6, coat ? COAT_HALO : t != null ? t[1] : HALO, (t != null ? 0.7 : 0.45) * alpha, 0.0, 1.6, 0.002);
+        layer(sink, w * 0.7, coat ? COAT_CORE : t != null ? t[0] : CORE, 1.0 * alpha, 1.0, 0.8, 0.004);
     }
+
+    /** 3.4.2: the palette strands are drawn in while set ({core, halo, glow}; null: the string's own white and pink). */
+    static int[] tint;
+    /** Red-hot strands, and the same cooling (Overheat's strands as they scatter). */
+    static final int[] HOT = {0xFFE2A8, 0xFF9436, 0xFF4A1A};
+    static final int[] COOLING = {0xFF9A50, 0xD0401A, 0x7A1A10};
+    /** A white burst's strands: the string's own white over a stronger pink glow (a burst of strings, never pale wisps). */
+    static final int[] BRIGHT = {0xFFFFFF, 0xFFC8E6, 0xF06CB8};
 
     /** How slim the strings are against the widths each move gives them; how much of a string's length its point takes. */
     static final double SLIM = 0.42;
@@ -319,112 +332,225 @@ public final class ItoArt {
     }
 
     /**
-     * Goshikito: five strings slashing down from the sky onto the ground at (x, y, z) along (wx, wz), {@code spread} either side;
-     * falling for {@code fall} ticks, then five glowing cuts in the ground and a burst of dust, all gone by {@code life}.
+     * Goshikito (3.4.2, redone after the owner: "Z Often doesnt work and looks bad overall (redo entirely)"). Five strings out of the
+     * fingers of the hand at (hx, hy, hz): while the hand is raised ({@link #GOSHIKI_UP} ticks) they hang up into the sky, swaying;
+     * then they are raked over and down onto the strip that starts at the user's feet (sx, sy, sz) and runs {@code length} along (wx,
+     * wz), landing on {@link #GOSHIKI_RAKE} tick, the far end of each lagging as a whip's tip does, a glowing sheet left in the air where
+     * each swept; landed, they cut five long lines into the ground (glowing, then cooling) and throw up dust along them, the strings
+     * drawn back into the fingers; all gone by {@code life}.
      */
-    public static void goshiki(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double spread, double fall, double age,
-                               double life, boolean coat, int seed) {
+    public static void goshiki(FireMesh.Sink sink, double hx, double hy, double hz, double sx, double sy, double sz, double wx, double wz,
+                               double length, double age, double life, boolean coat, int seed) {
         if (age < 0 || age > life) {
             return;
         }
         double wl = Math.max(1.0E-6, Math.hypot(wx, wz));
         wx /= wl;
         wz /= wl;
-        double sx = -wz;
-        double sz = wx;
-        double half = 4.0;
+        double px = -wz;
+        double pz = wx;
         for (int k = 0; k < 5; k++) {
-            double off = (k - 2) * spread * 0.5;
-            double bx = x + sx * off;
-            double bz = z + sz * off;
-            if (age < fall + 6) {
-                // the string, from high behind down onto its line: its tip falls first, then it whips up and away
-                double drop = ease(age / fall);
-                double lift = age > fall ? ease((age - fall) / 6.0) : 0.0;
-                double topX = bx - wx * 6.0;
-                double topY = y + 18.0;
-                double topZ = bz - wz * 6.0;
-                double tipX = bx + wx * half * (drop * 2 - 1);
-                double tipZ = bz + wz * half * (drop * 2 - 1);
-                double tipY = y + 18.0 * (1.0 - drop) + 0.05 + 10.0 * lift;
-                line(sink, topX, topY, topZ, tipX, tipY, tipZ, 0.11 + 0.02 * (k % 2), coat, 1.0 - lift, 0.25, 1.0, 10);
+            double off = (k - 2) * GOSHIKI_SPACING;
+            // where this string lands: its line on the ground, from near the feet to the strip's far end
+            double fx = sx + wx * length + px * off;
+            double fz = sz + wz * length + pz * off;
+            double fy = sy + 0.06;
+            if (age < GOSHIKI_RAKE + GOSHIKI_BACK) {
+                drawRake(sink, hx, hy, hz, fx, fy, fz, wx, wz, px * off * 0.02, pz * off * 0.02, k, age, coat);
+                if (age > GOSHIKI_UP - 0.5 && age < GOSHIKI_RAKE + 2) {
+                    // the sheet each string sweeps through the air on its way down
+                    sweep(sink, hx, hy, hz, fx, fy, fz, wx, wz, k, age, coat);
+                }
             }
-            if (age >= fall) {
-                // the cut in the ground along its line, glowing then cooling
-                double u = (age - fall) / (life - fall);
+            if (age >= GOSHIKI_RAKE) {
+                // the cut in the ground along its line, running out from the feet to the far end in 3 ticks, glowing then cooling
+                double u = (age - GOSHIKI_RAKE) / (life - GOSHIKI_RAKE);
+                double run = ease((age - GOSHIKI_RAKE) / 3.0);
                 double glow = (1.0 - u) * (1.0 - u);
-                line(sink, bx - wx * half, y + 0.04, bz - wz * half, bx + wx * half, y + 0.04, bz + wz * half, 0.11, coat, glow, 0.5, 1.0, 6);
+                double ax = sx + wx * 1.0 + px * off;
+                double az = sz + wz * 1.0 + pz * off;
+                double bx = ax + (fx - ax) * run;
+                double bz = az + (fz - az) * run;
+                // the groove: a dark cut in the ground, its glowing heart cooling to the dark of the cut
+                int dark = FireMesh.argb(0.6, 0x24160F);
+                FireMesh.quad(sink, ax - px * 0.09, sy + 0.025, az - pz * 0.09, dark, bx - px * 0.09, sy + 0.025, bz - pz * 0.09, dark, bx + px * 0.09,
+                    sy + 0.025, bz + pz * 0.09, dark, ax + px * 0.09, sy + 0.025, az + pz * 0.09, dark);
+                // its light laid flat on the ground (a ribbon turned to the eye reads as a hair along the ground from a low view)
+                int hot = FireMesh.argb(0.9 * glow, coat ? COAT_HALO : HALO);
+                int soft = FireMesh.argb(0.0, coat ? COAT_GLOW : GLOW);
+                int mid = FireMesh.argb(0.35 * glow, coat ? COAT_GLOW : GLOW);
+                for (int side = -1; side <= 1; side += 2) {
+                    FireMesh.quad(sink, ax, sy + 0.04, az, hot, bx, sy + 0.04, bz, hot, bx + px * 0.06 * side, sy + 0.04, bz + pz * 0.06 * side, hot,
+                        ax + px * 0.06 * side, sy + 0.04, az + pz * 0.06 * side, hot);
+                    FireMesh.quad(sink, ax + px * 0.06 * side, sy + 0.045, az + pz * 0.06 * side, mid, bx + px * 0.06 * side, sy + 0.045,
+                        bz + pz * 0.06 * side, mid, bx + px * 0.4 * side, sy + 0.045, bz + pz * 0.4 * side, soft, ax + px * 0.4 * side, sy + 0.045,
+                        az + pz * 0.4 * side, soft);
+                }
+                line(sink, ax, sy + 0.07, az, bx, sy + 0.07, bz, 0.12, coat, glow, 0.7, 1.0, 9);
             }
         }
-        if (age >= fall && age < fall + 14) {
-            double u = (age - fall) / 14.0;
+        if (age >= GOSHIKI_RAKE && age < GOSHIKI_RAKE + 16) {
+            // dust thrown up along the five lines as they are cut, nearest first
+            double u = (age - GOSHIKI_RAKE) / 16.0;
             FireMesh.palette(DUST);
             for (int i = 0; i < 5; i++) {
-                double a = (i - 2) * spread * 0.5;
-                FireMesh.puff(sink, x + sx * a + wx * (FireMesh.rand(seed, i) - 0.5) * 4, y + 0.3 + 0.6 * u, z + sz * a + wz * (FireMesh.rand(seed, i)
-                    - 0.5) * 4, 0.5 + 0.6 * u, 0, 1, 0, 0.2, 0.3, 0.5 - 0.3 * u, 0.3, false, 0.6 * (1.0 - u), age, seed + i);
+                double along = 2.0 + (length - 2.0) * (i + 0.5) / 5.0;
+                double born = 3.0 * along / length;
+                double a = (age - GOSHIKI_RAKE - born) / (16.0 - born);
+                if (a < 0 || a > 1) {
+                    continue;
+                }
+                double side = (FireMesh.rand(seed, i) - 0.5) * 4 * GOSHIKI_SPACING;
+                FireMesh.puff(sink, sx + wx * along + px * side, sy + 0.3 + 0.9 * a, sz + wz * along + pz * side, 0.45 + 0.7 * a, 0, 1, 0, 0.2, 0.3,
+                    0.5 - 0.3 * a, 0.3, false, 0.55 * (1.0 - a) * (1.0 - u * 0.3), age, seed + i);
             }
             FireMesh.palette(FireMesh.BAND);
         }
     }
 
+    /** Goshikito's beats: the hand is up by this tick, the strings land on {@link #GOSHIKI_RAKE}, and are drawn back over BACK more. */
+    public static final double GOSHIKI_UP = 3;
+    public static final double GOSHIKI_RAKE = 5;
+    static final double GOSHIKI_BACK = 6;
+    /** How far apart the five strings run (blocks; server/ItoMoves.GOSHIKI_SPREAD, the same). */
+    public static final double GOSHIKI_SPACING = 0.9;
+
+    /** How far over a Goshikito string has swung at {@code age}: 0 hanging straight up out of the hand, 1 landed on the ground. */
+    static double swing(double age) {
+        if (age <= GOSHIKI_UP) {
+            return 0.0;
+        }
+        double t = clamp((age - GOSHIKI_UP) / (GOSHIKI_RAKE - GOSHIKI_UP));
+        return t * t; // slow over the top, fast as it comes down
+    }
+
+    /**
+     * One Goshikito string from the hand: hanging up while the hand is raised; swung over toward its line on the ground, its tip lagging;
+     * landed, along to its far end; then drawn back into the fingers from its tip.
+     */
+    static void drawRake(FireMesh.Sink sink, double hx, double hy, double hz, double fx, double fy, double fz, double wx, double wz,
+                         double ox, double oz, int k, double age, boolean coat) {
+        double dx = fx - hx;
+        double dy = fy - hy;
+        double dz = fz - hz;
+        double reach = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        // the landed way (to its far end), and straight up a little back with the string's own fan
+        double lx = dx / reach;
+        double ly = dy / reach;
+        double lz = dz / reach;
+        double ux = -wx * 0.18 + ox * 6;
+        double uy = 1.0;
+        double uz = -wz * 0.18 + oz * 6;
+        double ul = Math.sqrt(ux * ux + uy * uy + uz * uz);
+        ux /= ul;
+        uy /= ul;
+        uz /= ul;
+        double grow = ease(age / 2.5);
+        double back = age > GOSHIKI_RAKE ? clamp((age - GOSHIKI_RAKE) / GOSHIKI_BACK) : 0.0;
+        double len = reach * (0.35 + 0.65 * grow) * (1.0 - back);
+        if (len < 0.2) {
+            return;
+        }
+        begin();
+        for (int j = 0; j <= 11; j++) {
+            double f = j / 11.0;
+            // the tip lags behind the base as it swings (a whip), and sways while hanging
+            double sw = swing(age - 0.9 * f);
+            double sway = age < GOSHIKI_UP ? 0.25 * f * Math.sin(age * 0.9 + k * 1.3) : 0.0;
+            double ax = ux + (lx - ux) * sw;
+            double ay = uy + (ly - uy) * sw;
+            double az = uz + (lz - uz) * sw;
+            double al = Math.sqrt(ax * ax + ay * ay + az * az);
+            double r = len * f;
+            point(hx + ax / al * r - wz * sway, hy + ay / al * r, hz + az / al * r + wx * sway, 0.55 + 0.45 * (1.0 - f * 0.5));
+        }
+        strand(sink, 0.14, coat, 1.0);
+    }
+
+    /** The glowing sheet a Goshikito string leaves in the air as it swings down (between where it was a tick ago and where it is). */
+    static void sweep(FireMesh.Sink sink, double hx, double hy, double hz, double fx, double fy, double fz, double wx, double wz, int k, double age,
+                      boolean coat) {
+        double dx = fx - hx;
+        double dy = fy - hy;
+        double dz = fz - hz;
+        double reach = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        double lx = dx / reach;
+        double ly = dy / reach;
+        double lz = dz / reach;
+        int rgb = coat ? COAT_GLOW : GLOW;
+        int pieces = 8;
+        for (int j = 0; j < pieces; j++) {
+            double f0 = (j + 1.0) / pieces;
+            double f1 = (double) j / pieces;
+            double[] a = SW_A;
+            double[] b = SW_B;
+            at(a, hx, hy, hz, wx, wz, lx, ly, lz, reach, age, f0, 0);
+            at(a, hx, hy, hz, wx, wz, lx, ly, lz, reach, age - 1.2, f0, 3);
+            at(b, hx, hy, hz, wx, wz, lx, ly, lz, reach, age, f1, 0);
+            at(b, hx, hy, hz, wx, wz, lx, ly, lz, reach, age - 1.2, f1, 3);
+            double alpha = 0.18 * (1.0 - clamp((age - GOSHIKI_RAKE) / 2.0)) * (0.3 + 0.7 * f0);
+            FireMesh.quad(sink, b[0], b[1], b[2], FireMesh.argb(alpha * 0.6, rgb), a[0], a[1], a[2], FireMesh.argb(alpha, rgb), a[3], a[4], a[5],
+                FireMesh.argb(0.0, rgb), b[3], b[4], b[5], FireMesh.argb(0.0, rgb));
+        }
+    }
+
+    static final double[] SW_A = new double[6];
+    static final double[] SW_B = new double[6];
+
+    /** A point {@code f} along a Goshikito string at {@code age} (as drawRake, without the sway), into out[o..o+2]. */
+    static void at(double[] out, double hx, double hy, double hz, double wx, double wz, double lx, double ly, double lz, double reach, double age,
+                   double f, int o) {
+        double ux = -wx * 0.18;
+        double uy = 1.0;
+        double uz = -wz * 0.18;
+        double ul = Math.sqrt(ux * ux + uy * uy + uz * uz);
+        double sw = swing(age - 0.9 * f);
+        double ax = ux / ul + (lx - ux / ul) * sw;
+        double ay = uy / ul + (ly - uy / ul) * sw;
+        double az = uz / ul + (lz - uz / ul) * sw;
+        double al = Math.sqrt(ax * ax + ay * ay + az * az);
+        double r = reach * f;
+        out[o] = hx + ax / al * r;
+        out[o + 1] = hy + ay / al * r;
+        out[o + 2] = hz + az / al * r;
+    }
+
     /** The ground's dust thrown up by a cut (FireMesh.puff's palette while it is drawn): earth brown to pale. */
     public static final int[] DUST = {0x4A3A2C, 0x5E4B3A, 0x74604C, 0x8A7660, 0xA08C76, 0xB6A38E, 0xCCBAA6, 0xE0D2C0};
 
-    static final double[] RING = new double[25 * 9 * 3];
-    static final int[] RING_C = new int[25 * 9];
+    static final double[] RING = new double[33 * 9 * 3];
+    static final int[] RING_C = new int[33 * 9];
 
     /**
-     * Overheat: a rope of red-hot string from the hand (hx, hy, hz) along (wx, wz), {@code length} long when it is all out (in 5 ticks,
-     * a wave running down it as down a whip), held, then drawn back and gone by {@code life}: a tube banded white-hot to red by how
-     * square it faces the eye, a wide orange glow round it, two bright strands twisting round it.
+     * A rope of red-hot string through the {@code n} points in {@link #HX} (Overheat's): its glow (a wide soft orange ribbon), a tube
+     * banded white-hot to red by how square it faces the eye, {@code r0} round at its first point and {@code r1} at its last, two bright
+     * strands wound round it turning with {@code age}; {@code fade} of it there.
      */
-    public static void overheat(FireMesh.Sink sink, double hx, double hy, double hz, double wx, double wz, double length, double age,
-                                double life, boolean coat, int seed) {
-        if (age < 0 || age > life) {
+    static void rope(FireMesh.Sink sink, int n, double r0, double r1, int[] bands, int glow, double fade, double age) {
+        if (n < 2 || fade < 0.01) {
             return;
         }
-        double wl = Math.max(1.0E-6, Math.hypot(wx, wz));
-        wx /= wl;
-        wz /= wl;
-        double sx = -wz;
-        double sz = wx;
-        double out = age < 5 ? ease(age / 5.0) : age > life - 6 ? clamp((life - age) / 6.0) : 1.0;
-        double len = length * out;
-        double radius = 0.2;
-        int along = 24;
         int around = 8;
-        int[] bands = coat ? COAT_HEAT : HEAT;
-        double fade = age > life - 3 ? (life - age) / 3.0 : 1.0;
-        // the rope's line: out along the way, a whip's wave running down it and dying away
-        begin();
-        for (int j = 0; j <= along; j++) {
-            double t = j / (double) along;
-            double wave = Math.sin(t * 7.0 - age * 1.6) * 0.9 * t * Math.max(0.0, 1.0 - age / 10.0);
-            double lift = 0.4 * Math.sin(Math.PI * t) * out - 0.25 * t;
-            point(hx + wx * len * t + sx * wave, hy + lift, hz + wz * len * t + sz * wave, 1.0 - 0.3 * t);
-        }
-        int n = count;
         for (int j = 0; j < n; j++) {
-            HX[j * 3] = PX[j * 3];
-            HX[j * 3 + 1] = PX[j * 3 + 1];
-            HX[j * 3 + 2] = PX[j * 3 + 2];
-        }
-        // its glow first (behind it): the line as a wide soft ribbon of orange, thinning near the eye as the rope does
-        sides();
-        for (int j = 0; j < n; j++) {
+            PX[j * 3] = HX[j * 3];
+            PX[j * 3 + 1] = HX[j * 3 + 1];
+            PX[j * 3 + 2] = HX[j * 3 + 2];
             double k = near(HX[j * 3], HX[j * 3 + 1], HX[j * 3 + 2], NEAR_ROPE);
-            FADE[j] *= k * k;
+            FADE[j] = k * k;
         }
-        layer(sink, radius * 3.4, coat ? COAT_HEAT_GLOW : HEAT_GLOW, 0.3 * fade, 0.0);
-        // the banded tube round that line
+        count = n;
+        boolean was = round;
+        round = true;
+        sides();
+        layer(sink, Math.max(r0, r1) * 3.4, glow, 0.3 * fade, 0.0);
+        round = was;
         double[] b = T_BASIS;
         for (int j = 0; j < n; j++) {
             int p = Math.max(0, j - 1);
             int q = Math.min(n - 1, j + 1);
             FireMesh.basis(HX[q * 3] - HX[p * 3], HX[q * 3 + 1] - HX[p * 3 + 1], HX[q * 3 + 2] - HX[p * 3 + 2], b);
             double t = j / (double) (n - 1);
-            double r = radius * (1.0 - 0.55 * t) * (0.6 + 0.4 * out) * near(HX[j * 3], HX[j * 3 + 1], HX[j * 3 + 2], NEAR_ROPE);
+            double r = (r0 + (r1 - r0) * t) * near(HX[j * 3], HX[j * 3 + 1], HX[j * 3 + 2], NEAR_ROPE);
             for (int i = 0; i <= around; i++) {
                 double a = 2 * Math.PI * i / around;
                 double ox = b[0] * Math.cos(a) + b[3] * Math.sin(a);
@@ -452,7 +578,8 @@ public final class ItoArt {
                     RING[c * 3 + 1], RING[c * 3 + 2], RING_C[c]);
             }
         }
-        // two bright strands wound round it (it is a rope of string), turning as it lashes
+        // two bright strands wound round it (a rope of string), turning
+        tint = HOT;
         for (int h = 0; h < 2; h++) {
             begin();
             for (int j = 0; j < n; j++) {
@@ -460,22 +587,302 @@ public final class ItoArt {
                 int q = Math.min(n - 1, j + 1);
                 FireMesh.basis(HX[q * 3] - HX[p * 3], HX[q * 3 + 1] - HX[p * 3 + 1], HX[q * 3 + 2] - HX[p * 3 + 2], b);
                 double t = j / (double) (n - 1);
-                double a = t * 18.0 + h * Math.PI + age * 0.8;
-                double r = radius * (1.0 - 0.55 * t) * (0.6 + 0.4 * out) * 1.05;
+                double a = t * 3.0 * n + h * Math.PI + age * 0.8;
+                double r = (r0 + (r1 - r0) * t) * 1.05;
                 point(HX[j * 3] + (b[0] * Math.cos(a) + b[3] * Math.sin(a)) * r, HX[j * 3 + 1] + (b[1] * Math.cos(a) + b[4] * Math.sin(a)) * r,
-                    HX[j * 3 + 2] + (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * r, 1.0 - 0.4 * t);
+                    HX[j * 3 + 2] + (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * r, 1.0 - 0.3 * t);
             }
-            strand(sink, 0.018, coat, fade);
+            boolean r = round;
+            round = true;
+            strand(sink, 0.04, false, fade);
+            round = r;
         }
-        // heat at the hand and a crack of light at the tip as it snaps out
-        FireMesh.shell(sink, hx, hy, hz, 0.5 * near(hx, hy, hz, NEAR_ROPE), coat ? COAT_HEAT_GLOW : HEAT_GLOW, 0.35 * fade, 0.0);
-        if (age > 3 && age < 9) {
-            double u = (age - 3) / 6.0;
+        tint = null;
+    }
+
+    /** How far ahead of the fist Overheat's rope winds itself into a knot. */
+    public static final double KNOT_AHEAD = 0.55;
+
+    /**
+     * Overheat held (3.4.2, the owner: "The charging should be one arm pointed forward and the strings gathering infront of the fist"):
+     * six strings spiralling in from round the fist at (x, y, z) to a knot {@link #KNOT_AHEAD} along (fx, fy, fz), red-hot where they
+     * reach it; the knot a banded white-hot ball growing with the {@code charge} (0 to 1), two strands wound round it, a heat glow.
+     */
+    public static void knot(FireMesh.Sink sink, double x, double y, double z, double fx, double fy, double fz, double charge, double age,
+                            boolean coat, int seed) {
+        knot(sink, x, y, z, fx, fy, fz, charge, age, coat, seed, 1.0);
+    }
+
+    /** As above, {@code scale} its size (one's own in first person is drawn smaller: right by the eye it would fill the view). */
+    public static void knot(FireMesh.Sink sink, double x, double y, double z, double fx, double fy, double fz, double charge, double age,
+                            boolean coat, int seed, double scale) {
+        double fl = Math.max(1.0E-6, Math.sqrt(fx * fx + fy * fy + fz * fz));
+        fx /= fl;
+        fy /= fl;
+        fz /= fl;
+        double[] b = K_BASIS;
+        FireMesh.basis(fx, fy, fz, b);
+        double kx = x + fx * KNOT_AHEAD * scale;
+        double ky = y + fy * KNOT_AHEAD * scale;
+        double kz = z + fz * KNOT_AHEAD * scale;
+        double nearK = near(kx, ky, kz, 1.2) * scale;
+        double kr = (0.08 + 0.17 * charge) * nearK;
+        int[] bands = coat ? COAT_HEAT : HEAT;
+        double grow = ease(age / 4.0);
+        tint = HOT;
+        for (int k = 0; k < 6; k++) {
+            double a0 = 2 * Math.PI * k / 6 + FireMesh.rand(seed, k) * 0.6;
+            double reach = (0.42 + 0.25 * FireMesh.rand(seed, k + 9)) * (0.85 + 0.2 * Math.sin(age * 0.25 + k)) * nearK * grow;
+            begin();
+            for (int j = 0; j <= 9; j++) {
+                double f = j / 9.0;
+                double ang = a0 + f * 5.2 + age * 0.32;
+                double r = kr * 1.05 + reach * Math.pow(1.0 - f, 1.2);
+                double back = -0.45 * (1.0 - f) * nearK;
+                point(kx + (b[0] * Math.cos(ang) + b[3] * Math.sin(ang)) * r + fx * back,
+                    ky + (b[1] * Math.cos(ang) + b[4] * Math.sin(ang)) * r + fy * back,
+                    kz + (b[2] * Math.cos(ang) + b[5] * Math.sin(ang)) * r + fz * back, 0.3 + 0.7 * f);
+            }
+            strand(sink, 0.07 * scale, coat, 0.95);
+        }
+        tint = null;
+        if (kr < 0.01) {
+            return;
+        }
+        FireMesh.shell(sink, kx, ky, kz, kr * 3.4, coat ? COAT_HEAT_GLOW : HEAT_GLOW, 0.26, 0.0);
+        FireMesh.shell(sink, kx, ky, kz, kr * 1.1, bands[2], 0.85, 0.35);
+        FireMesh.shell(sink, kx, ky, kz, kr * 0.75, bands[1], 0.95, 0.6);
+        FireMesh.shell(sink, kx, ky, kz, kr * 0.45, bands[0], 1.0, 0.9);
+        // two strands wound round the knot, turning: a ball of rope
+        tint = HOT;
+        for (int h = 0; h < 2; h++) {
+            begin();
+            double tilt = h * 1.1 + age * 0.15;
+            for (int j = 0; j <= 16; j++) {
+                double a = 2 * Math.PI * j / 16 + age * 0.5 * (h == 0 ? 1 : -1);
+                double cx = Math.cos(a) * kr * 1.15;
+                double cy = Math.sin(a) * kr * 1.15;
+                double ux = b[0] * Math.cos(tilt) + fx * Math.sin(tilt);
+                double uy = b[1] * Math.cos(tilt) + fy * Math.sin(tilt);
+                double uz = b[2] * Math.cos(tilt) + fz * Math.sin(tilt);
+                point(kx + ux * cx + b[3] * cy, ky + uy * cx + b[4] * cy, kz + uz * cx + b[5] * cy, 1.0);
+            }
+            ring(sink, 0.045 * scale, coat, 1.0);
+        }
+        tint = null;
+    }
+
+    static final double[] K_BASIS = new double[6];
+
+    /** How long Overheat's rope takes to fall apart after its blast. */
+    public static final double BREAK_LIFE = 12;
+
+    /**
+     * Overheat fired (3.4.2, the owner: "a charge beam that DOES NOT COME BACK (explodes on landing)"): a red-hot rope from the hand (hx,
+     * hy, hz) along (ux, uy, uz) (unit), its head out to {@code length} by {@code flight} ticks, thicker with the {@code charge}, a
+     * white-hot glare at its head; then, never drawn back, it falls apart where it lay: seven pieces flung off and dropping, cooling from
+     * orange to dark red, gone in {@link #BREAK_LIFE} (the blast and its scattering strings are {@link #scatter}).
+     */
+    public static void beam(FireMesh.Sink sink, double hx, double hy, double hz, double ux, double uy, double uz, double length, double charge,
+                            double age, double flight, boolean coat, int seed) {
+        beam(sink, hx, hy, hz, ux, uy, uz, length, charge, age, flight, coat, seed, false);
+    }
+
+    /**
+     * As above; {@code ribbon}: one's own beam in first person, seen from right behind the fist, drawn as a red-hot string turned to the
+     * eye (a tube seen end-on shows only its red rim: a flat wedge across the view).
+     */
+    public static void beam(FireMesh.Sink sink, double hx, double hy, double hz, double ux, double uy, double uz, double length, double charge,
+                            double age, double flight, boolean coat, int seed, boolean ribbon) {
+        if (age < 0 || age > flight + BREAK_LIFE) {
+            return;
+        }
+        if (ribbon && age <= flight) {
+            double head = length * clamp(age / Math.max(1.0, flight));
+            tint = HOT;
+            boolean was = round;
+            round = true; // its end is at the fist, out of view: no point there
+            begin();
+            for (int j = 0; j <= 12; j++) {
+                double t = j / 12.0;
+                point(hx + ux * head * t, hy + uy * head * t, hz + uz * head * t, 0.8 + 0.2 * t);
+            }
+            strand(sink, 0.1 + 0.06 * charge, coat, 1.0);
+            round = was;
+            tint = null;
+            double tx = hx + ux * head;
+            double ty = hy + uy * head;
+            double tz = hz + uz * head;
+            FireMesh.shell(sink, tx, ty, tz, 0.55 + 0.4 * charge, coat ? COAT_HEAT_GLOW : HEAT_GLOW, 0.45, 0.0);
+            FireMesh.shell(sink, tx, ty, tz, 0.22 + 0.12 * charge, (coat ? COAT_HEAT : HEAT)[0], 1.0, 0.6);
+            return;
+        }
+        int[] bands = coat ? COAT_HEAT : HEAT;
+        int glow = coat ? COAT_HEAT_GLOW : HEAT_GLOW;
+        double[] b = T_BASIS;
+        FireMesh.basis(ux, uy, uz, b);
+        double r0 = 0.12 + 0.1 * charge;
+        if (age <= flight) {
+            double head = length * clamp(age / Math.max(1.0, flight));
+            int n = 24;
+            for (int j = 0; j < n; j++) {
+                double t = j / (double) (n - 1);
+                double wave = 0.22 * Math.sin(t * 9.0 - age * 2.2) * t * (1.0 - t * 0.5);
+                HX[j * 3] = hx + ux * head * t + b[0] * wave;
+                HX[j * 3 + 1] = hy + uy * head * t + b[1] * wave;
+                HX[j * 3 + 2] = hz + uz * head * t + b[2] * wave;
+            }
+            rope(sink, n, r0, r0 * 0.75, bands, glow, 1.0, age);
             double tx = HX[(n - 1) * 3];
             double ty = HX[(n - 1) * 3 + 1];
             double tz = HX[(n - 1) * 3 + 2];
-            FireMesh.shell(sink, tx, ty, tz, 0.4 + 0.8 * u, coat ? COAT_HEAT_GLOW : HEAT_GLOW, 0.6 * (1.0 - u), 0.0);
-            FireMesh.ring(sink, tx, ty, tz, wx, 0, wz, 0.3 + 1.2 * u, 0.15 * (1.0 - u) + 0.02, 0.0, coat ? COAT_HEAT[3] : HEAT[1], 0.7 * (1.0 - u));
+            FireMesh.shell(sink, tx, ty, tz, 0.55 + 0.4 * charge, glow, 0.45, 0.0);
+            FireMesh.shell(sink, tx, ty, tz, 0.22 + 0.12 * charge, bands[0], 1.0, 0.6);
+            FireMesh.ring(sink, tx, ty, tz, ux, uy, uz, 0.35 + 0.3 * charge, 0.12, -0.2, bands[1], 0.7);
+            return;
+        }
+        double u = (age - flight) / BREAK_LIFE;
+        int[] cool = {COOLING[0], COOLING[1], COOLING[2], 0x3A0C08};
+        int[] used = coat ? COAT_HEAT : u < 0.3 ? bands : cool;
+        for (int k = 0; k < 7; k++) {
+            double t0 = k / 7.0;
+            double t1 = (k + 1) / 7.0;
+            double shrink = (t1 - t0) * (1.0 - 0.55 * u) * 0.5;
+            double mid = (t0 + t1) * 0.5;
+            double a = FireMesh.rand(seed, k) * 2 * Math.PI;
+            double fling = (0.6 + 1.6 * FireMesh.rand(seed, k + 7)) * u * (1.0 + u);
+            double ox = (b[0] * Math.cos(a) + b[3] * Math.sin(a)) * fling;
+            double oy = (b[1] * Math.cos(a) + b[4] * Math.sin(a)) * fling - 2.2 * u * u;
+            double oz = (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * fling;
+            int n = 5;
+            for (int j = 0; j < n; j++) {
+                double t = mid + (j / (double) (n - 1) - 0.5) * 2.0 * shrink;
+                double curl = 0.3 * u * Math.sin(j * 1.4 + k);
+                HX[j * 3] = hx + ux * length * t + ox + b[3] * curl;
+                HX[j * 3 + 1] = hy + uy * length * t + oy + b[4] * curl;
+                HX[j * 3 + 2] = hz + uz * length * t + oz + b[5] * curl;
+            }
+            rope(sink, n, r0 * (1.0 - 0.4 * u), r0 * 0.5 * (1.0 - 0.4 * u), used, glow, (1.0 - u) * (1.0 - u * 0.5), age + k);
+        }
+    }
+
+    /** How long a burst of strings flies. */
+    public static final double SCATTER_LIFE = 18;
+
+    /**
+     * Strings bursting out of (x, y, z) in every direction, {@code size} far (3.4.2: Overheat's explosion, the owner: "when it ends the
+     * strings scatter into every direction"; the Black Knight bursting, "it explodes into tons of strings"; the Birdcage shut): a flash,
+     * a shock shell, and eighteen strings (twelve {@code lite}) flung out, curling, slowing and falling; red-hot and cooling over a banded
+     * fireball when {@code heat}, white (violet coated) otherwise; gone in {@link #SCATTER_LIFE}.
+     */
+    public static void scatter(FireMesh.Sink sink, double x, double y, double z, double size, boolean heat, double age, boolean coat, int seed,
+                               boolean lite) {
+        if (age < 0 || age > SCATTER_LIFE) {
+            return;
+        }
+        double t = age / SCATTER_LIFE;
+        int[] bands = coat ? COAT_HEAT : HEAT;
+        if (age < 6) {
+            double f = 1.0 - age / 6.0;
+            FireMesh.shell(sink, x, y, z, size * (0.16 + 0.1 * age / 6.0), heat ? bands[0] : CORE, 0.9 * f * f, 0.3 * f);
+            if (!heat) {
+                FireMesh.shell(sink, x, y, z, size * (0.3 + 0.15 * age / 6.0), coat ? COAT_GLOW : GLOW, 0.45 * f, 0.0);
+            }
+        }
+        if (heat) {
+            // the blast: banded fire as the Magma fruit's bursts are (FireMesh's fire), billowing out and up, over a heat glow
+            double u = clamp(age / 14.0);
+            FireMesh.shell(sink, x, y, z, size * (0.35 + 0.25 * ease(u * 2.0)), coat ? COAT_HEAT_GLOW : HEAT_GLOW, 0.3 * (1.0 - u), 0.0);
+            if (u < 1.0) {
+                for (int i = 0; i < 4; i++) {
+                    double a = Math.PI * 2.0 * (i + FireMesh.rand(seed, i + 200)) / 4;
+                    double out = size * 0.16 * ease(u * 1.6);
+                    FireMesh.puff(sink, x + Math.cos(a) * out, y + size * 0.1 * u, z + Math.sin(a) * out, size * (0.2 + 0.08 * u) * (1.0 - 0.35 * u),
+                        Math.cos(a), 0.6, Math.sin(a), 0.8, 0.35, 0.9 - 0.45 * u, 0.6, true, 1.0 - u * u, age * 2.0, seed + i);
+                }
+            }
+        }
+        FireMesh.shell(sink, x, y, z, size * (0.25 + 0.35 * ease(t * 2.0)), heat ? (coat ? COAT_HEAT_GLOW : HEAT_GLOW) : coat ? COAT_GLOW : GLOW, 0.0,
+            0.16 * (1.0 - t) * (1.0 - t));
+        int n = lite ? 12 : 18;
+        for (int i = 0; i < n; i++) {
+            double yy = 1.0 - 2.0 * (i + 0.5) / n;
+            double rr = Math.sqrt(Math.max(0.0, 1.0 - yy * yy));
+            double th = i * 2.39996 + seed * 0.37;
+            double dx = Math.cos(th) * rr + (FireMesh.rand(seed, i) - 0.5) * 0.3;
+            double dy = yy * 0.85 + 0.15;
+            double dz = Math.sin(th) * rr + (FireMesh.rand(seed, i + 40) - 0.5) * 0.3;
+            double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            dx /= dl;
+            dy /= dl;
+            dz /= dl;
+            double far = size * ease(Math.min(1.0, t * 1.4)) * (0.6 + 0.4 * FireMesh.rand(seed, i + 80));
+            double len = size * (0.2 + 0.14 * FireMesh.rand(seed, i + 120)) * (1.0 - 0.45 * t);
+            // a curl square to its way
+            double qx = dz;
+            double qz = -dx;
+            double ql = Math.max(1.0E-6, Math.hypot(qx, qz));
+            qx /= ql;
+            qz /= ql;
+            double curl = len * 0.4 * (FireMesh.rand(seed, i + 160) - 0.5) * 2.0 * (0.4 + t);
+            begin();
+            for (int j = 0; j <= 5; j++) {
+                double f = j / 5.0;
+                double d = Math.max(0.0, far - len * (1.0 - f));
+                double bend = curl * Math.sin(Math.PI * f);
+                point(x + dx * d + qx * bend, y + dy * d - 0.9 * t * t * size * 0.3, z + dz * d + qz * bend, 0.4 + 0.6 * f);
+            }
+            tint = heat ? (t < 0.35 ? HOT : COOLING) : BRIGHT;
+            strand(sink, heat ? 0.12 : 0.1, coat, 1.0 - t * t);
+            tint = null;
+        }
+    }
+
+    /**
+     * The Birdcage held (3.4.2, the owner: "the user points at the sky and shoots a stedy stream of strings that spread into the cage
+     * when it reaches the right height"): six strings twisting up together from the raised hand (hx, hy, hz) to the cage's crown (cx,
+     * cy, cz) (as high as the cage is wide: its {@code radius} grows with the hold), bright beads running up them, a glow at the crown
+     * and the first strings fanning out down the dome from it, showing how big the cage will be.
+     */
+    public static void stream(FireMesh.Sink sink, double hx, double hy, double hz, double cx, double cy, double cz, double radius, double age,
+                              boolean coat, int seed) {
+        double grow = ease(age / 4.0);
+        double tx = hx + (cx - hx) * grow;
+        double ty = hy + (cy - hy) * grow;
+        double tz = hz + (cz - hz) * grow;
+        for (int k = 0; k < 6; k++) {
+            begin();
+            for (int j = 0; j <= 14; j++) {
+                double f = j / 14.0;
+                double ang = 2 * Math.PI * k / 6 + f * 9.0 + age * 0.6;
+                double r = 0.1 + 0.22 * f;
+                point(hx + (tx - hx) * f + Math.cos(ang) * r, hy + (ty - hy) * f, hz + (tz - hz) * f + Math.sin(ang) * r, 0.7 + 0.3 * f);
+            }
+            // thick enough to read as a stream from across the field (the string's own white over a strong pink glow)
+            tint = coat ? null : BRIGHT;
+            strand(sink, 0.1 + 0.004 * Math.abs(ty - hy), coat, 1.0);
+            tint = null;
+        }
+        // beads of light running up the stream
+        for (int k = 0; k < 3; k++) {
+            double f = (age * 0.07 + k / 3.0) % 1.0;
+            FireMesh.shell(sink, hx + (tx - hx) * f, hy + (ty - hy) * f, hz + (tz - hz) * f, 0.22, coat ? COAT_HALO : CORE, 0.8, 0.2);
+        }
+        if (grow < 0.99) {
+            return;
+        }
+        FireMesh.shell(sink, cx, cy, cz, 1.0 + radius * 0.03, coat ? COAT_GLOW : GLOW, 0.4, 0.0);
+        FireMesh.shell(sink, cx, cy, cz, 0.35, coat ? COAT_HALO : CORE, 0.9, 0.3);
+        // the dome's first strings, fanning down from the crown (its middle is radius below it, on the ground)
+        double gy = cy - radius;
+        for (int k = 0; k < 12; k++) {
+            double a = 2 * Math.PI * k / 12 + 0.05 + age * 0.01;
+            begin();
+            for (int j = 0; j <= 5; j++) {
+                double e = Math.PI / 2 - 0.42 * j / 5.0 * (0.85 + 0.15 * Math.sin(age * 0.3 + k));
+                point(cx + Math.cos(a) * radius * Math.cos(e), gy + radius * Math.sin(e), cz + Math.sin(a) * radius * Math.cos(e), 1.0 - 0.4 * j / 5.0);
+            }
+            strand(sink, 0.07 + radius * 0.002, coat, 1.0);
         }
     }
 
@@ -560,33 +967,54 @@ public final class ItoArt {
     }
 
     /**
-     * The Birdcage: its middle on the ground (x, y, z), {@code radius} now: {@link #CAGE_BARS} strings from its crown down to the ground
-     * all round (rising out of the ground over {@link #CAGE_RISE} ticks), a ring of light where they meet the ground; {@code alpha} of
-     * it there.
+     * 3.4.2: the strings a Black Knight is woven of, over its body (its feet at (x, y, z), {@code height} tall): five slim strings wound
+     * round it from its feet to its shoulders, slowly turning, faint enough that the clone's own skin shows through.
      */
-    public static void cage(FireMesh.Sink sink, double x, double y, double z, double radius, double age, double alpha, boolean coat) {
-        double rise = ease(age / CAGE_RISE);
+    public static void woven(FireMesh.Sink sink, double x, double y, double z, double height, double time, boolean coat, int seed) {
+        for (int k = 0; k < 5; k++) {
+            begin();
+            double a0 = 2 * Math.PI * k / 5 + time * 0.05 * (k % 2 == 0 ? 1 : -1) + seed;
+            for (int j = 0; j <= 11; j++) {
+                double f = j / 11.0;
+                double a = a0 + f * Math.PI * 2.4;
+                double r = 0.36 + 0.06 * Math.sin(f * Math.PI * 3 + k);
+                point(x + Math.cos(a) * r, y + 0.1 + f * height * 0.78, z + Math.sin(a) * r, 0.45 + 0.35 * Math.sin(Math.PI * f));
+            }
+            strand(sink, 0.03, coat, 0.7);
+        }
+    }
+
+    /**
+     * The Birdcage: its middle on the ground (x, y, z), {@code radius} now: {@link #CAGE_BARS} strings from its crown down to the ground
+     * all round, come down from the crown as far as {@code spread} (0 to 1: 3.4.2, let go they spread from the crown the stream reached
+     * down to the ground), a ring of light where they meet the ground; {@code tension} (0 to 1) while it closes: the strings pulled taut,
+     * brighter and thicker, quivering; {@code alpha} of it there.
+     */
+    public static void cage(FireMesh.Sink sink, double x, double y, double z, double radius, double spread, double tension, double alpha,
+                            boolean coat) {
         double dist = Math.sqrt(x * x + y * y + z * z);
         // fewer pieces a bar when the cage is small on the screen
-        int pieces = dist - radius > 60 ? 5 : 10;
-        double width = 0.08 + radius * 0.003;
+        int pieces = dist - radius > 60 ? 5 : 8;
+        double width = (0.08 + radius * 0.003) * (1.0 + 0.6 * tension);
+        double low = Math.PI / 2 * (1.0 - clamp(spread));
         for (int k = 0; k < CAGE_BARS; k++) {
             double a = 2 * Math.PI * k / CAGE_BARS + 0.05;
             double ca = Math.cos(a);
             double sa = Math.sin(a);
+            double quiver = tension * 0.012 * radius * Math.sin(k * 2.3 + tension * 40.0);
             begin();
             for (int j = 0; j <= pieces; j++) {
-                // up from the ground (elevation 0) to the crown (90 degrees), as far as it has risen
-                double e = Math.PI / 2 * j / pieces * rise;
-                double rr = radius * Math.cos(e);
-                point(x + ca * rr, y + radius * Math.sin(e), z + sa * rr, 0.75 + 0.25 * Math.sin(e));
+                // down from the crown (elevation 90 degrees) as far as it has spread
+                double e = Math.PI / 2 - (Math.PI / 2 - low) * j / pieces;
+                double rr = radius * Math.cos(e) + quiver * Math.sin(Math.PI * j / pieces);
+                point(x + ca * rr, y + radius * Math.sin(e), z + sa * rr, 0.75 + 0.25 * Math.sin(e) + 0.25 * tension);
             }
             strand(sink, width, coat, alpha);
         }
         // two rings round it: where the bars meet the ground, and a third of the way up
         for (int ring = 0; ring < 2; ring++) {
             double e = ring == 0 ? 0.02 : 0.6;
-            if (e > Math.PI / 2 * rise) {
+            if (e < low) {
                 continue;
             }
             double rr = radius * Math.cos(e);
@@ -596,6 +1024,10 @@ public final class ItoArt {
                 point(x + Math.cos(a) * rr, y + radius * Math.sin(e), z + Math.sin(a) * rr, ring == 0 ? 1.0 : 0.7);
             }
             ring(sink, width * (ring == 0 ? 1.4 : 0.9), coat, alpha);
+        }
+        if (spread < 1.0) {
+            // the crown the stream reached, still glowing as the strings spread from it
+            FireMesh.shell(sink, x, y + radius, z, 1.0 + radius * 0.03, coat ? COAT_GLOW : GLOW, 0.4 * alpha * (1.0 - spread), 0.0);
         }
     }
 
@@ -647,8 +1079,8 @@ public final class ItoArt {
                         WP[(b + 1) * 3], WP[(b + 1) * 3 + 1], WP[(b + 1) * 3 + 2], cb, WP[b * 3], WP[b * 3 + 1], WP[b * 3 + 2], ca);
                 }
             }
-            // strings running over it, every other piece of the round
-            for (int i = 0; i < seg; i += 2) {
+            // strings running over it, every third piece of the round (3.4.2: every other was the costliest thing the fruit drew)
+            for (int i = 0; i < seg; i += 3) {
                 begin();
                 for (int j = 0; j < WAVE_PROFILE; j++) {
                     int v = i * WAVE_PROFILE + j;
@@ -725,8 +1157,12 @@ public final class ItoArt {
             double kl = Math.max(1.0E-6, Math.sqrt(kx * kx + ky * ky + kz * kz));
             line(sink, hx - kx / kl * 1.4, hy - ky / kl * 1.4, hz - kz / kl * 1.4, hx + kx / kl * 0.3, hy + ky / kl * 0.3, hz + kz / kl * 0.3, 0.26,
                 true, fade, 1.0, 0.8, 8);
-            FireMesh.shell(sink, hx, hy, hz, 0.45, COAT_GLOW, 0.5 * fade, 0.0);
-            FireMesh.shell(sink, hx, hy, hz, 0.12, 0xE8D4FF, 0.8 * fade, 0.2);
+            if (k % 2 == 0) {
+                // 3.4.2: the glow and glint on every other tip (they all meet at one point: sixteen balls of light cost more than
+                // the whole Birdcage)
+                FireMesh.shell(sink, hx, hy, hz, 0.55, COAT_GLOW, 0.5 * fade, 0.0);
+                FireMesh.shell(sink, hx, hy, hz, 0.14, 0xE8D4FF, 0.8 * fade, 0.2);
+            }
         }
     }
 

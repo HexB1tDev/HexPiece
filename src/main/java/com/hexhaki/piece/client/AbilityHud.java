@@ -179,8 +179,9 @@ public final class AbilityHud {
             // 2.7.5 (the owner: "the keys HUD a ton of them say No slot"): a move's ability is its default slot, not its place in the
             // list (BindsClient.keyFor(i) asked for ability i: the Uo moves, out of slot order, were all "no slot")
             String key = LogbookData.moveKey(move);
-            if (move.key() != null && move.key().startsWith("[N]")) {
-                key = name(PieceKeys.FRUIT_N); // 3.1.7: the N key (client/FruitKeyN), as bound in Controls
+            if (move.key() != null && (move.key().startsWith("[N]") || move.key().startsWith("[M]"))) {
+                // 3.1.7: the N key (client/FruitKeyN), as bound in Controls; 3.4.2: M too (the original's label read it as H)
+                key = name(move.key().startsWith("[N]") ? PieceKeys.FRUIT_N : PieceKeys.FRUIT_M);
             } else if (move.slot() < 0 && key.indexOf(' ') > 0) {
                 key = key.substring(0, key.indexOf(' ')); // "LMB hold": the cap names the key alone, as every other row's does
             }

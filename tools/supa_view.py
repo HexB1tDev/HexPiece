@@ -28,7 +28,8 @@ import sword_view as sv  # noqa: E402
 COAT = np.array([62, 34, 88], float) / 255.0
 
 # the shapes (client/supa/SupaBlades keeps the same numbers): widen, thick, length, wave, period, curve; then where on the limb
-ARM = dict(widen=4.2, thick=2.6, length=0.82, wave=0.45, period=7.5, curve=0.4)
+ARM = dict(widen=4.2, thick=1.9, length=0.82, wave=0.45, period=7.5, curve=0.4, point=0.42)
+STRETCH = 0.45  # how much longer a point is drawn out (SupaBlades.STRETCH)
 ARM_AT = (-1.6, 3.2, 0.0)   # the guard end on the arm (px, the arm's frame: x out, y down the arm)
 ARM_TURN = 30.0             # the blade's section turned round the arm (degrees): never edge-on from the side
 
@@ -47,15 +48,19 @@ def shaped(key, s):
         spine[k] = max(spine.get(k, -1e9), x[i])
         edge[k] = min(edge.get(k, 1e9), x[i])
     out = v.copy()
+    top = max(y[i] for i in idx)  # 3.4.2: the tip, where every blade's point narrows to nothing (SupaBlades.Shape.taper)
     for i in idx:
         k = band[i]
         sp = spine[k]
         w = max(0.05, sp - edge[k])
         d = sp - x[i]
         u = min(1.0, max(0.0, d / w))
-        out[i, 0] = sp * s["curve"] - d * s["widen"] - s["wave"] * math.sin(2 * math.pi * y[i] / s["period"]) * u * u
-        out[i, 1] = y[i] * s["length"]
-        out[i, 2] = v[i, 2] * s["thick"]
+        t = min(1.0, max(0.0, y[i] / top)) if top > 0 else 0.0
+        frm = 1.0 - s["point"]
+        kk = 1.0 if t <= frm else max(0.0, (1.0 - t) / s["point"]) ** 0.85
+        out[i, 0] = sp * s["curve"] - (d * s["widen"] + s["wave"] * math.sin(2 * math.pi * y[i] / s["period"]) * u * u) * kk
+        out[i, 1] = (y[i] + ((t - frm) * top * STRETCH if t > frm else 0.0)) * s["length"]
+        out[i, 2] = v[i, 2] * s["thick"] * (0.3 + 0.7 * kk)
     return out, tris
 
 
@@ -81,9 +86,9 @@ def draw_steel(canvas, cam, key, verts, tris, matrix, shine=0.7, coat=0.0):
 
 
 # the other blades (supa/SupaBlades: the same numbers)
-CLAW = dict(widen=1.3, thick=1.8, length=0.26, wave=0.0, period=1.0, curve=1.0)
-DRILL = dict(widen=1.3, thick=2.2, length=0.5, wave=0.0, period=1.0, curve=0.2)
-SKATE = dict(widen=2.6, thick=2.2, length=0.46, wave=0.0, period=1.0, curve=1.0)
+CLAW = dict(widen=1.3, thick=1.4, length=0.26, wave=0.0, period=1.0, curve=1.0, point=0.55)
+DRILL = dict(widen=1.3, thick=1.6, length=0.5, wave=0.0, period=1.0, curve=0.2, point=0.6)
+SKATE = dict(widen=2.6, thick=1.6, length=0.46, wave=0.0, period=1.0, curve=1.0, point=0.32)
 CLAW_Y, CLAW_X, CLAW_FAN = 9.4, (-2.5, -1.5, -0.5, 0.5), (14.0, 5.0, -5.0, -14.0)
 DRILL_BLADES, DRILL_AXIS, DRILL_OUT, DRILL_LEAN, DRILL_TWIST = 6, (-1.0, 4.6, 0.0), 2.5, 11.0, 115.0
 SKATE_AT = (0.0, 12.4, 3.2)

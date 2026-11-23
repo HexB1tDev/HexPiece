@@ -47,10 +47,13 @@ final class SupaClient implements ClientKit {
 
     @Override
     public void renderBody(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
-                           CompoundTag state, float partial, boolean invisible) {
+                           CompoundTag state, float partial, boolean inWorld) {
+        // 3.4.2 (the owner: "Supa Supa No Mi, no blades are showing in third person at all"): the original's FruitLayer passes true here
+        // whenever the body is drawn in the world (false only in a screen's preview, the inventory's figure); 3.3.5 read it as "invisible"
+        // and drew nothing in the world. An invisible player never reaches here (FruitLayer returns first).
         int id = player.m_19879_();
         int mask = SupaFx.mask(id);
-        if (mask == 0 && !SupaFx.spinning(id) || invisible) {
+        if (mask == 0 && !SupaFx.spinning(id)) {
             return;
         }
         float coat = BladeCoatClient.progress(player);

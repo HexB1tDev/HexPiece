@@ -112,10 +112,23 @@ final class LogbookData {
      * The key a kit fruit's move is on now: its quick slot's key (the move's ability is its default slot, {@code FruitMove.slot}, as the
      * original's FruitHud.onKey reads it), "-" if that ability is on no slot, or its own key ("LMB hold") if it has no slot.
      */
+    /** 3.4.2: the fruit move keys this mod adds (client/PieceKeys FRUIT_N, FRUIT_M), named as bound in Controls. */
+    static final String[][] OWN_KEYS = {{"[N]"}, {"[M]"}};
+
     static String moveKey(com.hexhaki.fruit.FruitMove move) {
         int slot = move.slot();
         if (slot >= 0) {
             return keyOf(slot);
+        }
+        // 3.4.2 (the owner: "Awakening is for some fucking reason bound to H (which makes it not work)"): "[N]" and "[M]" are this mod's
+        // own keys (client/FruitKeyN); the original's labels read its old letters M and N as its Convergence key (H) and slot 8 (V)
+        String key = move.key() == null ? "" : move.key();
+        for (String[] own : OWN_KEYS) {
+            if (key.startsWith(own[0])) {
+                String name = AbilityHud.name("[N]".equals(own[0]) ? PieceKeys.FRUIT_N : PieceKeys.FRUIT_M);
+                String rest = key.substring(own[0].length()).trim();
+                return rest.isEmpty() ? name : name + " " + rest;
+            }
         }
         return "passive".equals(move.key()) ? "-" : live(move.key()).replace("[", "").replace("]", "");
     }

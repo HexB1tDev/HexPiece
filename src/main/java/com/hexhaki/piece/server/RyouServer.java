@@ -131,6 +131,8 @@ public final class RyouServer {
     public static boolean hakiOff(Player player) {
         // 2.7.3 (the owner: "Uo Uo, you cannot switch from fruit mode to any mode or use any form of haki, ONLY use what the
         // transformation abilities allow"): no Haki at all while the dragon is out (or coming or going)
-        return DragonServer.phase(player) != com.hexhaki.piece.dragon.DragonForm.HUMAN;
+        // 3.4.2 (the owner, on the Horo fruit's Astral Projection: "cant use style or haki at all"): none while out of the body either
+        return DragonServer.phase(player) != com.hexhaki.piece.dragon.DragonForm.HUMAN
+            || player instanceof net.minecraft.server.level.ServerPlayer server && HoroMoves.astral(server);
     }
 }

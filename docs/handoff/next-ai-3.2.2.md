@@ -31,7 +31,8 @@ pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, it
 (8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed and green (Build #177, Release #128); 3.3.8 (8zze:
 the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green (Build #179, Release #129); 3.3.9 (8zze: Dawn Pistol)
 is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the body) is green (Build #181, Release #131); 3.4.1 (8zze:
-the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132).**
+the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132); 3.4.2 (8zzf: the
+owner's Ito notes, Supa's blades, the Horo projection) is pushed: check its runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2388,13 +2389,247 @@ reaches the max, the entity is projected in a straight line FAST. adding a dust 
 - HudTests.dawnPistol: the stretch's first tick over 5x its last, at its limit at PIN, a straight fast launch under the game's movement
   check. Previews: NikaShots `|ndawn:t` (the loop, through the body, the launch), `|ndland:age` (the landing).
 
+## 8zzf. The owner on the Ito fruit after playing it (verbatim; 3.4.2 works on it)
+
+Asked (AskUserQuestion) how Dawn Pistol (3.3.9 to 3.4.1), Horo (3.3.6) and Ito (3.3.7) play, the owner answered with a message instead
+(Dawn Pistol and Horo: no answer yet, ask again later):
+"Ito Ito No Mi problems changes NEEDED:
+
+Z Often doesnt work and looks bad overall (redo entirely)
+X Should be a charge beam that DOES NOT COME BACK (explodes on landing) when it ends the strings scatter into every direction (The
+charging should be one arm pointed forward and the strings gathering infront of the fist.
+
+I dont like how M1 looks animationwise, its shitty.
+
+Black knight looks odd as well, it should be a clone that roams on it's own / follows the player, when killed it explodes into tons of
+strings, if the key is recast while it's alive it explodes into strings too.
+
+Awakening is for some fucking reason bound to H (which makes it not work)"
+
+Then (verbatim): "Bird cage should be also  a chargem the user points at the sky and shoots a stedy stream of strings that spread into
+the cage when it reaches the right height. (the longer you hold it the bigger it gets (max is the current size), when recasting it, the
+bird cage slowly closes, cutting down anything caught in the cage, all entities are pulled towards the center of the cage and when the
+cage fully closes, they take damage + bleed."
+
+Then (verbatim): "Another bug, Supa Supa No Mi, no blades are showing in third person at all.
+ANd the blades have to be dramaticly sharper with a pointy tip. all of them.
+
+in Horo Horo No Mi, the projections arms are NOT TO BE ANIMATED, in this form the user can do everything normal from minecraft, but cant
+use style or haki at all."
+
+Then the Nika fruit (verbatim, with a picture: a frame of Gear 5 Luffy as a spinning blur):
+"Whip and Dawn Whip Rework:
+
+Without Haki the leg whip move, becomes "Goof Ball" the user starts spinning super fast in a cartoon way and then becomes a  spinning
+ball of smoke and the player's skin mixed,  punching in all directions, this is a held move, when it ends the user is temporarily dizzy
+(with a dizzy symbol on top).
+
+Dawn whip (Goof Ball with Haki on)
+
+Dawn Whip is an extremely powerful, high-speed spinning kick in which Luffy twists his entire rubber body into a tightly wound spring,
+stretches one leg outward, and releases the accumulated rotational force to strike his opponent like a gigantic whip.
+What makes this attack unique is that Luffy doesn't simply spin around and kick someone. He uses the unnatural elasticity of his Gear 5
+body to generate tremendous rotational momentum, turning himself into a living, rubber-powered spinning weapon.
+It's essentially a combination of three movements: twisting, unwinding, and whipping. The technique is first demonstrated against Rob
+Lucci in his Awakened Zoan form during the Egghead arc.
+
+Complete movement breakdown
+Phase 1 — Winding up the body
+Luffy begins preparing the attack by twisting his body around its vertical axis. Rather than rotating his whole body as a rigid object,
+he uses his rubber physiology to twist his torso, hips, and lower body far beyond normal anatomical limits.
+His body behaves like an elastic spring being wound tighter and tighter.
+During this preparation:
+* His torso coils around itself, storing elastic tension.
+* His hips rotate to prepare the sweeping kick.
+* His upper body becomes increasingly twisted relative to his lower body.
+* His posture becomes exaggerated and cartoonishly distorted, something Gear 5 allows him to perform without injuring himself.
+The important detail is that the twisting happens before the main kick. He is building up the force that will power the strike, rather
+than immediately swinging his leg.
+The tighter the wind-up, the more violently his body can unwind.
+Phase 2 — Extending the attacking leg
+As he releases the twisted position, Luffy thrusts one leg outward into a nearly horizontal kicking position.
+His attacking leg stretches beyond its normal length, allowing his foot to reach opponents considerably farther away than an ordinary
+kick could.
+The leg effectively becomes the flexible striking section of an enormous whip.
+The body positioning is important:
+* His hip acts as the point from which the kicking leg swings outward.
+* His knee and ankle can remain extended while the rubber leg stretches.
+* His foot travels along a wide circular path around his body.
+* His torso provides the rotation needed to accelerate that extended leg.
+Luffy also reinforces the striking leg with Armament Haki, providing hardness and additional striking power while retaining his body's
+rubber-like movement.
+Phase 3 — Explosive rotational release
+This is the defining moment of Dawn Whip.
+The elastic tension stored in Luffy's twisted body is suddenly released. His torso begins unwinding, forcing his hips and extended leg
+into a tremendously fast circular movement.
+Rather than a conventional roundhouse kick, his entire body becomes the engine driving the attack.
+Imagine twisting a rubber band repeatedly and then letting it go. The rubber band rapidly rotates in the opposite direction as it
+releases the stored energy.
+Luffy performs the same principle with his entire body.
+His extended leg sweeps around him, and the tip of that leg travels considerably faster than the center of his rotating body.
+The motion becomes so fast that the animation emphasizes it through exaggerated spinning, rotational streaks, and cartoon-like
+distortion.
+The kick's real power comes from the combination of elastic recoil, rotational acceleration, an extended striking radius, and Haki
+reinforcement.
+Phase 4 — The whip-like impact
+As the attacking leg sweeps across his opponent, Luffy's foot and lower leg collide with the target at enormous speed.
+This is a lateral sweeping impact, not a downward stomp or a straightforward kick.
+The leg behaves like a whip because its movement is transmitted from the rotating body outward toward the striking foot.
+The result is an extremely sudden, violent sideways blow.
+Against Rob Lucci, the attack connects and sends him flying with substantial force. Lucci is knocked away into the surrounding structure.
+The characteristic impact is a combination of a high-speed kick and the snapping sensation of a whip.
+Phase 5 — Uncontrolled spinning after impact
+This is one of the most important details of the technique, and it is what makes Dawn Whip so distinctly Gear 5.
+The attack doesn't simply end when Luffy hits his opponent.
+Because he releases so much rotational force, Luffy actually struggles to stop spinning.
+His body continues rotating at high speed, even after the target has been launched away.
+During the continuation:
+* His arms and legs are pulled outward and around by the rotation.
+* His upper body continues following the momentum of the twisting motion.
+* His entire silhouette becomes increasingly distorted, resembling a spinning top or propeller.
+* Instead of immediately recovering his normal fighting stance, Luffy loses control of his direction.
+* The spinning eventually carries him downward, where he drills into the ground.
+In the Egghead fight, he literally spins into the floor, burrowing beneath it like a cartoon drill. This is an actual consequence shown
+after the attack, not just a visual effect.
+Phase 6 — The exaggerated Gear 5 recovery
+Once the rotation becomes uncontrollable, Luffy's movement stops resembling conventional martial arts entirely.
+His body acts like an overspun rubber toy.
+His limbs and torso can stretch, compress, and deform as the momentum pulls him around. His body remains flexible enough to survive the
+absurd movements without conventional physical injury.
+The sequence finishes with Luffy underground after his excessive spinning, rather than stopping gracefully in a traditional combat
+stance.
+This gives Dawn Whip a very unusual combination of characteristics: a genuinely devastating attack followed by a ridiculous,
+cartoon-inspired loss of control."
+(The message's source links, "Das Wiki für One Piece", "One Place", "Fandom", are left out.)
+
+Then (verbatim): "Noro Noro No Mi Z move should be a held Large cone infront of the player not multiple projectiles  anything caught in
+that beam is slowed in time.
+
+While holding the key the beam cannot be reaimed."
+
+Then (verbatim): "Ito Ito No mi double jump tap now has a new move:
+
+Sky Road movement ability
+
+I want this to feel incredibly stylish, fluid, fast, and intimidating. It should NOT resemble ordinary creative-mode flight, elytra
+flight, or a player simply floating through the air.
+
+When activated, the player launches into the air with a graceful, almost effortless movement. Extremely thin, semi-transparent white
+strings shoot upward from the player's fingertips, extending toward invisible anchor points high above them, as though attached to clouds.
+
+The player becomes suspended by these strings, but rather than hanging motionlessly, they begin running through the sky.
+
+The running animation should be unique. The player's upper body leans slightly forward, their arms spread loosely outward with their
+fingers extended, and their legs perform exaggerated, elegant running strides through empty air. Each step should resemble a powerful
+midair bound rather than ordinary walking.
+
+With every stride, the strings tighten and pull the player forward, creating the illusion that they're using the sky itself as a pathway.
+
+The movement should feel almost supernatural. The player takes long, floating strides, effortlessly covering enormous distances while
+barely appearing to exert themselves.
+
+At higher speeds, the running transitions into a more aggressive aerial sprint. The player leans farther forward, their legs cycle
+faster, and individual steps become elongated, almost like they're skating or leaping between invisible footholds.
+
+The strings dynamically detach and reconnect to new positions above and ahead of the player, pulling them along their trajectory. They
+must remain visually thin and elegant, never looking like giant ropes or bulky grappling hooks.
+
+Directional movement must be completely fluid. When turning left or right, the player's entire body banks naturally into the turn while
+the strings angle toward the new direction. Sharp turns should create elegant, sweeping aerial arcs rather than instant, robotic
+rotations.
+
+Sudden acceleration should produce a brief, powerful forward slingshot as the strings become taut and launch the player in the desired
+direction.
+
+The player should also be able to stop dramatically in midair. When they release movement, their legs stop running, their body
+straightens, and they transition into a relaxed suspended stance with one leg slightly bent and their arms loosely positioned at their
+sides.
+
+Add subtle, high-quality visual details: faint white motion streaks behind the player's feet, occasional tiny flashes as strings tighten,
+slight body sway during suspended movement, and smooth animation transitions between hovering, accelerating, running, turning, and
+stopping.
+
+The player must retain full directional control, including smooth ascending and descending movement. The camera should subtly
+communicate speed without excessive shaking.
+
+Most importantly, this ability should feel like the player is confidently sprinting across the heavens, carried forward by nearly
+invisible strings. Every movement should feel graceful, arrogant, effortless, and powerful, exactly like Doflamingo.
+
+Do not reuse vanilla sprinting animations or simply rotate the player horizontally into a flying pose. Create a dedicated aerial
+locomotion system with proper animations, procedural string rendering, momentum-aware body positioning, and smooth transitions. All
+movement must remain responsive and multiplayer-safe in Minecraft Forge 1.20.1."
+
+Then (verbatim): "Remember that Horo Astral Projection the Projection IS IMMORTAL, and can use fruit moves, however the user's real body
+left behind is very much damageable, and if killed the projection dies too."
+
+Plan told to the owner: 3.4.2 the Ito fixes, Supa's blades, the Horo projection; 3.4.3 Noro's held cone and Ito's Sky Road; 3.4.4 Goof
+Ball and the new Dawn Whip.
+
+Found: the panel (AbilityHud.kit) and the Ability Book (LogbookData.moveKey) read a move's "[M]" through the original's
+BindsClient.live -> HakiKeyLabels.of("M"): the original's letter M is its Convergence key, rebound to H since 2.7.1 (PiecePatch
+.keyDefaults), so the panel said H while the move listens on M (client/FruitKeyN, PieceKeys.FRUIT_M). The book read "[N]" the same way
+(the original's N is slot 8, V since 2.7.1). Goshikito "often doesn't work": it struck where the look met a BLOCK (ClipContext ignores
+bodies), so aiming at a mob put the cuts on the ground behind it.
+
+**3.4.2 as built** (nothing tested in game: build EXIT 0 with 13 suites, every new clip and effect rendered and judged in third and
+first person; renders docs/handoff/ito-*-3.4.2.jpg, supa-*-3.4.2.jpg, horo-astral-arms-3.4.2.jpg):
+- **Keys on the panel and in the book** (client/AbilityHud.kit, client/LogbookData.moveKey + OWN_KEYS): "[N]" and "[M]" moves are named
+  by PieceKeys.FRUIT_N / FRUIT_M as bound in Controls (never through BindsClient.live / HakiKeyLabels: the original's letters M and N
+  are its Convergence key (H) and slot 8 (V)).
+- **The Ito fruit's own clips** (tools/ito_anims.py, client/npc/ItoPoses; "ito_" added to PieceHooks.fruitClip/firstPersonArms, StandUp,
+  StylePoser, FirstPersonLight.fist, style/HandMoves): ito_slash_1 (forehand: the hand cocked by the ear, flicked out across; tick 2),
+  ito_slash_2 (backhand: the folded forearm flung open), ito_goshiki (hand up by 3, raked down on 5), ito_heat_charge (one arm pointed
+  straight ahead, trembling), ito_heat_fire (the recoil), ito_cage_charge (the arm straight up at the sky), ito_cage_cast, ito_cage_close
+  (the raised hand yanked down to the hip), ito_knight. Arms and upper body only, lint clean, no hand over the face from the front.
+- **Goshikito** (ItoMoves.goshikito/rake; ItoArt.goshiki, drawRake, sweep): the strip from the feet along the flat look (or toward the
+  aimed body: PikaMoves.aimed 24, slack 0.15), GOSHIKI_LENGTH 22 long, GOSHIKI_WIDTH 2.4 each side, struck on GOSHIKI_RAKE 5 (12 damage,
+  pushed down, lightning through cut()), ConquerorAura.exploded at its middle. Drawn from the posed fist (ItoFx.fist): five strings hang
+  up while the hand is raised, swing over (the tips lagging) with a glowing sheet behind them, land along five lines; the cuts glow (a
+  dark groove, light laid flat, a strand) and cool by GOSHIKI_LIFE 44; dust along them.
+- **Overheat** (ItoKit "[X] hold"; ItoMoves.heatCharge/heatFire, HEAT_FULL 40, HEAT_MOST 96 lets go by itself; OVERHEAT bx HEAT_CHARGE /
+  HEAT_FIRE / HEAT_DROP): fired along the full look from the fist at HEAT_SPEED 5, reach 18 to 40 by charge, it stops at the first body or
+  block; on arrival UoMoves.explode (2.2 + 2.6c radius, 8 + 10c damage, fire 3 + 4c s; the lightning) and SCATTER heat. Drawn:
+  ItoArt.knot (six hot strands spiralling into a banded white-hot ball KNOT_AHEAD 0.55 ahead of the fist; one's own in first person in
+  the hand's pass, client/HandPass + ItoFx.handPass, at HAND_KNOT 0.45 size), ItoArt.beam (the rope: ItoArt.rope, a banded tube with two
+  wound strands; one's own in first person a red-hot ribbon starting OWN_BEAM_GAP 1.2 ahead: a tube seen end-on is a red wedge), then
+  the rope falling apart and cooling over BREAK_LIFE 12; the blast ItoArt.scatter heat (FireMesh fire puffs, the house's banded fire, and
+  18 red-hot strands flung out).
+- **Hot strands** (ItoArt.tint: HOT, COOLING, BRIGHT palettes; a tinted strand glows harder): never pale wisps (the owner's rule).
+- **Black Knight** (ito/StringKnight, a PathfinderMob registered as hexhaki:black_knight, MobCategory.CREATURE (MISC is not proven);
+  client/ito/KnightRenderer: the player model in its weaver's own skin, slim or wide, its lashes posed from ito_slash_1/2 through
+  StylePoser; ItoArt.woven draws five slim strings wound round it): ItoMoves.knightTick (from its customServerAiStep): weaver gone ->
+  discarded; time KNIGHT_TICKS 600 -> burst; fights the weaver's nearest foe within 16 (m_5624_ path, KNIGHT_REACH 2.2, a lash every 14
+  ticks: SLASH fx sent as the knight (fxAs), cut 5, the mob it cuts targets it), else follows past KNIGHT_STRAY 6 or roams round the weaver;
+  teleported back past 28. HEALTH 40; the weaver's blows pass through; killed, B again, or time up: knightBurst (SCATTER white, 8 damage
+  within KNIGHT_BURST 4.5, the lightning, cooldown KNIGHT_REST 200). ItoMoves.foes and the slash skip one's own knight.
+- **Birdcage** (ItoKit "[N] hold"; CAGE bx CAGE_CHARGING / CAGE_STANDING / CAGE_CLOSING): held, cageSize grows 8 to 40 over CAGE_FULL 80
+  (CAGE_HOLD_MOST 96 casts by itself; ItoArt.stream from the fist to the crown, as high as the cage is wide, its first strings fanning
+  down; one's own starts OWN_STREAM_GAP 3 above the hand); cast, it stands CAGE_TICKS 900 at that radius (the strings spread from the
+  crown over CAGE_SPREAD 20; cut and pushed in or out at the wall); N again: cageClose over CAGE_CLOSE 100 (ItoArt.closing: smoothstep to
+  CAGE_SHUT 1.2), everyone inside pulled to the middle harder as it shuts, cut at the wall; shut: CAGE_DAMAGE 18 and Gore.bleed(5, 200) (the
+  original's bleeding), SCATTER white, the lightning, a quake.
+- **Budget**: DragonTests.itoStrings now models one charge at a time (stream with knot, or cage with beam) and stays under 16,000; to get
+  there: bursts 18 strands, the cage's bars 8 pieces, Break White's strings every third piece, God Thread's glow on every other tip.
+- **Supa** (client/supa/SupaClient.renderBody): the original FruitLayer's last argument is "drawn in the world" (the layer's origin within
+  8 of the player: false only in a screen's figure); 3.3.5 named it invisible and returned: no blades in the world. Sharper: SupaBlades
+  .Shape gained `point` (ARM 0.42, CLAW 0.55, DRILL 0.6, SKATE 0.32: width and wave narrowing to 0 at the tip, thickness to 0.3, the point
+  drawn STRETCH 0.45 longer) and thinner steel (thick 1.9 / 1.4 / 1.6 / 1.6); client/sword/KatanaMesh.shaped passes the blade's top;
+  tools/supa_view.py mirrors it (DragonTests checks).
+- **Horo Astral Projection**: the spirit's arms hang and swing as a player's (AstralArt.floating with speed and the game's attack anim;
+  HoroFx.spiritPose); the spirit is immortal (HoroMoves.spirit cancels every blow; below the world it returns to the body), strikes and
+  uses the fruit's moves (press/use no longer refuse while astral), but style and sword actions (network/C2SStyleAction, C2SSword) and
+  Haki (RyouServer.hakiOff) are refused; the body left behind is horo/AstralBody (hexhaki:astral_body; client/horo/BodyRenderer draws
+  nothing, HoroFx draws it as before): every blow on it goes to its owner (HoroMoves.bodyHurt with `forwarding`), mobs that lose the spirit
+  target it.
+
 ## 9. What to do next (after 3.3.7)
 
-1. Everything is pushed and green up to 3.4.1 (8zze: Dawn Pistol's looping arm, the slowing stretch, the straight launch, the crater:
-   Build #182, Release #132). The owner said "handoff + prompt" right after it. Next: ask the owner how Dawn Pistol (3.3.9 to 3.4.1)
-   looks in game, and the Horo (3.3.6) and Ito (3.3.7) fruits (not tested yet). If they ask about the arm, keep it a looping curve (never
-   straight) and the fist going on through the body; check the Bajrang Gun's fist handedness if they mention it (NikaArt.fist builds a
-   left hand by default).
+1. 3.4.2 (8zzf: the Ito fixes, Supa's blades, the Horo projection) is pushed: check its runs. Then, in the order told to the owner:
+   3.4.3 Noro's Z as a held cone aimed once at the press (8zzf) and Ito's Sky Road on the double jump (8zzf, verbatim spec: a dedicated
+   aerial run on strings: legs are needed there, it is running); 3.4.4 Goof Ball (the owner: "Without Haki the leg whip move, becomes Goof Ball": a held cartoon
+   spin into a ball of smoke and skin punching every way, dizzy after with a symbol over the head) and the new Dawn Whip (with Haki;
+   8zzf, the six phases verbatim). Dawn Pistol (3.3.9 to
+   3.4.1) and Horo: still no word from the owner on how they play: ask once the new work is out.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

@@ -4,11 +4,9 @@ import com.hexhaki.fruit.Fruit;
 import com.hexhaki.fruit.client.ClientKits;
 import com.hexhaki.piece.client.fx.PieceFx;
 import com.hexhaki.piece.dragon.FireMesh;
-import com.hexhaki.piece.horo.AstralArt;
 import com.hexhaki.piece.ito.ItoArt;
 import com.hexhaki.piece.network.S2CUoFx;
 import com.hexhaki.piece.server.ItoMoves;
-import com.hexhaki.piece.style.StyleShow;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
@@ -17,11 +15,8 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.player.AbstractClientPlayer;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
@@ -38,8 +33,10 @@ import org.joml.Matrix4f;
  * here), drawn once a frame after the particles through the game's own debugQuads type (alpha blended, depth tested, no culling: the
  * owner's device), eye-centred (ito/ItoArt): the lashes, bullets, hits, Goshikito, Overheat (from the user's hand as it is now),
  * Parasite's strings to the held body, Spider's Web, the Birdcage closing in (each client works out its radius from its age), Break
- * White, God Thread, the sky steps and the stitches; the Black Knight (the user's own skin, pale, through the game's translucent entity
- * type before the light's batch) walking where the server last put it and cutting.
+ * White, God Thread, the sky steps and the stitches. 3.4.2: Goshikito's rake from the posed hand, Overheat's knot on the fist while held
+ * (one's own in first person in the hand's own pass, client/HandPass) and its beam, the bursts of strings, the Birdcage's stream to the
+ * sky, its strings spreading from the crown and closing; the Black Knight is a real body now (client/ito/KnightRenderer draws it in
+ * its weaver's skin), the strings it is woven of drawn over it here.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class ItoFx {
@@ -55,10 +52,18 @@ public final class ItoFx {
     record Hit(Vec3 at, Vec3 way, double size, long born, boolean coat, int seed) {
     }
 
-    record Goshiki(Vec3 at, Vec3 way, double spread, long born, int life, boolean coat, int seed) {
+    record Goshiki(int user, Vec3 at, Vec3 way, double length, long born, int life, boolean coat, int seed) {
     }
 
-    record Heat(int user, Vec3 at, Vec3 way, double length, long born, int life, boolean coat, int seed) {
+    /** Overheat held (by user): since when, coated, its seed. */
+    record Knot(long born, boolean coat, int seed, long until) {
+    }
+
+    /** Overheat fired: from where, its way (unit), how far, its charge, its flight; the rope's start follows the hand while it flies. */
+    record Beam(int user, Vec3 from, Vec3 way, double length, double charge, long born, int flight, boolean coat, int seed) {
+    }
+
+    record Scatter(Vec3 at, double size, boolean heat, long born, boolean coat, int seed) {
     }
 
     record Held(int user, long born, long until, boolean coat) {
@@ -67,7 +72,12 @@ public final class ItoFx {
     record Web(Vec3 at, Vec3 facing, double radius, long born, int life, boolean coat) {
     }
 
-    record Cage(Vec3 at, double from, double to, long born, int life, boolean coat, long ended) {
+    /** The Birdcage standing ({@code closing} < 0) or closing (since then, over {@code life}), faded once ended. */
+    record Cage(Vec3 at, double radius, long born, int life, boolean coat, long closing, long ended) {
+    }
+
+    /** The Birdcage held (by user): since when, coated. */
+    record Stream(long born, boolean coat, long until) {
     }
 
     record Wave(Vec3 at, double reach, long born, int life, boolean coat) {
@@ -79,17 +89,8 @@ public final class ItoFx {
     record Sky(Vec3 at, long born, boolean coat, int seed) {
     }
 
-    /** The Black Knight: where it was and is going (the server's last two places), its facing, what it does, since when. */
-    static final class Knight {
-        Vec3 from;
-        Vec3 to;
-        float yaw;
-        int action;
-        long actionAt;
-        long movedAt;
-        long until;
-        long born;
-        boolean coat;
+    /** A Black Knight drawn this frame (KnightRenderer tells): its feet, its height, coated; the strings it is woven of go over it. */
+    record Seen(int id, Vec3 feet, double height, boolean coat) {
     }
 
     static final int MOST = 64;
@@ -97,10 +98,13 @@ public final class ItoFx {
     static final Map<Integer, Bullet> BULLETS = new HashMap<>();
     private static final List<Hit> HITS = new ArrayList<>();
     private static final List<Goshiki> GOSHIKIS = new ArrayList<>();
-    private static final List<Heat> HEATS = new ArrayList<>();
+    static final Map<Integer, Knot> KNOTS = new HashMap<>();
+    private static final List<Beam> BEAMS = new ArrayList<>();
+    private static final List<Scatter> SCATTERS = new ArrayList<>();
+    static final Map<Integer, Stream> STREAMS = new HashMap<>();
+    private static final List<Seen> SEEN = new ArrayList<>();
     static final Map<Integer, Held> HELD = new HashMap<>();
     static final Map<Integer, Web> WEBS = new HashMap<>();
-    static final Map<Integer, Knight> KNIGHTS = new HashMap<>();
     static final Map<Integer, Cage> CAGES = new HashMap<>();
     private static final List<Wave> WAVES = new ArrayList<>();
     private static final List<Thread> THREADS = new ArrayList<>();
@@ -138,8 +142,9 @@ public final class ItoFx {
                 }
                 add(HITS, new Hit(at, a, m.size(), clock, coat, m.id()));
             }
-            case ItoMoves.GOSHIKI -> add(GOSHIKIS, new Goshiki(at, a, m.size(), clock, m.ticks(), coat, m.id()));
-            case ItoMoves.OVERHEAT -> add(HEATS, new Heat(m.user(), at, a, m.size(), clock, m.ticks(), coat, m.id()));
+            case ItoMoves.GOSHIKI -> add(GOSHIKIS, new Goshiki(m.user(), at, a, m.size(), clock, m.ticks(), coat, m.id()));
+            case ItoMoves.OVERHEAT -> heat(m, at, a, coat);
+            case ItoMoves.SCATTER -> add(SCATTERS, new Scatter(at, m.size(), m.bx() > 0.5F, clock, coat, m.id()));
             case ItoMoves.PARASITE -> {
                 if (m.ticks() > 0) {
                     put(HELD, m.id(), new Held(m.user(), clock, clock + m.ticks(), coat));
@@ -154,17 +159,7 @@ public final class ItoFx {
                     WEBS.remove(m.user());
                 }
             }
-            case ItoMoves.KNIGHT -> knight(m, at, coat);
-            case ItoMoves.CAGE -> {
-                if (m.ticks() > 0) {
-                    put(CAGES, m.user(), new Cage(at, m.size(), m.by(), clock, m.ticks(), coat, -1));
-                } else {
-                    Cage c = CAGES.get(m.user());
-                    if (c != null && c.ended < 0) {
-                        CAGES.put(m.user(), new Cage(c.at, c.from, c.to, c.born, c.life, c.coat, clock));
-                    }
-                }
-            }
+            case ItoMoves.CAGE -> cage(m, at, coat);
             case ItoMoves.WAVE -> add(WAVES, new Wave(at, m.size(), clock, m.ticks(), coat));
             case ItoMoves.THREAD -> add(THREADS, new Thread(at, a, clock, m.ticks()));
             case ItoMoves.SKY -> add(SKIES, new Sky(at, clock, coat, m.user() * 7 + (int) m.bx()));
@@ -174,40 +169,43 @@ public final class ItoFx {
         }
     }
 
-    static void knight(S2CUoFx m, Vec3 at, boolean coat) {
-        if (m.ticks() <= 0) {
-            KNIGHTS.remove(m.user());
-            return;
-        }
-        Knight k = KNIGHTS.get(m.user());
-        if (k == null) {
-            if (KNIGHTS.size() >= MOST) {
-                return;
-            }
-            k = new Knight();
-            k.from = at;
-            k.to = at;
-            k.born = clock;
-            KNIGHTS.put(m.user(), k);
+    static void heat(S2CUoFx m, Vec3 at, Vec3 a, boolean coat) {
+        int phase = Math.round(m.bx());
+        if (phase == ItoMoves.HEAT_CHARGE) {
+            put(KNOTS, m.user(), new Knot(clock, coat, m.id(), clock + m.ticks() + 2));
+        } else if (phase == ItoMoves.HEAT_FIRE) {
+            KNOTS.remove(m.user());
+            double l = a.m_82553_();
+            add(BEAMS, new Beam(m.user(), at, l < 1.0E-6 ? new Vec3(0, 0, 1) : a.m_82490_(1.0 / l), m.size(), m.by(), clock, m.ticks(), coat, m.id()));
         } else {
-            k.from = position(k, 0.0F);
-            k.to = at;
-        }
-        k.movedAt = clock;
-        k.yaw = m.ax();
-        k.until = clock + m.ticks();
-        k.coat = coat;
-        int action = (int) m.ay();
-        if (action != 0) {
-            k.action = action;
-            k.actionAt = clock;
+            KNOTS.remove(m.user());
         }
     }
 
-    /** The knight's feet this frame: between the server's last two places. */
-    static Vec3 position(Knight k, float partial) {
-        double t = Math.max(0.0, Math.min(1.0, (clock + partial - k.movedAt) / (double) ItoMoves.KNIGHT_SEND));
-        return k.from.m_82549_(k.to.m_82546_(k.from).m_82490_(t));
+    static void cage(S2CUoFx m, Vec3 at, boolean coat) {
+        int phase = Math.round(m.bx());
+        if (m.ticks() <= 0) {
+            STREAMS.remove(m.user());
+            Cage c = CAGES.get(m.user());
+            if (c != null && c.ended < 0) {
+                CAGES.put(m.user(), new Cage(c.at, c.radius, c.born, c.life, c.coat, c.closing, clock));
+            }
+        } else if (phase == ItoMoves.CAGE_CHARGING) {
+            put(STREAMS, m.user(), new Stream(clock, coat, clock + m.ticks() + 2));
+        } else if (phase == ItoMoves.CAGE_STANDING) {
+            STREAMS.remove(m.user());
+            put(CAGES, m.user(), new Cage(at, m.size(), clock, m.ticks(), coat, -1, -1));
+        } else {
+            Cage c = CAGES.get(m.user());
+            put(CAGES, m.user(), new Cage(at, m.size(), c != null ? c.born : clock - (long) ItoArt.CAGE_SPREAD, m.ticks(), coat, clock, -1));
+        }
+    }
+
+    /** client/ito/KnightRenderer: a Black Knight was drawn this frame (its woven strings are drawn over it after the particles). */
+    static void knightDrawn(com.hexhaki.piece.ito.StringKnight knight, float partial) {
+        if (SEEN.size() < MOST) {
+            SEEN.add(new Seen(knight.m_19879_(), knight.m_20318_(partial), knight.m_20206_(), knight.coated()));
+        }
     }
 
     // ------------------------------------------------------------------------------------------------------ the clock
@@ -234,11 +232,13 @@ public final class ItoFx {
         BULLETS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().ticks + 1);
         HITS.removeIf(h -> clock - h.born > ItoArt.HIT_LIFE + 1);
         GOSHIKIS.removeIf(g -> clock - g.born > g.life + 1);
-        HEATS.removeIf(h -> clock - h.born > h.life + 1);
+        KNOTS.entrySet().removeIf(e -> clock > e.getValue().until || level.m_6815_(e.getKey()) == null);
+        BEAMS.removeIf(b -> clock - b.born > b.flight + ItoArt.BREAK_LIFE + 1);
+        SCATTERS.removeIf(c -> clock - c.born > ItoArt.SCATTER_LIFE + 1);
+        STREAMS.entrySet().removeIf(e -> clock > e.getValue().until || level.m_6815_(e.getKey()) == null);
         HELD.entrySet().removeIf(e -> clock > e.getValue().until + 2 || level.m_6815_(e.getKey()) == null);
         WEBS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().life + 1);
-        KNIGHTS.entrySet().removeIf(e -> clock > e.getValue().until + 20);
-        CAGES.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().life + 1
+        CAGES.entrySet().removeIf(e -> clock - (e.getValue().closing >= 0 ? e.getValue().closing : e.getValue().born) > e.getValue().life + 2
             || e.getValue().ended >= 0 && clock - e.getValue().ended > CAGE_FADE);
         WAVES.removeIf(w -> clock - w.born > w.life + 1);
         THREADS.removeIf(t -> clock - t.born > t.flight + 5);
@@ -247,9 +247,9 @@ public final class ItoFx {
     }
 
     static boolean empty() {
-        return LASHES.isEmpty() && BULLETS.isEmpty() && HITS.isEmpty() && GOSHIKIS.isEmpty() && HEATS.isEmpty() && HELD.isEmpty()
-            && WEBS.isEmpty() && KNIGHTS.isEmpty() && CAGES.isEmpty() && WAVES.isEmpty() && THREADS.isEmpty() && SKIES.isEmpty()
-            && STITCHES.isEmpty();
+        return LASHES.isEmpty() && BULLETS.isEmpty() && HITS.isEmpty() && GOSHIKIS.isEmpty() && KNOTS.isEmpty() && BEAMS.isEmpty()
+            && SCATTERS.isEmpty() && STREAMS.isEmpty() && SEEN.isEmpty() && HELD.isEmpty() && WEBS.isEmpty() && CAGES.isEmpty()
+            && WAVES.isEmpty() && THREADS.isEmpty() && SKIES.isEmpty() && STITCHES.isEmpty();
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -270,46 +270,6 @@ public final class ItoFx {
 
     static final Writer SINK = new Writer();
 
-    /** The knights' skins through the game's translucent entity type, lit by the world where they stand. */
-    static final class SkinWriter implements AstralArt.Skin {
-        MultiBufferSource.BufferSource buffers;
-        final float[] m = new float[12];
-        final float[] n = new float[9];
-        RenderType type;
-        VertexConsumer out;
-        int light = 0xF000F0;
-
-        void use(net.minecraft.resources.ResourceLocation skin) {
-            this.type = RenderType.m_110473_(skin);
-            this.out = this.buffers.m_6299_(this.type);
-        }
-
-        @Override
-        public void quad(double[] xyz, float[] uv, int argb, double nx, double ny, double nz) {
-            if (this.out == null) {
-                return;
-            }
-            float r = ((argb >>> 16) & 255) / 255.0F;
-            float g = ((argb >>> 8) & 255) / 255.0F;
-            float b = (argb & 255) / 255.0F;
-            float a = ((argb >>> 24) & 255) / 255.0F;
-            for (int k = 0; k < 4; k++) {
-                com.hexhaki.piece.client.render.Bulk.vertex(this.out, this.m, this.n, (float) xyz[k * 3], (float) xyz[k * 3 + 1],
-                    (float) xyz[k * 3 + 2], r, g, b, a, uv[k * 2], uv[k * 2 + 1], net.minecraft.client.renderer.texture.OverlayTexture.f_118083_,
-                    this.light, (float) nx, (float) ny, (float) nz);
-            }
-        }
-
-        void end() {
-            if (this.out != null) {
-                this.buffers.m_109912_(this.type);
-            }
-            this.out = null;
-        }
-    }
-
-    static final SkinWriter SKIN = new SkinWriter();
-
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || empty()) {
@@ -328,23 +288,13 @@ public final class ItoFx {
         Vec3 cam = event.getCamera().m_90583_();
         float partial = event.getPartialTick();
         try {
-            // the knights' skins first, each type ended before the next is asked for (2.9.0's lesson with the Light clones), then the
-            // light in one batch
-            if (!KNIGHTS.isEmpty()) {
-                SKIN.buffers = buffers;
-                com.hexhaki.piece.client.render.Bulk.read(pose.m_85850_(), SKIN.m, SKIN.n);
-                for (Map.Entry<Integer, Knight> e : KNIGHTS.entrySet()) {
-                    knightSkin(level, e.getKey(), e.getValue(), cam, partial);
-                    SKIN.end();
-                }
-            }
             SINK.buffer = buffers.m_6299_(type);
             draw(minecraft, level, cam, partial);
         } catch (RuntimeException failure) {
             com.hexhaki.piece.HexPiece.LOGGER.error("HexPiece: an Ito fruit move could not be drawn", failure);
             clear();
         }
-        SKIN.end();
+        SEEN.clear();
         if (SINK.buffer != null) {
             buffers.m_109912_(type);
         }
@@ -355,7 +305,6 @@ public final class ItoFx {
         return at.m_82557_(cam) > FAR * FAR;
     }
 
-    private static final float[][] POSE = new float[8][8];
     private static final double[] POINTS = new double[15];
 
     /** Where strings leave a user's hand this frame: in front of the view in one's own first person, else the right hand. */
@@ -370,6 +319,44 @@ public final class ItoFx {
         return user.m_20318_(partial).m_82520_(0.0, user.m_20206_() * 0.62, 0.0).m_82549_(right.m_82490_(0.36)).m_82549_(flat.m_82490_(0.35));
     }
 
+    /**
+     * 3.4.2: where a user's strings leave the fist this frame: a player playing one of the String fruit's clips, the clip's own posed
+     * fist (client/FirstPersonLight.fist: the raised hand of Goshikito and the Birdcage, the pointed fist of Overheat); else the hand.
+     */
+    static Vec3 fist(Minecraft minecraft, Entity user, float partial) {
+        if (user instanceof net.minecraft.world.entity.player.Player player) {
+            Vec3 at = com.hexhaki.piece.client.FirstPersonLight.fist(player, partial);
+            if (at != null) {
+                return at;
+            }
+        }
+        return hand(minecraft, user, partial);
+    }
+
+    /** How far above one's own hand the Birdcage's stream starts in first person. */
+    static final double OWN_STREAM_GAP = 3.0;
+
+    /** How far ahead of one's own view Overheat's beam starts in first person. */
+    static final double OWN_BEAM_GAP = 1.2;
+
+    /** How big one's own Overheat knot is in first person (in the hand's pass, right by the eye). */
+    static final double HAND_KNOT = 0.45;
+
+    /** client/HandPass: one's own Overheat knot, drawn on the fist in the hand's own pass. */
+    public static boolean handWanted(int id) {
+        return KNOTS.containsKey(id);
+    }
+
+    public static void handPass(FireMesh.Sink sink, int id, float partial) {
+        Knot k = KNOTS.get(id);
+        if (k == null) {
+            return;
+        }
+        double[] v = com.hexhaki.piece.pika.LightArt.firstPersonFingertip(-0.05);
+        double age = clock - k.born + partial;
+        ItoArt.knot(sink, v[0], v[1], v[2], 0, 0, -1, ItoMoves.heatCharge(age), age, k.coat, k.seed, HAND_KNOT);
+    }
+
     static void draw(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial) {
         double cx = cam.f_82479_;
         double cy = cam.f_82480_;
@@ -378,10 +365,31 @@ public final class ItoFx {
         for (Map.Entry<Integer, Cage> e : CAGES.entrySet()) {
             Cage c = e.getValue();
             double age = now - c.born;
-            double r = ItoArt.cageRadius(c.from, c.to, age, c.life);
+            boolean closing = c.closing >= 0;
+            double r = closing ? ItoMoves.cageRadius(c.radius, now - c.closing, c.life) : c.radius;
+            double tension = closing ? Math.min(1.0, (now - c.closing) / Math.max(1.0, c.life)) : 0.0;
             double alpha = c.ended >= 0 ? Math.max(0.0, 1.0 - (now - c.ended) / CAGE_FADE) : 1.0;
             if (c.at.m_82554_(cam) < FAR + r) {
-                ItoArt.cage(SINK, c.at.f_82479_ - cx, c.at.f_82480_ - cy, c.at.f_82481_ - cz, r, age, alpha, c.coat);
+                ItoArt.cage(SINK, c.at.f_82479_ - cx, c.at.f_82480_ - cy, c.at.f_82481_ - cz, r, Math.min(1.0, age / ItoArt.CAGE_SPREAD), tension,
+                    alpha, c.coat);
+            }
+        }
+        for (Map.Entry<Integer, Stream> e : STREAMS.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            if (user == null) {
+                continue;
+            }
+            Stream st = e.getValue();
+            double age = now - st.born;
+            double radius = ItoMoves.cageSize(age);
+            Vec3 feet = user.m_20318_(partial);
+            Vec3 from = fist(minecraft, user, partial);
+            if (ownView(minecraft, user)) {
+                from = from.m_82520_(0.0, OWN_STREAM_GAP, 0.0); // right by one's own eye the strings would be blades across the view
+            }
+            if (feet.m_82554_(cam) < FAR + radius) {
+                ItoArt.stream(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, feet.f_82479_ - cx, feet.f_82480_ + radius - cy,
+                    feet.f_82481_ - cz, radius, age, st.coat, e.getKey());
             }
         }
         for (Wave w : WAVES) {
@@ -392,8 +400,10 @@ public final class ItoFx {
         }
         for (Goshiki g : GOSHIKIS) {
             if (!far(g.at, cam)) {
-                ItoArt.goshiki(SINK, g.at.f_82479_ - cx, g.at.f_82480_ - cy, g.at.f_82481_ - cz, g.way.f_82479_, g.way.f_82481_, g.spread,
-                    ItoMoves.GOSHIKI_FALL, now - g.born, g.life, g.coat, g.seed);
+                Entity user = level.m_6815_(g.user);
+                Vec3 from = user != null ? fist(minecraft, user, partial) : g.at.m_82520_(0.0, 1.4, 0.0);
+                ItoArt.goshiki(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, g.at.f_82479_ - cx, g.at.f_82480_ - cy,
+                    g.at.f_82481_ - cz, g.way.f_82479_, g.way.f_82481_, g.length, now - g.born, g.life, g.coat, g.seed);
             }
         }
         for (Map.Entry<Integer, Web> e : WEBS.entrySet()) {
@@ -406,12 +416,50 @@ public final class ItoFx {
                     w.radius, now - w.born, w.life, w.coat, alpha);
             }
         }
-        for (Heat h : HEATS) {
-            Entity user = level.m_6815_(h.user);
-            Vec3 from = user != null ? hand(minecraft, user, partial) : h.at;
+        for (Map.Entry<Integer, Knot> e : KNOTS.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            if (user == null || ownView(minecraft, user)) {
+                continue; // one's own in first person is drawn on the fist in the hand's own pass (handPass)
+            }
+            Knot k = e.getValue();
+            Vec3 from = fist(minecraft, user, partial);
+            Vec3 look = user.m_20252_(partial);
             if (!far(from, cam)) {
-                ItoArt.overheat(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, h.way.f_82479_, h.way.f_82481_, h.length,
-                    now - h.born, h.life, h.coat, h.seed);
+                ItoArt.knot(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, look.f_82479_, look.f_82480_, look.f_82481_,
+                    ItoMoves.heatCharge(now - k.born), now - k.born, k.coat, k.seed);
+            }
+        }
+        for (Beam b : BEAMS) {
+            double age = now - b.born;
+            Entity user = level.m_6815_(b.user);
+            // flying, the rope leaves the hand as it is now; once it has blown up it lies where it was fired from
+            Vec3 from = user != null && age <= b.flight ? fist(minecraft, user, partial) : b.from;
+            Vec3 end = b.from.m_82549_(b.way.m_82490_(b.length));
+            Vec3 way = end.m_82546_(from);
+            double length = way.m_82553_();
+            if (length < 1.0E-3 || far(from, cam) && far(end, cam)) {
+                continue;
+            }
+            way = way.m_82490_(1.0 / length);
+            boolean own = user != null && ownView(minecraft, user);
+            if (own && length > OWN_BEAM_GAP + 1.0) {
+                // one's own beam in first person starts a little ahead of the view (a thick rope seen from right behind the fist is a
+                // flat red wedge across the screen)
+                from = from.m_82549_(way.m_82490_(OWN_BEAM_GAP));
+                length -= OWN_BEAM_GAP;
+            }
+            ItoArt.beam(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, way.f_82479_, way.f_82480_, way.f_82481_, length, b.charge,
+                age, b.flight, b.coat, b.seed, own);
+        }
+        for (Scatter c : SCATTERS) {
+            if (!far(c.at, cam)) {
+                ItoArt.scatter(SINK, c.at.f_82479_ - cx, c.at.f_82480_ - cy, c.at.f_82481_ - cz, c.size, c.heat, now - c.born, c.coat, c.seed,
+                    SCATTERS.size() > 4 || c.at.m_82554_(cam) > 40.0);
+            }
+        }
+        for (Seen k : SEEN) {
+            if (!far(k.feet, cam)) {
+                ItoArt.woven(SINK, k.feet.f_82479_ - cx, k.feet.f_82480_ - cy, k.feet.f_82481_ - cz, k.height, now, k.coat, k.id);
             }
         }
         for (Lash l : LASHES) {
@@ -459,14 +507,6 @@ public final class ItoFx {
             double alpha = Math.min(1.0, (h.until - now) / 6.0);
             ItoArt.parasite(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, p, now - h.born, Math.max(0.0, alpha), h.coat);
         }
-        for (Map.Entry<Integer, Knight> e : KNIGHTS.entrySet()) {
-            Knight k = e.getValue();
-            Vec3 feet = position(k, partial);
-            if (!far(feet, cam)) {
-                knightPose(k, feet, partial);
-                AstralArt.knight(null, SINK, POSE, place(feet, cam, k.yaw), knightAlpha(k, now), k.coat);
-            }
-        }
         for (Thread t : THREADS) {
             if (!far(t.target, cam)) {
                 ItoArt.thread(SINK, t.target.f_82479_ - cx, t.target.f_82480_ - cy, t.target.f_82481_ - cz, t.origin.f_82479_ - cx, t.origin.f_82480_ - cy,
@@ -507,52 +547,18 @@ public final class ItoFx {
         return user == minecraft.f_91074_ && minecraft.f_91066_.m_92176_() == net.minecraft.client.CameraType.FIRST_PERSON;
     }
 
-    static double knightAlpha(Knight k, double now) {
-        return Math.min(1.0, (now - k.born) / 8.0) * Math.max(0.0, Math.min(1.0, (k.until - now) / 8.0));
-    }
-
-    /** The knight's pose: a cut (the Light fruit's sword cuts) for 8 ticks after it strikes, else walking as fast as it moves. */
-    static void knightPose(Knight k, Vec3 feet, float partial) {
-        double since = clock + partial - k.actionAt;
-        if (k.action != 0 && since < 8.0) {
-            float[][] cut = com.hexhaki.piece.client.npc.StylePoser.sample(k.action == 1 ? "pika_sword_1" : "pika_sword_2", (float) since);
-            for (int i = 0; i < POSE.length; i++) {
-                System.arraycopy(cut[i], 0, POSE[i], 0, POSE[i].length);
-            }
-            return;
-        }
-        double speed = k.to.m_82554_(k.from) / ItoMoves.KNIGHT_SEND;
-        AstralArt.walking(clock + partial, Math.min(1.0, speed / 0.3), POSE);
-    }
-
-    static void knightSkin(ClientLevel level, int user, Knight k, Vec3 cam, float partial) {
-        if (!(level.m_6815_(user) instanceof AbstractClientPlayer player)) {
-            return;
-        }
-        Vec3 feet = position(k, partial);
-        if (far(feet, cam)) {
-            return;
-        }
-        SKIN.use(player.m_108560_());
-        SKIN.light = LevelRenderer.m_109541_(level, BlockPos.m_274561_(feet.f_82479_, feet.f_82480_ + 1.0, feet.f_82481_));
-        knightPose(k, feet, partial);
-        AstralArt.knight(SKIN, null, POSE, place(feet, cam, k.yaw), knightAlpha(k, clock + partial), k.coat);
-    }
-
-    /** Feet at {@code feet}, facing {@code yaw} (radians, the game's way), eye-relative. */
-    static StyleShow.Place place(Vec3 feet, Vec3 cam, double yaw) {
-        return new StyleShow.Place(feet.f_82479_ - cam.f_82479_, feet.f_82480_ - cam.f_82480_, feet.f_82481_ - cam.f_82481_, yaw);
-    }
-
     static void clear() {
         LASHES.clear();
         BULLETS.clear();
         HITS.clear();
         GOSHIKIS.clear();
-        HEATS.clear();
+        KNOTS.clear();
+        BEAMS.clear();
+        SCATTERS.clear();
+        STREAMS.clear();
+        SEEN.clear();
         HELD.clear();
         WEBS.clear();
-        KNIGHTS.clear();
         CAGES.clear();
         WAVES.clear();
         THREADS.clear();

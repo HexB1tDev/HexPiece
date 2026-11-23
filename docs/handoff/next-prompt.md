@@ -13,22 +13,25 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.4.1 everything is pushed and green (3.4.0 Dawn Pistol's skin stretched through the body: Build #181,
-Release #131). 3.4.1 (section 8zze: Dawn Pistol after the owner's "How IS THIS IN HELL STRAIGHT" and "It also has to be FAST, but when it
-lands and stuns (the skin streches to the limit slower and slower ...) ... projected in a straight line FAST. adding a dust explosion on
-landing (and making a crater)": the arm a looping rubber curve, through the body to the fist inside the stretched skin, slower and slower
-to its limit, then a straight fast launch through blocks, a crater and dust where it lands) is pushed and green (Build #182, Release
-#132). Ask the owner how Dawn Pistol plays in game (3.3.9 to 3.4.1). The fist is a right fist on the right arm, three-quarters of a
-block across (the owner: "thats the left hand on the right arm", "the fist is too big, way too big"). Read 8zz and 8zzb before any art: the owner called Supa's first flat blades "really poor and poorly
-made"; judge every effect against the Light, Gura and Magma art before showing it; thin pale lines and flat polygons are not acceptable.
+Where things stand: up to 3.4.1 everything is pushed and green. 3.4.2 (section 8zzf: the owner's Ito notes, verbatim there: Goshikito
+redone as a five-string claw raked over a strip centred on the aimed body; Overheat held, a red-hot knot in front of the pointed fist,
+fired as a beam that never comes back and explodes, its strings scattering; String Slash's own hand-whip clips; the Black Knight a real
+killable clone in the user's skin that follows, roams and bursts into strings; the Birdcage held (a stream to the sky sizing it, 8 to
+40), recast to close it slowly, pulling everyone in, a heavy cut and bleeding when it shuts; the Awakening's key shown as M, not H.
+Supa's blades drawn in third person again (the original's FruitLayer flag was read backwards) and every blade a long needle point.
+Horo's Astral Projection: the spirit's arms the game's own, the spirit immortal, using the fruit's moves but no style or Haki, the body
+left behind a real body whose blows land on the user) was pushed: first check its "Build HexPiece" and "Release HexPiece" runs and fix
+anything red.
 
-Next after that: the owner has not tested Horo (3.3.6) or Ito (3.3.7) yet ("Not tested yet"): ask again how they play. Their word on
-the strings (8zzd, verbatim): "it looks like dust", "its meant to be slimmer, they're too thick", "sharper in the end too not just
-square ends..", "where are the sharp ends?": keep every string slim, solid (no coplanar glow layers: they speckle) and pointed at both
-ends; judge strings at 840 pixels wide or more. Then the rest of the Nika rework (better Haki versions; never touch the lightning
-lance). The owner's target look for the Nika fruit is Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every pose with a raised
-arm keeps the hand off the face from the front (tools/anim.face_covered) and is looked at beside the owner's pictures from every side;
-a raised fist the owner wants forward stays forward.
+Next, in the order told to the owner: 3.4.3 the Noro fruit's Z as a held large cone aimed once at the press (everything in it slowed),
+and the Ito fruit's Sky Road on the double jump (read the owner's full spec in 8zzf: strings to anchors in the sky, running strides
+through the air with legs, banking turns, a slingshot on acceleration, a hovering stance on release, thin strings re-anchoring ahead,
+faint streaks, smooth up and down, multiplayer-safe; legs are needed: it is running); 3.4.4 the Nika fruit's Goof Ball (the Whip without
+Haki: a held cartoon spin into a ball of smoke and skin punching every way, dizzy after with a symbol over the head) and the new Dawn
+Whip (with Haki; the owner's six phases verbatim in 8zzf: wind-up twist, the stretched leg, the release, the whip impact, the
+uncontrolled overspin drilling into the ground, the rubber-toy recovery). The owner has not said how Dawn Pistol (3.3.9 to 3.4.1) or
+Horo play: ask once the new work is out. The fist is a right fist on the right arm (the owner: "thats the left hand on the right arm").
+Read 8zz and 8zzb before any art: thin pale lines and flat polygons are not acceptable; hot strings use ItoArt's HOT tint (3.4.2).
 
 The cloud environment is the personal "HexPiece" (freesound.org, cdn.freesound.org, opengameart.org); if freesound.org is refused, the
 session is on Default: get_environment, then switch_environment to it (network_only). Freesound also rate-limits its pages for a minute or two (403):

@@ -605,7 +605,8 @@ public final class HudTests {
         // 3.3.7: the owner's Birdcage ("40 blocks, 45 s") and the keys they accepted (M the Awakening, two passives)
         Check.that(com.hexhaki.piece.server.ItoMoves.CAGE_RADIUS == 40.0 && com.hexhaki.piece.server.ItoMoves.CAGE_TICKS == 900,
             "the Birdcage: 40 blocks, 45 seconds");
-        Check.that(com.hexhaki.piece.server.ItoKit.AWAKEN.key().equals("[M]") && com.hexhaki.piece.server.ItoKit.CAGE.key().equals("[N]")
+        Check.that(com.hexhaki.piece.server.ItoKit.AWAKEN.key().equals("[M]") && com.hexhaki.piece.server.ItoKit.CAGE.key().equals("[N] hold")
+            && com.hexhaki.piece.server.ItoKit.OVERHEAT.key().equals("[X] hold")
             && com.hexhaki.piece.server.ItoKit.MOVES.size() == 11, "the Ito keys as accepted");
         Check.that(com.hexhaki.piece.client.FruitKeyN.ABILITY_M == 41 && com.hexhaki.piece.client.FruitKeyN.ABILITY_SKY == 42,
             "the M key and the air step reach the kit");

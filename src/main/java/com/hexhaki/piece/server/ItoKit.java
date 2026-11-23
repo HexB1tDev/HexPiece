@@ -19,19 +19,23 @@ public final class ItoKit extends FruitKit {
     public static final FruitMove BULLET = new FruitMove("Tamaito", "[RMB]", 0, "ito_bullet",
         "Tap to shoot a string bullet from your fingertip that pierces through everyone in its way; hold to fire a burst of six.");
     public static final FruitMove GOSHIKI = new FruitMove("Goshikito", "[Z]", 0, "ito_goshiki",
-        "Five strings slash down from the sky onto the spot you look at, cutting the ground and everyone standing there.");
-    public static final FruitMove OVERHEAT = new FruitMove("Overheat", "[X]", 0, "ito_overheat",
-        "A red-hot rope of tightly wound string lashes out in a long line in front of you, burning whoever it strikes.");
+        "Five strings hang from your raised fingers, then rake down over everything in front of you (whoever you aim at in the middle"
+            + " of it): a long strip of ground cut in five lines, everyone on it cut.");
+    public static final FruitMove OVERHEAT = new FruitMove("Overheat", "[X] hold", 0, "ito_overheat",
+        "Hold to wind a red-hot rope of string in front of your pointed fist; let go to fire it as a beam that never comes back: it"
+            + " explodes where it lands and its burning strings scatter in every direction. The longer you hold, the further and harder.");
     public static final FruitMove PARASITE = new FruitMove("Parasite", "[C]", 0, "ito_parasite",
         "Threads sink into the one you look at: for five seconds they cannot move on their own, and you drag them wherever you look."
             + " Press again to let go.");
     public static final FruitMove WEB = new FruitMove("Spider's Web", "[V]", 0, "ito_web",
         "A web of string spreads in front of you for six seconds: projectiles stop in it and blows from the front are caught.");
     public static final FruitMove KNIGHT = new FruitMove("Black Knight", "[B]", 0, "ito_knight",
-        "You weave a copy of yourself out of string that fights beside you for fifteen seconds, slicing whoever is nearest.");
-    public static final FruitMove CAGE = new FruitMove("Birdcage", "[N]", 0, "ito_cage",
-        "A huge cage of strings 40 blocks across closes round you for 45 seconds, shrinking slowly: whoever touches its strings is cut,"
-            + " and no one gets out. Press again to take it down.");
+        "You weave a clone of yourself out of string: it follows you, roams and fights on its own for thirty seconds, and it can be"
+            + " killed. When it dies, or when you press again, it bursts into strings that cut everyone round it.");
+    public static final FruitMove CAGE = new FruitMove("Birdcage", "[N] hold", 0, "ito_cage",
+        "Hold, pointing at the sky: a steady stream of strings pours up, the cage growing the longer you hold (up to 40 blocks across)."
+            + " Let go: the strings spread down into the Birdcage; its strings cut whoever touches them and no one gets out. Press again:"
+            + " it slowly closes, cutting everything inside and pulling everyone to the middle; when it shuts they are cut and bleed.");
     public static final FruitMove AWAKEN = new FruitMove("Awakening", "[M]", 0, "ito_awaken",
         "Break White: the ground round you turns to waves of white string rolling outward, throwing everyone they reach. With Armament"
             + " on, God Thread: sixteen Haki-coated spears of string fired at once at what you look at.");
@@ -56,6 +60,7 @@ public final class ItoKit extends FruitKit {
     public void action(ServerPlayer player, int kind, int ability, int flags) {
         switch (kind) {
             case 0 -> ItoMoves.press(player, ability);
+            case 1 -> ItoMoves.pressUp(player, ability); // 3.4.2: Overheat and the Birdcage are held
             case 2 -> ItoMoves.slash(player);
             case 3 -> ItoMoves.use(player);
             case 4 -> ItoMoves.useUp(player);

@@ -52,19 +52,40 @@ public final class ItoMoves {
     public static final int BULLET = 241;
     /** Strings striking: id its seed, x, y, z where, a the way, bx what (HIT_*), size how big. */
     public static final int HIT = 242;
-    /** Goshikito: id its seed, user, x, y, z the ground struck, a the way along the cuts, size their spread, ticks how long they show. */
+    /**
+     * Goshikito (3.4.2): id its seed, user, x, y, z the ground at the user's feet, a the way the strip runs (flat), size its length,
+     * ticks how long it shows: five strings hang from the raised hand, then rake down over the strip on {@link #GOSHIKI_RAKE}.
+     */
     public static final int GOSHIKI = 243;
-    /** Overheat: id its seed, user, x, y, z the hand, a the way, size its length, ticks how long. */
+    /**
+     * Overheat (3.4.2): id its seed, user; bx {@link #HEAT_CHARGE} (the rope winding in front of the fist; ticks the longest hold),
+     * {@link #HEAT_FIRE} (x, y, z where it leaves the fist, a its step a tick, by the charge 0 to 1, size how far it flies before it
+     * explodes, ticks its flight) or {@link #HEAT_DROP} (the charge let go of with nothing fired).
+     */
     public static final int OVERHEAT = 244;
+    public static final int HEAT_CHARGE = 0;
+    public static final int HEAT_FIRE = 1;
+    public static final int HEAT_DROP = 2;
     /** Parasite: id the one held, user, ticks how long (0: let go). */
     public static final int PARASITE = 245;
     /** Spider's Web: user, x, y, z its middle, a its facing (out, away from its user), size its radius, ticks how long (0: down). */
     public static final int WEB = 246;
-    /** Black Knight: user, x, y, z its feet, ax its facing (radians, the game's way), ay what it does (0 walks, 1 and 2 cuts), ticks
-     *  how long it has left (0: gone). */
-    public static final int KNIGHT = 247;
-    /** The Birdcage: user, x, y, z its middle on the ground, size its first radius, by its last, ticks how long (0: down). */
+    /**
+     * 3.4.2: strings bursting out in every direction: id its seed, x, y, z where, a the way it came (or zero), bx what (SCATTER_*), size
+     * how far they fly. The Black Knight's burst (it is a real body now: ito/StringKnight) and Overheat's explosion.
+     */
+    public static final int SCATTER = 247;
+    public static final int SCATTER_WHITE = 0;
+    public static final int SCATTER_HEAT = 1;
+    /**
+     * The Birdcage (3.4.2): user; bx {@link #CAGE_CHARGING} (the stream of strings poured up out of the hand, growing the cage; ticks
+     * the longest hold), {@link #CAGE_STANDING} (x, y, z its middle on the ground, size its radius, ticks how long it stands) or
+     * {@link #CAGE_CLOSING} (as standing, ticks how long it takes to shut); ticks 0: down.
+     */
     public static final int CAGE = 248;
+    public static final int CAGE_STANDING = 0;
+    public static final int CAGE_CLOSING = 1;
+    public static final int CAGE_CHARGING = 2;
     /** Break White: id its seed, user, x, y, z its middle, size how far its waves roll, ticks how long. */
     public static final int WAVE = 249;
     /** God Thread: id its seed, user, x, y, z where the spears meet, a where they are fired from, ticks their flight. */
@@ -96,16 +117,27 @@ public final class ItoMoves {
     public static final double BULLET_SPEED = 2.4;
     static final double BULLET_RANGE = 40.0;
     static final double BULLET_REACH = 0.6;
-    /** Goshikito: how far it reaches, the strings' fall (ticks), its damage, the half length and half width of its cuts. */
-    static final double GOSHIKI_RANGE = 30.0;
-    public static final int GOSHIKI_FALL = 6;
-    public static final int GOSHIKI_LIFE = 40;
-    static final double GOSHIKI_HALF = 4.0;
-    public static final double GOSHIKI_SPREAD = 1.4;
-    /** Overheat: its length, reach round it, damage, seconds burning, how long it shows. */
-    public static final double OVERHEAT_LENGTH = 16.0;
-    static final double OVERHEAT_REACH = 1.4;
-    public static final int OVERHEAT_LIFE = 18;
+    /**
+     * Goshikito (3.4.2, the owner: "Z Often doesnt work and looks bad overall (redo entirely)": it struck where the look met a block,
+     * behind whoever was aimed at): the strip the five strings rake (from the feet along the way, centred on whoever is aimed at), its
+     * length, the strings' spacing, its half width; the tick of ito_goshiki they land on; how long the cuts show; the damage.
+     */
+    public static final double GOSHIKI_LENGTH = 22.0;
+    public static final double GOSHIKI_SPREAD = 0.9;
+    static final double GOSHIKI_WIDTH = 2.4;
+    public static final int GOSHIKI_RAKE = 5;
+    public static final int GOSHIKI_LIFE = 44;
+    static final float GOSHIKI_DAMAGE = 12.0F;
+    /**
+     * Overheat (3.4.2, the owner: "Should be a charge beam that DOES NOT COME BACK (explodes on landing) when it ends the strings scatter
+     * into every direction (The charging should be one arm pointed forward and the strings gathering infront of the fist"): full in
+     * {@link #HEAT_FULL} ticks, let go by itself at {@link #HEAT_MOST}; the beam's speed, its reach at no charge and at full, the blast.
+     */
+    public static final int HEAT_FULL = 40;
+    public static final int HEAT_MOST = 96;
+    public static final double HEAT_SPEED = 5.0;
+    public static final double HEAT_REACH_LEAST = 18.0;
+    public static final double HEAT_REACH_MOST = 40.0;
     /** Parasite: how far it reaches, how long it holds, how near and far the held body is kept. */
     static final double PARASITE_RANGE = 24.0;
     public static final int PARASITE_TICKS = 100;
@@ -113,17 +145,35 @@ public final class ItoMoves {
     static final double WEB_AHEAD = 2.2;
     public static final double WEB_RADIUS = 2.4;
     public static final int WEB_TICKS = 120;
-    /** Black Knight: how long, its pace, its reach, a cut every so many ticks, how far it looks for foes. */
-    public static final int KNIGHT_TICKS = 300;
-    static final double KNIGHT_SPEED = 0.3;
-    static final double KNIGHT_REACH = 2.0;
+    /**
+     * Black Knight (3.4.2, the owner: "it should be a clone that roams on it's own / follows the player, when killed it explodes into
+     * tons of strings, if the key is recast while it's alive it explodes into strings too"): a real body now (ito/StringKnight): how
+     * long it lasts, its reach, a cut every so many ticks, how far it looks for foes, how far it strays from its weaver before it walks
+     * back, the burst's reach and damage, the rest after it bursts.
+     */
+    public static final int KNIGHT_TICKS = 600;
+    static final double KNIGHT_REACH = 2.2;
     static final int KNIGHT_EVERY = 14;
     static final double KNIGHT_SEEK = 16.0;
-    public static final int KNIGHT_SEND = 4;
-    /** The Birdcage (the owner: "40 blocks, 45 s"): its first and last radius, how long. */
+    static final double KNIGHT_STRAY = 6.0;
+    public static final double KNIGHT_BURST = 4.5;
+    static final float KNIGHT_BURST_DAMAGE = 8.0F;
+    static final int KNIGHT_REST = 200;
+    /**
+     * The Birdcage (the owner: "40 blocks, 45 s"; 3.4.2: "Bird cage should be also a charge, the user points at the sky and shoots a
+     * steady stream of strings that spread into the cage when it reaches the right height. (the longer you hold it the bigger it gets
+     * (max is the current size), when recasting it, the bird cage slowly closes, cutting down anything caught in the cage, all entities
+     * are pulled towards the center of the cage and when the cage fully closes, they take damage + bleed"): the smallest and largest
+     * radius, the hold that reaches the largest, the longest hold, how long it stands, how long it takes to shut, the shut cage's blow.
+     */
+    public static final double CAGE_LEAST = 8.0;
     public static final double CAGE_RADIUS = 40.0;
-    public static final double CAGE_END = 10.0;
+    public static final int CAGE_FULL = 80;
+    public static final int CAGE_HOLD_MOST = 96;
     public static final int CAGE_TICKS = 900;
+    public static final int CAGE_CLOSE = 100;
+    public static final double CAGE_SHUT = 1.2;
+    static final float CAGE_DAMAGE = 18.0F;
     /** Break White: three waves, born so many ticks apart, rolling so fast, so far. */
     public static final int WAVES = 3;
     public static final int WAVE_EVERY = 8;
@@ -156,14 +206,15 @@ public final class ItoMoves {
         Vec3 webAt;
         Vec3 webFacing;
         final List<Projectile> caught = new ArrayList<>();
-        long knightUntil = -1;
-        Vec3 knight;
-        float knightYaw;
-        long knightNext;
-        int knightCuts;
+        long heatSince = -1;
+        int heatSeed;
+        com.hexhaki.piece.ito.StringKnight knight;
+        long cageSince = -1;
         long cageUntil = -1;
         long cageFrom;
         Vec3 cageAt;
+        double cageR;
+        long closeFrom = -1;
         final Map<Integer, Long> cut = new HashMap<>();
         int steps;
         long surgeryNext;
@@ -197,7 +248,12 @@ public final class ItoMoves {
     }
 
     static void fx(ServerPlayer player, int kind, int id, Vec3 at, Vec3 a, double bx, double by, double size, int ticks) {
-        PieceNetwork.around(player, new S2CUoFx(kind, id, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, (float) a.f_82479_,
+        fxAs(player, player.m_19879_(), kind, id, at, a, bx, by, size, ticks);
+    }
+
+    /** As {@link #fx}, its user another body (the Black Knight's own lashes). */
+    static void fxAs(ServerPlayer player, int user, int kind, int id, Vec3 at, Vec3 a, double bx, double by, double size, int ticks) {
+        PieceNetwork.around(player, new S2CUoFx(kind, id, user, at.f_82479_, at.f_82480_, at.f_82481_, (float) a.f_82479_,
             (float) a.f_82480_, (float) a.f_82481_, (float) bx, (float) by, coated(player) ? 1 : 0, (float) size, ticks));
     }
 
@@ -257,7 +313,14 @@ public final class ItoMoves {
     }
 
     static boolean busy(State s, long now) {
-        return s.useSince >= 0 || now < s.busyUntil;
+        return s.useSince >= 0 || s.heatSince >= 0 || s.cageSince >= 0 || now < s.busyUntil;
+    }
+
+    /** The user's foes near {@code at}, never their own Black Knight. */
+    static List<LivingEntity> foes(ServerPlayer player, Vec3 at, double radius) {
+        List<LivingEntity> out = PikaMoves.foes(player, at, radius);
+        out.removeIf(body -> body instanceof com.hexhaki.piece.ito.StringKnight knight && knight.weaver() == player);
+        return out;
     }
 
     static Vec3 flat(ServerPlayer player) {
@@ -327,26 +390,43 @@ public final class ItoMoves {
             return;
         }
         if (slot == N_SLOT && s.cageUntil >= 0) {
-            cageEnd(player, s); // the second press: the cage comes down
+            cageClose(player, s); // the second press: the cage closes (3.4.2)
+            return;
+        }
+        if (slot == ItoKit.KNIGHT.slot() && s.knight != null && s.knight.m_6084_()) {
+            knightBurst(player, s.knight); // the second press: the knight bursts into strings (3.4.2)
             return;
         }
         if (busy(s, now) || player.m_20159_()) {
             return;
         }
         if (slot == N_SLOT) {
-            birdcage(player, s);
+            cageCharge(player, s);
         } else if (slot == M_SLOT) {
             awaken(player, s);
         } else if (slot == ItoKit.GOSHIKI.slot()) {
             goshikito(player, s);
         } else if (slot == ItoKit.OVERHEAT.slot()) {
-            overheat(player, s);
+            heatCharge(player, s);
         } else if (slot == ItoKit.PARASITE.slot()) {
             parasite(player, s);
         } else if (slot == ItoKit.WEB.slot()) {
             web(player, s);
         } else if (slot == ItoKit.KNIGHT.slot()) {
             blackKnight(player, s);
+        }
+    }
+
+    /** 3.4.2: a held key let go (Overheat on X, the Birdcage on N). */
+    static void pressUp(ServerPlayer player, int slot) {
+        State s = STATES.get(player.m_20148_());
+        if (s == null) {
+            return;
+        }
+        if (slot == ItoKit.OVERHEAT.slot() && s.heatSince >= 0) {
+            heatFire(player, s);
+        } else if (slot == N_SLOT && s.cageSince >= 0) {
+            cageCast(player, s);
         }
     }
 
@@ -362,12 +442,17 @@ public final class ItoMoves {
         s.slashNext = now + SLASH_EVERY;
         s.slashes++;
         int which = s.slashes % 2;
-        animate(player, which == 0 ? "pika_sword_2" : "pika_sword_1");
+        // 3.4.2 (the owner: "I dont like how M1 looks animationwise"): the String fruit's own whip of the hand (tools/ito_anims.py),
+        // forehand (the strings swept right to left: ItoArt.lash which 0) then backhand
+        animate(player, which == 0 ? "ito_slash_1" : "ito_slash_2");
         sound(player, chest(player), ItoSounds.SWISH, 0.8F, 1.1F + which * 0.1F);
         later(player, 2, () -> {
             Vec3 f = flat(player);
             fx(player, SLASH, which, chest(player), f, which, 0, SLASH_REACH, 0);
             for (LivingEntity body : ahead(player, SLASH_REACH, SLASH_ARC)) {
+                if (body instanceof com.hexhaki.piece.ito.StringKnight knight && knight.weaver() == player) {
+                    continue;
+                }
                 Vec3 side = new Vec3(-f.f_82481_, 0, f.f_82479_).m_82490_(which == 0 ? 0.15 : -0.15);
                 cut(player, body, 4.5F, f.m_82490_(0.25).m_82549_(side).m_82520_(0, 0.1, 0));
             }
@@ -464,68 +549,121 @@ public final class ItoMoves {
 
     // ------------------------------------------------------------------------------------------------------ Z: Goshikito
 
-    /** Five strings slash down from the sky onto the spot looked at: the ground cut in five lines, everyone standing on them cut. */
+    /**
+     * Goshikito (3.4.2, redone): the hand raised high with five strings hanging from its fingers (ito_goshiki), then raked down over the
+     * strip in front of the user, {@link #GOSHIKI_LENGTH} long and {@link #GOSHIKI_WIDTH} each side, centred on whoever is aimed at:
+     * everyone on it cut (and their mobs turned on the user) on {@link #GOSHIKI_RAKE}; the ground cut in five lines; the Conqueror's
+     * lightning where the strings strike. It never misses for want of a block under the crosshair (3.3.7's did).
+     */
     static void goshikito(ServerPlayer player, State s) {
         if (!ready(player, ItoKit.GOSHIKI)) {
             return;
         }
         ServerLevel level = (ServerLevel) player.m_9236_();
-        Vec3 at = looked(player, GOSHIKI_RANGE);
-        Vec3 g = ground(level, at, 1.0, 8.0);
-        Vec3 spot = g != null ? g : at;
-        cool(player, ItoKit.GOSHIKI, 160);
-        s.busyUntil = now(player) + 10;
-        animate(player, "hie_partisan_throw");
         Vec3 way = flat(player);
-        int seed = ++seeds;
-        fx(player, GOSHIKI, seed, spot, way, 0, 0, GOSHIKI_SPREAD, GOSHIKI_LIFE);
-        sound(player, spot, ItoSounds.SWISH, 1.2F, 0.75F);
-        later(player, GOSHIKI_FALL, () -> {
-            Vec3 side = new Vec3(-way.f_82481_, 0, way.f_82479_);
-            for (LivingEntity body : PikaMoves.foes(player, spot, GOSHIKI_HALF + 1.0)) {
-                Vec3 d = body.m_20182_().m_82546_(spot);
-                double along = d.f_82479_ * way.f_82479_ + d.f_82481_ * way.f_82481_;
-                double across = d.f_82479_ * side.f_82479_ + d.f_82481_ * side.f_82481_;
-                if (Math.abs(along) <= GOSHIKI_HALF + body.m_20205_() * 0.5 && Math.abs(across) <= GOSHIKI_SPREAD + body.m_20205_() * 0.5
-                    && Math.abs(d.f_82480_) < 3.5) {
-                    cut(player, body, 12.0F, new Vec3(0, -0.2, 0).m_82549_(side.m_82490_(across >= 0 ? 0.2 : -0.2)));
-                }
+        LivingEntity aimed = PikaMoves.aimed(player, GOSHIKI_LENGTH + 2.0, 0.15);
+        if (aimed != null && !(aimed instanceof com.hexhaki.piece.ito.StringKnight)) {
+            Vec3 d = aimed.m_20182_().m_82546_(player.m_20182_());
+            Vec3 f = new Vec3(d.f_82479_, 0.0, d.f_82481_);
+            if (f.m_82553_() > 1.0) {
+                way = f.m_82541_();
             }
-            sound(player, spot, ItoSounds.SLICE, 1.4F, 0.8F);
-            ConquerorAura.exploded(player, level, spot.m_82520_(0, 0.5, 0), GOSHIKI_SPREAD + 1.5);
-            Impact.quake(level, spot, 16.0, 0.3F, 6);
-        });
+        }
+        Vec3 g = ground(level, player.m_20182_(), 0.5, 4.0);
+        Vec3 start = g != null ? g : player.m_20182_();
+        cool(player, ItoKit.GOSHIKI, 160);
+        s.busyUntil = now(player) + 12;
+        animate(player, "ito_goshiki");
+        int seed = ++seeds;
+        fx(player, GOSHIKI, seed, start, way, 0, 0, GOSHIKI_LENGTH, GOSHIKI_LIFE);
+        sound(player, chest(player), ItoSounds.SWISH, 1.0F, 0.8F);
+        Vec3 along = way;
+        later(player, GOSHIKI_RAKE, () -> rake(player, level, start, along));
+    }
+
+    /** The five strings landing: everyone on the strip cut, the ground's lightning, a quake. */
+    static void rake(ServerPlayer player, ServerLevel level, Vec3 start, Vec3 way) {
+        Vec3 side = new Vec3(-way.f_82481_, 0, way.f_82479_);
+        Vec3 middle = start.m_82549_(way.m_82490_(GOSHIKI_LENGTH * 0.5));
+        for (LivingEntity body : foes(player, middle, GOSHIKI_LENGTH * 0.5 + GOSHIKI_WIDTH + 1.0)) {
+            Vec3 d = body.m_20182_().m_82546_(start);
+            double on = d.f_82479_ * way.f_82479_ + d.f_82481_ * way.f_82481_;
+            double across = d.f_82479_ * side.f_82479_ + d.f_82481_ * side.f_82481_;
+            double half = body.m_20205_() * 0.5;
+            if (on >= 0.3 - half && on <= GOSHIKI_LENGTH + half && Math.abs(across) <= GOSHIKI_WIDTH + half && d.f_82480_ > -4.0
+                && d.f_82480_ < 10.0) {
+                cut(player, body, GOSHIKI_DAMAGE, way.m_82490_(0.25).m_82520_(0.0, -0.3, 0.0));
+            }
+        }
+        sound(player, middle, ItoSounds.SLICE, 1.6F, 0.75F);
+        sound(player, start.m_82549_(way.m_82490_(3.0)), ItoSounds.SWISH, 1.2F, 0.6F);
+        ConquerorAura.exploded(player, level, middle.m_82520_(0, 0.5, 0), 4.0);
+        Impact.quake(level, middle, 20.0, 0.35F, 6);
     }
 
     // ------------------------------------------------------------------------------------------------------ X: Overheat
 
-    /** A red-hot rope of string lashing out along the look: everyone along it struck, set burning and thrown aside. */
-    static void overheat(ServerPlayer player, State s) {
+    /** Overheat held: one arm pointed ahead (ito_heat_charge) while the red-hot rope winds itself in front of the fist. */
+    static void heatCharge(ServerPlayer player, State s) {
         if (!ready(player, ItoKit.OVERHEAT)) {
             return;
         }
-        cool(player, ItoKit.OVERHEAT, 140);
-        s.busyUntil = now(player) + 12;
-        animate(player, "hie_pheasant");
-        Vec3 way = flat(player);
-        int seed = ++seeds;
-        fx(player, OVERHEAT, seed, chest(player), way, 0, 0, OVERHEAT_LENGTH, OVERHEAT_LIFE);
-        sound(player, chest(player), ItoSounds.BURN, 1.3F, 0.95F);
-        later(player, 4, () -> {
-            ServerLevel level = (ServerLevel) player.m_9236_();
-            Vec3 from = chest(player);
-            Vec3 look = player.m_20154_();
-            Vec3 aim = new Vec3(look.f_82479_, Math.max(-0.35, Math.min(0.35, look.f_82480_)), look.f_82481_).m_82541_();
-            Vec3 to = from.m_82549_(aim.m_82490_(OVERHEAT_LENGTH));
-            BlockHitResult block = level.m_45547_(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
-            Vec3 end = block.m_6662_() == HitResult.Type.BLOCK ? block.m_82450_() : to;
-            Vec3 side = new Vec3(aim.f_82481_, 0, -aim.f_82479_);
-            for (LivingEntity body : PikaMoves.crossed(player, from, end, OVERHEAT_REACH)) {
-                cut(player, body, 10.0F, side.m_82490_(0.7).m_82549_(aim.m_82490_(0.3)).m_82520_(0, 0.3, 0));
-                body.m_20254_(5);
+        s.heatSince = now(player);
+        s.heatSeed = ++seeds;
+        animate(player, "ito_heat_charge");
+        fx(player, OVERHEAT, s.heatSeed, chest(player), player.m_20154_(), HEAT_CHARGE, 0, 0, HEAT_MOST);
+        sound(player, chest(player), ItoSounds.BURN, 0.7F, 0.8F);
+    }
+
+    /** How full Overheat's charge is after {@code held} ticks (a tap still fires a short one). */
+    public static double heatCharge(double held) {
+        return Math.max(0.15, Math.min(1.0, held / HEAT_FULL));
+    }
+
+    /**
+     * Overheat let go: the beam fired along the look from the fist, {@link #HEAT_SPEED} a tick, never drawn back: it explodes where it
+     * lands (the first body or block in its way, or the end of its reach), the blast burning and throwing, its strings scattering every
+     * way; the Conqueror's lightning out of the blast (UoMoves.explode).
+     */
+    static void heatFire(ServerPlayer player, State s) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        long now = now(player);
+        double c = heatCharge(now - s.heatSince);
+        int seed = s.heatSeed;
+        s.heatSince = -1;
+        cool(player, ItoKit.OVERHEAT, (int) (100 + 80 * c));
+        s.busyUntil = now + 8;
+        animate(player, "ito_heat_fire");
+        Vec3 look = player.m_20154_();
+        Vec3 from = chest(player).m_82549_(look.m_82490_(0.8));
+        double reach = HEAT_REACH_LEAST + (HEAT_REACH_MOST - HEAT_REACH_LEAST) * c;
+        Vec3 to = from.m_82549_(look.m_82490_(reach));
+        BlockHitResult block = level.m_45547_(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        Vec3 end = block.m_6662_() == HitResult.Type.BLOCK ? block.m_82450_() : to;
+        double best = from.m_82554_(end);
+        for (LivingEntity body : PikaMoves.crossed(player, from, end, 0.8)) {
+            if (body instanceof com.hexhaki.piece.ito.StringKnight knight && knight.weaver() == player) {
+                continue;
             }
-            fx(player, HIT, ++seeds, end, aim.m_82490_(-1.0), HIT_STRING, 1, 1.2, 0);
-            ConquerorAura.exploded(player, level, end, 2.0);
+            Vec3 m = StyleCombat.middle(body);
+            double d = m.m_82546_(from).m_82526_(look);
+            if (d > 0 && d < best) {
+                best = d;
+                end = from.m_82549_(look.m_82490_(d));
+            }
+        }
+        double length = from.m_82554_(end);
+        int flight = Math.max(1, (int) Math.ceil(length / HEAT_SPEED));
+        fx(player, OVERHEAT, seed, from, look.m_82490_(HEAT_SPEED), HEAT_FIRE, c, length, flight);
+        sound(player, from, ItoSounds.BURN, 1.4F, 1.1F - 0.2F * (float) c);
+        Vec3 at = end;
+        later(player, flight, () -> {
+            double radius = 2.2 + 2.6 * c;
+            UoMoves.explode(player, level, at, look, radius, (float) (8.0 + 10.0 * c), (int) (3 + 4 * c), 1.0 + 0.8 * c);
+            fx(player, SCATTER, seed, at, look, SCATTER_HEAT, 0, radius * 1.6, 0);
+            sound(player, at, ItoSounds.BURN, 2.0F, 0.7F);
+            sound(player, at, ItoSounds.SLICE, 1.4F, 0.6F);
+            Impact.quake(level, at, 18.0 + 10.0 * c, 0.3F + 0.2F * (float) c, 8);
         });
     }
 
@@ -666,138 +804,290 @@ public final class ItoMoves {
 
     // ------------------------------------------------------------------------------------------------------ B: Black Knight
 
-    /** A copy of the user woven of string fights beside them for {@link #KNIGHT_TICKS}. */
+    /**
+     * Black Knight (3.4.2): a clone of the user woven of string, a real body ({@link com.hexhaki.piece.ito.StringKnight}, the user's own
+     * skin on every client): it follows its weaver, roams round them, fights their foes, can be struck and killed; killed, pressed again
+     * or out of time it bursts into strings ({@link #knightBurst}).
+     */
     static void blackKnight(ServerPlayer player, State s) {
         if (!ready(player, ItoKit.KNIGHT)) {
             return;
         }
-        cool(player, ItoKit.KNIGHT, KNIGHT_TICKS + 100);
-        long now = now(player);
-        s.busyUntil = now + 10;
-        s.knightUntil = now + KNIGHT_TICKS;
-        Vec3 f = flat(player);
-        Vec3 right = new Vec3(-f.f_82481_, 0, f.f_82479_);
-        Vec3 at = player.m_20182_().m_82549_(right.m_82490_(1.3)).m_82549_(f.m_82490_(0.4));
-        Vec3 g = ground((ServerLevel) player.m_9236_(), at, 1.5, 4.0);
-        s.knight = g != null ? g : at;
-        s.knightYaw = (float) Math.atan2(-f.f_82479_, f.f_82481_);
-        s.knightNext = now + 10;
-        animate(player, "hie_partisan_raise");
-        knight(player, s, 0, now);
-        sound(player, s.knight.m_82520_(0, 1, 0), ItoSounds.PULL, 1.0F, 0.8F);
-    }
-
-    static void knight(ServerPlayer player, State s, int action, long now) {
-        fx(player, KNIGHT, 0, s.knight, new Vec3(s.knightYaw, action, 0), 0, 0, 0, (int) Math.max(0, s.knightUntil - now));
-    }
-
-    static void knightTick(ServerPlayer player, State s, long now) {
-        if (now >= s.knightUntil || !player.m_6084_()) {
-            s.knightUntil = -1;
-            fx(player, KNIGHT, 0, s.knight, Vec3.f_82478_, 0, 0, 0, 0);
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        com.hexhaki.piece.ito.StringKnight knight = com.hexhaki.piece.PieceEntities.KNIGHT.get().m_20615_(level);
+        if (knight == null) {
             return;
         }
-        ServerLevel level = (ServerLevel) player.m_9236_();
-        LivingEntity target = null;
-        double best = Double.MAX_VALUE;
-        for (LivingEntity body : PikaMoves.foes(player, s.knight, KNIGHT_SEEK)) {
-            double d = body.m_20182_().m_82557_(s.knight);
-            if (d < best) {
-                best = d;
-                target = body;
+        cool(player, ItoKit.KNIGHT, KNIGHT_TICKS + KNIGHT_REST);
+        long now = now(player);
+        s.busyUntil = now + 10;
+        Vec3 f = flat(player);
+        Vec3 right = new Vec3(-f.f_82481_, 0, f.f_82479_);
+        Vec3 at = player.m_20182_().m_82549_(right.m_82490_(1.4)).m_82549_(f.m_82490_(0.6));
+        Vec3 g = ground(level, at, 1.5, 4.0);
+        Vec3 feet = g != null ? g : player.m_20182_();
+        knight.m_7678_(feet.f_82479_, feet.f_82480_, feet.f_82481_, player.m_146908_(), 0.0F);
+        knight.weave(player, coated(player), now + KNIGHT_TICKS);
+        level.m_7967_(knight);
+        s.knight = knight;
+        animate(player, "ito_knight");
+        fx(player, SCATTER, ++seeds, feet.m_82520_(0, 1.0, 0), Vec3.f_82478_, SCATTER_WHITE, 1, 1.4, 0);
+        sound(player, feet.m_82520_(0, 1, 0), ItoSounds.PULL, 1.0F, 0.8F);
+    }
+
+    /**
+     * Each tick of a knight on the server (StringKnight's own AI step): its weaver gone (a reload, the fruit set aside) it unravels at
+     * once; out of time it bursts; else it fights the nearest foe of its weaver within {@link #KNIGHT_SEEK}, or follows its weaver and
+     * roams round them.
+     */
+    public static void knightTick(com.hexhaki.piece.ito.StringKnight knight, ServerLevel level) {
+        ServerPlayer owner = knight.weaver();
+        State s = owner == null ? null : STATES.get(owner.m_20148_());
+        if (owner == null || s == null || s.knight != knight || !owner.m_6084_() || owner.m_9236_() != level) {
+            knight.m_146870_();
+            return;
+        }
+        long now = level.m_46467_();
+        if (now >= knight.until()) {
+            knightBurst(owner, knight);
+            return;
+        }
+        LivingEntity foe = knight.foe();
+        if (foe != null && (!foe.m_6084_() || foe.m_9236_() != level || foe.m_20280_(knight) > 24 * 24 || foe == owner)) {
+            foe = null;
+        }
+        if (foe == null || now % 10 == 0) {
+            LivingEntity nearest = null;
+            double best = Double.MAX_VALUE;
+            for (LivingEntity body : foes(owner, knight.m_20182_(), KNIGHT_SEEK)) {
+                double d = body.m_20280_(knight);
+                if (body != knight && d < best) {
+                    best = d;
+                    nearest = body;
+                }
+            }
+            if (nearest != null && (foe == null || best < foe.m_20280_(knight) * 0.6)) {
+                foe = nearest;
             }
         }
-        Vec3 goal;
-        double stop;
-        if (target != null) {
-            goal = target.m_20182_();
-            stop = KNIGHT_REACH * 0.8 + target.m_20205_() * 0.5;
-        } else {
-            Vec3 f = flat(player);
-            goal = player.m_20182_().m_82549_(new Vec3(-f.f_82481_, 0, f.f_82479_).m_82490_(1.4)).m_82549_(f.m_82490_(-0.5));
-            stop = 0.8;
+        knight.foe(foe);
+        double fromOwner = Math.sqrt(knight.m_20280_(owner));
+        if (fromOwner > 28.0) {
+            // left far behind: woven again beside its weaver
+            Vec3 f = flat(owner);
+            Vec3 at = owner.m_20182_().m_82549_(new Vec3(-f.f_82481_, 0, f.f_82479_).m_82490_(1.4));
+            knight.m_6021_(at.f_82479_, at.f_82480_, at.f_82481_);
+            knight.m_21573_().m_26573_();
+            return;
         }
-        Vec3 d = new Vec3(goal.f_82479_ - s.knight.f_82479_, 0, goal.f_82481_ - s.knight.f_82481_);
-        double dist = d.m_82553_();
-        int action = 0;
-        if (dist > 24.0) {
-            s.knight = goal; // left far behind: it catches up at once
-        } else if (dist > stop) {
-            double pace = target != null ? KNIGHT_SPEED : Math.min(0.6, Math.max(KNIGHT_SPEED, dist * 0.15));
-            Vec3 step = d.m_82490_(Math.min(pace, dist - stop) / dist);
-            Vec3 next = s.knight.m_82549_(step);
-            Vec3 g = ground(level, next, 1.2, 3.0);
-            s.knight = g != null ? g : next;
+        if (foe != null) {
+            knight.m_21563_().m_24960_(foe, 30.0F, 30.0F);
+            double d = Math.sqrt(foe.m_20280_(knight));
+            if (d > KNIGHT_REACH + foe.m_20205_() * 0.5) {
+                if (now % 5 == 0) {
+                    knight.m_21573_().m_5624_(foe, 1.35);
+                }
+                return;
+            }
+            knight.m_21573_().m_26573_();
+            knight.face(foe);
+            if (now >= knight.nextCut()) {
+                knightCut(owner, knight, foe, now);
+            }
+            return;
         }
-        if (dist > 0.05) {
-            s.knightYaw = (float) Math.atan2(-d.f_82479_, d.f_82481_);
+        if (fromOwner > KNIGHT_STRAY) {
+            if (now % 10 == 0) {
+                knight.m_21573_().m_5624_(owner, 1.25); // follows its weaver
+            }
+        } else if (now >= knight.nextWander() && knight.m_21573_().m_26571_()) {
+            // roams round its weaver
+            knight.nextWander(now + 50 + knight.m_217043_().m_188503_(70));
+            double angle = knight.m_217043_().m_188500_() * Math.PI * 2;
+            double reach = 2.0 + knight.m_217043_().m_188500_() * 3.5;
+            knight.m_21573_().m_26519_(owner.m_20185_() + Math.cos(angle) * reach, owner.m_20186_(), owner.m_20189_() + Math.sin(angle) * reach, 0.9);
         }
-        if (target != null && dist <= KNIGHT_REACH + target.m_20205_() * 0.5 && now >= s.knightNext) {
-            s.knightNext = now + KNIGHT_EVERY;
-            s.knightCuts++;
-            action = 1 + s.knightCuts % 2;
-            Vec3 way = dist > 0.05 ? d.m_82490_(1.0 / dist) : flat(player);
-            cut(player, target, 5.0F, way.m_82490_(0.4).m_82520_(0, 0.15, 0));
-            fx(player, HIT, ++seeds, StyleCombat.middle(target), way, HIT_KNIGHT, 0, 1.0, 0);
-            sounds(player, s.knight, ItoSounds.SWISH, 0.8F, 1.15F, 1, 4);
+    }
+
+    /** The knight's lash: the same strings as its weaver's String Slash, out of its own hand; the mob it cuts turns on it. */
+    static void knightCut(ServerPlayer owner, com.hexhaki.piece.ito.StringKnight knight, LivingEntity foe, long now) {
+        int which = knight.cut(now, KNIGHT_EVERY);
+        Vec3 way = foe.m_20182_().m_82546_(knight.m_20182_());
+        way = new Vec3(way.f_82479_, 0, way.f_82481_);
+        way = way.m_82556_() < 1.0E-6 ? flat(owner) : way.m_82541_();
+        fxAs(owner, knight.m_19879_(), SLASH, which, knight.m_146892_().m_82520_(0.0, -0.4, 0.0), way, which, 0, SLASH_REACH, 0);
+        Vec3 side = new Vec3(-way.f_82481_, 0, way.f_82479_).m_82490_(which == 0 ? 0.15 : -0.15);
+        cut(owner, foe, 5.0F, way.m_82490_(0.35).m_82549_(side).m_82520_(0, 0.12, 0));
+        if (foe instanceof Mob mob && mob.m_6084_()) {
+            mob.m_6710_(knight); // it fights back: the knight can be killed
         }
-        if (action != 0 || (now - s.knightUntil) % KNIGHT_SEND == 0) {
-            knight(player, s, action, now);
+        sounds(owner, knight.m_20182_(), ItoSounds.SWISH, 0.8F, 1.15F, 1, 4);
+    }
+
+    /**
+     * The knight bursts into strings (killed, its key pressed again, or out of time): white strings fly out every way, cutting
+     * everyone of its weaver's foes within {@link #KNIGHT_BURST}; the Conqueror's lightning out of the burst; then it is gone and the
+     * move rests {@link #KNIGHT_REST} ticks.
+     */
+    public static void knightBurst(ServerPlayer owner, com.hexhaki.piece.ito.StringKnight knight) {
+        if (knight.burst()) {
+            return;
         }
+        ServerLevel level = (ServerLevel) knight.m_9236_();
+        Vec3 at = StyleCombat.middle(knight);
+        if (owner != null) {
+            fx(owner, SCATTER, ++seeds, at, Vec3.f_82478_, SCATTER_WHITE, 0, KNIGHT_BURST * 1.4, 0);
+            for (LivingEntity body : foes(owner, at, KNIGHT_BURST)) {
+                if (body == knight || body.m_20280_(knight) > KNIGHT_BURST * KNIGHT_BURST) {
+                    continue;
+                }
+                Vec3 out = StyleCombat.middle(body).m_82546_(at);
+                out = out.m_82556_() < 1.0E-6 ? Vec3.f_82478_ : out.m_82541_();
+                cut(owner, body, KNIGHT_BURST_DAMAGE, out.m_82490_(0.7).m_82520_(0, 0.35, 0));
+            }
+            ConquerorAura.exploded(owner, level, at, KNIGHT_BURST);
+            sound(owner, at, ItoSounds.SLICE, 1.5F, 0.85F);
+            sound(owner, at, ItoSounds.PULL, 1.2F, 0.6F);
+            State s = STATES.get(owner.m_20148_());
+            if (s != null && s.knight == knight) {
+                s.knight = null;
+                FruitData.cooldown(owner, ItoKit.KNIGHT.cooldown(), KNIGHT_REST);
+                FruitServer.sync(owner);
+            }
+        }
+        knight.m_146870_();
     }
 
     // ------------------------------------------------------------------------------------------------------ N: Birdcage
 
-    /** The Birdcage (the owner: "40 blocks, 45 s"): a dome of strings round the user, closing in; touching it cuts; no one gets out. */
-    static void birdcage(ServerPlayer player, State s) {
+    /** The Birdcage's radius after {@code held} ticks of the stream (the owner: "the longer you hold it the bigger it gets"). */
+    public static double cageSize(double held) {
+        double t = Math.max(0.0, Math.min(1.0, held / CAGE_FULL));
+        return CAGE_LEAST + (CAGE_RADIUS - CAGE_LEAST) * t;
+    }
+
+    /** N held: the arm pointed at the sky (ito_cage_charge), a steady stream of strings pouring up out of the hand. */
+    static void cageCharge(ServerPlayer player, State s) {
         if (!ready(player, ItoKit.CAGE)) {
             return;
         }
-        cool(player, ItoKit.CAGE, CAGE_TICKS * 2);
+        s.cageSince = now(player);
+        animate(player, "ito_cage_charge");
+        fx(player, CAGE, 0, player.m_20182_(), Vec3.f_82478_, CAGE_CHARGING, 0, 0, CAGE_HOLD_MOST);
+        sound(player, chest(player), ItoSounds.CAGE, 1.2F, 1.2F);
+    }
+
+    /** N let go (or held its longest): the strings spread down from the height they reached into the cage, round the user. */
+    static void cageCast(ServerPlayer player, State s) {
         long now = now(player);
-        s.busyUntil = now + 16;
+        double radius = cageSize(now - s.cageSince);
+        s.cageSince = -1;
+        cool(player, ItoKit.CAGE, CAGE_TICKS + 300);
+        s.busyUntil = now + 10;
         s.cageUntil = now + CAGE_TICKS;
         s.cageFrom = now;
+        s.closeFrom = -1;
+        s.cageR = radius;
         Vec3 g = ground((ServerLevel) player.m_9236_(), player.m_20182_(), 0.5, 6.0);
         s.cageAt = g != null ? g : player.m_20182_();
         s.cut.clear();
-        animate(player, "magu_rise");
-        fx(player, CAGE, 0, s.cageAt, Vec3.f_82478_, 0, CAGE_END, CAGE_RADIUS, CAGE_TICKS);
+        animate(player, "ito_cage_cast");
+        fx(player, CAGE, 0, s.cageAt, Vec3.f_82478_, CAGE_STANDING, 0, radius, CAGE_TICKS);
         sound(player, s.cageAt.m_82520_(0, 2, 0), ItoSounds.CAGE, 2.5F, 1.0F);
     }
 
+    /** N pressed again: the cage slowly closes ({@link #CAGE_CLOSE} ticks), pulling everyone in it to the middle. */
+    static void cageClose(ServerPlayer player, State s) {
+        if (s.closeFrom >= 0) {
+            return;
+        }
+        long now = now(player);
+        s.closeFrom = now;
+        s.cageUntil = now + CAGE_CLOSE;
+        animate(player, "ito_cage_close");
+        fx(player, CAGE, 0, s.cageAt, Vec3.f_82478_, CAGE_CLOSING, 0, s.cageR, CAGE_CLOSE);
+        sound(player, s.cageAt.m_82520_(0, 2, 0), ItoSounds.CAGE, 2.5F, 0.7F);
+    }
+
+    /** The cage's radius now: standing, its own; closing, shutting in to {@link #CAGE_SHUT} (every client works it out the same). */
+    public static double cageRadius(double radius, double closing, double close) {
+        return com.hexhaki.piece.ito.ItoArt.closing(radius, CAGE_SHUT, closing, close);
+    }
+
     static void cageTick(ServerPlayer player, State s, long now) {
+        boolean closing = s.closeFrom >= 0;
         if (now >= s.cageUntil) {
-            cageEnd(player, s);
+            if (closing) {
+                cageShut(player, s);
+            } else {
+                cageEnd(player, s);
+            }
             return;
         }
         if ((now - s.cageFrom) % 2 != 0) {
             return;
         }
-        double r = com.hexhaki.piece.ito.ItoArt.cageRadius(CAGE_RADIUS, CAGE_END, now - s.cageFrom, CAGE_TICKS);
+        double r = closing ? cageRadius(s.cageR, now - s.closeFrom, CAGE_CLOSE) : s.cageR;
+        double share = closing ? Math.min(1.0, (now - s.closeFrom) / (double) CAGE_CLOSE) : 0.0;
         Vec3 c = s.cageAt;
-        for (LivingEntity body : PikaMoves.foes(player, c, r + 2.0)) {
+        for (LivingEntity body : foes(player, c, Math.max(r, s.cageR) + 2.0)) {
             Vec3 m = StyleCombat.middle(body);
             Vec3 d = m.m_82546_(c);
             // the dome: a hemisphere on the ground (below its middle, the wall goes straight down)
             Vec3 dd = d.f_82480_ < 0 ? new Vec3(d.f_82479_, 0, d.f_82481_) : d;
             double dist = dd.m_82553_();
-            double gap = dist - r;
-            if (Math.abs(gap) > 1.2 || dist < 1.0E-4) {
+            if (dist < 1.0E-4) {
                 continue;
             }
+            double gap = dist - r;
             Vec3 out = dd.m_82490_(1.0 / dist);
-            // inside it is pushed back in, outside it is kept out
-            Vec3 push = out.m_82490_(gap < 0 ? -0.5 : 0.5);
-            body.m_20256_(new Vec3(push.f_82479_, Math.max(body.m_20184_().f_82480_, 0.05), push.f_82481_));
-            body.f_19864_ = true;
-            Long last = s.cut.get(body.m_19879_());
-            if (last == null || now - last >= 10) {
-                s.cut.put(body.m_19879_(), now);
-                cut(player, body, 4.0F, Vec3.f_82478_);
-                fx(player, HIT, ++seeds, c.m_82549_(out.m_82490_(r)), out, HIT_CAGE, 0, 0.8, 0);
+            if (closing && dist < s.cageR + 0.5 && gap < 1.2) {
+                // closing: everyone caught inside is pulled toward the middle, harder as it shuts
+                Vec3 pull = out.m_82490_(-(0.18 + 0.32 * share) * Math.min(1.0, dist / 3.0));
+                Vec3 v = body.m_20184_();
+                body.m_20256_(new Vec3(v.f_82479_ * 0.5 + pull.f_82479_, Math.max(v.f_82480_, 0.0) * 0.5 + pull.f_82480_ * 0.5,
+                    v.f_82481_ * 0.5 + pull.f_82481_));
+                body.f_19864_ = true;
+                body.f_19789_ = 0.0F;
+            } else if (Math.abs(gap) <= 1.2) {
+                // standing: inside it is pushed back in, outside it is kept out
+                Vec3 push = out.m_82490_(gap < 0 ? -0.5 : 0.5);
+                body.m_20256_(new Vec3(push.f_82479_, Math.max(body.m_20184_().f_82480_, 0.05), push.f_82481_));
+                body.f_19864_ = true;
+            } else {
+                continue;
+            }
+            if (Math.abs(gap) <= 1.2) {
+                Long last = s.cut.get(body.m_19879_());
+                if (last == null || now - last >= 10) {
+                    s.cut.put(body.m_19879_(), now);
+                    cut(player, body, 4.0F, Vec3.f_82478_);
+                    fx(player, HIT, ++seeds, c.m_82549_(out.m_82490_(r)), out, HIT_CAGE, 0, 0.8, 0);
+                }
             }
         }
+    }
+
+    /**
+     * The cage shut: everyone pulled into its middle is cut deeply and left bleeding (the original's own wounds, gore/Gore.bleed), the
+     * strings burst out of it, the Conqueror's lightning out of the burst.
+     */
+    static void cageShut(ServerPlayer player, State s) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        Vec3 c = s.cageAt;
+        for (LivingEntity body : foes(player, c, s.cageR + 1.0)) {
+            Vec3 d = StyleCombat.middle(body).m_82546_(c);
+            if (Math.hypot(d.f_82479_, d.f_82481_) > s.cageR + 0.5) {
+                continue;
+            }
+            cut(player, body, CAGE_DAMAGE, new Vec3(0, 0.25, 0));
+            com.hexhaki.gore.Gore.bleed(player, body, 5, 200);
+        }
+        fx(player, SCATTER, ++seeds, c.m_82520_(0, 1.0, 0), Vec3.f_82478_, SCATTER_WHITE, 0, 7.0, 0);
+        ConquerorAura.exploded(player, level, c.m_82520_(0, 1.0, 0), 5.0);
+        sound(player, c.m_82520_(0, 1, 0), ItoSounds.SLICE, 2.0F, 0.6F);
+        Impact.quake(level, c, 24.0, 0.5F, 10);
+        cageEnd(player, s);
     }
 
     static void cageEnd(ServerPlayer player, State s) {
@@ -805,8 +1095,9 @@ public final class ItoMoves {
             return;
         }
         s.cageUntil = -1;
+        s.closeFrom = -1;
         s.cut.clear();
-        fx(player, CAGE, 0, s.cageAt != null ? s.cageAt : player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
+        fx(player, CAGE, 0, s.cageAt != null ? s.cageAt : player.m_20182_(), Vec3.f_82478_, CAGE_STANDING, 0, 0, 0);
     }
 
     // ------------------------------------------------------------------------------------------------------ M: Awakening
@@ -950,8 +1241,14 @@ public final class ItoMoves {
         if (s.webUntil >= 0) {
             webTick(player, s, now);
         }
-        if (s.knightUntil >= 0) {
-            knightTick(player, s, now);
+        if (s.heatSince >= 0 && now - s.heatSince >= HEAT_MOST) {
+            heatFire(player, s); // held its longest: it goes by itself
+        }
+        if (s.cageSince >= 0 && now - s.cageSince >= CAGE_HOLD_MOST) {
+            cageCast(player, s);
+        }
+        if (s.knight != null && !s.knight.m_6084_()) {
+            s.knight = null;
         }
         if (s.cageUntil >= 0) {
             cageTick(player, s, now);
@@ -969,9 +1266,16 @@ public final class ItoMoves {
         }
         release(player, s);
         webEnd(player, s);
-        if (s.knightUntil >= 0) {
-            s.knightUntil = -1;
-            fx(player, KNIGHT, 0, s.knight != null ? s.knight : player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
+        if (s.heatSince >= 0) {
+            s.heatSince = -1;
+            fx(player, OVERHEAT, s.heatSeed, chest(player), Vec3.f_82478_, HEAT_DROP, 0, 0, 0);
+        }
+        if (s.cageSince >= 0) {
+            s.cageSince = -1;
+            fx(player, CAGE, 0, player.m_20182_(), Vec3.f_82478_, CAGE_STANDING, 0, 0, 0);
+        }
+        if (s.knight != null && s.knight.m_6084_()) {
+            knightBurst(player, s.knight);
         }
         cageEnd(player, s);
         STATES.remove(player.m_20148_());
@@ -980,6 +1284,9 @@ public final class ItoMoves {
     /** The server stopping (before the save): every caught shot given back its fall, everything dropped. */
     static void clear() {
         for (State s : STATES.values()) {
+            if (s.knight != null && s.knight.m_6084_()) {
+                s.knight.m_146870_(); // never saved: a knight without its weaver unravels
+            }
             for (Projectile shot : s.caught) {
                 if (shot.m_6084_()) {
                     shot.m_20242_(false);

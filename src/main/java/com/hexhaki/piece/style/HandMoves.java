@@ -144,6 +144,16 @@ public final class HandMoves {
             case "hie_ice_age" -> new Move(DOWN, 0);
             case "hie_road_slide" -> new Move(COCKED, 0.3);
             case "hie_saber_draw" -> new Move(SIDE_QUICK, 0);
+            // 3.4.2: the String fruit's own clips (tools/ito_anims.py)
+            case "ito_slash_1" -> new Move(SWEEP, 0);
+            case "ito_slash_2" -> new Move(SWEEP_BACK, 0);
+            case "ito_goshiki" -> new Move(DOWN, 0);
+            case "ito_heat_charge" -> new Move(POINT, 0.4);
+            case "ito_heat_fire" -> new Move(RECOIL, 0);
+            case "ito_cage_charge" -> new Move(UP, 0.3);
+            case "ito_cage_cast" -> new Move(UP_END, 0);
+            case "ito_cage_close" -> new Move(DOWN, 0);
+            case "ito_knight" -> new Move(POINT_TAP, 0);
             default -> null;
         };
     }

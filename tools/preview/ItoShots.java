@@ -50,15 +50,58 @@ public final class ItoShots {
             }
             case "ihit" -> ItoArt.hit(sink, -ex, 1.2 - ey, 3 - ez, 0, 0, -1, 1.2, age, coat, 3);
             case "igoshiki" -> {
-                HieShots.body(sink, -ex, -ey, -ez);
-                HieShots.body(sink, 0.6 - ex, -ey, 7.5 - ez);
-                ItoArt.goshiki(sink, -ex, -ey, 7 - ez, 0, 1, ItoMoves.GOSHIKI_SPREAD, ItoMoves.GOSHIKI_FALL, age, ItoMoves.GOSHIKI_LIFE, coat, 5);
-            }
-            case "iheat" -> {
+                // 3.4.2: the hand raised (ito_goshiki's beats: up by 3) then raked down on 5; the strip from the feet along +z
                 if (!fp) {
                     HieShots.body(sink, -ex, -ey, -ez);
                 }
-                ItoArt.overheat(sink, HX - ex, HY - ey, HZ - ez, 0, 1, ItoMoves.OVERHEAT_LENGTH, age, ItoMoves.OVERHEAT_LIFE, coat, 7);
+                HieShots.body(sink, 0.6 - ex, -ey, 9 - ez);
+                HieShots.body(sink, -1.2 - ex, -ey, 15 - ez);
+                double up = Math.min(1.0, age / 3.0);
+                double down = Math.max(0.0, Math.min(1.0, (age - 4.0) / 1.0));
+                double hy = 1.15 + 1.3 * up - 1.5 * down;
+                double hz = 0.35 + 0.2 * up + 0.4 * down;
+                ItoArt.goshiki(sink, HX - ex, hy - ey, hz - ez, -ex, -ey, -ez, 0, 1, ItoMoves.GOSHIKI_LENGTH, age, ItoMoves.GOSHIKI_LIFE, coat, 5);
+            }
+            case "iknot" -> {
+                // Overheat held: the arm pointed ahead, the fist at about (-0.36, 1.38, 0.95)
+                double charge = move.length > 3 ? Double.parseDouble(move[3]) : Math.min(1.0, age / ItoMoves.HEAT_FULL);
+                if (!fp) {
+                    HieShots.body(sink, -ex, -ey, -ez);
+                }
+                double kz = fp ? 0.9 : 0.95;
+                ItoArt.knot(sink, HX - ex, (fp ? 1.32 : 1.38) - ey, kz - ez, 0, 0, 1, charge, age, coat, 7);
+            }
+            case "ibeam" -> {
+                double charge = move.length > 3 ? Double.parseDouble(move[3]) : 1.0;
+                double length = 24.0;
+                double flight = Math.ceil(length / ItoMoves.HEAT_SPEED);
+                if (!fp) {
+                    HieShots.body(sink, -ex, -ey, -ez);
+                }
+                HieShots.body(sink, -ex, -ey, 25 - ez);
+                // in first person one's own beam starts ItoFx.OWN_BEAM_GAP ahead
+                double gap = fp ? 1.2 : 0.0;
+                ItoArt.beam(sink, HX - ex, 1.38 - ey, 1.0 + gap - ez, 0, 0.0, 1, length - gap, charge, age, flight, coat, 7, fp);
+                if (age >= flight) {
+                    ItoArt.scatter(sink, HX - ex, 1.38 - ey, 1.0 + length - ez, (2.2 + 2.6 * charge) * 1.6, true, age - flight, coat, 7, false);
+                }
+            }
+            case "iknothand" -> {
+                // one's own knot in first person as client/ito/ItoFx.handPass draws it: at the game's fingertip (about 0.75 right, 0.43
+                // down, 1.2 ahead of the eye: LightArt.firstPersonFingertip), HAND_KNOT its size
+                double charge = move.length > 3 ? Double.parseDouble(move[3]) : 1.0;
+                ItoArt.knot(sink, -0.75, -0.43, 1.2, 0, 0, 1, charge, age, coat, 7, 0.45);
+            }
+            case "iscatter" -> {
+                boolean heat = move.length > 3 && move[3].equals("h");
+                ItoArt.scatter(sink, -ex, 1.2 - ey, 6 - ez, heat ? 7.6 : 6.3, heat, age, coat, 11, false);
+            }
+            case "istream" -> {
+                double radius = move.length > 3 ? Double.parseDouble(move[3]) : ItoMoves.cageSize(age);
+                if (!fp) {
+                    HieShots.body(sink, -ex, -ey, -ez);
+                }
+                ItoArt.stream(sink, HX - ex, (fp ? 1.32 + 3.0 : 2.35) - ey, (fp ? 0.7 : 0.1) - ez, -ex, radius - ey, -ez, radius, age, coat, 3);
             }
             case "iparasite" -> {
                 if (!fp) {
@@ -76,10 +119,15 @@ public final class ItoShots {
                 ItoArt.web(sink, -ex, 1.1 - ey, 2.2 - ez, 0, 0, 1, ItoMoves.WEB_RADIUS, age, ItoMoves.WEB_TICKS, coat, fp ? 0.45 : 1.0);
             }
             case "icage" -> {
+                // 3.4.2: |icage:age:c-or-b:radius:phase (phase s: standing, spreading from the crown at age 0; c: closing, age into it)
                 HieShots.body(sink, -ex, -ey, -ez);
-                double radius = move.length > 3 ? Double.parseDouble(move[3])
-                    : ItoArt.cageRadius(ItoMoves.CAGE_RADIUS, ItoMoves.CAGE_END, age, ItoMoves.CAGE_TICKS);
-                ItoArt.cage(sink, -ex, -ey, -ez, radius, age, 1.0, coat);
+                HieShots.body(sink, 4 - ex, -ey, 6 - ez);
+                double radius = move.length > 3 ? Double.parseDouble(move[3]) : ItoMoves.CAGE_RADIUS;
+                boolean closing = move.length > 4 && move[4].equals("c");
+                double r = closing ? ItoMoves.cageRadius(radius, age, ItoMoves.CAGE_CLOSE) : radius;
+                double spread = closing ? 1.0 : Math.min(1.0, age / ItoArt.CAGE_SPREAD);
+                double tension = closing ? Math.min(1.0, age / ItoMoves.CAGE_CLOSE) : 0.0;
+                ItoArt.cage(sink, -ex, -ey, -ez, r, spread, tension, 1.0, coat);
             }
             case "iwave" -> {
                 HieShots.body(sink, -ex, -ey, -ez);

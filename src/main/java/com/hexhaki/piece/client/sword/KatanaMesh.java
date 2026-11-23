@@ -59,6 +59,11 @@ public final class KatanaMesh {
         }
         float[] pos = src.pos.clone();
         boolean[] done = new boolean[src.pos.length / 3];
+        // 3.4.2: the blade's tip (its furthest point along), where every Supa blade's point narrows to nothing
+        float top = 0.0F;
+        for (int i = start; i < end; i++) {
+            top = Math.max(top, src.pos[src.quads[i] * 3 + 1]);
+        }
         for (int i = start; i < end; i++) {
             int v = src.quads[i];
             if (done[v]) {
@@ -68,9 +73,9 @@ public final class KatanaMesh {
             float x = src.pos[v * 3];
             float y = src.pos[v * 3 + 1];
             float[] b = bands.get((int) Math.floor(y / 0.5F));
-            pos[v * 3] = shape.x(x, y, b[0], b[1]);
-            pos[v * 3 + 1] = y * shape.length();
-            pos[v * 3 + 2] = src.pos[v * 3 + 2] * shape.thick();
+            pos[v * 3] = shape.x(x, y, b[0], b[1], top);
+            pos[v * 3 + 1] = shape.y(y, top);
+            pos[v * 3 + 2] = shape.z(src.pos[v * 3 + 2], y, top);
         }
         int[] quads = java.util.Arrays.copyOfRange(src.quads, start, end);
         return new KatanaMesh(pos, src.uv, src.nrm, quads, 0, src.bladeCount);

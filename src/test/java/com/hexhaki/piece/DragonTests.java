@@ -454,12 +454,22 @@ public final class DragonTests {
                 finite[0] &= Double.isFinite(v);
             }
         };
-        float[][] pose = new float[8][8];
         for (int coat = 0; coat < 2; coat++) {
             boolean c = coat == 1;
             for (int age = 0; age <= 40; age += 4) {
                 count[0] = 0;
-                com.hexhaki.piece.ito.ItoArt.cage(sink, 0, -1.6, 0, com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, age * 20, 900), age, 1.0, c);
+                // 3.4.2: one user holds one charge at a time: the Birdcage's stream (no cage of theirs stands while it pours) and
+                // Overheat's knot (no beam of theirs flies while it winds), or else the cage (spreading, then closing taut) and a beam
+                boolean held = (age / 4) % 2 == 1;
+                double close = Math.max(0, age - 20) * 2.5;
+                if (held) {
+                    com.hexhaki.piece.ito.ItoArt.stream(sink, -0.36, 0.7, 0.1, 0, 38.4, 0, 40, age, c, 3);
+                    com.hexhaki.piece.ito.ItoArt.knot(sink, -0.36, -0.25, 0.95, 0, 0, 1, Math.min(1.0, age / 40.0), age, c, 3);
+                } else {
+                    com.hexhaki.piece.ito.ItoArt.cage(sink, 0, -1.6, 0, com.hexhaki.piece.server.ItoMoves.cageRadius(40, close, 100),
+                        Math.min(1.0, age / 20.0), Math.min(1.0, close / 100.0), 1.0, c);
+                    com.hexhaki.piece.ito.ItoArt.beam(sink, -0.36, -0.25, 1.0, 0, 0, 1, 40, 1.0, age % 20, 8, c, 3);
+                }
                 if (!c) {
                     // the Awakening is one key: Break White bare, God Thread with Armament (below), never both at once
                     com.hexhaki.piece.ito.ItoArt.waves(sink, 0, -1.6, 0, 18, 3, 8, 0.5, age, 60, c);
@@ -468,8 +478,10 @@ public final class DragonTests {
                     com.hexhaki.piece.ito.ItoArt.bullet(sink, -0.3, -0.3, 1 + 2.4 * ((age + k * 4) % 16), 0, 0, 1, age, c);
                 }
                 com.hexhaki.piece.ito.ItoArt.lash(sink, -0.36, -0.45, 0.35, 0, 1, 4.5, age % 2, age % 8, c);
-                com.hexhaki.piece.ito.ItoArt.overheat(sink, -0.36, -0.45, 0.35, 0, 1, 16, age % 18, 18, c, 3);
-                com.hexhaki.piece.ito.ItoArt.goshiki(sink, 0, -1.6, 7, 0, 1, 1.4, 6, age, 40, c, 5);
+                com.hexhaki.piece.ito.ItoArt.scatter(sink, 0, -0.2, 41, 7.6, true, age % 18, c, 3, false);
+                com.hexhaki.piece.ito.ItoArt.scatter(sink, 2, -0.6, 5, 6.3, false, age % 18, c, 4, false);
+                com.hexhaki.piece.ito.ItoArt.goshiki(sink, -0.36, 0.8, 0.5, 0, -1.6, 0, 0, 1, 22, age, 44, c, 5);
+                com.hexhaki.piece.ito.ItoArt.woven(sink, 1.5, -1.6, 3, 1.8, age, c, 2);
                 double[] at = {0, 0.2, 5, 0.3, -0.3, 5, -0.3, -0.3, 5, 0.15, -1.4, 5, -0.15, -1.4, 5};
                 com.hexhaki.piece.ito.ItoArt.parasite(sink, -0.36, -0.45, 0.35, at, age, 1.0, c);
                 com.hexhaki.piece.ito.ItoArt.web(sink, 0, -0.5, 2.2, 0, 0, 1, 2.4, age, 120, c, 1.0);
@@ -481,13 +493,19 @@ public final class DragonTests {
                 }
                 com.hexhaki.piece.ito.ItoArt.sky(sink, 1, -1.6, 2, age % 14, c, 4);
                 com.hexhaki.piece.ito.ItoArt.stitch(sink, 0, -0.6, 0, 1.8, age, 60, 9);
-                com.hexhaki.piece.horo.AstralArt.walking(age, 1.0, pose);
-                com.hexhaki.piece.horo.AstralArt.knight(null, sink, pose, new com.hexhaki.piece.style.StyleShow.Place(1.5, -1.6, 3, 0), 1.0, c);
                 check(count[0], finite[0], "Ito strings" + (c ? " (coated)" : ""), age);
             }
         }
-        Check.that(com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, 0, 900) == 40 && com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, 900, 900) == 10
-            && com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, 450, 900) == 25, "the Birdcage closes from 40 to 10 over its life");
+        // 3.4.2 (the owner: "the longer you hold it the bigger it gets (max is the current size), when recasting it, the bird cage
+        // slowly closes"): the hold sizes it up to 40, the recast shuts it, slowly at first
+        Check.that(com.hexhaki.piece.server.ItoMoves.cageSize(0) == com.hexhaki.piece.server.ItoMoves.CAGE_LEAST
+            && com.hexhaki.piece.server.ItoMoves.cageSize(1000) == 40.0 && com.hexhaki.piece.server.ItoMoves.cageSize(40) > 20.0
+            && com.hexhaki.piece.server.ItoMoves.cageSize(40) < 30.0, "the Birdcage grows with the hold, at most 40");
+        Check.that(com.hexhaki.piece.server.ItoMoves.cageRadius(40, 0, 100) == 40 && Math.abs(com.hexhaki.piece.server.ItoMoves.cageRadius(40, 100, 100)
+            - com.hexhaki.piece.server.ItoMoves.CAGE_SHUT) < 1.0E-9 && 40 - com.hexhaki.piece.server.ItoMoves.cageRadius(40, 10, 100) < 1.5,
+            "the Birdcage closes when recast, slowly at first, to its middle");
+        Check.that(com.hexhaki.piece.server.ItoMoves.heatCharge(0) > 0.1 && com.hexhaki.piece.server.ItoMoves.heatCharge(1000) == 1.0,
+            "Overheat: a tap still fires, the hold fills it");
         // a string's last stretch narrows to a point: its last quads' far corners meet on its line
         double[] last = new double[12];
         com.hexhaki.piece.dragon.FireMesh.Sink tip = (xyz, argb) -> System.arraycopy(xyz, 0, last, 0, 12);
@@ -525,11 +543,20 @@ public final class DragonTests {
             check(count[0], finite[0], "Supa cuts", age);
         }
         com.hexhaki.piece.supa.SupaBlades.Shape arm = com.hexhaki.piece.supa.SupaBlades.ARM;
-        Check.that(Math.abs(arm.x(1.0F, 5.0F, 1.0F, -0.5F) - arm.curve()) < 1.0E-5F, "the steel's spine stays on its (eased) curve");
-        Check.that(arm.x(-0.5F, 5.0F, 1.0F, -0.5F) < -0.5F * arm.widen() + 1.0F * arm.curve() + 0.5F, "the edge widened out past the katana's");
+        Check.that(Math.abs(arm.x(1.0F, 5.0F, 1.0F, -0.5F, 40.0F) - arm.curve()) < 1.0E-5F, "the steel's spine stays on its (eased) curve");
+        Check.that(arm.x(-0.5F, 5.0F, 1.0F, -0.5F, 40.0F) < -0.5F * arm.widen() + 1.0F * arm.curve() + 0.5F, "the edge widened out past the katana's");
+        // 3.4.2 (the owner: "the blades have to be dramaticly sharper with a pointy tip. all of them"): every blade narrows to a needle
+        for (com.hexhaki.piece.supa.SupaBlades.Shape shape : new com.hexhaki.piece.supa.SupaBlades.Shape[] {arm,
+            com.hexhaki.piece.supa.SupaBlades.CLAW, com.hexhaki.piece.supa.SupaBlades.DRILL, com.hexhaki.piece.supa.SupaBlades.SKATE}) {
+            Check.that(shape.taper(40.0F, 40.0F) == 0.0F && shape.taper(10.0F, 40.0F) == 1.0F && shape.point() >= 0.3F,
+                "the " + shape.id() + " blade ends in a long point");
+            Check.that(Math.abs(shape.x(-0.5F, 40.0F, 1.0F, -0.5F, 40.0F) - shape.curve()) < 1.0E-5F, "the " + shape.id() + " blade's edge meets its spine at the tip");
+            Check.that(shape.y(40.0F, 40.0F) > 40.0F * shape.length(), "the " + shape.id() + " blade's point drawn out");
+        }
         String view = java.nio.file.Files.readString(java.nio.file.Path.of("tools/supa_view.py"));
         Check.that(view.contains("ARM = dict(widen=" + arm.widen() + ", thick=" + arm.thick() + ", length=" + arm.length() + ", wave="
-            + arm.wave() + ", period=" + arm.period() + ", curve=" + arm.curve() + ")"), "tools/supa_view.py draws the arm blade by SupaBlades.ARM");
+            + arm.wave() + ", period=" + arm.period() + ", curve=" + arm.curve() + ", point=" + arm.point() + ")")
+            && view.contains("STRETCH = " + com.hexhaki.piece.supa.SupaBlades.STRETCH), "tools/supa_view.py draws the arm blade by SupaBlades.ARM");
     }
 
     static void hieIce() {

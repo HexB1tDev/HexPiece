@@ -22,8 +22,9 @@ public final class HoroKit extends FruitKit {
     public static final FruitMove TOKU = new FruitMove("Toku Hollow", "[X]", 0, "horo_toku",
         "A giant grinning ghost floats out ahead of you. Press again, or let it touch someone or a wall: it explodes in a huge blast.");
     public static final FruitMove ASTRAL = new FruitMove("Astral Projection", "[C]", 0, "horo_astral",
-        "Your spirit leaves your body and flies as a ghost for up to twenty seconds: nothing can touch it and mobs lose sight of you. Press"
-            + " again, or when the time is up, you are back in your body where you left it.");
+        "Your spirit leaves your body and flies as a ghost for up to twenty seconds: nothing can harm it, mobs lose sight of it, and it"
+            + " strikes, mines and uses the fruit's moves as you do (but no fighting style and no Haki). Your body stays behind and can be"
+            + " struck: what it takes, you take, and if it dies so do you. Press again, or when the time is up, you are back in it.");
     public static final FruitMove NETWORK = new FruitMove("Ghost Network", "[V]", 0, "horo_network",
         "Six ghosts spread out round you for thirty seconds and keep watch: every living thing within 48 blocks glows, seen through walls.");
     public static final List<FruitMove> MOVES = List.of(NEGATIVE, MINI, TOKU, ASTRAL, NETWORK);

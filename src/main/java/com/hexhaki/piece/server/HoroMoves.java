@@ -130,6 +130,8 @@ public final class HoroMoves {
         long astralUntil = -1;
         ServerPlayer spirit;
         Vec3 astralFrom;
+        /** 3.4.2: the body left behind, a real body (horo/AstralBody): struck, its owner is. */
+        com.hexhaki.piece.horo.AstralBody body;
         float astralYaw;
         float astralPitch;
         boolean hadMayfly;
@@ -222,7 +224,7 @@ public final class HoroMoves {
         return player.m_146892_().m_82520_(0.0, -0.35, 0.0);
     }
 
-    static boolean astral(ServerPlayer player) {
+    public static boolean astral(ServerPlayer player) {
         State s = STATES.get(player.m_20148_());
         return s != null && s.astralUntil >= 0;
     }
@@ -244,7 +246,8 @@ public final class HoroMoves {
             boom(player, s); // the second press: it explodes
             return;
         }
-        if (busy(s, now) || player.m_20159_() || s.astralUntil >= 0) {
+        // 3.4.2 (the owner: "the Projection ... can use fruit moves"): the spirit uses the fruit as the body does
+        if (busy(s, now) || player.m_20159_()) {
             return;
         }
         if (slot == HoroKit.MINI.slot()) {
@@ -263,7 +266,7 @@ public final class HoroMoves {
     static void use(ServerPlayer player) {
         State s = state(player);
         long now = now(player);
-        if (busy(s, now) || player.m_20159_() || s.astralUntil >= 0 || !ready(player, HoroKit.NEGATIVE)) {
+        if (busy(s, now) || player.m_20159_() || !ready(player, HoroKit.NEGATIVE)) {
             return;
         }
         s.useSince = now;
@@ -471,6 +474,14 @@ public final class HoroMoves {
         player.m_7292_(new MobEffectInstance(MobEffects.f_19609_, ASTRAL_TICKS + 20, 0, false, false, false));
         animate(player, "hie_partisan_raise");
         fx(player, ASTRAL, 0, s.astralFrom, new Vec3(s.astralYaw, 0, 0), 0, 0, ASTRAL_TICKS);
+        // 3.4.2: the body left behind is a real body: it can be struck, and every blow on it is the user's (bodyHurt)
+        com.hexhaki.piece.horo.AstralBody body = com.hexhaki.piece.PieceEntities.ASTRAL_BODY.get().m_20615_(player.m_9236_());
+        if (body != null) {
+            body.m_7678_(s.astralFrom.f_82479_, s.astralFrom.f_82480_, s.astralFrom.f_82481_, s.astralYaw, 0.0F);
+            body.leftBy(player);
+            ((ServerLevel) player.m_9236_()).m_7967_(body);
+            s.body = body;
+        }
         sound(player, chest(player), HoroSounds.SPIRIT, 1.0F, 1.0F);
         player.m_20256_(new Vec3(0, 0.35, 0));
         player.f_19864_ = true;
@@ -482,6 +493,10 @@ public final class HoroMoves {
             return;
         }
         s.astralUntil = -1;
+        if (s.body != null) {
+            s.body.m_146870_();
+            s.body = null;
+        }
         Abilities abilities = player.m_150110_();
         boolean creative = player.m_7500_() || player.m_5833_();
         abilities.f_35936_ = creative || s.hadMayfly;
@@ -498,19 +513,45 @@ public final class HoroMoves {
         s.busyUntil = now(player) + 10;
     }
 
-    /** The spirit is untouchable (only the void reaches it), and it cannot strike anything either. */
+    /**
+     * The spirit is untouchable (only the void reaches it). 3.4.2 (the owner: "in this form the user can do everything normal from
+     * minecraft, but cant use style or haki at all"): it strikes, mines and uses things as anyone does (3.3.6 cancelled its blows); its
+     * fighting style, sword moves and Haki are refused (network/C2SStyleAction, C2SSword, RyouServer.hakiOff).
+     */
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void spirit(LivingAttackEvent event) {
-        if (STATES.isEmpty()) {
+        if (STATES.isEmpty() || forwarding) {
             return;
         }
-        if (event.getEntity() instanceof ServerPlayer target && astral(target)
-            && !event.getSource().m_269533_(net.minecraft.tags.DamageTypeTags.f_268738_)) {
+        // 3.4.2 (the owner: "the Projection IS IMMORTAL"): nothing harms the spirit (the void sends it back to its body: tick)
+        if (event.getEntity() instanceof ServerPlayer target && astral(target)) {
             event.setCanceled(true);
+        }
+    }
+
+    /** While a blow on the body left behind is passed on to its owner (the spirit's immortality does not stop that one). */
+    private static boolean forwarding;
+
+    /** Whether {@code body} is the one {@code owner} left behind and they are still out of it. */
+    public static boolean leftBody(ServerPlayer owner, com.hexhaki.piece.horo.AstralBody body) {
+        State s = STATES.get(owner.m_20148_());
+        return s != null && s.astralUntil >= 0 && s.body == body;
+    }
+
+    /**
+     * A blow on the body left behind (3.4.2, the owner: "the user's real body left behind is very much damageable, and if killed the
+     * projection dies too"): it lands on its owner, whose own spirit cannot strike it.
+     */
+    public static void bodyHurt(com.hexhaki.piece.horo.AstralBody body, net.minecraft.world.damagesource.DamageSource source, float amount) {
+        ServerPlayer owner = body.owner();
+        if (owner == null || !astral(owner) || source.m_7639_() == owner || source.m_7640_() == owner) {
             return;
         }
-        if (event.getSource().m_7639_() instanceof ServerPlayer striker && astral(striker)) {
-            event.setCanceled(true);
+        forwarding = true;
+        try {
+            owner.m_6469_(source, amount);
+        } finally {
+            forwarding = false;
         }
     }
 
@@ -568,11 +609,13 @@ public final class HoroMoves {
         if (s.astralUntil >= 0) {
             if (now >= s.astralUntil || !player.m_6084_()) {
                 astralEnd(player, s);
+            } else if (player.m_20186_() < ((ServerLevel) player.m_9236_()).m_141937_() - 8) {
+                astralEnd(player, s); // fallen out of the world: back in the body (the spirit cannot die)
             } else if (now % 10 == 0) {
-                // mobs lose sight of the spirit
+                // mobs lose sight of the spirit; 3.4.2: they go for the body left behind
                 Vec3 at = player.m_20182_();
                 for (Mob mob : player.m_9236_().m_6443_(Mob.class, UoMoves.box(at, at).m_82400_(32.0), e -> e.m_5448_() == player)) {
-                    mob.m_6710_(null);
+                    mob.m_6710_(s.body != null && s.body.m_6084_() ? s.body : null);
                 }
             }
         }

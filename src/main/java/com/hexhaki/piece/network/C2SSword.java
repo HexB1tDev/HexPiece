@@ -29,7 +29,11 @@ public record C2SSword(int action) {
         NetworkEvent.Context context = supplier.get();
         ServerPlayer sender = context.getSender();
         if (sender != null) {
-            context.enqueueWork(() -> SwordServer.input(sender, message.action));
+            context.enqueueWork(() -> {
+                if (!com.hexhaki.piece.server.HoroMoves.astral(sender)) { // 3.4.2: no style (the sword's included) as a spirit
+                    SwordServer.input(sender, message.action);
+                }
+            });
         }
         context.setPacketHandled(true);
     }

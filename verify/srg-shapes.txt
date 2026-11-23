@@ -33,6 +33,7 @@ f_123796_
 f_12490_
 f_13131_
 f_135028_
+f_171162_
 f_171164_
 f_171165_
 f_171166_
@@ -180,6 +181,7 @@ m_135381_ (Laby;Ljava/lang/Object;)V
 m_135815_ ()Ljava/lang/String;
 m_135827_ ()Ljava/lang/String;
 m_141937_ ()I
+m_146870_ ()V
 m_146892_ ()Leei;
 m_146908_ ()F
 m_146909_ ()F
@@ -260,6 +262,7 @@ m_214293_ (Ljava/lang/String;Ljava/lang/String;)Lacq;
 m_21525_ ()Z
 m_21552_ ()Lbhf$a;
 m_21557_ (Z)V
+m_21563_ ()Lblx;
 m_21573_ ()Lbpj;
 m_217043_ ()Lapf;
 m_22100_ (D)V

@@ -38,7 +38,7 @@ final class HieClient implements ClientKit {
 
     @Override
     public void renderBody(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
-                           CompoundTag state, float partial, boolean invisible) {
+                           CompoundTag state, float partial, boolean inWorld) {
         if (!HieFx.saber(player.m_19879_())) {
             return;
         }

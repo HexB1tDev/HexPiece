@@ -495,7 +495,11 @@ public final class HoroFx {
         float body = player.f_20884_ + wrap(player.f_20883_ - player.f_20884_) * partial;
         float head = player.f_20886_ + wrap(player.f_20885_ - player.f_20886_) * partial;
         float pitch = player.f_19860_ + (player.m_146909_() - player.f_19860_) * partial;
-        AstralArt.floating(age, pitch, wrap(head - body), POSE);
+        // 3.4.2: its arms the game's own (hanging, swinging as it moves, the right one swung by its punch), not the ghost's raised arms
+        double dx = player.m_20185_() - player.f_19854_;
+        double dz = player.m_20189_() - player.f_19856_;
+        double speed = Math.min(1.0, Math.sqrt(dx * dx + dz * dz) / 0.25);
+        AstralArt.floating(age, pitch, wrap(head - body), speed, player.m_21324_(partial), POSE);
     }
 
     static float wrap(float degrees) {

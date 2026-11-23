@@ -43,7 +43,7 @@ final class PikaClient implements ClientKit {
     /** The sword of light in the right hand (the model's own arm pose), the leg alight while it gathers the light. */
     @Override
     public void renderBody(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
-                           CompoundTag state, float partial, boolean invisible) {
+                           CompoundTag state, float partial, boolean inWorld) {
         if (!PikaFx.sword(player.m_19879_())) {
             return;
         }
