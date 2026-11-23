@@ -15,7 +15,7 @@ render any lightning change beside the release from the same camera before pushi
 
 Where things stand: up to 3.4.6 everything is pushed and green (3.4.6: Build #191, Release #137: Goof Ball and Giant only in Gear 5,
 Dawn Whip's leg drawn by HexPiece; 8zzg). 3.4.7 (8zzg: the Gum-Gum Giant's throw flat and straight like the house's other throws, our
-own crash where the body hits, the original's vanilla explosion gone) was pushed: check its Build and Release runs first.
+own crash where the body hits, the original's vanilla explosion gone) is green too (Build #192, Release #138).
 
 Next: ask the owner how Dawn Pistol (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, 3.4.4 and 3.4.5 play (they have not said), and work on what
 they answer. The fist is a right fist on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any
