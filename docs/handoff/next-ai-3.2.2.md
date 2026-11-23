@@ -27,7 +27,8 @@ look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone
 description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is
 pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed and green (Build
 #172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); 3.3.7
-(8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed: check its runs (section 9).**
+(8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed; its Build #177 and Release #128 were still running
+when the owner stopped the session ("Stop handoff + prompt NOW"): check them first (section 9).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2241,7 +2242,9 @@ Built (nothing tested in game: build EXIT 0, 13 suites, every effect rendered an
   840 wide or more (FxPreview --size) before judging: small previews show thin strings as specks.**
 - The owner, shown God Thread's spears with square ends: "where are the sharp ends?" Every string now tapers at BOTH ends
   (ItoArt.taper: its last POINT 30 % and its first POINT_START 15 %; ItoArt.line at least 6 pieces so the points have a body between
-  them); God Thread's spears are sharp black thorns, each with a long diamond head. docs/handoff/ito-sharp-3.3.7.jpg (sent).
+  them); God Thread's spears are sharp black thorns, each with a long diamond head. docs/handoff/ito-sharp-3.3.7.jpg (sent);
+  the Armament variants: docs/handoff/ito-coated-3.3.7.jpg (dark slim strings, a faint violet glow: if the owner wants Haki to read more
+  strongly, raise COAT_GLOW's layer, never the width).
 - First person: every string and Overheat's rope thin near the eye (ItoArt.near: NEAR 1.5, NEAR_ROPE 3), one's own web drawn at 0.45;
   ItoFx.hand puts one's own strings in front of the view's lower right. The reused clips' hand moves checked (HandPreview: low right).
   The Black Knight rendered in a real skin (AstralPreview with ASTRAL_KNIGHT=1): a pale glowing copy, walking, violet with Armament.
@@ -2257,8 +2260,10 @@ Built (nothing tested in game: build EXIT 0, 13 suites, every effect rendered an
 
 ## 9. What to do next (after 3.3.7)
 
-1. 3.3.6 is pushed and green (Build #175, Release #127); 3.3.7 (8zzd, the Ito Ito no Mi) is pushed: check its "Build HexPiece" and
-   "Release HexPiece" runs are green before anything else.
+1. 3.3.6 is pushed and green (Build #175, Release #127); 3.3.7 (8zzd, the Ito Ito no Mi) is pushed (commit d6581a7) and its Build #177
+   and Release #128 were in progress when the owner said "Stop handoff + prompt NOW" (the local build was EXIT 0, 13 suites): check
+   both are green before anything else, and fix anything red. The session pushed to both `ccr-cacd1493-6rdwwy` (the session's branch)
+   and `claude/nice-bell-gam7qf` (the owner's; only claude/** branches run the workflows).
 2. The owner tests at home ("Ima only test when I get home"): ask how the Horo fruit (3.3.6) and the Ito fruit (3.3.7) play, and how
    3.3.2 and 3.3.3 feel. Strings: keep them slim, solid and pointed at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

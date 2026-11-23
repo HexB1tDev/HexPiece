@@ -14,7 +14,8 @@ never fat tubes, never re-scaled, never any other lightning; section 8zn has the
 render any lightning change beside the release from the same camera before pushing).
 
 Where things stand: up to 3.3.6 everything is pushed and green (sections 8zl to 8zzb; 3.3.6 Build #175, Release #127); 3.3.7, the
-Ito Ito no Mi (8zzc the plan, 8zzd as built), is pushed: check its runs first. 3.3.6 is the Horo Horo no Mi: the owner said "The ghosts are meant to be cute" (redone: big shining
+Ito Ito no Mi (8zzc the plan, 8zzd as built), is pushed; its Build #177 and Release #128 were still running when the owner stopped
+the session ("Stop handoff + prompt NOW"): check both are green first and fix anything red. 3.3.6 is the Horo Horo no Mi: the owner said "The ghosts are meant to be cute" (redone: big shining
 eyes, rosy cheeks, docs/handoff/horo-cute-3.3.6.jpg) and asked for Gloom as its own effect (blind, slow, 8 in 10 attacks of every kind
 miss, 8 seconds after a short fall: their answers, 8zzb). Read 8zz and 8zzb before any art: the owner called Supa's first flat blades
 "really poor and poorly made"; judge every effect against the Light, Gura and Magma art before showing it; thin pale lines and flat
