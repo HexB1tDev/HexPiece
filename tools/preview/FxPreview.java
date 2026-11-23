@@ -383,7 +383,9 @@ public final class FxPreview {
                     if (!MaguShots.shot(sink, eye, move)) { // 3.1.3: the Magma fruit's (tools/preview/MaguShots)
                         if (!HieShots.shot(sink, eye, move)) { // 3.1.9: the Ice fruit's (tools/preview/HieShots)
                             if (!NikaShots.shot(sink, eye, move)) { // 3.2.6: the Nika fruit's (tools/preview/NikaShots)
-                                NoroShots.shot(sink, eye, move); // 3.3.4: the Noro fruit's (tools/preview/NoroShots)
+                                if (!NoroShots.shot(sink, eye, move)) { // 3.3.4: the Noro fruit's (tools/preview/NoroShots)
+                                    SupaShots.shot(sink, eye, move); // 3.3.5: the Supa fruit's (tools/preview/SupaShots)
+                                }
                             }
                         }
                     }

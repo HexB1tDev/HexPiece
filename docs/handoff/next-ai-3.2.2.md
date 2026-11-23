@@ -1944,10 +1944,38 @@ Finished in the next session (nothing tested in game: build, 13 suites, renders,
   some 502s): fetch in parallel with retries.
 - The owner, when this was ready (verbatim): "no need for gif, proceed to the next fruit". So no GIF for 3.3.4; on to Supa Supa.
 
+## 8zz. IN PROGRESS (3.3.5): the Supa Supa no Mi; the owner on the first blade renders
+
+Wired (in the tree, not yet built as a whole): PiecePatch SUPA {"supa", "Supa Supa no Mi", "Blade", "8FB3DA", lore} ordinal 7, not a
+Logia; FruitRanks UNCOMMON; HexPiece.init registers server/SupaKit (not written yet); PieceSounds registers supa/SupaSounds (SWISH, DRAW,
+CUT, GLANCE, RIP, SKATE loop, SPIN loop: names only, no clips yet); UoFx routes kinds 200-219 to client/supa/SupaFx (not written
+yet); en_us "§aSupa Supa no Mi" and the subtitles; the icon (tools/supa_icon.py: a blue fruit with white crescent blades in a pinwheel,
+a stem and a leaf) and item model; build.py VERSION 3.3.5 and NEW_PREFIXES. Found for the moves: FruitKit.blocks(player, source)
+(the original calls it when the fruit is active and not in the sea: cancels the attack) and FruitServer.hakiInfused(source) (the
+attacker has Armament or Ryou on) for Slashing Immunity; SwordItem, AxeItem (HexGhoul's list) and the mod's KatanaItem for "a blade";
+NikaToon squashes ANYONE who plays a gear5_ clip (never reuse gear5_dawn_whip for another fruit); the reused clips chosen by render:
+pika_sword_1/2 (Spar Claw), hie_partisan_raise then hie_partisan_throw (Flying Slash), pika_murakumo (Atomic Spar: arms cross then
+sweep out), hie_road_slide then hie_road_punch (Spiral Hollow; the slide for Atomic Spurt), hie_partisan_launch (Spider), pika_lunge
+(Sparkling Daisy), gura_tilt (Spar Break: arms out wide while a ring of blades spins).
+
+The owner on the first renders (flat single-colour polygons: supa/SupaArt's armBlade, claws, drill, steelBox; tools/preview/SupaShots),
+verbatim: "the arm blade looks really bad", then "it honestly all looks really poor and poorly made." Asked (AskUserQuestion), the owner
+chose **"Katana steel"**: every blade made from the mod's own katana steel (the owner's lit, textured blade mesh with its temper line),
+reshaped broad with Daz's wavy edge, so Haki coats it black-purple exactly as the katanas; the flying cuts redone in the Light/Gura glow
+style; rendered beside a katana for the owner's yes before any move code. Built for that: tools/supa_view.py (sword_view/sword_rig: the
+figure and the katana steel, textured and lit as the game does): a katana's 01_Blade part reshaped (per 0.5 px band its spine and edge;
+x' = spine * curve - d * widen - wave * sin(2 pi y / period) * u^2, y' = y * length, z' = z * thick), set on the forearm (ARM_AT, turned
+ARM_TURN 30 degrees round the arm), the coat multiplied toward (62, 34, 88). Chosen: Silver Crane's steel, widen 4.2, thick 2.6, length
+0.82, wave 0.45, period 7.5, curve 0.4 (Azure Tide blue-grey and Blackwater dark compared). Render: docs/handoff/supa-arm-blades-3.3.5.jpg
+(bare and with Armament, beside the katana), sent to the owner for a yes. NEXT: port the reshape to client/sword/KatanaMesh (a shaped
+copy, cached) and a public KatanaRenderer.steel (the katana's own quads, coated and highlight on the steel alone); SupaArt's flat
+blades go; the other blades (claws, drills of blades round the forearm, the skate blades, Spider's steel) made the same way and judged
+the same way; then the moves (8zw).
+
 ## 9. What to do next (after 3.3.4)
 
 1. **Check the branch's last "Build HexPiece" and "Release HexPiece" runs** (`claude/nice-bell-gam7qf`) and fix whatever is red.
-2. **3.3.5 Supa Supa**, then **3.3.6 Horo Horo** (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
+2. **3.3.5 Supa Supa (IN PROGRESS: 8zz)**, then **3.3.6 Horo Horo** (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
    Noro is (8zy), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
    CC0 web sounds, the Conqueror's lightning out of every explosion). Supa's blades go black-purple with Armament on, like the katanas.
 3. Sounds: Freesound needs the HexPiece environment (the session started on Default again: get_environment lists HexPiece,

@@ -131,6 +131,10 @@ public final class UoFx {
             com.hexhaki.piece.client.noro.NoroFx.accept(m); // 3.3.4: the Noro fruit's (180 to 199)
             return;
         }
+        if (m.kind() >= 200 && m.kind() < 220) {
+            com.hexhaki.piece.client.supa.SupaFx.accept(m); // 3.3.5: the Supa fruit's (200 to 219)
+            return;
+        }
         if (m.kind() == com.hexhaki.piece.server.NikaJump.HOP || m.kind() == com.hexhaki.piece.server.NikaJump.LAND) {
             com.hexhaki.piece.client.gear.RubberWorldDraw.accept(m); // 3.3.2: Gear 5's jump turning the ground to rubber
             return;
