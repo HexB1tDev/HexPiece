@@ -149,6 +149,10 @@ public final class PiecePatch implements Opcodes {
     static final String[] HORO = {"horo", "Horo Horo no Mi", "Ghost", "F3E3A6",
         "A Paramecia that lets its eater make ghosts: hollows that drain the will to fight from whoever they pass through, little ones that"
             + " burst, a giant one that explodes, and lets the eater's own spirit leave the body. Perona's fruit."};
+    /** 3.3.7: the Ito Ito no Mi (the owner: "New Rare Fruit: Ito Ito No Mi (Rare) The Strings Fruit"): a Paramecia, Doflamingo's. */
+    static final String[] ITO = {"ito", "Ito Ito no Mi", "String", "F27BB8",
+        "A Paramecia that lets its eater make strings sharp enough to cut steel: to slice and whip, to work others like puppets, to walk"
+            + " the sky, to weave a copy of themself and a cage that closes in on everyone inside. Donquixote Doflamingo's fruit."};
     /** 3.3.5: the Supa Supa no Mi (the owner: "Supa Supa No Mi (UnCommon)"): a Paramecia, Daz Bones' (Mr. 1). */
     static final String[] SUPA = {"supa", "Supa Supa no Mi", "Blade", "8FB3DA",
         "A Paramecia that turns any part of its eater's body into steel blades: arms, fingers, feet, the whole body, hard enough that no"
@@ -836,10 +840,11 @@ public final class PiecePatch implements Opcodes {
      */
     static void uoFruit(ClassNode node) {
         // 3.1.9 (the owner: "Can you create the ice fruit, the Aokiji one?"): the Hie Hie no Mi joins after it (ordinal 5); 3.3.4: the
-        // Noro Noro no Mi (ordinal 6); 3.3.5: the Supa Supa no Mi (ordinal 7); 3.3.6: the Horo Horo no Mi (ordinal 8)
-        String[][] extra = {UO, HIE, NORO, SUPA, HORO};
-        String[] names = {"UO", "HIE", "NORO", "SUPA", "HORO"};
-        boolean[] logia = {false, true, false, false, false};
+        // Noro Noro no Mi (ordinal 6); 3.3.5: the Supa Supa no Mi (ordinal 7); 3.3.6: the Horo Horo no Mi (ordinal 8); 3.3.7: the Ito Ito
+        // no Mi (ordinal 9)
+        String[][] extra = {UO, HIE, NORO, SUPA, HORO, ITO};
+        String[] names = {"UO", "HIE", "NORO", "SUPA", "HORO", "ITO"};
+        boolean[] logia = {false, true, false, false, false, false};
         String type = "L" + FRUIT + ";";
         for (String name : names) {
             node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, name, type, null, null));

@@ -36,6 +36,7 @@ public final class HexPiece {
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.NORO, com.hexhaki.piece.server.NoroKit::new); // 3.3.4
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.SUPA, com.hexhaki.piece.server.SupaKit::new); // 3.3.5
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.HORO, com.hexhaki.piece.server.HoroKit::new); // 3.3.6
+        com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.ITO, com.hexhaki.piece.server.ItoKit::new); // 3.3.7
         LOGGER.info("HexPiece expansion started: profiles, the start menu, fighting styles, the katanas, pirates and marines, the Uo Uo no Mi");
     }
 }

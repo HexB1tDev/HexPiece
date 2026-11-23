@@ -47,6 +47,8 @@ public final class FruitEnergy {
             {"supa_slash", "20"}, {"supa_atomic", "30"}, {"supa_spiral", "30"}, {"supa_spurt", "30"}, {"supa_spider", "35"},
             {"supa_daisy", "30"}, {"supa_break", "40"},
             {"horo_negative", "25"}, {"horo_mini", "30"}, {"horo_toku", "40"}, {"horo_astral", "30"}, {"horo_network", "35"},
+            {"ito_bullet", "15"}, {"ito_goshiki", "30"}, {"ito_overheat", "30"}, {"ito_parasite", "35"}, {"ito_web", "25"},
+            {"ito_knight", "40"}, {"ito_cage", "60"}, {"ito_awaken", "50"},
             {"pika_laser", "20"}, {"pika_yata", "15"}, {"pika_yasakani", "30"}, {"pika_lunge", "20"}, {"pika_light_kick", "30"},
             {"pika_clones", "35"},
             {"uo_air", "15"}, {"uo_breath", "30"}, {"uo_wind", "25"}, {"uo_embers", "20"}, {"uo_flame", "15"}, {"uo_blast", "40"},

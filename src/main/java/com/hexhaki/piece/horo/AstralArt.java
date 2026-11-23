@@ -123,6 +123,55 @@ public final class AstralArt {
         boxes(skin, null, pose, place, 0.0, 1.0, false, 0);
     }
 
+    /** 3.3.7: the Ito fruit's Black Knight: the user's own skin, pale and nearly solid (woven of white string); with Armament, darker. */
+    public static final int KNIGHT_WASH = 0xFFF2F8;
+    public static final int KNIGHT_COAT_WASH = 0xB8A8CC;
+    static final double[][] KNIGHT_SHELLS = {{0.3, 0.2}, {1.3, 0.09}};
+    static final int[] KNIGHT_SHELL = {0xFFFFFF, 0xF59ACB};
+    static final int[] KNIGHT_COAT_SHELL = {0x8A5AC8, 0x6A3A9E};
+
+    /**
+     * 3.3.7: the Black Knight (the Ito fruit's copy of its user woven of string), posed by {@code pose} at {@code place}: its skin (pale,
+     * nearly solid, only the faces turned to the eye) into {@code skin}, a glow of string-white seams round every box into {@code glow}
+     * (violet with Armament, {@code coat}); either may be null (the game draws the skin first, the light after).
+     */
+    public static void knight(Skin skin, FireMesh.Sink glow, float[][] pose, StyleShow.Place place, double alpha, boolean coat) {
+        if (alpha < 0.01) {
+            return;
+        }
+        if (skin != null) {
+            knightWash = coat ? KNIGHT_COAT_WASH : KNIGHT_WASH;
+            boxes(skin, null, pose, place, 0.0, alpha, true, 0);
+            knightWash = 0;
+        }
+        if (glow != null) {
+            int[] colours = coat ? KNIGHT_COAT_SHELL : KNIGHT_SHELL;
+            for (int layer = 0; layer < KNIGHT_SHELLS.length; layer++) {
+                knightWash = 1;
+                boxes(null, glow, pose, place, KNIGHT_SHELLS[layer][0], 1.0, true, FireMesh.argb(KNIGHT_SHELLS[layer][1] * alpha, colours[layer]));
+                knightWash = 0;
+            }
+        }
+    }
+
+    /** While a knight is drawn: its wash (0: a spirit's or a body's), the legs kept whole. */
+    static int knightWash;
+
+    /**
+     * 3.3.7: a walk {@code age} ticks in at {@code speed} (0 standing to 1 a stride), into {@code pose}: arms and legs swinging opposite,
+     * the knees and elbows bending as they swing back, a little bob.
+     */
+    public static void walking(double age, double speed, float[][] pose) {
+        clear(pose);
+        double s = Math.max(0.0, Math.min(1.0, speed));
+        double phase = Math.sin(age * 0.55);
+        set(pose, StyleRig.BODY, 0.0, 0.03 * Math.abs(phase) * s, 0.0, 0.0, 0.0, 0.0, 3.0 * s);
+        set(pose, StyleRig.RIGHT_ARM, 0.0, 0.0, 0.0, -32.0 * phase * s, 0.0, 4.0, 10.0 + 8.0 * s);
+        set(pose, StyleRig.LEFT_ARM, 0.0, 0.0, 0.0, 32.0 * phase * s, 0.0, -4.0, 10.0 + 8.0 * s);
+        set(pose, StyleRig.RIGHT_LEG, 0.0, 0.0, 0.0, 34.0 * phase * s, 0.0, 1.0, Math.max(0.0, 30.0 * phase) * s);
+        set(pose, StyleRig.LEFT_LEG, 0.0, 0.0, 0.0, -34.0 * phase * s, 0.0, -1.0, Math.max(0.0, -30.0 * phase) * s);
+    }
+
     /** Each box's faces (SkinBox.faces is built once here): [box][outer], boxes the head, the torso's halves, then each limb's halves. */
     static final int[][][][] FACES = new int[11][2][][];
 
@@ -157,7 +206,7 @@ public final class AstralArt {
                 for (int half = 0; half < 2; half++) {
                     double[] h = StyleRig.half(pose, PARTS[i], half == 1, g);
                     System.arraycopy(h, 0, C, 0, 24);
-                    double fade = !ghost || i < 2 ? 1.0 : half == 0 ? THIGH : SHIN;
+                    double fade = !ghost || i < 2 || knightWash != 0 ? 1.0 : half == 0 ? THIGH : SHIN;
                     box(skin, glow, place, FACES[3 + i * 2 + half][outer], alpha * fade, ghost, scale(shell, fade));
                 }
             }
@@ -194,7 +243,8 @@ public final class AstralArt {
             }
             return;
         }
-        int argb = ghost ? FireMesh.argb(WASH_ALPHA * alpha, WASH) : FireMesh.argb(alpha, 0xFFFFFF);
+        int argb = knightWash != 0 ? FireMesh.argb(0.94 * alpha, knightWash) : ghost ? FireMesh.argb(WASH_ALPHA * alpha, WASH)
+            : FireMesh.argb(alpha, 0xFFFFFF);
         for (int[] face : faces) {
             for (int k = 0; k < 4; k++) {
                 System.arraycopy(W, face[k] * 3, XYZ, k * 3, 3);

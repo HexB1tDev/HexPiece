@@ -2203,6 +2203,35 @@ Proposed keys (as the other fruits: LMB, RMB, Z X C V B N M, a passive):
 **The owner's answers** (AskUserQuestion, 3.3.6's session): the keys **"As proposed"** (exactly the list above); the Birdcage **"40
 blocks, 45 s"** (a huge cage like Dressrosa's, shrinking slowly over 45 seconds). Rare (three stars), version 3.3.7. Not started.
 
+## 8zzd. IN PROGRESS (3.3.7, not released): the Ito Ito no Mi (the owner: "Ima only test when I get home, proceed")
+
+Built so far (the local build EXIT 0, 13 suites; nothing rendered or judged yet, no sounds, no tests of its own):
+- **Wiring**: PiecePatch ITO {"ito", "Ito Ito no Mi", "String", "F27BB8", lore} ordinal 9; FruitRanks RARE ("§9Ito Ito no Mi");
+  HexPiece.init registers server/ItoKit; PieceSounds registers ito/ItoSounds (SWISH, SHOT, SLICE, BURN, PULL, WEB, CAGE, WAVE, STEP:
+  names only, no clips or sounds.json entries yet); en_us subtitles; icon tools/ito_icon.py (a white pear with black swirls, a curly
+  pink stem; judged) and item model; build.py VERSION 3.3.7 and NEW_PREFIXES; FruitEnergy ito_* costs; UoFx routes kinds >= 240 to
+  client/ito/ItoFx (**S2CUoFx's kind is one byte: 255 is the last kind there is**; the Ito fruit uses 240 to 252).
+- **client/FruitKeyN**: M sends ability 41 (ABILITY_M) for a fruit with a move on "[M]"; a jump pressed in the air with the Ito fruit
+  (fruit mode, not flying, not in water) sends 42 (ABILITY_SKY). The original's FruitServer.action passes any ability number to the kit
+  once fruit mode is on.
+- **server/ItoKit + ItoMoves** (8zzc's keys): LMB String Slash (pika_sword_1/2, 4.5 reach, 70 degrees, 4.5 damage); RMB Tamaito (tap one
+  piercing bullet 2.4 a tick, 40 blocks, 4 damage; held a burst of six, pika_laser_charge/end); Z Goshikito (hie_partisan_throw; 5 strings
+  fall for 6 ticks onto the spot looked at within 30; 12 damage in an 8 x 2.8 strip; the Conqueror's lightning out of it); X Overheat
+  (hie_pheasant; a 16-block line at tick 4: 10 damage, 5 s on fire, thrown aside); C Parasite (hie_grab_reach; the one aimed at within 24
+  dragged where the user looks for 100 ticks, C again lets go); V Spider's Web (hie_ball_gather; 2.2 ahead, radius 2.4, 120 ticks:
+  projectiles crossing it held fast, gravity given back after; ItoKit.blocks stops blows from in front); B Black Knight (hie_partisan_raise;
+  300 ticks, a server-side copy walking to the nearest foe within 16 at 0.3 a tick, cutting 5 every 14 ticks, a KNIGHT message every 4
+  ticks, the clients interpolate); N Birdcage (magu_rise; the owner's 40 blocks closing to 10 over 900 ticks, every 2 ticks whoever is
+  within 1.2 of its dome cut 4 (once per 10 ticks) and pushed back in or kept out; N again takes it down); M Break White (hie_ice_age;
+  three waves 8 ticks apart rolling 0.5 a tick to 18, 7 damage, thrown up) or with Armament God Thread (hie_ball_throw; 16 spears meet
+  at the aimed body or point within 40 after 8 ticks: UoMoves.explode radius 3.5, 14 damage); passive Sora no Michi (three air steps,
+  lift 0.5, fall forgotten); passive Self-Surgery (below a third, Regeneration II 6 s, once a minute). Armament: strings coated (bz 1
+  in every message) and 25 % more damage.
+- **ito/ItoArt** (strands: three soft ribbons turned to the eye, a white-hot core, a pink-white halo, a wide pink glow; coated: a dark
+  core in a violet glow; Overheat a banded red-hot tube with two strands wound round it and an orange glow) and **client/ito/ItoFx**
+  (everything above; the Black Knight's skin through AstralArt.knight: pale, nearly solid, string-white seams, walking pose
+  AstralArt.walking or the Light fruit's sword cuts). **Next: render and judge every effect (tools/preview/ItoShots), sounds, tests.**
+
 ## 9. What to do next (after 3.3.6)
 
 1. 3.3.6 is pushed and green (Build #175, Release #127). Check the branch's last runs before anything else all the same.

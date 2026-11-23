@@ -22,22 +22,37 @@ import net.minecraftforge.fml.common.Mod;
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class FruitKeyN {
+    // 3.3.7: M and the Ito fruit's air step go the same way (ABILITY_M, ABILITY_SKY)
     /** The N key's ability number (server/GuraUltimate.SLOT takes it). */
     public static final int ABILITY = 40;
+    /** 3.3.7: the M key's (the Ito fruit's Awakening; the Nika fruit reads M itself, client/gear/NikaKeys). */
+    public static final int ABILITY_M = 41;
+    /**
+     * 3.3.7: a jump pressed in the air with the Ito fruit (Sora no Michi, server/ItoMoves): the server lets the player step up on strings
+     * (it alone moves the body and forgets the fall, so no fall damage is taken for the height walked).
+     */
+    public static final int ABILITY_SKY = 42;
     private static boolean down;
+    private static boolean downM;
+    private static boolean jumpWas;
 
     private FruitKeyN() {
     }
 
     /** Whether the active fruit has a move on N. */
     static boolean hasN(Minecraft minecraft) {
+        return has(minecraft, "[N]");
+    }
+
+    /** Whether the active fruit has a move on {@code key} ("[N]", "[M]"). */
+    static boolean has(Minecraft minecraft, String key) {
         com.hexhaki.fruit.Fruit fruit = FruitClient.fruit(minecraft.f_91074_.m_19879_());
         ClientKit kit = fruit == null ? null : ClientKits.get(fruit);
         if (kit == null || kit.moves() == null) {
             return false;
         }
         for (FruitMove move : kit.moves()) {
-            if (move.key() != null && move.key().startsWith("[N]")) {
+            if (move.key() != null && move.key().startsWith(key)) {
                 return true;
             }
         }
@@ -64,5 +79,30 @@ public final class FruitKeyN {
                 FruitKeys.send(1, ABILITY, FruitKeys.flags(minecraft));
             }
         }
+        // 3.3.7: M, as N, for a fruit with a move on it (the Ito fruit's Awakening)
+        boolean canM = minecraft.f_91074_ != null && minecraft.f_91080_ == null && PieceHooks.fruitKeysActive() && has(minecraft, "[M]");
+        boolean heldM = canM && PieceKeys.FRUIT_M.m_90857_();
+        if (canM) {
+            while (PieceKeys.FRUIT_M.m_90859_()) {
+                // only whether it is held matters here
+            }
+        }
+        if (heldM && !downM) {
+            downM = true;
+            FruitKeys.send(0, ABILITY_M, FruitKeys.flags(minecraft));
+        } else if (!heldM && downM) {
+            downM = false;
+            if (minecraft.f_91074_ != null) {
+                FruitKeys.send(1, ABILITY_M, FruitKeys.flags(minecraft));
+            }
+        }
+        // 3.3.7: Sora no Michi: the jump pressed again in the air (not flying, not swimming) with the Ito fruit
+        boolean jump = minecraft.f_91074_ != null && minecraft.f_91066_.f_92089_.m_90857_();
+        if (jump && !jumpWas && minecraft.f_91080_ == null && PieceHooks.fruitKeysActive()
+            && FruitClient.fruit(minecraft.f_91074_.m_19879_()) == com.hexhaki.fruit.Fruit.ITO && !minecraft.f_91074_.m_20096_()
+            && !minecraft.f_91074_.m_150110_().f_35935_ && !minecraft.f_91074_.m_20069_() && !minecraft.f_91074_.m_20159_()) {
+            FruitKeys.send(0, ABILITY_SKY, FruitKeys.flags(minecraft));
+        }
+        jumpWas = jump;
     }
 }

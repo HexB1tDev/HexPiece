@@ -54,6 +54,9 @@ public final class FruitRanks {
         if (fruit == Fruit.HORO) {
             return Rank.COMMON; // 3.3.6 (the owner: "Horo Horo No Mi (common)")
         }
+        if (fruit == Fruit.ITO) {
+            return Rank.RARE; // 3.3.7 (the owner: "New Rare Fruit: Ito Ito No Mi (Rare)")
+        }
         if (fruit == Fruit.SUPA) {
             return Rank.UNCOMMON; // 3.3.5 (the owner: "Supa Supa No Mi (UnCommon)")
         }
