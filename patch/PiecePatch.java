@@ -145,6 +145,10 @@ public final class PiecePatch implements Opcodes {
     static final String[] NORO = {"noro", "Noro Noro no Mi", "Slow", "C77DE0",
         "A Paramecia that lets its eater shoot Noroma photons: whatever they touch moves in extreme slow motion for thirty seconds, and"
             + " every blow it takes meanwhile lands all at once when the time is up. Foxy the Silver Fox's fruit."};
+    /** 3.3.6: the Horo Horo no Mi (the owner: "Horo Horo No Mi (common)"): a Paramecia, Perona's. */
+    static final String[] HORO = {"horo", "Horo Horo no Mi", "Ghost", "F3E3A6",
+        "A Paramecia that lets its eater make ghosts: hollows that drain the will to fight from whoever they pass through, little ones that"
+            + " burst, a giant one that explodes, and lets the eater's own spirit leave the body. Perona's fruit."};
     /** 3.3.5: the Supa Supa no Mi (the owner: "Supa Supa No Mi (UnCommon)"): a Paramecia, Daz Bones' (Mr. 1). */
     static final String[] SUPA = {"supa", "Supa Supa no Mi", "Blade", "8FB3DA",
         "A Paramecia that turns any part of its eater's body into steel blades: arms, fingers, feet, the whole body, hard enough that no"
@@ -832,10 +836,10 @@ public final class PiecePatch implements Opcodes {
      */
     static void uoFruit(ClassNode node) {
         // 3.1.9 (the owner: "Can you create the ice fruit, the Aokiji one?"): the Hie Hie no Mi joins after it (ordinal 5); 3.3.4: the
-        // Noro Noro no Mi (ordinal 6); 3.3.5: the Supa Supa no Mi (ordinal 7)
-        String[][] extra = {UO, HIE, NORO, SUPA};
-        String[] names = {"UO", "HIE", "NORO", "SUPA"};
-        boolean[] logia = {false, true, false, false};
+        // Noro Noro no Mi (ordinal 6); 3.3.5: the Supa Supa no Mi (ordinal 7); 3.3.6: the Horo Horo no Mi (ordinal 8)
+        String[][] extra = {UO, HIE, NORO, SUPA, HORO};
+        String[] names = {"UO", "HIE", "NORO", "SUPA", "HORO"};
+        boolean[] logia = {false, true, false, false, false};
         String type = "L" + FRUIT + ";";
         for (String name : names) {
             node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, name, type, null, null));

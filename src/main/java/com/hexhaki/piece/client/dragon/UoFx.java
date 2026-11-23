@@ -135,6 +135,7 @@ public final class UoFx {
             com.hexhaki.piece.client.supa.SupaFx.accept(m); // 3.3.5: the Supa fruit's (200 to 219)
             return;
         }
+        // 3.3.6 (in progress, docs/handoff 8zzb): route kinds 220 to 239 to client/horo/HoroFx once it is written
         if (m.kind() == com.hexhaki.piece.server.NikaJump.HOP || m.kind() == com.hexhaki.piece.server.NikaJump.LAND) {
             com.hexhaki.piece.client.gear.RubberWorldDraw.accept(m); // 3.3.2: Gear 5's jump turning the ground to rubber
             return;

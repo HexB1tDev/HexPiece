@@ -13,17 +13,20 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.3.4 everything is pushed and green (sections 8zl to 8zy). 3.3.5, the Supa Supa no Mi (8zz), is pushed:
-check its runs. Read 8zz before any art: the owner called the first flat single-colour blades "really poor and poorly made", chose
-"Katana steel" and said "Yes, build it" to the steel arm blades; the cuts in the air were rebuilt as the Light fruit's wave. Judge every
-effect against the Light, Gura and Magma art before showing it; thin pale lines and flat polygons are not acceptable. The owner also
-added a Rare fruit to the to-do list: the Ito Ito no Mi (Doflamingo, 8zza verbatim): plan its keys and ask first.
+Where things stand: up to 3.3.5 everything is pushed and green (sections 8zl to 8zz). 3.3.6, the Horo Horo no Mi, is IN PROGRESS
+(8zzb): pushed at the owner's word ("Enough prompt and handoff") without a local build or a CI check: first run python3 build.py and
+check the branch's "Build HexPiece" run, fix anything red, then finish it as 8zzb lists (client/horo/HoroFx and HoroClient, the
+astral spirit drawn as the player's own ghostly body, sounds, tests, release notes). Read 8zz before any art: the owner called Supa's
+first flat single-colour blades "really poor and poorly made", chose "Katana steel" and said "Yes, build it"; the cuts in the air were
+rebuilt as the Light fruit's wave. Horo's ghosts (horo/HoroArt) were judged good in renders (docs/handoff/horo-ghosts-3.3.6.jpg). Judge
+every effect against the Light, Gura and Magma art before showing it; thin pale lines and flat polygons are not acceptable.
 
-Next: 3.3.6 Horo Horo (8zv verbatim, 8zw the keys the owner accepted), built as Noro (8zy) and Supa (8zz) are, with "simple reused
-animations already in the mod"; then the Ito Ito no Mi (8zza). Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika rework (better
-Haki versions: Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika fruit is Gear 5 Luffy's laughing skip
-(8zt item 3, 8zu item 5): every pose with a raised arm keeps the hand off the face from the front (tools/anim.face_covered) and is looked
-at beside the owner's pictures from every side; a raised fist the owner wants forward stays forward.
+Next: finish 3.3.6 Horo Horo (8zv verbatim, 8zw the keys the owner accepted, 8zzb the state); then the owner's Rare fruit, the Ito Ito
+no Mi (Doflamingo, 8zza verbatim): plan its keys and ask first. Ask how 3.3.2 and 3.3.3 feel (asked, not yet answered). Then the rest
+of the Nika rework (better Haki versions: Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika fruit is
+Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every pose with a raised arm keeps the hand off the face from the front
+(tools/anim.face_covered) and is looked at beside the owner's pictures from every side; a raised fist the owner wants forward stays
+forward.
 
 The cloud environment is the personal "HexPiece", env_01VDpZP1V4zScExADvRmie8m (freesound.org, cdn.freesound.org, opengameart.org); if
 freesound.org is refused, the session is on Default: get_environment, then switch_environment to it. Check every new sound AS CUT for

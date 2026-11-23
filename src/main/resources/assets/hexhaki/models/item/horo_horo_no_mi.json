@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "hexhaki:item/horo_horo_no_mi"
+  }
+}
