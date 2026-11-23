@@ -4,7 +4,7 @@ Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standin
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzg of next-ai-3.2.2.md
-(2.9.6 to 3.4.7); open the older next-ai-*.md only for a feature's detail.
+(2.9.6 to 3.4.8); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -13,13 +13,16 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.4.6 everything is pushed and green (3.4.6: Build #191, Release #137: Goof Ball and Giant only in Gear 5,
-Dawn Whip's leg drawn by HexPiece; 8zzg). 3.4.7 (8zzg: the Gum-Gum Giant's throw flat and straight like the house's other throws, our
-own crash where the body hits, the original's vanilla explosion gone) is green too (Build #192, Release #138).
+Where things stand: up to 3.4.7 everything is pushed and green (3.4.7: Build #192, Release #138; section 8zzg covers 3.4.4 to 3.4.8 with
+the owner's words verbatim: Goof Ball, Dawn Whip, Broken Bones, Goof Ball and Giant only in Gear 5, Dawn Whip's leg drawn by HexPiece,
+the Giant's straight throw and crash). 3.4.8 (/hexpiece style mastery <0..1000>, and an optimization pass: the lightning's and the
+effect primitives' per-frame garbage removed, proven identical by a fingerprint; dragons out of view not skinned) was pushed at the owner's
+"handoff and prompt now": check its Build and Release runs first and fix anything red.
 
-Next: ask the owner how Dawn Pistol (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, 3.4.4 and 3.4.5 play (they have not said), and work on what
-they answer. The fist is a right fist on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any
-art: thin pale lines and flat polygons are not acceptable; hot strings use ItoArt's HOT tint.
+Next: the owner is testing 3.4.4 to 3.4.8: wait for their notes and work on them. The optimization can go on if they want more (8zzg
+lists what is left: Ryou's fist aura only with a fingerprint proving it unchanged, WaterFx's per-frame lists). The fist is a right fist on
+the right arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any art: thin pale lines and flat polygons are
+not acceptable; hot strings use ItoArt's HOT tint.
 
 The cloud environment is the personal "HexPiece" (freesound.org, cdn.freesound.org, opengameart.org); if freesound.org is refused, the
 session is on Default: get_environment, then switch_environment to it (network_only). Freesound also rate-limits its pages for a minute or two (403):

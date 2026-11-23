@@ -160,6 +160,77 @@ public final class BoltMesh {
         return Math.acos(cos) - Math.asin(r / d) <= VIEW_HALF;
     }
 
+    /**
+     * 3.4.8 (the owner: "optimize the mod as much as you can"): the arrays one drawing works with, handed out from a pool and given back
+     * all at once when the next drawing starts ({@link Scratch#reset} at the head of {@link #build}, {@link #landing}, {@link #ring} and
+     * {@link #burst}): each comes zeroed over the length asked for, as a new one would. Until now every bolt allocated some 30 arrays a
+     * frame and every quad two more (thousands a frame through a release: garbage the phone's collector stuttered over). The render
+     * thread only (the preview tools run on one thread too).
+     */
+    static final class Scratch {
+        double[][] doubles = new double[64][];
+        float[][] floats = new float[16][];
+        int[][] ints = new int[32][];
+        int d;
+        int f;
+        int i;
+
+        void reset() {
+            this.d = 0;
+            this.f = 0;
+            this.i = 0;
+        }
+
+        double[] d(int n) {
+            if (this.d == this.doubles.length) {
+                this.doubles = java.util.Arrays.copyOf(this.doubles, this.d * 2);
+            }
+            double[] a = this.doubles[this.d];
+            if (a == null || a.length < n) {
+                a = new double[Math.max(n, 32)];
+                this.doubles[this.d] = a;
+            } else {
+                java.util.Arrays.fill(a, 0, n, 0.0);
+            }
+            this.d++;
+            return a;
+        }
+
+        float[] f(int n) {
+            if (this.f == this.floats.length) {
+                this.floats = java.util.Arrays.copyOf(this.floats, this.f * 2);
+            }
+            float[] a = this.floats[this.f];
+            if (a == null || a.length < n) {
+                a = new float[Math.max(n, 32)];
+                this.floats[this.f] = a;
+            } else {
+                java.util.Arrays.fill(a, 0, n, 0.0F);
+            }
+            this.f++;
+            return a;
+        }
+
+        int[] i(int n) {
+            if (this.i == this.ints.length) {
+                this.ints = java.util.Arrays.copyOf(this.ints, this.i * 2);
+            }
+            int[] a = this.ints[this.i];
+            if (a == null || a.length < n) {
+                a = new int[Math.max(n, 32)];
+                this.ints[this.i] = a;
+            } else {
+                java.util.Arrays.fill(a, 0, n, 0);
+            }
+            this.i++;
+            return a;
+        }
+    }
+
+    static final Scratch S = new Scratch();
+    static final double[] WOUND_V = new double[12];
+    static final int[] WOUND_C = new int[4];
+
     public static void build(Bolt bolt, Frame frame, double age, double pixel, Sink sink) {
         build(bolt, frame, age, pixel, 1.0, sink);
     }
@@ -169,14 +240,15 @@ public final class BoltMesh {
      * sky (added light washes out against a bright sky, and lightning reads by its ink there).
      */
     public static void build(Bolt bolt, Frame frame, double age, double pixel, double shine, Sink sink) {
+        S.reset(); // 3.4.8: this drawing's arrays from the pool
         if (age < 0 || age > bolt.duration || bolt.kind == Bolt.HEART) {
             return; // 2.5.2: a heart draws nothing (its core is white-hot already): its points are not even placed
         }
         int full = bolt.count();
         // far away, the finest kinks are smaller than a pixel: every second (fourth ...) point is the coarser crackle they ride on
-        double[] mid = new double[3];
+        double[] mid = S.d(3);
         bolt.dancing(full / 2, age, mid);
-        double[] at = new double[3];
+        double[] at = S.d(3);
         frame.place(mid, at, 0);
         double away = Math.max(0.5, Math.sqrt(at[0] * at[0] + at[1] * at[1] + at[2] * at[2]));
         double pieceLength = Math.max(1.0E-6, length(bolt) / (full - 1));
@@ -185,9 +257,9 @@ public final class BoltMesh {
             step *= 2;
         }
         int n = (full - 1) / step + 1;
-        double[] all = new double[n * 3];
-        float[] widths = new float[n];
-        double[] local = new double[3];
+        double[] all = S.d(n * 3);
+        float[] widths = S.f(n);
+        double[] local = S.d(3);
         float widest = 0;
         for (int i = 0; i < n; i++) {
             bolt.dancing(i * step, age, local);
@@ -197,7 +269,7 @@ public final class BoltMesh {
         }
         // the strike: only the part the bolt has raced along so far
         double grow = bolt.crawl <= 0 ? 1.0 : Math.min(1.0, age / bolt.crawl);
-        double[] lengths = new double[n];
+        double[] lengths = S.d(n);
         for (int i = 1; i < n; i++) {
             lengths[i] = lengths[i - 1] + distance(all, i - 1, i);
         }
@@ -206,8 +278,8 @@ public final class BoltMesh {
         while (m < n - 1 && lengths[m] < reach) {
             m++;
         }
-        double[] p = new double[(m + 1) * 3];
-        float[] w = new float[m + 1];
+        double[] p = S.d((m + 1) * 3);
+        float[] w = S.f(m + 1);
         System.arraycopy(all, 0, p, 0, m * 3);
         System.arraycopy(widths, 0, w, 0, m);
         double span = lengths[m] - lengths[m - 1];
@@ -228,8 +300,8 @@ public final class BoltMesh {
         double fade = fade(life);
         double flash = flash(bolt, age);
         double flicker = flicker(bolt, age);
-        double[] dist = new double[count];
-        double[] tip = new double[count];
+        double[] dist = S.d(count);
+        double[] tip = S.d(count);
         for (int i = 0; i < count; i++) {
             dist[i] = Math.max(1.0E-6, Math.sqrt(p[i * 3] * p[i * 3] + p[i * 3 + 1] * p[i * 3 + 1] + p[i * 3 + 2] * p[i * 3 + 2]));
             // the least width a stroke keeps far away (a pixel or so) gives way where the stroke itself comes to a point
@@ -241,10 +313,10 @@ public final class BoltMesh {
         switch (bolt.kind) {
             case Bolt.BODY -> {
                 double scale = Math.sqrt(fade) * (1.0 + 0.15 * flash);
-                double[] half = new double[count];
-                double[] ink = new double[count];
-                double[] lift = new double[count];
-                double[] inkLift = new double[count];
+                double[] half = S.d(count);
+                double[] ink = S.d(count);
+                double[] lift = S.d(count);
+                double[] inkLift = S.d(count);
                 for (int i = 0; i < count; i++) {
                     half[i] = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade * tip[i]);
                     ink[i] = half[i] + outline(half[i], pixel, dist[i], fade) * tip[i];
@@ -261,10 +333,10 @@ public final class BoltMesh {
                 // ribbon blocks wide twists at a kink: 2.2.5's "pink facets")
                 double scale = Math.sqrt(fade) * (1.0 + 0.15 * flash);
                 double bright = Math.min(1.0, flicker * (0.85 + 0.15 * fade) + 0.4 * flash);
-                double[] inner = new double[count];
-                double[] rim = new double[count];
-                double[] ink = new double[count];
-                double[] halo = new double[count];
+                double[] inner = S.d(count);
+                double[] rim = S.d(count);
+                double[] ink = S.d(count);
+                double[] halo = S.d(count);
                 for (int i = 0; i < count; i++) {
                     double body = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade * tip[i]);
                     inner[i] = body * 0.96;
@@ -280,7 +352,7 @@ public final class BoltMesh {
             }
             case Bolt.AURA -> {
                 double strength = ((color >>> 24) & 255) / 255.0 * 0.7 * fade * flicker * (1.0 + 0.6 * flash);
-                double[] half = new double[count];
+                double[] half = S.d(count);
                 for (int i = 0; i < count; i++) {
                     half[i] = w[i] * 0.7 * (0.6 + 0.4 * fade);
                 }
@@ -295,11 +367,11 @@ public final class BoltMesh {
             default -> {
                 double scale = fade * (1.0 + 0.3 * flash);
                 double bright = Math.min(1.0, flicker * (0.82 + 0.18 * fade) + 0.4 * flash);
-                double[] core = new double[count];
-                double[] ink = new double[count];
-                double[] halo = new double[count];
-                double[] lift = new double[count];
-                double[] inkLift = new double[count];
+                double[] core = S.d(count);
+                double[] ink = S.d(count);
+                double[] halo = S.d(count);
+                double[] lift = S.d(count);
+                double[] inkLift = S.d(count);
                 for (int i = 0; i < count; i++) {
                     double c = Math.max(w[i] * 0.5 * CORE * scale, 0.75 * pixel * dist[i] * fade * tip[i]);
                     core[i] = c;
@@ -460,8 +532,8 @@ public final class BoltMesh {
         // a coarse ring spreads its rim's colour over the whole of each face: its rims are lit as a little nearer the middle
         double rough = k <= 2 ? 0.5 : k <= 4 ? 0.28 : k <= 6 ? 0.12 : 0.0;
         double[] m = mitres(p, count, side);
-        double[] axis = new double[count * 3];
-        double[] toward = new double[count * 3];
+        double[] axis = S.d(count * 3);
+        double[] toward = S.d(count * 3);
         for (int i = 0; i < count; i++) {
             double back = 1.0 - lift[i] / dist[i];
             axis[i * 3] = p[i * 3] * back;
@@ -500,13 +572,13 @@ public final class BoltMesh {
             toward[i * 3 + 1] = uy / ul;
             toward[i * 3 + 2] = uz / ul;
         }
-        double[] row = new double[(k + 1) * 3];
-        double[] last = new double[(k + 1) * 3];
-        int[] colours = new int[k + 1];
-        int[] lastColours = new int[k + 1];
-        double[] v = new double[12];
-        int[] c = new int[4];
-        double[] n = new double[3];
+        double[] row = S.d((k + 1) * 3);
+        double[] last = S.d((k + 1) * 3);
+        int[] colours = S.i(k + 1);
+        int[] lastColours = S.i(k + 1);
+        double[] v = S.d(12);
+        int[] c = S.i(4);
+        double[] n = S.d(3);
         for (int i = 0; i < count; i++) {
             for (int j = 0; j <= k; j++) {
                 double theta = -Math.PI / 2 + Math.PI * j / k;
@@ -590,12 +662,12 @@ public final class BoltMesh {
         double[] rings = {0.0, 0.55, 1.05};
         double[][] pts = new double[rings.length + 1][];
         int[][] cols = new int[rings.length + 1][];
-        double[] n = new double[3];
+        double[] n = S.d(3);
         double[] at = {cx, cy, cz};
         for (int ring = 0; ring <= rings.length; ring++) {
             int size = ring == rings.length ? 1 : around;
-            pts[ring] = new double[size * 3];
-            cols[ring] = new int[size];
+            pts[ring] = S.d(size * 3);
+            cols[ring] = S.i(size);
             double phi = ring == rings.length ? Math.PI / 2 : rings[ring];
             for (int k = 0; k < size; k++) {
                 double a = Math.PI * 2.0 * k / around;
@@ -612,8 +684,8 @@ public final class BoltMesh {
                 cols[ring][k] = shadeAt(shade, n, at, 0, rough);
             }
         }
-        double[] v = new double[12];
-        int[] c = new int[4];
+        double[] v = S.d(12);
+        int[] c = S.i(4);
         for (int ring = 0; ring < rings.length; ring++) {
             boolean crown = ring + 1 == rings.length;
             for (int k = 0; k < around; k++) {
@@ -668,13 +740,13 @@ public final class BoltMesh {
             double[] a = {p[i * 3], p[i * 3 + 1], p[i * 3 + 2]};
             double[] b = {a[0] + dx / dl * length, a[1] + dy / dl * length, a[2] + dz / dl * length};
             double[] path = Bolt.path(a, b, 2, 0.3, kinks);
-            double[] spur = new double[points * 3];
-            double[] half = new double[points];
-            double[] ink = new double[points];
-            double[] halo = new double[points];
-            double[] dist = new double[points];
-            double[] up = new double[points];
-            double[] inkUp = new double[points];
+            double[] spur = S.d(points * 3);
+            double[] half = S.d(points);
+            double[] ink = S.d(points);
+            double[] halo = S.d(points);
+            double[] dist = S.d(points);
+            double[] up = S.d(points);
+            double[] inkUp = S.d(points);
             for (int k = 0; k < points; k++) {
                 int from = k < 3 ? k : 4;
                 spur[k * 3] = path[from * 3];
@@ -706,6 +778,7 @@ public final class BoltMesh {
      * lingers ({@link #SCORCH} ticks; translucent, so the ground shows through as it fades). {@code size} about 1 for a Conqueror bolt.
      */
     public static void landing(double x, double y, double z, double age, int color, double size, double shine, Sink sink) {
+        S.reset(); // 3.4.8: this drawing's arrays from the pool
         if (age < 0 || age > SCORCH) {
             return;
         }
@@ -733,6 +806,7 @@ public final class BoltMesh {
      * light trailing it and fading behind, all of it thinning away as it reaches the end.
      */
     public static void ring(double x, double y, double z, double age, double reach, int color, double shine, Sink sink) {
+        S.reset(); // 3.4.8: this drawing's arrays from the pool
         if (age < 0 || age > WAVE) {
             return;
         }
@@ -769,7 +843,7 @@ public final class BoltMesh {
     /** A flat disc on the ground (twelve wedges), {@code centre} in its middle, {@code edge} at its rim. */
     static void flat(double x, double y, double z, double radius, int centre, int edge, boolean glow, Sink sink) {
         int n = 12;
-        double[] rim = new double[n * 3];
+        double[] rim = S.d(n * 3);
         for (int k = 0; k < n; k++) {
             double a = Math.PI * 2.0 * k / n;
             rim[k * 3] = x + Math.cos(a) * radius;
@@ -786,7 +860,7 @@ public final class BoltMesh {
 
     /** Unit vectors across the path at each point, square to it and to the line of sight (3 per point). */
     static double[] sides(double[] p, int count) {
-        double[] side = new double[count * 3];
+        double[] side = S.d(count * 3);
         for (int i = 0; i < count; i++) {
             int a = Math.max(0, i - 1);
             int b = Math.min(count - 1, i + 1);
@@ -830,7 +904,7 @@ public final class BoltMesh {
      * the two pieces, not to either): 1 on a straight run, up to {@link #MITRE} at a sharp bend.
      */
     static double[] mitres(double[] p, int count, double[] side) {
-        double[] m = new double[count];
+        double[] m = S.d(count);
         for (int i = 0; i < count; i++) {
             int a = i == 0 ? 0 : i - 1;
             int b = i == 0 ? 1 : i;
@@ -854,8 +928,8 @@ public final class BoltMesh {
      */
     static void ribbon(double[] p, int count, double[] side, double[] half, double[] lift, int rim, int middle, double pixel, double[] dist,
                        boolean discs, Sink sink) {
-        double[] v = new double[12];
-        int[] c = new int[4];
+        double[] v = S.d(12);
+        int[] c = S.i(4);
         double[] m = mitres(p, count, side);
         for (int i = 0; i + 1 < count; i++) {
             double ha = half[i] * m[i];
@@ -905,8 +979,8 @@ public final class BoltMesh {
      */
     static void band(double[] p, int count, double[] side, double[] inner, double[] outer, int near, int far, double layer, double[] dist,
                      Sink sink) {
-        double[] v = new double[12];
-        int[] c = new int[4];
+        double[] v = S.d(12);
+        int[] c = S.i(4);
         double[] m = mitres(p, count, side);
         for (int i = 0; i + 1 < count; i++) {
             double pushA = push(layer, dist[i]);
@@ -930,8 +1004,8 @@ public final class BoltMesh {
         if ((color & 0xFFFFFF) == 0) {
             return;
         }
-        double[] v = new double[12];
-        int[] c = new int[4];
+        double[] v = S.d(12);
+        int[] c = S.i(4);
         int none = color & 0xFF000000;
         double[] m = mitres(p, count, side);
         for (int i = 0; i + 1 < count; i++) {
@@ -954,8 +1028,8 @@ public final class BoltMesh {
         if ((color & 0xFFFFFF) == 0) {
             return;
         }
-        double[] v = new double[12];
-        int[] c = new int[4];
+        double[] v = S.d(12);
+        int[] c = S.i(4);
         int none = color & 0xFF000000;
         double[] m = mitres(p, count, side);
         for (int i = 0; i + 1 < count; i++) {
@@ -1002,7 +1076,7 @@ public final class BoltMesh {
             wy = -wy;
             wz = -wz;
         }
-        double[] rim = new double[5 * 3];
+        double[] rim = S.d(5 * 3);
         for (int k = 0; k <= 4; k++) {
             double a = Math.PI * k / 4.0;
             double ca = Math.cos(a) * radius;
@@ -1042,7 +1116,7 @@ public final class BoltMesh {
         double vx = py / l * uz - pz / l * uy;
         double vy = pz / l * ux - px / l * uz;
         double vz = px / l * uy - py / l * ux;
-        double[] rim = new double[ROUND * 3];
+        double[] rim = S.d(ROUND * 3);
         for (int k = 0; k < ROUND; k++) {
             double a = Math.PI * 2.0 * k / ROUND;
             double ca = Math.cos(a) * radius;
@@ -1051,7 +1125,7 @@ public final class BoltMesh {
             rim[k * 3 + 1] = cy + uy * ca + vy * sa;
             rim[k * 3 + 2] = cz + uz * ca + vz * sa;
         }
-        double[] v = new double[12];
+        double[] v = S.d(12);
         int[] c = {centre, edge, edge, edge};
         for (int k = 0; k < ROUND; k += 2) {
             v[0] = cx;
@@ -1092,10 +1166,29 @@ public final class BoltMesh {
         double first = facing(v, 0, 1, 2);
         double second = facing(v, 0, 2, 3);
         if (first >= 0 && second >= 0) {
-            sink.quad(glow, v.clone(), c.clone());
+            // 3.4.8: given as it is (every sink takes the quad's numbers at once: HakiBolts copies them into its batch); it cloned two
+            // arrays a quad, thousands a frame through a release
+            sink.quad(glow, v, c);
         } else if (first <= 0 && second <= 0) {
-            sink.quad(glow, new double[] {v[0], v[1], v[2], v[9], v[10], v[11], v[6], v[7], v[8], v[3], v[4], v[5]},
-                new int[] {c[0], c[3], c[2], c[1]});
+            double[] w = WOUND_V;
+            int[] k = WOUND_C;
+            w[0] = v[0];
+            w[1] = v[1];
+            w[2] = v[2];
+            w[3] = v[9];
+            w[4] = v[10];
+            w[5] = v[11];
+            w[6] = v[6];
+            w[7] = v[7];
+            w[8] = v[8];
+            w[9] = v[3];
+            w[10] = v[4];
+            w[11] = v[5];
+            k[0] = c[0];
+            k[1] = c[3];
+            k[2] = c[2];
+            k[3] = c[1];
+            sink.quad(glow, w, k);
         } else {
             triangle(glow, v, c, 0, 1, 2, first, sink);
             triangle(glow, v, c, 0, 2, 3, second, sink);
@@ -1106,8 +1199,19 @@ public final class BoltMesh {
     static void triangle(boolean glow, double[] v, int[] c, int a, int b, int d, double facing, Sink sink) {
         int p = facing >= 0 ? b : d;
         int q = facing >= 0 ? d : b;
-        sink.quad(glow, new double[] {v[a * 3], v[a * 3 + 1], v[a * 3 + 2], v[p * 3], v[p * 3 + 1], v[p * 3 + 2], v[q * 3], v[q * 3 + 1],
-            v[q * 3 + 2], v[q * 3], v[q * 3 + 1], v[q * 3 + 2]}, new int[] {c[a], c[p], c[q], c[q]});
+        double[] w = WOUND_V;
+        int[] k = WOUND_C;
+        for (int i = 0; i < 3; i++) {
+            w[i] = v[a * 3 + i];
+            w[3 + i] = v[p * 3 + i];
+            w[6 + i] = v[q * 3 + i];
+            w[9 + i] = v[q * 3 + i];
+        }
+        k[0] = c[a];
+        k[1] = c[p];
+        k[2] = c[q];
+        k[3] = c[q];
+        sink.quad(glow, w, k);
     }
 
     /** Positive when the triangle i, j, k turns counter-clockwise seen from the origin. */
@@ -1149,6 +1253,7 @@ public final class BoltMesh {
      * blocks, white-hot in the middle through the colour to nothing at its rim; it swells in two ticks and dies over {@link #BURST}.
      */
     public static void burst(double x, double y, double z, double age, double radius, int color, double shine, Sink sink) {
+        S.reset(); // 3.4.8: this drawing's arrays from the pool
         if (age < 0 || age > BURST) {
             return;
         }
@@ -1165,8 +1270,8 @@ public final class BoltMesh {
         double[] rings = {0.0, 0.3, 0.62, 1.0};
         int[] colours = {scale(mix(color, 0xFFFFFFFF, 0.9), life * shine), scale(mix(color, 0xFFFFFFFF, 0.7), life * shine),
             scale(mix(color, 0xFFFFFFFF, 0.4), life * 0.65 * shine), 0};
-        double[] q = new double[12];
-        int[] c = new int[4];
+        double[] q = S.d(12);
+        int[] c = S.i(4);
         for (int ring = 0; ring + 1 < rings.length; ring++) {
             for (int k = 0; k < sides; k++) {
                 double a0 = Math.PI * 2.0 * k / sides;

@@ -128,6 +128,20 @@ final class DragonRenderer {
         Vector3f nz = turn.transform(new Vector3f(0.0F, 0.0F, 1.0F));
         float[] n = {nx.x, ny.x, nz.x, nx.y, ny.y, nz.y, nx.z, ny.z, nz.z};
         float g = DragonForm.grow(phase, seconds) * DragonForm.SCALE;
+        // 3.4.8 (the owner: "optimize the mod as much as you can"): a dragon wholly outside the view (behind the eye, off to a side) is
+        // neither skinned nor sent (the skinning is the dragon's whole per-frame cost); the mouth above is placed all the same (the
+        // breath comes from it). Its bounding sphere: every vertex's farthest reach from the model's origin, scaled, with room for the
+        // pose's swing.
+        Matrix4f inverse = new Matrix4f(view).invert();
+        Vector3f eye = inverse.transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
+        Vector3f ahead = inverse.transformPosition(new Vector3f(0.0F, 0.0F, -1.0F));
+        double fx = ahead.x - eye.x;
+        double fy = ahead.y - eye.y;
+        double fz = ahead.z - eye.z;
+        double fl = Math.max(1.0E-9, Math.sqrt(fx * fx + fy * fy + fz * fz));
+        if (!com.hexhaki.piece.haki.BoltMesh.seen(world[3], world[7], world[11], extent(m) * g * 1.3 + 2.0, fx / fl, fy / fl, fz / fl)) {
+            return;
+        }
         float[] nm = new float[9];
         for (int r = 0; r < 3; r++) {
             for (int c = 0; c < 3; c++) {
@@ -152,6 +166,25 @@ final class DragonRenderer {
             }
         }
         buffers.m_109912_(fire);
+    }
+
+    private static float extent = -1.0F;
+
+    /** 3.4.8: the farthest any of the model's vertices lies from its origin (model units), worked out once. */
+    static float extent(DragonModel m) {
+        if (extent < 0.0F) {
+            float most = 0.0F;
+            for (DragonModel.Part part : m.parts) {
+                for (int v = 0; v < part.vertices(); v++) {
+                    float x = part.pos[v * 3];
+                    float y = part.pos[v * 3 + 1];
+                    float z = part.pos[v * 3 + 2];
+                    most = Math.max(most, (float) Math.sqrt(x * x + y * y + z * z));
+                }
+            }
+            extent = most;
+        }
+        return extent;
     }
 
     /** a x b, both 3 x 4 affine row-major. */

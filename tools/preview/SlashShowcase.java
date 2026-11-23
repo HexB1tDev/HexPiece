@@ -590,8 +590,8 @@ public final class SlashShowcase {
         for (int i = 0; i < bolts.size(); i++) {
             BoltMesh.build(bolts.get(i), BoltMesh.Frame.at(0, 0, 0), ages.get(i), pixel, 0.5, (g, xyz, argb) -> {
                 if (g) {
-                    gv.add(xyz);
-                    gc.add(argb);
+                    gv.add(xyz.clone());
+                    gc.add(argb.clone());
                 } else {
                     r.gameQuad(xyz, argb);
                 }

@@ -632,28 +632,41 @@ public final class FireMesh {
         int head = argb(alpha, 0xFFFDF2);
         int tail = argb(0.0, rgb);
         int mid = argb(alpha, rgb);
-        double[][] ring = new double[4][];
+        // 3.4.8: the four corners round its middle in a reused array (it allocated five arrays a spark, every frame)
+        double[] ring = STREAK_RING;
         for (int k = 0; k < 4; k++) {
-            double a = k * Math.PI / 2.0;
-            double ox = (B[0] * Math.cos(a) + B[3] * Math.sin(a)) * width;
-            double oy = (B[1] * Math.cos(a) + B[4] * Math.sin(a)) * width;
-            double oz = (B[2] * Math.cos(a) + B[5] * Math.sin(a)) * width;
-            ring[k] = new double[] {x + ox, y + oy, z + oz};
+            // the four quarter turns: cos and sin of 0, 90, 180 and 270 degrees
+            double c = k == 0 ? 1.0 : k == 2 ? -1.0 : 0.0;
+            double sn = k == 1 ? 1.0 : k == 3 ? -1.0 : 0.0;
+            ring[k * 3] = x + (B[0] * c + B[3] * sn) * width;
+            ring[k * 3 + 1] = y + (B[1] * c + B[4] * sn) * width;
+            ring[k * 3 + 2] = z + (B[2] * c + B[5] * sn) * width;
         }
         for (int k = 0; k < 4; k++) {
-            double[] a = ring[k];
-            double[] b = ring[(k + 1) % 4];
-            quad(sink, hx, hy, hz, head, a[0], a[1], a[2], mid, b[0], b[1], b[2], mid, b[0], b[1], b[2], mid);
-            quad(sink, tx, ty, tz, tail, b[0], b[1], b[2], mid, a[0], a[1], a[2], mid, a[0], a[1], a[2], mid);
+            int a = k * 3;
+            int b = ((k + 1) % 4) * 3;
+            quad(sink, hx, hy, hz, head, ring[a], ring[a + 1], ring[a + 2], mid, ring[b], ring[b + 1], ring[b + 2], mid, ring[b], ring[b + 1],
+                ring[b + 2], mid);
+            quad(sink, tx, ty, tz, tail, ring[b], ring[b + 1], ring[b + 2], mid, ring[a], ring[a + 1], ring[a + 2], mid, ring[a], ring[a + 1],
+                ring[a + 2], mid);
         }
     }
+
+    static final double[] STREAK_RING = new double[12];
+    static final double[] SHARD_CORNERS = new double[24];
+    static final int[][] SHARD_SIDES = {{0, 1, 3, 2}, {4, 6, 7, 5}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 5, 7, 3}};
+    static final int TUBE_AROUND = 12;
+    static final double[] TUBE_A = new double[TUBE_AROUND * 3];
+    static final double[] TUBE_B = new double[TUBE_AROUND * 3];
+    static final int[] TUBE_CA = new int[TUBE_AROUND];
+    static final int[] TUBE_CB = new int[TUBE_AROUND];
 
     /** A rock torn loose: a rough box {@code size} across at ({@code x}, {@code y}, {@code z}), turned by {@code spin}, lit from above. */
     public static void shard(Sink sink, double x, double y, double z, double size, double spin, int seed, int rgb, double alpha) {
         if (alpha < 0.004 || size < 0.02) {
             return;
         }
-        double[] c = new double[24];
+        double[] c = SHARD_CORNERS; // 3.4.8: reused (render thread only), no allocation a rock a frame
         double a = spin + rand(seed, 5) * 6.28;
         double b = spin * 0.7 + rand(seed, 6) * 6.28;
         double ca = Math.cos(a);
@@ -672,8 +685,7 @@ public final class FireMesh {
             c[k * 3 + 1] = y + qy;
             c[k * 3 + 2] = z + qz;
         }
-        int[][] sides = {{0, 1, 3, 2}, {4, 6, 7, 5}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 5, 7, 3}};
-        for (int[] s : sides) {
+        for (int[] s : SHARD_SIDES) {
             double ex = c[s[1] * 3] - c[s[0] * 3];
             double ey = c[s[1] * 3 + 1] - c[s[0] * 3 + 1];
             double ez = c[s[1] * 3 + 2] - c[s[0] * 3 + 2];
@@ -707,12 +719,13 @@ public final class FireMesh {
         double uy = dy / len;
         double uz = dz / len;
         basis(ux, uy, uz, B);
-        int around = 12;
+        int around = TUBE_AROUND;
         int along = Math.max(2, Math.min(24, (int) (len / 1.2)));
-        double[] prev = new double[around * 3];
-        int[] prevC = new int[around];
-        double[] cur = new double[around * 3];
-        int[] curC = new int[around];
+        // 3.4.8: two rings swapped back and forth in reused arrays (render thread only): no allocation a tube a frame
+        double[] prev = TUBE_A;
+        int[] prevC = TUBE_CA;
+        double[] cur = TUBE_B;
+        int[] curC = TUBE_CB;
         for (int j = 0; j <= along; j++) {
             double t = j / (double) along;
             double r = ra + (rb - ra) * t;

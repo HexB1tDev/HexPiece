@@ -598,8 +598,8 @@ public final class BoltPreview {
                 for (int i = 0; i < bolts.size(); i++) {
                     BoltMesh.build(bolts.get(i), BoltMesh.Frame.at(0, 0, 0), ages.get(i), pixel, night ? 1.0 : 0.5, (g, xyz, argb) -> {
                         if (g) {
-                            gv.add(xyz);
-                            gc.add(argb);
+                            gv.add(xyz.clone());
+                            gc.add(argb.clone());
                         } else {
                             raster.quad(xyz, argb, false);
                         }
@@ -781,8 +781,8 @@ public final class BoltPreview {
         for (int i = 0; i < bolts.size(); i++) {
             BoltMesh.build(bolts.get(i), BoltMesh.Frame.at(0, 0, 0), ages.get(i), pixel, night ? 1.0 : 0.5, (g, xyz, argb) -> {
                 if (g) {
-                    gv.add(xyz);
-                    gc.add(argb);
+                    gv.add(xyz.clone());
+                    gc.add(argb.clone());
                 } else {
                     raster.quad(xyz, argb, false);
                 }
@@ -1032,8 +1032,8 @@ public final class BoltPreview {
                 BoltMesh.build(bolt, frame, age - bolt.delay, pixel, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                     quads[0]++;
                     if (glow) {
-                        glowV.add(xyz);
-                        glowC.add(argb);
+                        glowV.add(xyz.clone());
+                        glowC.add(argb.clone());
                     } else {
                         quad(xyz, argb, false);
                     }
@@ -1044,8 +1044,8 @@ public final class BoltPreview {
                     this.flash > 0 ? this.flash : 10.0 + this.wave * 0.1,
                     this.stormColor, this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                         quads[0]++;
-                        glowV.add(xyz);
-                        glowC.add(argb);
+                        glowV.add(xyz.clone());
+                        glowC.add(argb.clone());
                     });
             }
             if (this.wave > 0) {
@@ -1053,8 +1053,8 @@ public final class BoltPreview {
                     this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                     quads[0]++;
                     if (glow) {
-                        glowV.add(xyz);
-                        glowC.add(argb);
+                        glowV.add(xyz.clone());
+                        glowC.add(argb.clone());
                     } else {
                         quad(xyz, argb, false);
                     }
@@ -1065,8 +1065,8 @@ public final class BoltPreview {
                     BoltMesh.landing(hit[0] - this.eye[0], 0.0 - this.eye[1], hit[2] - this.eye[2], age - hit[3], this.stormColor, 1.0,
                         this.night ? 1.0 : 0.5, (glow, xyz, argb) -> {
                             if (glow) {
-                                glowV.add(xyz);
-                                glowC.add(argb);
+                                glowV.add(xyz.clone());
+                                glowC.add(argb.clone());
                             } else {
                                 quad(xyz, argb, false);
                             }

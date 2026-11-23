@@ -21,7 +21,8 @@ import net.minecraftforge.fml.common.Mod;
  * 2.1.1: /hexpiece (operators): {@code reset} lets the player choose gender, flag and style again on the start menu;
  * {@code spawn pirate|marine [rank]} stands a fighter (0 grunt, 1 officer, 2 captain) where they are, who stays;
  * {@code patrol pirate|marine} sends a patrol nearby; 2.4.6: {@code alignment [value]} shows or sets the player's alignment
- * ({@link Alignment}: -100 pure evil, 0 neutral, 100 pure good).
+ * ({@link Alignment}: -100 pure evil, 0 neutral, 100 pure good); 3.4.8: {@code style mastery [0..1000]} shows or sets the mastery of the
+ * player's own fighting style.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class PieceCommands {
@@ -49,7 +50,12 @@ public final class PieceCommands {
             // 2.4.6 (the owner: "a command to set your alignment, 100 is pure good, 0 is neutal, -100 pure evil")
             .then(Commands.m_82127_("alignment").executes(PieceCommands::alignment)
                 .then(Commands.m_82129_("value", IntegerArgumentType.integer(Alignment.MIN, Alignment.MAX))
-                    .executes(context -> alignment(context, IntegerArgumentType.getInteger(context, "value"))))));
+                    .executes(context -> alignment(context, IntegerArgumentType.getInteger(context, "value")))))
+            // 3.4.8 (the owner: "a mastery command for the styles so I can test the moves ... hex piece space style space mastery space
+            // then the number"): the player's own fighting style's mastery
+            .then(Commands.m_82127_("style").then(Commands.m_82127_("mastery").executes(PieceCommands::mastery)
+                .then(Commands.m_82129_("value", IntegerArgumentType.integer(0, com.hexhaki.piece.PieceRules.MAX_MASTERY))
+                    .executes(context -> mastery(context, IntegerArgumentType.getInteger(context, "value")))))));
     }
 
     /** 2.4.6: {@code /hexpiece alignment}: says where the player stands. */
@@ -67,6 +73,32 @@ public final class PieceCommands {
         String sound = Alignment.evil(set) ? " Your full-charge Conqueror's Haki now has the evil voice and roar."
             : Alignment.good(set) ? " (Good's own Conqueror sounds are to come.)" : "";
         player.m_5661_(Component.m_237113_("Alignment set: " + Alignment.label(set) + " (" + set + ")." + sound), false);
+        return 1;
+    }
+
+    /** 3.4.8: {@code /hexpiece style mastery}: says the player's style and its mastery. */
+    static int mastery(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().m_81375_();
+        com.hexhaki.piece.PieceProfile profile = ProfileServer.of(player);
+        if (!profile.style().choice()) {
+            player.m_5661_(Component.m_237113_("No fighting style chosen yet."), false);
+            return 0;
+        }
+        player.m_5661_(Component.m_237113_(profile.style().display() + " mastery: " + profile.mastery(profile.style()) + " / "
+            + com.hexhaki.piece.PieceRules.MAX_MASTERY), false);
+        return 1;
+    }
+
+    /** 3.4.8: {@code /hexpiece style mastery <0..1000>}: sets the player's own style's mastery (every move it opens announced). */
+    static int mastery(CommandContext<CommandSourceStack> context, int value) throws CommandSyntaxException {
+        ServerPlayer player = context.getSource().m_81375_();
+        FightingStyle style = ProfileServer.of(player).style();
+        if (!style.choice()) {
+            player.m_5661_(Component.m_237113_("No fighting style chosen yet: choose one first (/hexpiece reset)."), false);
+            return 0;
+        }
+        int set = ProfileServer.setMastery(player, style, value);
+        player.m_5661_(Component.m_237113_(style.display() + " mastery set to " + set + "."), false);
         return 1;
     }
 

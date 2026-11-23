@@ -103,6 +103,26 @@ public final class ProfileServer {
         }
     }
 
+    /**
+     * 3.4.8 (the owner: "we need a mastery command for the styles so I can test the moves ... hex piece space style space mastery space
+     * then the number"): {@code style}'s mastery set to {@code value} (0 to PieceRules.MAX_MASTERY), every special it opens on the way up
+     * announced as when it is earned; returns the value set.
+     */
+    public static int setMastery(ServerPlayer player, FightingStyle style, int value) {
+        CompoundTag root = root(player);
+        String key = "Mastery_" + style.id();
+        int before = PieceRules.clampMastery(root.m_128451_(key));
+        int after = PieceRules.clampMastery(value);
+        root.m_128405_(key, after);
+        for (com.hexhaki.piece.style.StyleMove move : com.hexhaki.piece.style.StyleMove.values()) {
+            if (move.style() == style && move.mastery() > before && move.mastery() <= after) {
+                player.m_5661_(Component.m_237113_(style.display() + ": " + move.display() + " learned!"), false);
+            }
+        }
+        sync(player);
+        return after;
+    }
+
     /** Renown for beating someone of the other side; a new title or rank is announced. */
     public static void addRenown(ServerPlayer player, long amount) {
         PieceProfile profile = of(player);
