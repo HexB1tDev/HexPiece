@@ -99,12 +99,13 @@ public final class KatanaMesh {
             v0 = 0;
             v1 = 1;
         }
-        // a window in the middle of the steel's texture (the long way of it along the blade: whichever of u, v spans more)
+        // a small window in the middle of the steel's flat (the long way of it along the blade: whichever of u, v spans more), clear of
+        // the bevel's lines that striped the first skin
         boolean alongV = v1 - v0 >= u1 - u0;
-        float a0 = alongV ? v0 + (v1 - v0) * 0.4F : u0 + (u1 - u0) * 0.4F;
-        float a1 = alongV ? v0 + (v1 - v0) * 0.6F : u0 + (u1 - u0) * 0.6F;
-        float b0 = alongV ? u0 : v0;
-        float b1 = alongV ? u1 : v1;
+        float a0 = alongV ? v0 + (v1 - v0) * 0.45F : u0 + (u1 - u0) * 0.45F;
+        float a1 = alongV ? v0 + (v1 - v0) * 0.5F : u0 + (u1 - u0) * 0.5F;
+        float b0 = alongV ? u0 + (u1 - u0) * 0.3F : v0 + (v1 - v0) * 0.3F;
+        float b1 = alongV ? u0 + (u1 - u0) * 0.6F : v0 + (v1 - v0) * 0.6F;
         float[][] corners = {
             {x0, y0, z0}, {x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0}, {x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}};
         int[][] faces = {{0, 1, 2, 3}, {5, 4, 7, 6}, {4, 0, 3, 7}, {1, 5, 6, 2}, {4, 5, 1, 0}, {3, 2, 6, 7}};

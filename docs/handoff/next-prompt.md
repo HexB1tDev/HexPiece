@@ -13,16 +13,17 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.3.3 everything is pushed and green (sections 8zl to 8zx). 3.3.4, the Noro Noro no Mi (8zy: its own CC0
-sounds, the mirror turning fireballs, slowed shots restored before a save, crowd sounds capped), is pushed: check its runs. The owner
-then: "no need for gif, proceed to the next fruit".
+Where things stand: up to 3.3.4 everything is pushed and green (sections 8zl to 8zy). 3.3.5, the Supa Supa no Mi (8zz), is pushed:
+check its runs. Read 8zz before any art: the owner called the first flat single-colour blades "really poor and poorly made", chose
+"Katana steel" and said "Yes, build it" to the steel arm blades; the cuts in the air were rebuilt as the Light fruit's wave. Judge every
+effect against the Light, Gura and Magma art before showing it; thin pale lines and flat polygons are not acceptable. The owner also
+added a Rare fruit to the to-do list: the Ito Ito no Mi (Doflamingo, 8zza verbatim): plan its keys and ask first.
 
-Next: the owner's three new fruits (8zv verbatim, 8zw the keys the owner accepted): 3.3.5 Supa Supa (Uncommon; with Armament the
-blades black-purple like the katanas), then 3.3.6 Horo Horo, each built as the Ice fruit was (8zc, 8ze) and Noro is (8zy), with
-"simple reused animations already in the mod". Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika rework (better Haki versions:
-Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika fruit is Gear 5 Luffy's laughing skip (8zt item 3,
-8zu item 5): every pose with a raised arm keeps the hand off the face from the front (tools/anim.face_covered) and is looked at beside
-the owner's pictures from every side; a raised fist the owner wants forward stays forward.
+Next: 3.3.6 Horo Horo (8zv verbatim, 8zw the keys the owner accepted), built as Noro (8zy) and Supa (8zz) are, with "simple reused
+animations already in the mod"; then the Ito Ito no Mi (8zza). Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika rework (better
+Haki versions: Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika fruit is Gear 5 Luffy's laughing skip
+(8zt item 3, 8zu item 5): every pose with a raised arm keeps the hand off the face from the front (tools/anim.face_covered) and is looked
+at beside the owner's pictures from every side; a raised fist the owner wants forward stays forward.
 
 The cloud environment is the personal "HexPiece", env_01VDpZP1V4zScExADvRmie8m (freesound.org, cdn.freesound.org, opengameart.org); if
 freesound.org is refused, the session is on Default: get_environment, then switch_environment to it. Check every new sound AS CUT for
@@ -36,6 +37,5 @@ owner's phone everything alpha-blended and depth-tested, never additive, never a
 sound outlasting its move; no music (the owner: copyright); versions roll over at 9; a push is done only when GitHub's runs are green;
 at 98% weekly usage write the handoff and this prompt first, commit, push and stop without checking CI.
 
-The owner during 3.2.9: "I want gifs when it's all done": when the work is done, send GIFs of every move changed (tools/make_gif.py
-from FxPreview frames, tools/clip_gif.py for clips with Toon Force; docs/gifs/ has 3.2.8's to 3.3.2's), with SendUserFile, and say they are previews, not
-the game.
+The owner during 3.2.9: "I want gifs when it's all done"; during 3.3.4: "no need for gif, proceed to the next fruit". Send renders (or a
+GIF when the owner wants one) with SendUserFile, and say they are previews, not the game.

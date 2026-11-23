@@ -26,7 +26,7 @@ public final class SupaArt {
     public static final int EDGE = 0xFFFFFF;
     /** The cutting force (the flying slash, the X): white at its heart, the fruit's pale blue round it. */
     public static final int CUT_CORE = 0xF4F9FF;
-    public static final int CUT_GLOW = 0x9CC3F0;
+    public static final int CUT_GLOW = 0x7FAEEA;
     /** Sparks off steel. */
     public static final int SPARK = 0xFFD27A;
     /** The katanas' coat (client/sword/KatanaRenderer: COAT_R/G/B), and the glint a coated edge keeps. */
@@ -73,9 +73,11 @@ public final class SupaArt {
     static final double[] B = new double[6];
 
     /**
-     * A crescent of cutting force flying along (ux, uy, uz) (unit), its middle at (x, y, z), {@code roll} radians round its way (0 flat,
-     * PI / 2 upright), {@code scale} its size (1 a tapped slash, 2.4 one charged full), {@code coat} the user's Armament (its glow dark
-     * purple then): a white crescent bulging forward with a pale blue glow, two fading ghosts of it behind (the speed it carries).
+     * A crescent of cutting force flying along (ux, uy, uz) (unit), its middle at (x, y, z), {@code roll} radians round its way (0 level,
+     * as the owner wanted the Light fruit's wave: "it's going vertical its very strange"), {@code scale} its size (1 a tapped slash, 2.4
+     * one charged full), {@code coat} the user's Armament: built as the Light fruit's wave is (LightArt.wave, approved): a crescent bowed
+     * out ahead the way it flies, its ends trailing, five bands deep so it reads from behind, each a wide pale-blue glow under a white
+     * core (with Armament a very dark purple core in a violet glow).
      */
     public static void slash(FireMesh.Sink sink, double x, double y, double z, double ux, double uy, double uz, double roll, double scale,
                              double age, double coat) {
@@ -89,22 +91,24 @@ public final class SupaArt {
         double nx = uy * sz - uz * sy;
         double ny = uz * sx - ux * sz;
         double nz = ux * sy - uy * sx;
-        double radius = 0.95 * scale;
-        double sweep = Math.toRadians(150);
-        double grow = Math.min(1.0, 0.45 + age * 0.3);
+        double width = 1.5 * scale * Math.min(1.0, 0.55 + age * 0.2);
+        double cx = x - ux * width;
+        double cy = y - uy * width;
+        double cz = z - uz * width;
+        double start = startOf(nx, ny, nz, ux, uy, uz) - 1.05;
         int core = coat(CUT_CORE, coat);
         int glow = coat > 0 ? FireMesh.mix(CUT_GLOW, COAT_GLINT, Math.min(1.0, coat)) : CUT_GLOW;
-        for (int ghost = 0; ghost < 3; ghost++) {
-            double back = ghost * 0.38 * scale;
-            double fade = ghost == 0 ? 1.0 : ghost == 1 ? 0.45 : 0.2;
-            double cx = x - ux * (radius + back);
-            double cy = y - uy * (radius + back);
-            double cz = z - uz * (radius + back);
-            double start = startOf(nx, ny, nz, ux, uy, uz) - sweep / 2;
-            FireMesh.arc(sink, cx, cy, cz, nx, ny, nz, radius * grow, 0.34 * scale, start, sweep, 0.0, glow, 0.5 * fade);
-            FireMesh.arc(sink, cx, cy, cz, nx, ny, nz, radius * grow, 0.13 * scale, start, sweep, 0.0, core, 0.95 * fade);
+        for (int k = -2; k <= 2; k++) {
+            double off = k * 0.08 * Math.min(1.6, scale);
+            double depth = k == 0 ? 1.0 : Math.abs(k) == 1 ? 0.7 : 0.4;
+            FireMesh.arc(sink, cx + nx * off, cy + ny * off, cz + nz * off, nx, ny, nz, width, width * 0.42 + 0.12, start, 2.1, 0.0, glow,
+                0.7 * depth);
+            FireMesh.arc(sink, cx + nx * off, cy + ny * off, cz + nz * off, nx, ny, nz, width, width * 0.18 + 0.06, start, 2.1, 0.0, core,
+                depth);
         }
     }
+
+    /** The angle    }
 
     /** The angle (in FireMesh.arc's frame round the normal n) at which the arc points along u. */
     static double startOf(double nx, double ny, double nz, double ux, double uy, double uz) {
@@ -123,8 +127,9 @@ public final class SupaArt {
     }
 
     /**
-     * Spar Claw's marks in the air before the user (x, y, z, facing fx, fz flat): four thin parallel arcs slashed across, one way or the
-     * other by {@code which}, {@code reach} out, fading over {@link #CLAW_LIFE}.
+     * Spar Claw's marks in the air before the user (x, y, z its chest, facing fx, fz flat): four parallel claw cuts raked across, one way
+     * or the other by {@code which}, {@code reach} out round the chest: each a white core in a pale-blue glow, two bands deep so they read
+     * edge-on, opening as the swipe goes and fading over {@link #CLAW_LIFE}.
      */
     public static void clawMarks(FireMesh.Sink sink, double x, double y, double z, double fx, double fz, int which, double reach, double age,
                                  double coat) {
@@ -132,25 +137,29 @@ public final class SupaArt {
         if (t >= 1.0) {
             return;
         }
-        double alpha = t < 0.2 ? t / 0.2 : 1.0 - (t - 0.2) / 0.8;
+        double alpha = t < 0.15 ? t / 0.15 : 1.0 - (t - 0.15) / 0.85;
         // tilted planes: the first swipe falls from the upper right, the second rises from the lower left
         double tilt = which == 0 ? 0.45 : -0.45;
-        double sweep = Math.toRadians(80) * Math.min(1.0, age / 2.0);
+        double sweep = Math.toRadians(95) * Math.min(1.0, 0.35 + age / 1.5);
         double rx = -fz;
         double rz = fx;
         double nx = rx * Math.sin(tilt);
         double ny = Math.cos(tilt);
         double nz = rz * Math.sin(tilt);
-        int line = coat(CUT_CORE, coat);
+        int core = coat(CUT_CORE, coat);
+        int glow = coat > 0 ? FireMesh.mix(CUT_GLOW, COAT_GLINT, Math.min(1.0, coat)) : CUT_GLOW;
+        double mid = startOf(nx, ny, nz, fx, 0, fz);
+        double start = which == 0 ? mid + Math.toRadians(48) - sweep : mid - Math.toRadians(48);
         for (int k = 0; k < 4; k++) {
-            double off = (k - 1.5) * 0.13;
-            double cx = x + nx * off;
-            double cy = y + ny * off;
-            double cz = z + nz * off;
-            double mid = startOf(nx, ny, nz, fx, 0, fz);
-            double start = which == 0 ? mid + Math.toRadians(40) - sweep : mid - Math.toRadians(40);
-            FireMesh.arc(sink, cx, cy, cz, nx, ny, nz, reach, 0.08, start, sweep, 0.0, line, 0.95 * alpha);
-            FireMesh.arc(sink, cx, cy, cz, nx, ny, nz, reach, 0.22, start, sweep, 0.0, CUT_GLOW, 0.35 * alpha);
+            double off = (k - 1.5) * 0.17;
+            for (int band = -1; band <= 1; band += 2) {
+                double o = off + band * 0.035;
+                double cx = x + nx * o;
+                double cy = y + ny * o;
+                double cz = z + nz * o;
+                FireMesh.arc(sink, cx, cy, cz, nx, ny, nz, reach, 0.3, start, sweep, 0.0, glow, 0.45 * alpha);
+                FireMesh.arc(sink, cx, cy, cz, nx, ny, nz, reach, 0.11, start, sweep, 0.0, core, alpha);
+            }
         }
     }
 
@@ -194,8 +203,8 @@ public final class SupaArt {
     }
 
     /**
-     * Spiral Hollow's wake from A to B: a corkscrew of white cuts round the way the drills went, tightest at B, fading over
-     * {@link #TRAIL_LIFE}.
+     * Spiral Hollow's wake from A to B: rings of white cut round the way the drills went, each open where the thread runs and turned on
+     * from the last (a drill's wake), a bright core and a pale-blue glow down its middle, tightest at B, fading over {@link #TRAIL_LIFE}.
      */
     public static void drillTrail(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double age,
                                   double coat) {
@@ -211,21 +220,28 @@ public final class SupaArt {
         double uy = dy / length;
         double uz = dz / length;
         double alpha = 1.0 - t;
-        int line = coat(CUT_CORE, coat);
-        int n = Math.min(40, (int) (length / 0.35));
+        int core = coat(CUT_CORE, coat);
+        int glow = coat > 0 ? FireMesh.mix(CUT_GLOW, COAT_GLINT, Math.min(1.0, coat)) : CUT_GLOW;
+        int n = Math.min(28, (int) (length / 0.6));
         for (int i = 0; i < n; i++) {
-            double s = i / (double) Math.max(1, n - 1);
+            double s = (i + (age * 0.4) % 1.0) / (double) Math.max(1, n);
             double px = ax + dx * s;
             double py = ay + dy * s;
             double pz = az + dz * s;
-            double radius = 0.55 + 0.25 * (1.0 - s) + 0.4 * t;
-            double start = s * 9.0 + age * 0.6;
-            FireMesh.arc(sink, px, py, pz, ux, uy, uz, radius, 0.09, start, 2.0, 0.25, line, 0.75 * alpha);
+            double radius = 0.45 + 0.25 * (1.0 - s) + 0.4 * t;
+            // a ring cut open where the thread runs, turning along the way (a drill's wake)
+            double start = s * 10.0 + age * 0.5;
+            FireMesh.arc(sink, px, py, pz, ux, uy, uz, radius, 0.26, start, 4.4, 0.25, glow, 0.4 * alpha);
+            FireMesh.arc(sink, px, py, pz, ux, uy, uz, radius, 0.09, start, 4.4, 0.25, core, 0.85 * alpha);
         }
-        FireMesh.ray(sink, ax, ay, az, ux, uy, uz, length, 0.25, 0, 0, CUT_GLOW, 0.35 * alpha);
+        FireMesh.ray(sink, ax, ay, az, ux, uy, uz, length, 0.9 * (1.0 - 0.5 * t), 0, 0, glow, 0.35 * alpha);
+        FireMesh.ray(sink, ax, ay, az, ux, uy, uz, length, 0.22 * (1.0 - 0.5 * t), 0, 0, core, 0.7 * alpha);
     }
 
-    /** Sparkling Daisy's cut from A to B: one bright straight line of steel drawn through the air, with a glow round it, fading. */
+    /**
+     * Sparkling Daisy's cut from A to B: a bright cut of steel drawn straight through the air, thick at first and thinning as it fades, a
+     * wide pale-blue glow round it, a second fainter cut crossing it at a slant (both blades out), over {@link #TRAIL_LIFE}.
+     */
     public static void daisyTrail(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double age,
                                   double coat) {
         double t = age / TRAIL_LIFE;
@@ -240,10 +256,13 @@ public final class SupaArt {
         double uy = dy / length;
         double uz = dz / length;
         double alpha = 1.0 - t * t;
-        double thin = 1.0 - t;
-        FireMesh.ray(sink, ax, ay + 0.15, az, ux, uy, uz, length, 0.09 * thin + 0.02, 0, 0, coat(CUT_CORE, coat), alpha);
-        FireMesh.ray(sink, ax, ay - 0.15, az, ux, uy, uz, length, 0.09 * thin + 0.02, 0, 0, coat(CUT_CORE, coat), alpha);
-        FireMesh.ray(sink, ax, ay, az, ux, uy, uz, length, 0.5 * thin + 0.1, 0, 0, CUT_GLOW, 0.3 * alpha);
+        double thin = 1.0 - 0.7 * t;
+        int core = coat(CUT_CORE, coat);
+        int glow = coat > 0 ? FireMesh.mix(CUT_GLOW, COAT_GLINT, Math.min(1.0, coat)) : CUT_GLOW;
+        FireMesh.ray(sink, ax, ay + 0.2, az, ux, uy, uz, length, 1.3 * thin, 0, 0, glow, 0.35 * alpha);
+        FireMesh.ray(sink, ax, ay + 0.2, az, ux, uy, uz, length, 0.32 * thin, 0, 0, core, alpha);
+        FireMesh.ray(sink, ax, ay - 0.25, az, ux, uy - 0.03, uz, length, 0.7 * thin, 0, 0, glow, 0.25 * alpha);
+        FireMesh.ray(sink, ax, ay - 0.25, az, ux, uy - 0.03, uz, length, 0.16 * thin, 0, 0, core, 0.7 * alpha);
     }
 
     /**
@@ -254,10 +273,17 @@ public final class SupaArt {
     public static void spin(FireMesh.Sink sink, double x, double y, double z, double radius, double age, double coat) {
         double grow = Math.min(1.0, age / 3.0);
         double turn = age * 1.4;
-        int blur = coat(CUT_CORE, coat);
-        FireMesh.arc(sink, x, y + 0.25, z, 0, 1, 0, radius * grow * 0.85, 0.3, turn, Math.PI * 1.3, 0.0, blur, 0.5 * grow);
-        FireMesh.arc(sink, x, y - 0.2, z, 0, 1, 0, radius * grow * 0.8, 0.25, turn + Math.PI, Math.PI * 1.3, 0.0, blur, 0.45 * grow);
-        FireMesh.arc(sink, x, y, z, 0, 1, 0, radius * grow, 0.6, turn + 0.8, Math.PI * 1.6, 0.0, CUT_GLOW, 0.25 * grow);
+        int core = coat(CUT_CORE, coat);
+        int glow = coat > 0 ? FireMesh.mix(CUT_GLOW, COAT_GLINT, Math.min(1.0, coat)) : CUT_GLOW;
+        for (int k = -1; k <= 1; k++) {
+            double h = y + k * 0.16;
+            double depth = k == 0 ? 1.0 : 0.6;
+            for (int r = 0; r < 2; r++) {
+                double start = turn + r * Math.PI;
+                FireMesh.arc(sink, x, h, z, 0, 1, 0, radius * grow * 0.9, 0.7, start, Math.PI * 0.9, 0.0, glow, 0.45 * depth * grow);
+                FireMesh.arc(sink, x, h, z, 0, 1, 0, radius * grow * 0.9, 0.22, start, Math.PI * 0.9, 0.0, core, 0.9 * depth * grow);
+            }
+        }
     }
 
     /** One stretch of a skate mark on the ground from A to B: a thin bright line lying flat, {@code alpha} its fade. */

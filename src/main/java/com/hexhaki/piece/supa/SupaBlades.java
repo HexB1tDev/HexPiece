@@ -32,9 +32,9 @@ public final class SupaBlades {
     /** A finger blade (Spar Claw): short, narrow, its curve kept (a claw). */
     public static final Shape CLAW = new Shape("claw", 1.3F, 1.8F, 0.26F, 0.0F, 1.0F, 1.0F);
     /** One blade of Spiral Hollow's drill (several stand round the forearm, twisted like a screw's threads). */
-    public static final Shape DRILL = new Shape("drill", 2.4F, 2.2F, 0.62F, 0.0F, 1.0F, 0.2F);
+    public static final Shape DRILL = new Shape("drill", 1.3F, 2.2F, 0.5F, 0.0F, 1.0F, 0.2F);
     /** Atomic Spurt's skate blade under a foot (its curve lifts its front like a skate's). */
-    public static final Shape SKATE = new Shape("skate", 1.8F, 1.6F, 0.34F, 0.0F, 1.0F, 1.0F);
+    public static final Shape SKATE = new Shape("skate", 2.6F, 2.2F, 0.46F, 0.0F, 1.0F, 1.0F);
 
     /** The arm blade's guard end on the arm (px, the right arm's frame: x out, y down the arm), its section turned round the arm. */
     public static final float[] ARM_AT = {-1.6F, 3.2F, 0.0F};
@@ -47,11 +47,12 @@ public final class SupaBlades {
 
     /** The drill: so many blades round the forearm's middle (px, the right arm's frame), their roots this far out, leaning in this much
      *  toward a point past the fist, each turned along itself like a thread. */
-    public static final int DRILL_BLADES = 5;
-    public static final float[] DRILL_AXIS = {-1.0F, 4.2F, 0.0F};
-    public static final float DRILL_OUT = 2.6F;
-    public static final float DRILL_LEAN = 9.0F;
-    public static final float DRILL_TWIST = 40.0F;
+    public static final int DRILL_BLADES = 6;
+    public static final float[] DRILL_AXIS = {-1.0F, 4.6F, 0.0F};
+    public static final float DRILL_OUT = 2.5F;
+    public static final float DRILL_LEAN = 11.0F;
+    /** Each blade turned this far along itself: 90 lays its flat along the cone's surface, the rest its thread's slant. */
+    public static final float DRILL_TWIST = 115.0F;
     /** How fast the drill turns (degrees a tick). */
     public static final float DRILL_SPIN = 36.0F;
 
@@ -62,7 +63,7 @@ public final class SupaBlades {
     public static final float SPIN_SPEED = 50.0F;
 
     /** The skate blade under a foot (px, a leg's frame: the sole at y 12): its heel end, running forward (-z) with its edge down. */
-    public static final float[] SKATE_AT = {0.0F, 12.6F, 2.4F};
+    public static final float[] SKATE_AT = {0.0F, 12.4F, 3.2F};
 
     /**
      * Spider's steel skin: every part's box (model px, the part's own frame) grown by {@link #SKIN} px, the steel's texture on its

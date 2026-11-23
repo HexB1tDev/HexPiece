@@ -40,7 +40,8 @@ import net.minecraftforge.fml.common.Mod;
  * {@link S2CUoFx} (kinds {@link #PARTS} to {@link #SPIN}, 200 to 219): which blades a body shows and for how long (the clients draw them
  * from the owner's katana steel: client/supa/SupaClient), and the cuts in the air (client/supa/SupaFx, supa/SupaArt). The animations are
  * the mod's own (the owner: "simple reused animations already in the mod"), chosen by render: pika_sword_1/2, hie_partisan_raise/throw,
- * pika_murakumo, hie_road_slide/punch, hie_partisan_launch, pika_lunge, gura_tilt.
+ * pika_murakumo, hie_grab_reach then hie_road_punch (Spiral Hollow: both arms forward), hie_road_slide (Atomic Spurt),
+ * hie_partisan_launch, pika_lunge, gura_tilt.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class SupaMoves {
@@ -228,7 +229,27 @@ public final class SupaMoves {
         Vec3 way = push.m_82556_() < 1.0E-6 ? Vec3.f_82478_ : push.m_82541_();
         fx(player, SPARK, ++seeds, at, way, Math.min(1.0, damage / 10.0), 0, 0);
         sounds(player, at, SupaSounds.CUT, 0.9F, 0.95F + (seeds % 5) * 0.04F, 2, 3);
-        ConquerorAura.mixed(player, at, 2.0, 5, -1.0);
+        lightning(player, at, 2.0, 5);
+    }
+
+    /** Per user: when the strikes' lightning may next go (ticks). */
+    private static final Map<UUID, Long> BOLTS = new HashMap<>();
+    static final int BOLT_GAP = 4;
+
+    /**
+     * The Conqueror's lightning at a strike (POINT ONE; visual only, gated on the Conqueror's Haki and Ryou inside ConquerorAura), at most
+     * once every {@link #BOLT_GAP} ticks a user: Spar Break or Atomic Spurt through a crowd is one burst at a time, never a flood of bolts
+     * on the owner's phone.
+     */
+    static void lightning(ServerPlayer player, Vec3 at, double radius, int count) {
+        long now = now(player);
+        Long next = BOLTS.get(player.m_20148_());
+        if (next != null && now < next && now >= next - BOLT_GAP) {
+            return;
+        }
+        if (ConquerorAura.mixed(player, at, radius, count, -1.0)) {
+            BOLTS.put(player.m_20148_(), now + BOLT_GAP);
+        }
     }
 
     /** Living foes in front of {@code player} within {@code reach} and {@code arc} degrees each side of the look. */
@@ -430,7 +451,7 @@ public final class SupaMoves {
         Vec3 f = flat(player);
         Vec3 to = PikaMoves.room(player, from, from.m_82549_(f.m_82490_(SPIRAL_LENGTH)));
         int ticks = Math.max(3, (int) Math.ceil(to.m_82554_(from) / SPIRAL_SPEED));
-        dash(player, s, from, to, f, ticks, -1, DRILLS, "hie_road_slide", "hie_road_punch", 9.0F, 1.8, 0);
+        dash(player, s, from, to, f, ticks, -1, DRILLS, "hie_grab_reach", "hie_road_punch", 9.0F, 1.8, 0);
     }
 
     /**
@@ -471,7 +492,7 @@ public final class SupaMoves {
             fx(player, TRAIL, 0, from.m_82520_(0, 1.0, 0), at, trail, 0, 0);
             fx(player, SPARK, ++seeds, at.m_82549_(way.m_82490_(0.8)), way, 1.0, 0, 0);
             sound(player, at, SupaSounds.RIP, 1.0F, 0.9F);
-            ConquerorAura.mixed(player, at.m_82549_(way.m_82490_(0.8)), 2.5, 7, -1.0);
+            lightning(player, at.m_82549_(way.m_82490_(0.8)), 2.5, 7);
         });
     }
 
@@ -691,6 +712,7 @@ public final class SupaMoves {
         STATES.clear();
         LIVE.clear();
         HEARD.clear();
+        BOLTS.clear();
     }
 
     /** The world's tick: the cuts in flight and everything timed. */

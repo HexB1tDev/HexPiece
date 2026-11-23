@@ -24,7 +24,8 @@ what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber
 rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip and the jump pose redone to the owner's target
 look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's
 description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is
-pushed (its runs: section 8zy); 3.3.5 (Supa Supa) is next: section 9.** The cloud environment
+pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed: check its runs,
+section 9.** The cloud environment
 is the personal "HexPiece", env_016v9rNSffz2fds2ha514nhY since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -1944,7 +1945,7 @@ Finished in the next session (nothing tested in game: build, 13 suites, renders,
   some 502s): fetch in parallel with retries.
 - The owner, when this was ready (verbatim): "no need for gif, proceed to the next fruit". So no GIF for 3.3.4; on to Supa Supa.
 
-## 8zz. IN PROGRESS (3.3.5): the Supa Supa no Mi; the owner on the first blade renders
+## 8zz. Done (3.3.5): the Supa Supa no Mi; the owner on the first blade renders, the blades made of katana steel
 
 Wired (in the tree, not yet built as a whole): PiecePatch SUPA {"supa", "Supa Supa no Mi", "Blade", "8FB3DA", lore} ordinal 7, not a
 Logia; FruitRanks UNCOMMON; HexPiece.init registers server/SupaKit (not written yet); PieceSounds registers supa/SupaSounds (SWISH, DRAW,
@@ -1967,10 +1968,43 @@ figure and the katana steel, textured and lit as the game does): a katana's 01_B
 x' = spine * curve - d * widen - wave * sin(2 pi y / period) * u^2, y' = y * length, z' = z * thick), set on the forearm (ARM_AT, turned
 ARM_TURN 30 degrees round the arm), the coat multiplied toward (62, 34, 88). Chosen: Silver Crane's steel, widen 4.2, thick 2.6, length
 0.82, wave 0.45, period 7.5, curve 0.4 (Azure Tide blue-grey and Blackwater dark compared). Render: docs/handoff/supa-arm-blades-3.3.5.jpg
-(bare and with Armament, beside the katana), sent to the owner for a yes. NEXT: port the reshape to client/sword/KatanaMesh (a shaped
-copy, cached) and a public KatanaRenderer.steel (the katana's own quads, coated and highlight on the steel alone); SupaArt's flat
-blades go; the other blades (claws, drills of blades round the forearm, the skate blades, Spider's steel) made the same way and judged
-the same way; then the moves (8zw).
+(bare and with Armament, beside the katana), sent to the owner: **"Yes, build it"**.
+
+Built (nothing tested in game: build, 13 suites, every blade and cut rendered and judged, every sound measured):
+- **The steel** (client/sword/KatanaMesh.shaped: a katana's 01_Blade quads reshaped by supa/SupaBlades.Shape, cached per katana, level
+  of detail and shape; KatanaMesh.box: a box skinned with a small window in the middle of the steel's flat; KatanaRenderer.steel and
+  steelBox: drawn through the katana's own quads / coated / highlight, so lit, textured and coated as the katanas, BladeCoatClient's
+  gradual coat). Silver Crane's steel. client/supa/SupaClient.renderBody puts it on the limbs (the left arm mirrored): ARM (ARM_AT,
+  ARM_TURN 30), CLAW x4 out of the fist (CLAW_X, CLAW_Y, CLAW_FAN), DRILL x6 round the forearm (DRILL_AXIS, OUT 2.5, LEAN 11 in, TWIST
+  115: flats along the cone's surface, a thread's slant), SKATE under each foot (Rx -90 Ry 90: blade forward, edge down), Spider's
+  steel skin (every part's box grown SKIN), Spar Break's 8 arm blades round the body's middle whirling (SPIN_*). firstPerson: the
+  same on the game's own arm (LightArt.FIRST_PERSON_GRIP's first 8 steps; FirstPersonHand's move is already on the pose). Renders:
+  docs/handoff/supa-blades-3.3.5.jpg (every move's blades on its clip's pose, bare and coated), supa-first-person-3.3.5.jpg.
+  tools/supa_view.py mirrors SupaClient step by step (--parts, --first); DragonTests.supaCuts checks its ARM numbers equal SupaBlades.
+- **The cuts in the air** (supa/SupaArt, client/supa/SupaFx; the first ones were thin pale lines: rebuilt as the Light fruit's wave
+  is, LightArt.wave: a level crescent five bands deep, a wide glow under a white core; with Armament a dark core in a violet glow): the
+  flying slash (level: the owner called Murakumo's vertical wave "very strange"), the X (two crescents at +-45), claw marks (four, two
+  bands deep), sparks, the glance (ring and sparks), Spiral Hollow's wake (rings open where the thread runs, round a glowing core),
+  Sparkling Daisy's cut (two bright rays in a glow), Spar Break's blur (three bands of arcs), skate marks (each client its own from the
+  skater's feet). Render: docs/handoff/supa-cuts-3.3.5.jpg. Budget DragonTests.supaCuts (a crowd of everything under 16,000 quads).
+- **The moves** (server/SupaKit, SupaMoves; S2CUoFx 200-209: PARTS (a mask: ARMS, CLAWS, DRILLS, SKATES, STEEL), SLASH, SLASH_END,
+  CLAW, SPARK, GLANCE, DASH (one's own client carries the body, as the Ice fruit's slide), TRAIL, CROSS, SPIN): LMB Spar Claw
+  (pika_sword_1/2 by turns every 7 ticks, a 3.2 cone 75 degrees each side, 4 damage), RMB Flying Slash (tap: 6 damage, 24 blocks; held
+  past 5 ticks hie_partisan_raise, full in 30 more: 14 damage, 36 blocks, 2.4 times as big; hie_partisan_throw; cuts through everyone
+  once, ends at a wall with sparks), Z Atomic Spar (pika_murakumo, the X flies 16 blocks, 11 damage), X Spiral Hollow (hie_grab_reach,
+  12 blocks at 1.5 a tick, 9 damage each passed, hie_road_punch at the end), C Atomic Spurt (70 ticks, Speed IV, 5 damage to each
+  passed once per 10 ticks, hie_road_slide), V Spider (160 ticks, Slowness I, hie_partisan_launch; SupaKit.blocks stops every blow
+  with an attacker unless FruitServer.hakiInfused, a bare fist cut 3 once per 10 ticks), B Sparkling Daisy (pika_lunge through the one
+  aimed at 2.2 a tick, 14 damage as it passes, an X flash, 6 to others passed), N Spar Break (36 ticks, gura_tilt, 3.5 damage all round
+  every 4 ticks, a last burst 5 damage thrown out + ConquerorAura.exploded), passive Slashing Immunity (SupaKit.blocks: a melee blow
+  with a SwordItem, AxeItem or KatanaItem in hand, unless Haki-coated). Energy supa_* in FruitEnergy.COSTS. The Conqueror's lightning
+  at every strike through SupaMoves.lightning (at most one burst a player per 4 ticks: ConquerorAura.mixed has no throttle of its own).
+- **Sounds** (tools/supa_sounds.py, sounds/piece/supa, SwordTests webSounds("supa", ..., 7)): swish1 Qvantor "Swish Swipe Short"
+  877976, draw1 mywhats "knife sharpening" 175520 (from 0.55 s), cut1 ihitokage "Sword stab 1" 395370 (0.1 s, 0.25 s), glance1
+  velcronator "Sword Impact" 733887, rip1 reg7783 "cloth_ripping" 133440, skate (loop) 13FPanska_Marval_Lukas "Skating" 379329, spin
+  (loop) Qvantor "Whoosh Swirl Spinning" 877983. **The pitch check, refined:** a short clip's peaks read higher by chance alone (plain
+  noise: about +10 dB at 0.25 s, +7 at 0.45 s, +4.5 at 1 s, +3.5 long): judge a clip by its excess over noise of its own length.
+- The panel and book rows come from SupaKit.MOVES (Spar Claw "LMB", the passive "-") as every fruit's.
 
 ## 8zza. The owner's new request during 3.3.5 (verbatim): a Rare fruit, the Ito Ito no Mi (on the to-do list, not started)
 
@@ -2025,10 +2059,10 @@ POINT ONE for everything else (the house style, the Conqueror's lightning out of
 and ask the owner (AskUserQuestion) before building, as 8zw did for the other three. Lessons from Supa (8zz): judge the art against the
 Light/Gura/Magma art before showing it; a flat single-colour mesh is not acceptable.
 
-## 9. What to do next (after 3.3.4)
+## 9. What to do next (after 3.3.5)
 
 1. **Check the branch's last "Build HexPiece" and "Release HexPiece" runs** (`claude/nice-bell-gam7qf`) and fix whatever is red.
-2. **3.3.5 Supa Supa (IN PROGRESS: 8zz)**, then **3.3.6 Horo Horo**, then the **Ito Ito no Mi (Rare: 8zza, plan and ask first)**, (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
+2. **3.3.6 Horo Horo**, then the **Ito Ito no Mi (Rare: 8zza, plan and ask first)** (3.3.5 Supa Supa is done: 8zz), (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
    Noro is (8zy), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
    CC0 web sounds, the Conqueror's lightning out of every explosion). Supa's blades go black-purple with Armament on, like the katanas.
 3. Sounds: Freesound needs the HexPiece environment (the session started on Default again: get_environment lists HexPiece,
