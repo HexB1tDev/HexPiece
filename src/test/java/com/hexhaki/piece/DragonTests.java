@@ -439,6 +439,63 @@ public final class DragonTests {
             "the spirit shows only the faces turned to the eye (" + behind + " from behind, " + faces[0] + " from in front)");
     }
 
+    /**
+     * 3.3.7: the Ito fruit's strings at their busiest stay within a phone's budget: everything one user can have on screen at once (the
+     * Birdcage round them, a burst of bullets, a lash, Overheat, Parasite, the web, hits, a sky step, stitches, the knight's light, and
+     * the Awakening: Break White bare or God Thread coated, one key), coated and not; every vertex finite; the cage closes from the owner's 40 to 10 over 45 seconds; a
+     * string ends in a point (the owner: "sharper in the end too not just square ends").
+     */
+    static void itoStrings() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        float[][] pose = new float[8][8];
+        for (int coat = 0; coat < 2; coat++) {
+            boolean c = coat == 1;
+            for (int age = 0; age <= 40; age += 4) {
+                count[0] = 0;
+                com.hexhaki.piece.ito.ItoArt.cage(sink, 0, -1.6, 0, com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, age * 20, 900), age, 1.0, c);
+                if (!c) {
+                    // the Awakening is one key: Break White bare, God Thread with Armament (below), never both at once
+                    com.hexhaki.piece.ito.ItoArt.waves(sink, 0, -1.6, 0, 18, 3, 8, 0.5, age, 60, c);
+                }
+                for (int k = 0; k < 6; k++) {
+                    com.hexhaki.piece.ito.ItoArt.bullet(sink, -0.3, -0.3, 1 + 2.4 * ((age + k * 4) % 16), 0, 0, 1, age, c);
+                }
+                com.hexhaki.piece.ito.ItoArt.lash(sink, -0.36, -0.45, 0.35, 0, 1, 4.5, age % 2, age % 8, c);
+                com.hexhaki.piece.ito.ItoArt.overheat(sink, -0.36, -0.45, 0.35, 0, 1, 16, age % 18, 18, c, 3);
+                com.hexhaki.piece.ito.ItoArt.goshiki(sink, 0, -1.6, 7, 0, 1, 1.4, 6, age, 40, c, 5);
+                double[] at = {0, 0.2, 5, 0.3, -0.3, 5, -0.3, -0.3, 5, 0.15, -1.4, 5, -0.15, -1.4, 5};
+                com.hexhaki.piece.ito.ItoArt.parasite(sink, -0.36, -0.45, 0.35, at, age, 1.0, c);
+                com.hexhaki.piece.ito.ItoArt.web(sink, 0, -0.5, 2.2, 0, 0, 1, 2.4, age, 120, c, 1.0);
+                if (c) {
+                    com.hexhaki.piece.ito.ItoArt.thread(sink, 0, -0.6, 12, 0, -0.4, 0, 16, age % 12, 8);
+                }
+                for (int k = 0; k < 4; k++) {
+                    com.hexhaki.piece.ito.ItoArt.hit(sink, -2 + k, -0.4, 4, 0, 0, -1, 1.0, (age + k * 2) % 10, c, k);
+                }
+                com.hexhaki.piece.ito.ItoArt.sky(sink, 1, -1.6, 2, age % 14, c, 4);
+                com.hexhaki.piece.ito.ItoArt.stitch(sink, 0, -0.6, 0, 1.8, age, 60, 9);
+                com.hexhaki.piece.horo.AstralArt.walking(age, 1.0, pose);
+                com.hexhaki.piece.horo.AstralArt.knight(null, sink, pose, new com.hexhaki.piece.style.StyleShow.Place(1.5, -1.6, 3, 0), 1.0, c);
+                check(count[0], finite[0], "Ito strings" + (c ? " (coated)" : ""), age);
+            }
+        }
+        Check.that(com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, 0, 900) == 40 && com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, 900, 900) == 10
+            && com.hexhaki.piece.ito.ItoArt.cageRadius(40, 10, 450, 900) == 25, "the Birdcage closes from 40 to 10 over its life");
+        // a string's last stretch narrows to a point: its last quads' far corners meet on its line
+        double[] last = new double[12];
+        com.hexhaki.piece.dragon.FireMesh.Sink tip = (xyz, argb) -> System.arraycopy(xyz, 0, last, 0, 12);
+        com.hexhaki.piece.ito.ItoArt.line(tip, 0, 0, 5, 0, 0, 9, 0.05, false, 1.0, 1.0, 1.0, 6);
+        Check.that(Math.abs(last[3] - last[6]) < 1.0E-9 && Math.abs(last[4] - last[7]) < 1.0E-9 && Math.abs(last[5] - last[8]) < 1.0E-9,
+            "a string ends in a point, not a square end");
+    }
+
     static void supaCuts() throws Exception {
         int[] count = {0};
         boolean[] finite = {true};
@@ -575,6 +632,8 @@ public final class DragonTests {
             Check.that(zip.getEntry("assets/hexhaki/textures/item/horo_horo_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/horo_horo_no_mi.json") != null, "the Horo fruit's icon and model");
             Check.that(zip.getEntry("assets/hexhaki/textures/mob_effect/gloom.png") != null, "Gloom's icon");
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/ito_ito_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/ito_ito_no_mi.json") != null, "the Ito fruit's icon and model");
             try (InputStream in = zip.getInputStream(entry)) {
                 model = DragonModel.read(in);
             }
@@ -590,6 +649,7 @@ public final class DragonTests {
         noroPhotons();
         supaCuts();
         horoGhosts();
+        itoStrings();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

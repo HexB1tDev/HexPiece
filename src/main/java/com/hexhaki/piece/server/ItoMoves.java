@@ -141,11 +141,6 @@ public final class ItoMoves {
     static final int SURGERY_EVERY = 1200;
     static final int SURGERY_TICKS = 120;
 
-    /** Cage time: how far it has closed in at {@code age} ticks of {@code life} (its radius). */
-    public static double cageRadius(double radius, double end, double age, double life) {
-        double t = Math.max(0.0, Math.min(1.0, age / Math.max(1.0, life)));
-        return radius + (end - radius) * t;
-    }
 
     static final class State {
         long busyUntil;
@@ -779,7 +774,7 @@ public final class ItoMoves {
         if ((now - s.cageFrom) % 2 != 0) {
             return;
         }
-        double r = cageRadius(CAGE_RADIUS, CAGE_END, now - s.cageFrom, CAGE_TICKS);
+        double r = com.hexhaki.piece.ito.ItoArt.cageRadius(CAGE_RADIUS, CAGE_END, now - s.cageFrom, CAGE_TICKS);
         Vec3 c = s.cageAt;
         for (LivingEntity body : PikaMoves.foes(player, c, r + 2.0)) {
             Vec3 m = StyleCombat.middle(body);

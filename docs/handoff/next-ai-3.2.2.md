@@ -26,8 +26,8 @@ rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip 
 look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's
 description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is
 pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed and green (Build
-#172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); the Ito Ito
-no Mi's keys are planned and accepted (8zzc): build it next as 3.3.7.**
+#172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); 3.3.7
+(8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed: check its runs (section 9).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2203,9 +2203,9 @@ Proposed keys (as the other fruits: LMB, RMB, Z X C V B N M, a passive):
 **The owner's answers** (AskUserQuestion, 3.3.6's session): the keys **"As proposed"** (exactly the list above); the Birdcage **"40
 blocks, 45 s"** (a huge cage like Dressrosa's, shrinking slowly over 45 seconds). Rare (three stars), version 3.3.7. Not started.
 
-## 8zzd. IN PROGRESS (3.3.7, not released): the Ito Ito no Mi (the owner: "Ima only test when I get home, proceed")
+## 8zzd. Done (3.3.7): the Ito Ito no Mi (the owner: "Ima only test when I get home, proceed")
 
-Built so far (the local build EXIT 0, 13 suites; nothing rendered or judged yet, no sounds, no tests of its own):
+Built (nothing tested in game: build EXIT 0, 13 suites, every effect rendered and judged third and first person, every sound measured):
 - **Wiring**: PiecePatch ITO {"ito", "Ito Ito no Mi", "String", "F27BB8", lore} ordinal 9; FruitRanks RARE ("§9Ito Ito no Mi");
   HexPiece.init registers server/ItoKit; PieceSounds registers ito/ItoSounds (SWISH, SHOT, SLICE, BURN, PULL, WEB, CAGE, WAVE, STEP:
   names only, no clips or sounds.json entries yet); en_us subtitles; icon tools/ito_icon.py (a white pear with black swirls, a curly
@@ -2231,13 +2231,37 @@ Built so far (the local build EXIT 0, 13 suites; nothing rendered or judged yet,
   core in a violet glow; Overheat a banded red-hot tube with two strands wound round it and an orange glow) and **client/ito/ItoFx**
   (everything above; the Black Knight's skin through AstralArt.knight: pale, nearly solid, string-white seams, walking pose
   AstralArt.walking or the Light fruit's sword cuts). **Next: render and judge every effect (tools/preview/ItoShots), sounds, tests.**
+- **The owner on the strings** (verbatim, as they watched the renders): "Not a fan of the strings, it looks like dust." (the strand's
+  glow, halo and core ribbons lay in one plane and fought in the depth test pixel by pixel: specks; and the core was thinner than a pixel
+  with clear edges), then "its meant to be slimmer, they're too thick", then "sharper in the end too not just square ends..". Fixed in
+  ItoArt.strand: each ribbon a hair nearer the eye than the one under it (layer's lift: 0, 0.002, 0.004 of the distance), the core solid
+  (opaque to its edges) and never under about a pixel and a half (PIXEL 0.0016 rad), every string SLIM 0.42 of the width each move gives
+  it, and its last POINT 30 % narrowing to a needle point (rings: ItoArt.ring, no point). Overheat stays a red-hot rope. Rendered and
+  sent: docs/handoff/ito-strings-3.3.7.jpg (phone-like resolution, halved). **Keep strings this way: slim, solid, pointed; render at
+  840 wide or more (FxPreview --size) before judging: small previews show thin strings as specks.**
+- The owner, shown God Thread's spears with square ends: "where are the sharp ends?" Every string now tapers at BOTH ends
+  (ItoArt.taper: its last POINT 30 % and its first POINT_START 15 %; ItoArt.line at least 6 pieces so the points have a body between
+  them); God Thread's spears are sharp black thorns, each with a long diamond head. docs/handoff/ito-sharp-3.3.7.jpg (sent).
+- First person: every string and Overheat's rope thin near the eye (ItoArt.near: NEAR 1.5, NEAR_ROPE 3), one's own web drawn at 0.45;
+  ItoFx.hand puts one's own strings in front of the view's lower right. The reused clips' hand moves checked (HandPreview: low right).
+  The Black Knight rendered in a real skin (AstralPreview with ASTRAL_KNIGHT=1): a pale glowing copy, walking, violet with Armament.
+- Sounds (tools/ito_sounds.py, sounds/piece/ito, SwordTests webSounds("ito", ..., 9)): swish1 hz37 "Swish wipe" 667419 (-6 dB), shot1
+  ssierra1202 "swing" 391952, slice1 PEDBRA "Slicing" 377214 (from 0.2 s, -3 dB; the first pick, "Corte", was all sub-bass: a thump),
+  burn1 hnhnh "fire-whoosh" 244926, pull1 ssierra1202 "ropes" 391946 (from 1.2 s), web1 Qvantor "Whoosh Flutter Wings" 877979, cage1
+  Henrythetrain "Air Rush" 135785 (from 1.0 s, -2 dB), wave1 DJT4NN3R "whoosh_long_low" 449990, step1 Qvantor "UI Hover Micro Swish"
+  878248; each as cut -2.5 to +4.9 dB over noise (tools/tonal_lines.py narrow); loudness -21 to -14 LUFS (ebur128 reads clips under
+  0.4 s as -70: use volumedetect's mean for those).
+- Tests: HudTests (Ito Rare, the Birdcage's 40 and 900, the keys, M 41 and the air step 42, the energy list), DragonTests (the icon and
+  model, itoStrings: the busiest moment one user can make under 16,000 quads coated and bare; the Awakening is one key, Break White bare
+  or God Thread coated, never both; the cage closing 40 to 10; a string ends in a point). Panel (UiPreview hud-10). Release notes 3.3.7.
 
-## 9. What to do next (after 3.3.6)
+## 9. What to do next (after 3.3.7)
 
-1. 3.3.6 is pushed and green (Build #175, Release #127). Check the branch's last runs before anything else all the same.
-2. Ask the owner how the Horo fruit (3.3.6: the cute ghosts, Gloom, the astral spirit) looks and plays.
-3. Build the **Ito Ito no Mi as 3.3.7 (Rare) to 8zzc's accepted keys and the owner's 40-block, 45-second Birdcage**, built as the Ice
-   fruit was (8zc, 8ze) and Noro, Supa and Horo are
+1. 3.3.6 is pushed and green (Build #175, Release #127); 3.3.7 (8zzd, the Ito Ito no Mi) is pushed: check its "Build HexPiece" and
+   "Release HexPiece" runs are green before anything else.
+2. The owner tests at home ("Ima only test when I get home"): ask how the Horo fruit (3.3.6) and the Ito fruit (3.3.7) play, and how
+   3.3.2 and 3.3.3 feel. Strings: keep them slim, solid and pointed at both ends (8zzd).
+3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are
    (8zy, 8zz, 8zzb), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
    CC0 web sounds, the Conqueror's lightning out of every explosion). Its strings are thin by nature: make them read as the Light,
    Gura and Magma art does (a glowing core under a wide soft glow, several strands, Overheat's wave of white strings shading purple at its

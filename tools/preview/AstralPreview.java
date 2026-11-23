@@ -74,10 +74,20 @@ public final class AstralPreview {
         AstralArt.asleep(pose);
         AstralArt.left(skinSink, pose, new StyleShow.Place(1.6 - eye[0], -eye[1], -1.2 - eye[2], 0.0));
         lit[0] = false;
-        AstralArt.floating(age, headPitch, headYaw, pose);
-        StyleShow.Place spirit = new StyleShow.Place(-eye[0], 1.2 - eye[1], -eye[2], 0.0);
-        AstralArt.spirit(skinSink, null, pose, spirit, Math.min(1.0, age / 6.0 + 0.0001 + (age == 0 ? 1 : 0)));
-        AstralArt.spirit(null, glow, pose, spirit, Math.min(1.0, age / 6.0 + (age == 0 ? 1 : 0)));
+        if (System.getenv("ASTRAL_KNIGHT") != null) {
+            // 3.3.7: the Ito fruit's Black Knight instead of the spirit: walking (ages under 30) or still, lit, coated when the head yaw is 50
+            boolean coat = headYaw == 50;
+            lit[0] = true;
+            AstralArt.walking(age, age < 30 ? 1.0 : 0.0, pose);
+            StyleShow.Place knight = new StyleShow.Place(-eye[0], -eye[1], -eye[2], 0.0);
+            AstralArt.knight(skinSink, null, pose, knight, 1.0, coat);
+            AstralArt.knight(null, glow, pose, knight, 1.0, coat);
+        } else {
+            AstralArt.floating(age, headPitch, headYaw, pose);
+            StyleShow.Place spirit = new StyleShow.Place(-eye[0], 1.2 - eye[1], -eye[2], 0.0);
+            AstralArt.spirit(skinSink, null, pose, spirit, Math.min(1.0, age / 6.0 + 0.0001 + (age == 0 ? 1 : 0)));
+            AstralArt.spirit(null, glow, pose, spirit, Math.min(1.0, age / 6.0 + (age == 0 ? 1 : 0)));
+        }
         // a Negative Hollow beside, for scale and style
         HoroArt.ghost(glow, -1.6 - eye[0], 1.7 - eye[1], 0.8 - eye[2], 0, 0, 1, 0.75, HoroArt.NEGATIVE, age, 1.0, 1);
         list.sort(Comparator.comparingDouble(Quad::far).reversed());

@@ -497,6 +497,15 @@ public final class HudTests {
             "ranks: the Noro fruit Common (the owner: \"New common Fruits\")");
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.SUPA) == com.hexhaki.piece.FruitRanks.Rank.UNCOMMON,
             "ranks: the Supa fruit Uncommon (the owner: \"Supa Supa No Mi (UnCommon)\")");
+        Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.ITO) == com.hexhaki.piece.FruitRanks.Rank.RARE,
+            "ranks: the Ito fruit Rare (the owner: \"New Rare Fruit: Ito Ito No Mi (Rare)\")");
+        // 3.3.7: the owner's Birdcage ("40 blocks, 45 s") and the keys they accepted (M the Awakening, two passives)
+        Check.that(com.hexhaki.piece.server.ItoMoves.CAGE_RADIUS == 40.0 && com.hexhaki.piece.server.ItoMoves.CAGE_TICKS == 900,
+            "the Birdcage: 40 blocks, 45 seconds");
+        Check.that(com.hexhaki.piece.server.ItoKit.AWAKEN.key().equals("[M]") && com.hexhaki.piece.server.ItoKit.CAGE.key().equals("[N]")
+            && com.hexhaki.piece.server.ItoKit.MOVES.size() == 11, "the Ito keys as accepted");
+        Check.that(com.hexhaki.piece.client.FruitKeyN.ABILITY_M == 41 && com.hexhaki.piece.client.FruitKeyN.ABILITY_SKY == 42,
+            "the M key and the air step reach the kit");
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.HORO) == com.hexhaki.piece.FruitRanks.Rank.COMMON,
             "ranks: the Horo fruit Common (the owner: \"Horo Horo No Mi (common)\")");
         // 3.3.6 (the owner: "make sure gloom is it's own custom effect ... miss often"; they chose 8 in 10 and 8 seconds)
@@ -510,6 +519,7 @@ public final class HudTests {
         for (java.util.List<com.hexhaki.fruit.FruitMove> moves : java.util.List.of(com.hexhaki.piece.server.GuraKit.MOVES,
             com.hexhaki.piece.server.HieKit.MOVES, com.hexhaki.piece.server.MaguKit.MOVES, com.hexhaki.piece.server.NoroKit.MOVES,
             com.hexhaki.piece.server.PikaKit.MOVES, com.hexhaki.piece.server.SupaKit.MOVES, com.hexhaki.piece.server.HoroKit.MOVES,
+            com.hexhaki.piece.server.ItoKit.MOVES,
             com.hexhaki.piece.server.UoKit.MOVES)) {
             for (com.hexhaki.fruit.FruitMove move : moves) {
                 if (move.cooldown() != null) {

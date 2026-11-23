@@ -385,7 +385,9 @@ public final class FxPreview {
                             if (!NikaShots.shot(sink, eye, move)) { // 3.2.6: the Nika fruit's (tools/preview/NikaShots)
                                 if (!NoroShots.shot(sink, eye, move)) { // 3.3.4: the Noro fruit's (tools/preview/NoroShots)
                                     if (!SupaShots.shot(sink, eye, move)) { // 3.3.5: the Supa fruit's (tools/preview/SupaShots)
-                                        HoroShots.shot(sink, eye, move); // 3.3.6: the Horo fruit's (tools/preview/HoroShots)
+                                        if (!HoroShots.shot(sink, eye, move)) { // 3.3.6: the Horo fruit's (tools/preview/HoroShots)
+                                            ItoShots.shot(sink, eye, move); // 3.3.7: the Ito fruit's (tools/preview/ItoShots)
+                                        }
                                     }
                                 }
                             }

@@ -591,7 +591,8 @@ public final class SwordTests {
                 || java.util.Arrays.stream(com.hexhaki.piece.gear.GearSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.noro.NoroSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.supa.SupaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
-                || java.util.Arrays.stream(com.hexhaki.piece.horo.HoroSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                || java.util.Arrays.stream(com.hexhaki.piece.horo.HoroSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.ito.ItoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
@@ -661,6 +662,8 @@ public final class SwordTests {
         webSounds("supa", com.hexhaki.piece.supa.SupaSounds.EVENTS, 7);
         // 3.3.6: the Horo Horo no Mi's (tools/horo_sounds.py)
         webSounds("horo", com.hexhaki.piece.horo.HoroSounds.EVENTS, 6);
+        // 3.3.7: the Ito Ito no Mi's (tools/ito_sounds.py)
+        webSounds("ito", com.hexhaki.piece.ito.ItoSounds.EVENTS, 9);
     }
 
     /** One fruit's web sounds (sounds/piece/{folder}): as {@link #dragonSounds} checks them, at least {@code least} clips. */

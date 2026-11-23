@@ -1,0 +1,13 @@
+The Ito Ito no Mi's sounds (tools/ito_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+swish1.ogg: "Swish wipe HZA 16-05-2022.wav" by hz37, https://freesound.org/people/hz37/sounds/667419/ (CC0 1.0), from 0.0 s, 0.44 s long, 6.0 dB quieter
+shot1.ogg: "swing" by ssierra1202, https://freesound.org/people/ssierra1202/sounds/391952/ (CC0 1.0), from 0.0 s, 0.35 s long
+slice1.ogg: "Slicing" by PEDBRA, https://freesound.org/people/PEDBRA/sounds/377214/ (CC0 1.0), from 0.2 s, 0.50 s long, 3.0 dB quieter
+burn1.ogg: "fire-whoosh.wav" by hnhnh, https://freesound.org/people/hnhnh/sounds/244926/ (CC0 1.0), from 0.1 s, 1.20 s long
+pull1.ogg: "ropes" by ssierra1202, https://freesound.org/people/ssierra1202/sounds/391946/ (CC0 1.0), from 1.2 s, 0.79 s long
+web1.ogg: "Whoosh Flutter Wings" by Qvantor, https://freesound.org/people/Qvantor/sounds/877979/ (CC0 1.0), from 0.1 s, 0.90 s long
+cage1.ogg: "Air Rush.wav" by Henrythetrain, https://freesound.org/people/Henrythetrain/sounds/135785/ (CC0 1.0), from 1.0 s, 2.10 s long, 2.0 dB quieter
+wave1.ogg: "whoosh_long_low.wav" by DJT4NN3R, https://freesound.org/people/DJT4NN3R/sounds/449990/ (CC0 1.0), from 0.3 s, 2.40 s long
+step1.ogg: "UI Hover Micro Swish" by Qvantor, https://freesound.org/people/Qvantor/sounds/878248/ (CC0 1.0), from 0.0 s, 0.21 s long

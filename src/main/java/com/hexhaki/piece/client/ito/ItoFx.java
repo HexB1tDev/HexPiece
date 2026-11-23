@@ -378,7 +378,7 @@ public final class ItoFx {
         for (Map.Entry<Integer, Cage> e : CAGES.entrySet()) {
             Cage c = e.getValue();
             double age = now - c.born;
-            double r = ItoMoves.cageRadius(c.from, c.to, age, c.life);
+            double r = ItoArt.cageRadius(c.from, c.to, age, c.life);
             double alpha = c.ended >= 0 ? Math.max(0.0, 1.0 - (now - c.ended) / CAGE_FADE) : 1.0;
             if (c.at.m_82554_(cam) < FAR + r) {
                 ItoArt.cage(SINK, c.at.f_82479_ - cx, c.at.f_82480_ - cy, c.at.f_82481_ - cz, r, age, alpha, c.coat);
@@ -399,8 +399,11 @@ public final class ItoFx {
         for (Map.Entry<Integer, Web> e : WEBS.entrySet()) {
             Web w = e.getValue();
             if (!far(w.at, cam)) {
+                // one's own web in first person, right in front of the view: fainter, so the fight can still be seen through it
+                Entity user = level.m_6815_(e.getKey());
+                double alpha = user != null && ownView(minecraft, user) ? 0.45 : 1.0;
                 ItoArt.web(SINK, w.at.f_82479_ - cx, w.at.f_82480_ - cy, w.at.f_82481_ - cz, w.facing.f_82479_, w.facing.f_82480_, w.facing.f_82481_,
-                    w.radius, now - w.born, w.life, w.coat);
+                    w.radius, now - w.born, w.life, w.coat, alpha);
             }
         }
         for (Heat h : HEATS) {
