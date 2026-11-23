@@ -13,11 +13,11 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.4.7 everything is pushed and green (3.4.7: Build #192, Release #138; section 8zzg covers 3.4.4 to 3.4.8 with
-the owner's words verbatim: Goof Ball, Dawn Whip, Broken Bones, Goof Ball and Giant only in Gear 5, Dawn Whip's leg drawn by HexPiece,
-the Giant's straight throw and crash). 3.4.8 (/hexpiece style mastery <0..1000>, and an optimization pass: the lightning's and the
-effect primitives' per-frame garbage removed, proven identical by a fingerprint; dragons out of view not skinned) was pushed at the owner's
-"handoff and prompt now": check its Build and Release runs first and fix anything red.
+Where things stand: up to 3.4.8 everything is pushed and green (3.4.8: Build #194, Release #139; section 8zzg covers 3.4.4 to 3.4.8
+with the owner's words verbatim: Goof Ball, Dawn Whip, Broken Bones, Goof Ball and Giant only in Gear 5, Dawn Whip's leg drawn by
+HexPiece, the Giant's straight throw and crash, /hexpiece style mastery <0..1000>, and an optimization pass: the lightning's and the
+effect primitives' per-frame garbage removed, proven identical by a fingerprint; dragons out of view not skinned). Check the newest
+Build run on the branch first and fix anything red.
 
 Next: the owner is testing 3.4.4 to 3.4.8: wait for their notes and work on them. The optimization can go on if they want more (8zzg
 lists what is left: Ryou's fist aura only with a fingerprint proving it unchanged, WaterFx's per-frame lists). The fist is a right fist on

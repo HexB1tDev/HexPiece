@@ -37,7 +37,7 @@ owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Buil
 Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is green (Build #188, Release #135). 3.4.5
 (8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136). 3.4.6 (8zzg: Goof Ball and Giant Gear 5 only, Dawn Whip's
 leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Giant's straight throw and our crash) is green (Build #192, Release #138). 3.4.8 (8zzg: /hexpiece style mastery,
-the optimization pass) is pushed: check its runs first.**
+the optimization pass) is green (Build #194, Release #139).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2829,7 +2829,7 @@ testing your stuff, you may as well start doing that so you're not stopped." The
 can test the moves, because currently I can't. We forgot to add that. Should be like hex piece space style space mastery space then the
 number." Then: "Okay, enough. Give me handoff and prompt now."
 
-**3.4.8 as built** (nothing tested in game; the local build was run as this was pushed: check Build/Release):
+**3.4.8 as built** (nothing tested in game; green: Build #194, Release #139):
 - `/hexpiece style mastery [0..1000]` (server/PieceCommands.mastery; ProfileServer.setMastery: the player's own style's mastery, every
   special it opens announced, the profile synced). Operators only, as every /hexpiece command.
 - Optimization pass (no visual change): the server's tick handlers all return at once when idle (checked one by one: nothing to do);
@@ -2847,8 +2847,8 @@ number." Then: "Okay, enough. Give me handoff and prompt now."
 
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.8 (8zzg: the style mastery command, the optimization pass) is pushed: check its Build and Release runs and fix anything
-   red. The owner is testing 3.4.4 to 3.4.8 now: wait for what they say. Ask the owner how Dawn Pistol
+1. 3.4.8 (8zzg: the style mastery command, the optimization pass) is green (Build #194, Release #139). The owner is testing
+   3.4.4 to 3.4.8 now: wait for what they say. Ask the owner how Dawn Pistol
    (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, Goof Ball and Dawn Whip (3.4.4) and Broken Bones (3.4.5) play, and work on what they say.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
