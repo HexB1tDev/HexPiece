@@ -119,6 +119,18 @@ public class UiPreview {
         ImageIO.write(big, "png", new File(dir, name + ".png"));
     }
 
+    /** 3.3.4: a kit's panel rows as client/AbilityHud.kit makes them in game: "[Z]" -> "Z", "[RMB]" -> "RMB", a passive "-". */
+    static java.util.List<com.hexhaki.piece.ui.AbilityPanel.Move> kitRows(java.util.List<com.hexhaki.fruit.FruitMove> moves, String cooling) {
+        java.util.List<com.hexhaki.piece.ui.AbilityPanel.Move> out = new java.util.ArrayList<>();
+        for (com.hexhaki.fruit.FruitMove move : moves) {
+            String key = "passive".equals(move.key()) ? "-" : move.key().replace("[", "").replace("]", "");
+            key = key.indexOf(' ') > 0 ? key.substring(0, key.indexOf(' ')) : key;
+            boolean cool = cooling.equals(move.cooldown());
+            out.add(new com.hexhaki.piece.ui.AbilityPanel.Move(key, move.name(), "", cool ? 90 : 0, cool ? 240 : 0));
+        }
+        return out;
+    }
+
     public static void main(String[] args) throws Exception {
         String dir = args[0];
         new File(dir).mkdirs();
@@ -255,7 +267,12 @@ public class UiPreview {
                     new com.hexhaki.piece.ui.AbilityPanel.Move("B hold", "Bajrang Gun", "", 0, 0),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("N hold", "Lightning Lance", "", 0, 0),
                     new com.hexhaki.piece.ui.AbilityPanel.Move("M hold", "Gum-Gum Rubber World", "", 0, 0)), true, true, false, false,
-                java.util.List.of(), 64, 100)}};
+                java.util.List.of(), 64, 100)},
+            // 3.3.4: the Noro Noro no Mi, its rows from NoroKit.MOVES as client/AbilityHud.kit makes them (the key in its brackets, a
+            // passive "-"), the Mirror recharging
+            {"Noro Noro no Mi", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
+                java.util.List.of(), null, "Noro Noro no Mi", 0xFF000000 | com.hexhaki.fruit.Fruit.NORO.colour, true, kitRows(
+                    com.hexhaki.piece.server.NoroKit.MOVES, "noro_mirror"), true, false, false, false, haki, 64, 100)}};
         for (int i = 0; i < huds.length; i++) {
             com.hexhaki.piece.ui.AbilityPanel.Input input = (com.hexhaki.piece.ui.AbilityPanel.Input)huds[i][1];
             String label = (String)huds[i][0];

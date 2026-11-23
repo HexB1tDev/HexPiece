@@ -1,0 +1,15 @@
+The Noro Noro no Mi's sounds (tools/noro_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+photon1.ogg: "release_air_pffft.wav" by reg7783, https://freesound.org/people/reg7783/sounds/131302/ (CC0 1.0), from 0.2 s, 0.60 s long, 1.5 dB quieter
+photon2.ogg: "Steam/hiss" by wubitog, https://freesound.org/people/wubitog/sounds/234782/ (CC0 1.0), from 0.8 s, 0.55 s long, 2.5 dB quieter
+slow1.ogg: "Deep Whoosh #5" by Kinoton, https://freesound.org/people/Kinoton/sounds/558827/ (CC0 1.0), from 0.3 s, 1.60 s long
+slow2.ogg: "Deep Whoosh Speed Ramp" by oMzig, https://freesound.org/people/oMzig/sounds/789075/ (CC0 1.0), from 0.1 s, 1.40 s long, compressed to sound louder
+store1.ogg: "body_hit.wav" by insanity54, https://freesound.org/people/insanity54/sounds/276600/ (CC0 1.0), from 0.2 s, 0.50 s long, 4.0 dB quieter
+store2.ogg: "Muffled thud" by NeoSpica, https://freesound.org/people/NeoSpica/sounds/512241/ (CC0 1.0), from 0.1 s, 0.70 s long, 4.0 dB quieter
+release1.ogg: "Swoosh Explosion" by Electroviolence, https://freesound.org/people/Electroviolence/sounds/234555/ (CC0 1.0), from 0.6 s, 2.20 s long, compressed to sound louder
+mirror1.ogg: "twistedwooshes-plastic5.wav" by emptysound, https://freesound.org/people/emptysound/sounds/205989/ (CC0 1.0), from 2.8 s, 1.10 s long, 4.0 dB quieter
+mirror2.ogg: "twistedwooshes-plastic5.wav" by emptysound, https://freesound.org/people/emptysound/sounds/205989/ (CC0 1.0), from 7.9 s, 0.90 s long
+field1.ogg: "Steam.wav" by SukritSen, https://freesound.org/people/SukritSen/sounds/398077/ (CC0 1.0), from 0.4 s, 2.60 s long, 2.5 dB quieter
+beam.ogg: "Air (or steam) pressure release" by brunoboselli, https://freesound.org/people/brunoboselli/sounds/457294/ (CC0 1.0), a loop from 8.0 s, 4.00 s long, 6.0 dB quieter

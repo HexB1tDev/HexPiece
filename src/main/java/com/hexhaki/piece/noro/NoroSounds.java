@@ -1,11 +1,10 @@
 package com.hexhaki.piece.noro;
 
 /**
- * 3.3.4: the Noro Noro no Mi's own sound events ({@code hexhaki:piece.noro.*}, the merged sounds.json). Freesound.org refused this
- * session's connection (403, and its pages unreachable for the web reader too), so for now every event plays CC0 Freesound recordings
- * the mod already carries (each credited in its own folder's SOURCES.txt), at its own pitch in sounds.json: nothing made or mixed by
- * hand. Give the fruit recordings of its own (a tools/noro_sounds.py as tools/hie_sounds.py) once Freesound answers. Pure: names only
- * (PieceSounds registers them; the beam is a loop the client plays while it shines).
+ * 3.3.4: the Noro Noro no Mi's own sound events ({@code hexhaki:piece.noro.*}, the merged sounds.json), every clip a CC0 recording from
+ * Freesound.org cut by tools/noro_sounds.py (sounds/piece/noro, credited in its SOURCES.txt), broadband with no pitched line. (The first
+ * 3.3.4 push borrowed the mod's own clips while Freesound refused that session: replaced.) Pure: names only (PieceSounds registers
+ * them; the beam is a loop the client plays while it shines).
  */
 public final class NoroSounds {
     private NoroSounds() {
@@ -26,9 +25,9 @@ public final class NoroSounds {
     /** The Slow Field's dome rising. */
     public static final String FIELD = "piece.noro.field";
 
-    /** Every event and its clips (assets/hexhaki/sounds/piece/{folder/clip}.ogg: recordings the mod already carries, for now). */
+    /** Every event and its clips (assets/hexhaki/sounds/piece/noro/{clip}.ogg). */
     public static final String[][] EVENTS = {
-        {PHOTON, "pika/zap1", "pika/zap2"}, {BEAM, "gura/charge"}, {SLOW, "uo/air2"}, {STORE, "pika/hit1", "pika/hit2"},
-        {RELEASE, "pika/pop1"}, {MIRROR, "pika/sparkle1"}, {FIELD, "pika/travel1"},
+        {PHOTON, "photon1", "photon2"}, {BEAM, "beam"}, {SLOW, "slow1", "slow2"}, {STORE, "store1", "store2"},
+        {RELEASE, "release1"}, {MIRROR, "mirror1", "mirror2"}, {FIELD, "field1"},
     };
 }

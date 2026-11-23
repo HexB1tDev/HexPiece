@@ -122,7 +122,7 @@ public final class NoroSlow {
                 shot.m_20242_(true);
             }
             SLOWED.put(body.m_19879_(), s);
-            NoroMoves.sound(user, body.m_20182_(), NoroSounds.SLOW, 0.9F, 1.0F);
+            NoroMoves.sounds(user, body.m_20182_(), NoroSounds.SLOW, 0.9F, 1.0F, 2, 4);
         }
         s.until = now + LENGTH;
         Vec3 crawl = s.velocity != null ? s.velocity.m_82490_(CRAWL) : Vec3.f_82478_;
@@ -187,7 +187,7 @@ public final class NoroSlow {
         PieceNetwork.around(body, new S2CUoFx(NoroMoves.RELEASE, body.m_19879_(), user != null ? user.m_19879_() : 0, middle.f_82479_,
             middle.f_82480_, middle.f_82481_, 0, 0, 0, s.blows, 0, 0, size, 0));
         if (user != null) {
-            NoroMoves.sound(user, middle, NoroSounds.RELEASE, 0.8F + size * 0.6F, 1.05F - size * 0.15F);
+            NoroMoves.sounds(user, middle, NoroSounds.RELEASE, 0.8F + size * 0.6F, 1.05F - size * 0.15F, 2, 6);
             ConquerorAura.exploded(user, s.level, middle, 2.0 + 3.0 * size);
         }
     }
@@ -204,6 +204,21 @@ public final class NoroSlow {
             end(s, true);
         }
         return mine.size();
+    }
+
+    /**
+     * The server stopping (NoroKit.reset, before the world is saved): every slowed shot given back its fall and its speed, so none is
+     * saved hanging in the air for good; nothing is told or released (no one is left to see it).
+     */
+    static void clear() {
+        for (Slow s : SLOWED.values()) {
+            if (s.body instanceof Projectile shot && s.velocity != null) {
+                shot.m_20242_(false);
+                shot.m_20256_(s.velocity);
+            }
+        }
+        SLOWED.clear();
+        releasing = false;
     }
 
     /** Delayed Kinetic Force: a blow on a slowed body from someone is held back, added to the rest (a small pink flash shows it). */

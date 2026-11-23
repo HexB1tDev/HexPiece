@@ -653,23 +653,8 @@ public final class SwordTests {
         webSounds("hie", com.hexhaki.piece.hie.HieSounds.EVENTS, 11);
         // 3.2.3: the Nika fruit's transformation drums (tools/gear_sounds.py)
         webSounds("gear", com.hexhaki.piece.gear.GearSounds.EVENTS, 2);
-        // 3.3.4: the Noro Noro no Mi's, for now CC0 recordings the mod already carries (Freesound refused the session): every event
-        // defined with its subtitle, every clip it plays a mono Ogg file credited as CC0 in its own folder's SOURCES.txt
-        String json = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
-        String lang = Files.readString(Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
-        for (String[] event : com.hexhaki.piece.noro.NoroSounds.EVENTS) {
-            Check.that(json.contains("\"" + event[0] + "\": {"), event[0] + ": defined in sounds.json");
-            Check.that(lang.contains("\"subtitles.hexhaki." + event[0] + "\""), event[0] + ": its subtitle");
-            for (int i = 1; i < event.length; i++) {
-                String folder = event[i].substring(0, event[i].indexOf('/'));
-                String clip = event[i].substring(event[i].indexOf('/') + 1);
-                Path dir = Path.of("src/main/resources/assets/hexhaki/sounds/piece/" + folder);
-                Check.that(json.contains("\"hexhaki:piece/" + event[i] + "\""), event[0] + ": plays " + event[i]);
-                Check.that(Files.exists(dir.resolve(clip + ".ogg")), event[i] + ".ogg exists");
-                Check.that(Pattern.compile("(?m)^" + Pattern.quote(clip + ".ogg") + ": \".+\" by \\S+, https://freesound\\.org/people/\\S+/sounds/\\d+/ \\(CC0 1\\.0\\)")
-                    .matcher(Files.readString(dir.resolve("SOURCES.txt"))).find(), event[i] + ": a credited CC0 recording");
-            }
-        }
+        // 3.3.4: the Noro Noro no Mi's (tools/noro_sounds.py; the first 3.3.4 push borrowed the mod's own clips: replaced)
+        webSounds("noro", com.hexhaki.piece.noro.NoroSounds.EVENTS, 11);
     }
 
     /** One fruit's web sounds (sounds/piece/{folder}): as {@link #dragonSounds} checks them, at least {@code least} clips. */

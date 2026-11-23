@@ -19,6 +19,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
@@ -118,6 +119,25 @@ public final class NoroMoves {
         SoundEvent event = com.hexhaki.piece.PieceSounds.event(name);
         if (event != null) {
             player.m_9236_().m_6263_(null, at.f_82479_, at.f_82480_, at.f_82481_, event, SoundSource.PLAYERS, volume, pitch);
+        }
+    }
+
+    /** Per user and event: the tick its window began and how many played in it ({@link #sounds}). */
+    private static final Map<String, long[]> HEARD = new HashMap<>();
+
+    /**
+     * 3.3.4: at most {@code most} of one event of one user's in any {@code gap} ticks: a crowd slowed by the Slow Field or released by
+     * Time's Up at once is one or two sounds, not twenty (the handoff's rule since 2.9.5: many sounds at once are loud).
+     */
+    static void sounds(ServerPlayer player, Vec3 at, String name, float volume, float pitch, int most, int gap) {
+        long now = now(player);
+        long[] heard = HEARD.computeIfAbsent(player.m_20148_() + name, k -> new long[] {Long.MIN_VALUE / 2, 0});
+        if (now - heard[0] >= gap || now < heard[0]) {
+            heard[0] = now;
+            heard[1] = 0;
+        }
+        if (heard[1]++ < most) {
+            sound(player, at, name, volume, pitch);
         }
     }
 
@@ -469,6 +489,14 @@ public final class NoroMoves {
                 Vec3 hit = p.m_82549_(unit.m_82490_(t));
                 shot.m_6034_(hit.f_82479_ + d[0] * 0.05, hit.f_82480_ + d[1] * 0.05, hit.f_82481_ + d[2] * 0.05);
                 shot.m_20256_(new Vec3(d[0], d[1], d[2]));
+                if (shot instanceof AbstractHurtingProjectile fireball) {
+                    // 3.3.4: a fireball pushes itself along its power every tick: turned too, or it would fly back at the user
+                    double[] power = {fireball.f_36813_, fireball.f_36814_, fireball.f_36815_};
+                    g.reflect(power);
+                    fireball.f_36813_ = power[0];
+                    fireball.f_36814_ = power[1];
+                    fireball.f_36815_ = power[2];
+                }
                 NoroSlow.slow(m.owner, shot);
                 fx(m.owner, REFLECT, 0, hit, Vec3.f_82478_, 0, 0, 0);
                 sound(m.owner, hit, NoroSounds.MIRROR, 0.7F, 1.3F);
@@ -578,6 +606,7 @@ public final class NoroMoves {
         STATES.clear();
         LIVE.clear();
         MIRRORS.clear();
+        HEARD.clear();
     }
 
     /** The world's tick: the bursts in flight, the fields, the mirrors. */

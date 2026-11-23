@@ -23,8 +23,8 @@ owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam)
 what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber) is pushed and green; 3.3.0 (8zs: Rubber World's ground
 rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip and the jump pose redone to the owner's target
 look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's
-description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is IN PROGRESS,
-pushed unchecked at the owner's word: check its build first, section 9.** The cloud environment
+description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is
+pushed (its runs: section 8zy); 3.3.5 (Supa Supa) is next: section 9.** The cloud environment
 is the personal "HexPiece", env_016v9rNSffz2fds2ha514nhY since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -1877,7 +1877,7 @@ one version on: 3.3.4 Noro Noro, 3.3.5 Supa Supa, 3.3.6 Horo Horo**). Nothing te
   fast enough). HudTests.rubberWorld: the first ring moves 1.5 to 3.5 blocks in 8 ticks, heights differ more than 2.5 times, the waves
   at most 0.2 a tick. The jump's ripples (RubberJump) unchanged (the owner named Rubber World).
 
-## 8zy. IN PROGRESS (3.3.4, not released): the Noro Noro no Mi; the owner stopped the session ("Enough, handoff and prompt, now")
+## 8zy. Done (3.3.4): the Noro Noro no Mi (first pushed unchecked at the owner's word, finished in the next session)
 
 3.3.3 (8zx) is pushed and green (Build #169, Release #124). The session then moved onto the personal HexPiece environment
 (env_016v9rNSffz2fds2ha514nhY: get_environment, switch_environment, network_only) and began the Noro fruit (8zw's keys). Pushed at the
@@ -1918,20 +1918,41 @@ Built (all in the tree):
   recordings of its own** (tools/noro_sounds.py as tools/hie_sounds.py, a sounds/piece/noro folder with SOURCES.txt, SwordTests
   webSounds("noro", ...)), and tell the owner the borrowed ones were a stopgap.
 
-Left for 3.3.4: a full build (fix anything red), first-person look at the reused clips (they carry their own hand moves), the Ability
-Book and panel rows (they come from NoroClient's moves: render UiPreview to check), release notes .github/release-notes-3.3.4.md (plain
-words; say the sounds are borrowed for now and nothing was tested in game), push, both runs green, send the GIF. Then 3.3.5 Supa Supa
-and 3.3.6 Horo Horo (8zw) the same way.
+Finished in the next session (nothing tested in game: build, 13 suites, renders, sound measurements):
+- The unchecked push's Build HexPiece #170 was green; the local build too.
+- First person (tools/preview/HandPreview over the six reused clips: docs/handoff/noro-hands-3.3.4.jpg): every hand on screen, attached
+  low right, never over the view. The reused clips' effects are keyed on network kinds, never on clip names (no ice orb, no light glow
+  on a Noro user). The panel (UiPreview hud-8, rows from NoroKit.MOVES as AbilityHud.kit makes them: docs/handoff/noro-panel-3.3.4.png)
+  reads RMB Z X C V and the passive "-". The effects re-rendered and judged (FxPreview, the busiest the dome at about 1,000 quads).
+- Stress-test fixes: **the mirror turns a fireball's power too** (AbstractHurtingProjectile xPower/yPower/zPower f_36813_/14_/15_,
+  proven in verify/api-allowlist.txt from joined.tsrg byv C_1153_ + intermediary class_1668; srg-shapes regenerated): reflected
+  without it, a ghast's fireball turned straight back at the user. **NoroSlow.clear** on NoroKit.reset (ServerStoppingEvent, before
+  the save): every slowed shot given back its gravity and speed (none saved hanging forever), SLOWED emptied (no stale entities kept
+  across worlds). **Crowd sounds capped** (NoroMoves.sounds: at most 2 SLOW per 4 ticks and 2 RELEASE per 6 ticks per user): a Slow
+  Field or Time's Up on a crowd no longer stacks twenty 2 s explosions.
+- **Sounds: the fruit's own** (tools/noro_sounds.py, sounds/piece/noro, SOURCES.txt; SwordTests webSounds("noro", ..., 11)): photon1
+  reg7783 "release_air_pffft" 131302, photon2 wubitog "Steam/hiss" 234782 (from 0.8 s), beam (loop) brunoboselli "Air (or steam)
+  pressure release" 457294, slow1 Kinoton "Deep Whoosh #5" 558827, slow2 oMzig "Deep Whoosh Speed Ramp" 789075, store1 insanity54
+  "body_hit" 276600, store2 NeoSpica "Muffled thud" 512241, release1 Electroviolence "Swoosh Explosion" 234555 (from 0.6 s), mirror1/2
+  emptysound "twistedwooshes-plastic5" 205989, field1 SukritSen "Steam" 398077. sounds.json plays them at pitch 1 (the borrowed clips'
+  pitches gone). **The pitch check that works** (the old tonal.py was lost with its scratchpad): the long-term spectrum (8192-point
+  FFT, half overlap, 40 Hz to 12 kHz), each bin's dB over the median of its 121 neighbours, the top line: plain noise about +3.5 dB,
+  the Ice clips the owner accepted +4.4 to +13.4, these +4.4 to +9.8 AS CUT (measure the cut clip: the slow-motion sound whined at
+  11.7 kHz +33 dB, the steam hiss's first half second hummed at 199 Hz, the explosion's start had a 1.26 kHz line). The borrowed clips
+  were pitched (the sparkle 60% of its energy in lines, the Gura charge a hum). Loudness (ebur128 integrated): bursts -15.5, release
+  -13.9, slowing -15 and -20, mirror -18.5/-20.2, dome -16.8, beam -18.1, thuds -20.4. The Freesound CDN is slow (about 30 s a file,
+  some 502s): fetch in parallel with retries.
+- The owner, when this was ready (verbatim): "no need for gif, proceed to the next fruit". So no GIF for 3.3.4; on to Supa Supa.
 
-## 9. What to do next (after 3.3.3, with 3.3.4 in progress)
+## 9. What to do next (after 3.3.4)
 
-1. **Check the branch's last "Build HexPiece" run** (`claude/nice-bell-gam7qf`): the Noro work was pushed at the owner's word without a
-   local build. Fix whatever is red first.
-2. **Finish 3.3.4, the Noro Noro no Mi (8zy "Left for 3.3.4")**, then **3.3.5 Supa Supa** and **3.3.6 Horo Horo** (8zv verbatim, 8zw
-   the accepted keys), each built as the Ice fruit was (8zc, 8ze) and Noro is, animations reused from the mod's own clips, POINT ONE for
-   the rest (3D art in the house style, first-person hands, CC0 web sounds, the Conqueror's lightning out of every explosion). Supa's
-   blades go black-purple with Armament on, like the katanas.
-3. Sounds: try Freesound again (get_environment: the session must be on HexPiece); give Noro its own recordings (8zy).
+1. **Check the branch's last "Build HexPiece" and "Release HexPiece" runs** (`claude/nice-bell-gam7qf`) and fix whatever is red.
+2. **3.3.5 Supa Supa**, then **3.3.6 Horo Horo** (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
+   Noro is (8zy), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
+   CC0 web sounds, the Conqueror's lightning out of every explosion). Supa's blades go black-purple with Armament on, like the katanas.
+3. Sounds: Freesound needs the HexPiece environment (the session started on Default again: get_environment lists HexPiece,
+   env_01VDpZP1V4zScExADvRmie8m, under saved_for_session_repositories: switch_environment, network_only). Check every new clip AS CUT
+   with the line measure in 8zy.
 4. Ask the owner how 3.3.2 (the jump, the skip pose) and 3.3.3 (Rubber World's slow waves) feel.
 5. The rest of the Nika rework: better Haki versions (Dawn Pistol; the lightning lance never touched). Any raised arm: the hand off
    the face from the front (tools/anim.face_covered views front), and look at it beside the owner's pictures from every side.

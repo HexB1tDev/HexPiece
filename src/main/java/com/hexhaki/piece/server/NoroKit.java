@@ -69,5 +69,6 @@ public final class NoroKit extends FruitKit {
     @Override
     public void reset() {
         NoroMoves.clear();
+        NoroSlow.clear();
     }
 }

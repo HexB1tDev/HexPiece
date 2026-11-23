@@ -207,3 +207,12 @@ F net/minecraft/world/level/block/Blocks f_50354_ Lnet/minecraft/world/level/blo
 F net/minecraft/world/level/block/Blocks f_50449_ Lnet/minecraft/world/level/block/Block;   # [srg] FROSTED_ICE: joined.tsrg cpo kI f_50449_ 50449; intermediary cpo kI field_10110 (yarn FROSTED_ICE, the Frost Walker's own ice)
 F net/minecraft/world/level/block/Blocks f_50568_ Lnet/minecraft/world/level/block/Block;   # [srg] BLUE_ICE: joined.tsrg cpo mW f_50568_ 50568; intermediary cpo mW field_10384 (yarn BLUE_ICE)
 M net/minecraft/world/level/Level m_6801_ (ILnet/minecraft/core/BlockPos;I)V   # [srg] destroyBlockProgress: joined.tsrg cmm (Level, as HexGhoul's list: m_7731_ setBlock) a (ILgu;I)V m_6801_ 6801 (gu BlockPos); intermediary METHOD cmm (ILgu;I)V a method_8517 (yarn setBlockBreakingInfo): the frozen body's ice cracks before it breaks
+
+# --- 3.3.4: the Noro Noro no Mi's mirror turns a fireball's own push too (server/NoroMoves.mirrors) --------------------------------
+# A fireball (a ghast's, a blaze's, a wither skull) adds its power to its motion every tick; reflected without it, it turned straight
+# back at the mirror's user. joined.tsrg byv C_1153_ <init> (Lbfn;Lbfz;DDDLcmm;)V (bfn C_513_ = intermediary class_1299 EntityType, bfz
+# C_524_ = class_1309 LivingEntity, cmm C_1596_ = class_1937 Level); intermediary byv class_1668 (yarn ExplosiveProjectileEntity).
+C net/minecraft/world/entity/projectile/AbstractHurtingProjectile   # [srg] joined.tsrg byv C_1153_, intermediary class_1668 (yarn ExplosiveProjectileEntity): the fireballs' and skulls' common class, a Projectile (bzg C_1167_ class_1676)
+F net/minecraft/world/entity/projectile/AbstractHurtingProjectile f_36813_ D   # [srg] xPower: joined.tsrg byv b f_36813_ 36813; intermediary FIELD byv D b field_7601 (yarn powerX)
+F net/minecraft/world/entity/projectile/AbstractHurtingProjectile f_36814_ D   # [srg] yPower: joined.tsrg byv c f_36814_ 36814; intermediary FIELD byv D c field_7600 (yarn powerY)
+F net/minecraft/world/entity/projectile/AbstractHurtingProjectile f_36815_ D   # [srg] zPower: joined.tsrg byv d f_36815_ 36815; intermediary FIELD byv D d field_7599 (yarn powerZ)

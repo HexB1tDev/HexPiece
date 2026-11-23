@@ -13,25 +13,20 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.3.1 everything is pushed and green (sections 8zl to 8zt). 3.3.2 (8zu: Sky Bounce gone; every Gear 5
-jump about five blocks high with the laughing skip, the ground springing and rippling like rubber, no fall damage; Rubber World
-throwing everyone but its user about; the skip pose redone from the owner's limb-by-limb description after they were furious it was
-still wrong: the right fist raised FORWARD, never to the side) is pushed and green. 3.3.3 (8zx: Rubber World's waves slow and of
-different sizes, at the owner's word) is pushed and green. **3.3.4, the Noro Noro no Mi, is IN PROGRESS (8zy)**: pushed at the owner's
-word ("Enough, handoff and prompt, now") without a local build or a CI check: first check the branch's "Build HexPiece" run and fix
-anything red, then finish it as 8zy lists.
+Where things stand: up to 3.3.3 everything is pushed and green (sections 8zl to 8zx). 3.3.4, the Noro Noro no Mi (8zy: its own CC0
+sounds, the mirror turning fireballs, slowed shots restored before a save, crowd sounds capped), is pushed: check its runs. The owner
+then: "no need for gif, proceed to the next fruit".
 
-Next: the owner's three new fruits (8zv verbatim, 8zw the keys the owner accepted): finish 3.3.4 Noro Noro, then 3.3.5 Supa Supa
-(Uncommon; with Armament the blades black-purple like the katanas), then 3.3.6 Horo Horo, each built as the Ice fruit was (8zc, 8ze)
-and Noro is, with "simple reused animations already in the mod". Freesound refused the last session (403): Noro's sounds borrow the
-mod's own CC0 recordings for now; try Freesound again and give it its own. Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika
-rework (better Haki versions: Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika fruit is Gear 5
-Luffy's laughing skip (8zt item 3, 8zu item 5): every pose with a raised arm keeps the hand off the face from the front
-(tools/anim.face_covered) and is looked at beside the owner's pictures from every side; a raised fist the owner wants forward stays
-forward.
+Next: the owner's three new fruits (8zv verbatim, 8zw the keys the owner accepted): 3.3.5 Supa Supa (Uncommon; with Armament the
+blades black-purple like the katanas), then 3.3.6 Horo Horo, each built as the Ice fruit was (8zc, 8ze) and Noro is (8zy), with
+"simple reused animations already in the mod". Ask how 3.3.2 and 3.3.3 feel. Then the rest of the Nika rework (better Haki versions:
+Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika fruit is Gear 5 Luffy's laughing skip (8zt item 3,
+8zu item 5): every pose with a raised arm keeps the hand off the face from the front (tools/anim.face_covered) and is looked at beside
+the owner's pictures from every side; a raised fist the owner wants forward stays forward.
 
-The cloud environment is the personal "HexPiece", env_016v9rNSffz2fds2ha514nhY (freesound.org, cdn.freesound.org, opengameart.org); if
-freesound.org is refused, the session is on Default: get_environment, then switch_environment to it.
+The cloud environment is the personal "HexPiece", env_01VDpZP1V4zScExADvRmie8m (freesound.org, cdn.freesound.org, opengameart.org); if
+freesound.org is refused, the session is on Default: get_environment, then switch_environment to it. Check every new sound AS CUT for
+pitched lines (8zy has the measure that works).
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;
 render and judge every animation and effect yourself, third and first person; never key the head or unused limbs; keep every effect
