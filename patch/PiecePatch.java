@@ -433,7 +433,10 @@ public final class PiecePatch implements Opcodes {
         entries.put(FRUIT + ".class", transform(entries.get(FRUIT + ".class"), PiecePatch::uoFruit));
         entries.put(HAKI_KEYS + ".class", transform(entries.get(HAKI_KEYS + ".class"), PiecePatch::keyDefaults));
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
-        entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), PiecePatch::firstPersonArms));
+        entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), node -> {
+            firstPersonArms(node);
+            toonClips(node);
+        }));
         entries.put(CONTROLLER + ".class", transform(entries.get(CONTROLLER + ".class"), PiecePatch::conquerorHaki));
         entries.put(GEAR_KEYS + ".class", transform(entries.get(GEAR_KEYS + ".class"), PiecePatch::nikaKeys));
         entries.put(REMOTE_GEAR + ".class", transform(entries.get(REMOTE_GEAR + ".class"), PiecePatch::gearFastClient));
@@ -1303,6 +1306,20 @@ public final class PiecePatch implements Opcodes {
         head.add(new VarInsnNode(ALOAD, 0));
         head.add(new MethodInsnNode(INVOKESTATIC, "com/hexhaki/piece/client/gear/RubberWorldDraw", "play", "(Lcom/hexhaki/network/msg/S2CGearFx;)V",
             false));
+        play.instructions.insert(head);
+    }
+
+    /**
+     * 3.3.1 (the owner: "every move should feel like a Bugs Bunny movie"): the head of {@code HakiAnimations.playRemote(id, clip,
+     * priority)} (every clip any player starts, on every client) tells {@code client/gear/NikaToon.clip(id, clip)} first: the Nika
+     * fruit's clips squash and stretch the body on a rubber spring (gear/ToonForce).
+     */
+    static void toonClips(ClassNode node) {
+        MethodNode play = method(node, "playRemote", "(ILjava/lang/String;I)V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ILOAD, 0));
+        head.add(new VarInsnNode(ALOAD, 1));
+        head.add(new MethodInsnNode(INVOKESTATIC, "com/hexhaki/piece/client/gear/NikaToon", "clip", "(ILjava/lang/String;)V", false));
         play.instructions.insert(head);
     }
 

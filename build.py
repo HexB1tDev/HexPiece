@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.3.0"
+VERSION = "3.3.1"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -611,6 +611,21 @@ def check_animations():
                     broken.append(f"{key}: {problems[0][1]} at tick {problems[0][0]} (+{len(problems) - 1} more)")
     if broken:
         raise RuntimeError(f"Animations that come apart ({len(broken)}): {broken}")
+    # 3.3.1 (the owner, on a fist drawn over the face that the check above passed: "how the FUCK is that a pass"): these clips' hands
+    # are never drawn over the face, from the front, either three-quarter or either side, at any quarter tick (tools/anim.face_covered)
+    with zipfile.ZipFile(OUTPUT) as jar:
+        for key in FACE_CLEAR_CLIPS:
+            a = anim.Anim(json.loads(jar.read(ANIMATIONS + key + ".json")))
+            tick = 0.0
+            while tick <= a.length() + 1e-9:
+                covered = anim.face_covered(a.pose(tick))
+                if covered:
+                    raise RuntimeError(f"{key}: a hand drawn over the face at tick {tick} ({covered})")
+                tick += 0.25
+
+
+# 3.3.1: the clips whose hands must never cover the face (the owner's target look: Gear 5's laughing skip)
+FACE_CLEAR_CLIPS = ("gear5_dawn_whip", "gear5_bounce")
 
 
 # 2.3.2: sword animations allowed a named problem the clearance check finds (none: every one must pass)

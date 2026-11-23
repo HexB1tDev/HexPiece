@@ -44,7 +44,7 @@ LOOP_WORDS = ("charge", "idle", "stance", "float", "fly", "run", "walk", "ready"
 GENERATED = {"conqueror_gear5_charge", "supreme_conqueror_release", "conqueror_gear5_release",
              # 3.2.4: the Nika fruit's reworked ones are tools/nika_anims.py's (run it after this pass)
              "gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam",
-             "gear5_dawn_whip"}
+             "gear5_dawn_whip", "gear5_bounce"}
 # synchronised pairs (attacker and victim are played together and must stay in step): only the safe passes (easing, head)
 PAIRED = ("thragg_",)
 # arms seen in first person (HakiAnimations.OWN_FIRST_PERSON_ARM): no counter-swing of the off arm (it would cross the view)

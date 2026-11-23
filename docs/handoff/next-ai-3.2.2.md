@@ -10,7 +10,8 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground), 8zt 3.3.1 (Toon Force, Dawn Whip and the jump pose redone; THE OWNER'S NEW JUMP
+REQUEST: read it).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -19,7 +20,8 @@ white panel, stretch moves untransformed, drums instead of the music) is pushed 
 and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the move lightning the release's own again, after the
 owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed and green; 3.2.7 (8zp: Dawn Whip's cartoon spin) is pushed and green; 3.2.8 (8zq: Giant holds
 what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber) is pushed and green; 3.3.0 (8zs: Rubber World's ground
-rolling in rubber waves) is pushed (check its runs: section 9). Next is the
+rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip and the jump pose redone to the owner's target
+look) is pushed unchecked (the owner asked for the handoff at once: check its runs first, section 9). Next is the
 rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
@@ -1631,18 +1633,66 @@ Luffy jumping over ground rolling in soft rubbery waves. Nothing tested in game:
   allocation a frame). RenderLivingEvent.Pre (LOWEST): every living body within 6 blocks of the field's height is drawn lifted by the
   ground under it (not one's own first-person pass); a translation only, inside the dispatcher's own push. FxPreview `|nworld:t[:radius[:end]]`.
 
-## 9. What to do next (after 3.3.0)
+## 8zt. Done (3.3.1): Toon Force; Dawn Whip and the Gear 5 jump pose redone to the owner's target look; the owner's new jump request
 
-1. Check 3.3.0's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika rework, part 8 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
-   Dawn Whip, Giant's hold, Star Gun's rubber body, Rubber World's rolling ground); better Haki versions; Toon Force everywhere.
-   Render every clip in third person; first person stays.
-3. The owner: "I want gifs when it's all done" (8zr): a GIF of each move changed (tools/make_gif.py), sent at the end; previews, not
-   the game.
-4. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
+The owner during this session (verbatim, in order):
+1. "I want gifs when it's all done" (send GIFs of every move changed when the work is done: SendUserFile; they are previews, say so).
+2. On the Toon Force GIF's Dawn Whip and Sky Bounce cells: "not a fan of these 2 animations ngl".
+3. "this is the target look" (image: Gear 5 Luffy mid-skip, from a three-quarter view: leaning back laughing, head thrown back, one
+   arm raised with the fist up beside and above his head (elbow bent), the other arm swung down and back with a clenched fist, one
+   knee driven high in front with the foot reaching forward, the other leg bent with the foot kicked up behind, white clothes, purple
+   sash, white cloud hair).
+4. Circling the first try's raised fist (drawn over the face in the side and three-quarter views) with question marks; then "the arm
+   bro, look at the arm"; then, circling the second try's fist (beside the head but drawn over its corner from the three-quarter view):
+   "how the FUCK is that a pass". (The old check, tools/anim.lint, only asked whether a forearm goes THROUGH the head in 3D; a fist a
+   pixel beside the head passed. Never call a pose fine from a 3D test: look at the picture, and run tools/anim.face_covered.)
+5. **NOT DONE YET, the next version (3.3.2), the owner insists**: "also one change I insist shift + space ability is removed, default
+   jumping is much higher and always does the jump animation we're doing, it always turns the ground into rubber for the player using
+   the fruit, basically world of rubber on every jump, world of rubber makes it so for everyone else, it's main goal is to confuse the
+   target, displace them and overwhealm". Read as: (a) Sky Bounce (Shift+Space, GearServerController.skyBounce, the AbilityHud row,
+   the Logbook entry) removed; (b) the fruit user's normal jump much higher and always playing gear5_bounce (the skip clip of 3.3.1);
+   (c) every jump of the fruit user turns the ground under them to rubber (a small Rubber World: client/gear/RubberWorldDraw's waves
+   round the landing and the take-off, gear/RubberWave; the bounce only for the user); (d) Rubber World (M) then works on everyone
+   else: its goal "to confuse the target, displace them and overwhelm" (throw the others about on the waves: knocked up and sideways
+   by the crests, their movement scrambled, nausea-like confusion; the user unaffected). Not decided: Gear 5 only or any time with the
+   fruit (Sky Bounce was Gear 5 only; "for the player using the fruit"): ask in one short question if unsure, or take Gear 5 only and
+   say so. Then 3.3.3 and on: the rest (better Haki versions: Dawn Pistol; never touch the lightning lance; GIFs).
+- Toon Force (gear/ToonForce, client/gear/NikaToon, patch/PiecePatch.toonClips: the head of HakiAnimations.playRemote(id, clip,
+  priority) tells NikaToon.clip): each Gear 5 clip's beats (tick, kick: + squashes short and wide, - stretches tall and thin) kick a
+  per-player spring (PULL 0.3, DAMP 0.2 a tick, within +-1.2); RenderPlayerEvent.Pre (LOWEST) scales the body round the feet (tall
+  1 - 0.3 x, wide 1 + 0.26 x), Post pops; not in the first-person pass. A loop's beats after its returnTick come again each period.
+  None on gear5_awaken or the lance. HudTests.toonForce. tools/preview/ToonDump prints the spring for tools/clip_gif.py.
+- tools/clip_gif.py: GIFs of clips (tools/anim's box player, half a tick a frame, --toon, several clips in a grid); tools/make_gif.py:
+  GIFs from FxPreview frame folders. docs/gifs: Giant's hold (3.2.8), Star Gun (3.2.9), Rubber World (3.3.0). The Toon Force grid GIF
+  was made with the old Dawn Whip and jump clips and deleted: make it again (pistol, rocket, dawn whip, giant throw, gigante laugh,
+  bounce, with --toon) and one of the two redone clips.
+- tools/nika_anims.py `target(fist, lean, knee)`: the skip (body pitch +lean (back), bend -12; the fist arm arm(30, 0, 135, -30): up and
+  out to the side, a little back, so the hand is beside the head and never over the face; the other arm(66, 0, 30, -30) mirrored;
+  the front knee leg(knee, 0, 34), the back leg leg(34, 0, 96)). gear5_dawn_whip (20 ticks): wind-up, two turns with the arms out and
+  a little down (roll 62: they sweep under the head as the body spins) and a knee tucked, overshoot, the fist raised by the side (an
+  arm(34, 0, 82) key first), the skip from 16, the arm lowered by the side at 19, the yaw stepped 720 -> 0 at 20. gear5_bounce (14
+  ticks, now OWNED; anim_polish leaves it alone): crouch, a star-jump launch (arms up by the sides, arm(24, 0, 150)), the skip from 7,
+  lowered by the side at 12, rest at 14. Toon beats retimed for both.
+- tools/anim.face_covered(pose): in the views front, three (35), threeleft (-35), side (90), sideleft (-90), is a hand (the last two
+  thirds of a forearm's box) drawn over the face (the head's front half, shrunk half a pixel) and in front of the head? It flags both
+  poses the owner circled. build.py checks FACE_CLEAR_CLIPS (gear5_dawn_whip, gear5_bounce) at every quarter tick. Mod-wide it would
+  flag 183 clips (guards and charges hold arms before the face on purpose): use it for any new pose with a raised arm.
+
+## 9. What to do next (after 3.3.1)
+
+1. Check 3.3.1's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. **The owner's insisted jump change (8zt item 5), as 3.3.2**: Shift+Space Sky Bounce removed; the fruit user's jump much higher,
+   always with gear5_bounce; rubber ground under every jump (the user only); Rubber World throwing everyone else about ("confuse the
+   target, displace them and overwhelm"). Render it (FxPreview |nworld, tools/clip_gif.py), make its GIF.
+3. Then the rest of the Nika rework (8zk; done: the keys, the transformation, the wobble, the Bajrang Gun, Dawn Whip, Giant's hold,
+   Star Gun's rubber body, Rubber World's rolling ground, Toon Force, the target-look skip): better Haki versions (Dawn Pistol; the
+   lightning lance never touched). Any raised arm: tools/anim.face_covered must find nothing, and look at the picture yourself.
+4. The owner: "I want gifs when it's all done" (8zr, 8zt): a GIF of each move changed (tools/make_gif.py, tools/clip_gif.py), sent
+   with SendUserFile at the end; previews, not the game.
+5. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
    refill) and whether Gear 5 should spend energy too.
-5. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
+6. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
    first-person hands (3.1.4), 3.1.2's Gura fixes, the Light fruit and katana fixes (3.0.x to 3.1.0), 2.9.5's Conqueror sounds.
-6. POINT ONE for any new fruit: same style (meshes, clips without legs or head, first-person hands, CC0 sounds), the Conqueror's
+7. POINT ONE for any new fruit: same style (meshes, clips without legs or head, first-person hands, CC0 sounds), the Conqueror's
    lightning out of its explosions with Haki (UoMoves.explode does it for free; else ConquerorAura.exploded/mixed at the strike).
-7. Lag: the dragon's per-frame CPU skinning; ask the owner where they still see lag.
+8. Lag: the dragon's per-frame CPU skinning; ask the owner where they still see lag.

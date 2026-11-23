@@ -226,6 +226,44 @@ public final class HudTests {
         giantHold();
         starRubber();
         rubberWorld();
+        toonForce();
+    }
+
+    /**
+     * 3.3.1: Toon Force (gear/ToonForce): the Nika moves have beats, the transformation and the lance none (the owner loves them), the
+     * spring rings and settles within bounds, a loop's beats come again, and the body never folds to nothing.
+     */
+    static void toonForce() {
+        for (String clip : new String[] {"gear5_pistol", "gear5_gatling", "gear5_rocket", "gear5_whip", "gear5_dawn_whip", "gear5_giant_grab",
+            "gear5_giant_throw", "gear5_gigante_laugh", "gear5_coil_charge", "gear5_coil_release", "gear5_bounce", "gear5_bajrang_slam",
+            "gear5_dodge_backflip", "gear5_stance"}) {
+            Check.that(com.hexhaki.piece.gear.ToonForce.score(clip) != null, "nika: " + clip + " has Toon Force beats");
+            Check.that(new java.io.File("src/main/resources/assets/hexhaki/player_animation/" + clip + ".json").exists(),
+                "nika: Toon Force's " + clip + " is a real clip");
+        }
+        for (String clip : new String[] {"gear5_awaken", "gear5_lance_charge", "gear5_lance_throw", "pika_beam", "__clear__"}) {
+            Check.that(com.hexhaki.piece.gear.ToonForce.score(clip) == null, "nika: no Toon Force on " + clip);
+        }
+        com.hexhaki.piece.gear.ToonForce.Score rocket = com.hexhaki.piece.gear.ToonForce.score("gear5_rocket");
+        double[] spring = new double[2];
+        double most = 0;
+        double least = 0;
+        double played = -1.0E-6;
+        for (int t = 1; t < 80; t++) {
+            com.hexhaki.piece.gear.ToonForce.step(spring, rocket.kicks(played, t));
+            played = t;
+            most = Math.max(most, spring[0]);
+            least = Math.min(least, spring[0]);
+            Check.that(Math.abs(spring[0]) <= com.hexhaki.piece.gear.ToonForce.MOST, "nika: Toon Force within its most");
+        }
+        Check.that(most > 0.3 && least < -0.5, "nika: the rocket squashes and stretches (" + least + " to " + most + ")");
+        Check.that(com.hexhaki.piece.gear.ToonForce.still(spring), "nika: the spring settles after the move (" + spring[0] + ")");
+        com.hexhaki.piece.gear.ToonForce.Score gatling = com.hexhaki.piece.gear.ToonForce.score("gear5_gatling");
+        Check.that(Math.abs(gatling.kicks(12, 16.5) - gatling.kicks(3, 7.5)) < 1e-9 && gatling.kicks(20, 40) != 0,
+            "nika: the Gatling's beats come again as it loops");
+        Check.that(Math.abs(Math.abs(gatling.kicks(11.9, 12.1)) - 0.28) < 1e-9, "nika: one beat on the loop's end, not two");
+        Check.that(com.hexhaki.piece.gear.ToonForce.tall(com.hexhaki.piece.gear.ToonForce.MOST) > 0.5
+            && com.hexhaki.piece.gear.ToonForce.wide(-com.hexhaki.piece.gear.ToonForce.MOST) > 0.6, "nika: the body never folds to nothing");
     }
 
     /**

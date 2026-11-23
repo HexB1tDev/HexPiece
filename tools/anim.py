@@ -391,3 +391,69 @@ def lint(a, step=0.5):
                     break
         tick += step
     return problems
+
+
+# 3.3.1 (the owner, circling a fist drawn on the face from the 3/4 view that lint() passed: "how the FUCK is that a pass"): lint() only
+# asks whether a forearm goes through the head in 3D; a fist hovering a pixel beside the head still reads as a fist in the face. This
+# asks what the picture shows: in each view, does a forearm's box cover the head's outline (from the side or behind, its face half)
+# while not hidden behind the head?
+FACE_VIEWS = ("front", "three", "side", "threeback", "back")
+# the views a face must be clear in: from the front, both three-quarters and both sides (the other side's through VIEWS' negatives)
+FACE_CLEAR = ("front", "three", "threeleft", "side", "sideleft")
+VIEWS.update({"threeleft": -35, "sideleft": -90})
+
+
+def _overlap(p, q):
+    """Do two convex 2D polygons overlap (separating axis test, a hair's tolerance)?"""
+    for poly in (p, q):
+        for i in range(len(poly)):
+            a, b = poly[i], poly[(i + 1) % len(poly)]
+            nx, ny = b[1] - a[1], a[0] - b[0]
+            pa = [nx * x + ny * y for x, y in p]
+            qa = [nx * x + ny * y for x, y in q]
+            if max(pa) <= min(qa) + 1e-6 or max(qa) <= min(pa) + 1e-6:
+                return False
+    return True
+
+
+def face_covered(pose, views=FACE_CLEAR, margin=-0.5):
+    """[(view, side)] where a hand (the last two thirds of the forearm's box) is drawn over the face (the head's front half, its
+    outline grown by {margin} px: shrunk a little, so only real cover counts) and in front of the head. An arm beside or behind the
+    head is fine, as anyone's raised arm is; a fist on the face is not."""
+    sk = skeleton(pose)
+    out = []
+    hands = {}
+    for part, corners in sk["boxes"]:
+        if part.endswith("Arm"):
+            # the forearm's corners are dx, y, dz nested: y index 0 at the elbow, 1 at the hand's end
+            hand = []
+            for i, c in enumerate(corners):
+                if (i // 2) % 2 == 1:
+                    elbow = corners[i - 2]
+                    hand.append(c)
+                    hand.append(tuple(c[k] + (elbow[k] - c[k]) * 0.66 for k in range(3)))
+            hands[part] = hand
+    head = sk["head"]
+    # the face half: the front corners (z index 0) and the head's mid-depth
+    face = []
+    for i in range(8):
+        face.append(head[i] if i % 2 == 0 else tuple((head[i][k] + head[i - 1][k]) / 2 for k in range(3)))
+    for view in views:
+        a = math.radians(VIEWS[view])
+
+        def project(p):
+            return (p[0] * math.cos(a) - p[2] * math.sin(a), p[1]), p[0] * math.sin(a) + p[2] * math.cos(a)
+
+        pf = [project(c) for c in face]
+        fx = sum(q[0][0] for q in pf) / 8
+        fy = sum(q[0][1] for q in pf) / 8
+        grow = 1 + margin / 4
+        face_hull = hull([(fx + (q[0][0] - fx) * grow, fy + (q[0][1] - fy) * grow) for q in pf])
+        head_depth = sum(project(c)[1] for c in head) / 8
+        for side, hand in hands.items():
+            ph = [project(c) for c in hand]
+            if sum(q[1] for q in ph) / len(ph) > head_depth:
+                continue  # behind the head: drawn under it
+            if _overlap(hull([q[0] for q in ph]), face_hull):
+                out.append((view, side))
+    return out
