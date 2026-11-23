@@ -12,7 +12,8 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
 owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs), 8zs 3.3.0 (Rubber World's rolling ground), 8zt 3.3.1 (Toon Force, Dawn Whip and the jump pose redone; the owner's jump request),
 8zu 3.3.2 (the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's description: read it), 8zv the
-owner's three new fruits (verbatim), 8zw their accepted keys, 8zx 3.3.3 (Rubber World's slow waves), 8zy 3.3.4 in progress (Noro).
+owner's three new fruits (verbatim), 8zw their accepted keys, 8zx 3.3.3 (Rubber World's slow waves), 8zy 3.3.4 (Noro), 8zz 3.3.5 (Supa),
+8zza the owner's Rare fruit request (the Ito Ito no Mi, verbatim), 8zzb 3.3.6 (Horo: cute ghosts, the Gloom effect, the astral spirit).
 
 Branch `claude/nice-bell-gam7qf` since 3.3.2 (fetch it first: it is the newest; it continues claude/pensive-heisenberg-mkr9cl). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -25,8 +26,8 @@ rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip 
 look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's
 description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is
 pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed and green (Build
-#172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi) is IN PROGRESS, pushed unchecked at the owner's word: build it first, section 9.** The cloud environment
-is the personal "HexPiece", env_016v9rNSffz2fds2ha514nhY since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
+#172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed: check its runs (section 9).**
+The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
 ## POINT ONE (the owner, 3.1.4: always keep this first in every handoff and pass it on to every AI after you)
@@ -2059,7 +2060,7 @@ POINT ONE for everything else (the house style, the Conqueror's lightning out of
 and ask the owner (AskUserQuestion) before building, as 8zw did for the other three. Lessons from Supa (8zz): judge the art against the
 Light/Gura/Magma art before showing it; a flat single-colour mesh is not acceptable.
 
-## 8zzb. IN PROGRESS (3.3.6, not released): the Horo Horo no Mi; the owner stopped the session ("Enough prompt and handoff")
+## 8zzb. Done (3.3.6): the Horo Horo no Mi (first pushed unchecked at the owner's word, finished in the next session); cute ghosts; Gloom
 
 3.3.5 (8zz) is pushed and green (Build #172, Release #126). The owner then (verbatim): "bitch wheres Horo Horo No mi? did you just
 skip it?" (it was not skipped: the accepted order was Noro 3.3.4, Supa 3.3.5, Horo 3.3.6; said so in one line and started it), then
@@ -2111,7 +2112,42 @@ joined.tsrg's MobEffect, bey), and Gloom.miss (LivingAttackEvent HIGH): any atta
 cancelled 80 % of the time, whoever it is aimed at. HoroMoves.despair: knockDown 40 ticks then Gloom.put 160 (the old weakness and
 slowness gone); the Negative Hollow's book text says so.
 
-Left for 3.3.6:
+Finished in session 2 (nothing tested in game: build, 13 suites, renders, sound measurements):
+- **client/horo/HoroFx** (as NoroFx/SupaFx; UoFx routes 220-239 again) and **client/horo/HoroClient** (ClientKits on the first tick):
+  Negative Hollows (from + step * age, weaving, fading in and out), despair's gloom following each body (over it as it lies: the new
+  Tumbles.lying gives the fall's angle, way, slide and lift), Mini Hollows flying from the user's chest to whom they cling over
+  HoroArt.MINI_FLY 10 ticks then clinging (HoroArt.cling: round the body, bobbing, facing out) or waiting at their point, the Toku
+  Hollow drifting (facing its way), bursts (a pop size 1, the blast TOKU_RADIUS; bx 1 drops without one), Ghost Network's six watchers
+  (HoroArt.watch: spreading out over 16 ticks, circling at their own heights; no link lines: thin pale lines are not acceptable, and
+  HoroArt.link is gone), the punch given back (HoroFx.punch). Caps: 64 of each.
+- **Astral Projection drawn** (horo/AstralArt, pure; tools/preview/AstralPreview renders it in art/user_skin.png): HoroFx.asSpirit cancels
+  RenderPlayerEvent.Pre for a spirit; the spirit is the player model in its own skin and outer layer (StyleRig boxes, SkinBox faces built
+  once), washed WASH F2EEFF at 0.62 and see-through, **only the faces turned to the eye** (culled on the CPU from each face's normal: the
+  phone culls nothing; without it the far side's skin showed through the near side and the body read as a muddle), the thighs at 0.6
+  and shins at 0.16 (a ghost fades toward its feet), three pale shells (0.35 px white 0.14, 1.4 px lavender 0.11, 3.2 px 0.05) and a
+  faint heart glow, floating as a Japanese ghost (AstralArt.floating: upper arms level forward, forearms hanging 34 degrees, legs hanging
+  together slightly back, bobbing; its head turned as the player looks), full bright; not drawn in one's own first person. The body left
+  behind (AstralArt.asleep: standing, arms hanging, head dropped 32 degrees as if asleep) in its own skin, lit by the world where it
+  stands (LevelRenderer.m_109541_) and shaded by its faces' normals. Both skins through entityTranslucent before the light's batch
+  (2.9.0's lesson). Judged from six sides: docs/handoff/horo-astral-3.3.6.jpg. A soft ghost puff where the spirit goes back in.
+- **Cute ghosts** (the owner: "The ghosts are meant to be cute"): HoroArt.face redone, big eyes with a white shine each (`shine`),
+  rosy cheeks (`blush`, BLUSH FF8FAE): the Negative Hollow's sleepy round eyes under a soft lid, a little open mouth, a short tongue
+  swinging; the Mini's big round eyes and small smile; the Toku's round eyes, wide happy grin with a pink tongue and two little fangs
+  (no rows of teeth, no heavy brows); tails shorter (2.0 r, the Toku 1.7 r); 18 sides and 7 head rings, and a lighter mesh (11 sides, 4 + 6
+  rings) for a ghost under 0.09 of its distance on the screen. Judged and sent: docs/handoff/horo-cute-3.3.6.jpg.
+- **Sounds** (tools/horo_sounds.py, sounds/piece/horo, SOURCES.txt; SwordTests webSounds("horo", ..., 6)): ghost1 newagesoup
+  "Mouth-swoosh-01" 372520 (0.4 s on, -5 dB), despair1 Logicogonist "bass rumble - deepwhoosh 1" 807976 (-3 dB), pop1 Planman "Poof of
+  Smoke" 208111 (compressed louder), boom1 Za-Games "Deep Boom" 539968 (compressed), spirit1 florianreichelt "Woosh" 683096, network1
+  martian "magical rising wind or sea" 403003 (from 6.9 s, -4 dB). Loudness -11.9 (boom) to -18.8 (wind) LUFS. **tools/tonal_lines.py
+  is the pitch check, kept in the repository now**: the 121-bin line and a narrow peak (over the bins 4 to 10 either side: a tone stands
+  over its near neighbours, a bass slope at the band's low edge does not), each against noise of the clip's own length; the Ice clips the
+  owner accepted read up to +6.8 dB narrow; these +1.9 to +5.2 as cut. Freesound rate-limits pages (403 for a minute or two): wait.
+- **Lag**: the busiest moment one user can make (a stream, gloom over eight, the watchers, a spirit's light, and the Minis and Toku or
+  their bursts) under 16,000 quads (DragonTests.horoGhosts): the blast 10 puffs (was 14: 6,500 quads at 7 blocks), a pop 4, gloom's
+  cloud 3. HudTests: Horo Common, its moves' energy, Gloom's numbers and name; DragonTests: the icon, model and Gloom's icon.
+- First person of every reused clip (HandPreview: low right, never over the view) and the panel (UiPreview hud-9: RMB Z X C V) checked.
+
+What was asked to be done, as first planned (kept for the record):
 1. **client/horo/HoroFx** (as client/noro/NoroFx and client/supa/SupaFx): accept the kinds above; put client/horo/HoroClient (a
    ClientKit: HoroKit.MOVES, no stance) in ClientKits.KITS on the first tick; give the attack button back to the game's punch (NoroFx.punch);
    draw at AFTER_PARTICLES (debugQuads): Negative Hollows (from + step * age, a little wobble, facing their way), despair over each body
@@ -2133,17 +2169,18 @@ Left for 3.3.6:
    the moves for the owner (they said "no need for gif" for Noro: renders are fine).
 6. Then the **Ito Ito no Mi** (8zza: plan the keys and ask first).
 
-## 9. What to do next (after 3.3.5, with 3.3.6 in progress)
+## 9. What to do next (after 3.3.6)
 
-1. **Build the tree** (python3 build.py) and check the branch's last "Build HexPiece" run (`claude/nice-bell-gam7qf`): the Horo work
-   was pushed at the owner's word without a build. Fix whatever is red first.
-2. **Finish 3.3.6 Horo Horo (8zzb "Left for 3.3.6")**, then the **Ito Ito no Mi (Rare: 8zza, plan and ask first)** (3.3.5 Supa Supa is
-   done: 8zz), (8zv verbatim, 8zw the accepted keys), each built as the Ice fruit was (8zc, 8ze) and
-   Noro is (8zy), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
-   CC0 web sounds, the Conqueror's lightning out of every explosion). Supa's blades go black-purple with Armament on, like the katanas.
-3. Sounds: Freesound needs the HexPiece environment (the session started on Default again: get_environment lists HexPiece,
-   env_01VDpZP1V4zScExADvRmie8m, under saved_for_session_repositories: switch_environment, network_only). Check every new clip AS CUT
-   with the line measure in 8zy.
+1. Check the branch's last "Build HexPiece" and "Release HexPiece" runs (`claude/nice-bell-gam7qf`) are green; fix anything red first.
+2. Ask the owner how the Horo fruit (3.3.6: the cute ghosts, Gloom, the astral spirit) looks and plays.
+3. The **Ito Ito no Mi (Rare: 8zza, plan the keys and ask first)**, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are
+   (8zy, 8zz, 8zzb), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
+   CC0 web sounds, the Conqueror's lightning out of every explosion). Its strings are thin by nature: make them read as the Light,
+   Gura and Magma art does (a glowing core under a wide soft glow, several strands, Overheat's wave of white strings shading purple at its
+   heart), never thin pale lines.
+3b. Sounds: Freesound needs the HexPiece environment (this session was on it: env_01PmnEXrwDhxzij8M5q6P6bL; if a session starts on
+   Default, get_environment lists HexPiece under saved_for_session_repositories: switch_environment, network_only). Check every new clip
+   AS CUT with tools/tonal_lines.py (8zzb).
 4. Ask the owner how 3.3.2 (the jump, the skip pose) and 3.3.3 (Rubber World's slow waves) feel.
 5. The rest of the Nika rework: better Haki versions (Dawn Pistol; the lightning lance never touched). Any raised arm: the hand off
    the face from the front (tools/anim.face_covered views front), and look at it beside the owner's pictures from every side.

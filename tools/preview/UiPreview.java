@@ -272,7 +272,11 @@ public class UiPreview {
             // passive "-"), the Mirror recharging
             {"Noro Noro no Mi", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
                 java.util.List.of(), null, "Noro Noro no Mi", 0xFF000000 | com.hexhaki.fruit.Fruit.NORO.colour, true, kitRows(
-                    com.hexhaki.piece.server.NoroKit.MOVES, "noro_mirror"), true, false, false, false, haki, 64, 100)}};
+                    com.hexhaki.piece.server.NoroKit.MOVES, "noro_mirror"), true, false, false, false, haki, 64, 100)},
+            // 3.3.6: the Horo Horo no Mi, its rows from HoroKit.MOVES, the Toku Hollow recharging
+            {"Horo Horo no Mi", new com.hexhaki.piece.ui.AbilityPanel.Input(keys, "Six Powers", FightingStyle.SIX_POWERS.colour(), false,
+                java.util.List.of(), null, "Horo Horo no Mi", 0xFF000000 | com.hexhaki.fruit.Fruit.HORO.colour, true, kitRows(
+                    com.hexhaki.piece.server.HoroKit.MOVES, "horo_toku"), true, false, false, false, haki, 64, 100)}};
         for (int i = 0; i < huds.length; i++) {
             com.hexhaki.piece.ui.AbilityPanel.Input input = (com.hexhaki.piece.ui.AbilityPanel.Input)huds[i][1];
             String label = (String)huds[i][0];
