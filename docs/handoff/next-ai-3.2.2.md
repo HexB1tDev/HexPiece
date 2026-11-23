@@ -1763,10 +1763,108 @@ nika-rubber-world-others-3.3.2.gif):
   threw them outward only: a 16-block field was empty in 50 ticks; now they tumble about inside it).
 - First person: the jump and landing clips hide the arms as every non-listed Gear 5 clip does (the stance already does).
 
+## 8zv. The owner's new request during 3.3.2 (verbatim): three new common fruits, Horo Horo, Noro Noro, Supa Supa
+
+With three zips of reference pictures (kept only in the session's scratchpad: anime frames and the series' fruit art are never put in
+the repository): Horo: Perona with Negative Hollows (round white see-through ghosts with tongues out, wispy tails), the Toku Hollow (a
+giant round grinning ghost), the fruit (cream-yellow lobes with ghost faces, curled tips); Noro: the fruit (purple oval with swirls, a
+green ring for a stem), Foxy shooting the Noroma photons (pink-violet concentric rings out of the hands); Supa: Spiral Hollow (white
+drill blades round the forearms), Daz Bones' arm blade (steel with a wavy edge, from the forearm) and finger blades, the fruit (blue
+and white crescent blades).
+
+"New common Fruits:
+(simple reused animations already in the mod).
+
+Horo Horo No Mi (common):
+
+Core Abilities
+
+* Negative Hollow: Intangible flying ghosts that pass through targets and plunge them into extreme depression and lost willpower.
+* Mini Hollow / Ghost Bomb: Small, tangible ghosts that latch onto targets and detonate on command.
+* Toku Hollow (Special Ghost): Large, tangible ghosts that create massive shockwaves and explosions when detonated.
+* Ghost Doppelgänger & Astral Projection: Lets the user project a floating ghost body or separate their spirit to scout, fly, and speak
+  remotely.
+* Ghost Network: Links the user's consciousness to multiple ghosts for surveillance and information gathering. [1, 2, 3, 4, 5]
+
+Noro Noro No Mi (Common)
+
+The Noro Noro no Mi is a Paramecia-type Devil Fruit in One Piece eaten by Foxy. It allows the user to emit "Noroma" photon beams that
+drastically slow down whatever they hit for 30 seconds. [1, 2]
+Core Mechanics
+
+* 30-Second Slowdown: Targets hit by Noroma photons—including people, objects, or projectiles like cannonballs—move in extreme slow
+  motion for 30 seconds before returning to normal speed. [1, 2, 3]
+* Delayed Kinetic Force: While a target is slowed, kinetic energy from strikes accumulates without immediately taking effect, then
+  releases all at once when the 30-second timer ends. [1, 2, 3]
+* Tactical & Environmental Uses: Slowed objects or opponents can be used as temporary platforms or obstacles, requiring good timing from
+  the user.
+
+Supa Supa No Mi (UnCommon):
+
+Core Abilities
+
+* Blade Transformation: Turns any body part—such as fingers, arms, legs, or the entire body—into sharp steel blades.
+* Slashing Immunity: Grants steel-like hardness, making the user immune to standard blade and slash attacks.
+* Ranged & Spinning Cuts: Enables flying slashes, spinning saw or drill-like blades, and cutting force without direct physical contact.
+* High-Speed Mobility: Lets the user sprout blades from their feet to skate or slide rapidly across surfaces. [1, 2, 3, 4, 5, 6, 7]
+
+Signature Techniques
+
+* Spar Claw: Turns the undersides of the fingers into slashing blades.
+* Spider: Hardens the body for heavy defense.
+* Atomic Spar: Delivers devastating X-shaped slashes.
+* Spiral Hollow: Forms spinning, drill-like blades on the forearms.
+* Atomic Spurt: Combines blade-footed skating with high-speed strikes.
+* Sparkling Daisy & Spar Break: Additional offensive blade techniques. [1, 2, 3]
+
+(haki blackens the blades as in makes them purpleish like the katanas).
+
+Search for references yourself (gifs) but I attached some looks of the fruits 2d and looks of moves."
+
+Read as: three new fruits in the Devil Fruits tab, Horo and Noro COMMON (one star), Supa UNCOMMON (two stars); animations reused from
+the mod's own clips (no new clip work beyond picking and, if needed, small variants); POINT ONE still holds for everything else (3D
+meshes in the house style, first-person hand moves, CC0 web sounds, the Conqueror's lightning out of every explosion with the
+Conqueror's Haki and Ryou on); Supa's blades with Armament (Haki) on go black-purple like the katanas' Haki colour. The plan and the
+owner's answers follow in 8zw.
+
+## 8zw. The plan for the three fruits and the owner's answers (AskUserQuestion, 3.3.2's session: every option "As proposed")
+
+Order: **one fruit per version: 3.3.3 Noro Noro, 3.3.4 Supa Supa, 3.3.5 Horo Horo.** Keys as every fruit (the attack button the game's
+punch unless said, RMB the use button, Z X C V B, N via client/FruitKeyN). The owner accepted these layouts as written:
+
+Horo Horo no Mi (Perona, Common):
+- LMB the game's punch. RMB **Negative Hollow**: tap one ghost, hold for a stream (up to 5); they fly through bodies; whoever they pass
+  falls to their knees in despair ~6 s: can't attack, barely moves.
+- Z **Mini Hollow (Ghost Rap)**: 4 little ghosts latch onto the nearest foes; Z again detonates them (or after 6 s).
+- X **Toku Hollow**: a giant grinning ghost floats where you look; X again, or touching someone or a wall: a huge shockwave explosion.
+- C **Astral Projection**: the spirit leaves the body and flies as a see-through ghost (not through walls), unseen by mobs, up to 20 s;
+  the body stays behind, helpless; C again or time up: back in it.
+- V **Ghost Network**: 6 ghosts spread out round the user for 30 s; every living thing within 48 blocks glows (seen through walls).
+
+Noro Noro no Mi (Foxy, Common):
+- LMB the game's punch. RMB **Noroma Photon**: tap a burst of pink rings, hold a steady beam; anything hit moves in extreme slow motion
+  for 30 s: mobs, players, and arrows or fireballs hang in the air.
+- Z **Noroma Spread**: a wide fan of rings in front. X **Noroma Mirror**: a mirror in front for 5 s that sends projectiles back slowed
+  (and one's own beam on). C **Time's Up**: ends every slowdown the user put on now, releasing everything stored at once. V **Slow
+  Field**: a dome of photons round the user for 8 s; whatever enters it is slowed (projectiles stop in the air).
+- Passive **Delayed Kinetic Force**: blows on a slowed target do nothing yet; they add up and all hit at once (damage and knockback)
+  when its slowdown ends.
+
+Supa Supa no Mi (Daz Bones, Uncommon; with Armament on the blades go black-purple like the katanas):
+- LMB **Spar Claw**: finger blades, a combo of claw swipes. RMB **Flying Slash**: a crescent of cutting force from the arm blade; hold
+  to charge a bigger one.
+- Z **Atomic Spar**: an X-shaped double slash with both arm blades. X **Spiral Hollow**: drills spin on both forearms; a dash forward
+  drilling through everything in a line. C **Atomic Spurt**: skate on foot blades at high speed for a few seconds, slashing whoever is
+  passed. V **Spider**: the whole body hardened steel for 8 s: blows mostly bounce off, no knockback, bare-handed attackers cut, the
+  user slower. B **Sparkling Daisy**: a lunge through the one looked at, both arm blades out. N **Spar Break**: the whole body a
+  spinning blade, cutting all round.
+- Passive **Slashing Immunity**: swords, axes and blades cannot cut the user unless coated in Armament Haki.
+
 ## 9. What to do next (after 3.3.2)
 
 1. Check 3.3.2's runs ("Build HexPiece" and "Release HexPiece") on `claude/nice-bell-gam7qf` ended green; if not, fix and push.
-2. Ask the owner how the skip pose (8zu item 5), the jump, the rubber ground and Rubber World's throws feel; quote their words.
+2. **The three new fruits (8zv, 8zw): 3.3.3 Noro Noro, 3.3.4 Supa Supa, 3.3.5 Horo Horo**, each following the Ice fruit file by file
+   (8zc/8ze), animations reused from the mod's clips, POINT ONE for the rest. Ask the owner how 3.3.2 feels (the pose above all).
 3. The rest of the Nika rework (8zk; done: the keys, the transformation, the wobble, the Bajrang Gun, Dawn Whip, Giant's hold, Star
    Gun's rubber body, Rubber World's rolling ground and its throws, Toon Force, the skip, the jump): better Haki versions (Dawn Pistol;
    the lightning lance never touched). Any raised arm: the hand off the face from the front (tools/anim.face_covered views front), and
