@@ -42,7 +42,8 @@ the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the own
 Release #140). 3.5.0 (8zzj: the owner's Ito list) is green (Build #197, Release #141). 3.5.1 (8zzk: the Awakening's tentacles made
 massive) is green (Build #198, Release #142). 3.5.2 (8zzl: Sky Road rebuilt to the owner's rework request: one string at a time,
 a Spider-Man swing, leaps, climbing on string steps) is green (Build #200, Release #143); 3.5.3 (8zzl: one thin string a step, the
-owner's word) is pushed: check its Build and Release runs.**
+owner's word) and 3.5.4 (8zzm: the Birdcage's closing frees everyone inside, only its wall cuts and sweeps) are pushed: check their Build
+and Release runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -3104,10 +3105,23 @@ thick one". ItoArt.tread is one normal string now (3.5.2 wove three side by side
 Sky Road string (ItoArt.sky), across the step, giving under the foot, a tiny flash (0.12 shell) where the foot lands, gone by TREAD_LIFE.
 **Sky Road's strings, steps included, stay thin.**
 
+## 8zzm. Done (3.5.4): the Birdcage's closing no longer freezes or pulls (the owner's bug, verbatim)
+
+"Bug: Bird cage is freezing and forcing entities to the middle, regarless if the cage pulls them or Not, thats wrong, they are free to
+move around at all times, if they touch the cage they get damage and get pushed along with it, only at the end are they free after
+taking the full damage"
+Found: server/ItoMoves.cageTick, closing, set every body caught inside to half its velocity plus a pull to the middle every 2 ticks
+(3.4.2's reading of "all entities are pulled towards the center"): frozen and dragged wherever they stood. Now `cageShove` (pure,
+HudTests.birdcage): away from the wall (more than CAGE_TOUCH 1.2) a body is left alone, standing or closing; touching it, only the
+part of its velocity going through the wall is taken away (it slides along as it likes) and it is pushed CAGE_PUSH 0.3 plus the
+wall's own speed in (closing: swept in with it; the caught are those inside when it began to close, swept back in if the wall passed
+them) or out (standing, from outside: kept out); every touch cuts 4 (once per 10 ticks). The shut (cageShut) unchanged: CAGE_DAMAGE 18
+and Gore.bleed to everyone it caught, then they are free. ItoKit's Birdcage text says so. Release notes 3.5.4.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is pushed: check its Build and
-   Release runs. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito), 3.5.1
+1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) and 3.5.4 (8zzm: the Birdcage's closing)
+   are pushed: check their Build and Release runs. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito), 3.5.1
    (the tentacles) and 3.5.2 (Sky Road), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).

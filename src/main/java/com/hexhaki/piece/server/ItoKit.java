@@ -35,7 +35,8 @@ public final class ItoKit extends FruitKit {
     public static final FruitMove CAGE = new FruitMove("Birdcage", "[N] hold", 0, "ito_cage",
         "Hold, pointing at the sky: a steady stream of strings pours up, the cage growing the longer you hold (up to 40 blocks across)."
             + " Let go: the strings spread down into the Birdcage; its strings cut whoever touches them and no one gets out. Press again:"
-            + " it slowly closes, cutting everything inside and pulling everyone to the middle; when it shuts they are cut and bleed.");
+            + " it slowly closes; inside you move freely, but its strings cut whoever they touch and sweep them in as it shuts; when it"
+            + " shuts everyone caught is cut deeply and bleeds.");
     public static final FruitMove AWAKEN = new FruitMove("Awakening", "[M]", 0, "ito_awaken",
         "The ground round you turns to string for 15 seconds: whoever stands on it is impaled by a spike of string shooting up under"
             + " them, cut and bleeding. With Armament on, a toggle (M again: off): while it is on, huge tentacles of string rise out of"

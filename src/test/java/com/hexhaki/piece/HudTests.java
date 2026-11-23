@@ -853,6 +853,7 @@ public final class HudTests {
         Check.that(com.hexhaki.piece.client.FruitKeyN.ABILITY_M == 41 && com.hexhaki.piece.client.FruitKeyN.ABILITY_SKY == 42,
             "the M key and the air step reach the kit");
         skyRoad();
+        birdcage();
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.HORO) == com.hexhaki.piece.FruitRanks.Rank.COMMON,
             "ranks: the Horo fruit Common (the owner: \"Horo Horo No Mi (common)\")");
         // 3.3.6 (the owner: "make sure gloom is it's own custom effect ... miss often"; they chose 8 in 10 and 8 seconds)
@@ -976,5 +977,26 @@ public final class HudTests {
             up += sv[1];
         }
         Check.that(Math.abs(up - com.hexhaki.piece.ito.SkyPhysics.STEP_RISE) < 1.0E-9, "Sky Road: a step climbs one step");
+    }
+
+    /**
+     * 3.5.4 (the owner: "Bird cage is freezing and forcing entities to the middle, regarless if the cage pulls them or Not, thats wrong,
+     * they are free to move around at all times, if they touch the cage they get damage and get pushed along with it, only at the end are
+     * they free after taking the full damage"): away from the wall a body is left alone (its own movement kept), standing or closing; at the
+     * wall it slides along it as it likes, only its push through the wall taken away, and the closing wall sweeps it in at least as fast
+     * as the wall comes.
+     */
+    static void birdcage() {
+        double sweep = 0.12;
+        Check.that(com.hexhaki.piece.server.ItoMoves.cageShove(1, 0, 0, -6.0, 0.3, 0.0, -0.2, true, sweep) == null
+            && com.hexhaki.piece.server.ItoMoves.cageShove(1, 0, 0, -6.0, 0.3, 0.0, -0.2, true, 0.0) == null,
+            "Birdcage: inside, away from its strings, a body moves freely (no pull to the middle)");
+        double[] v = com.hexhaki.piece.server.ItoMoves.cageShove(1, 0, 0, -0.5, 0.4, 0.0, 0.25, true, sweep);
+        Check.that(v != null && v[0] <= -(com.hexhaki.piece.server.ItoMoves.CAGE_PUSH + sweep) + 1.0E-9 && Math.abs(v[2] - 0.25) < 1.0E-9,
+            "Birdcage: touching the closing wall, swept in with it, still free to slide along it");
+        double[] w = com.hexhaki.piece.server.ItoMoves.cageShove(1, 0, 0, -0.5, -0.3, 0.0, 0.0, true, sweep);
+        Check.that(w != null && w[0] < -0.3, "Birdcage: moving away from the wall, a body keeps its own speed");
+        double[] o = com.hexhaki.piece.server.ItoMoves.cageShove(1, 0, 0, 0.6, -0.4, 0.0, 0.0, false, 0.0);
+        Check.that(o != null && o[0] >= com.hexhaki.piece.server.ItoMoves.CAGE_PUSH - 1.0E-9, "Birdcage: outside, kept out");
     }
 }

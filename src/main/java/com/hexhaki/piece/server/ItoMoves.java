@@ -1036,7 +1036,12 @@ public final class ItoMoves {
         sound(player, s.cageAt.m_82520_(0, 2, 0), ItoSounds.CAGE, 2.5F, 1.0F);
     }
 
-    /** N pressed again: the cage slowly closes ({@link #CAGE_CLOSE} ticks), pulling everyone in it to the middle. */
+    /**
+     * N pressed again: the cage slowly closes ({@link #CAGE_CLOSE} ticks). 3.5.4 (the owner: "Bird cage is freezing and forcing entities to
+     * the middle, regarless if the cage pulls them or Not, thats wrong, they are free to move around at all times, if they touch the cage
+     * they get damage and get pushed along with it, only at the end are they free after taking the full damage"): no pull to the middle;
+     * only its wall sweeps in whoever it reaches ({@link #cageShove}).
+     */
     static void cageClose(ServerPlayer player, State s) {
         if (s.closeFrom >= 0) {
             return;
@@ -1068,7 +1073,8 @@ public final class ItoMoves {
             return;
         }
         double r = closing ? cageRadius(s.cageR, now - s.closeFrom, CAGE_CLOSE) : s.cageR;
-        double share = closing ? Math.min(1.0, (now - s.closeFrom) / (double) CAGE_CLOSE) : 0.0;
+        // how fast the wall comes in (blocks a tick), closing
+        double sweep = closing ? Math.max(0.0, r - cageRadius(s.cageR, now - s.closeFrom + 1, CAGE_CLOSE)) : 0.0;
         Vec3 c = s.cageAt;
         for (LivingEntity body : foes(player, c, Math.max(r, s.cageR) + 2.0)) {
             Vec3 m = StyleCombat.middle(body);
@@ -1081,35 +1087,59 @@ public final class ItoMoves {
             }
             double gap = dist - r;
             Vec3 out = dd.m_82490_(1.0 / dist);
-            if (closing && dist < s.cageR + 0.5 && gap < 1.2) {
-                // closing: everyone caught inside is pulled toward the middle, harder as it shuts
-                Vec3 pull = out.m_82490_(-(0.18 + 0.32 * share) * Math.min(1.0, dist / 3.0));
-                Vec3 v = body.m_20184_();
-                body.m_20256_(new Vec3(v.f_82479_ * 0.5 + pull.f_82479_, Math.max(v.f_82480_, 0.0) * 0.5 + pull.f_82480_ * 0.5,
-                    v.f_82481_ * 0.5 + pull.f_82481_));
-                body.f_19864_ = true;
-                body.f_19789_ = 0.0F;
-            } else if (Math.abs(gap) <= 1.2) {
-                // standing: inside it is pushed back in, outside it is kept out
-                Vec3 push = out.m_82490_(gap < 0 ? -0.5 : 0.5);
-                body.m_20256_(new Vec3(push.f_82479_, Math.max(body.m_20184_().f_82480_, 0.05), push.f_82481_));
-                body.f_19864_ = true;
-            } else {
+            // inside it they move freely; only its wall moves them: closing, it sweeps in whoever it reaches (caught inside when it
+            // began to close); standing, it pushes back in whoever is inside and keeps out whoever is outside
+            boolean inside = closing ? dist < s.cageR + 0.5 : gap < 0.0;
+            Vec3 v = body.m_20184_();
+            double[] shove = cageShove(out.f_82479_, out.f_82480_, out.f_82481_, gap, v.f_82479_, v.f_82480_, v.f_82481_, inside, sweep);
+            if (shove == null) {
                 continue;
             }
-            if (Math.abs(gap) <= 1.2) {
-                Long last = s.cut.get(body.m_19879_());
-                if (last == null || now - last >= 10) {
-                    s.cut.put(body.m_19879_(), now);
-                    cut(player, body, 4.0F, Vec3.f_82478_);
-                    fx(player, HIT, ++seeds, c.m_82549_(out.m_82490_(r)), out, HIT_CAGE, 0, 0.8, 0);
-                }
+            body.m_20256_(new Vec3(shove[0], shove[1], shove[2]));
+            body.f_19864_ = true;
+            body.f_19789_ = 0.0F;
+            // touching its strings cuts (once every half second)
+            Long last = s.cut.get(body.m_19879_());
+            if (last == null || now - last >= 10) {
+                s.cut.put(body.m_19879_(), now);
+                cut(player, body, 4.0F, Vec3.f_82478_);
+                fx(player, HIT, ++seeds, c.m_82549_(out.m_82490_(r)), out, HIT_CAGE, 0, 0.8, 0);
             }
         }
     }
 
+    /** How near its wall (blocks, either side) the cage's strings reach a body. */
+    public static final double CAGE_TOUCH = 1.2;
+    /** How hard the wall pushes a body it touches (blocks a tick, on top of the wall's own speed in). */
+    public static final double CAGE_PUSH = 0.3;
+
     /**
-     * The cage shut: everyone pulled into its middle is cut deeply and left bleeding (the original's own wounds, gore/Gore.bleed), the
+     * 3.5.4: what the cage's wall does to a body: (ox, oy, oz) the way from the cage's middle to it (unit), {@code gap} how far it is
+     * outside the wall (negative: inside), (vx, vy, vz) its velocity, {@code inside} on the cage's inner side, {@code sweep} how fast the
+     * wall comes in (0 standing). Away from the wall: null, left alone, free to move. Touching it: its velocity with the part going
+     * through the wall taken away (it slides along the wall as it likes) and pushed {@link #CAGE_PUSH} plus the wall's own speed back to
+     * its side (inside: in toward the middle, swept along as the wall closes; outside: out, kept out).
+     */
+    public static double[] cageShove(double ox, double oy, double oz, double gap, double vx, double vy, double vz, boolean inside, double sweep) {
+        if (Math.abs(gap) > CAGE_TOUCH && !(inside && gap > 0.0)) {
+            return null;
+        }
+        // the way back to its side of the wall: in for the inside, out for the outside
+        double sx = inside ? -ox : ox;
+        double sy = inside ? -oy : oy;
+        double sz = inside ? -oz : oz;
+        double into = vx * sx + vy * sy + vz * sz;
+        double push = CAGE_PUSH + (inside ? sweep : 0.0);
+        // only the part of its own velocity heading through the wall is taken away
+        double through = Math.min(0.0, into);
+        double nx = vx - sx * through + sx * push;
+        double ny = vy - sy * through + sy * push;
+        double nz = vz - sz * through + sz * push;
+        return new double[] {nx, Math.max(ny, Math.min(vy, 0.0)), nz};
+    }
+
+    /**
+     * The cage shut: everyone swept into its middle is cut deeply and left bleeding (the original's own wounds, gore/Gore.bleed), the
      * strings burst out of it, the Conqueror's lightning out of the burst.
      */
     static void cageShut(ServerPlayer player, State s) {
