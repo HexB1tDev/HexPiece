@@ -31,7 +31,7 @@ pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, it
 (8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed and green (Build #177, Release #128); 3.3.8 (8zze:
 the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green (Build #179, Release #129); 3.3.9 (8zze: Dawn Pistol)
 is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the body) is green (Build #181, Release #131); 3.4.1 (8zze:
-the looping arm, the slowing stretch, the straight launch, the crater) is pushed: check its runs (section 9).**
+the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2390,8 +2390,11 @@ reaches the max, the entity is projected in a straight line FAST. adding a dust 
 
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.0 is green (Build #181, Release #131). 3.4.1 (8zze: Dawn Pistol's looping arm, the slowing stretch, the straight launch, the
-   crater) is pushed: check its Build and Release runs are green. Then ask the owner how Dawn Pistol looks in game.
+1. Everything is pushed and green up to 3.4.1 (8zze: Dawn Pistol's looping arm, the slowing stretch, the straight launch, the crater:
+   Build #182, Release #132). The owner said "handoff + prompt" right after it. Next: ask the owner how Dawn Pistol (3.3.9 to 3.4.1)
+   looks in game, and the Horo (3.3.6) and Ito (3.3.7) fruits (not tested yet). If they ask about the arm, keep it a looping curve (never
+   straight) and the fist going on through the body; check the Bajrang Gun's fist handedness if they mention it (NikaArt.fist builds a
+   left hand by default).
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

@@ -13,12 +13,12 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.4.0 everything is pushed and green (3.4.0 Dawn Pistol's skin stretched through the body: Build #181,
+Where things stand: up to 3.4.1 everything is pushed and green (3.4.0 Dawn Pistol's skin stretched through the body: Build #181,
 Release #131). 3.4.1 (section 8zze: Dawn Pistol after the owner's "How IS THIS IN HELL STRAIGHT" and "It also has to be FAST, but when it
 lands and stuns (the skin streches to the limit slower and slower ...) ... projected in a straight line FAST. adding a dust explosion on
 landing (and making a crater)": the arm a looping rubber curve, through the body to the fist inside the stretched skin, slower and slower
-to its limit, then a straight fast launch through blocks, a crater and dust where it lands) is pushed: check its Build and Release runs
-are green first and fix anything red, then ask how Dawn Pistol plays. The fist is a right fist on the right arm, three-quarters of a
+to its limit, then a straight fast launch through blocks, a crater and dust where it lands) is pushed and green (Build #182, Release
+#132). Ask the owner how Dawn Pistol plays in game (3.3.9 to 3.4.1). The fist is a right fist on the right arm, three-quarters of a
 block across (the owner: "thats the left hand on the right arm", "the fist is too big, way too big"). Read 8zz and 8zzb before any art: the owner called Supa's first flat blades "really poor and poorly
 made"; judge every effect against the Light, Gura and Magma art before showing it; thin pale lines and flat polygons are not acceptable.
 
