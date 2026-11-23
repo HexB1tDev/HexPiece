@@ -26,7 +26,8 @@ rolling in rubber waves) is pushed and green; 3.3.1 (8zt: Toon Force, Dawn Whip 
 look) is pushed and green; 3.3.2 (8zu: the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's
 description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is pushed and green; 3.3.4 (8zy: the Noro Noro no Mi) is
 pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed and green (Build
-#172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed: check its runs (section 9).**
+#172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); the Ito Ito
+no Mi's keys are planned and accepted (8zzc): build it next as 3.3.7.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2169,11 +2170,45 @@ What was asked to be done, as first planned (kept for the record):
    the moves for the owner (they said "no need for gif" for Noro: renders are fine).
 6. Then the **Ito Ito no Mi** (8zza: plan the keys and ask first).
 
+## 8zzc. The plan for the Ito Ito no Mi (3.3.7; researched in 3.3.6's session; the owner's answers at the end)
+
+Research: the fandom wiki is behind a browser check (curl gets "Just a moment..."); the techniques are well known: Tamaito (string
+bullets from the fingertips), Goshikito (five strings slashing down), Overheat (a red-hot rope of tightly wound string lashed like a
+whip: the Tenor reference doflamingo-overheat shows it glowing orange-red, a white-hot core), Fulbright (strings hanging from the hands),
+Parasite (threads into a body: a marionette), Sora no Michi (strings to the clouds: walking the sky), Black Knight (a string clone),
+Kumo no Sugaki (Spider's Web, a shield), Torikago (the Birdcage: a dome of strings closing in, cutting all it passes), the awakening
+(the ground turned to waves of string: Break White, Ever White) and God Thread (sixteen Haki-coated spears of string fired at once).
+Reference GIFs (Tenor, kept only in the scratchpad): doflamingo-overheat, doflamingo-dressrossa, doflamingo-string,
+donquixote-doflamingo-vs.
+
+The art (POINT ONE): never thin pale lines. A string is drawn as the Light fruit's beam and wave are: a bright core under a wide soft
+glow, several strands together, cel-banded where it is thick (Overheat: red-hot banded rope, orange to white at its heart, as the Magma
+fruit's fire bands are); the Birdcage a dome of glowing strands; Armament turns every string black-purple like the katanas. Black Knight
+is the player's own body (horo/AstralArt's way) woven of white string. Animations reused from the mod's own clips.
+
+Proposed keys (as the other fruits: LMB, RMB, Z X C V B N M, a passive):
+- LMB **String Slash**: lashes of string from the fingers, a combo (pika_sword_1/2), reach 4.5 blocks.
+- RMB **Tamaito**: tap a string bullet that pierces, hold for a burst of up to six.
+- Z **Goshikito**: five strings slash down onto the spot looked at (a deep cut in the ground, big damage).
+- X **Overheat**: a red-hot rope of string lashes out in a long line ahead, setting what it hits on fire.
+- C **Parasite**: threads into the one looked at: for 5 s they cannot move on their own; you drag them where you look.
+- V **Spider's Web**: a web of string in front for 6 s: projectiles stop in it, blows from the front are blocked.
+- B **Black Knight**: a string clone of yourself fights beside you for 15 s.
+- N **Birdcage**: a huge cage of strings round you for 30 s, shrinking slowly; whoever touches its strings is cut; no one gets out.
+- M **Awakening: Break White**: the ground round you turns to waves of white string rolling outward; with Armament on, **God Thread**:
+  sixteen Haki-coated spears of string fired at once at what you look at.
+- Passive **Sora no Michi**: jump again in the air to walk on strings (a few steps up the sky, then down); **Self-Surgery**: below a
+  third of your health, strings stitch you up (healing for a few seconds, once a minute).
+
+**The owner's answers** (AskUserQuestion, 3.3.6's session): the keys **"As proposed"** (exactly the list above); the Birdcage **"40
+blocks, 45 s"** (a huge cage like Dressrosa's, shrinking slowly over 45 seconds). Rare (three stars), version 3.3.7. Not started.
+
 ## 9. What to do next (after 3.3.6)
 
-1. Check the branch's last "Build HexPiece" and "Release HexPiece" runs (`claude/nice-bell-gam7qf`) are green; fix anything red first.
+1. 3.3.6 is pushed and green (Build #175, Release #127). Check the branch's last runs before anything else all the same.
 2. Ask the owner how the Horo fruit (3.3.6: the cute ghosts, Gloom, the astral spirit) looks and plays.
-3. The **Ito Ito no Mi (Rare: 8zza, plan the keys and ask first)**, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are
+3. Build the **Ito Ito no Mi as 3.3.7 (Rare) to 8zzc's accepted keys and the owner's 40-block, 45-second Birdcage**, built as the Ice
+   fruit was (8zc, 8ze) and Noro, Supa and Horo are
    (8zy, 8zz, 8zzb), animations reused from the mod's own clips, POINT ONE for the rest (3D art in the house style, first-person hands,
    CC0 web sounds, the Conqueror's lightning out of every explosion). Its strings are thin by nature: make them read as the Light,
    Gura and Magma art does (a glowing core under a wide soft glow, several strands, Overheat's wave of white strings shading purple at its

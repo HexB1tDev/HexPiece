@@ -13,15 +13,17 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.3.6 everything is pushed (sections 8zl to 8zzb); check the branch's last "Build HexPiece" and "Release
-HexPiece" runs are green first. 3.3.6 is the Horo Horo no Mi: the owner said "The ghosts are meant to be cute" (redone: big shining
+Where things stand: up to 3.3.6 everything is pushed and green (sections 8zl to 8zzb; 3.3.6 Build #175, Release #127); check the
+branch's last runs first all the same. 3.3.6 is the Horo Horo no Mi: the owner said "The ghosts are meant to be cute" (redone: big shining
 eyes, rosy cheeks, docs/handoff/horo-cute-3.3.6.jpg) and asked for Gloom as its own effect (blind, slow, 8 in 10 attacks of every kind
 miss, 8 seconds after a short fall: their answers, 8zzb). Read 8zz and 8zzb before any art: the owner called Supa's first flat blades
 "really poor and poorly made"; judge every effect against the Light, Gura and Magma art before showing it; thin pale lines and flat
 polygons are not acceptable.
 
-Next: ask the owner how the Horo fruit looks and plays; then the owner's Rare fruit, the Ito Ito no Mi (Doflamingo, 8zza verbatim):
-research it, plan its keys and ask first (AskUserQuestion), as 8zw did. Ask how 3.3.2 and 3.3.3 feel (asked, not yet answered). Then
+Next: ask the owner how the Horo fruit looks and plays; build the owner's Rare fruit, the Ito Ito no Mi (Doflamingo, 8zza verbatim),
+as 3.3.7 to the keys they accepted ("As proposed") and their 40-block, 45-second Birdcage (8zzc has the plan, the research and the art
+rules: strings drawn as the Light fruit's beam is, a bright core under a wide glow, never thin pale lines; Overheat a red-hot banded
+rope; black-purple with Armament). Ask how 3.3.2 and 3.3.3 feel (asked, not yet answered). Then
 the rest of the Nika rework (better Haki versions: Dawn Pistol; never touch the lightning lance). The owner's target look for the Nika
 fruit is Gear 5 Luffy's laughing skip (8zt item 3, 8zu item 5): every pose with a raised arm keeps the hand off the face from the front
 (tools/anim.face_covered) and is looked at beside the owner's pictures from every side; a raised fist the owner wants forward stays
