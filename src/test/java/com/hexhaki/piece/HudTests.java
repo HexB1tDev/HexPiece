@@ -198,8 +198,9 @@ public final class HudTests {
      * original's rules (3.3.2: Sky Bounce is gone).
      */
     static void nika() {
-        java.util.Set<String> stretch = java.util.Set.of("PISTOL", "ROCKET_START", "ROCKET_RELEASE", "WHIP", "GATLING_START", "GATLING_RELEASE",
-            "GIANT_START", "GIANT_RELEASE", "COIL_START", "COIL_RELEASE", "GIANT_GRAB");
+        // 3.4.6 (the owner: Goof Ball "should be only usable in Gear 5 mode ... Same for Giant"): no Whip, no Giant untransformed
+        java.util.Set<String> stretch = java.util.Set.of("PISTOL", "ROCKET_START", "ROCKET_RELEASE", "GATLING_START", "GATLING_RELEASE",
+            "COIL_START", "COIL_RELEASE");
         for (com.hexhaki.network.GearAction action : com.hexhaki.network.GearAction.values()) {
             Check.that(com.hexhaki.piece.server.NikaRules.stretch(action) == stretch.contains(action.name()),
                 "nika: " + action + (stretch.contains(action.name()) ? " works untransformed" : " needs Gear 5"));
@@ -340,8 +341,22 @@ public final class HudTests {
         Check.that(last != null && Math.abs(last % 360.0) < 1.0E-6, "goofWhip: whole turns where the clip hands over (" + last + ")");
         Double wound = yaws.get(com.hexhaki.piece.gear.NikaDawn.WIND);
         Check.that(wound != null && wound < -250, "goofWhip: wound up the wrong way first (" + wound + ")");
-        Check.that(com.hexhaki.piece.gear.NikaDawn.IMPACT - com.hexhaki.piece.gear.NikaDawn.STRETCH_LEAD >= 0
-            && com.hexhaki.piece.gear.NikaDawn.STRETCH_LEAD == 10, "goofWhip: the leg's stretch (StretchStyle WHIP: windup 5 + extend 5) out at the impact");
+        // 3.4.6 (the owner: "I don't see the leg in your render"): the leg drawn by gear/NikaDawn.leg turns as the clip turns the body
+        // (its yaw table is the clip's at every key from 10 to 28), is at its full reach at the impact, and back in after
+        for (int k = 0; k < com.hexhaki.piece.gear.NikaDawn.YAW_TICKS.length; k++) {
+            int tick = (int) com.hexhaki.piece.gear.NikaDawn.YAW_TICKS[k];
+            Double keyed = yaws.get(tick);
+            Check.that(keyed != null && Math.abs(keyed - com.hexhaki.piece.gear.NikaDawn.YAW[k]) < 1.0E-6,
+                "goofWhip: the leg's turn at " + tick + " is the clip's (" + keyed + ", " + com.hexhaki.piece.gear.NikaDawn.YAW[k] + ")");
+        }
+        Check.that(Math.abs(com.hexhaki.piece.gear.NikaDawn.legLength(com.hexhaki.piece.gear.NikaDawn.IMPACT) - com.hexhaki.piece.gear.NikaDawn.REACH) < 1.0E-9
+            && com.hexhaki.piece.gear.NikaDawn.legLength(com.hexhaki.piece.gear.NikaDawn.LEG_OUT - 0.5) == 0.0
+            && com.hexhaki.piece.gear.NikaDawn.legLength(com.hexhaki.piece.gear.NikaDawn.LEG_BACK + 0.5) == 0.0,
+            "goofWhip: the leg at its full reach at the impact, not out before or after");
+        int[] legQuads = new int[1];
+        com.hexhaki.piece.gear.NikaDawn.leg((xyz, uv, argb, nx, ny, nz) -> legQuads[0]++, new com.hexhaki.piece.style.StyleShow.Place(0.3, -1.6,
+            4.0, 0.4), com.hexhaki.piece.gear.NikaDawn.IMPACT, false, com.hexhaki.piece.gear.NikaDawn.COAT);
+        Check.that(legQuads[0] > 12 && legQuads[0] < 80, "goofWhip: the leg drawn, cheaply (" + legQuads[0] + " quads)");
         Check.that(com.hexhaki.piece.gear.NikaDawn.WIND < com.hexhaki.piece.gear.NikaDawn.IMPACT
             && com.hexhaki.piece.gear.NikaDawn.IMPACT < com.hexhaki.piece.gear.NikaDawn.OVERSPIN
             && com.hexhaki.piece.gear.NikaDawn.OVERSPIN + com.hexhaki.piece.gear.NikaDawn.DEPTH * com.hexhaki.piece.gear.NikaDawn.DRILL_STEP
@@ -390,7 +405,7 @@ public final class HudTests {
             quads[0] = 0;
             double t = age - com.hexhaki.piece.gear.NikaDawn.WIND;
             com.hexhaki.piece.gear.NikaDawn.coil(count, 0.4, -1.0, 3.0, age, 5);
-            com.hexhaki.piece.gear.NikaDawn.smear(count, 0.4, -0.25, 3.0, t, 0, 1, com.hexhaki.piece.gear.NikaDawn.REACH, 5);
+            com.hexhaki.piece.gear.NikaDawn.smear(count, new com.hexhaki.piece.style.StyleShow.Place(0.4, -1.0, 3.0, 0.3), age, 5);
             for (int k = 0; k < 4; k++) {
                 com.hexhaki.piece.gear.NikaDawn.crack(count, 3.0 + k, 0, 6.0, 1, 0, age - com.hexhaki.piece.gear.NikaDawn.IMPACT, 1.8, k);
             }

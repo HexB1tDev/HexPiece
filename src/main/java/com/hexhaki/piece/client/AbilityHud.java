@@ -221,10 +221,10 @@ public final class AbilityHud {
             haki ? new Object[] {GearAbility.STAR_GUN, name(HakiKeys.MODE), GearAbility.STAR_GUN.display, true}
                 : new Object[] {GearAbility.ROCKET, name(HakiKeys.MODE) + " hold", GearAbility.ROCKET.display, false},
             // 3.4.4: in Gear 5 C is Goof Ball (held), with Haki Dawn Whip; untransformed the plain whip
-            {GearAbility.WHIP, name(HakiKeys.SLOT_7) + (five && !haki ? " hold" : ""), haki ? "Dawn Whip" : five ? "Goof Ball"
-                : GearAbility.WHIP.display, false},
+            // 3.4.6: Goof Ball and Giant only in Gear 5 (the owner's word): dimmed with "Gear 5" untransformed
+            {GearAbility.WHIP, name(HakiKeys.SLOT_7) + (haki ? "" : " hold"), haki ? "Dawn Whip" : "Goof Ball", true},
             {GearAbility.GATLING, name(HakiKeys.SLOT_8) + " hold", GearAbility.GATLING.display, false},
-            {GearAbility.GIANT, name(HakiKeys.STAR_GUN) + " hold", haki ? "Bajrang Gun" : GearAbility.GIANT.display, false},
+            {GearAbility.GIANT, name(HakiKeys.STAR_GUN) + " hold", haki ? "Bajrang Gun" : GearAbility.GIANT.display, true},
             {GearAbility.COIL, name(PieceKeys.FRUIT_N) + " hold", haki ? "Lightning Lance" : GearAbility.COIL.display, false},
             // 3.3.2: Sky Bounce (Shift + Space) is gone (the owner: "shift + space ability is removed"): Gear 5's own jump bounces now
             {GearAbility.RUBBER_WORLD, name(PieceKeys.FRUIT_M) + " hold", GearAbility.RUBBER_WORLD.display, true}};

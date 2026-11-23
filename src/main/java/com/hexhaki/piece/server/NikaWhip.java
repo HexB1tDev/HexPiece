@@ -30,8 +30,9 @@ import net.minecraftforge.fml.common.Mod;
 
 /**
  * 3.4.4: the Nika fruit's C in Gear 5 (the owner: "Whip and Dawn Whip Rework"; then "the Goof ball is only usable in transformed state").
- * patch/PiecePatch has the original's {@code GearServerController.whip} ask {@link #unlocked} first: untransformed, C is the original's
- * Gum-Gum Whip as before; in Gear 5 the original stops there and this runs:
+ * patch/PiecePatch has the original's {@code GearServerController.whip} ask {@link #unlocked} first; the original's whip never goes on
+ * (3.4.6, the owner: "it should be only usable in Gear 5 mode": untransformed C does nothing, server/NikaRules refuses it first); in
+ * Gear 5 this runs:
  * <ul>
  *   <li><b>Goof Ball</b> (no Haki; held: client/gear/NikaKeys sends the let go, network/C2SNikaWhip): a cartoon spin-up
  *       (gear5_goof_spin), then the body is a spinning ball of smoke and its own limbs punching out every way (every client draws it:
@@ -39,8 +40,8 @@ import net.minecraftforge.fml.common.Mod;
  *       knocked about; let go (at least {@link NikaGoof#LEAST} ticks of ball) or after {@link NikaGoof#MOST} the ball pops and the user
  *       is dizzy for {@link NikaGoof#DIZZY} ticks (slowed, no moves, stars over the head, gear5_goof_dizzy);</li>
  *   <li><b>Dawn Whip</b> (with Haki: the original's {@code dawn}, Gear 5 with Armament or Ryou), the owner's six phases
- *       (gear/NikaDawn's timeline, gear5_dawn_whip): rooted and wound up like a spring; the right leg stretched out as the original's
- *       rubber leg (its S2CGearStretch, Haki-coated) while the body unwinds; at {@link NikaDawn#IMPACT} everyone round within the leg's
+ *       (gear/NikaDawn's timeline, gear5_dawn_whip): rooted and wound up like a spring; the right leg stretched out as a rubber whip,
+ *       Haki-coated, while the body unwinds (3.4.6: drawn by every client, gear/NikaDawn.leg); at {@link NikaDawn#IMPACT} everyone round within the leg's
  *       reach struck and launched sideways (the way the leg sweeps) through blocks up to obsidian, the Conqueror's lightning at each
  *       strike; the overspin, drifting out of control; drilling into the ground (a self-repairing shaft {@link NikaDawn#DEPTH} deep,
  *       the world's mobGriefing rule obeyed); popped back out with a rubber bounce (gear5_dawn_pop).</li>
@@ -117,8 +118,11 @@ public final class NikaWhip {
         if (!GearData.unlocked(player, ability)) {
             return false;
         }
-        if (ability != GearAbility.WHIP || !(player instanceof ServerPlayer server) || !GearData.flag(server, "gear5")) {
+        if (ability != GearAbility.WHIP || !(player instanceof ServerPlayer server)) {
             return true;
+        }
+        if (!GearData.flag(server, "gear5")) {
+            return false; // 3.4.6 (the owner: "it should be only usable in Gear 5 mode"): never untransformed
         }
         try {
             start(server);
@@ -307,9 +311,8 @@ public final class NikaWhip {
             player.m_20256_(new Vec3(0, Math.min(v.f_82480_, age >= NikaDawn.OVERSPIN ? 0.0 : v.f_82480_), 0));
             player.f_19864_ = true;
         }
-        if (age == NikaDawn.IMPACT - NikaDawn.STRETCH_LEAD) {
-            stretch(player, dawn);
-        }
+        // 3.4.6: the striking leg is drawn by every client (gear/NikaDawn.leg, client/gear/NikaWhipClient), no longer the original's
+        // own stretched leg (its geometry could not be rendered and judged: the owner saw no leg in the render)
         if (age == NikaDawn.WIND) {
             com.hexhaki.piece.PieceSounds.playAt(player, player.m_20185_(), player.m_20186_() + 1.0, player.m_20189_(), GearSounds.SPIN, 1.0F,
                 1.1F);
@@ -342,14 +345,6 @@ public final class NikaWhip {
         if (age > NikaDawn.POP + 3 && player.m_20096_() || age > NikaDawn.POP + NikaDawn.LANDING) {
             dawnEnd(player, dawn, now, false);
         }
-    }
-
-    /** The original's rubber leg (its own S2CGearStretch: the right leg, StretchStyle WHIP, Haki-coated), out at the impact. */
-    static void stretch(ServerPlayer player, Dawn dawn) {
-        float retract = 1.0F - 0.55F * GearData.rank01(player, com.hexhaki.devilfruit.data.GearUpgrade.SNAP_BACK);
-        com.hexhaki.network.HakiNetwork.tracking(player, new com.hexhaki.network.msg.S2CGearStretch(player.m_19879_(),
-            com.hexhaki.devilfruit.data.RubberLimb.RIGHT_LEG.ordinal(), com.hexhaki.devilfruit.data.StretchStyle.WHIP.ordinal(),
-            (float) NikaDawn.REACH, 1.0F, retract, 1, dawn.wx, 0.0, dawn.wz, false, player.m_217043_().m_188505_()));
     }
 
     /**

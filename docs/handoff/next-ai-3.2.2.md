@@ -35,7 +35,8 @@ is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the
 the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132); 3.4.2 (8zzf: the
 owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Build #184, Release #133); 3.4.3 (8zzf: Noro's held cone, Ito's
 Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is green (Build #188, Release #135). 3.4.5
-(8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136).**
+(8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136). 3.4.6 (8zzg: Goof Ball and Giant Gear 5 only, Dawn Whip's
+leg drawn by HexPiece) is pushed: check its runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2779,9 +2780,33 @@ screen: docs/handoff/gura-broken-bones-3.4.5.jpg). 3.4.4's runs were green (Buil
   18 x 18). build.py NEW_PREFIXES lists both. Tests: HudTests.brokenBones (20 s, 3 to 6 s, the kind its own, the name, the GIF's timing),
   DragonTests (the icon, the sheet's size, alpha and clear background in the jar).
 
+**The owner after 3.4.5 (verbatim)**: "I think you just told me to go fuck myself. I said that the goofy ball, that ability that we just
+made, it should be only usable in Gear 5 mode, which is the transformation. Same for Giant. Giant is not usable without the
+transformation. It makes no sense. On top of that, I don't see the Dawn Whip. Like, I don't see the leg in your render. Like, there's no
+leg or anything. So I needed to see an accurate render of that. What was that? Oh yeah, Dawn Whip. Don't forget that shit is only when
+it's like hockey activated. It's never by default." (3.4.4 had kept the original's plain Gum-Gum Whip on C untransformed; the renders
+showed a stand-in body and no leg: the original drew the leg, which no preview can run.)
+
+**3.4.6 as built** (nothing tested in game: build EXIT 0 with 13 suites; renders docs/handoff/nika-dawn-whip-leg-3.4.6.jpg):
+- **Gear 5 only**: server/NikaRules.stretch no longer has WHIP, GIANT_START/RELEASE or GIANT_GRAB (untransformed only the Pistol, Rocket,
+  Gatling and Coil Spring); NikaWhip.unlocked answers false untransformed (the original's whip never runs); the panel's Whip and Giant
+  rows are Gear 5 only (dimmed with "Gear 5"), the Ability Book's rows say "Gear 5 only"; UiPreview's untransformed panel; HudTests.nika.
+  Dawn Whip was already Haki-only (the original's dawn: Gear 5 with Armament or Ryou): unchanged.
+- **The leg drawn by HexPiece** (gear/NikaDawn.leg, legGlow, line; client/gear/NikaWhipClient in the skin pass, then the glow in the
+  light's batch): the original's S2CGearStretch is no longer sent (NikaWhip.stretch removed). NikaDawn.YAW_TICKS/YAW is gear5_dawn_whip's
+  body yaw at its keys 10 to 28 (HudTests checks it against the clip); the leg (12 segments, a square tube 1.3x the leg's 4 px, the right
+  leg's skin rows 20 to 32 stretched along it, its front up, the sole at the end) runs from the right hip (turned with the body) out to
+  legLength(t) (LEG_OUT 11, full REACH 10.2 at IMPACT, held to LEG_HOLD 18, back by LEG_BACK 25), its outer part trailing the turn by
+  up to 0.9 rad (s^1.6), sagging 0.35 at full reach; tinted COAT 0x3A3248 (the Haki coat) in the user's Gear 5 skin; legGlow: an 8-sided
+  shell 1.9x wider, bright only along its outline (LEG_GLOW 0xB08CFF), so it reads as a coated leg and not a black rope (the first render
+  did). The smear now takes the user's Place and the same yaw and reach (it trails the drawn leg exactly). Place from the body's yaw
+  (yBodyRot, interpolated): StyleShow.Place (x left, z ahead), the clip's positive yaw to the left (checked against StyleRig.place).
+  Preview: NikaShots |ndwhip:t[:fp] (the user posed by client/npc/StylePoser.sample("gear5_dawn_whip"), AstralArt.left in the skin, the
+  leg, the glow, the smear, the coil or arcs, two bodies struck and thrown); the preview's skin takes the coat's tint.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.5 (8zzg: Broken Bones) is green (Build #189, Release #136). Ask the owner how Dawn Pistol
+1. 3.4.6 (8zzg: Gear 5 only, the drawn leg) is pushed: check its runs. Ask the owner how Dawn Pistol
    (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, Goof Ball and Dawn Whip (3.4.4) and Broken Bones (3.4.5) play, and work on what they say.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).

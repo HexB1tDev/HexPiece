@@ -295,12 +295,52 @@ public final class NikaShots {
                 com.hexhaki.piece.gear.NikaDawn.coil(sink, -ex, -ey, -ez, age, 5);
             }
             case "nsmear" -> {
-                double age = move.length > 1 ? Double.parseDouble(move[1]) : 3;
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 15;
                 HieShots.body(sink, -ex, -ey, -ez);
                 HieShots.body(sink, -ex, -ey, 7.0 - ez);
-                NikaDawn.smear(sink, -ex, 0.75 - ey, -ez, age, 0, 1, NikaDawn.REACH, 5);
-                if (age >= NikaDawn.IMPACT - NikaDawn.WIND) {
-                    NikaDawn.crack(sink, -ex, 0.95 - ey, 7.0 - ez, 1, 0, age - (NikaDawn.IMPACT - NikaDawn.WIND), 1.8, 5);
+                NikaDawn.smear(sink, new com.hexhaki.piece.style.StyleShow.Place(-ex, -ey, -ez, 0.0), age, 5);
+            }
+            // 3.4.6 (the owner: "I don't see the leg in your render ... I needed to see an accurate render"): |ndwhip:t the whole of Dawn
+            // Whip t ticks in: the user (art/user_skin.png; the game uses the Gear 5 skin) posed by gear5_dawn_whip as client/npc/StylePoser
+            // samples it, the striking leg stretched out Haki-coated (gear/NikaDawn.leg, the very quads the game draws), the smear, the
+            // coil or the overspin's arcs, two bodies 7 and 5 blocks off (struck and launched at the impact) and their cracks
+            case "ndwhip" -> {
+                double t = move.length > 1 ? Double.parseDouble(move[1]) : 16;
+                // |ndwhip:t:fp: one's own first person (with the camera fp:pitch): no body of one's own, no coil or arcs round the eye
+                boolean fp = move.length > 2 && move[2].equals("fp");
+                float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample("gear5_dawn_whip", (float) t);
+                com.hexhaki.piece.style.StyleShow.Place place = new com.hexhaki.piece.style.StyleShow.Place(-ex, -ey, -ez, 0.0);
+                if (!fp) {
+                    com.hexhaki.piece.horo.AstralArt.left(skin(sink), pose, place);
+                }
+                NikaDawn.leg(skin(sink), place, t, false, NikaDawn.COAT);
+                NikaDawn.legGlow(sink, place, t, NikaDawn.LEG_GLOW);
+                NikaDawn.smear(sink, place, t, 5);
+                if (fp) {
+                    NikaDawn.firstPerson(sink, t - NikaDawn.WIND, 5, 0, -Math.sin(Math.toRadians(20)), Math.cos(Math.toRadians(20)), 0,
+                        Math.cos(Math.toRadians(20)), Math.sin(Math.toRadians(20)), -1, 0, 0);
+                } else if (t <= NikaDawn.WIND + 1) {
+                    NikaDawn.coil(sink, -ex, -ey, -ez, t, 5);
+                }
+                if (!fp && t > NikaDawn.IMPACT && t < NikaDawn.DRILL) {
+                    NikaDawn.whirl(sink, -ex, -ey, -ez, t - NikaDawn.IMPACT, Math.max(0, Math.min(1, (t - NikaDawn.OVERSPIN) / 4.0)), 5);
+                }
+                // the struck: 7 ahead and 5 to the left-back; thrown sideways the way the leg sweeps from the impact on
+                double[][] bodies = {{0, 7}, {-4, -3}};
+                for (double[] b : bodies) {
+                    double r = Math.hypot(b[0], b[1]);
+                    double rx = b[0] / r;
+                    double rz = b[1] / r;
+                    double cx = rz + rx * 0.35;
+                    double cz = -rx + rz * 0.35;
+                    double cl = Math.hypot(cx, cz);
+                    double flown = t > NikaDawn.IMPACT ? Math.min(30, (t - NikaDawn.IMPACT) * 3.4) : 0;
+                    double bx = b[0] + cx / cl * flown;
+                    double bz = b[1] + cz / cl * flown;
+                    HieShots.body(sink, bx - ex, -ey, bz - ez);
+                    if (t >= NikaDawn.IMPACT) {
+                        NikaDawn.crack(sink, b[0] - ex, 0.95 - ey, b[1] - ez, cx / cl, cz / cl, t - NikaDawn.IMPACT, 1.8, 5);
+                    }
                 }
             }
             case "ncrack" -> {
@@ -638,8 +678,8 @@ public final class NikaShots {
                     if ((texel >>> 24) < 26) {
                         continue;
                     }
-                    int c = 0xFF000000 | (int) (((texel >> 16) & 255) * shade) << 16 | (int) (((texel >> 8) & 255) * shade) << 8
-                        | (int) ((texel & 255) * shade);
+                    int c = 0xFF000000 | (int) (((texel >> 16) & 255) * ((argb >> 16) & 255) / 255 * shade) << 16
+                        | (int) (((texel >> 8) & 255) * ((argb >> 8) & 255) / 255 * shade) << 8 | (int) ((texel & 255) * (argb & 255) / 255 * shade);
                     double[] q = new double[12];
                     texel(q, 0, xyz, i / (double) tw, j / (double) th);
                     texel(q, 1, xyz, (i + 1) / (double) tw, j / (double) th);

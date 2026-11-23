@@ -9,8 +9,9 @@ import net.minecraft.world.entity.player.Player;
  * 3.2.3 (the owner: "The stretchy moves like M1s and whatsoever, they should all be used in the normal like non-transformed state";
  * asked, "All stretch moves"): which of the Nika fruit's moves work without Gear 5. The original refused every move but the
  * transformation unless Gear 5 was up ({@code GearServerController.onAction}) and checked it again in Gatling, Giant and Coil Spring;
- * patch/PiecePatch.gearUntransformed asks here instead. Untransformed: the stretching punch (Pistol), Rocket, Whip, Gatling, Giant
- * (Gigante) and Coil Spring. Gear 5 only: Rubber World, Star Gun, and the Haki versions (Dawn Pistol, Dawn Whip, the
+ * patch/PiecePatch.gearUntransformed asks here instead. Untransformed: the stretching punch (Pistol), Rocket, Gatling and Coil Spring
+ * (3.4.6: no longer the Whip or Giant, the owner's word). Gear 5 only: Goof Ball, Giant, Rubber World, Star Gun, and the Haki versions
+ * (Dawn Pistol, Dawn Whip, the
  * Bajrang Gun, the lightning lance), which the original only ever gives in Gear 5 ({@code GearServerController.dawn}).
  */
 public final class NikaRules {
@@ -23,11 +24,14 @@ public final class NikaRules {
         return (GearData.flag(player, "gear5") || stretch(action)) && !NikaWhip.busy(player);
     }
 
-    /** The stretch moves (their press and their let go). */
+    /**
+     * The stretch moves that work untransformed (their press and their let go). 3.4.6 (the owner: "the goofy ball, that ability that
+     * we just made, it should be only usable in Gear 5 mode, which is the transformation. Same for Giant. Giant is not usable without
+     * the transformation"): the Whip (Goof Ball, Dawn Whip) and Giant (Gigante, its grab, the Bajrang Gun) are Gear 5's only now.
+     */
     public static boolean stretch(GearAction action) {
         return switch (action.name()) {
-            case "PISTOL", "ROCKET_START", "ROCKET_RELEASE", "WHIP", "GATLING_START", "GATLING_RELEASE", "GIANT_START", "GIANT_RELEASE",
-                "COIL_START", "COIL_RELEASE", "GIANT_GRAB" -> true;
+            case "PISTOL", "ROCKET_START", "ROCKET_RELEASE", "GATLING_START", "GATLING_RELEASE", "COIL_START", "COIL_RELEASE" -> true;
             default -> false;
         };
     }

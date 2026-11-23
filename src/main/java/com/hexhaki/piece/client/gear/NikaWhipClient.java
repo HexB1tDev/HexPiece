@@ -270,9 +270,12 @@ public final class NikaWhipClient {
             if (this.out == null) {
                 return;
             }
+            float r = ((argb >>> 16) & 255) / 255.0F;
+            float g = ((argb >>> 8) & 255) / 255.0F;
+            float b = (argb & 255) / 255.0F;
             for (int k = 0; k < 4; k++) {
                 com.hexhaki.piece.client.render.Bulk.vertex(this.out, this.m, this.n, (float) xyz[k * 3], (float) xyz[k * 3 + 1],
-                    (float) xyz[k * 3 + 2], 1.0F, 1.0F, 1.0F, 1.0F, uv[k * 2], uv[k * 2 + 1],
+                    (float) xyz[k * 3 + 2], r, g, b, 1.0F, uv[k * 2], uv[k * 2 + 1],
                     net.minecraft.client.renderer.texture.OverlayTexture.f_118083_, this.light, (float) nx, (float) ny, (float) nz);
             }
         }
@@ -337,6 +340,25 @@ public final class NikaWhipClient {
                     SKIN.end();
                 }
             }
+            // 3.4.6: Dawn Whip's striking leg, stretched out as a rubber whip in the user's Gear 5 skin, coated by Haki (gear/NikaDawn.leg)
+            if (!DAWNS.isEmpty()) {
+                SKIN.buffers = buffers;
+                com.hexhaki.piece.client.render.Bulk.read(pose.m_85850_(), SKIN.m, SKIN.n);
+                for (Map.Entry<Integer, Dawn> e : DAWNS.entrySet()) {
+                    double age = now - e.getValue().start;
+                    if (NikaDawn.legLength(age) <= 0.0 || !(level.m_6815_(e.getKey()) instanceof AbstractClientPlayer player)) {
+                        continue;
+                    }
+                    Vec3 feet = player.m_20318_(partial);
+                    if (feet.m_82557_(cam) > FAR * FAR) {
+                        continue;
+                    }
+                    SKIN.use(gearSkin(player));
+                    SKIN.light = LevelRenderer.m_109541_(level, BlockPos.m_274561_(feet.f_82479_, feet.f_82480_ + 1.0, feet.f_82481_));
+                    NikaDawn.leg(SKIN, place(player, cam, partial), age, "slim".equals(player.m_108564_()), NikaDawn.COAT);
+                    SKIN.end();
+                }
+            }
             SINK.buffer = buffers.m_6299_(type);
             draw(minecraft, level, cam, now, partial, firstPerson, own);
         } catch (RuntimeException failure) {
@@ -359,6 +381,26 @@ public final class NikaWhipClient {
         } catch (RuntimeException failure) {
             return skin;
         }
+    }
+
+    /** An angle's difference brought into -180 to 180 degrees. */
+    static float wrap(float degrees) {
+        float d = degrees % 360.0F;
+        if (d >= 180.0F) {
+            d -= 360.0F;
+        }
+        if (d < -180.0F) {
+            d += 360.0F;
+        }
+        return d;
+    }
+
+    /** The player's feet (eye-relative) and its body's facing, as StyleShow.Place takes them (x to the left, z ahead). */
+    static com.hexhaki.piece.style.StyleShow.Place place(AbstractClientPlayer player, Vec3 cam, float partial) {
+        Vec3 feet = player.m_20318_(partial);
+        float body = player.f_20884_ + wrap(player.f_20883_ - player.f_20884_) * partial;
+        return new com.hexhaki.piece.style.StyleShow.Place(feet.f_82479_ - cam.f_82479_, feet.f_82480_ - cam.f_82480_, feet.f_82481_ - cam.f_82481_,
+            Math.toRadians(body));
     }
 
     static final double[] F = new double[3];
@@ -430,8 +472,10 @@ public final class NikaWhipClient {
             if (!mine && age <= NikaDawn.WIND + 1) {
                 NikaDawn.coil(SINK, x, y, z, age, dawn.seed);
             }
-            if (age >= NikaDawn.WIND) {
-                NikaDawn.smear(SINK, x, y + 0.75, z, age - NikaDawn.WIND, dawn.wx, dawn.wz, dawn.reach, dawn.seed);
+            if (age >= NikaDawn.LEG_OUT) {
+                com.hexhaki.piece.style.StyleShow.Place place = place(player, cam, partial);
+                NikaDawn.legGlow(SINK, place, age, NikaDawn.LEG_GLOW);
+                NikaDawn.smear(SINK, place, age, dawn.seed);
             }
             if (age > NikaDawn.IMPACT && age < NikaDawn.DRILL) {
                 double drill = Math.max(0.0, Math.min(1.0, (age - NikaDawn.OVERSPIN) / 4.0));

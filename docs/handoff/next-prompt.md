@@ -4,7 +4,7 @@ Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standin
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
 with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzg of next-ai-3.2.2.md
-(2.9.6 to 3.4.5); open the older next-ai-*.md only for a feature's detail.
+(2.9.6 to 3.4.6); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -13,10 +13,9 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.4.4 everything is pushed and green (3.4.4: Build #188, Release #135: the Nika fruit's C, untransformed the
-plain whip, in Gear 5 Goof Ball, with Haki the new Dawn Whip; 8zzg). 3.4.5 (8zzg: the Gura ultimate's Broken Bones: the owner's GIF as
-an X-ray over a struck player's screen, a new 20 s effect with Slowness I and random ragdoll falls) is green too (Build #189, Release
-#136).
+Where things stand: up to 3.4.5 everything is pushed and green (3.4.4: Build #188, Release #135; 3.4.5: Build #189, Release #136;
+8zzg). 3.4.6 (8zzg: the owner's correction, verbatim there: Goof Ball and Giant only in Gear 5, untransformed C and B do nothing; Dawn
+Whip's striking leg now drawn by HexPiece itself, rendered with it) was pushed: check its Build and Release runs first.
 
 Next: ask the owner how Dawn Pistol (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, 3.4.4 and 3.4.5 play (they have not said), and work on what
 they answer. The fist is a right fist on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any
