@@ -62,6 +62,13 @@ public final class NoroMoves {
     public static final int REFLECT = 191;
     /** Time's Up: the user's snap (user), x, y, z the hand. */
     public static final int SNAP = 192;
+    /**
+     * 3.4.2 (the owner: "Noro Noro No Mi Z move should be a held Large cone infront of the player not multiple projectiles anything caught
+     * in that beam is slowed in time. While holding the key the beam cannot be reaimed"): Noroma Spread held: user, a its way (fixed at the
+     * press), size its reach, bx its half angle (degrees), ticks the longest hold; CONE_OFF (user) when let go.
+     */
+    public static final int CONE_ON = 193;
+    public static final int CONE_OFF = 194;
 
     // ---- numbers
     /** A press of RMB shorter than this (ticks) is a burst; held longer, the beam (at most {@link #BEAM_MOST} ticks). */
@@ -73,9 +80,11 @@ public final class NoroMoves {
     static final double SHOT_RANGE = 36.0;
     static final double SHOT_REACH = 0.6;
     static final double BEAM_REACH = 0.7;
-    /** Noroma Spread: how many bursts, across how many degrees each side. */
-    static final int SPREAD_COUNT = 7;
-    static final double SPREAD_DEGREES = 35.0;
+    /** Noroma Spread (3.4.2, held): the cone's reach, its half angle, the longest hold, how often it slows what is in it. */
+    public static final double CONE_RANGE = 20.0;
+    public static final double CONE_DEGREES = 30.0;
+    public static final int CONE_MOST = 80;
+    static final int CONE_EVERY = 4;
     /** The mirror: how far in front, how long (ticks). */
     static final double MIRROR_AHEAD = 2.2;
     public static final int MIRROR_LIFE = 100;
@@ -87,6 +96,8 @@ public final class NoroMoves {
         long busyUntil;
         long useSince = -1;
         long beamSince = -1;
+        long coneSince = -1;
+        Vec3 coneWay;
         Mirror mirror;
     }
 
@@ -165,7 +176,7 @@ public final class NoroMoves {
     }
 
     static boolean busy(State s, long now) {
-        return s.useSince >= 0 || s.beamSince >= 0 || now < s.busyUntil;
+        return s.useSince >= 0 || s.beamSince >= 0 || s.coneSince >= 0 || now < s.busyUntil;
     }
 
     /** Between the hands, a little in front of the chest: where the photons come out of. */
@@ -405,25 +416,73 @@ public final class NoroMoves {
 
     // ------------------------------------------------------------------------------------------------------ Z: Noroma Spread
 
-    /** A fan of bursts across the front, each its own way. */
+    /**
+     * Noroma Spread held (3.4.2): a large cone of photons poured out of the hands along the way looked at when Z was pressed (it never
+     * turns while held), {@link #CONE_RANGE} long, {@link #CONE_DEGREES} each side; every {@link #CONE_EVERY} ticks everything in it (living
+     * foes and other people's shots, seen from the hands) is slowed; let go or at {@link #CONE_MOST}, it ends.
+     */
     static void spread(ServerPlayer player, State s) {
         if (!ready(player, NoroKit.SPREAD)) {
             return;
         }
-        cool(player, NoroKit.SPREAD, 140);
-        s.busyUntil = now(player) + 12;
-        animate(player, "hie_pheasant");
+        s.coneSince = now(player);
+        s.coneWay = player.m_20154_();
+        animate(player, "pika_laser_charge");
+        fx(player, CONE_ON, 0, hands(player), s.coneWay, CONE_DEGREES, CONE_RANGE, CONE_MOST);
         sound(player, hands(player), NoroSounds.PHOTON, 1.1F, 0.85F);
-        later(player, 5, () -> {
-            Vec3 look = player.m_20154_();
-            double yaw = Math.atan2(look.f_82481_, look.f_82479_);
-            double flat = Math.sqrt(look.f_82479_ * look.f_82479_ + look.f_82481_ * look.f_82481_);
-            for (int k = 0; k < SPREAD_COUNT; k++) {
-                double off = Math.toRadians(-SPREAD_DEGREES + 2 * SPREAD_DEGREES * k / (SPREAD_COUNT - 1));
-                Vec3 way = new Vec3(Math.cos(yaw + off) * flat, look.f_82480_, Math.sin(yaw + off) * flat);
-                shoot(player, hands(player), way);
+    }
+
+    /** Z let go (or held its longest): the cone ends; the rest grows with how long it poured. */
+    static void spreadEnd(ServerPlayer player, State s) {
+        long held = now(player) - s.coneSince;
+        s.coneSince = -1;
+        cool(player, NoroKit.SPREAD, 60 + (int) Math.min(100, held));
+        s.busyUntil = now(player) + 6;
+        animate(player, "pika_laser_end");
+        fx(player, CONE_OFF, 0, hands(player), Vec3.f_82478_, 0, 0, 0);
+    }
+
+    /** Where the cone pours from: between the hands, along its own fixed way. */
+    static Vec3 coneFrom(ServerPlayer player, Vec3 way) {
+        return player.m_146892_().m_82549_(way.m_82490_(0.7)).m_82520_(0.0, -0.35, 0.0);
+    }
+
+    /** Whether {@code at} is inside the cone from {@code from} along {@code way} (unit). */
+    public static boolean inCone(Vec3 from, Vec3 way, Vec3 at, double range, double degrees) {
+        Vec3 d = at.m_82546_(from);
+        double l = d.m_82553_();
+        if (l > range) {
+            return false;
+        }
+        return l < 0.8 || d.m_82526_(way) / l >= Math.cos(Math.toRadians(degrees));
+    }
+
+    static void coneTick(ServerPlayer player, State s) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        Vec3 way = s.coneWay;
+        Vec3 from = coneFrom(player, way);
+        for (LivingEntity body : PikaMoves.foes(player, from.m_82549_(way.m_82490_(CONE_RANGE * 0.5)), CONE_RANGE * 0.6 + 2.0)) {
+            Vec3 m = StyleCombat.middle(body);
+            if (NoroSlow.slowed(body) || !inCone(from, way, m, CONE_RANGE + body.m_20205_() * 0.5, CONE_DEGREES) || !seen(level, player, from, m)) {
+                continue;
             }
-        });
+            if (NoroSlow.slow(player, body)) {
+                ConquerorAura.exploded(player, level, m, 1.5);
+            }
+        }
+        Vec3 far = from.m_82549_(way.m_82490_(CONE_RANGE));
+        for (Projectile shot : level.m_6443_(Projectile.class, UoMoves.box(from, far).m_82400_(CONE_RANGE * Math.tan(Math.toRadians(CONE_DEGREES))
+            * 0.6 + 1.0), e -> e.m_6084_() && e.m_19749_() != player)) {
+            if (!NoroSlow.slowed(shot) && inCone(from, way, shot.m_20182_(), CONE_RANGE, CONE_DEGREES)) {
+                NoroSlow.slow(player, shot);
+            }
+        }
+    }
+
+    /** Whether nothing solid stands between the hands and {@code at}. */
+    static boolean seen(ServerLevel level, ServerPlayer player, Vec3 from, Vec3 at) {
+        BlockHitResult block = level.m_45547_(new ClipContext(from, at, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));
+        return block.m_6662_() != HitResult.Type.BLOCK;
     }
 
     // ------------------------------------------------------------------------------------------------------ X: Noroma Mirror
@@ -589,12 +648,30 @@ public final class NoroMoves {
                 beamTick(player);
             }
         }
+        if (s.coneSince >= 0) {
+            if (now - s.coneSince >= CONE_MOST || !player.m_6084_()) {
+                spreadEnd(player, s);
+            } else if ((now - s.coneSince) % CONE_EVERY == 0) {
+                coneTick(player, s);
+            }
+        }
+    }
+
+    /** 3.4.2: a held key let go (Noroma Spread). */
+    static void pressUp(ServerPlayer player, int slot) {
+        State s = STATES.get(player.m_20148_());
+        if (s != null && slot == NoroKit.SPREAD.slot() && s.coneSince >= 0) {
+            spreadEnd(player, s);
+        }
     }
 
     static void forget(ServerPlayer player) {
         State s = STATES.remove(player.m_20148_());
         if (s != null && s.beamSince >= 0) {
             fx(player, BEAM_OFF, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0);
+        }
+        if (s != null && s.coneSince >= 0) {
+            fx(player, CONE_OFF, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0);
         }
         if (s != null && s.mirror != null) {
             MIRRORS.remove(s.mirror);

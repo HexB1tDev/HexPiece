@@ -39,8 +39,10 @@ public final class ItoKit extends FruitKit {
     public static final FruitMove AWAKEN = new FruitMove("Awakening", "[M]", 0, "ito_awaken",
         "Break White: the ground round you turns to waves of white string rolling outward, throwing everyone they reach. With Armament"
             + " on, God Thread: sixteen Haki-coated spears of string fired at once at what you look at.");
-    public static final FruitMove SKY = new FruitMove("Sora no Michi", "passive", 0, null,
-        "Jump again in the air to step up on strings hung from the sky (three steps before you land); no fall damage from them.");
+    public static final FruitMove SKY = new FruitMove("Sky Road", "passive", 0, null,
+        "Jump again in the air: strings from your fingers catch on the sky and you run through the air on them, as far as you like for up"
+            + " to thirty seconds. Move to run (sprint to run faster), jump and sneak to climb and sink, let go to hang still; touching the"
+            + " ground ends it, and no fall hurts you when the strings let go.");
     public static final FruitMove SURGERY = new FruitMove("Self-Surgery", "passive", 0, null,
         "Below a third of your health, strings stitch your wounds: you heal for a few seconds, once a minute.");
     public static final List<FruitMove> MOVES = List.of(SLASH, BULLET, GOSHIKI, OVERHEAT, PARASITE, WEB, KNIGHT, CAGE, AWAKEN, SKY, SURGERY);

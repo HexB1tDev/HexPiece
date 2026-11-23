@@ -142,8 +142,20 @@ public final class ItoShots {
                 ItoArt.thread(sink, -ex, 1 - ey, 12 - ez, -ex, 1.25 - ey, -ez, ItoMoves.SPEARS, age, ItoMoves.THREAD_FLIGHT);
             }
             case "isky" -> {
-                HieShots.body(sink, -ex, 3 - ey, -ez);
-                ItoArt.sky(sink, -ex, 3 - ey, -ez, age, coat, 4);
+                // 3.4.3: a Sky Road runner 4 up, running along +z: a string from each hand to its anchor high ahead (the right one
+                // tightening with the age), one let go behind, the feet's streak
+                HieShots.body(sink, -ex, 4 - ey, -ez);
+                double taut = Math.max(0.0, 1.0 - (age % 8) / 4.0);
+                ItoArt.sky(sink, -0.75 - ex, 5.05 - ey, 0.1 - ez, -3.4 - ex, 20 - ey, 13 - ez, 0.75, taut, true, coat);
+                ItoArt.sky(sink, 0.75 - ex, 5.05 - ey, 0.1 - ez, 2.8 - ex, 19 - ey, 11 - ez, 0.75, 0.0, true, coat);
+                ItoArt.sky(sink, 0.4 - ex, 9.0 - ey, -2 - ez, 2.4 - ex, 18 - ey, -5 - ez, 0.3, 0.0, false, coat);
+                double[] feet = new double[24];
+                for (int k = 0; k < 8; k++) {
+                    feet[k * 3] = 0.1 * Math.sin(k * 0.8);
+                    feet[k * 3 + 1] = 4.12;
+                    feet[k * 3 + 2] = -0.9 * k;
+                }
+                ItoArt.streak(sink, feet, 8, ex, ey, ez, 1.0, coat);
             }
             case "istitch" -> {
                 HieShots.body(sink, -ex, -ey, -ez);

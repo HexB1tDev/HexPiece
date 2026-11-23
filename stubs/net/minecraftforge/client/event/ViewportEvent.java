@@ -18,6 +18,7 @@ public abstract class ViewportEvent extends net.minecraftforge.eventbus.api.Even
     public static class ComputeFov extends ViewportEvent {
         public double getFOV() { throw new UnsupportedOperationException(); }
         /** 2.3.6: the world's view (true) or the hand's (false) */ public boolean usedConfiguredFov() { throw new UnsupportedOperationException(); }
+        /** 3.4.3: Sky Road's view a little wider at speed (proven in verify/hexghoul-allowlist.txt) */ public void setFOV(double fov) { throw new UnsupportedOperationException(); }
     }
 
     /** 1.3.40: Clear Sight pushes the fog back (cancelled for the change to take). */

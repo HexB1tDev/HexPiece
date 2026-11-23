@@ -70,6 +70,11 @@ public final class NoroFx {
     private static final List<Spot> SPOTS = new ArrayList<>();
     static final Map<Integer, Shot> SHOTS = new HashMap<>();
     static final Map<Integer, Long> BEAMS = new HashMap<>();
+    /** 3.4.2: Noroma Spread held, by user: its fixed way, reach, half angle, since when, until when at the latest. */
+    record Cone(Vec3 way, double range, double degrees, long born, long until) {
+    }
+
+    static final Map<Integer, Cone> CONES = new HashMap<>();
     static final Map<Integer, Slowed> SLOWED = new HashMap<>();
     static final Map<Integer, Glass> MIRRORS = new HashMap<>();
     static final Map<Integer, Dome> DOMES = new HashMap<>();
@@ -106,6 +111,14 @@ public final class NoroFx {
                     () -> since.equals(BEAMS.get(m.user())));
             }
             case NoroMoves.BEAM_OFF -> BEAMS.remove(m.user());
+            case NoroMoves.CONE_ON -> {
+                double l = a.m_82553_();
+                Cone cone = new Cone(l < 1.0E-6 ? new Vec3(0, 0, 1) : a.m_82490_(1.0 / l), m.size(), m.bx(), clock, clock + m.ticks() + 2);
+                CONES.put(m.user(), cone);
+                com.hexhaki.piece.client.LoopSound.play(NoroSounds.BEAM, entity(m.user()), 1.0F, 0.85F, true, true, 1.0,
+                    () -> CONES.get(m.user()) == cone);
+            }
+            case NoroMoves.CONE_OFF -> CONES.remove(m.user());
             case NoroMoves.SLOW -> {
                 if (SLOWED.size() >= MOST_SLOWED && !SLOWED.containsKey(m.id())) {
                     return;
@@ -145,6 +158,7 @@ public final class NoroFx {
         SPOTS.removeIf(s -> clock - s.born > life(s) + 1);
         SHOTS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().ticks + 2);
         BEAMS.entrySet().removeIf(e -> clock - e.getValue() > NoroMoves.BEAM_MOST + 20 || entity(e.getKey()) == null);
+        CONES.entrySet().removeIf(e -> clock > e.getValue().until || entity(e.getKey()) == null);
         MIRRORS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().life + 1);
         DOMES.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().life + 1);
         SLOWED.entrySet().removeIf(e -> clock > e.getValue().until + 20);
@@ -177,7 +191,7 @@ public final class NoroFx {
             return;
         }
         net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
-        if (self == null || BEAMS.containsKey(self.m_19879_()) || !com.hexhaki.fruit.client.FruitClient.active()
+        if (self == null || BEAMS.containsKey(self.m_19879_()) || CONES.containsKey(self.m_19879_()) || !com.hexhaki.fruit.client.FruitClient.active()
             || com.hexhaki.fruit.client.FruitClient.fruit(self.m_19879_()) != Fruit.NORO || !self.m_21205_().m_41619_()) {
             return;
         }
@@ -206,7 +220,7 @@ public final class NoroFx {
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || SPOTS.isEmpty() && SHOTS.isEmpty() && BEAMS.isEmpty()
-            && SLOWED.isEmpty() && MIRRORS.isEmpty() && DOMES.isEmpty()) {
+            && SLOWED.isEmpty() && MIRRORS.isEmpty() && DOMES.isEmpty() && CONES.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -289,6 +303,19 @@ public final class NoroFx {
                 beam(level, user, cam, partial, now - e.getValue());
             }
         }
+        for (Map.Entry<Integer, Cone> e : CONES.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            if (user == null) {
+                continue;
+            }
+            Cone c = e.getValue();
+            // from between the hands, along the way fixed when it was pressed (it never turns while held)
+            Vec3 from = user.m_20299_(partial).m_82549_(c.way.m_82490_(0.7)).m_82520_(0.0, -0.35, 0.0);
+            if (!far(from, cam)) {
+                NoroArt.cone(SINK, from.f_82479_ - cam.f_82479_, from.f_82480_ - cam.f_82480_, from.f_82481_ - cam.f_82481_, c.way.f_82479_,
+                    c.way.f_82480_, c.way.f_82481_, c.range, c.degrees, now - c.born, 1.0);
+            }
+        }
         for (Spot s : SPOTS) {
             if (far(s.at, cam)) {
                 continue;
@@ -346,6 +373,7 @@ public final class NoroFx {
         SPOTS.clear();
         SHOTS.clear();
         BEAMS.clear();
+        CONES.clear();
         SLOWED.clear();
         MIRRORS.clear();
         DOMES.clear();

@@ -89,6 +89,68 @@ public final class NoroArt {
     }
 
     /**
+     * 3.4.2: Noroma Spread held, a large cone of photons out of the hands (x, y, z) along (ux, uy, uz) (unit), {@code range} long,
+     * {@code degrees} each side: photon rings one every {@link #CONE_STEP} along it, each as wide as the cone is there, sliding outward
+     * and swelling, pink and violet by turns; a faint cone of light under them (brightest at the hands, clear at its far rim); motes of
+     * light drifting out; a ball of light at the hands. {@code alpha} of it there (it fades in over 4 ticks and out when let go).
+     */
+    public static void cone(FireMesh.Sink sink, double x, double y, double z, double ux, double uy, double uz, double range, double degrees,
+                            double age, double alpha) {
+        double grow = Math.min(1.0, age / 4.0) * alpha;
+        if (grow < 0.01) {
+            return;
+        }
+        double tan = Math.tan(Math.toRadians(degrees));
+        double reach = range * Math.min(1.0, age / 6.0 + 0.15);
+        FireMesh.basis(ux, uy, uz, CB);
+        // the cone's light: sixteen long thin triangles from the hands to the far rim, bright at the hands, clear at the rim
+        int sides = 16;
+        double rim = reach * tan;
+        for (int k = 0; k < sides; k++) {
+            double a0 = 2 * Math.PI * k / sides;
+            double a1 = 2 * Math.PI * (k + 1) / sides;
+            double ex = x + ux * reach;
+            double ey = y + uy * reach;
+            double ez = z + uz * reach;
+            double p0x = ex + (CB[0] * Math.cos(a0) + CB[3] * Math.sin(a0)) * rim;
+            double p0y = ey + (CB[1] * Math.cos(a0) + CB[4] * Math.sin(a0)) * rim;
+            double p0z = ez + (CB[2] * Math.cos(a0) + CB[5] * Math.sin(a0)) * rim;
+            double p1x = ex + (CB[0] * Math.cos(a1) + CB[3] * Math.sin(a1)) * rim;
+            double p1y = ey + (CB[1] * Math.cos(a1) + CB[4] * Math.sin(a1)) * rim;
+            double p1z = ez + (CB[2] * Math.cos(a1) + CB[5] * Math.sin(a1)) * rim;
+            int c0 = FireMesh.argb(0.16 * grow, PINK);
+            int c1 = FireMesh.argb(0.0, VIOLET);
+            FireMesh.quad(sink, x, y, z, c0, x, y, z, c0, p1x, p1y, p1z, c1, p0x, p0y, p0z, c1);
+        }
+        FireMesh.shell(sink, x, y, z, 0.3 * grow + 0.05, PINK, 0.5, 0.0);
+        double slide = (age * 0.3) % 1.0;
+        int n = (int) Math.ceil(reach / CONE_STEP);
+        for (int k = 0; k < n; k++) {
+            double s = (k + slide) * CONE_STEP;
+            if (s > reach || s < 0.4) {
+                continue;
+            }
+            double fade = Math.min(1.0, (reach - s) / 2.0) * Math.min(1.0, s / 1.5);
+            double radius = s * tan * (0.92 + 0.06 * Math.sin(age * 0.5 - k));
+            FireMesh.ring(sink, x + ux * s, y + uy * s, z + uz * s, ux, uy, uz, radius, 0.16 + 0.03 * s, 0.0, k % 2 == 0 ? PINK : VIOLET,
+                0.75 * grow * fade);
+        }
+        // motes drifting out through it
+        for (int k = 0; k < 10; k++) {
+            double f = ((age * 0.04 + k * 0.137) % 1.0);
+            double s = f * reach;
+            double a = k * 2.39996;
+            double r = s * tan * (0.25 + 0.6 * ((k * 0.61) % 1.0));
+            FireMesh.shell(sink, x + ux * s + (CB[0] * Math.cos(a) + CB[3] * Math.sin(a)) * r, y + uy * s + (CB[1] * Math.cos(a) + CB[4] * Math.sin(a)) * r,
+                z + uz * s + (CB[2] * Math.cos(a) + CB[5] * Math.sin(a)) * r, 0.16 + 0.05 * s / range, k % 2 == 0 ? PINK : WHITE, 0.8 * grow * (1.0 - f), 0.2);
+        }
+    }
+
+    /** How far apart the cone's rings are. */
+    public static final double CONE_STEP = 1.6;
+    static final double[] CB = new double[6];
+
+    /**
      * A slowed body (its middle at (x, y, z), {@code wide} across, {@code tall} high): three photon rings round it turning slowly, tilted
      * every way, and motes drifting round it; {@code left} 0 to 1 of its time still to come (it fades out over the last tenth).
      */

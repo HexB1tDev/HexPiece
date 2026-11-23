@@ -16,8 +16,9 @@ public final class NoroKit extends FruitKit {
     public static final FruitMove PHOTON = new FruitMove("Noroma Photon", "[RMB]", 0, "noro_photon",
         "A burst of pink Noroma photons out of your hands; hold for a steady beam. Whatever they touch moves in extreme slow motion for"
             + " 30 seconds: people, beasts, even arrows and fireballs, which hang in the air crawling along.");
-    public static final FruitMove SPREAD = new FruitMove("Noroma Spread", "[Z]", 0, "noro_spread",
-        "A wide fan of photon bursts in front of you, slowing everything it catches.");
+    public static final FruitMove SPREAD = new FruitMove("Noroma Spread", "[Z] hold", 0, "noro_spread",
+        "Hold to pour a large cone of photons out in front of you, aimed where you looked when you pressed (it does not turn while held):"
+            + " everything caught in it is slowed.");
     public static final FruitMove MIRROR = new FruitMove("Noroma Mirror", "[X]", 0, "noro_mirror",
         "A mirror in the air in front of you for a few seconds. Shots that hit it are turned back the way they came, slowed; your own"
             + " photons bounce off it the same way.");
@@ -44,6 +45,7 @@ public final class NoroKit extends FruitKit {
     public void action(ServerPlayer player, int kind, int ability, int flags) {
         switch (kind) {
             case 0 -> NoroMoves.press(player, ability);
+            case 1 -> NoroMoves.pressUp(player, ability); // 3.4.2: Noroma Spread is held
             case 3 -> NoroMoves.use(player);
             case 4 -> NoroMoves.useUp(player);
             default -> {

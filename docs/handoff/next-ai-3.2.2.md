@@ -32,7 +32,8 @@ pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, it
 the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green (Build #179, Release #129); 3.3.9 (8zze: Dawn Pistol)
 is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the body) is green (Build #181, Release #131); 3.4.1 (8zze:
 the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132); 3.4.2 (8zzf: the
-owner's Ito notes, Supa's blades, the Horo projection) is pushed: check its runs.**
+owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Build #184, Release #133); 3.4.3 (8zzf: Noro's held cone, Ito's
+Sky Road) is pushed: check its runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2622,11 +2623,34 @@ first person; renders docs/handoff/ito-*-3.4.2.jpg, supa-*-3.4.2.jpg, horo-astra
   nothing, HoroFx draws it as before): every blow on it goes to its owner (HoroMoves.bodyHurt with `forwarding`), mobs that lose the spirit
   target it.
 
+**3.4.3 as built** (nothing tested in game: build EXIT 0 with 13 suites; renders docs/handoff/noro-cone-3.4.3.jpg,
+ito-sky-road-3.4.3.jpg, ito-sky-clips-3.4.3.jpg):
+- **Noroma Spread held** (NoroKit "[Z] hold", case 1 -> NoroMoves.pressUp; NoroMoves.spread/spreadEnd/coneTick, CONE_ON 193 / CONE_OFF 194):
+  the way fixed at the press (State.coneWay: never re-aimed), CONE_RANGE 20, CONE_DEGREES 30, CONE_MOST 80; every CONE_EVERY 4 ticks
+  every living foe (seen from the hands: a block clip) and other people's shots inside it slowed (NoroSlow), the lightning on each newly
+  slowed body. Clips pika_laser_charge / pika_laser_end (reused, as the beam). NoroArt.cone (rings one every CONE_STEP 1.6 as wide as
+  the cone, sliding out, a faint cone of light, motes, a ball at the hands); client/noro/NoroFx CONES (the beam's hum through LoopSound
+  while held). Preview NoroShots |ncone:age[:fp].
+- **Sky Road** (the owner's spec verbatim above): server/ItoMoves.sky/skyTick/skyEnd (ABILITY_SKY 42 from client/FruitKeyN's air jump):
+  mayfly on while it runs (the Horo spirit's way: no server kicks a floater; flying itself forced off), fall forgotten, ends on the ground
+  (SKY_GROUNDED 3 ticks), at SKY_MOST 600, riding, dying or in water; SKY_REST 30 before the next; skyFall keeps the drop after it
+  harmless. SKY (251) bx 1 on / 0 off. client/ito/SkyRoad: the runner's own client moves it (MovementInputUpdateEvent takes the keys;
+  ClientTickEvent END sets the velocity: RUN 0.62 / SPRINT 1.15 a tick, the heading turned at most TURN_RUN 11 / TURN_SPRINT 7 degrees a
+  tick (arcs), speed eased, a slingshot (x SLING 1.5) from a standstill and x1.35 on breaking into a sprint, climbing with the look and
+  with jump/sneak (CLIMB 0.42), gliding to a stop and bobbing when let go). Every client, for every runner: momentum from its movement
+  -> lean (5 to 31 degrees, +10 in a slingshot) and bank (3x the turn, at most 35) round the hips (RenderPlayerEvent.Pre LOWEST / Post
+  HIGHEST, only when the Pre ran); clip by speed (ito_sky_hover below 0.07, ito_sky_run, ito_sky_sprint above 0.82, with hysteresis)
+  through the original's HakiAnimations.playRemote; two anchors (right hand to the right of the way, left to the left, 14 to 18 up,
+  6 + 16 x speed ahead) re-thrown when passed under or 36 away (hovering: kept overhead), a flash on each catch and stride; the feet's
+  streak; one's own first person: roll 0.22 x bank, FOV x (1 + 0.09 x speed). ItoArt.sky (a thin string, 0.022 wide, fading to the sky)
+  and ItoArt.streak. tools/ito_anims.py sky(): the clips key the legs (it is running) but never the head; firstPersonArms leaves ito_sky_
+  out (the game's own hand in first person). The 3.3.7 air steps (Sora no Michi) are gone; ItoKit's passive is "Sky Road".
+- Stub: ViewportEvent.ComputeFov.setFOV (proven by HexGhoul's list); srg-shapes regenerated (keySprint f_92091_, isSprinting m_20142_).
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.2 (8zzf: the Ito fixes, Supa's blades, the Horo projection) is pushed: check its runs. Then, in the order told to the owner:
-   3.4.3 Noro's Z as a held cone aimed once at the press (8zzf) and Ito's Sky Road on the double jump (8zzf, verbatim spec: a dedicated
-   aerial run on strings: legs are needed there, it is running); 3.4.4 Goof Ball (the owner: "Without Haki the leg whip move, becomes Goof Ball": a held cartoon
+1. 3.4.2 is green (Build #184, Release #133); 3.4.3 (Noro's held cone, Ito's Sky Road) is pushed: check its runs. Then, in the order
+   told to the owner: 3.4.4 Goof Ball (the owner: "Without Haki the leg whip move, becomes Goof Ball": a held cartoon
    spin into a ball of smoke and skin punching every way, dizzy after with a symbol over the head) and the new Dawn Whip (with Haki;
    8zzf, the six phases verbatim). Dawn Pistol (3.3.9 to
    3.4.1) and Horo: still no word from the owner on how they play: ask once the new work is out.

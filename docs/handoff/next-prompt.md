@@ -13,25 +13,18 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.4.1 everything is pushed and green. 3.4.2 (section 8zzf: the owner's Ito notes, verbatim there: Goshikito
-redone as a five-string claw raked over a strip centred on the aimed body; Overheat held, a red-hot knot in front of the pointed fist,
-fired as a beam that never comes back and explodes, its strings scattering; String Slash's own hand-whip clips; the Black Knight a real
-killable clone in the user's skin that follows, roams and bursts into strings; the Birdcage held (a stream to the sky sizing it, 8 to
-40), recast to close it slowly, pulling everyone in, a heavy cut and bleeding when it shuts; the Awakening's key shown as M, not H.
-Supa's blades drawn in third person again (the original's FruitLayer flag was read backwards) and every blade a long needle point.
-Horo's Astral Projection: the spirit's arms the game's own, the spirit immortal, using the fruit's moves but no style or Haki, the body
-left behind a real body whose blows land on the user) was pushed: first check its "Build HexPiece" and "Release HexPiece" runs and fix
-anything red.
+Where things stand: up to 3.4.2 everything is pushed and green (3.4.2: Build #184, Release #133: the owner's Ito notes, Supa's blades
+in third person and sharper, Horo's projection; section 8zzf). 3.4.3 (8zzf: the Noro fruit's Z as a held cone aimed once at the press,
+everything in it slowed; the Ito fruit's Sky Road on the air jump, a dedicated run through the sky on thin strings, built to the owner's
+long spec quoted verbatim in 8zzf) was pushed: first check its "Build HexPiece" and "Release HexPiece" runs and fix anything red.
 
-Next, in the order told to the owner: 3.4.3 the Noro fruit's Z as a held large cone aimed once at the press (everything in it slowed),
-and the Ito fruit's Sky Road on the double jump (read the owner's full spec in 8zzf: strings to anchors in the sky, running strides
-through the air with legs, banking turns, a slingshot on acceleration, a hovering stance on release, thin strings re-anchoring ahead,
-faint streaks, smooth up and down, multiplayer-safe; legs are needed: it is running); 3.4.4 the Nika fruit's Goof Ball (the Whip without
-Haki: a held cartoon spin into a ball of smoke and skin punching every way, dizzy after with a symbol over the head) and the new Dawn
-Whip (with Haki; the owner's six phases verbatim in 8zzf: wind-up twist, the stretched leg, the release, the whip impact, the
-uncontrolled overspin drilling into the ground, the rubber-toy recovery). The owner has not said how Dawn Pistol (3.3.9 to 3.4.1) or
-Horo play: ask once the new work is out. The fist is a right fist on the right arm (the owner: "thats the left hand on the right arm").
-Read 8zz and 8zzb before any art: thin pale lines and flat polygons are not acceptable; hot strings use ItoArt's HOT tint (3.4.2).
+Next, as told to the owner: 3.4.4 the Nika fruit's Goof Ball (the Whip without Haki: a held cartoon spin into a ball of smoke and the
+player's skin punching every way, dizzy after with a symbol over the head) and the new Dawn Whip (with Haki; the owner's six phases
+verbatim in 8zzf: the wind-up twist storing tension, the stretched leg thrust out, the explosive unwinding, the lateral whip impact sending
+the target flying, the uncontrolled overspin that drills the user into the ground, the rubber-toy recovery). The owner has not said how
+Dawn Pistol (3.3.9 to 3.4.1), Horo or the 3.4.2/3.4.3 work play: ask once 3.4.4 is out. The fist is a right fist on the right arm (the
+owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any art: thin pale lines and flat polygons are not acceptable;
+hot strings use ItoArt's HOT tint (3.4.2).
 
 The cloud environment is the personal "HexPiece" (freesound.org, cdn.freesound.org, opengameart.org); if freesound.org is refused, the
 session is on Default: get_environment, then switch_environment to it (network_only). Freesound also rate-limits its pages for a minute or two (403):

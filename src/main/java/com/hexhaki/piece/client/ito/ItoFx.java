@@ -86,8 +86,6 @@ public final class ItoFx {
     record Thread(Vec3 target, Vec3 origin, long born, int flight) {
     }
 
-    record Sky(Vec3 at, long born, boolean coat, int seed) {
-    }
 
     /** A Black Knight drawn this frame (KnightRenderer tells): its feet, its height, coated; the strings it is woven of go over it. */
     record Seen(int id, Vec3 feet, double height, boolean coat) {
@@ -108,7 +106,6 @@ public final class ItoFx {
     static final Map<Integer, Cage> CAGES = new HashMap<>();
     private static final List<Wave> WAVES = new ArrayList<>();
     private static final List<Thread> THREADS = new ArrayList<>();
-    private static final List<Sky> SKIES = new ArrayList<>();
     static final Map<Integer, long[]> STITCHES = new HashMap<>();
     static final double FAR = 160.0;
     static final int CAGE_FADE = 12;
@@ -162,7 +159,7 @@ public final class ItoFx {
             case ItoMoves.CAGE -> cage(m, at, coat);
             case ItoMoves.WAVE -> add(WAVES, new Wave(at, m.size(), clock, m.ticks(), coat));
             case ItoMoves.THREAD -> add(THREADS, new Thread(at, a, clock, m.ticks()));
-            case ItoMoves.SKY -> add(SKIES, new Sky(at, clock, coat, m.user() * 7 + (int) m.bx()));
+            case ItoMoves.SKY -> SkyRoad.accept(m); // 3.4.3: Sky Road on or off
             case ItoMoves.STITCH -> put(STITCHES, m.user(), new long[] {clock, m.ticks()});
             default -> {
             }
@@ -242,14 +239,13 @@ public final class ItoFx {
             || e.getValue().ended >= 0 && clock - e.getValue().ended > CAGE_FADE);
         WAVES.removeIf(w -> clock - w.born > w.life + 1);
         THREADS.removeIf(t -> clock - t.born > t.flight + 5);
-        SKIES.removeIf(s -> clock - s.born > ItoArt.SKY_LIFE + 1);
         STITCHES.entrySet().removeIf(e -> clock - e.getValue()[0] > e.getValue()[1] + 1);
     }
 
     static boolean empty() {
         return LASHES.isEmpty() && BULLETS.isEmpty() && HITS.isEmpty() && GOSHIKIS.isEmpty() && KNOTS.isEmpty() && BEAMS.isEmpty()
             && SCATTERS.isEmpty() && STREAMS.isEmpty() && SEEN.isEmpty() && HELD.isEmpty() && WEBS.isEmpty() && CAGES.isEmpty()
-            && WAVES.isEmpty() && THREADS.isEmpty() && SKIES.isEmpty() && STITCHES.isEmpty();
+            && WAVES.isEmpty() && THREADS.isEmpty() && SkyRoad.empty() && STITCHES.isEmpty();
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -513,11 +509,7 @@ public final class ItoFx {
                     t.origin.f_82481_ - cz, ItoMoves.SPEARS, now - t.born, t.flight);
             }
         }
-        for (Sky s : SKIES) {
-            if (!far(s.at, cam)) {
-                ItoArt.sky(SINK, s.at.f_82479_ - cx, s.at.f_82480_ - cy, s.at.f_82481_ - cz, now - s.born, s.coat, s.seed);
-            }
-        }
+        SkyRoad.draw(SINK, minecraft, level, cam, partial);
         for (Map.Entry<Integer, long[]> e : STITCHES.entrySet()) {
             Entity user = level.m_6815_(e.getKey());
             if (user == null || ownView(minecraft, user)) {
@@ -562,7 +554,6 @@ public final class ItoFx {
         CAGES.clear();
         WAVES.clear();
         THREADS.clear();
-        SKIES.clear();
         STITCHES.clear();
     }
 

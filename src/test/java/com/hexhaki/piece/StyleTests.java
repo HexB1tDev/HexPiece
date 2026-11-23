@@ -372,7 +372,7 @@ public final class StyleTests {
         java.util.List<String> clips = new java.util.ArrayList<>();
         try (var files = Files.list(ANIMATIONS)) {
             files.map(f -> f.getFileName().toString().replace(".json", "")).filter(n -> n.startsWith("gura_") || n.startsWith("magu_") || n.startsWith("hie_")
-                || n.startsWith("ito_"))
+                || n.startsWith("ito_") && !n.startsWith("ito_sky_")) // 3.4.3: Sky Road's run leaves the first-person hand alone
                 .sorted().forEach(clips::add);
         }
         Check.that(clips.size() >= 20, "hands: the Gura and Magma clips are found (" + clips.size() + ")");

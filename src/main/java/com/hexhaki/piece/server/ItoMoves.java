@@ -25,6 +25,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Abilities;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
@@ -90,7 +91,11 @@ public final class ItoMoves {
     public static final int WAVE = 249;
     /** God Thread: id its seed, user, x, y, z where the spears meet, a where they are fired from, ticks their flight. */
     public static final int THREAD = 250;
-    /** Sora no Michi: user, x, y, z the feet. */
+    /**
+     * Sky Road (3.4.3, the owner: "Ito Ito No mi double jump tap now has a new move: Sky Road movement ability"; was 3.3.7's three air
+     * steps): user; bx 1 on (ticks how long at the most, x, y, z the feet), 0 off. The runner's own client moves it (client/ito/SkyRoad),
+     * every client draws its strings and poses it.
+     */
     public static final int SKY = 251;
     /** Self-Surgery: user, ticks how long the stitching shows. */
     public static final int STITCH = 252;
@@ -183,9 +188,10 @@ public final class ItoMoves {
     public static final int SPEARS = 16;
     public static final int THREAD_FLIGHT = 8;
     static final double THREAD_RANGE = 40.0;
-    /** Sora no Michi: steps before landing, the lift a step gives. */
-    public static final int SKY_STEPS = 3;
-    static final double SKY_LIFT = 0.5;
+    /** Sky Road: the longest run (ticks), the rest after it, and how long on the ground ends it. */
+    public static final int SKY_MOST = 600;
+    static final int SKY_REST = 30;
+    static final int SKY_GROUNDED = 3;
     /** Self-Surgery: below this share of the health, once in so many ticks, healing so long. */
     static final double SURGERY_BELOW = 1.0 / 3.0;
     static final int SURGERY_EVERY = 1200;
@@ -216,7 +222,11 @@ public final class ItoMoves {
         double cageR;
         long closeFrom = -1;
         final Map<Integer, Long> cut = new HashMap<>();
-        int steps;
+        long skyUntil = -1;
+        long skyNext;
+        int skyGrounded;
+        boolean skyMayfly;
+        boolean skyFall;
         long surgeryNext;
     }
 
@@ -1197,18 +1207,59 @@ public final class ItoMoves {
 
     // ------------------------------------------------------------------------------------------------------ the passives
 
-    /** Sora no Michi: a step up on strings in the air ({@link #SKY_STEPS} before landing); the fall so far forgotten. */
+    /**
+     * Sky Road (3.4.3): the jump pressed again in the air: the user is held up by strings to anchors in the sky and runs through it,
+     * moved by their own client (client/ito/SkyRoad: momentum, arcs, the slingshot, the hover) as the Light fruit's glide is; here only
+     * what the server must keep: the player may fly while it lasts (so no server kicks a floating runner; flying itself is kept off), no
+     * fall is counted, and it ends on the ground ({@link #SKY_GROUNDED} ticks), at {@link #SKY_MOST}, or on riding or dying. A second air
+     * jump while it runs is the runner going up (the client), never a toggle.
+     */
     static void sky(ServerPlayer player, State s) {
-        if (player.m_20096_() || player.m_150110_().f_35935_ || player.m_20069_() || player.m_20159_() || s.steps >= SKY_STEPS) {
+        long now = now(player);
+        if (s.skyUntil >= 0 || now < s.skyNext || player.m_20096_() || player.m_150110_().f_35935_ || player.m_20069_() || player.m_20159_()) {
             return;
         }
-        s.steps++;
-        Vec3 v = player.m_20184_();
-        player.m_20256_(new Vec3(v.f_82479_ * 1.05, SKY_LIFT, v.f_82481_ * 1.05));
-        player.f_19864_ = true;
+        s.skyUntil = now + SKY_MOST;
+        s.skyGrounded = 0;
+        Abilities abilities = player.m_150110_();
+        s.skyMayfly = abilities.f_35936_;
+        abilities.f_35936_ = true;
+        abilities.f_35935_ = false;
+        player.m_6885_();
         player.f_19789_ = 0.0F;
-        fx(player, SKY, 0, player.m_20182_(), Vec3.f_82478_, s.steps, 0, 0, 0);
-        sound(player, player.m_20182_(), ItoSounds.STEP, 0.7F, 1.0F + s.steps * 0.08F);
+        fx(player, SKY, 0, player.m_20182_(), Vec3.f_82478_, 1, 0, 0, SKY_MOST);
+        sound(player, player.m_20182_(), ItoSounds.STEP, 0.9F, 0.9F);
+    }
+
+    static void skyTick(ServerPlayer player, State s, long now) {
+        Abilities abilities = player.m_150110_();
+        if (abilities.f_35935_ && !player.m_7500_() && !player.m_5833_()) {
+            abilities.f_35935_ = false; // never the game's own flight (a double tap of the jump key): the strings carry them
+            player.m_6885_();
+        }
+        player.f_19789_ = 0.0F;
+        s.skyGrounded = player.m_20096_() ? s.skyGrounded + 1 : 0;
+        if (now >= s.skyUntil || s.skyGrounded >= SKY_GROUNDED || player.m_20159_() || !player.m_6084_() || player.m_20069_()) {
+            skyEnd(player, s);
+        }
+    }
+
+    /** Sky Road over: the player's own flight given back as it was; the fall from here never hurts (until they land). */
+    static void skyEnd(ServerPlayer player, State s) {
+        if (s.skyUntil < 0) {
+            return;
+        }
+        s.skyUntil = -1;
+        s.skyNext = now(player) + SKY_REST;
+        s.skyFall = !player.m_20096_();
+        Abilities abilities = player.m_150110_();
+        boolean creative = player.m_7500_() || player.m_5833_();
+        abilities.f_35936_ = creative || s.skyMayfly;
+        if (!creative) {
+            abilities.f_35935_ = false;
+        }
+        player.m_6885_();
+        fx(player, SKY, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
     }
 
     /** Self-Surgery: below a third of the health, once a minute, strings stitch the wounds (healing a few seconds). */
@@ -1253,8 +1304,11 @@ public final class ItoMoves {
         if (s.cageUntil >= 0) {
             cageTick(player, s, now);
         }
-        if (s.steps > 0 && player.m_20096_()) {
-            s.steps = 0;
+        if (s.skyUntil >= 0) {
+            skyTick(player, s, now);
+        } else if (s.skyFall) {
+            player.f_19789_ = 0.0F; // the strings let go in the air: no fall damage for that drop
+            s.skyFall = !player.m_20096_() && !player.m_20069_();
         }
         surgery(player, s, now);
     }
@@ -1266,6 +1320,7 @@ public final class ItoMoves {
         }
         release(player, s);
         webEnd(player, s);
+        skyEnd(player, s);
         if (s.heatSince >= 0) {
             s.heatSince = -1;
             fx(player, OVERHEAT, s.heatSeed, chest(player), Vec3.f_82478_, HEAT_DROP, 0, 0, 0);

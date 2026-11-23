@@ -30,6 +30,20 @@ public final class NoroShots {
                 NoroArt.beam(sink, -ex, 1.2 - ey, 0.7 - ez, -ex, 1.2 - ey, 14.0 - ez, age);
                 NoroArt.aura(sink, -ex, 0.95 - ey, 14.4 - ez, 0.6, 1.9, age, 1.0);
             }
+            case "ncone" -> {
+                // 3.4.2: Noroma Spread held: the cone from between the hands along +z, two bodies in it slowed
+                if (!(move.length > 2 && move[2].equals("fp"))) {
+                    HieShots.body(sink, -ex, -ey, -ez);
+                }
+                HieShots.body(sink, 2.5 - ex, -ey, 10 - ez);
+                HieShots.body(sink, -3 - ex, -ey, 14 - ez);
+                NoroArt.cone(sink, -ex, 1.27 - ey, 0.7 - ez, 0, 0, 1, com.hexhaki.piece.server.NoroMoves.CONE_RANGE,
+                    com.hexhaki.piece.server.NoroMoves.CONE_DEGREES, age, 1.0);
+                if (age > 6) {
+                    NoroArt.aura(sink, 2.5 - ex, 0.95 - ey, 10 - ez, 0.6, 1.9, age - 6, 1.0);
+                    NoroArt.aura(sink, -3 - ex, 0.95 - ey, 14 - ez, 0.6, 1.9, age - 6, 1.0);
+                }
+            }
             case "naura" -> {
                 HieShots.body(sink, -ex, -ey, -ez);
                 NoroArt.aura(sink, -ex, 0.95 - ey, -ez, 0.6, 1.9, age, 1.0);

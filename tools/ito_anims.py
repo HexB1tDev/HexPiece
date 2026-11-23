@@ -17,8 +17,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gura_anims import ARMS, REST, RIGHT, tremble, write_parts  # noqa: E402
-from style_anims import WRITTEN, arm, java_poses, mirror, p  # noqa: E402
+import json  # noqa: E402
+
+from gura_anims import ANIM_DIR, ARMS, REST, RIGHT, tremble, write_parts  # noqa: E402
+from style_anims import WRITTEN, arm, java_poses, leg, mirror, p  # noqa: E402
 
 
 # ------------------------------------------------------------------------------------------------------ LMB: String Slash
@@ -129,12 +131,77 @@ def knight():
     ], "Ito Ito: Black Knight: the hand held out, then drawn back as if pulling strings.", RIGHT)
 
 
+# ------------------------------------------------------------------------------------------------------ Sky Road (the air jump)
+
+# 3.4.3 (the owner: "Sky Road movement ability ... The running animation should be unique. The player's upper body leans slightly
+# forward, their arms spread loosely outward with their fingers extended, and their legs perform exaggerated, elegant running strides
+# through empty air ... At higher speeds ... their legs cycle faster, and individual steps become elongated, almost like they're skating
+# or leaping between invisible footholds ... a relaxed suspended stance with one leg slightly bent and their arms loosely positioned at
+# their sides"): a run in the air, so the legs are keyed here (it is running); the lean and the bank into turns are the body's momentum,
+# turned by client/ito/SkyRoad round the hips (never keyed: they follow the speed and the turn). Loops; never the head.
+SKY_PARTS = {"body": ("yaw", "roll", "bend"), "rightArm": ("pitch", "yaw", "roll", "bend"), "leftArm": ("pitch", "yaw", "roll", "bend"),
+             "rightLeg": ("pitch", "yaw", "roll", "bend"), "leftLeg": ("pitch", "yaw", "roll", "bend")}
+
+
+def write_loop(name, duration, beats, description):
+    moves = []
+    for tick, easing, q in beats:
+        for part, channels in SKY_PARTS.items():
+            values = q.get(part, {})
+            for channel in channels:
+                moves.append({"tick": tick, "easing": easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
+    moves.sort(key=lambda m: m["tick"])
+    data = {"version": 3, "name": name, "author": "HexPiece 3.4.3", "description": description,
+            "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration + 3, "isLoop": True, "returnTick": 0,
+                      "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
+    WRITTEN[name] = data
+    with open(os.path.join(ANIM_DIR, name + ".json"), "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=1)
+        handle.write("\n")
+
+
+def sky():
+    # a long bound: the front leg reaching far forward from a high knee, the back leg trailing with its shin kicked up behind; the arms
+    # spread loosely out to the sides, swaying against the stride; the chest a little forward
+    def stride(front_right, reach, trail, arms_out, sway):
+        f = leg(-reach, 0, 24)
+        b = leg(trail, 0, 82)
+        ra = arm(-8 * sway, 0, arms_out, -12)
+        la = mirror(arm(8 * sway, 0, arms_out, -12))
+        return p(rightLeg=f if front_right else b, leftLeg=mirror(b) if front_right else mirror(f), rightArm=ra, leftArm=la,
+                 body={"yaw": 7 * sway, "bend": 8})
+    a = stride(True, 78, 42, 52, 1)
+    b = stride(False, 78, 42, 52, -1)
+    write_loop("ito_sky_run", 16, [(0, "inoutsine", a), (8, "inoutsine", b), (16, "inoutsine", a)],
+               "Ito Ito: Sky Road: running through the air in long bounds, the arms spread loosely, carried by strings.")
+    # faster and longer: the steps drawn out like a skater's, the arms swept back and out
+    def skate(front_right, sway):
+        f = leg(-96, 0, 12)
+        b = leg(58, 0, 64)
+        ra = arm(26 - 6 * sway, 0, 40, -6)
+        la = mirror(arm(26 + 6 * sway, 0, 40, -6))
+        return p(rightLeg=f if front_right else b, leftLeg=mirror(b) if front_right else mirror(f), rightArm=ra, leftArm=la,
+                 body={"yaw": 5 * sway, "bend": 12})
+    a = skate(True, 1)
+    b = skate(False, -1)
+    write_loop("ito_sky_sprint", 10, [(0, "inoutsine", a), (5, "inoutsine", b), (10, "inoutsine", a)],
+               "Ito Ito: Sky Road at speed: an aggressive sprint through the sky, the steps long as a skater's.")
+    # hanging at rest on the strings: upright, one leg slightly bent, the arms loose at the sides, swaying a little
+    h0 = p(rightLeg=leg(-12, 0, 30), leftLeg=mirror(leg(4, 0, 6)), rightArm=arm(4, 0, 14, -8), leftArm=mirror(arm(4, 0, 14, -8)),
+           body={"roll": 1.5, "bend": 0})
+    h1 = p(rightLeg=leg(-16, 0, 36), leftLeg=mirror(leg(2, 0, 4)), rightArm=arm(2, 0, 18, -10), leftArm=mirror(arm(6, 0, 12, -6)),
+           body={"roll": -1.5, "bend": 2})
+    write_loop("ito_sky_hover", 40, [(0, "inoutsine", h0), (20, "inoutsine", h1), (40, "inoutsine", h0)],
+               "Ito Ito: Sky Road at rest: hanging easy on the strings, one leg slightly bent, the arms loose at the sides.")
+
+
 def main():
     slash()
     goshiki()
     overheat()
     birdcage()
     knight()
+    sky()
     names = sorted(n for n in WRITTEN if n.startswith("ito_"))
     java_poses(names, "ItoPoses", "tools/ito_anims.py", "the String fruit's animations' keyframes, for the strings on the fist")
     print(f"wrote {len(names)} Ito animations and their poses")

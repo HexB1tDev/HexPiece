@@ -30,10 +30,9 @@ public final class ItoArt {
     public static final int[] COAT_HEAT = {0x2A0C1C, 0x6A1A3E, 0xB0285E, 0xE04A6A};
     public static final int COAT_HEAT_GLOW = 0xC03A8A;
 
-    /** How long each shows (ticks): the lash, a hit, a sky step. */
+    /** How long each shows (ticks): the lash, a hit. */
     public static final double LASH_LIFE = 8;
     public static final double HIT_LIFE = 10;
-    public static final double SKY_LIFE = 14;
     /**
      * 3.4.2: the Birdcage's radius {@code age} ticks into closing over {@code close} ticks: from {@code radius} to {@code shut}, slowly
      * at first, fastest in the middle, slowing as it shuts (the server cuts and pulls at it, every client draws it from the same numbers).
@@ -1167,23 +1166,37 @@ public final class ItoArt {
     }
 
     /**
-     * Sora no Michi: a step on strings in the air at the feet (x, y, z): three strings hung from far up in the sky down to the hands and
-     * feet, a ring of light under the feet; gone in {@link #SKY_LIFE}.
+     * Sky Road (3.4.3, the owner: "Extremely thin, semi-transparent white strings shoot upward from the player's fingertips, extending
+     * toward invisible anchor points high above them ... They must remain visually thin and elegant, never looking like giant ropes or
+     * bulky grappling hooks ... occasional tiny flashes as strings tighten"): one string from the hand (ax, ay, az) up to (bx, by, bz) (its
+     * anchor, or as far as it has been thrown), thin, fading toward the sky; {@code taut} (0 to 1) brightens it as it tightens, a tiny
+     * flash at the hand and, once {@code caught}, where it holds in the sky.
      */
-    public static void sky(FireMesh.Sink sink, double x, double y, double z, double age, boolean coat, int seed) {
-        if (age < 0 || age > SKY_LIFE) {
+    public static void sky(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double alpha, double taut,
+                           boolean caught, boolean coat) {
+        if (alpha < 0.01) {
             return;
         }
-        double t = age / SKY_LIFE;
-        double fade = 1.0 - t * t;
-        for (int k = 0; k < 3; k++) {
-            double a = FireMesh.rand(seed, k) * 2 * Math.PI;
-            double ox = Math.cos(a) * 0.4;
-            double oz = Math.sin(a) * 0.4;
-            line(sink, x + ox * 0.4, y + 0.1 + 0.5 * k, z + oz * 0.4, x + ox * 8, y + 22.0, z + oz * 8, 0.05, coat, fade, 1.0, 0.0, 8);
+        line(sink, ax, ay, az, bx, by, bz, 0.022 + 0.01 * taut, coat, Math.min(1.0, alpha), 0.9, 0.2, 10);
+        if (taut > 0.01) {
+            FireMesh.shell(sink, ax, ay, az, 0.12 + 0.08 * taut, coat ? COAT_HALO : CORE, 0.7 * taut, 0.2);
+            if (caught) {
+                FireMesh.shell(sink, bx, by, bz, 0.35 + 0.25 * taut, coat ? COAT_GLOW : GLOW, 0.5 * taut, 0.0);
+                FireMesh.shell(sink, bx, by, bz, 0.12, coat ? COAT_HALO : CORE, 0.9 * taut, 0.3);
+            }
         }
-        FireMesh.ring(sink, x, y + 0.05, z, 0, 1, 0, 0.4 + 0.8 * ease(t * 2), 0.12 * (1.0 - t) + 0.02, 0.0, coat ? COAT_HALO : HALO, 0.7 * fade);
-        FireMesh.shell(sink, x, y + 0.1, z, 0.5, coat ? COAT_GLOW : GLOW, 0.3 * fade, 0.0);
+    }
+
+    /**
+     * Sky Road's faint streak behind the feet: through the feet's last places {@code feet} (world: x, y, z each, the newest first),
+     * {@code count} of them, less of it the slower ({@code speed} 0 to 1), fading toward its tail.
+     */
+    public static void streak(FireMesh.Sink sink, double[] feet, int count, double cx, double cy, double cz, double speed, boolean coat) {
+        begin();
+        for (int i = 0; i < count; i++) {
+            point(feet[i * 3] - cx, feet[i * 3 + 1] - cy, feet[i * 3 + 2] - cz, 1.0 - (double) i / count);
+        }
+        strand(sink, 0.035, coat, 0.35 * speed);
     }
 
     /**
