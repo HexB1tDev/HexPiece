@@ -192,7 +192,8 @@ public final class NikaArt {
             scale = 1.0 - 0.45 * (age - 7.0) / (POW_LIFE - 7.0);
         }
         double alpha = age < 7.0 ? 1.0 : Math.max(0.0, 1.0 - (age - 7.0) / (POW_LIFE - 7.0));
-        double radius = (0.5 + 0.3 * Math.max(0.5, Math.min(3.0, size))) * Math.max(0.05, scale);
+        // 3.4.0: three-fifths of 3.3.9's: it hid the body and the skin pulled out of it
+        double radius = 0.6 * (0.5 + 0.3 * Math.max(0.5, Math.min(3.0, size))) * Math.max(0.05, scale);
         // just in front of the body, toward the eye
         double front = Math.min(dist * 0.5, 0.35 + 0.12 * size);
         double cx = x - vx * front;

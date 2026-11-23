@@ -67,8 +67,8 @@ public final class NikaPow {
         p.seed = m.ticks();
         p.born = level.m_46467_();
         POWS.add(p);
-        // the struck body pulled out like rubber along the blow (bx: how hard)
-        NikaBendClient.dawn(m.id(), m.bx(), (float) Math.atan2(m.ax(), m.az()));
+        // 3.4.0: the fist through the body: its skin stretched out to the fist, then snapping back as it is launched
+        NikaSkinClient.start(m.id(), m.ax(), m.ay(), m.az(), p.born);
     }
 
     static final class Writer implements FireMesh.Sink {

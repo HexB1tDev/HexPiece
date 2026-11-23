@@ -23,8 +23,6 @@ public final class NikaBendClient {
         double release;
         double strength;
         float yaw;
-        /** 3.3.9: Dawn Pistol's pull (gear/NikaBend.dawn), not Star Gun's bend. */
-        boolean dawn;
     }
 
     static final Map<Integer, Hit> HITS = new HashMap<>();
@@ -48,23 +46,11 @@ public final class NikaBendClient {
         HITS.put(message.entityId(), hit);
     }
 
-    /** 3.3.9: Dawn Pistol has struck body {@code id} ({@code strength} 0.4 to 1, the blow's way {@code yaw}): pulled out like rubber. */
-    public static void dawn(int id, float strength, float yaw) {
-        long now = System.currentTimeMillis();
-        prune(now);
-        Hit hit = new Hit();
-        hit.start = now;
-        hit.strength = strength;
-        hit.yaw = yaw;
-        hit.dawn = true;
-        HITS.put(id, hit);
-    }
-
     static void prune(long now) {
         Iterator<Hit> it = HITS.values().iterator();
         while (it.hasNext()) {
             Hit h = it.next();
-            if ((now - h.start) / 50.0 > (h.dawn ? NikaBend.dawnLength() : NikaBend.length(h.hold, h.release))) {
+            if ((now - h.start) / 50.0 > NikaBend.length(h.hold, h.release)) {
                 it.remove();
             }
         }
@@ -77,7 +63,7 @@ public final class NikaBendClient {
             return false;
         }
         double t = (System.currentTimeMillis() - hit.start) / 50.0;
-        if (!(hit.dawn ? NikaBend.dawn(t, hit.strength, SHAPE) : NikaBend.shape(t, hit.hold, hit.release, hit.strength, SHAPE))) {
+        if (!NikaBend.shape(t, hit.hold, hit.release, hit.strength, SHAPE)) {
             HITS.remove(entity.m_19879_());
             return false;
         }

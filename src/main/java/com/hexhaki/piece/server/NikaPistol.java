@@ -27,10 +27,10 @@ import net.minecraftforge.fml.common.Mod;
  *       {@code gear5_dawn_pistol} (the right arm thrown) or {@code gear5_dawn_pistol_left} (the left: the original alternates them and has
  *       just chosen), and the throw remembered ({@link #THROWN}). Their arms are the Pistol's own, so first person stays as it is.</li>
  *   <li>{@link #struck}, right after the original's {@code hit} where the thrown arm lands on a body: a Dawn Pistol thrown within
- *       {@link #WINDOW} ticks sends the struck body {@link #FAR} times as far back as the hit did and lifts it, draws the cartoon POW
- *       where it lands ({@link #POW}: client/gear/NikaPow), which every client also takes as the body pulled out lengthways like rubber
- *       (the owner: "make sure it bends the entities a ton more and looks better than the current one": gear/NikaBend.dawn), and plays
- *       the cartoon punch. The original's own impact (and with it the Conqueror's lightning,
+ *       {@link #WINDOW} ticks draws the cartoon POW where it lands ({@link #POW}: client/gear/NikaPow) and plays the cartoon punch;
+ *       3.4.0 (the owner: "the fist goes through the body, stretching the skin to insane amounts and then causes a catastrophic knockback
+ *       that destroys all blocks in it's way"): the body is held ({@link Pin}) while every client draws its skin stretched out through it
+ *       to the fist (client/gear/NikaSkinClient, from the POW), then launched through every block up to obsidian. The original's own impact (and with it the Conqueror's lightning,
  *       ConquerorAura.gear, with the Conqueror's Haki and Ryou on) still comes.</li>
  * </ul>
  */
@@ -43,9 +43,6 @@ public final class NikaPistol {
     public static final String CLIP_LEFT = "gear5_dawn_pistol_left";
     /** A Dawn Pistol thrown lands within this many ticks (the Pistol's wind-up 6 and reach 4, and some slack), or never. */
     static final int WINDOW = 24;
-    /** The struck body thrown this many times as far back as the original's hit throws it, and lifted up to this (blocks a tick). */
-    public static final double FAR = 2.0;
-    public static final double LIFT = 0.45;
 
     static final Map<UUID, Long> THROWN = new HashMap<>();
 
@@ -90,14 +87,10 @@ public final class NikaPistol {
     }
 
     static void land(ServerPlayer player, LivingEntity target, Vec3 way) {
-        // knocked far back: the hit's own throw (it already weighs the body's knockback resistance) made FAR times as long, and lifted
+        // how hard it goes: the hit's own throw already weighs the body's knockback resistance (1.25 for a body that takes it all)
         Vec3 v = target.m_20184_();
         double flat = Math.sqrt(v.f_82479_ * v.f_82479_ + v.f_82481_ * v.f_82481_);
         double share = Math.min(1.0, flat / 1.25);
-        if (flat > 1.0E-4) {
-            target.m_20334_(v.f_82479_ * FAR, Math.max(v.f_82480_, LIFT * share), v.f_82481_ * FAR);
-            target.f_19864_ = true;
-        }
         ServerLevel level = (ServerLevel) player.m_9236_();
         AABB box = target.m_20191_();
         Vec3 mid = box.m_82399_();
@@ -121,6 +114,110 @@ public final class NikaPistol {
             (float) wx, (float) wy, (float) wz, (float) Math.max(0.4, share), 0, 0, (float) (box.f_82292_ - box.f_82289_),
             (int) (level.m_46467_() & 0x7FFFFFFF)));
         com.hexhaki.piece.PieceSounds.playAt(player, mid.f_82479_, mid.f_82480_, mid.f_82481_, GearSounds.DAWN_PISTOL, 1.0F, 1.0F);
+        // 3.4.0: held where it was struck while the fist stretches its skin out through it (gear/NikaSkin.PIN), then launched
+        Vec3 carry = new Vec3(wx, 0, wz);
+        if (carry.m_82553_() < 0.2) {
+            Vec3 look = player.m_20154_();
+            carry = new Vec3(look.f_82479_, 0, look.f_82481_);
+        }
+        carry = carry.m_82553_() < 1.0E-4 ? new Vec3(0, 0, 1) : carry.m_82541_();
+        LIVE.add(new Pin(level, player, target, target.m_20182_(), carry, level.m_46467_() + com.hexhaki.piece.gear.NikaSkin.PIN,
+            LAUNCH_SPEED * (0.55 + 0.45 * share)));
+    }
+
+    /** 3.4.0: the launch: blocks a tick at first (a body that takes the whole blow), and the hardest block it tears through (obsidian). */
+    public static final double LAUNCH_SPEED = 3.6;
+    public static final float LAUNCH_HARDEST = 50.0F;
+
+    static final java.util.List<UoMoves.Live> LIVE = new java.util.ArrayList<>();
+
+    /**
+     * 3.4.0: the struck body held where it was struck (its motion stopped every tick) until {@code until}, the fist stretching its skin out
+     * through it (every client draws it: client/gear/NikaSkinClient); then the skin snaps back and the body is launched along {@code carry}
+     * through every block up to obsidian (the Light fruit's PikaMoves.Launch: torn out through the self-repairing Scars, never dropped,
+     * claims and protection obeyed; knocked down where it stops), the ground shaking.
+     */
+    static final class Pin implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final LivingEntity body;
+        final Vec3 at;
+        final Vec3 carry;
+        final long until;
+        final double speed;
+
+        Pin(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 at, Vec3 carry, long until, double speed) {
+            this.level = level;
+            this.owner = owner;
+            this.body = body;
+            this.at = at;
+            this.carry = carry;
+            this.until = until;
+            this.speed = speed;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (!this.body.m_6084_() || this.body.m_9236_() != this.level || !this.owner.m_6084_()) {
+                return true;
+            }
+            if (now < this.until) {
+                this.body.m_20256_(Vec3.f_82478_);
+                this.body.f_19864_ = true;
+                this.body.f_19789_ = 0.0F;
+                // put back where it was struck once it has moved (as the Ice fruit holds a frozen body; a player too)
+                if (this.body.m_20182_().m_82557_(this.at) > 0.12 * 0.12) {
+                    this.body.m_6021_(this.at.f_82479_, this.at.f_82480_, this.at.f_82481_);
+                }
+                return false;
+            }
+            Vec3 mid = this.body.m_20191_().m_82399_();
+            com.hexhaki.fx.Impact.quake(this.level, mid, 20.0, 0.6F, 10);
+            com.hexhaki.piece.PieceSounds.playAt(this.owner, mid.f_82479_, mid.f_82480_, mid.f_82481_, com.hexhaki.piece.gura.GuraSounds.BOOM, 1.4F,
+                1.15F);
+            PikaMoves.Launch launch = new PikaMoves.Launch(this.level, this.owner, this.body, this.carry, this.speed);
+            launch.hardest = LAUNCH_HARDEST;
+            launch.stopped = (owner, where) -> {
+                com.hexhaki.fx.Impact.quake(this.level, where, 16.0, 0.5F, 8);
+                com.hexhaki.piece.PieceSounds.playAt(owner, where.f_82479_, where.f_82480_, where.f_82481_, com.hexhaki.piece.gura.GuraSounds.HIT,
+                    1.4F, 0.8F);
+                com.hexhaki.piece.PieceSounds.playAt(owner, where.f_82479_, where.f_82480_, where.f_82481_, com.hexhaki.piece.gura.GuraSounds.CRUMBLE,
+                    1.0F, 1.0F);
+            };
+            LIVE.add(launch);
+            return true;
+        }
+    }
+
+    @SubscribeEvent
+    public static void tick(net.minecraftforge.event.TickEvent.LevelTickEvent event) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || LIVE.isEmpty() || !(event.level instanceof ServerLevel level)) {
+            return;
+        }
+        long now = level.m_46467_();
+        // a snapshot: a pin adds its launch while it is walked
+        java.util.List<UoMoves.Live> due = new java.util.ArrayList<>();
+        for (UoMoves.Live live : LIVE) {
+            if (live.level() == level) {
+                due.add(live);
+            }
+        }
+        for (UoMoves.Live live : due) {
+            boolean done;
+            try {
+                done = live.tick(now);
+            } catch (RuntimeException failure) {
+                done = true;
+            }
+            if (done) {
+                LIVE.remove(live);
+            }
+        }
     }
 
     @SubscribeEvent

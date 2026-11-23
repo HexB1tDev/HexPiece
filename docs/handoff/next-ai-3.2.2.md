@@ -29,8 +29,9 @@ description) is pushed and green; 3.3.3 (8zx: Rubber World's slow waves) is push
 pushed and green (Build #171, Release #125); 3.3.5 (8zz: the Supa Supa no Mi, its blades of katana steel) is pushed and green (Build
 #172, Release #126); 3.3.6 (8zzb: the Horo Horo no Mi, its cute ghosts, Gloom, the astral spirit) is pushed and green (Build #175, Release #127); 3.3.7
 (8zzc the plan, 8zzd as built: the Ito Ito no Mi, its slim pointed strings) is pushed and green (Build #177, Release #128); 3.3.8 (8zze:
-the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green (Build #179, Release #129); 3.3.9 (8zze: Dawn Pistol,
-the wind-up, the black ballooned fist, the POW, the body pulled like taffy) is pushed: check its runs (section 9).**
+the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green (Build #179, Release #129); 3.3.9 (8zze: Dawn Pistol)
+is green (Build #180, Release #130); 3.4.0 (8zze: Dawn Pistol's final blow, the skin stretched through the body, the launch through
+blocks) is pushed: check its runs (section 9).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2339,10 +2340,33 @@ Lucci (Cap 1101: Lucci's leopard body pulled out like taffy, several times its l
   POW cheap and gone after its life; the pull at rest at both ends, the top flung 3.5 to 6 blocks, more than 3 x Star Gun's, a squash,
   no jumps, a heavy body pulled less. Previews: NikaShots `|npow:age`, `|npistol:reach[:pow age[:balloon]]`, `|ndbend:t`, `|ndawn:t`.
 
+**3.4.0 (Dawn Pistol's final blow)**. 3.3.9's runs were green (Build #180, Release #130). The owner, verbatim, on 3.3.9's GIFs: "it looks
+cool but please get a gif of Gear 5 luffy vs luccy the final blow, its not that... the fist goes through the body, stretching the skin to
+insane amounts and then causes a catastrophic knockback that destroys all blocks in it's way", with a frame (KIRA AMVs' Egghead AMV: Luffy's
+arm looping round, the fist driven into Lucci's back, his skin bulging out of his front in a long funnel, red then orange then white-hot at
+its end) and a YouTube link (https://www.youtube.com/watch?v=T1ChQRs6uhI: the page answers a bot check here; i.ytimg.com gives its stills:
+the same AMV). The HexPiece environment now allows tenor.com, media.tenor.com, media1.tenor.com, www.youtube.com, i.ytimg.com (added this
+session at the owner's request). The Tenor GIF that shows the blow: media.tenor.com/VTcdI2kEM2AAAAAC/luffy-vs-lucci-one-piece.gif (Lucci's
+spotted skin stretched along Luffy's arm to the glowing fist, then smashed down through buildings); kept only in the scratchpad.
+- gear/NikaSkin (pure): `out(t)` (out-back to full in GROW 2, held quivering to PIN 5, snapped back over SNAP 2.5), `skin(...)` (a cone
+  out of the body along the way, LENGTH 7: body-wide (radius 0.7 x the body's width, 0.3 to 1.2) narrowing evenly to NECK 0.27, a bulb
+  BULB 0.42 round the fist at the end; 16 rings x 12 sides; the texture's region u round it, v stretched along), `heat(...)` (bands a
+  hair outside it from 0.38 of the way: red C81E1E, F0501E, FFA02A, FFF0C0; the fist a white-hot shell in an orange glow). The first
+  render (power 2.2 to a 0.2 neck) read as a thin stick: now a cone.
+- client/gear/NikaSkinClient (from NikaPow.accept): the struck body's texture as FinisherFx finds it (a player's skin; renderer.m_5478_;
+  a HumanoidModel's chest region 20..28 x 20..32 of 64 x 64, 64 x 32 for skeletons and strays; the middle 16..32 of anything else),
+  entityTranslucent, the light where it stands, a batch per body, then the heat through debugQuads; not one's own in first person.
+- server/NikaPistol: no more x2 throw; `Pin` holds the body (motion zero, put back past 0.12 with m_6021_ as HieFreeze does) until
+  NikaSkin.PIN, then `PikaMoves.Launch` along the flat way at LAUNCH_SPEED 3.6 x (0.55 + 0.45 x share) with `hardest` LAUNCH_HARDEST 50
+  (obsidian; Launch gained the field, the Light kick and Gekishin keep iron), a quake and the Gura boom at the launch, Gura's hit and
+  crumble where it stops; NikaPistol.LIVE ticked on LevelTickEvent (a snapshot: the pin adds its launch).
+- NikaBend.dawn (3.3.9's taffy pull), NikaBendClient.dawn and their tests and previews are gone. The POW is three-fifths of 3.3.9's size
+  (it hid the body). Previews: NikaShots `|nskin:t`, `|ndawn:t` (the whole move: arm, skin, POW, launch).
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.3.8 (8zze: the ripples twice as high, every fall ripples) is green (Build #179, Release #129). 3.3.9 (8zze: Dawn Pistol) is
-   pushed: check its Build and Release runs are green. Then ask the owner how Dawn Pistol looks in game (the fist's size, the pull).
+1. 3.3.9 is green (Build #180, Release #130). 3.4.0 (8zze: Dawn Pistol's final blow: the skin stretched through the body, the
+   launch through blocks) is pushed: check its Build and Release runs are green. Then ask the owner how Dawn Pistol looks in game.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

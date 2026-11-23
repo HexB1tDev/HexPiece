@@ -277,41 +277,25 @@ public final class HudTests {
         com.hexhaki.piece.gear.NikaArt.pow(count, 0.3, 1.0, 5.0, 0, 0, 1, com.hexhaki.piece.gear.NikaArt.POW_LIFE + 0.5, 1.9, 7);
         Check.that(quads[0] == 0, "dawnPistol: the POW gone after its life");
         Check.that(com.hexhaki.piece.server.NikaPistol.PISTOL_AWARD == 5, "dawnPistol: the Pistol's landing (the original's award 5)");
-        // the owner: "make sure it bends the entities a ton more and looks better than the current one" (gear/NikaBend.dawn)
-        double[] shape = new double[5];
-        double[] star = new double[5];
-        Check.that(!com.hexhaki.piece.gear.NikaBend.dawn(-0.1, 1, shape) && shape[com.hexhaki.piece.gear.NikaBend.SHEAR] == 0,
-            "dawnPistol: the body at rest before the blow");
-        Check.that(!com.hexhaki.piece.gear.NikaBend.dawn(com.hexhaki.piece.gear.NikaBend.dawnLength() + 0.1, 1, shape)
-            && shape[com.hexhaki.piece.gear.NikaBend.UP] == 1, "dawnPistol: the body at rest after the pull");
-        double pulled = 0;
-        double squashed = 1;
-        double starMost = 0;
-        double last = 0;
-        double jump = 0;
-        for (double t = 0; t < com.hexhaki.piece.gear.NikaBend.dawnLength(); t += 0.25) {
-            com.hexhaki.piece.gear.NikaBend.dawn(t, 1, shape);
-            // how far the top of a body 1.8 high is flung along the blow
-            double top = shape[com.hexhaki.piece.gear.NikaBend.SHEAR] * shape[com.hexhaki.piece.gear.NikaBend.UP] * 1.8;
-            pulled = Math.max(pulled, top);
-            if (t > 1) {
-                jump = Math.max(jump, Math.abs(top - last));
-            }
-            last = top;
-            squashed = Math.min(squashed, shape[com.hexhaki.piece.gear.NikaBend.UP]);
-            Check.that(shape[com.hexhaki.piece.gear.NikaBend.ACROSS] > 0.3 && shape[com.hexhaki.piece.gear.NikaBend.UP] > 0.4,
-                "dawnPistol: the body never folds to nothing");
-            com.hexhaki.piece.gear.NikaBend.shape(t, 26, 17, 1, star);
-            starMost = Math.max(starMost, Math.abs(star[com.hexhaki.piece.gear.NikaBend.SHEAR] * star[com.hexhaki.piece.gear.NikaBend.UP] * 1.8));
-        }
-        Check.that(pulled > 3.5 && pulled < 6, "dawnPistol: the top flung far along the blow (" + pulled + " blocks)");
-        Check.that(pulled > 3 * starMost, "dawnPistol: a ton more than Star Gun's bend (" + pulled + " against " + starMost + ")");
-        Check.that(squashed < 0.85, "dawnPistol: it snaps back through a squash (" + squashed + ")");
-        Check.that(jump < 1.6, "dawnPistol: no jumps past the smack (" + jump + " a quarter tick)");
-        com.hexhaki.piece.gear.NikaBend.dawn(5, 0.4, shape);
-        double weak = shape[com.hexhaki.piece.gear.NikaBend.SHEAR];
-        com.hexhaki.piece.gear.NikaBend.dawn(5, 1, shape);
-        Check.that(weak < 0.5 * shape[com.hexhaki.piece.gear.NikaBend.SHEAR], "dawnPistol: a heavy body pulled less");
+        // 3.4.0 (the owner: "the fist goes through the body, stretching the skin to insane amounts and then causes a catastrophic
+        // knockback that destroys all blocks in it's way"): the skin out of the body, held while the body is pinned, snapped back as it
+        // is launched; through every block up to obsidian
+        Check.that(com.hexhaki.piece.gear.NikaSkin.out(-0.1) == 0 && com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.life()) == 0,
+            "dawnPistol: no skin before the blow or after it snaps back");
+        Check.that(com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.GROW) > 0.95
+            && com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.PIN - 0.5) > 0.9, "dawnPistol: stretched out while pinned");
+        Check.that(com.hexhaki.piece.gear.NikaSkin.out(com.hexhaki.piece.gear.NikaSkin.PIN + com.hexhaki.piece.gear.NikaSkin.SNAP * 0.6) < 0.3,
+            "dawnPistol: snapped back as the body is launched");
+        Check.that(com.hexhaki.piece.gear.NikaSkin.LENGTH >= 5.0, "dawnPistol: the skin stretched to insane amounts (" + com.hexhaki.piece.gear.NikaSkin.LENGTH + ")");
+        Check.that(com.hexhaki.piece.server.NikaPistol.LAUNCH_HARDEST >= 50.0F, "dawnPistol: launched through every block up to obsidian");
+        int[] skinQuads = new int[1];
+        com.hexhaki.piece.horo.AstralArt.Skin skinCount = (xyz, uv, argb, nx, ny, nz) -> skinQuads[0]++;
+        com.hexhaki.piece.gear.NikaSkin.skin(skinCount, 0, 1, 5, 0, 0, 1, com.hexhaki.piece.gear.NikaSkin.LENGTH, 0.4,
+            com.hexhaki.piece.gear.NikaSkin.BULB, 0, 1, 0, 1, -1, 0);
+        quads[0] = 0;
+        com.hexhaki.piece.gear.NikaSkin.heat(count, 0, 1, 5, 0, 0, 1, com.hexhaki.piece.gear.NikaSkin.LENGTH, 0.4, com.hexhaki.piece.gear.NikaSkin.BULB,
+            1.0, 0);
+        Check.that(skinQuads[0] > 50 && skinQuads[0] + quads[0] < 1200, "dawnPistol: the stretched skin cheap (" + skinQuads[0] + " + " + quads[0] + ")");
     }
 
     static String clipText(String name) {

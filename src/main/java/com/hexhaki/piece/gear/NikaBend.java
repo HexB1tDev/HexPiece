@@ -89,61 +89,6 @@ public final class NikaBend {
         return LEAN * s * (1 - 1.45 * Math.exp(-tau / 3.4) * Math.cos(tau * 0.95)) + 0.14 * s * Math.sin(tau * 0.62);
     }
 
-    // ------------------------------------------------------------------------------------------------------ 3.3.9: Dawn Pistol
-
-    /** Dawn Pistol's pull: the smack, the hold, the snap back and the wobble's ticks. */
-    public static final double DAWN_RAMP = 2.0;
-    public static final double DAWN_HOLD = 9.0;
-    public static final double DAWN_RELEASE = 10.0;
-    public static final double DAWN_TAIL = 10.0;
-    /** How far the top is flung along the blow per block up at full strength (the body pulled out lengthways). */
-    static final double DAWN_PULL = 2.8;
-
-    /** The whole of a Dawn Pistol's pull. */
-    public static double dawnLength() {
-        return DAWN_RAMP + DAWN_HOLD + DAWN_RELEASE + DAWN_TAIL;
-    }
-
-    /**
-     * 3.3.9 (the owner, as Dawn Pistol was built: "make sure it bends the entities a ton more and looks better than the current one",
-     * with a frame of Luffy vs Lucci: Lucci's body pulled out like taffy, several times its length, along the punch): the shape of a
-     * body Dawn Pistol strikes, {@code t} ticks after the hit, into {@code out} (as {@link #shape}). Not a stretch through the body's
-     * thin front-to-back (Star Gun's, which barely shows on a body seen from the side): the whole body pulled out lengthways along the
-     * blow, its top flung {@link #DAWN_PULL} blocks ahead per block up while its feet trail, thinned across and a little lowered (about
-     * two and a half times its height long at full strength, a steep slant: 3.3.9's first try, 4.5 and lowered 0.38, lay down flat as a
-     * plank and no longer read as a body); held quivering; let go, it snaps back past upright into a
-     * squash (short and wide, its top swung back toward the striker) and wobbles to rest. False once it is over.
-     */
-    public static boolean dawn(double t, double strength, double[] out) {
-        double s = Math.max(0, Math.min(1.25, strength));
-        if (t < 0 || t >= dawnLength()) {
-            rest(out);
-            return false;
-        }
-        double e;
-        if (t < DAWN_RAMP) {
-            double u = t / DAWN_RAMP;
-            // out-back: yanked past its mark and back
-            e = 1.0 + 2.4 * Math.pow(u - 1, 3) + 1.3 * Math.pow(u - 1, 2);
-        } else if (t < DAWN_RAMP + DAWN_HOLD) {
-            double tau = t - DAWN_RAMP;
-            e = 1.0 + 0.14 * Math.exp(-tau / 4.0) * Math.sin(tau * 2.1) + 0.05 * Math.sin(tau * 0.9);
-        } else {
-            double tau = t - DAWN_RAMP - DAWN_HOLD;
-            double held = 1.0 + 0.05 * Math.sin(DAWN_HOLD * 0.9);
-            e = held * Math.exp(-tau / 3.4) * Math.cos(tau * 0.72);
-        }
-        e *= s;
-        double pull = Math.max(0, e);
-        double squash = Math.max(0, -e);
-        out[SHEAR] = DAWN_PULL * e;
-        out[ACROSS] = pull > 0 ? 1.0 / (1.0 + 0.7 * pull) : 1.0 + 0.9 * squash;
-        out[UP] = pull > 0 ? 1.0 - 0.18 * pull : 1.0 - 0.6 * squash;
-        out[ALONG] = 1.0 + 0.8 * pull + 0.6 * squash;
-        out[BACK] = 0.25 * pull;
-        return true;
-    }
-
     static void rest(double[] out) {
         out[ACROSS] = 1;
         out[UP] = 1;

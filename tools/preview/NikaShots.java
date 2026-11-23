@@ -1,5 +1,6 @@
 import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.gear.NikaArt;
+import com.hexhaki.piece.gear.NikaSkin;
 import com.hexhaki.piece.gear.NikaBend;
 import com.hexhaki.piece.gear.NikaHold;
 import com.hexhaki.piece.gear.RubberJump;
@@ -60,39 +61,58 @@ public final class NikaShots {
                 HieShots.body(sink, -ex, -ey, 5.0 + back - ez);
                 NikaArt.pow(sink, -ex, 0.95 - ey, 5.0 + back - ez, 0, 0, 1, age, size, 7);
             }
-            case "ndbend" -> {
-                // 3.3.9: a body Dawn Pistol strikes, pulled out lengthways (gear/NikaBend.dawn): |ndbend:t[:strength], the blow along +z
+            case "nskin" -> {
+                // 3.4.0: Dawn Pistol through the body, |nskin:t (t ticks after the hit; the body 4.5 ahead, the blow along +z): the
+                // body's skin stretched out of its far side to the fist (here the shirt's red where the game uses the body's own texture),
+                // the heat over it, the POW where the fist went in; launched at NikaSkin.PIN
                 double t = move.length > 1 ? Double.parseDouble(move[1]) : 3;
-                double strength = move.length > 2 ? Double.parseDouble(move[2]) : 1;
-                double[] shape = new double[5];
-                NikaBend.dawn(t, strength, shape);
+                double flown = 0;
+                double v = 3.6;
+                for (int k = NikaSkin.PIN; k < (int) t; k++) {
+                    flown += v;
+                }
+                if (t > NikaSkin.PIN) {
+                    flown += v * Math.min(1, t - Math.max(NikaSkin.PIN, (int) t));
+                }
+                double bz = 4.5 + flown;
                 HieShots.body(sink, -ex, -ey, -ez);
-                bent(sink, -ex, -ey, 4.0 - ez, 0.0, shape);
+                HieShots.body(sink, -ex, -ey, bz - ez);
+                double len = NikaSkin.LENGTH * NikaSkin.out(t);
+                double glow = Math.min(1.0, NikaSkin.out(t) * 1.2);
+                com.hexhaki.piece.horo.AstralArt.Skin flat = (xyz, uv, argb, nx, ny, nz) -> {
+                    double lit = nx * -0.33 + ny * 0.79 + nz * -0.51;
+                    double band = lit > 0.5 ? 1.0 : lit > 0.1 ? 0.86 : lit > -0.3 ? 0.72 : 0.6;
+                    int c = FireMesh.argb(1.0, FireMesh.mix(0, 0xB03A2E, band));
+                    sink.quad(xyz, new int[] {c, c, c, c});
+                };
+                NikaSkin.skin(flat, -ex, 1.05 - ey, bz - ez, 0, 0, 1, len, 0.42, NikaSkin.BULB, 0, 1, 0, 1, 0xFFFFFFFF, t);
+                NikaSkin.heat(sink, -ex, 1.05 - ey, bz - ez, 0, 0, 1, len, 0.42, NikaSkin.BULB, glow, t);
+                NikaArt.pow(sink, -ex, 0.95 - ey, 4.5 - ez, 0, 0, 1, t, 1.9, 7);
             }
             case "ndawn" -> {
-                // 3.3.9: Dawn Pistol over time, |ndawn:t (t ticks after the arm leaves; this scene's arm lands on tick 4): the Haki-black
-                // arm and ballooned fist reaching out and coming back, the POW, the struck body pulled out like rubber and knocked back
+                // 3.4.0: Dawn Pistol over time, |ndawn:t (t ticks after the arm leaves; this scene's arm lands on tick 4): the Haki-black
+                // arm and ballooned fist reaching into the body, the POW, its skin stretched out through it to the white-hot fist (the
+                // shirt's red here; the body's own texture in game), held while pinned, then snapping back as it is launched (3.6 a tick)
                 double t = move.length > 1 ? Double.parseDouble(move[1]) : 5;
                 double land = 4.0;
                 double tl = t - land;
-                double full = 4.5;
-                double reach = t < land ? 0.6 + (full - 0.6) * (1 - Math.pow(1 - t / land, 3)) : tl < 3 ? full
-                    : Math.max(0.0, full - (tl - 3) * 0.75);
+                double bz0 = 4.6;
+                double reach = t < land ? 0.6 + (bz0 - 0.6) * (1 - Math.pow(1 - t / land, 3)) : tl < 3 ? bz0
+                    : Math.max(0.0, bz0 - (tl - 3) * 0.75);
+                double flown = 0;
+                for (int k = NikaSkin.PIN; k < (int) tl; k++) {
+                    flown += 3.6;
+                }
+                if (tl > NikaSkin.PIN) {
+                    flown += 3.6 * Math.min(1, tl - Math.max(NikaSkin.PIN, (int) tl));
+                }
+                double bz = bz0 + flown;
                 HieShots.body(sink, -ex, -ey, -ez);
+                HieShots.body(sink, -ex, -ey, bz - ez);
                 int skin = 0xE7B48F;
                 int coat = FireMesh.mix(0, skin, 0.12);
                 double sx = -0.37;
                 double sy = 1.3;
-                double knock = 0;
-                double v = 2.5;
-                for (int k = 0; k < (int) Math.max(0, tl); k++) {
-                    knock += v;
-                    v *= 0.91;
-                }
-                if (tl > 0) {
-                    knock += v * (tl - (int) tl);
-                }
-                double bodyZ = full + 0.9 + knock;
                 if (reach > 0.3) {
                     FireMesh.tube(sink, sx - ex, sy - ey, -ez, -ex, 1.15 - ey, reach - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
                     double r = 0.125 * 3.0 * (0.4 + 0.6 * Math.min(1.0, reach / 2.5));
@@ -105,12 +125,17 @@ public final class NikaShots {
                     NikaArt.fist(sink, dx / dl * r - ex, 1.15 + dy / dl * r - ey, reach + dz / dl * r - ez, dx, dy, dz, 0, 1, 0, r, true, true);
                     NikaArt.tint = 0xFFFFFF;
                 }
-                double[] shape = new double[5];
-                NikaBend.dawn(tl, 1, shape);
-                double lift = tl > 0 ? Math.min(1.2, 0.45 * tl - 0.04 * tl * tl) : 0;
-                bent(sink, -ex, Math.max(0, lift) - ey, bodyZ - ez, 0.0, shape);
                 if (tl >= 0) {
-                    NikaArt.pow(sink, -ex, 0.95 - ey, full + 0.9 - ez, 0, 0, 1, tl, 1.9, 7);
+                    double len = NikaSkin.LENGTH * NikaSkin.out(tl);
+                    com.hexhaki.piece.horo.AstralArt.Skin flat = (xyz, uv, argb, nx, ny, nz) -> {
+                        double lit = nx * -0.33 + ny * 0.79 + nz * -0.51;
+                        double band = lit > 0.5 ? 1.0 : lit > 0.1 ? 0.86 : lit > -0.3 ? 0.72 : 0.6;
+                        int c = FireMesh.argb(1.0, FireMesh.mix(0, 0xB03A2E, band));
+                        sink.quad(xyz, new int[] {c, c, c, c});
+                    };
+                    NikaSkin.skin(flat, -ex, 1.05 - ey, bz - ez, 0, 0, 1, len, 0.42, NikaSkin.BULB, 0, 1, 0, 1, 0xFFFFFFFF, tl);
+                    NikaSkin.heat(sink, -ex, 1.05 - ey, bz - ez, 0, 0, 1, len, 0.42, NikaSkin.BULB, Math.min(1.0, NikaSkin.out(tl) * 1.2), tl);
+                    NikaArt.pow(sink, -ex, 0.95 - ey, bz0 - ez, 0, 0, 1, tl, 1.9, 7);
                 }
             }
             case "npistol" -> {

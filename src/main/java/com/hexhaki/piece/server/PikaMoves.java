@@ -1151,6 +1151,8 @@ public final class PikaMoves {
         int broken;
         /** 3.1.1: what is seen and heard where it is stopped dead (the Gura fruit's Gekishin); null: the Light fruit's burst. */
         java.util.function.BiConsumer<ServerPlayer, Vec3> stopped;
+        /** 3.4.0: the hardest block it tears through (the Light fruit's and Gekishin's: iron; Dawn Pistol's: obsidian). */
+        float hardest = V_HARDEST;
 
         Launch(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 carry, double speed) {
             this.level = level;
@@ -1200,7 +1202,7 @@ public final class PikaMoves {
                             continue; // air, or nothing to bump into (grass, flowers)
                         }
                         float hardness = state.m_60800_(this.level, pos);
-                        boolean torn = this.broken < V_MOST_BLOCKS && hardness >= 0.0F && hardness <= V_HARDEST && scars.room()
+                        boolean torn = this.broken < V_MOST_BLOCKS && hardness >= 0.0F && hardness <= this.hardest && scars.room()
                             && scars.tear(this.owner, pos, supports, -1L) == Scars.TORN;
                         if (torn) {
                             broke++;
