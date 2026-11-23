@@ -49,6 +49,54 @@ LOOPS = {
 }
 
 
+# 3.4.9 (the owner: "we also need a sound redesign for most of the abilities. The like mostly like cartoony sounds, so go get them from
+# the web"): the original's own Gear 5 events play these (sounds.json overrides them; sounds/piece/nika). Each checked as cut with
+# tools/tonal_lines.py against plain noise of its own length (broadband: no whine, hum or ringing).
+NIKA_OUT = os.path.join(ROOT, "src/main/resources/assets/hexhaki/sounds/piece/nika")
+NIKA_SOUNDS = {
+    "zip": ("se2001", 541507),             # "Cartoon Quick Zip 02": the stretching punch thrown
+    "slap": ("AdminMP", 383201),           # "Slap - Cartoony": a stretched fist landing
+    "kungfu": ("Sadiquecat", 786323),      # "Kung-Fu punch SFX (A-B) (Edited)": the Gatling's fists
+    "kungfu2": ("peridactyloptrix", 210897),  # "Kung Fu punch 5": the Gatling's fists
+    "swosh": ("qubodup", 59988),           # "SWOSH-01 44.1kHz": Rocket's haul
+    "swing": ("SypherZent", 420668),       # "Basic Melee Swing / Miss / Whoosh": a dodge
+    "balloon": ("xkeril", 760346),         # "Inflating a party balloon (fast)": Gigante, the Bajrang Gun's fist swelling
+    "explosion": ("modusmogulus", 784205), # "Cartoon Explosion (designed on cassette tape lol)": the Bajrang Gun's impact
+    "deep": ("DJT4NN3R", 449990),          # "whoosh_long_low.wav": the Bajrang Gun's slam, the Giant's throw
+    "rubber": ("mickdow", 253327),         # "Rubber Stretch Rip 1.wav": Coil Spring let go
+    "pop": ("unfa", 245646),               # "Cartoon Pop (Distorted)": the bounding walk's bounds
+    "splat": ("foxgirl", 437312),          # "melonexplosion.wav": Rubber World let go
+}
+NIKA_CLIPS = {
+    "pistol1": ("zip", 0.0, None, 0.0, 0.05),
+    "impact1": ("slap", 0.05, 0.6, 0.0, 0.15),
+    "gatling1": ("kungfu", 0.0, None, 0.0, 0.08),
+    "gatling2": ("kungfu2", 0.25, 0.4, 0.0, 0.1),
+    "rocket1": ("swosh", 0.0, None, 0.0, 0.08),
+    "dodge1": ("swing", 0.0, None, 0.0, 0.05),
+    "giant1": ("balloon", 0.25, 0.75, 0.03, 0.15),
+    "charge1": ("balloon", 1.25, 0.65, 0.03, 0.15),
+    "slam1": ("deep", 0.3, 2.0, 0.05, 0.5),
+    "throw1": ("deep", 0.6, 1.1, 0.03, 0.35),
+    "boom1": ("explosion", 0.0, 2.8, 0.0, 0.8),
+    "coil1": ("rubber", 2.0, 0.8, 0.03, 0.2),
+    "bounce1": ("pop", 0.0, None, 0.0, 0.03),
+    "world1": ("splat", 0.0, None, 0.0, 0.15),
+}
+
+
+def nika_level(name):
+    """(gain in dB, compressed louder): the hits and pops short and punchy; the Gatling's fists (every 3 ticks) and the bounding walk's
+    bounds (every step) 2 and 3 dB down; the rest as recorded."""
+    if name.startswith("gatling"):
+        return -2.0, True
+    if name == "bounce1":
+        return -3.0, True
+    if name in ("impact1", "coil1", "world1"):
+        return 0.0, True
+    return 0.0, False
+
+
 def level(name):
     """(gain in dB below full scale, compressed louder): the beats are the transformation's only sound, loud and punchy; Dawn Pistol's
     punch (-11.3 LUFS as recorded) 3 dB down, beside the original's own impact sound that plays with it."""
@@ -67,7 +115,11 @@ def main():
     only = None
     if len(sys.argv) > 2 and sys.argv[1] == "--only":
         only = set(sys.argv[2].split(","))
-    web_sounds.build(SOUNDS, CLIPS, LOOPS, OUT, "The Nika fruit's transformation drums (tools/gear_sounds.py).", only, level)
+    if not only or only & (set(CLIPS) | set(LOOPS)):
+        web_sounds.build(SOUNDS, CLIPS, LOOPS, OUT, "The Nika fruit's transformation drums (tools/gear_sounds.py).", only, level)
+    if not only or only & set(NIKA_CLIPS):
+        web_sounds.build(NIKA_SOUNDS, NIKA_CLIPS, {}, NIKA_OUT, "Gear 5's moves, redone as cartoon sounds (tools/gear_sounds.py, 3.4.9).",
+                         only, nika_level)
 
 
 if __name__ == "__main__":

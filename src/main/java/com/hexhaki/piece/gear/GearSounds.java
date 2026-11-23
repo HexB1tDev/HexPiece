@@ -29,6 +29,23 @@ public final class GearSounds {
     public static final String SPIN = "piece.gear.whip_spin";
     public static final String CRACK = "piece.gear.whip_crack";
 
+    /**
+     * 3.4.9 (the owner: "we also need a sound redesign for most of the abilities. The like mostly like cartoony sounds, so go get them
+     * from the web"): the original's own Gear 5 events, played where the original plays them, now on cartoon recordings from Freesound
+     * (CC0, cut by tools/gear_sounds.py into assets/hexhaki/sounds/piece/nika, credited in its SOURCES.txt; sounds.json overrides each
+     * event, its subtitle and range kept): the stretching punch thrown (a quick cartoon zip), a stretched fist landing (a cartoony slap),
+     * the Gatling's fists (two kung-fu punches), Rocket's haul and a dodge (short swooshes), Gigante and the Bajrang Gun's fist swelling (a
+     * party balloon inflating), the Bajrang Gun's slam and the Giant's throw (a long low whoosh), its impact (a cassette cartoon
+     * explosion), Coil Spring (a rubber stretch), the bounding walk's bounds (a cartoon pop), Rubber World (a wet splat). The lance's
+     * lightning (gear5_lightning_throw) is left as it is. Event, then its clips.
+     */
+    public static final String[][] REDONE = {
+        {"gear5_pistol", "pistol1"}, {"gear5_impact", "impact1"}, {"gear5_gatling", "gatling1", "gatling2"}, {"gear5_rocket", "rocket1"},
+        {"gear5_dodge", "dodge1"}, {"gear5_giant", "giant1"}, {"gear5_whip", "throw1"}, {"gear5_bajrang_charge", "charge1"},
+        {"gear5_bajrang_slam", "slam1"}, {"gear5_bajrang_impact", "boom1"}, {"gear5_coil", "coil1"}, {"gear5_sky_bounce", "bounce1"},
+        {"gear5_rubber_world", "world1"},
+    };
+
     /** Every event and its clips (assets/hexhaki/sounds/piece/gear/{clip}.ogg). */
     public static final String[][] EVENTS = {
         {DRUM, "drum1"}, {DRUM_BIG, "drum2"}, {DAWN_PISTOL, "dawn_pistol1"}, {GOOF, "goof_spin"}, {GOOF_PUNCH, "dawn_pistol1"},

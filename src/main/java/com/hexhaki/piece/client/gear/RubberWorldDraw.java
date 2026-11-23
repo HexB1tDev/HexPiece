@@ -48,6 +48,8 @@ import net.minecraftforge.fml.common.Mod;
 public final class RubberWorldDraw {
     /** The most blocks drawn in one frame, and how far from the camera. */
     public static final int MOST_DRAWN = 520;
+    /** 3.4.9: more while a giant's ripple shows (its rings run 18 to 22 blocks round: about 900 blocks at their widest). */
+    static final int MOST_DRAWN_GIANT = 900;
     static final int NEAR = 28;
     /** New columns looked up in one frame at most. */
     static final int LOOKUPS = 360;
@@ -76,6 +78,8 @@ public final class RubberWorldDraw {
         double heard;
         double end = Double.POSITIVE_INFINITY;
         int kind = WORLD;
+        /** 3.4.9: a jump's ripple, the size of the body that made it (Giant's 4). */
+        double scale = 1.0;
         /** The columns found, on a grid round the middle (no allocation a frame): from (minX, minZ), size by size. */
         int minX;
         int minZ;
@@ -142,6 +146,11 @@ public final class RubberWorldDraw {
 
     /** A Gear 5 jump's take-off (or landing) at the feet (x, y, z): the ground there turns to rubber for a moment. */
     public static void hop(double x, double y, double z, boolean landing) {
+        hop(x, y, z, landing, 1.0);
+    }
+
+    /** 3.4.9: as {@link #hop(double, double, double, boolean)} for a body {@code scale} times the normal one (Giant's ripples are its size). */
+    public static void hop(double x, double y, double z, boolean landing, double scale) {
         if (Minecraft.m_91087_().f_91073_ == null) {
             return;
         }
@@ -153,14 +162,15 @@ public final class RubberWorldDraw {
         f.x = x;
         f.y = y;
         f.z = z;
-        f.radius = landing ? RubberJump.LAND_RADIUS : RubberJump.HOP_RADIUS;
+        f.scale = Math.max(1.0, Math.min(6.0, scale));
+        f.radius = (landing ? RubberJump.LAND_RADIUS : RubberJump.HOP_RADIUS) * f.scale;
         f.size = 2 * (int) Math.ceil(f.radius) + 3;
         f.minX = (int) Math.floor(f.x) - f.size / 2;
         f.minZ = (int) Math.floor(f.z) - f.size / 2;
         f.columns = new Column[f.size * f.size];
         f.born = clock(0.0F);
         f.heard = f.born;
-        f.end = f.born + RubberJump.LIFE;
+        f.end = f.born + RubberJump.life(f.scale);
         HOPS.add(f);
     }
 
@@ -170,7 +180,7 @@ public final class RubberWorldDraw {
         if (self != null && self.m_19879_() == m.user()) {
             return;
         }
-        hop(m.x(), m.y(), m.z(), m.kind() == NikaJump.LAND);
+        hop(m.x(), m.y(), m.z(), m.kind() == NikaJump.LAND, m.bx() > 1.0F ? m.bx() : 1.0);
     }
 
     /** How high the ground rises {@code r} from field {@code f}'s middle at {@code angle}, {@code t} ticks after it began. */
@@ -178,14 +188,14 @@ public final class RubberWorldDraw {
         if (f.kind == WORLD) {
             return RubberWave.rise(r, angle, t, f.radius, f.end - f.born);
         }
-        return RubberJump.hop(r, angle, t, f.kind == LANDING);
+        return RubberJump.hop(r, angle, t, f.kind == LANDING, f.scale);
     }
 
     static double slope(Field f, double r, double angle, double t) {
         if (f.kind == WORLD) {
             return RubberWave.slope(r, angle, t, f.radius, f.end - f.born);
         }
-        return RubberJump.slope(r, angle, t, f.kind == LANDING);
+        return RubberJump.slope(r, angle, t, f.kind == LANDING, f.scale);
     }
 
     static double clock(float partial) {
@@ -226,6 +236,12 @@ public final class RubberWorldDraw {
         try {
             BlockRenderDispatcher blocks = minecraft.m_91289_();
             int budget = MOST_DRAWN;
+            for (Field f : HOPS) {
+                if (f.scale > 1.05) {
+                    budget = MOST_DRAWN_GIANT;
+                    break;
+                }
+            }
             // the jumps' ripples first: small, and where the players are
             for (Field f : HOPS) {
                 double fx = f.x - cam.f_82479_;

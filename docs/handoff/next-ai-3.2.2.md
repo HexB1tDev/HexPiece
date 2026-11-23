@@ -37,7 +37,8 @@ owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Buil
 Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is green (Build #188, Release #135). 3.4.5
 (8zzg: the Gura ultimate's Broken Bones) is green (Build #189, Release #136). 3.4.6 (8zzg: Goof Ball and Giant Gear 5 only, Dawn Whip's
 leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Giant's straight throw and our crash) is green (Build #192, Release #138). 3.4.8 (8zzg: /hexpiece style mastery,
-the optimization pass) is green (Build #194, Release #139).**
+the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the owner's Gear 5 bug list) is pushed: check its runs. The
+owner's Ito list (8zzi) is next, as 3.5.0.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2845,10 +2846,128 @@ number." Then: "Okay, enough. Give me handoff and prompt now."
   was). WaterFx's draw makes lists and arrays per drop each frame; PikaFx a few Vec3 a frame. The original mod's own photon effects were
   not looked at.
 
+## 8zzh. The owner's Gear 5 bug list after 3.4.8 (verbatim; 3.4.9 works on it)
+
+3.4.8 was green (Build #194, Release #139). The owner (verbatim): "I'm going to do a massive list of bugs from now on. I'm going to
+dictate everything that is wrong. Your main goal is to fix it. First of all, while transformed, we're starting with the mythical Gear 5
+fruit. First of all, the camera in the giant form should need be adjusted to adapt to its new size. The animation of the arm that is not
+holding a mob should just be normal. It has a strange animation when it really doesn't have to. Also, the overall animations of the
+giant should be the same as default. So like jumping animations and all should remain the same as the one we got. The ground should it's
+basically the same thing as the player. So basically every jumping animation, every ground rippling, everything should just be the same
+except the player's much bigger. Um Next is that the white aura around the player, it needs to be replaced with like some kind of like
+photon smoke. Because this aura that is around the player, the white one, and I don't mean the clouds, just mean the outline that the
+player has, doesn't adapt well to animations and it's going to generate more problems in the future. Next, M1s, like the default M1s,
+they don't like they should have a cooldown, otherwise you can just spam it and cancel the animation, which isn't should not be possible.
+You shouldn't be able to punch until the arm is fully returned to your body to avoid lag. Speaking of M1, the Dawn pistol, I want it to
+just be a straight punch from third person. Like if you notice the third person, the arm does a zigzag, which I don't like. It should be a
+straight punch. Just like the first person, exactly like it, but with the animation that we got, basically the Looney Tunes stuff. Um,
+what else? Let me see. Batarang gun also has an issue. It's still jumping too high up, so I think we just reduce the blocks that the
+player jumps high, like a little lower. And there's another issue where the arm, like after it hits the floor, it switches direction and
+like it's bending to the left instead of to the right, which causes a visual weird thing that I'm gonna show you as a screenshot. And I
+think that's everything for the Gear 5 fruit. Oh yeah, and we also need a sound redesign for most of the abilities. The like mostly like
+cartoony sounds, so go get them from the web. We got a lot of work to do on the other fruits as well, but for now I think this is it.
+Focus on reworking the Gear 5 once and for all. Let's close this up, and when it's done, we'll move to the other fruits."
+The screenshot (Bajrang Gun, in game, at dusk): the player high in the air, upside down, the dark Haki fist at the hand, and the stretched
+arm a thin red-brown line curving down from the shoulder to the ground in an S, bending away to the left near the ground; a blue ground
+ring (the Rubber World / impact ring) under it.
+Read as: (1) the giant's camera scaled to its size; (2) the giant's free arm and every giant animation the normal Gear 5 ones (the jump,
+the landing, the ground ripples: the same, only bigger); (3) the white outline round the Gear 5 body (not the clouds) replaced by a
+photon-like smoke; (4) the Pistol (M1) can't be thrown again until the arm is back; (5) Dawn Pistol a straight punch in third person
+(the 3.4.1 loop gone), the first person's punch, the Looney Tunes body kept; (6) the Bajrang Gun climbs lower, and its arm after the
+impact never bends the other way; (7) cartoony CC0 sounds for most Gear 5 moves. Then the other fruits.
+
+**3.4.9 as built so far** (the Gear 5 list above; nothing tested in game: build, tests, renders):
+- **The giant's camera** (client/gear/GiantCamera, asked by client/dragon/DragonCamera.position: the original's CameraMixin takes a fixed
+  camera place from it, PiecePatch's existing CameraMixin row): third person, the camera VANILLA_BACK 4 x the body's size behind the
+  giant's own eye (feet + eye height x size), growing with it, clipped short of blocks (DragonCamera.clip, now public); first person
+  keeps the original's eye lift (GearBodyDeformer.eyeLift). The dragon still first.
+- **The giant's animations**: tools/nika_anims.giant_grab: gear5_giant_grab keys only the holding right arm (the original's track
+  exactly; the left arm, head, torso and body free: the free arm swings as it walks); gear5_giant_throw no longer keys the head. Both in
+  anim_polish's GENERATED and nika_anims' OWNED. The giant jumps as the normal body (client/gear/NikaJumpClient.may no longer refuses the
+  giant; server/NikaJump.busy no longer counts "gigante"): the same lift, gear5_jump and gear5_land, and its ripples its size:
+  gear/RubberJump.hop(r, angle, t, landing, size) (size 1 exactly the old; the giant's 4: the rings reach 4x as far round, 2x as thick and
+  high, half as fast; life(size)), RubberWorldDraw.hop(..., scale) (Field.scale; MOST_DRAWN_GIANT 900 blocks a frame while a giant's
+  ripple shows: about 900 at its widest), server/NikaJump.ripple sends the size in bx. Render: the scratchpad's giantripple.png (NikaShots
+  |nhop:t:land:size).
+- **The smoke aura**: PiecePatch.gearAura empties GearAuraLayer.render (the white outline: the whole body drawn twice more, scaled 1.055
+  and 1.135 round the chest in textures/effect/gear5_aura.png); gear/NikaSmoke (pure: rate, spawn) and client/gear/NikaSmokeFx (every
+  client tick, every visible Gear 5 body within 48 blocks: white steam wisps and soft puffs through client/fx/PieceFx (Photon), alpha
+  -blended, rising off the body's outline, scaled by size and presence and the particle setting; not one's own in first person).
+  Preview NikaShots |nsmoke:seed[:scale[:clip[:tick]]] (the sprites textured, 40 ticks of wisps simulated as PieceFx's Mote moves them).
+- **The M1 lock**: PiecePatch CALL_REDIRECTS: GearServerController.pistol's onCooldown -> server/NikaRules.armOut (game time < the
+  original's own "cd_pistol", set to the throw + 20 = the arm's whole life, in every mode: the original's no-cooldown mode,
+  HakiServerController.noCooldowns = HakiData.op, skipped it).
+- **Dawn Pistol straight**: client/gear/NikaPistolArm draws a Dawn Pistol's arm as one straight piece of the original's limb mesh
+  (control point the middle), on through the struck body to the fist at the skin's end while it stretches; gear/NikaArc (3.4.1's loop)
+  deleted; NikaShots |ndawn draws the straight arm.
+- **The Bajrang Gun**: PiecePatch DOUBLES (new table, replaceDouble): beginBajrang's climb 75 -> 55 blocks (BAJRANG_ALTITUDE kept in
+  step; the slam's reach is measured to the ground); PiecePatch.bajrangBow: BajrangFistLayer.render's bow sign (SLAM ? -1 : 1) is -1 in
+  every phase, so the arm keeps its bend through the impact, the retract and the fall.
+- **Sounds** (tools/gear_sounds.py NIKA_SOUNDS/NIKA_CLIPS -> sounds/piece/nika, SOURCES.txt; gear/GearSounds.REDONE; sounds.json
+  overrides each original event with its subtitle and attenuation kept; build.py RENAMED[SOUNDS]; SwordTests.redone): the session
+  moved to the HexPiece environment (env_01PmnEXrwDhxzij8M5q6P6bL) for Freesound. The originals measured 1 to 7 s long with pitched
+  hums +6 to +22 dB over noise. Now: gear5_pistol pistol1 (se2001 541507 "Cartoon Quick Zip 02"), gear5_impact impact1 (AdminMP 383201
+  "Slap - Cartoony"), gear5_gatling gatling1/2 (Sadiquecat 786323 "Kung-Fu punch SFX", peridactyloptrix 210897 "Kung Fu punch 5"; the
+  first picks, two slapstick cracks, were clicks 17 dB under the original), gear5_rocket rocket1 (qubodup 59988 "SWOSH-01"),
+  gear5_dodge dodge1 (SypherZent 420668 swing), gear5_giant giant1 and gear5_bajrang_charge charge1 (xkeril 760346 "Inflating a party
+  balloon (fast)": one inflation each; the charge plays every 12 ticks, so the fist inflates continuously), gear5_whip throw1 and
+  gear5_bajrang_slam slam1 (DJT4NN3R 449990 "whoosh_long_low"; Qvantor's "Whoosh Deep Heavy" was refused: a 65 Hz hum +12 dB),
+  gear5_bajrang_impact boom1 (modusmogulus 784205 "Cartoon Explosion"), gear5_coil coil1 (mickdow 253327 "Rubber Stretch Rip 1", from
+  2.0 s), gear5_sky_bounce bounce1 (unfa 245646 "Cartoon Pop (Distorted)", the bounding walk's bounds), gear5_rubber_world world1
+  (foxgirl 437312 "melonexplosion"). As cut, every one within +4.5 dB of plain noise (narrow); loudest 50 ms within a few dB of the
+  originals'. Left alone: gear5_lightning_throw (the lance: never touch it), gear5_cartoon_sprint (the original's vanilla note blocks:
+  no broadband cartoon running recording found yet), gear5_dawn_pistol/dawn_whip (unused). The Don Gun (DonGunServer) shares the
+  Bajrang Gun's three events. Tools kept in the scratchpad: fs_search.py (Freesound CC0 search), fs_eval.py (fetch, pitch check,
+  envelope), punch.py (loudest 50 ms).
+- 3.4.9: build EXIT 0, 13 suites (HudTests: the giant's ripples, the smoke; SwordTests.redone). Release notes 3.4.9.
+
+## 8zzi. The owner's Ito Ito no Mi list during 3.4.9 (verbatim; after Gear 5's list, 8zzh)
+
+"Okay, moving on to Ito Ito no Mi, aka the string fruit. The player it's nice. I like it. It just I don't want the player to just be
+attached to two strings in the air at all times. I want it to like do break dances in the fucking sky. Like I want it to like jump from
+rope to rope, like just without like any requirement from the player, just animation wise, like backflip to another string, just skip to
+another one, jump from one to the other, and like swing, just like grab a string from the sky and swing to the next line. Like I want all
+that, and also the flying mechanic, this flying mechanic that I'm describing, should only happen when the player double clicks the jump
+bar. I mean the jump key, because right now I only have to click it once and instantly starts the flying, which is not what we want. If
+the player is just, like, hanging in midair, then we just make the player, like, grabbing onto a string with one hand, like, whenever
+they're just, like, in the sky, and we also can keep just animate it a little bit more, that's what I want.
+
+Bird Cage:
+
+For the birdcage, it's perfect as it is, but for detail, like we needed the strings to actually reach the floor and adapt to the
+environment. Otherwise, there's gaps that are left out of the birdcage. It should be a complete sphere, even on the floor. It should be a
+complete perfect sphere. And we want to add like it already has perfect lining. Let's get this straight. But we want to add more strings
+to the middle of the birdcage so that it feels more solid. The thinner lines in the middle, basically.
+
+As for the awakening, I would argue that the awakening in hockey mode should be different and same for the default awakening. I think
+that the awakening, the first of all, without hockey, the floor itself should be turned into string-like material and just like spike up
+and create like little spikes on the floor whenever someone steps in it, like sharp spikes from the floor that like rise up high whenever
+something steps on it, causing bleed. When hockey's on, I would say that massive tentacles like rise from the floor and from trees, like
+entire trees. Whenever the player has awakening activated, like it becoming a toggle while hockey's on, and whenever the player like has an
+hostile entity nearby, the environment will automatically generate massive tentacles of strings with the tip coded in hockey that will
+like impale, lift the targets up into the sky, and just like throw them afterwards. This should be a visual spectacle as well, so this is
+going to require some elbow grease on your part. Good luck."
+The screenshot (in game, inside the Birdcage, from behind the player standing on a grassy hill): the cage's dark strings run from the
+crown down in long arcs; its lower ring ends above the ground on the slopes, leaving open gaps between the strings' ends and the ground
+(circled in green, both sides); green strokes drawn between the existing strings (more, thinner strings wanted there) and along the
+ground's edge (the strings should reach down into the ground all round).
+Read as (planned after Gear 5's 3.4.9, as 3.5.0): (1) Sky Road starts on a double tap of jump in the air (not one press); (2) the
+runner does acrobatics on its own, animation only: backflips to another string, skips and leaps from string to string, grabs a string and
+swings to the next; (3) hanging still: one hand holding a string overhead, more alive; (4) the Birdcage reaches the ground all round,
+following the terrain (no gaps under its edge), a whole sphere; more, thinner strings between the main lines; (5) the Awakening without
+Haki: the ground round turns to string and sharp spikes shoot up high under whoever steps on it (bleeding); (6) with Haki (Armament): a
+toggle; while on, huge tentacles of string rise out of the ground and out of whole trees at hostile bodies near, their tips Haki-coated:
+they impale, lift them into the sky and throw them. A spectacle.
+Then (verbatim): "Also, I forgot to add, but the birdcage should close way slower. I mean, when the player activates the closing, when he
+like activates it again, it should come slowly, very slowly back. Like I mean, very slow." (7) The Birdcage's closing (N again) much,
+much slower than CAGE_CLOSE 100 ticks.
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.8 (8zzg: the style mastery command, the optimization pass) is green (Build #194, Release #139). The owner is testing
-   3.4.4 to 3.4.8 now: wait for what they say. Ask the owner how Dawn Pistol
+1. 3.4.9 (8zzh: the owner's Gear 5 list: the giant's camera, arm, jump and ripples; the smoke aura; the M1 lock; Dawn Pistol
+   straight; the Bajrang Gun lower and its bend; cartoon sounds) is pushed: check its Build and Release runs. Then the owner's Ito
+   list (8zzi: Sky Road on a double tap with acrobatics and a one-hand hang; the Birdcage down to the ground, more thin strings,
+   closing very slowly; the Awakening's spikes, and with Haki a toggle of string tentacles out of the ground and trees) as 3.5.0. Ask the owner how Dawn Pistol
    (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, Goof Ball and Dawn Whip (3.4.4) and Broken Bones (3.4.5) play, and work on what they say.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).

@@ -558,6 +558,62 @@ public final class HudTests {
         Check.that(com.hexhaki.piece.gear.RubberWave.toss(rise) > 0, "rubberJump: Rubber World's first ring throws a body 5 blocks out (" + rise + ")");
         Check.that(com.hexhaki.piece.gear.ToonForce.score("gear5_jump") != null && com.hexhaki.piece.gear.ToonForce.score("gear5_land") != null,
             "rubberJump: the jump and the landing have Toon Force beats");
+        // 3.4.9 (the owner, on the giant: "every ground rippling, everything should just be the same except the player's much bigger"):
+        // a normal body's ripple is exactly as before; the giant's (4x) reaches 4 times as far round, rises about twice as high, lasts twice
+        // as long, and is 0 outside its reach and life
+        java.util.Random random = new java.util.Random(7);
+        for (int i = 0; i < 2000; i++) {
+            double r = random.nextDouble() * 7;
+            double a = random.nextDouble() * 6.3;
+            double t = random.nextDouble() * 20 - 1;
+            boolean landing = random.nextBoolean();
+            Check.that(com.hexhaki.piece.gear.RubberJump.hop(r, a, t, landing, 1.0) == com.hexhaki.piece.gear.RubberJump.hop(r, a, t, landing),
+                "rubberJump: a normal body's ripple is unchanged");
+        }
+        for (boolean landing : new boolean[] {false, true}) {
+            double most = 0;
+            double far = 0;
+            double life = com.hexhaki.piece.gear.RubberJump.life(4.0);
+            double radius = (landing ? com.hexhaki.piece.gear.RubberJump.LAND_RADIUS : com.hexhaki.piece.gear.RubberJump.HOP_RADIUS) * 4;
+            for (double t = -1; t <= life + 2; t += 0.5) {
+                for (double r = 0; r < radius + 3; r += 0.5) {
+                    for (double a = 0; a < 6.3; a += 0.9) {
+                        double h = com.hexhaki.piece.gear.RubberJump.hop(r, a, t, landing, 4.0);
+                        most = Math.max(most, h);
+                        if (h > 0.05) {
+                            far = Math.max(far, r);
+                        }
+                        if (t > life || t < 0 || r > radius) {
+                            Check.that(h == 0, "rubberJump: a giant's ripple is still outside its life and reach (" + h + ")");
+                        }
+                    }
+                }
+            }
+            Check.that(most > 1.6 && most < 4.8, "rubberJump: a giant's ripple rises about twice as high (" + most + ")");
+            Check.that(far > radius * 0.6, "rubberJump: a giant's ripple runs out about 4 times as far (" + far + " of " + radius + ")");
+        }
+        Check.that(com.hexhaki.piece.gear.RubberJump.life(4.0) == 2 * com.hexhaki.piece.gear.RubberJump.LIFE, "rubberJump: a giant's lasts twice as long");
+        // 3.4.9: Gear 5's smoke (the owner: the white outline replaced "with like some kind of like photon smoke"): every wisp starts on the
+        // body (within its box, a little out), rises, grows, and the giant's are its size; a modest number a tick
+        double[] w = new double[com.hexhaki.piece.gear.NikaSmoke.FIELDS];
+        for (double scale : new double[] {1.0, 4.0}) {
+            for (int i = 0; i < 500; i++) {
+                com.hexhaki.piece.gear.NikaSmoke.spawn(scale, random.nextDouble() * 360 - 180, random, w);
+                double out = Math.hypot(w[com.hexhaki.piece.gear.NikaSmoke.X], w[com.hexhaki.piece.gear.NikaSmoke.Z]);
+                Check.that(out <= 0.5 * scale && w[com.hexhaki.piece.gear.NikaSmoke.Y] >= 0.15 * scale && w[com.hexhaki.piece.gear.NikaSmoke.Y] <= 1.85 * scale,
+                    "nikaSmoke: a wisp starts on the body (" + out + ", " + w[com.hexhaki.piece.gear.NikaSmoke.Y] + ")");
+                Check.that(w[com.hexhaki.piece.gear.NikaSmoke.VY] > 0, "nikaSmoke: smoke rises");
+                Check.that(w[com.hexhaki.piece.gear.NikaSmoke.SIZE1] > w[com.hexhaki.piece.gear.NikaSmoke.SIZE0], "nikaSmoke: a wisp grows");
+                Check.that(w[com.hexhaki.piece.gear.NikaSmoke.LIFETIME] >= 10 && w[com.hexhaki.piece.gear.NikaSmoke.LIFETIME] <= 40,
+                    "nikaSmoke: a wisp lives under two seconds");
+                Check.that(w[com.hexhaki.piece.gear.NikaSmoke.SIZE1] <= 1.5 * scale, "nikaSmoke: a wisp is the body's size at most");
+            }
+        }
+        Check.that(com.hexhaki.piece.gear.NikaSmoke.rate(1.0, 1.0) * (com.hexhaki.piece.gear.NikaSmoke.LIFE + com.hexhaki.piece.gear.NikaSmoke.LIFE_SPREAD) < 120
+            && com.hexhaki.piece.gear.NikaSmoke.rate(4.0, 1.0) * (com.hexhaki.piece.gear.NikaSmoke.LIFE + com.hexhaki.piece.gear.NikaSmoke.LIFE_SPREAD) < 200,
+            "nikaSmoke: a body keeps at most a couple of hundred wisps alive");
+        Check.that(com.hexhaki.piece.gear.NikaSmoke.rate(1.0, 0.0) == 0, "nikaSmoke: none while the transformation's presence is gone");
+        Check.that((com.hexhaki.piece.gear.NikaSmoke.FROM >>> 24) < 0xC0, "nikaSmoke: see-through smoke");
     }
 
     /**

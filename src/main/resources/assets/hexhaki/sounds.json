@@ -1328,5 +1328,117 @@
         "attenuation_distance": 40
       }
     ]
+  },
+  "gear5_pistol": {
+    "subtitle": "subtitles.hexhaki.gear5_pistol",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/pistol1"
+      }
+    ]
+  },
+  "gear5_impact": {
+    "subtitle": "subtitles.hexhaki.gear5_impact",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/impact1"
+      }
+    ]
+  },
+  "gear5_gatling": {
+    "subtitle": "subtitles.hexhaki.gear5_gatling",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/gatling1"
+      },
+      {
+        "name": "hexhaki:piece/nika/gatling2"
+      }
+    ]
+  },
+  "gear5_rocket": {
+    "subtitle": "subtitles.hexhaki.gear5_rocket",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/rocket1"
+      }
+    ]
+  },
+  "gear5_dodge": {
+    "subtitle": "subtitles.hexhaki.gear5_dodge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/dodge1"
+      }
+    ]
+  },
+  "gear5_giant": {
+    "subtitle": "subtitles.hexhaki.gear5_giant",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/giant1",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "gear5_whip": {
+    "subtitle": "subtitles.hexhaki.gear5_whip",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/throw1"
+      }
+    ]
+  },
+  "gear5_bajrang_charge": {
+    "subtitle": "subtitles.hexhaki.gear5_bajrang_charge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/charge1",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "gear5_bajrang_slam": {
+    "subtitle": "subtitles.hexhaki.gear5_bajrang_slam",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/slam1",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "gear5_bajrang_impact": {
+    "subtitle": "subtitles.hexhaki.gear5_bajrang_impact",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/boom1",
+        "attenuation_distance": 72
+      }
+    ]
+  },
+  "gear5_coil": {
+    "subtitle": "subtitles.hexhaki.gear5_coil",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/coil1"
+      }
+    ]
+  },
+  "gear5_sky_bounce": {
+    "subtitle": "subtitles.hexhaki.gear5_sky_bounce",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/bounce1"
+      }
+    ]
+  },
+  "gear5_rubber_world": {
+    "subtitle": "subtitles.hexhaki.gear5_rubber_world",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/world1",
+        "attenuation_distance": 40
+      }
+    ]
   }
 }

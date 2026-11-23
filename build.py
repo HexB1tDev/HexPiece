@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.4.8"
+VERSION = "3.4.9"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -107,6 +107,8 @@ PATCHED = {
     # 3.3.2: Sky Bounce gone (GearMovement's Shift + Space), Rubber World on everyone else (GearFields' bounce emptied), Buoyancy's text
     "com/hexhaki/client/devilfruit/GearMovement.class",
     "com/hexhaki/devilfruit/gameplay/GearFields.class",
+    # 3.4.9: Gear 5's white outline off (client/gear/NikaSmokeFx's smoke in its place)
+    "com/hexhaki/client/devilfruit/render/GearAuraLayer.class",
     "com/hexhaki/devilfruit/data/GearUpgrade.class",
     # 3.2.6: the Bajrang Gun's rounded giant fist, swept down from overhead (nikaFist)
     "com/hexhaki/client/devilfruit/render/BajrangFistLayer.class",
@@ -189,7 +191,12 @@ RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.
                     "conqueror_supreme_snap",
                     # 3.2.3 (the owner: "give the transformation just the drum sounds and just get rid of the music because of
                     # copyright"): Gear 5's transformation music silenced (the drums are server/GearDrums')
-                    "gear5_ambient_transformation"}}
+                    "gear5_ambient_transformation",
+                    # 3.4.9 (the owner: "a sound redesign for most of the abilities ... mostly like cartoony sounds"): Gear 5's moves on
+                    # cartoon CC0 recordings (gear/GearSounds.REDONE, tools/gear_sounds.py)
+                    "gear5_pistol", "gear5_impact", "gear5_gatling", "gear5_rocket", "gear5_dodge", "gear5_giant", "gear5_whip",
+                    "gear5_bajrang_charge", "gear5_bajrang_slam", "gear5_bajrang_impact", "gear5_coil", "gear5_sky_bounce",
+                    "gear5_rubber_world"}}
 # 2.1.1 (the owner: "Get rid of the Imu fruit (Devil Devil fruit). Get rid of it ENTIRELY, but keep it's assets, for future use on other
 # things"): no code, text or file name of the jar may name it; its assets (the Black Soul texture, model and name) stay.
 IMU = re.compile(rb"(?<![A-Za-z])(imu|Imu|IMU)(?![A-Za-z])|Akuma Akuma|akuma_akuma|AKUMA_AKUMA|Devil Devil|devil_devil")

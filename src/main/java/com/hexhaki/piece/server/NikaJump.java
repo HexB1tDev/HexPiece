@@ -50,6 +50,8 @@ public final class NikaJump {
     /** At most one jump in this many ticks; a jump not landed in {@link #LONGEST} ticks is forgotten. */
     static final int GAP = 5;
     static final int LONGEST = 200;
+    /** The giant's size (the original's GearServerController.bodyScale100 is 400 with "gigante"). */
+    static final float GIANT = 4.0F;
 
     static final class Jump {
         long at;
@@ -90,14 +92,16 @@ public final class NikaJump {
     /** A move of the fruit that has its own clip going (the jump's would cut it). */
     static boolean busy(ServerPlayer player) {
         return GearData.flag(player, "gatling") || GearData.flag(player, "rocketing") || GearData.flag(player, "coilHeld")
-            || GearData.flag(player, "lanceHolding") || GearData.flag(player, "giantHeld") || GearData.flag(player, "gigante")
+            || GearData.flag(player, "lanceHolding") || GearData.flag(player, "giantHeld")
             || GearData.flag(player, "rubberWorldHeld") || GearData.integer(player, "bajrangPhase") != 0
             || GearData.integer(player, "grabHeld") != 0;
     }
 
+    /** 3.4.9: bx the body's size (Giant's 4: its ripples are that big; the original's GearServerController.bodyScale100). */
     static void ripple(ServerPlayer player, int kind, double radius) {
+        float scale = GearData.flag(player, "gigante") ? GIANT : 1.0F;
         PieceNetwork.around(player, new S2CUoFx(kind, 0, player.m_19879_(), player.m_20185_(), player.m_20186_(), player.m_20189_(), 0, 0, 0,
-            0, 0, 0, (float) radius, 0));
+            scale, 0, 0, (float) (radius * scale), 0));
     }
 
     /** The clip Gear 5 stands or runs in (the original's own GearServerController.idleTrack). */

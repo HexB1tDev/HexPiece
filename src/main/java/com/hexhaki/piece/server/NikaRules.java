@@ -18,6 +18,21 @@ public final class NikaRules {
     private NikaRules() {
     }
 
+    /** The original's M1 lock: GearServerController.setM1Cooldown sets "cd_pistol" to the throw's tick + 20, the stretched arm's whole
+     * life (StretchStyle.PISTOL: wind-up 6, out 4, held 3, back 7). */
+    static final String PISTOL_LOCK = "cd_pistol";
+
+    /**
+     * 3.4.9 (the owner: the M1s "should have a cooldown, otherwise you can just spam it and cancel the animation, which isn't should
+     * not be possible. You shouldn't be able to punch until the arm is fully returned to your body to avoid lag"): in place of the
+     * Pistol's {@code onCooldown(player, "pistol")} in GearServerController.pistol: true while the last arm thrown is still out (until
+     * the tick the original's own lock ends), in every mode; the original's no-cooldown mode (HakiServerController.noCooldowns) skipped
+     * it, so every click restarted the punch and threw another arm.
+     */
+    public static boolean armOut(ServerPlayer player, String key) {
+        return player.m_9236_().m_46467_() < GearData.longValue(player, PISTOL_LOCK);
+    }
+
     /** Whether {@code action} goes ahead for {@code player}: in Gear 5 every one, out of it the stretch moves only. */
     public static boolean allowed(ServerPlayer player, GearAction action) {
         // 3.4.4: nothing else while Goof Ball, its daze or Dawn Whip runs (server/NikaWhip)

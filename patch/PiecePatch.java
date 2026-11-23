@@ -281,6 +281,11 @@ public final class PiecePatch implements Opcodes {
         // 3.4.4 (the owner: "Whip and Dawn Whip Rework"; "the Goof ball is only usable in transformed state"): the whip asks
         // server/NikaWhip whether it is unlocked: untransformed the original's answer (its Gum-Gum Whip as before); in Gear 5 Goof Ball or
         // the new Dawn Whip starts there and the answer is no, so the original's whip goes no further
+        // 3.4.9 (the owner: the M1s "should have a cooldown, otherwise you can just spam it and cancel the animation ... You shouldn't be
+        // able to punch until the arm is fully returned to your body"): the Pistol asks server/NikaRules.armOut, which holds it while the
+        // last arm is still out in every mode (the original's own 20-tick lock, cd_pistol, was skipped by its no-cooldown mode)
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "pistol", "com/hexhaki/devilfruit/gameplay/GearServerController", "onCooldown",
+            "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/String;)Z", "com/hexhaki/piece/server/NikaRules", "armOut", 1},
         {"com/hexhaki/devilfruit/gameplay/GearServerController", "whip", "com/hexhaki/devilfruit/data/GearData", "unlocked",
             "(Lnet/minecraft/world/entity/player/Player;Lcom/hexhaki/devilfruit/data/GearAbility;)Z", "com/hexhaki/piece/server/NikaWhip",
             "unlocked", 1},
@@ -359,6 +364,14 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/client/render/HakiPhysiqueLayer", "armSeparation", 0.35F, 0.08F, 1},
         {"com/hexhaki/client/render/HakiChestLayer", "render", 0.55F, 0.06F, 1},
         {"com/hexhaki/client/render/HakiChestLayer", "render", 0.3575F, 0.10F, 1},
+    };
+    /**
+     * 3.4.9 (the owner: the Bajrang Gun is "still jumping too high up, so I think we just reduce the blocks that the player jumps high,
+     * like a little lower"): double constants, class, method, from, to, how many, and the named constant kept in step (or null). The
+     * climb's top, 75 blocks over where it began, becomes 55 (the slam's reach is measured down to the ground, so it follows).
+     */
+    static final Object[][] DOUBLES = {
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "beginBajrang", 75.0, 55.0, 1, "BAJRANG_ALTITUDE"},
     };
     /** The physique's named constants, kept in step with {@link #FLOATS} (class, field, value). */
     static final Object[][] FLOAT_FIELDS = {
@@ -455,6 +468,10 @@ public final class PiecePatch implements Opcodes {
             String owner = (String) f[0];
             entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> replaceInt(node, f)));
         }
+        for (Object[] f : DOUBLES) {
+            String owner = (String) f[0];
+            entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> replaceDouble(node, f)));
+        }
         for (Object[] f : FLOAT_FIELDS) {
             String owner = (String) f[0];
             entries.put(owner + ".class", transform(entries.get(owner + ".class"), node -> {
@@ -499,6 +516,7 @@ public final class PiecePatch implements Opcodes {
             rubberChaos(node);
         }));
         entries.put(GEAR_FIELDS + ".class", transform(entries.get(GEAR_FIELDS + ".class"), PiecePatch::fieldsQuiet));
+        entries.put(GEAR_AURA + ".class", transform(entries.get(GEAR_AURA + ".class"), PiecePatch::gearAura));
         // 2.9.4 (the owner: "Get rid of this fucking old lighting from everywhere, including Gear 5"): the effects that played their
         // lightning themselves, past HakiBolts, and showed the original's flat beams
         entries.put(GEAR_VFX + ".class", transform(entries.get(GEAR_VFX + ".class"), node -> {
@@ -1386,6 +1404,28 @@ public final class PiecePatch implements Opcodes {
         bounce.invisibleLocalVariableAnnotations = null;
     }
 
+    /** 3.4.9: Gear 5's white outline (the whole body drawn twice more, scaled up round the chest). */
+    static final String GEAR_AURA = "com/hexhaki/client/devilfruit/render/GearAuraLayer";
+
+    /**
+     * 3.4.9 (the owner: "the white aura around the player, it needs to be replaced with like some kind of like photon smoke ... the
+     * outline that the player has, doesn't adapt well to animations"): GearAuraLayer.render draws nothing; Gear 5's aura is
+     * client/gear/NikaSmokeFx's smoke. The layer stays registered (the original adds it), empty.
+     */
+    static void gearAura(ClassNode node) {
+        MethodNode render = method(node, "render", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;"
+            + "ILnet/minecraft/client/player/AbstractClientPlayer;FFFFFF)V");
+        InsnList body = new InsnList();
+        body.add(new InsnNode(RETURN));
+        render.instructions = body;
+        render.tryCatchBlocks.clear();
+        if (render.localVariables != null) {
+            render.localVariables.clear();
+        }
+        render.visibleLocalVariableAnnotations = null;
+        render.invisibleLocalVariableAnnotations = null;
+    }
+
     /** 3.2.8: the Giant's grab (server/GiantHold). */
     static final String GIANT_GRAB = "com/hexhaki/patch/GiantGrab";
     static final String GIANT_HOLD = "com/hexhaki/piece/server/GiantHold";
@@ -1552,6 +1592,30 @@ public final class PiecePatch implements Opcodes {
         }
         if (centres != 1 || emits != 3) {
             throw new AssertionError("BajrangFistLayer.render is not as inspected: " + centres + " centres, " + emits + " emits");
+        }
+        bajrangBow(render);
+    }
+
+    /**
+     * 3.4.9 (the owner, with a screenshot of the arm curving away under the player: "the arm, like after it hits the floor, it switches
+     * direction and like it's bending to the left instead of to the right"): the original bows the stretched arm 0.14 of its length to
+     * one side while it slams ({@code phase == SLAM ? -1 : 1}) and to the other side once it has hit (IMPACT, the retract, the fall), so
+     * the whole arm swung over at the moment of impact. The other branch's {@code 1.0F} becomes the slam's {@code -1.0F}: it keeps its
+     * bend. Exactly one, or the build fails.
+     */
+    static void bajrangBow(MethodNode render) {
+        int found = 0;
+        for (AbstractInsnNode insn = render.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof FieldInsnNode field && field.getOpcode() == GETSTATIC && field.name.equals("SLAM")
+                && field.owner.equals("com/hexhaki/devilfruit/data/BajrangPhase") && nextReal(field) instanceof JumpInsnNode jump
+                && jump.getOpcode() == IF_ACMPNE && nextReal(jump) instanceof LdcInsnNode minus && Float.valueOf(-1.0F).equals(minus.cst)
+                && nextReal(jump.label) instanceof InsnNode one && one.getOpcode() == FCONST_1) {
+                render.instructions.set(one, new LdcInsnNode(-1.0F));
+                found++;
+            }
+        }
+        if (found != 1) {
+            throw new AssertionError("BajrangFistLayer.render's bow is not as inspected: " + found);
         }
     }
 
@@ -1726,6 +1790,30 @@ public final class PiecePatch implements Opcodes {
         }
         if (count != (Integer) f[4]) {
             throw new AssertionError("expected " + f[4] + " constants " + f[2] + " in " + node.name + "." + f[1] + ", found " + count);
+        }
+    }
+
+    /** One {@link #DOUBLES} row: the double constant in the method becomes the new value (the count must match), and its named field. */
+    static void replaceDouble(ClassNode node, Object[] f) {
+        MethodNode method = method(node, (String) f[1], null);
+        int count = 0;
+        for (AbstractInsnNode insn = method.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (insn instanceof LdcInsnNode ldc && ldc.cst instanceof Double value && value.doubleValue() == (Double) f[2]) {
+                ldc.cst = f[3];
+                count++;
+            }
+        }
+        if (count != (Integer) f[4]) {
+            throw new AssertionError("expected " + f[4] + " constants " + f[2] + " in " + node.name + "." + f[1] + ", found " + count);
+        }
+        if (f[5] != null) {
+            for (FieldNode field : node.fields) {
+                if (field.name.equals(f[5])) {
+                    field.value = f[3];
+                    return;
+                }
+            }
+            throw new AssertionError("missing " + node.name + "." + f[5]);
         }
     }
 

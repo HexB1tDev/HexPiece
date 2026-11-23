@@ -56,18 +56,27 @@ public final class NikaJumpClient {
         Vec3 v = player.m_20184_();
         player.m_20334_(v.f_82479_, RubberJump.lifted(v.f_82480_), v.f_82481_);
         PieceNetwork.toServer(new C2SNikaJump());
-        RubberWorldDraw.hop(player.m_20185_(), player.m_20186_(), player.m_20189_(), false);
+        RubberWorldDraw.hop(player.m_20185_(), player.m_20186_(), player.m_20189_(), false, size(player));
         airborne = true;
         airTicks = 0;
     }
 
-    /** Gear 5, and nothing holding the body: not transforming, not the giant, not in the Bajrang Gun, not flying, riding or swimming. */
+    /**
+     * Gear 5, and nothing holding the body: not transforming, not in the Bajrang Gun, not flying, riding or swimming. 3.4.9 (the owner:
+     * the giant's "jumping animations and all should remain the same as the one we got"): the giant jumps as the normal body does.
+     */
     static boolean may(LocalPlayer player) {
         if (!GearClientState.gearFive || GearClientState.transforming() || player.m_150110_().f_35935_ || player.m_20159_() || player.m_20069_()) {
             return false;
         }
         RemoteGearStates.State state = RemoteGearStates.get(player.m_19879_());
-        return state == null || state.targetScale < 1.05F && (state.bajrang == null || state.bajrang == BajrangPhase.NONE);
+        return state == null || state.bajrang == null || state.bajrang == BajrangPhase.NONE;
+    }
+
+    /** 3.4.9: how many times the normal body this one is drawn (Giant's 4, growing and shrinking): its ripples are that big. */
+    static double size(LocalPlayer player) {
+        RemoteGearStates.State state = RemoteGearStates.get(player.m_19879_());
+        return state == null ? 1.0 : Math.max(1.0, Math.min(6.0, state.scale(1.0F)));
     }
 
     @SubscribeEvent
@@ -97,13 +106,13 @@ public final class NikaJumpClient {
             } else if (airTicks >= 3 && ground) {
                 airborne = false;
                 peak = Double.NaN;
-                RubberWorldDraw.hop(player.m_20185_(), y, player.m_20189_(), true);
+                RubberWorldDraw.hop(player.m_20185_(), y, player.m_20189_(), true, size(player));
                 return;
             }
         }
         if (ground && !Double.isNaN(peak)) {
             if (peak - y >= RubberJump.FALL_MIN && GearClientState.gearFive && !airborne) {
-                RubberWorldDraw.hop(player.m_20185_(), y, player.m_20189_(), true);
+                RubberWorldDraw.hop(player.m_20185_(), y, player.m_20189_(), true, size(player));
             }
             peak = Double.NaN;
         }

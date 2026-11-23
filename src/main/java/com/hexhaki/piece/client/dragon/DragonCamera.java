@@ -28,11 +28,18 @@ public final class DragonCamera {
 
     public static Vec3 position(Entity entity, float partial) {
         Vec3 original = CinematicController.kingsGripCameraPosition(entity, partial);
-        if (original != null || entity == null || DragonClient.ENTRIES.isEmpty()) {
+        if (original != null || entity == null) {
             return original;
         }
         try {
-            return dragon(entity, partial);
+            if (!DragonClient.ENTRIES.isEmpty()) {
+                Vec3 dragon = dragon(entity, partial);
+                if (dragon != null) {
+                    return dragon;
+                }
+            }
+            // 3.4.9: Gear 5's giant has a camera its size (client/gear/GiantCamera)
+            return com.hexhaki.piece.client.gear.GiantCamera.position(entity, partial);
         } catch (RuntimeException e) {
             return null; // the game's own camera
         }
@@ -60,7 +67,7 @@ public final class DragonCamera {
     }
 
     /** {@code to}, or short of the first block between {@code from} and it. */
-    static Vec3 clip(Entity entity, Vec3 from, Vec3 to) {
+    public static Vec3 clip(Entity entity, Vec3 from, Vec3 to) {
         HitResult hit = entity.m_9236_().m_45547_(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, entity));
         if (hit.m_6662_() == HitResult.Type.MISS) {
             return to;

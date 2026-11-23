@@ -29,7 +29,8 @@ from style_anims import OUT as ANIM_DIR, PARTS, WRITTEN, arm, leg, mirror, p  # 
 
 OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam", "gear5_dawn_whip",
          "gear5_bounce", "gear5_jump", "gear5_land", "gear5_dawn_pistol", "gear5_dawn_pistol_left", "gear5_goof_spin",
-         "gear5_goof_dizzy", "gear5_dawn_pop"}
+         "gear5_goof_dizzy", "gear5_dawn_pop", "gear5_giant_grab",
+         "gear5_giant_throw"}
 
 # the transformation's beats on the real clock (the original's 170-tick clock at double speed: patch/PiecePatch.gearFast)
 LENGTH = 85
@@ -404,6 +405,26 @@ def dawn_pistol():
         save(name, data)
 
 
+def giant_grab():
+    """3.4.9 (the owner: "The animation of the arm that is not holding a mob should just be normal. It has a strange animation when it
+    really doesn't have to"): Giant's hold, gear5_giant_grab, keys only the holding (right) arm, exactly the original's track (first
+    person shows it: HakiAnimations' OWN_FIRST_PERSON_ARM; gear/NikaHold puts the held body in that fist). The left arm, the head, the
+    torso and the body are left to the game: the free arm swings as it walks, the look is the player's own."""
+    data = load("gear5_giant_grab")
+    emote = data["emote"]
+    emote["moves"] = [m for m in emote["moves"] if "rightArm" in m]
+    data["description"] = "Nika: Giant's hold: the right arm reaches out and holds what it caught at full stretch; nothing else keyed."
+    data["author"] = "HexPiece 3.4.9"
+    WRITTEN["gear5_giant_grab"] = data
+    save("gear5_giant_grab", data)
+    # the throw out of the hold: its own arms and body as they were, the head never keyed (the look is the player's own)
+    throw = load("gear5_giant_throw")
+    throw["emote"]["moves"] = [m for m in throw["emote"]["moves"] if "head" not in m]
+    throw["author"] = "HexPiece 3.4.9"
+    WRITTEN["gear5_giant_throw"] = throw
+    save("gear5_giant_throw", throw)
+
+
 def sky_bounce():
     """Sky Bounce (Shift+Space in Gear 5; the owner: "not a fan" of the old one, which hunched over with the arms folded across the chest;
     the target: Gear 5 Luffy's skip): a squash crouch with the arms swung back, the launch stretched straight with both arms flung up,
@@ -467,6 +488,7 @@ def main():
     goof_spin()
     goof_dizzy()
     dawn_pistol()
+    giant_grab()
     sky_bounce()
     jump()
     land()

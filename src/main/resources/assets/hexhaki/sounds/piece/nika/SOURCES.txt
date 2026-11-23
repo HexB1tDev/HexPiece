@@ -1,0 +1,18 @@
+Gear 5's moves, redone as cartoon sounds (tools/gear_sounds.py, 3.4.9). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+pistol1.ogg: "Cartoon Quick Zip 02" by se2001, https://freesound.org/people/se2001/sounds/541507/ (CC0 1.0), from 0.0 s, 0.24 s long
+impact1.ogg: "Slap - Cartoony" by AdminMP, https://freesound.org/people/AdminMP/sounds/383201/ (CC0 1.0), from 0.1 s, 0.60 s long, compressed to sound louder
+gatling1.ogg: "Kung-Fu punch SFX (A-B) (Edited)" by Sadiquecat, https://freesound.org/people/Sadiquecat/sounds/786323/ (CC0 1.0), from 0.0 s, 0.45 s long, 2.0 dB quieter, compressed to sound louder
+gatling2.ogg: "Kung Fu punch 5" by peridactyloptrix, https://freesound.org/people/peridactyloptrix/sounds/210897/ (CC0 1.0), from 0.2 s, 0.40 s long, 2.0 dB quieter, compressed to sound louder
+rocket1.ogg: "SWOSH-01 44.1kHz" by qubodup, https://freesound.org/people/qubodup/sounds/59988/ (CC0 1.0), from 0.0 s, 0.28 s long
+dodge1.ogg: "Basic Melee Swing / Miss / Whoosh" by SypherZent, https://freesound.org/people/SypherZent/sounds/420668/ (CC0 1.0), from 0.0 s, 0.20 s long
+giant1.ogg: "Inflating a party balloon (fast)" by xkeril, https://freesound.org/people/xkeril/sounds/760346/ (CC0 1.0), from 0.2 s, 0.75 s long
+charge1.ogg: "Inflating a party balloon (fast)" by xkeril, https://freesound.org/people/xkeril/sounds/760346/ (CC0 1.0), from 1.2 s, 0.65 s long
+slam1.ogg: "whoosh_long_low.wav" by DJT4NN3R, https://freesound.org/people/DJT4NN3R/sounds/449990/ (CC0 1.0), from 0.3 s, 2.00 s long
+throw1.ogg: "whoosh_long_low.wav" by DJT4NN3R, https://freesound.org/people/DJT4NN3R/sounds/449990/ (CC0 1.0), from 0.6 s, 1.10 s long
+boom1.ogg: "Cartoon Explosion (designed on cassette tape lol)" by modusmogulus, https://freesound.org/people/modusmogulus/sounds/784205/ (CC0 1.0), from 0.0 s, 2.80 s long
+coil1.ogg: "Rubber Stretch Rip 1.wav" by mickdow, https://freesound.org/people/mickdow/sounds/253327/ (CC0 1.0), from 2.0 s, 0.80 s long, compressed to sound louder
+bounce1.ogg: "Cartoon Pop (Distorted)" by unfa, https://freesound.org/people/unfa/sounds/245646/ (CC0 1.0), from 0.0 s, 0.17 s long, 3.0 dB quieter, compressed to sound louder
+world1.ogg: "melonexplosion.wav" by foxgirl, https://freesound.org/people/foxgirl/sounds/437312/ (CC0 1.0), from 0.0 s, 0.75 s long, compressed to sound louder

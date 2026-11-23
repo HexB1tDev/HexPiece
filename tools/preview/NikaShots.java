@@ -111,17 +111,19 @@ public final class NikaShots {
                 double sx = -0.37;
                 double sy = 1.3;
                 if (reach > 0.3) {
-                    // through the body: the loop laid out to the body, the arm straight on to the fist (client/gear/NikaPistolArm)
-                    double to = Math.min(reach, bz0);
-                    curvedArm(sink, ex, ey, ez, sx, sy, 0, 0, 1.15, to, coat, reach > bz0 + 0.05 ? -1 : mulRgb(skin, 0x3A3248));
-                    if (reach > bz0 + 0.05) {
-                        FireMesh.tube(sink, -ex, 1.15 - ey, to - ez, -ex, 1.15 - ey, reach - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
-                        NikaArt.tint = mulRgb(skin, 0x3A3248);
-                        NikaArt.light(-0.33, 0.79, -0.51);
-                        double r = 0.375;
-                        NikaArt.fist(sink, -ex, 1.15 - ey, reach + r - ez, 0, 0, 1, 0, 1, 0, r, true, true);
-                        NikaArt.tint = 0xFFFFFF;
-                    }
+                    // 3.4.9: one straight arm from the shoulder to the fist, on through the body while the skin stretches
+                    // (client/gear/NikaPistolArm)
+                    FireMesh.tube(sink, sx - ex, sy - ey, -ez, -ex, 1.15 - ey, reach - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
+                    double dx = -sx;
+                    double dy = 1.15 - sy;
+                    double dz = reach;
+                    double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    NikaArt.tint = mulRgb(skin, 0x3A3248);
+                    NikaArt.light(-0.33, 0.79, -0.51);
+                    double r = 0.125 * 3.0 * (0.4 + 0.6 * Math.min(1.0, dl / 2.5));
+                    NikaArt.fist(sink, dx / dl * (dl + r) + sx - ex, sy + dy / dl * (dl + r) - ey, dz / dl * (dl + r) - ez, dx, dy, dz, 0, 1, 0, r,
+                        true, true);
+                    NikaArt.tint = 0xFFFFFF;
                 }
                 if (tl >= 0) {
                     double len = NikaSkin.LENGTH * NikaSkin.out(tl);
@@ -227,17 +229,20 @@ public final class NikaShots {
             case "nhop" -> {
                 double t = move.length > 1 ? Double.parseDouble(move[1]) : 1;
                 boolean landing = move.length > 2 && move[2].equals("1");
-                for (int x = -7; x < 7; x++) {
-                    for (int z = -7; z < 7; z++) {
+                // 3.4.9: |nhop:t:land:size a body size times the normal one (the giant: 4), its ripples as gear/RubberJump makes them
+                double size = move.length > 3 ? Double.parseDouble(move[3]) : 1.0;
+                int span = (int) Math.ceil(7 * size);
+                for (int x = -span; x < span; x++) {
+                    for (int z = -span; z < span; z++) {
                         double cx = x + 0.5;
                         double cz = z + 0.5;
                         double r = Math.sqrt(cx * cx + cz * cz);
                         double angle = Math.atan2(cz, cx);
-                        double h = RubberJump.hop(r, angle, t, landing);
+                        double h = RubberJump.hop(r, angle, t, landing, size);
                         if (h < 0.03) {
                             continue;
                         }
-                        double tilt = RubberWave.tilt(RubberJump.slope(r, angle, t, landing));
+                        double tilt = RubberWave.tilt(RubberJump.slope(r, angle, t, landing, size));
                         column(sink, x - ex, h - ey, z - ez, cx / Math.max(r, 1e-6), cz / Math.max(r, 1e-6), tilt, h);
                     }
                 }
@@ -251,10 +256,14 @@ public final class NikaShots {
                     }
                     y += v * (t - (int) t);
                 }
-                HieShots.body(sink, -ex, y - ey, -ez);
-                double bx = 2.6;
-                double bz = 0.9;
-                double bh = RubberJump.hop(Math.hypot(bx, bz), Math.atan2(bz, bx), t, landing);
+                if (size > 1.0) {
+                    giant(sink, -ex, y - ey, -ez, 0, size, 0);
+                } else {
+                    HieShots.body(sink, -ex, y - ey, -ez);
+                }
+                double bx = 2.6 * size;
+                double bz = 0.9 * size;
+                double bh = RubberJump.hop(Math.hypot(bx, bz), Math.atan2(bz, bx), t, landing, size);
                 HieShots.body(sink, bx - ex, bh - ey, bz - ez);
             }
             // 3.4.4: Goof Ball. |ngoof:age[:slim] the ball (age ticks after it formed) at the middle with the user's limbs punching out
@@ -304,6 +313,22 @@ public final class NikaShots {
             // Whip t ticks in: the user (art/user_skin.png; the game uses the Gear 5 skin) posed by gear5_dawn_whip as client/npc/StylePoser
             // samples it, the striking leg stretched out Haki-coated (gear/NikaDawn.leg, the very quads the game draws), the smear, the
             // coil or the overspin's arcs, two bodies 7 and 5 blocks off (struck and launched at the impact) and their cracks
+            // 3.4.9: |nsmoke:seed[:scale[:clip[:tick]]] Gear 5's smoke aura (gear/NikaSmoke, the very spawn rule client/gear/NikaSmokeFx
+            // uses, run for 40 ticks as PieceFx's Mote moves them: drag, wander, growing, fading) round the user posed by a clip
+            case "nsmoke" -> {
+                long seed = move.length > 1 ? Long.parseLong(move[1]) : 1;
+                double scale = move.length > 2 ? Double.parseDouble(move[2]) : 1.0;
+                String clip = move.length > 3 ? move[3] : "gear5_stance";
+                float tick = move.length > 4 ? Float.parseFloat(move[4]) : 10.0F;
+                float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample(clip, tick);
+                com.hexhaki.piece.style.StyleShow.Place place = new com.hexhaki.piece.style.StyleShow.Place(-ex, -ey, -ez, 0.0);
+                if (scale <= 1.0) {
+                    com.hexhaki.piece.horo.AstralArt.left(skin(sink), pose, place);
+                } else {
+                    giant(sink, -ex, -ey, -ez, 0, scale, 0);
+                }
+                smoke(sink, -ex, -ey, -ez, scale, seed);
+            }
             case "ndwhip" -> {
                 double t = move.length > 1 ? Double.parseDouble(move[1]) : 16;
                 // |ndwhip:t:fp: one's own first person (with the camera fp:pitch): no body of one's own, no coil or arcs round the eye
@@ -554,60 +579,6 @@ public final class NikaShots {
      * One grass block (its top at y), from x, z, turned about the flat axis across the way out (rx, rz) by {@code tilt} radians round
      * its top's middle (a positive tilt faces its top inward, as the client turns it).
      */
-    /**
-     * 3.4.1: Dawn Pistol's arm as client/gear/NikaPistolArm draws it: gear/NikaArc's looping path (up and out to the right: the thrower's
-     * right is -x facing +z) as a quadratic B-spline, each piece 4 tube lengths, and the ballooned right fist on its end facing along the
-     * path's last stretch.
-     */
-    static void curvedArm(FireMesh.Sink sink, double ex, double ey, double ez, double sx, double sy, double sz, double tx, double ty, double tz,
-                          int coat, int fistTint) {
-        double[] h = new double[3];
-        double[] k = new double[com.hexhaki.piece.gear.NikaArc.KNOTS * 3];
-        if (!com.hexhaki.piece.gear.NikaArc.plane(tx - sx, ty - sy, tz - sz, 0, 1, 0, -1, 0, 0, h)) {
-            return;
-        }
-        com.hexhaki.piece.gear.NikaArc.path(sx, sy, sz, tx, ty, tz, h[0], h[1], h[2], k);
-        int n = com.hexhaki.piece.gear.NikaArc.KNOTS;
-        double px = sx;
-        double py = sy;
-        double pz = sz;
-        for (int p = 0; p <= n - 2; p++) {
-            double[] a0 = p == 0 ? new double[] {k[0], k[1], k[2]} : mid(k, p, p + 1);
-            double[] c0 = {k[(p + 1) * 3], k[(p + 1) * 3 + 1], k[(p + 1) * 3 + 2]};
-            double[] b0 = p == n - 2 ? new double[] {k[(n - 1) * 3], k[(n - 1) * 3 + 1], k[(n - 1) * 3 + 2]} : mid(k, p + 1, p + 2);
-            for (int i = 1; i <= 4; i++) {
-                double u = i / 4.0;
-                double qa = (1 - u) * (1 - u);
-                double qb = 2 * u * (1 - u);
-                double qc = u * u;
-                double qx = qa * a0[0] + qb * c0[0] + qc * b0[0];
-                double qy = qa * a0[1] + qb * c0[1] + qc * b0[1];
-                double qz = qa * a0[2] + qb * c0[2] + qc * b0[2];
-                FireMesh.tube(sink, px - ex, py - ey, pz - ez, qx - ex, qy - ey, qz - ez, 0.13, 0.13, coat, coat, coat, 0.0, 1.0, 0.0, 0.0, 1);
-                px = qx;
-                py = qy;
-                pz = qz;
-            }
-        }
-        if (fistTint < 0) {
-            return; // the fist is further on (through the body)
-        }
-        double len = Math.sqrt((tx - sx) * (tx - sx) + (ty - sy) * (ty - sy) + (tz - sz) * (tz - sz));
-        double r = 0.125 * 3.0 * (0.4 + 0.6 * Math.min(1.0, len / 2.5));
-        double fx = tx - k[(n - 2) * 3];
-        double fy = ty - k[(n - 2) * 3 + 1];
-        double fz = tz - k[(n - 2) * 3 + 2];
-        double fl = Math.max(1.0E-6, Math.sqrt(fx * fx + fy * fy + fz * fz));
-        NikaArt.tint = fistTint;
-        NikaArt.light(-0.33, 0.79, -0.51);
-        NikaArt.fist(sink, tx + fx / fl * r - ex, ty + fy / fl * r - ey, tz + fz / fl * r - ez, fx, fy, fz, 0, 1, 0, r, true, true);
-        NikaArt.tint = 0xFFFFFF;
-    }
-
-    static double[] mid(double[] k, int i, int j) {
-        return new double[] {(k[i * 3] + k[j * 3]) * 0.5, (k[i * 3 + 1] + k[j * 3 + 1]) * 0.5, (k[i * 3 + 2] + k[j * 3 + 2]) * 0.5};
-    }
-
     /** Two colours multiplied (a texel times a vertex colour, as the game draws it). */
     static int mulRgb(int a, int b) {
         int r = ((a >> 16) & 255) * ((b >> 16) & 255) / 255;
@@ -668,6 +639,110 @@ public final class NikaShots {
     static java.awt.image.BufferedImage userSkin;
 
     /** Skin quads (AstralArt.Skin) drawn into {@code sink} texel by texel in art/user_skin.png, lit as the game lights an entity. */
+    static java.awt.image.BufferedImage[] smokeSprites;
+
+    /** 3.4.9: Gear 5's smoke round feet (x, y, z): 40 ticks of wisps as client/gear/NikaSmokeFx spawns them and PieceFx moves them. */
+    static void smoke(FireMesh.Sink sink, double x, double y, double z, double scale, long seed) {
+        if (smokeSprites == null) {
+            smokeSprites = new java.awt.image.BufferedImage[2];
+            String[] names = {"steam", "puff"};
+            for (int i = 0; i < 2; i++) {
+                try {
+                    smokeSprites[i] = javax.imageio.ImageIO.read(new java.io.File("src/main/resources/assets/hexhaki/textures/piece/particle/" + names[i] + ".png"));
+                } catch (java.io.IOException failure) {
+                    throw new IllegalStateException(failure);
+                }
+            }
+        }
+        java.util.Random random = new java.util.Random(seed);
+        double[] w = new double[com.hexhaki.piece.gear.NikaSmoke.FIELDS];
+        int now = 40;
+        double carry = 0;
+        java.util.List<double[]> drawn = new java.util.ArrayList<>();
+        for (int born = 0; born < now; born++) {
+            carry += com.hexhaki.piece.gear.NikaSmoke.rate(scale, 1.0);
+            while (carry >= 1.0) {
+                carry -= 1.0;
+                com.hexhaki.piece.gear.NikaSmoke.spawn(scale, 0.0, random, w);
+                int age = now - born;
+                if (age > w[com.hexhaki.piece.gear.NikaSmoke.LIFETIME]) {
+                    continue;
+                }
+                double px = w[0];
+                double py = w[1];
+                double pz = w[2];
+                double vx = w[3];
+                double vy = w[4];
+                double vz = w[5];
+                java.util.Random jitter = new java.util.Random(random.nextLong());
+                for (int k = 0; k < age; k++) {
+                    double j = com.hexhaki.piece.gear.NikaSmoke.WANDER;
+                    vx += (jitter.nextFloat() - 0.5) * j;
+                    vy += (jitter.nextFloat() - 0.5) * j * 0.5;
+                    vz += (jitter.nextFloat() - 0.5) * j;
+                    vx *= com.hexhaki.piece.gear.NikaSmoke.DRAG;
+                    vy *= com.hexhaki.piece.gear.NikaSmoke.DRAG;
+                    vz *= com.hexhaki.piece.gear.NikaSmoke.DRAG;
+                    px += vx;
+                    py += vy;
+                    pz += vz;
+                }
+                double t = age / w[com.hexhaki.piece.gear.NikaSmoke.LIFETIME];
+                double open = Math.min(1.0, age / 4.0);
+                boolean puff = w[com.hexhaki.piece.gear.NikaSmoke.PUFF] > 0.5;
+                int from = puff ? com.hexhaki.piece.gear.NikaSmoke.FROM_PUFF : com.hexhaki.piece.gear.NikaSmoke.FROM;
+                double alpha = ((from >>> 24) / 255.0) * (1 - t) * open * open * (3 - 2 * open);
+                double size = w[6] + (w[7] - w[6]) * t;
+                drawn.add(new double[] {x + px, y + py, z + pz, size, alpha, puff ? 1 : 0});
+            }
+        }
+        for (double[] d : drawn) {
+            billboard(sink, d[0], d[1], d[2], d[3], d[4], smokeSprites[(int) d[5]]);
+        }
+    }
+
+    /** A sprite facing the eye (at the origin), {@code size} across, its texels as little quads (14 x 14), white tinted by alpha. */
+    static void billboard(FireMesh.Sink sink, double x, double y, double z, double size, double alpha, java.awt.image.BufferedImage sprite) {
+        double d = Math.sqrt(x * x + y * y + z * z);
+        double fx = -x / d;
+        double fy = -y / d;
+        double fz = -z / d;
+        // right = up x toward-eye, up' = toward-eye x right
+        double rx = fz;
+        double ry = 0;
+        double rz = -fx;
+        double rl = Math.max(1.0E-6, Math.sqrt(rx * rx + rz * rz));
+        rx /= rl;
+        rz /= rl;
+        double ux = fy * rz - fz * ry;
+        double uy = fz * rx - fx * rz;
+        double uz = fx * ry - fy * rx;
+        int n = 14;
+        double cell = size / n;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                int sx = (int) ((i + 0.5) * sprite.getWidth() / n);
+                int sy = (int) ((j + 0.5) * sprite.getHeight() / n);
+                int texel = sprite.getRGB(sx, sy);
+                double a = ((texel >>> 24) & 255) / 255.0 * alpha;
+                if (a < 0.01) {
+                    continue;
+                }
+                double a0 = -size / 2 + i * cell;
+                double b0 = size / 2 - j * cell;
+                int argb = ((int) (a * 255) << 24) | (texel & 0xFFFFFF);
+                double[] q = new double[12];
+                double[][] corners = {{a0, b0}, {a0 + cell, b0}, {a0 + cell, b0 - cell}, {a0, b0 - cell}};
+                for (int c = 0; c < 4; c++) {
+                    q[c * 3] = x + rx * corners[c][0] + ux * corners[c][1];
+                    q[c * 3 + 1] = y + ry * corners[c][0] + uy * corners[c][1];
+                    q[c * 3 + 2] = z + rz * corners[c][0] + uz * corners[c][1];
+                }
+                sink.quad(q, new int[] {argb, argb, argb, argb});
+            }
+        }
+    }
+
     static com.hexhaki.piece.horo.AstralArt.Skin skin(FireMesh.Sink sink) {
         if (userSkin == null) {
             try {

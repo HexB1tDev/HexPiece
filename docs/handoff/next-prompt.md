@@ -3,8 +3,8 @@ Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetc
 Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzg of next-ai-3.2.2.md
-(2.9.6 to 3.4.8); open the older next-ai-*.md only for a feature's detail.
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzi of next-ai-3.2.2.md
+(2.9.6 to 3.4.9); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -13,16 +13,19 @@ and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStor
 never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
 render any lightning change beside the release from the same camera before pushing).
 
-Where things stand: up to 3.4.8 everything is pushed and green (3.4.8: Build #194, Release #139; section 8zzg covers 3.4.4 to 3.4.8
-with the owner's words verbatim: Goof Ball, Dawn Whip, Broken Bones, Goof Ball and Giant only in Gear 5, Dawn Whip's leg drawn by
-HexPiece, the Giant's straight throw and crash, /hexpiece style mastery <0..1000>, and an optimization pass: the lightning's and the
-effect primitives' per-frame garbage removed, proven identical by a fingerprint; dragons out of view not skinned). Check the newest
-Build run on the branch first and fix anything red.
+Where things stand: up to 3.4.8 everything is pushed and green (3.4.8: Build #194, Release #139). 3.4.9 (section 8zzh: the owner's
+Gear 5 bug list verbatim and as built: the giant's camera, its free arm, its jump and giant-sized ripples; the white outline replaced by
+Photon smoke; the M1 lock until the arm is back; Dawn Pistol straight in third person; the Bajrang Gun 55 blocks up and its arm keeping
+its bend; cartoon CC0 sounds for most Gear 5 moves) was pushed: check its Build and Release runs first and fix anything red.
 
-Next: the owner is testing 3.4.4 to 3.4.8: wait for their notes and work on them. The optimization can go on if they want more (8zzg
-lists what is left: Ryou's fist aura only with a fingerprint proving it unchanged, WaterFx's per-frame lists). The fist is a right fist on
-the right arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before any art: thin pale lines and flat polygons are
-not acceptable; hot strings use ItoArt's HOT tint.
+Next: the owner's Ito Ito no Mi list (section 8zzi, verbatim, with their screenshot described) as 3.5.0: Sky Road only on a double tap
+of jump, the runner doing acrobatics on its own (backflips, skips, leaps and swings from string to string), a one-hand hang when still;
+the Birdcage's strings down to the ground all round following the terrain (no gaps), more thin strings between the main ones, and its
+closing very, very slow; the Awakening: without Haki the ground turned to string, spikes shooting up under whoever steps on it (bleeding);
+with Haki a toggle: huge string tentacles out of the ground and whole trees at hostile bodies near, Haki-coated tips, impaling, lifting
+them into the sky and throwing them, a spectacle. Then the owner's lists for the other fruits ("We got a lot of work to do on the other
+fruits as well"). The fist is a right fist on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz and 8zzb before
+any art: thin pale lines and flat polygons are not acceptable; hot strings use ItoArt's HOT tint.
 
 The cloud environment is the personal "HexPiece" (freesound.org, cdn.freesound.org, opengameart.org); if freesound.org is refused, the
 session is on Default: get_environment, then switch_environment to it (network_only). Freesound also rate-limits its pages for a minute or two (403):

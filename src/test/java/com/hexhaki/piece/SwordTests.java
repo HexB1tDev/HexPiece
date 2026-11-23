@@ -656,6 +656,9 @@ public final class SwordTests {
         webSounds("hie", com.hexhaki.piece.hie.HieSounds.EVENTS, 11);
         // 3.2.3: the Nika fruit's transformation drums (tools/gear_sounds.py)
         webSounds("gear", com.hexhaki.piece.gear.GearSounds.EVENTS, 8);
+        // 3.4.9 (the owner: "we also need a sound redesign for most of the abilities ... mostly like cartoony sounds, so go get them from
+        // the web"): the original's Gear 5 events play CC0 recordings (tools/gear_sounds.py, sounds/piece/nika)
+        redone("nika", com.hexhaki.piece.gear.GearSounds.REDONE, 10);
         // 3.3.4: the Noro Noro no Mi's (tools/noro_sounds.py; the first 3.3.4 push borrowed the mod's own clips: replaced)
         webSounds("noro", com.hexhaki.piece.noro.NoroSounds.EVENTS, 11);
         // 3.3.5: the Supa Supa no Mi's (tools/supa_sounds.py)
@@ -678,6 +681,48 @@ public final class SwordTests {
             Check.that(lang.contains("\"subtitles.hexhaki." + event[0] + "\""), event[0] + ": its subtitle");
             for (int i = 1; i < event.length; i++) {
                 Check.that(json.contains("\"hexhaki:piece/" + folder + "/" + event[i] + "\""), event[0] + ": plays " + event[i]);
+                played.add(event[i]);
+            }
+        }
+        int files = 0;
+        try (java.util.stream.Stream<Path> list = Files.list(dir)) {
+            for (Path file : (Iterable<Path>) list::iterator) {
+                String name = file.getFileName().toString();
+                if (!name.endsWith(".ogg")) {
+                    continue;
+                }
+                files++;
+                Check.that(played.contains(name.substring(0, name.length() - 4)), name + ": played by some event");
+                Matcher credit = Pattern.compile("(?m)^" + Pattern.quote(name)
+                    + ": \".+\" by \\S+, https://freesound\\.org/people/\\S+/sounds/\\d+/ \\(CC0 1\\.0\\)").matcher(sources);
+                Check.that(credit.find(), name + ": credited in SOURCES.txt (its title, author, page and CC0 licence)");
+                byte[] data = Files.readAllBytes(file);
+                int at = indexOf(data, "\u0001vorbis".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+                Check.that(data[0] == 'O' && data[1] == 'g' && data[2] == 'g' && data[3] == 'S' && at >= 0 && data[at + 11] == 1,
+                    name + ": mono Ogg Vorbis");
+            }
+        }
+        Check.that(files == played.size() && files >= least, "every " + folder + " clip is played (" + files + " clips)");
+    }
+
+    /**
+     * 3.4.9: the original's own events given new recordings ({@code events}: the original's event, then its clips in sounds/piece/{folder}):
+     * each overridden in sounds.json with only those clips, its subtitle kept; every clip in the folder played, credited and mono.
+     */
+    static void redone(String folder, String[][] events, int least) throws Exception {
+        Path dir = Path.of("src/main/resources/assets/hexhaki/sounds/piece/" + folder);
+        String json = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
+        String sources = Files.readString(dir.resolve("SOURCES.txt"));
+        Set<String> played = new HashSet<>();
+        for (String[] event : events) {
+            int at = json.indexOf("\"" + event[0] + "\": {");
+            Check.that(at >= 0, event[0] + ": overridden in sounds.json");
+            int end = json.indexOf("\n  }", at);
+            String entry = json.substring(at, end);
+            Check.that(entry.contains("\"subtitles.hexhaki." + event[0] + "\""), event[0] + ": its own subtitle kept");
+            Check.that(!entry.contains("\"hexhaki:" + event[0] + "\""), event[0] + ": the original's recording no longer played");
+            for (int i = 1; i < event.length; i++) {
+                Check.that(entry.contains("\"hexhaki:piece/" + folder + "/" + event[i] + "\""), event[0] + ": plays " + event[i]);
                 played.add(event[i]);
             }
         }

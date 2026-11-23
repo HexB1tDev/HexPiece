@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "gear5_giant_throw",
- "author": "HexHaki, reworked for HexPiece 2.1.1",
+ "author": "HexPiece 3.4.9",
  "description": "Gigant throw: pulls the right hand back slightly, snaps the whole upper body through and releases the held target forward.",
  "emote": {
   "beginTick": 0,
@@ -38,27 +38,6 @@
     "easing": "outquad",
     "body": {
      "z": -0.05
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "outquad",
-    "head": {
-     "pitch": 3.6
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "outquad",
-    "head": {
-     "roll": -1.0
-    }
-   },
-   {
-    "tick": 0,
-    "easing": "outquad",
-    "head": {
-     "yaw": 6.0
     }
    },
    {
@@ -176,27 +155,6 @@
    {
     "tick": 3,
     "easing": "outcubic",
-    "head": {
-     "pitch": -9.2
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outcubic",
-    "head": {
-     "roll": 3.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outcubic",
-    "head": {
-     "yaw": -12.0
-    }
-   },
-   {
-    "tick": 3,
-    "easing": "outcubic",
     "leftArm": {
      "bend": -28.0
     }
@@ -304,27 +262,6 @@
     "easing": "outexpo",
     "body": {
      "z": -0.12
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outexpo",
-    "head": {
-     "pitch": 11.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outexpo",
-    "head": {
-     "roll": -4.0
-    }
-   },
-   {
-    "tick": 6,
-    "easing": "outexpo",
-    "head": {
-     "yaw": 16.0
     }
    },
    {
@@ -442,27 +379,6 @@
    {
     "tick": 10,
     "easing": "outback",
-    "head": {
-     "pitch": 6.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "outback",
-    "head": {
-     "roll": -2.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "outback",
-    "head": {
-     "yaw": 8.0
-    }
-   },
-   {
-    "tick": 10,
-    "easing": "outback",
     "leftArm": {
      "bend": -12.0
     }
@@ -575,27 +491,6 @@
    {
     "tick": 14,
     "easing": "outquad",
-    "head": {
-     "pitch": -2.2
-    }
-   },
-   {
-    "tick": 14,
-    "easing": "outquad",
-    "head": {
-     "roll": 1.0
-    }
-   },
-   {
-    "tick": 14,
-    "easing": "outquad",
-    "head": {
-     "yaw": -3.0
-    }
-   },
-   {
-    "tick": 14,
-    "easing": "outquad",
     "leftArm": {
      "bend": -7.0
     }
@@ -703,27 +598,6 @@
     "easing": "inoutsine",
     "body": {
      "z": 0.0
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "head": {
-     "pitch": 0.0
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "head": {
-     "roll": 0.0
-    }
-   },
-   {
-    "tick": 18,
-    "easing": "inoutsine",
-    "head": {
-     "yaw": 0.0
     }
    },
    {
