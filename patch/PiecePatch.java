@@ -278,6 +278,12 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/devilfruit/gameplay/GearServerController", "skyBounce", "com/hexhaki/devilfruit/data/GearData", "unlocked",
             "(Lnet/minecraft/world/entity/player/Player;Lcom/hexhaki/devilfruit/data/GearAbility;)Z", "com/hexhaki/piece/server/NikaRules",
             "unlocked", 1},
+        // 3.4.4 (the owner: "Whip and Dawn Whip Rework"; "the Goof ball is only usable in transformed state"): the whip asks
+        // server/NikaWhip whether it is unlocked: untransformed the original's answer (its Gum-Gum Whip as before); in Gear 5 Goof Ball or
+        // the new Dawn Whip starts there and the answer is no, so the original's whip goes no further
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "whip", "com/hexhaki/devilfruit/data/GearData", "unlocked",
+            "(Lnet/minecraft/world/entity/player/Player;Lcom/hexhaki/devilfruit/data/GearAbility;)Z", "com/hexhaki/piece/server/NikaWhip",
+            "unlocked", 1},
         // 3.3.2: Gear 5's walk switches its run and its stance as the body leaves and touches the ground: through server/NikaJump, which
         // holds them back while the jump's laughing skip plays
         {"com/hexhaki/devilfruit/gameplay/GearServerController", "tickBouncyWalk", "com/hexhaki/gameplay/HakiServerController", "animate",

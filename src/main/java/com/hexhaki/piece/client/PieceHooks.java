@@ -70,7 +70,9 @@ public final class PieceHooks {
         if (name != null && (name.startsWith("style_") && !name.startsWith("style_swordsman") || name.startsWith("pika_")
             || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_") || name.startsWith("hie_")
             // 3.2.7: Dawn Whip's own clip shows the whip's very arms in first person, as gear5_whip does (the owner: first person is fine)
-            || name.equals("gear5_dawn_whip"))) {
+            || name.equals("gear5_dawn_whip")
+            // 3.4.4: Goof Ball's spin-up: the arms windmilling in first person before the ball (then client/gear/NikaWhipClient's fists)
+            || name.equals("gear5_goof_spin"))) {
             return config.setShowRightArm(true).setShowLeftArm(true);
         }
         return config;

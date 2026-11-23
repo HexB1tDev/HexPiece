@@ -63,8 +63,15 @@ public final class ToonForce {
         // 3.3.9: Dawn Pistol: squashed as it winds up, stretched long as the whole body is thrown, squashed by the landing
         put("gear5_dawn_pistol", 22, 0, false, 2, 0.55, 6, -0.9, 10, 0.4);
         put("gear5_dawn_pistol_left", 22, 0, false, 2, 0.55, 6, -0.9, 10, 0.4);
-        // 3.3.2's cartoon spin: wound up, stretched by the spin, squashed by the stop, popping tall into the skip
-        put("gear5_dawn_whip", 20, 0, false, 2, 0.45, 6, -0.5, 10, -0.6, 14, 0.55, 16, -0.5, 19, 0.2);
+        // 3.4.4: Dawn Whip after the owner's six phases: squashed tighter and tighter as the body winds up like a spring, shot long as it
+        // lets go, squashed by the impact, bulging and stretching as it spins on out of control, stretched thin as a drill bit
+        put("gear5_dawn_whip", 67, 0, false, 3, 0.25, 7, 0.3, 10, 0.35, 13, -1.0, 16, 0.45, 20, -0.3, 24, 0.3, 28, -0.3, 32, 0.3, 36, -0.3,
+            40, 0.3, 46, -0.9, 50, -0.2, 54, -0.2);
+        // 3.4.4: popped out of the ground: squashed, shot up long, the skip popping open
+        put("gear5_dawn_pop", 16, 0, false, 0, 0.8, 2, -1.0, 6, 0.35, 10, -0.15);
+        // 3.4.4: Goof Ball's spin-up (the body is in the ball from tick 8) and the daze after it
+        put("gear5_goof_spin", 12, 8, true, 2, 0.5, 4, -0.5, 6, 0.4, 8, -0.4, 10, 0.2, 12, -0.2);
+        put("gear5_goof_dizzy", 20, 0, true, 0, 0.12, 10, -0.12);
         put("gear5_giant_charge", 30, 8, true, 0, 0.4, 15, -0.18, 30, 0.18);
         put("gear5_giant_grab", 24, 10, false, 0, 0.3, 8, -0.5);
         put("gear5_giant_throw", 18, 0, false, 0, 0.5, 6, -0.9, 10, 0.4);

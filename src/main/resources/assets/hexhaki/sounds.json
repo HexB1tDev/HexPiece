@@ -1274,5 +1274,59 @@
         "attenuation_distance": 16
       }
     ]
+  },
+  "piece.gear.goof": {
+    "subtitle": "subtitles.hexhaki.piece.gear.goof",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/goof_spin",
+        "attenuation_distance": 20
+      }
+    ]
+  },
+  "piece.gear.goof_punch": {
+    "subtitle": "subtitles.hexhaki.piece.gear.goof_punch",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/dawn_pistol1",
+        "attenuation_distance": 20
+      }
+    ]
+  },
+  "piece.gear.goof_pop": {
+    "subtitle": "subtitles.hexhaki.piece.gear.goof_pop",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/goof_pop1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.gear.whip_wind": {
+    "subtitle": "subtitles.hexhaki.piece.gear.whip_wind",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/whip_wind1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.gear.whip_spin": {
+    "subtitle": "subtitles.hexhaki.piece.gear.whip_spin",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/whip_spin1",
+        "attenuation_distance": 28
+      }
+    ]
+  },
+  "piece.gear.whip_crack": {
+    "subtitle": "subtitles.hexhaki.piece.gear.whip_crack",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/whip_crack1",
+        "attenuation_distance": 40
+      }
+    ]
   }
 }

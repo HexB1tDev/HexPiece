@@ -69,7 +69,7 @@ public final class NikaJump {
     /** C2SNikaJump: the player's client has just lifted a Gear 5 jump. */
     public static void jumped(ServerPlayer player) {
         if (!player.m_6084_() || player.m_5833_() || !GearData.flag(player, "gear5") || GearData.integer(player, "transformTick") > 0
-            || player.m_150110_().f_35935_ || player.m_20159_()) {
+            || player.m_150110_().f_35935_ || player.m_20159_() || NikaWhip.busy(player)) {
             return;
         }
         long now = player.m_9236_().m_46467_();
@@ -231,6 +231,9 @@ public final class NikaJump {
      * as it was.
      */
     public static void walkClip(ServerPlayer player, String name, int fade) {
+        if (NikaWhip.holds(player, name)) {
+            return; // 3.4.4: Goof Ball, its daze or Dawn Whip is playing its own clip
+        }
         if (!JUMPS.isEmpty() && ("gear5_run".equals(name) || "gear5_stance".equals(name) || "__clear__".equals(name))) {
             Jump jump = JUMPS.get(player.m_20148_());
             if (jump != null && jump.clip) {

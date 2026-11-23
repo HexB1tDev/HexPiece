@@ -151,6 +151,10 @@ public final class UoFx {
             com.hexhaki.piece.client.gear.NikaPow.accept(m); // 3.3.9: Dawn Pistol's cartoon POW where it lands
             return;
         }
+        if (m.kind() >= com.hexhaki.piece.server.NikaWhip.GOOF && m.kind() <= com.hexhaki.piece.server.NikaWhip.STOP) {
+            com.hexhaki.piece.client.gear.NikaWhipClient.accept(m); // 3.4.4: Goof Ball and Dawn Whip (165 to 172)
+            return;
+        }
         if (m.kind() >= 160 && m.kind() < 180) {
             com.hexhaki.piece.client.gear.NikaHoldClient.accept(m); // 3.2.8: the Nika fruit's (160 to 179): the Giant's hold
             return;

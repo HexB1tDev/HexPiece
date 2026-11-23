@@ -220,7 +220,9 @@ public final class AbilityHud {
             {GearAbility.PISTOL, name(minecraft.f_91066_.f_92096_), haki ? "Dawn Pistol" : GearAbility.PISTOL.display, false},
             haki ? new Object[] {GearAbility.STAR_GUN, name(HakiKeys.MODE), GearAbility.STAR_GUN.display, true}
                 : new Object[] {GearAbility.ROCKET, name(HakiKeys.MODE) + " hold", GearAbility.ROCKET.display, false},
-            {GearAbility.WHIP, name(HakiKeys.SLOT_7), haki ? "Dawn Whip" : GearAbility.WHIP.display, false},
+            // 3.4.4: in Gear 5 C is Goof Ball (held), with Haki Dawn Whip; untransformed the plain whip
+            {GearAbility.WHIP, name(HakiKeys.SLOT_7) + (five && !haki ? " hold" : ""), haki ? "Dawn Whip" : five ? "Goof Ball"
+                : GearAbility.WHIP.display, false},
             {GearAbility.GATLING, name(HakiKeys.SLOT_8) + " hold", GearAbility.GATLING.display, false},
             {GearAbility.GIANT, name(HakiKeys.STAR_GUN) + " hold", haki ? "Bajrang Gun" : GearAbility.GIANT.display, false},
             {GearAbility.COIL, name(PieceKeys.FRUIT_N) + " hold", haki ? "Lightning Lance" : GearAbility.COIL.display, false},

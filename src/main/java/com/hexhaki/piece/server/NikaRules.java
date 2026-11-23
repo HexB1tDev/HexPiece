@@ -19,7 +19,8 @@ public final class NikaRules {
 
     /** Whether {@code action} goes ahead for {@code player}: in Gear 5 every one, out of it the stretch moves only. */
     public static boolean allowed(ServerPlayer player, GearAction action) {
-        return GearData.flag(player, "gear5") || stretch(action);
+        // 3.4.4: nothing else while Goof Ball, its daze or Dawn Whip runs (server/NikaWhip)
+        return (GearData.flag(player, "gear5") || stretch(action)) && !NikaWhip.busy(player);
     }
 
     /** The stretch moves (their press and their let go). */
@@ -32,6 +33,7 @@ public final class NikaRules {
     }
 
     /**
+     * 3.4.4: in Gear 5 the original's whip never gets this far (server/NikaWhip runs Goof Ball and Dawn Whip), so its clip is its own.
      * 3.2.7 (the owner: "Dawn Whip needs a complete rework. That move has to be entirely scrapped and redone ... he actually rotates
      * like a cartoon character. I think that the player's feet should also rotate like a cartoon character"): the whip's clip, in place of
      * the original's {@code animate(player, "gear5_whip", priority)} in {@code GearServerController.whip}: with Haki on in Gear 5 (the
@@ -39,9 +41,8 @@ public final class NikaRules {
      * whip as it was.
      */
     public static void whipClip(ServerPlayer player, String name, int priority) {
-        boolean dawn = GearData.flag(player, "gear5")
-            && (com.hexhaki.data.HakiData.flag(player, "armamentOn") || com.hexhaki.data.HakiData.flag(player, "acocOn"));
-        com.hexhaki.gameplay.HakiServerController.animate(player, dawn ? "gear5_dawn_whip" : name, priority);
+        // 3.4.4: the original's whip only runs untransformed now (server/NikaWhip has Gear 5's C): its own clip
+        com.hexhaki.gameplay.HakiServerController.animate(player, name, priority);
     }
 
     /**

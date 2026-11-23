@@ -276,7 +276,7 @@ final class LogbookData {
             {GearAbility.PISTOL, AbilityHud.name(minecraft.f_91066_.f_92096_) + " (Dawn Pistol with Haki in Gear 5)"},
             {GearAbility.ROCKET, AbilityHud.name(HakiKeys.MODE) + " hold"},
             {GearAbility.STAR_GUN, AbilityHud.name(HakiKeys.MODE) + " with Haki in Gear 5"},
-            {GearAbility.WHIP, AbilityHud.name(HakiKeys.SLOT_7) + " (Dawn Whip with Haki in Gear 5)"},
+            {GearAbility.WHIP, AbilityHud.name(HakiKeys.SLOT_7) + " (in Gear 5 Goof Ball, held; Dawn Whip with Haki)"},
             {GearAbility.GATLING, AbilityHud.name(HakiKeys.SLOT_8) + " hold"},
             {GearAbility.GIANT, AbilityHud.name(HakiKeys.STAR_GUN) + " hold (Bajrang Gun with Haki in Gear 5)"},
             {GearAbility.COIL, AbilityHud.name(com.hexhaki.piece.client.PieceKeys.FRUIT_N) + " hold (the lightning lance with Haki in Gear 5)"},

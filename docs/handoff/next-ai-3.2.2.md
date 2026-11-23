@@ -14,7 +14,8 @@ owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (th
 8zu 3.3.2 (the rubber jump, Rubber World on everyone else, the skip pose redone from the owner's description: read it), 8zv the
 owner's three new fruits (verbatim), 8zw their accepted keys, 8zx 3.3.3 (Rubber World's slow waves), 8zy 3.3.4 (Noro), 8zz 3.3.5 (Supa),
 8zza the owner's Rare fruit request (the Ito Ito no Mi, verbatim), 8zzb 3.3.6 (Horo: cute ghosts, the Gloom effect, the astral spirit),
-8zzc/8zzd 3.3.7 (Ito), 8zze 3.3.8 and 3.3.9 (the owner's answers, the rubber ripples, the Dawn Pistol accepted).
+8zzc/8zzd 3.3.7 (Ito), 8zze 3.3.8 and 3.3.9 (the owner's answers, the rubber ripples, the Dawn Pistol accepted), 8zzf 3.4.0 to
+3.4.3, 8zzg 3.4.4 (Goof Ball, Dawn Whip) and the owner's Broken Bones request (3.4.5).
 
 Branch `claude/nice-bell-gam7qf` since 3.3.2 (fetch it first: it is the newest; it continues claude/pensive-heisenberg-mkr9cl). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -33,8 +34,8 @@ the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green
 is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the body) is green (Build #181, Release #131); 3.4.1 (8zze:
 the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132); 3.4.2 (8zzf: the
 owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Build #184, Release #133); 3.4.3 (8zzf: Noro's held cone, Ito's
-Sky Road) is pushed (Build #185 and Release #134 were running at the handoff: check them). 3.4.4 (Goof Ball, Dawn Whip) is planned in 8zzf,
-not started.**
+Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is pushed: check its runs. 3.4.5 (8zzg: the
+Gura ultimate's Broken Bones, the owner's GIF and answers) is next.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2682,13 +2683,93 @@ ito-sky-road-3.4.3.jpg, ito-sky-clips-3.4.3.jpg):
   dust, (6) after a moment underground, popped back up out of the hole with a rubber squash and bounce (never left inside the shaft
   when Scars puts the blocks back). Render every clip (tools/anim_preview.py, face check from the front) and every effect.
 
+## 8zzg. This session (3.4.4, then 3.4.5): Goof Ball and Dawn Whip; the owner's Broken Bones request (verbatim)
+
+3.4.3 was green (Release #134; Build #187 on the handoff commit carries 3.4.3's code: #185 and #186 were only cancelled by newer pushes).
+The session started on Default: switch_environment to HexPiece (env_01VDpZP1V4zScExADvRmie8m now) for Freesound.
+
+**The owner's new request during 3.4.4 (verbatim)**, with a zip holding one GIF ("Sequência de fratura do esqueleto pixelizado.gif": a
+pixel-art X-ray of a Minecraft player's skeleton, grey bones in a see-through grey body on black, cracking and then shattering into
+flying bone pieces; 12 frames of 240 ms, 356 x 358, 2.9 s): "Another Update I want, whenever the Gura Gura No Mi hits the ultimate move N,
+this gif I sent fills the screen (in a way that looks good) and plays till the end only once, the user is stunned (and ragdolled)  and a
+temporary effect is applied called Broken Bones, this causes the player to have slowness 1 and randomly fall into ragdoll at random times
+as long as the effect is active."
+Asked (AskUserQuestion), the owner chose: the GIF on **the screen of the player who is hit** (mobs only get the rest); **everyone the
+ultimate hits** is stunned, ragdolled and gets Broken Bones (never the Gura user); Broken Bones **20 s, a fall every 3 to 6 s**; the
+look **an X-ray overlay** (the skeleton big in the middle, its black a dark see-through tint over the game, a quick fade in and out,
+played once). Planned as 3.4.5, after 3.4.4.
+
+The owner, while Goof Ball's first renders were made (verbatim): "the Goof ball is only usable in transformed state so it should have the
+skin of the transformed state." So: C untransformed stays the plain Gum-Gum Whip (the original's); in Gear 5 without Haki it is Goof Ball;
+in Gear 5 with Haki, Dawn Whip. The ball's limbs and one's own first-person fists are drawn in the Gear 5 skin (the original's
+GearJacketSkin.resolve, the same white skin the body wears: HakiSkin's Armament black included).
+
+**3.4.4 as built** (Goof Ball, Dawn Whip; nothing tested in game: build EXIT 0 with 13 suites, every clip and effect rendered and judged
+third and first person: docs/handoff/nika-goof-ball-3.4.4.jpg, nika-dawn-whip-fx-3.4.4.jpg, nika-dawn-whip-clip-3.4.4.jpg,
+nika-goof-whip-clips-3.4.4.jpg):
+- **The hook**: PiecePatch CALL_REDIRECTS row: GearServerController.whip's `GearData.unlocked(Player, GearAbility)` -> server/NikaWhip
+  .unlocked: untransformed the original's answer (its Gum-Gum Whip as before, its clip through NikaRules.whipClip, now always the
+  original's own); in Gear 5 it starts Goof Ball (no Haki) or Dawn Whip (the original's `dawn`) and answers false (the original stops).
+  The cooldown is NikaWhip.REST (Goof Ball 40 after the daze, Dawn Whip 60 after landing; HakiServerController.noCooldowns obeyed).
+  NikaRules.allowed refuses the fruit's other actions while NikaWhip.busy (a ball, its daze, Dawn Whip); NikaJump.jumped refuses too and
+  NikaJump.walkClip holds the walk's run/stance back (NikaWhip.holds).
+- **Keys**: client/gear/NikaKeys: C sends WHIP on the press and network/C2SNikaWhip (message 21, PieceNetwork PROTOCOL "15") on the let
+  go (a tap within a tick sends both); releaseHeld lets go too. Panel (AbilityHud.gearKeys): "Goof Ball" with " hold" in Gear 5, "Dawn
+  Whip" with Haki, the Gum-Gum Whip untransformed; the Ability Book row says so.
+- **S2CUoFx kinds** 165 GOOF, 166 GOOF_HIT, 167 GOOF_POP (bx 1 balled, ticks the daze), 168 DAWN (a the look's way, size the reach), 169
+  DAWN_HIT (a the throw), 170 DAWN_DRILL (bx torn), 171 DAWN_POP, 172 STOP; client/dragon/UoFx routes 165-172 to client/gear/NikaWhipClient
+  (before the 160-179 Giant route). 173 to 179 still free.
+- **Goof Ball** (gear/NikaGoof: SPIN 8, LEAST 12, MOST 100, DIZZY 60, RADIUS 1.05, MIDDLE 0.95): gear5_goof_spin (a cartoon wind-up,
+  whirling with the arms windmilling at or under the shoulder and the legs pedalling, looping from 8); from tick 8 the body is hidden
+  (RenderPlayerEvent.Pre) and the ball drawn: 16 banded grey-white puffs (NikaGoof.CLOUD palette) churning, 4 speed arcs, ground dust,
+  small comic bursts (NikaGoof.burst: Dawn Pistol's POW bands, 8 spikes; NikaArt.pow was too big for the ball), the limbs: 6 skin boxes
+  (arms and legs, slim arms 3 px) shot out every PUNCH 4 ticks in new directions, stretched up to 1.55x, the head popping out of the
+  top for 5 ticks in 14; only faces turned to the eye; **the Gear 5 skin** (GearJacketSkin.resolve, the owner: "it should have the skin
+  of the transformed state"), lit by the world. Server: every 3 ticks up to 6 foes within 2.6 take 2.5 (the game's own invulnerability
+  spaces them) and are knocked about (0.55 out at a random angle, 0.22-0.37 up), GOOF_HIT each, a quiet cartoon punch at most every 4
+  ticks, ConquerorAura.mixed throttled (never with Ryou in practice: Ryou on makes it Dawn Whip). End: GOOF_POP, the pop (puffs flung
+  out, a ring), Slowness III 60 ticks (hidden), gear5_goof_dizzy (the body wobbling round in a circle, arms loose; legs and head the
+  player's own), five cartoon stars circling over the head (NikaGoof.dizzy), one's own view rolling +-4 and yawing +-2 degrees. First
+  person in the ball: no hands (RenderHandEvent), 8 puffs framing the view and one's own Gear 5 fists jabbing in from the lower corners
+  (NikaGoof.firstPerson). Sound: piece.gear.goof (a loop through LoopSound while the ball lasts), goof_punch (dawn_pistol1), goof_pop.
+- **Dawn Whip** (gear/NikaDawn: WIND 12, STRETCH_LEAD 10, IMPACT 16, OVERSPIN 44, DRILL 56, POP 66, DEPTH 3, DRILL_STEP 3, REACH 10.2,
+  SWEEP_HEIGHT 2.4): gear5_dawn_whip (67 ticks; the old 3.3.2 clip replaced): wound to yaw -284 by 12 (hunched, arms hugging the waist,
+  legs crossed and lagging the turn), unwound 160 degrees a tick to 360 at the impact (the leg along the look), the overspin (arms flung
+  out under the shoulder, legs splayed, wobbling), the drill (arms wrapped round the chest, legs together, 110 degrees a tick), slowing
+  under the ground to whole turns at 66, a constant step to 0. A positive body yaw swings the forward leg to the user's LEFT (tools/anim
+  rig): the smear follows that and the struck are launched along (r.z, 0, -r.x) + 0.35 r. gear5_dawn_pop (16): squashed, shot up, the
+  skip (the owner's target pose), lowered. Toon Force beats for all four. Server: rooted (motion zeroed, hidden Slowness X renewed) to
+  the impact and from the drill to the pop; at 6 the original's own S2CGearStretch (RIGHT_LEG, StretchStyle WHIP, reach 10.2, variant 1:
+  Haki-black with the dawn fire) so the rubber leg is out at 16; at 16 every foe within reach and 2.4 of the hips hit 16 (PikaMoves.hit,
+  heavy) and launched (PikaMoves.Launch 3.4 a tick, straight 6, through up to obsidian; landed: Craters 1.8, GuraMoves QUAKE, exploded
+  lightning, the boom), DAWN_HIT, ConquerorAura.mixed at up to three strikes; 17 to 43 drifting at 0.16 a tick on a wandering heading;
+  44 the drill: over the middle of the block under the feet (m_6021_), a shaft torn a layer every 3 ticks (the mouth with its four
+  neighbours) through Scars.tear growing back after 300 ticks, mobGriefing obeyed (none: it only spins in place); 66 thrown up 1.05 (0.63
+  without a shaft) with gear5_dawn_pop; at 74 put on top of the shaft if still in it; ended on landing (or 40 after the pop); no fall
+  damage throughout. Effects (NikaWhipClient): the coil (white spiral tension lines with a Haki-violet edge, dust drawn in), the smear (a
+  translucent fan from the hips to the reach trailing the leg, a white and Haki-violet leading edge, speed lines; one fan only: two
+  stacked translucent fans blocked each other in stripes), the crack (NikaArt.pow, shock rings along the throw, streaks), the whirl (arcs
+  round the body, spun-off dust), the drill (earth puffs in a spiral, stones, a dust ring), the pop out of the hole; first person: no
+  coil or whirl round one's own eye, speed streaks sweeping left to right across the view (NikaDawn.firstPerson). Sounds: whip_wind
+  ("Rubber Stretch Rip 1" by mickdow 253327), whip_spin ("Whoosh Swirl Spinning" by Qvantor 877983), whip_crack ("Mixed Whip Crack 1" by
+  peterbullmusic 351267), the Gura fruit's boom and crumble, goof_pop at the pop. Every new clip as cut within +2.2 to +4.5 dB of plain
+  noise (narrow, tools/tonal_lines.py); -15 to -24 LUFS. Rejected: digging 384362 (a 65 Hz hum +20 dB), the cut pull-stretch 645710 (+7.2
+  narrow at 118 Hz), Whip Cracks 118068 (+6.6 to +7.1).
+- Freesound rate-limits pages and the CDN (403, empty files): tools/gear_sounds.py checks every recording's page on each run; retry with
+  a wait (the scratchpad's gear_retry.py pattern: web_sounds.fetch wrapped, 35 s between tries).
+- build.py FACE_CLEAR_CLIPS gained gear5_dawn_pop, gear5_goof_spin, gear5_goof_dizzy (every quarter tick from the front); HudTests
+  .goofAndDawnWhip (clips, timelines, kinds, budgets: Goof Ball's busiest under 16,000, Dawn Whip's too); SwordTests webSounds("gear",
+  ..., 8).
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.2 is green (Build #184, Release #133); 3.4.3 (Noro's held cone, Ito's Sky Road) is pushed: check Build #185 and Release #134
-   and fix anything red. Then, as told to the owner (the plan and every finding for it are in 8zzf, "3.4.4 ... NOT started"): 3.4.4 Goof Ball (the owner: "Without Haki the leg whip move, becomes Goof Ball": a held cartoon
-   spin into a ball of smoke and skin punching every way, dizzy after with a symbol over the head) and the new Dawn Whip (with Haki;
-   8zzf, the six phases verbatim). Dawn Pistol (3.3.9 to
-   3.4.1) and Horo: still no word from the owner on how they play: ask once the new work is out.
+1. 3.4.4 (8zzg: Goof Ball, Dawn Whip) is pushed: check its Build and Release runs and fix anything red. Then 3.4.5, the owner's
+   Broken Bones (8zzg, verbatim with the answers): when the Gura ultimate (N, server/GuraUltimate) strikes a player, the owner's GIF
+   (art/broken-bones.gif: 12 frames, 240 ms, a pixel X-ray skeleton cracking and shattering; the owner's own file, so its frames may go
+   into the jar as textures) plays once on that player's screen as an X-ray overlay (the skeleton big in the
+   middle, its black a dark see-through tint, a quick fade in and out); everyone struck (never the user) is stunned and ragdolled
+   (HakiFalls / Knockdowns / Tumbles) and gets a new effect Broken Bones for 20 s: Slowness I and a random ragdoll fall every 3 to 6 s.
+   Dawn Pistol (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3 and 3.4.4: still no word from the owner on how they play: ask once 3.4.5 is out.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

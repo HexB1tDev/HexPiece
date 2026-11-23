@@ -3,7 +3,9 @@
 web. Get proper sounds in."; then, on Gear 5's transformation: "if you could give the transformation just the drum sounds and just get
 rid of the music because of copyright, that would be perfect"): CC0 recordings from Freesound.org, the drums of liberation as the chest
 is pounded: a deep tribal floor tom for each beat, one heavy cinematic drum hit for the last. 3.3.9: Dawn Pistol's cartoon punch (the
-owner accepted "a new CC0 punch sound from the web"; broadband, +3 dB over plain noise in tools/tonal_lines.py).
+owner accepted "a new CC0 punch sound from the web"; broadband, +3 dB over plain noise in tools/tonal_lines.py). 3.4.4: Goof Ball and
+Dawn Whip (a rubber stretch for the wind-up, a swirling whoosh for the unwinding and the ball's loop, a whip's crack, a poof of smoke;
+each checked as cut with tools/tonal_lines.py: within 4 dB of plain noise, narrow).
 
 tools/web_sounds.py fetches each recording's high-quality preview (checking on its page that it is CC0), cuts the part used, makes it
 mono, peak-normalises it, fades it and writes it as Ogg Vorbis into src/main/resources/assets/hexhaki/sounds/piece/gear/ with
@@ -25,6 +27,10 @@ SOUNDS = {
     "floor_tom": ("hello_flowers", 30822),               # "Tomtom6_TribalFloor.wav"
     "heavy_drum": ("choomaque-crispydinner", 577408),    # "crdn_cinematic_heavy_drums - 14.wav"
     "cartoon_punch": ("modusmogulus", 785936),           # "Cartoon Punch Cassette F" (3.3.9: Dawn Pistol's POW)
+    "rubber": ("mickdow", 253327),                       # "Rubber Stretch Rip 1.wav" (3.4.4: Dawn Whip's wind-up)
+    "swirl": ("Qvantor", 877983),                        # "Whoosh Swirl Spinning" (3.4.4: the unwinding, Goof Ball's loop)
+    "whip": ("peterbullmusic", 351267),                  # "Mixed Whip Crack 1.wav" (3.4.4: Dawn Whip's crack)
+    "poof": ("Planman", 208111),                         # "Poof of Smoke" (3.4.4: Goof Ball popping, the pop out of the ground)
 }
 
 # our file: (sound, start s, length s or None for the rest, fade in s, fade out s)
@@ -32,9 +38,15 @@ CLIPS = {
     "drum1": ("floor_tom", 0.0, 1.5, 0.0, 0.6),
     "drum2": ("heavy_drum", 0.0, None, 0.0, 0.3),
     "dawn_pistol1": ("cartoon_punch", 0.0, None, 0.0, 0.05),
+    "whip_wind1": ("rubber", 0.1, 0.9, 0.05, 0.3),
+    "whip_spin1": ("swirl", 0.3, 1.3, 0.05, 0.4),
+    "whip_crack1": ("whip", 0.45, 0.4, 0.0, 0.15),
+    "goof_pop1": ("poof", 0.1, 0.6, 0.0, 0.25),
 }
 
-LOOPS = {}
+LOOPS = {
+    "goof_spin": ("swirl", 0.5, 2.0, 0.6),
+}
 
 
 def level(name):
@@ -42,6 +54,12 @@ def level(name):
     punch (-11.3 LUFS as recorded) 3 dB down, beside the original's own impact sound that plays with it."""
     if name == "dawn_pistol1":
         return 3.0, False
+    if name == "goof_spin":
+        return -6.0, False  # 3.4.4: held for seconds under the punches (as the Supa fruit's spin)
+    if name in ("whip_wind1", "whip_spin1"):
+        return 0.0, False
+    if name in ("whip_crack1", "goof_pop1"):
+        return 0.0, True  # short: compressed louder
     return 0.0, True
 
 

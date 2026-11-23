@@ -1,5 +1,7 @@
 import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.gear.NikaArt;
+import com.hexhaki.piece.gear.NikaDawn;
+import com.hexhaki.piece.gear.NikaGoof;
 import com.hexhaki.piece.gear.NikaSkin;
 import com.hexhaki.piece.gear.NikaBend;
 import com.hexhaki.piece.gear.NikaHold;
@@ -254,6 +256,85 @@ public final class NikaShots {
                 double bz = 0.9;
                 double bh = RubberJump.hop(Math.hypot(bx, bz), Math.atan2(bz, bx), t, landing);
                 HieShots.body(sink, bx - ex, bh - ey, bz - ez);
+            }
+            // 3.4.4: Goof Ball. |ngoof:age[:slim] the ball (age ticks after it formed) at the middle with the user's limbs punching out
+            // of it in art/user_skin.png, a bystander 2.4 off; |ngoofpop:age the ball bursting; |ndizzy:age the stars over a dizzy body;
+            // |ngoofp:age:pitch one's own first person in the ball (with the camera fp:pitch)
+            case "ngoof" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 8;
+                boolean slim = move.length > 2 && move[2].equals("slim");
+                HieShots.body(sink, 2.4 - ex, -ey, 0.6 - ez);
+                com.hexhaki.piece.gear.NikaGoof.ball(sink, -ex, NikaGoof.MIDDLE - ey, -ez, age, 11);
+                NikaGoof.limbs(skin(sink), -ex, NikaGoof.MIDDLE - ey, -ez, age, 11, slim);
+            }
+            case "ngoofpop" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 2;
+                HieShots.body(sink, -ex, -ey, -ez);
+                NikaGoof.pop(sink, -ex, NikaGoof.MIDDLE - ey, -ez, age, 11);
+                NikaGoof.dizzy(sink, -ex, 1.95 - ey, -ez, age, NikaGoof.DIZZY, 11);
+            }
+            case "ndizzy" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 20;
+                HieShots.body(sink, -ex, -ey, -ez);
+                NikaGoof.dizzy(sink, -ex, 1.95 - ey, -ez, age, NikaGoof.DIZZY, 11);
+            }
+            case "ngoofp" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 8;
+                double pr = Math.toRadians(move.length > 2 ? Double.parseDouble(move[2]) : 10);
+                double fy = -Math.sin(pr);
+                double fz = Math.cos(pr);
+                NikaGoof.firstPerson(sink, skin(sink), age, 11, false, 0, fy, fz, 0, fz, -fy, -1, 0, 0);
+            }
+            // 3.4.4: Dawn Whip, the user at the middle facing +z (a stand-in body; tools/anim_preview.py shows the clip): |ncoil:age the
+            // wind-up; |nsmear:age (ticks after the wind-up) the release's smear with a body struck at the leg's reach ahead; |ncrack:age
+            // the crack on a body thrown to the left; |nwhirl:age[:drill] the overspin; |ndrill:age[:torn] the drill; |ndpop:age the pop;
+            // |nwhipfp:age:pitch one's own first person through the spin (with fp:pitch)
+            case "ncoil" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 8;
+                HieShots.body(sink, -ex, -ey, -ez);
+                com.hexhaki.piece.gear.NikaDawn.coil(sink, -ex, -ey, -ez, age, 5);
+            }
+            case "nsmear" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 3;
+                HieShots.body(sink, -ex, -ey, -ez);
+                HieShots.body(sink, -ex, -ey, 7.0 - ez);
+                NikaDawn.smear(sink, -ex, 0.75 - ey, -ez, age, 0, 1, NikaDawn.REACH, 5);
+                if (age >= NikaDawn.IMPACT - NikaDawn.WIND) {
+                    NikaDawn.crack(sink, -ex, 0.95 - ey, 7.0 - ez, 1, 0, age - (NikaDawn.IMPACT - NikaDawn.WIND), 1.8, 5);
+                }
+            }
+            case "ncrack" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 2;
+                double flown = Math.max(0, age) * 1.6;
+                HieShots.body(sink, flown - ex, -ey, 4.0 - ez);
+                NikaDawn.crack(sink, -ex + 0.2, 0.95 - ey, 4.0 - ez, 1, 0, age, 1.8, 5);
+            }
+            case "nwhirl" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 8;
+                double drill = move.length > 2 ? Double.parseDouble(move[2]) : 0;
+                HieShots.body(sink, -ex, -ey, -ez);
+                NikaDawn.whirl(sink, -ex, -ey, -ez, age, drill, 5);
+            }
+            case "ndrill" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 4;
+                boolean torn = move.length < 3 || !move[2].equals("0");
+                double sunk = torn ? Math.min(NikaDawn.DEPTH, age / NikaDawn.DRILL_STEP) : 0;
+                HieShots.body(sink, -ex, -sunk - ey, -ez);
+                NikaDawn.whirl(sink, -ex, -sunk - ey, -ez, age + 28, 1.0, 5);
+                NikaDawn.drill(sink, -ex, -ey, -ez, age, torn, 5);
+            }
+            case "ndpop" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 3;
+                double up = Math.max(0, 1.05 * age - 0.04 * age * age) - NikaDawn.DEPTH;
+                HieShots.body(sink, -ex, up - ey, -ez);
+                NikaDawn.pop(sink, -ex, -ey, -ez, age, 5);
+            }
+            case "nwhipfp" -> {
+                double age = move.length > 1 ? Double.parseDouble(move[1]) : 4;
+                double pr = Math.toRadians(move.length > 2 ? Double.parseDouble(move[2]) : 10);
+                double fy = -Math.sin(pr);
+                double fz = Math.cos(pr);
+                NikaDawn.firstPerson(sink, age, 5, 0, fy, fz, 0, fz, -fy, -1, 0, 0);
             }
             case "nchaos" -> {
                 double t = move.length > 1 ? Double.parseDouble(move[1]) : 30;
@@ -524,6 +605,57 @@ public final class NikaShots {
                 System.arraycopy(corner[order[k][i]], 0, q, i * 3, 3);
             }
             sink.quad(q, new int[] {col, col, col, col});
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------ 3.4.4: a skin in the preview
+
+    static java.awt.image.BufferedImage userSkin;
+
+    /** Skin quads (AstralArt.Skin) drawn into {@code sink} texel by texel in art/user_skin.png, lit as the game lights an entity. */
+    static com.hexhaki.piece.horo.AstralArt.Skin skin(FireMesh.Sink sink) {
+        if (userSkin == null) {
+            try {
+                userSkin = javax.imageio.ImageIO.read(new java.io.File("art/user_skin.png"));
+            } catch (java.io.IOException failure) {
+                throw new IllegalStateException(failure);
+            }
+        }
+        return (xyz, uv, argb, nx, ny, nz) -> {
+            double shade = Math.min(1.0, 0.4 + 0.6 * (Math.max(0, nx * 0.2 + ny * 1.0 - nz * 0.7) / 1.24 + Math.max(0, -nx * 0.2 + ny * 1.0 + nz * 0.7) / 1.24));
+            int u0 = Math.round(uv[0] * 64);
+            int v0 = Math.round(uv[1] * 64);
+            int u1 = Math.round(uv[2] * 64);
+            int v1 = Math.round(uv[5] * 64);
+            int tw = u1 - u0;
+            int th = v1 - v0;
+            if (tw <= 0 || th <= 0) {
+                return;
+            }
+            for (int i = 0; i < tw; i++) {
+                for (int j = 0; j < th; j++) {
+                    int texel = userSkin.getRGB(u0 + i, v0 + j);
+                    if ((texel >>> 24) < 26) {
+                        continue;
+                    }
+                    int c = 0xFF000000 | (int) (((texel >> 16) & 255) * shade) << 16 | (int) (((texel >> 8) & 255) * shade) << 8
+                        | (int) ((texel & 255) * shade);
+                    double[] q = new double[12];
+                    texel(q, 0, xyz, i / (double) tw, j / (double) th);
+                    texel(q, 1, xyz, (i + 1) / (double) tw, j / (double) th);
+                    texel(q, 2, xyz, (i + 1) / (double) tw, (j + 1) / (double) th);
+                    texel(q, 3, xyz, i / (double) tw, (j + 1) / (double) th);
+                    sink.quad(q, new int[] {c, c, c, c});
+                }
+            }
+        };
+    }
+
+    static void texel(double[] q, int k, double[] xyz, double s, double t) {
+        for (int a = 0; a < 3; a++) {
+            double top = xyz[a] + (xyz[3 + a] - xyz[a]) * s;
+            double bottom = xyz[9 + a] + (xyz[6 + a] - xyz[9 + a]) * s;
+            q[k * 3 + a] = top + (bottom - top) * t;
         }
     }
 }

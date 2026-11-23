@@ -28,7 +28,8 @@ from gura_anims import write_parts  # noqa: E402
 from style_anims import OUT as ANIM_DIR, PARTS, WRITTEN, arm, leg, mirror, p  # noqa: E402
 
 OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam", "gear5_dawn_whip",
-         "gear5_bounce", "gear5_jump", "gear5_land", "gear5_dawn_pistol", "gear5_dawn_pistol_left"}
+         "gear5_bounce", "gear5_jump", "gear5_land", "gear5_dawn_pistol", "gear5_dawn_pistol_left", "gear5_goof_spin",
+         "gear5_goof_dizzy", "gear5_dawn_pop"}
 
 # the transformation's beats on the real clock (the original's 170-tick clock at double speed: patch/PiecePatch.gearFast)
 LENGTH = 85
@@ -248,31 +249,128 @@ TARGET_PARTS = {"body": ("pitch", "yaw", "bend"), "rightArm": ("pitch", "yaw", "
 REST = p(body={"pitch": 0, "bend": 0, "yaw": 0}, rightArm=arm(0, 0, 0, -4), leftArm=arm(0, 0, 0, -4), rightLeg=leg(0, 0, 0), leftLeg=leg(0, 0, 0))
 
 
+# 3.4.4: Goof Ball and Dawn Whip's timelines (gear/NikaDawn and gear/NikaGoof hold the same numbers: HudTests checks them)
+GOOF_SPIN = 8
+GOOF_LOOP = 4
+DIZZY = 60
+DAWN_WIND = 12
+DAWN_IMPACT = 16
+DAWN_OVERSPIN = 44
+DAWN_DRILL = 56
+DAWN_POP = 66
+POP_LENGTH = 16
+
+DAWN_PARTS = {"body": ("pitch", "yaw", "roll", "bend"), "rightArm": ("pitch", "yaw", "roll", "bend"),
+              "leftArm": ("pitch", "yaw", "roll", "bend"), "rightLeg": ("pitch", "yaw", "roll", "bend"),
+              "leftLeg": ("pitch", "yaw", "roll", "bend")}
+DIZZY_PARTS = {"body": ("pitch", "roll"), "rightArm": ("pitch", "yaw", "roll", "bend"), "leftArm": ("pitch", "yaw", "roll", "bend")}
+
+
+def goof_spin():
+    """3.4.4 (the owner: "Without Haki the leg whip move, becomes "Goof Ball" the user starts spinning super fast in a cartoon way and
+    then becomes a spinning ball of smoke and the player's skin mixed, punching in all directions, this is a held move"): the spin-up,
+    GOOF_SPIN ticks: a cartoon anticipation (hunched, wound back, fists cocked), then the body whirls faster and faster like a cartoon
+    tornado, the arms windmilling and the legs pedalling in the air, popping into the ball at GOOF_SPIN (from there the body is hidden
+    inside the cloud: client/gear/NikaWhipClient), then the same whirl looping (GOOF_LOOP ticks, one turn: seamless) while the ball
+    lasts. No head keyed."""
+    cocked = p(body={"yaw": -40, "pitch": -6, "roll": 0, "bend": 18}, rightArm=arm(46, 0, 22, -70), leftArm=mirror(arm(46, 0, 22, -70)),
+               rightLeg=leg(-30, 0, 52), leftLeg=leg(-26, 0, 48))
+    # the windmill kept at or under the shoulder: whirling, a raised arm would sweep across the face
+    up = arm(-14, 0, 78, -6)
+    down = arm(40, 0, 30, -20)
+    run_a = (leg(-72, 0, 84), leg(38, 0, 30))
+    run_b = (leg(38, 0, 30), leg(-72, 0, 84))
+    beats = [(0, "linear", REST), (2, "outsine", cocked)]
+    yaws = {3: 40, 4: 200, 5: 440, 6: 760, 7: 1120, 8: 1500, 9: 1590, 10: 1680, 11: 1770, 12: 1860}
+    for t in range(3, GOOF_SPIN + GOOF_LOOP + 1):
+        odd = t % 2 == 1
+        right, left = (up, down) if odd else (down, up)
+        legs = run_a if odd else run_b
+        beats.append((t, "linear", p(body={"yaw": yaws[t], "pitch": -8, "roll": 0, "bend": 6}, rightArm=right, leftArm=mirror(left),
+                                     rightLeg=legs[0], leftLeg=mirror(legs[1]))))
+    write_clip("gear5_goof_spin", GOOF_SPIN + GOOF_LOOP, beats, "Nika: Goof Ball: a cartoon wind-up, then whirling faster and "
+               "faster, arms windmilling and legs pedalling, into the ball of smoke.", DAWN_PARTS, loop=True, return_tick=GOOF_SPIN)
+
+
+def goof_dizzy():
+    """3.4.4 (the owner: "when it ends the user is temporarily dizzy (with a dizzy symbol on top)"): DIZZY ticks of a cartoon daze,
+    a loop of 20: the whole body wobbling round in a slow circle (leaning forward, to one side, back, the other side), the arms hanging
+    loose and swinging out of time. The legs are the player's own (they may stagger off) and the head too."""
+    sway = ((6, 0), (0, 9), (-6, 0), (0, -9), (6, 0))
+    beats = []
+    for k, t in enumerate((0, 5, 10, 15, 20)):
+        lean, roll = sway[k]
+        swing = 1 if k % 2 == 0 else -1
+        right = arm(10 * swing, 0, 14 + 6 * swing, -12)
+        left = mirror(arm(-10 * swing, 0, 14 - 6 * swing, -12))
+        beats.append((t, "inoutsine", p(body={"pitch": -lean, "roll": roll}, rightArm=right, leftArm=left)))
+    write_clip("gear5_goof_dizzy", 20, beats, "Nika: dizzy after Goof Ball: the body wobbling round in a circle, the arms hanging "
+               "loose.", DIZZY_PARTS, loop=True, return_tick=0)
+
+
 def dawn_whip():
-    """Dawn Whip, redone again (3.3.2; the owner on 3.2.7's: "not a fan"; the target: Gear 5 Luffy's skip). Cartoon timing, open limbs
-    (nothing crossed over the chest): wound up low and turned back, then the body spins round twice like a top on one foot, the arms flung
-    straight out like a propeller and the other knee tucked up (fastest as the stretched leg lands: StretchStyle WHIP hits on tick 10),
-    it overshoots, wobbles back and pops into Luffy's skip (fist up, laughing), then lets go. server/NikaRules.whipClip plays it with
-    Haki on in Gear 5. No head keyed."""
-    wind = p(body={"yaw": -55, "pitch": -8, "bend": 16}, rightArm=arm(38, 0, 26, -48), leftArm=mirror(arm(38, 0, 26, -48)),
-             rightLeg=leg(-18, 0, 34), leftLeg=leg(-46, 0, 74))
-    # the arms flung out and a little down, like a top's: as the body spins they sweep under the head, never across the face
-    spin = {"rightArm": arm(-6, 0, 62, -6), "leftArm": mirror(arm(-6, 0, 62, -6)), "rightLeg": leg(0, 0, 4), "leftLeg": leg(-60, 0, 96)}
-    beats = [(0, "linear", REST), (4, "outsine", wind)]
-    for t, yaw, pitch in ((6, 70, 6), (8, 290, 8), (10, 520, 8), (12, 700, 6)):
-        beats.append((t, "linear", p(spin, body={"yaw": yaw, "pitch": pitch, "bend": -4})))
-    # past the second turn, wobbling back, then the skip pose: a pop (outback), held a beat, released
-    beats.append((14, "outsine", p(spin, body={"yaw": 742, "pitch": 4, "bend": -4})))
-    # the right arm swings round to the front, level and a little out, then comes up into the skip
-    beats.append((15, "inoutsine", p(target("right"), rightArm=arm(-90, 20, 0, -20), body={"yaw": 722})))
-    beats.append((16, "outback", p(target("right"), body={"yaw": 716})))
-    beats.append((18, "inoutsine", p(target("right", lean=8, knee=-94), body={"yaw": 720})))
-    # and comes down in front before the clip lets go (its fade then only lowers it)
-    beats.append((19, "inoutsine", p(target("right", lean=4, knee=-60, back=80), rightArm=LOWERED, body={"yaw": 720})))
-    # 720 is 0 seen: a step there at once (the clip's fade-out never unwinds the two turns)
-    beats.append((20, "constant", p(target("right", lean=4, knee=-60, back=80), rightArm=LOWERED, body={"yaw": 0})))
-    write_clip("gear5_dawn_whip", 20, beats, "Nika: Dawn Whip: wound up, spun round twice like a top with the arms flung out, popping "
-               "into Gear 5's laughing skip.", TARGET_PARTS)
+    """3.4.4: Dawn Whip after the owner's six phases (docs/handoff 8zzf has them verbatim), DAWN_POP ticks:
+    1. 0 to DAWN_WIND: the body wound up like a spring, turned far round the wrong way and slowing as it tightens (-280 degrees), hunched
+       and squashed (Toon Force), the arms hugging the waist, the legs crossed and lagging behind the turn (the hips twisted against
+       the torso), trembling with the stored tension;
+    2. and 3. DAWN_WIND to DAWN_IMPACT: let go: the arms fly open, the right leg is thrust out (the original's stretched rubber leg:
+       server/NikaWhip sends its stretch so it is out at DAWN_IMPACT) and the body unwinds in a blur, 160 degrees a tick;
+    4. DAWN_IMPACT: the leg sweeps across what is in front (yaw 360: the leg along the look) and all round;
+    5. to DAWN_OVERSPIN: it cannot stop: spinning on like a top, the arms and legs flung out and flopping, the body wobbling round;
+       then to DAWN_DRILL the drill: arms wrapped tight round the chest, legs together, a spinning drill bit boring into the ground;
+    6. to DAWN_POP: under the ground, slowing; the pop back out is gear5_dawn_pop.
+    A positive body yaw swings the forward leg toward the player's left (tools/anim's rig): server/NikaWhip throws the struck bodies
+    that way round. No head keyed. Every yaw key lands on whole turns where the clip hands over (no snap)."""
+    hug = arm(-30, 0, -30, -60)
+    wind = p(body={"yaw": 0, "pitch": -10, "roll": 0, "bend": 20}, rightArm=hug, leftArm=mirror(hug),
+             rightLeg=leg(-18, 0, 34, -44), leftLeg=leg(8, 0, 40, -38))
+    beats = [(0, "linear", REST)]
+    for t, yaw, bend in ((3, -100, 14), (7, -210, 20), (10, -265, 24), (11, -276, 24), (12, -284, 25)):
+        beats.append((t, "outsine" if t < 11 else "linear", p(wind, body={"yaw": yaw, "bend": bend})))
+    # the release: arms flung open like propellers, the right leg thrust out level, the left the pivot
+    flung = {"rightArm": arm(-6, 0, 72, -6), "leftArm": mirror(arm(-6, 0, 72, -6)), "rightLeg": leg(-88, 0, 0, 0),
+             "leftLeg": leg(-6, 0, 16, 0)}
+    for t, yaw in ((13, -160), (14, -10), (15, 170), (16, 360)):
+        beats.append((t, "linear", p(flung, body={"yaw": yaw, "pitch": -4, "roll": 0, "bend": -6})))
+    # the overspin: flopping limbs, the body wobbling round like a top
+    yaw = 360.0
+    for t in range(18, DAWN_OVERSPIN + 1, 2):
+        yaw += 142 if t < 30 else 128
+        k = (t // 2) % 2
+        wobble = ((7, 9), (-7, -9))[k]
+        flop = {"rightArm": arm(-12 if k else 14, 0, 76 if k else 60, -10), "leftArm": mirror(arm(14 if k else -12, 0, 60 if k else 76, -10)),
+                "rightLeg": leg(-24 if k else 10, 30, 14), "leftLeg": mirror(leg(10 if k else -24, 30, 14))}
+        beats.append((t, "linear", p(flop, body={"yaw": yaw, "pitch": wobble[0], "roll": wobble[1], "bend": 0})))
+    # the drill: straight and thin, arms up together, legs together, boring faster
+    # (the arms wrapped tight round the chest, never up past the face: a hand over the face from the front is checked by build.py)
+    drill = {"rightArm": arm(-34, 0, -34, -70), "leftArm": mirror(arm(-34, 0, -34, -70)), "rightLeg": leg(0, -4, 0),
+             "leftLeg": mirror(leg(0, -4, 0))}
+    for t in range(DAWN_OVERSPIN + 2, DAWN_DRILL + 1, 2):
+        yaw += 220
+        beats.append((t, "linear", p(drill, body={"yaw": yaw, "pitch": 0, "roll": 0, "bend": 0})))
+    # under the ground, slowing to the next whole turn
+    turns = (yaw // 360 + 2) * 360
+    for t, share in ((60, 0.55), (64, 0.88), (DAWN_POP, 1.0)):
+        beats.append((t, "outsine", p(drill, body={"yaw": yaw + (turns - yaw) * share, "pitch": 0, "roll": 0, "bend": 0})))
+    beats.append((DAWN_POP + 1, "constant", p(drill, body={"yaw": 0, "pitch": 0, "roll": 0, "bend": 0})))
+    write_clip("gear5_dawn_whip", DAWN_POP + 1, beats, "Nika: Dawn Whip: wound up like a spring, unwinding with the leg stretched out "
+               "into a whip, spinning on out of control and drilling into the ground.", DAWN_PARTS)
+
+
+def dawn_pop():
+    """3.4.4 (the owner's phase 6: "the exaggerated Gear 5 recovery ... His body acts like an overspun rubber toy"): popped back up out
+    of the hole (server/NikaWhip throws the body up): squashed, then shot up stretched straight with the arms flung high, springing open
+    into Gear 5's laughing skip in the air, bobbing, the fist lowered for the landing. No head keyed; no hand over the face."""
+    squash = p(body={"pitch": -4, "yaw": 0, "bend": 24}, rightArm=arm(30, 0, 40, -30), leftArm=mirror(arm(30, 0, 40, -30)),
+               rightLeg=leg(-40, 0, 70), leftLeg=leg(-40, 0, 70))
+    launch = p(body={"pitch": 4, "yaw": 0, "bend": -8}, rightArm=arm(-160, 0, -20, -8), leftArm=mirror(arm(24, 0, 150, -8)),
+               rightLeg=leg(6, 0, 4), leftLeg=leg(4, 0, 6))
+    beats = [(0, "linear", squash), (2, "outexpo", launch), (6, "outback", target("right")),
+             (10, "inoutsine", target("right", lean=14, knee=-108, back=120, pump=8)),
+             (14, "inoutsine", p(target("right", lean=4, knee=-60, back=80), rightArm=LOWERED)),
+             (POP_LENGTH, "inoutsine", p(REST, body={"pitch": 2, "bend": 0}))]
+    write_clip("gear5_dawn_pop", POP_LENGTH, beats, "Nika: popped back out of the ground after Dawn Whip: squashed, shot up "
+               "stretched, springing into Gear 5's laughing skip.", TARGET_PARTS)
 
 
 # 3.3.9: Dawn Pistol's wind-up: (tick, easing, body yaw for the right arm thrown, body bend). The whole body (PlayerAnimator turns
@@ -365,6 +463,9 @@ def main():
     calmed()
     bajrang()
     dawn_whip()
+    dawn_pop()
+    goof_spin()
+    goof_dizzy()
     dawn_pistol()
     sky_bounce()
     jump()

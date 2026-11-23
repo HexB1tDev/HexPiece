@@ -19,7 +19,7 @@ import net.minecraft.client.Minecraft;
  * <ul>
  *   <li>Z: Gear 5 (transform, and back).</li>
  *   <li>X: Gum-Gum Rocket (held); with Haki on in Gear 5: Star Gun.</li>
- *   <li>C: Gum-Gum Whip (the server makes it Dawn Whip with Haki on in Gear 5).</li>
+ *   <li>C: Gum-Gum Whip; in Gear 5 Goof Ball (held), with Haki on Dawn Whip (3.4.4: server/NikaWhip).</li>
  *   <li>V: Gum-Gum Gatling (held).</li>
  *   <li>B: Gum-Gum Gigante (held; with Haki on in Gear 5 the server charges the Bajrang Gun).</li>
  *   <li>N: Coil Spring (held; with Haki on in Gear 5 the lightning lance).</li>
@@ -31,6 +31,7 @@ import net.minecraft.client.Minecraft;
  */
 public final class NikaKeys {
     private static boolean xDown;
+    private static boolean cDown;
     private static boolean xStar;
     private static boolean gatlingDown;
     private static boolean giantDown;
@@ -88,9 +89,22 @@ public final class NikaKeys {
         while (z().m_90859_()) {
             send(GearAction.GEAR_FIVE_TOGGLE);
         }
+        // C: the whip on the press (in Gear 5 the server makes it Goof Ball or Dawn Whip); 3.4.4: Goof Ball is held, so its let go is
+        // sent too (network/C2SNikaWhip; the server ignores it for anything else)
+        boolean c = c().m_90857_();
+        boolean cTapped = false;
         while (c().m_90859_()) {
-            send(GearAction.WHIP);
+            cTapped = true;
         }
+        if (c && !cDown) {
+            send(GearAction.WHIP);
+        } else if (!c && cDown) {
+            letGoWhip();
+        } else if (!c && cTapped) {
+            send(GearAction.WHIP);
+            letGoWhip();
+        }
+        cDown = c;
         // X: Rocket while held, or (Haki on in Gear 5) Star Gun on the press
         boolean x = x().m_90857_();
         boolean tapped = false;
@@ -129,6 +143,12 @@ public final class NikaKeys {
         return true;
     }
 
+    static void letGoWhip() {
+        if (Minecraft.m_91087_().f_91074_ != null) {
+            com.hexhaki.piece.network.PieceNetwork.toServer(new com.hexhaki.piece.network.C2SNikaWhip());
+        }
+    }
+
     /** A held move: its start on the press, its let go on the release; returns whether it is held now. */
     static boolean held(boolean now, boolean was, GearAction start, GearAction release) {
         if (now && !was) {
@@ -156,6 +176,10 @@ public final class NikaKeys {
         if (rubberDown) {
             send(GearAction.RUBBER_WORLD_RELEASE);
         }
+        if (cDown) {
+            letGoWhip();
+        }
+        cDown = false;
         xDown = false;
         gatlingDown = false;
         giantDown = false;

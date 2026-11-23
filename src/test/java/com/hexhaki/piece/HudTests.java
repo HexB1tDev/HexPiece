@@ -229,6 +229,7 @@ public final class HudTests {
         toonForce();
         rubberJump();
         dawnPistol();
+        goofAndDawnWhip();
     }
 
     /**
@@ -303,6 +304,109 @@ public final class HudTests {
         com.hexhaki.piece.gear.NikaSkin.heat(count, 0, 1, 5, 0, 0, 1, com.hexhaki.piece.gear.NikaSkin.LENGTH, 0.4, com.hexhaki.piece.gear.NikaSkin.BULB,
             1.0, 0);
         Check.that(skinQuads[0] > 50 && skinQuads[0] + quads[0] < 1200, "dawnPistol: the stretched skin cheap (" + skinQuads[0] + " + " + quads[0] + ")");
+    }
+
+    /**
+     * 3.4.4: Goof Ball and Dawn Whip (the owner's "Whip and Dawn Whip Rework"; "the Goof ball is only usable in transformed state"): the
+     * clips key no head and last what the timelines say (gear/NikaGoof, gear/NikaDawn, server/NikaWhip run them); Dawn Whip's yaw has
+     * the leg along the look at the impact and lands on whole turns where it hands over; their own message kinds (none of the Nika
+     * fruit's others); the leg's stretch sent so it is out at the impact; the art cheap (one user's busiest moment under 16,000 quads)
+     * and gone after its life; only the limbs' faces turned to the eye drawn.
+     */
+    static void goofAndDawnWhip() {
+        for (String name : new String[] {"gear5_goof_spin", "gear5_goof_dizzy", "gear5_dawn_whip", "gear5_dawn_pop"}) {
+            String text = clipText(name);
+            Check.that(!text.contains("\"head\""), "goofWhip: " + name + " keys no head");
+            Check.that(com.hexhaki.piece.gear.ToonForce.score(name) != null, "goofWhip: " + name + " has Toon Force beats");
+        }
+        Check.that(clipText("gear5_goof_spin").contains("\"endTick\":" + (com.hexhaki.piece.gear.NikaGoof.SPIN + 4) + ",")
+            && clipText("gear5_goof_spin").contains("\"returnTick\":" + com.hexhaki.piece.gear.NikaGoof.SPIN + ","),
+            "goofWhip: the spin-up loops from the ball's tick");
+        Check.that(clipText("gear5_dawn_whip").contains("\"endTick\":" + (com.hexhaki.piece.gear.NikaDawn.POP + 1) + ","),
+            "goofWhip: Dawn Whip's clip runs to the pop");
+        Check.that(clipText("gear5_dawn_pop").contains("\"endTick\":" + com.hexhaki.piece.gear.NikaDawn.POP_CLIP + ","),
+            "goofWhip: the pop's clip");
+        // the body's yaw at the impact: the leg along the look (a whole number of turns), and whole turns where the clip hands over
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{\"tick\":(\\d+),\"easing\":\"\\w+\",\"body\":\\{\"yaw\":(-?[0-9.]+)\\}\\}")
+            .matcher(clipText("gear5_dawn_whip"));
+        java.util.Map<Integer, Double> yaws = new java.util.HashMap<>();
+        while (m.find()) {
+            yaws.put(Integer.parseInt(m.group(1)), Double.parseDouble(m.group(2)));
+        }
+        Double impact = yaws.get(com.hexhaki.piece.gear.NikaDawn.IMPACT);
+        Check.that(impact != null && Math.abs(impact % 360.0) < 1.0E-6 && impact > 0, "goofWhip: the leg along the look at the impact (" + impact + ")");
+        Double last = yaws.get(com.hexhaki.piece.gear.NikaDawn.POP);
+        Check.that(last != null && Math.abs(last % 360.0) < 1.0E-6, "goofWhip: whole turns where the clip hands over (" + last + ")");
+        Double wound = yaws.get(com.hexhaki.piece.gear.NikaDawn.WIND);
+        Check.that(wound != null && wound < -250, "goofWhip: wound up the wrong way first (" + wound + ")");
+        Check.that(com.hexhaki.piece.gear.NikaDawn.IMPACT - com.hexhaki.piece.gear.NikaDawn.STRETCH_LEAD >= 0
+            && com.hexhaki.piece.gear.NikaDawn.STRETCH_LEAD == 10, "goofWhip: the leg's stretch (StretchStyle WHIP: windup 5 + extend 5) out at the impact");
+        Check.that(com.hexhaki.piece.gear.NikaDawn.WIND < com.hexhaki.piece.gear.NikaDawn.IMPACT
+            && com.hexhaki.piece.gear.NikaDawn.IMPACT < com.hexhaki.piece.gear.NikaDawn.OVERSPIN
+            && com.hexhaki.piece.gear.NikaDawn.OVERSPIN + com.hexhaki.piece.gear.NikaDawn.DEPTH * com.hexhaki.piece.gear.NikaDawn.DRILL_STEP
+                <= com.hexhaki.piece.gear.NikaDawn.DRILL
+            && com.hexhaki.piece.gear.NikaDawn.DRILL < com.hexhaki.piece.gear.NikaDawn.POP, "goofWhip: the six phases in order, the shaft dug before the drill ends");
+        int[] kinds = {com.hexhaki.piece.server.NikaWhip.GOOF, com.hexhaki.piece.server.NikaWhip.GOOF_HIT, com.hexhaki.piece.server.NikaWhip.GOOF_POP,
+            com.hexhaki.piece.server.NikaWhip.DAWN, com.hexhaki.piece.server.NikaWhip.DAWN_HIT, com.hexhaki.piece.server.NikaWhip.DAWN_DRILL,
+            com.hexhaki.piece.server.NikaWhip.DAWN_POP, com.hexhaki.piece.server.NikaWhip.STOP};
+        for (int i = 0; i < kinds.length; i++) {
+            int k = kinds[i];
+            Check.that(k == 165 + i, "goofWhip: kind " + k + " in order from 165");
+            Check.that(k != com.hexhaki.piece.server.NikaPistol.POW && k != com.hexhaki.piece.server.NikaJump.HOP
+                && k != com.hexhaki.piece.server.NikaJump.LAND && k != com.hexhaki.piece.server.GiantHold.HOLD
+                && k != com.hexhaki.piece.server.GiantHold.LET_GO && k < 180, "goofWhip: kind " + k + " is its own");
+        }
+        // the busiest moment: one ball with its limbs, three bursts, a pop and the stars, then Dawn Whip's every effect at its height
+        int[] quads = new int[1];
+        com.hexhaki.piece.dragon.FireMesh.Sink count = (xyz, argb) -> quads[0]++;
+        int[] skins = new int[1];
+        boolean[] outward = {true};
+        com.hexhaki.piece.horo.AstralArt.Skin skin = (xyz, uv, argb, nx, ny, nz) -> {
+            skins[0]++;
+            // only the faces turned to the eye (the phone culls nothing: a far face would show through)
+            double cx = (xyz[0] + xyz[6]) * 0.5;
+            double cy = (xyz[1] + xyz[7]) * 0.5;
+            double cz = (xyz[2] + xyz[8]) * 0.5;
+            if (nx * cx + ny * cy + nz * cz > 1.0E-9) {
+                outward[0] = false;
+            }
+        };
+        int most = 0;
+        for (double age = 0; age <= 30; age += 0.5) {
+            quads[0] = 0;
+            com.hexhaki.piece.gear.NikaGoof.ball(count, 0.4, 0.9, 3.0, age, 7);
+            com.hexhaki.piece.gear.NikaGoof.limbs(skin, 0.4, 0.9, 3.0, age, 7, false);
+            com.hexhaki.piece.gear.NikaGoof.burst(count, 1.0, 1.0, 3.0, age % 6, 0.32, 3);
+            com.hexhaki.piece.gear.NikaGoof.burst(count, -1.0, 1.0, 3.0, (age + 2) % 6, 0.32, 4);
+            com.hexhaki.piece.gear.NikaGoof.pop(count, 3.0, 0.9, 3.0, age % 10, 5);
+            com.hexhaki.piece.gear.NikaGoof.dizzy(count, 3.0, 2.0, 3.0, age, com.hexhaki.piece.gear.NikaGoof.DIZZY, 5);
+            most = Math.max(most, quads[0]);
+        }
+        Check.that(most > 1000 && most < 16000, "goofWhip: Goof Ball drawn, under 16,000 quads (" + most + ")");
+        Check.that(skins[0] > 0 && outward[0], "goofWhip: the limbs' skin faces drawn, only those turned to the eye");
+        most = 0;
+        for (double age = 0; age <= com.hexhaki.piece.gear.NikaDawn.POP; age += 0.5) {
+            quads[0] = 0;
+            double t = age - com.hexhaki.piece.gear.NikaDawn.WIND;
+            com.hexhaki.piece.gear.NikaDawn.coil(count, 0.4, -1.0, 3.0, age, 5);
+            com.hexhaki.piece.gear.NikaDawn.smear(count, 0.4, -0.25, 3.0, t, 0, 1, com.hexhaki.piece.gear.NikaDawn.REACH, 5);
+            for (int k = 0; k < 4; k++) {
+                com.hexhaki.piece.gear.NikaDawn.crack(count, 3.0 + k, 0, 6.0, 1, 0, age - com.hexhaki.piece.gear.NikaDawn.IMPACT, 1.8, k);
+            }
+            com.hexhaki.piece.gear.NikaDawn.whirl(count, 0.4, -1.0, 3.0, age - com.hexhaki.piece.gear.NikaDawn.IMPACT, 0.5, 5);
+            com.hexhaki.piece.gear.NikaDawn.drill(count, 0.4, -1.0, 3.0, age - com.hexhaki.piece.gear.NikaDawn.OVERSPIN, true, 5);
+            com.hexhaki.piece.gear.NikaDawn.pop(count, 0.4, -1.0, 3.0, age - com.hexhaki.piece.gear.NikaDawn.POP + 6, 5);
+            most = Math.max(most, quads[0]);
+        }
+        Check.that(most > 300 && most < 16000, "goofWhip: Dawn Whip drawn, under 16,000 quads (" + most + ")");
+        quads[0] = 0;
+        com.hexhaki.piece.gear.NikaGoof.pop(count, 0, 0.9, 3.0, com.hexhaki.piece.gear.NikaGoof.POP_LIFE + 0.5, 5);
+        com.hexhaki.piece.gear.NikaDawn.crack(count, 0, 0.9, 3.0, 1, 0, com.hexhaki.piece.gear.NikaDawn.CRACK_LIFE + 0.5, 1.8, 5);
+        com.hexhaki.piece.gear.NikaDawn.pop(count, 0, 0.9, 3.0, com.hexhaki.piece.gear.NikaDawn.POP_LIFE + 0.5, 5);
+        com.hexhaki.piece.gear.NikaGoof.dizzy(count, 0, 2.0, 3.0, com.hexhaki.piece.gear.NikaGoof.DIZZY + 1, com.hexhaki.piece.gear.NikaGoof.DIZZY, 5);
+        Check.that(quads[0] == 0, "goofWhip: every effect gone after its life");
+        Check.that(com.hexhaki.piece.gear.NikaGoof.reach(0) < 0.01 && com.hexhaki.piece.gear.NikaGoof.reach(0.4) > 0.99
+            && com.hexhaki.piece.gear.NikaGoof.reach(1.0) < 0.01, "goofWhip: a limb punches out and comes back in");
     }
 
     static String clipText(String name) {

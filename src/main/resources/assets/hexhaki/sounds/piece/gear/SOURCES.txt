@@ -5,3 +5,8 @@ start). Nothing is made by hand. Thanks to every author named.
 drum1.ogg: "Tomtom6_TribalFloor.wav" by hello_flowers, https://freesound.org/people/hello_flowers/sounds/30822/ (CC0 1.0), from 0.0 s, 1.50 s long, compressed to sound louder
 drum2.ogg: "crdn_cinematic_heavy_drums - 14.wav" by choomaque-crispydinner, https://freesound.org/people/choomaque-crispydinner/sounds/577408/ (CC0 1.0), from 0.0 s, 1.33 s long, compressed to sound louder
 dawn_pistol1.ogg: "Cartoon Punch Cassette F" by modusmogulus, https://freesound.org/people/modusmogulus/sounds/785936/ (CC0 1.0), from 0.0 s, 0.44 s long, -3.0 dB quieter
+whip_wind1.ogg: "Rubber Stretch Rip 1.wav" by mickdow, https://freesound.org/people/mickdow/sounds/253327/ (CC0 1.0), from 0.1 s, 0.90 s long
+whip_spin1.ogg: "Whoosh Swirl Spinning" by Qvantor, https://freesound.org/people/Qvantor/sounds/877983/ (CC0 1.0), from 0.3 s, 1.30 s long
+whip_crack1.ogg: "Mixed Whip Crack 1.wav" by peterbullmusic, https://freesound.org/people/peterbullmusic/sounds/351267/ (CC0 1.0), from 0.5 s, 0.40 s long, compressed to sound louder
+goof_pop1.ogg: "Poof of Smoke" by Planman, https://freesound.org/people/Planman/sounds/208111/ (CC0 1.0), from 0.1 s, 0.60 s long, compressed to sound louder
+goof_spin.ogg: "Whoosh Swirl Spinning" by Qvantor, https://freesound.org/people/Qvantor/sounds/877983/ (CC0 1.0), a loop from 0.5 s, 2.00 s long, 6.0 dB quieter
