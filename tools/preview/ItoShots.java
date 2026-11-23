@@ -203,6 +203,8 @@ public final class ItoShots {
             // feet like stairs; |ileap:tick the split leap, the string let go fading; |iflip:tick the backflip after a swing lets go;
             // |iswingfp:angle one's own first person on a swing (camera fp:pitch)
             case "iswing", "ihang", "iclimb", "ileap", "iflip" -> sky(sink, ex, ey, ez, move, fp, coat);
+            // 3.5.4: |iskyrun:t frame t of the scripted Sky Road run (tools/preview/SkyRun: the game's own state machine and numbers)
+            case "iskyrun" -> skyRun(sink, ex, ey, ez, (int) age);
             // |iarc: one swing seen whole: the body at five points of its arc under one anchor (the string drawn to the last, faint to
             // the others), then flung on in a backflip past the top
             case "iarc" -> {
@@ -227,6 +229,50 @@ public final class ItoShots {
             }
         }
         return true;
+    }
+
+    /** The clips' lengths (ticks): the loops wrap, the tricks hold their last pose. */
+    static float clipTick(String clip, float tick) {
+        return switch (clip) {
+            case "ito_sky_hang" -> tick % 48.0F;
+            case "ito_sky_swinging" -> tick % 24.0F;
+            case "ito_sky_climb" -> tick % 10.0F;
+            case "ito_sky_drop" -> tick % 16.0F;
+            case "ito_sky_backflip" -> Math.min(tick, 13.9F);
+            default -> Math.min(tick, 11.9F);
+        };
+    }
+
+    /** Frame t of SkyRun: the runner posed and turned as SkyRoad does, its string, the one let go, its steps, its streak. */
+    static void skyRun(FireMesh.Sink sink, double ex, double ey, double ez, int t) {
+        java.util.List<SkyRun.Frame> frames = SkyRun.run();
+        SkyRun.Frame f = frames.get(Math.max(0, Math.min(frames.size() - 1, t)));
+        boolean coat = f.coat;
+        double px = f.fx - f.pivotOut;
+        double py = f.fy + f.pivotY;
+        double pz = f.fz;
+        posed(sink, f.clip, clipTick(f.clip, f.clipTick), f.fx, f.fy, f.fz, px, py, pz, ex, ey, ez, f.pitch, 0.0);
+        // the hand on the string: the pivot while it holds one, else over the right shoulder
+        double hx = f.fx - 0.42;
+        double hy = f.fy + com.hexhaki.piece.ito.SkyPhysics.GRIP;
+        double hz = f.fz;
+        if (f.rope != null) {
+            double tx = hx + (f.rope[0] - hx) * f.ropeGrow;
+            double ty = hy + (f.rope[1] - hy) * f.ropeGrow;
+            double tz = hz + (f.rope[2] - hz) * f.ropeGrow;
+            ItoArt.sky(sink, hx - ex, hy - ey, hz - ez, tx - ex, ty - ey, tz - ez, 0.75 + 0.25 * f.taut, f.taut, f.ropeGrow >= 1.0, coat);
+        }
+        if (f.old != null) {
+            double k = 0.35 + 0.65 * f.oldFade;
+            ItoArt.sky(sink, hx + (f.old[0] - hx) * k - ex, hy + (f.old[1] - hy) * k - ey, hz + (f.old[2] - hz) * k - ez, f.old[0] - ex,
+                f.old[1] - ey, f.old[2] - ez, 0.45 * (1.0 - f.oldFade), 0.0, false, coat);
+        }
+        for (double[] tr : f.treads) {
+            ItoArt.tread(sink, tr[0] - ex, tr[1] - ey, tr[2] - ez, 0.0, tr[3], coat);
+        }
+        if (f.feetCount >= 3) {
+            ItoArt.streak(sink, f.feet, f.feetCount, ex, ey, ez, 1.0, coat);
+        }
     }
 
     /** A Sky Road shot (see the cases above). */

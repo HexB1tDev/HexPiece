@@ -3118,6 +3118,13 @@ wall's own speed in (closing: swept in with it; the caught are those inside when
 them) or out (standing, from outside: kept out); every touch cuts 4 (once per 10 ticks). The shut (cageShut) unchanged: CAGE_DAMAGE 18
 and Gore.bleed to everyone it caught, then they are free. ItoKit's Birdcage text says so. Release notes 3.5.4.
 
+**The owner: "When ur done I wanna see a gif of the sky walk with all variants"** (after 3.5.4): docs/gifs/ito-sky-road-3.5.4.gif (sent):
+a scripted run through the game's own state machine and numbers (tools/preview/SkyRun: hang, swings with the let-go backflip and split
+leap, a tap of Space's leap, a climb on string steps, a drop, the catch; then swings with Haki), each frame captioned with the move and its
+key (tools/make_gif.py --captions). Remake: `java -cp build/preview:build/classes SkyRun shots.txt captions.txt`, FxPreview with the
+shots into a folder (--size=600x375), make_gif --ms 50 --captions captions.txt. **The camera holds still and cuts ahead** (a camera that
+follows every tick changes every pixel: 14 to 27 MB; still shots with cuts: 2.9 MB).
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);
