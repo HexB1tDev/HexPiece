@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.2.8"
+VERSION = "3.2.9"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -108,6 +108,9 @@ PATCHED = {
     "com/hexhaki/client/devilfruit/render/BajrangFistLayer.class",
     # 3.2.8: the Giant holds a body in its fist (PiecePatch.giantHold, server/GiantHold)
     "com/hexhaki/patch/GiantGrab.class",
+    # 3.2.9: Star Gun's struck body as rubber (PiecePatch.starRubberStates, starRubberDeformer; client/gear/NikaBendClient)
+    "com/hexhaki/client/devilfruit/RubberBendStates.class",
+    "com/hexhaki/client/devilfruit/render/RubberBendDeformer.class",
     # 2.9.4: Gear 5's and the thunderstorm's lightning through the 3D Haki lightning
     "com/hexhaki/client/devilfruit/GearVfx.class",
     "com/hexhaki/patch/ThunderstormImpact.class",

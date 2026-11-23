@@ -224,6 +224,54 @@ public final class HudTests {
             Check.that(keyed(clip, tick, "rightArm", fmt(arm)), "nika: the slam's arm pitch at " + tick + " is NikaSlam's (" + arm + ")");
         }
         giantHold();
+        starRubber();
+    }
+
+    /**
+     * 3.2.9: Star Gun's struck body as rubber (gear/NikaBend): from rest and back to rest, never a jump between frames, stretched further
+     * than the original's 2.35 at full strength, past its own shape into a squash after the let go, alive through the hold.
+     */
+    static void starRubber() {
+        double[] a = new double[5];
+        double[] b = new double[5];
+        double hold = 26;
+        double release = 17;
+        double end = com.hexhaki.piece.gear.NikaBend.length(hold, release);
+        com.hexhaki.piece.gear.NikaBend.shape(0, hold, release, 1, a);
+        Check.that(Math.abs(a[0] - 1) + Math.abs(a[1] - 1) + Math.abs(a[2] - 1) + Math.abs(a[3]) + Math.abs(a[4]) < 1e-9, "nika: Star Gun's body starts at rest");
+        Check.that(!com.hexhaki.piece.gear.NikaBend.shape(end + 0.01, hold, release, 1, a), "nika: Star Gun's bend ends");
+        com.hexhaki.piece.gear.NikaBend.shape(end - 0.01, hold, release, 1, a);
+        Check.that(Math.abs(a[2] - 1) < 0.02 && Math.abs(a[3]) < 0.02, "nika: Star Gun's body back at rest by the end (" + a[2] + ", " + a[3] + ")");
+        double longest = 0;
+        double shortest = 9;
+        double leanMin = 9;
+        double leanMax = -9;
+        double holdMin = 9;
+        double holdMax = 0;
+        for (double t = 0; t < end; t += 0.05) {
+            com.hexhaki.piece.gear.NikaBend.shape(t, hold, release, 1, a);
+            com.hexhaki.piece.gear.NikaBend.shape(t + 0.05, hold, release, 1, b);
+            double jump = Math.max(Math.abs(a[2] - b[2]), Math.max(Math.abs(a[3] - b[3]), Math.abs(a[4] - b[4])));
+            Check.that(jump < (t < com.hexhaki.piece.gear.NikaBend.RAMP ? 0.2 : 0.06), "nika: Star Gun's body never jumps (" + t + ": " + jump + ")");
+            Check.that(a[0] > 0.3 && a[0] < 2 && a[1] > 0.5 && a[1] < 1.6 && a[2] >= 0.42, "nika: Star Gun's body within bounds at " + t);
+            longest = Math.max(longest, a[2]);
+            if (t > com.hexhaki.piece.gear.NikaBend.RAMP + hold) {
+                shortest = Math.min(shortest, a[2]);
+            }
+            if (t > com.hexhaki.piece.gear.NikaBend.RAMP + 8 && t < com.hexhaki.piece.gear.NikaBend.RAMP + hold) {
+                holdMin = Math.min(holdMin, a[2]);
+                holdMax = Math.max(holdMax, a[2]);
+            }
+            leanMin = Math.min(leanMin, a[3]);
+            leanMax = Math.max(leanMax, a[3]);
+        }
+        Check.that(longest > 2.6, "nika: Star Gun stretches the body further than the original's 2.35 (" + longest + ")");
+        Check.that(shortest < 0.7, "nika: let go, it springs back past its shape into a squash (" + shortest + ")");
+        Check.that(holdMax - holdMin > 0.2, "nika: still quivering late in the hold (" + holdMin + " to " + holdMax + ")");
+        Check.that(leanMin < -0.15 && leanMax > 0.6, "nika: the top left behind by the smack, then whipping forward (" + leanMin + ", " + leanMax + ")");
+        com.hexhaki.piece.gear.NikaBend.shape(com.hexhaki.piece.gear.NikaBend.RAMP + 10, hold, release, 0.4, a);
+        com.hexhaki.piece.gear.NikaBend.shape(com.hexhaki.piece.gear.NikaBend.RAMP + 10, hold, release, 1, b);
+        Check.that(a[2] < b[2], "nika: a weaker blow (knockback resistance) stretches less");
     }
 
     /**

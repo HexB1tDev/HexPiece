@@ -439,6 +439,8 @@ public final class PiecePatch implements Opcodes {
         entries.put(REMOTE_GEAR + ".class", transform(entries.get(REMOTE_GEAR + ".class"), PiecePatch::gearFastClient));
         entries.put(BAJRANG_LAYER + ".class", transform(entries.get(BAJRANG_LAYER + ".class"), PiecePatch::nikaFist));
         entries.put(GIANT_GRAB + ".class", transform(entries.get(GIANT_GRAB + ".class"), PiecePatch::giantHold));
+        entries.put(RUBBER_BEND_STATES + ".class", transform(entries.get(RUBBER_BEND_STATES + ".class"), PiecePatch::starRubberStates));
+        entries.put(RUBBER_BEND_DEFORMER + ".class", transform(entries.get(RUBBER_BEND_DEFORMER + ".class"), PiecePatch::starRubberDeformer));
         entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), node -> {
             gearLightning(node);
             gearDrums(node);
@@ -1251,6 +1253,41 @@ public final class PiecePatch implements Opcodes {
         if (hands != 1 || moved != 1 || grabbed != 1) {
             throw new AssertionError("GiantGrab is not as inspected: hand " + hands + ", syncMotion in tick " + moved + ", in grab " + grabbed);
         }
+    }
+
+    /** 3.2.9: Star Gun's struck body as rubber (client/gear/NikaBendClient). */
+    static final String RUBBER_BEND_STATES = "com/hexhaki/client/devilfruit/RubberBendStates";
+    static final String RUBBER_BEND_DEFORMER = "com/hexhaki/client/devilfruit/render/RubberBendDeformer";
+    static final String NIKA_BEND = "com/hexhaki/piece/client/gear/NikaBendClient";
+
+    /**
+     * 3.2.9 (the owner: "the Star Gun is okay. It could push the entities model a bit further and make it more like rubber"): the head
+     * of {@code RubberBendStates.accept(S2CRubberBend)} calls {@code NikaBendClient.accept(message)}; {@code RubberBendDeformer.applyBend
+     * (PoseStack, LivingEntity)} becomes {@code return NikaBendClient.apply(pose, entity)} (the same contract: a pose pushed and true,
+     * or neither).
+     */
+    static void starRubberStates(ClassNode node) {
+        MethodNode accept = method(node, "accept", "(Lcom/hexhaki/network/msg/S2CRubberBend;)V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, 0));
+        head.add(new MethodInsnNode(INVOKESTATIC, NIKA_BEND, "accept", "(Lcom/hexhaki/network/msg/S2CRubberBend;)V", false));
+        accept.instructions.insert(head);
+    }
+
+    static void starRubberDeformer(ClassNode node) {
+        String desc = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/world/entity/LivingEntity;)Z";
+        MethodNode apply = method(node, "applyBend", desc);
+        InsnList body = new InsnList();
+        body.add(new VarInsnNode(ALOAD, 0));
+        body.add(new VarInsnNode(ALOAD, 1));
+        body.add(new MethodInsnNode(INVOKESTATIC, NIKA_BEND, "apply", desc, false));
+        body.add(new InsnNode(IRETURN));
+        apply.instructions.clear();
+        apply.tryCatchBlocks.clear();
+        if (apply.localVariables != null) {
+            apply.localVariables.clear();
+        }
+        apply.instructions.add(body);
     }
 
     /** 3.2.6: the Bajrang Gun's giant fist (client/gear/NikaFist). */

@@ -1,5 +1,6 @@
 import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.gear.NikaArt;
+import com.hexhaki.piece.gear.NikaBend;
 import com.hexhaki.piece.gear.NikaHold;
 
 /**
@@ -10,6 +11,9 @@ import com.hexhaki.piece.gear.NikaHold;
  * <p>3.2.8: {@code |ngrab:yaw:age[:arm]} the Gum-Gum Giant (the player model's own boxes, placed and scaled as PlayerRenderer and
  * GearBodyDeformer do, four times the size) turned {@code yaw} degrees, its right arm out at {@code arm} degrees of pitch (-90: the
  * hold), a body grabbed {@code age} ticks ago standing 6 blocks off at the start, flown into the fist as gear/NikaHold places it.
+ *
+ * <p>3.2.9: {@code |nbend:t[:strength]} a body Star Gun struck {@code t} ticks ago (gear/NikaBend: held 26, let go over 17, as the
+ * original's starHit sends), the blow toward +x; a faint outline of the body at rest beside it.
  */
 public final class NikaShots {
     private NikaShots() {
@@ -48,6 +52,15 @@ public final class NikaShots {
                 double by = (fist[1] - 0.95) * k;
                 double bz = fromZ + (fist[2] - fromZ) * k;
                 HieShots.body(sink, bx - ex, by - ey, bz - ez);
+            }
+            case "nbend" -> {
+                double t = move.length > 1 ? Double.parseDouble(move[1]) : 0;
+                double strength = move.length > 2 ? Double.parseDouble(move[2]) : 1;
+                double[] shape = new double[5];
+                NikaBend.shape(t, 26, 17, strength, shape);
+                bent(sink, -ex, -ey, -ez, Math.PI / 2, shape);
+                double[] rest = {1, 1, 1, 0, 0};
+                bent(sink, -ex, -ey, -ez - 2.2, Math.PI / 2, rest);
             }
             default -> {
                 return false;
@@ -103,6 +116,45 @@ public final class NikaShots {
                 double[] q = new double[12];
                 for (int i = 0; i < 4; i++) {
                     System.arraycopy(c[order[k][i]], 0, q, i * 3, 3);
+                }
+                sink.quad(q, new int[] {col, col, col, col});
+            }
+        }
+    }
+
+    /** HieShots.body's boxes changed as client/gear/NikaBendClient changes a drawing: in the blow's frame (yaw) scaled, leaned, pushed. */
+    static void bent(FireMesh.Sink sink, double x, double y, double z, double yaw, double[] shape) {
+        double[][] boxes = {
+            {-0.3, 0, -0.15, 0.3, 0.75, 0.15, 0x3A4A7A},
+            {-0.3, 0.75, -0.15, 0.3, 1.4, 0.15, 0xB03A2E},
+            {-0.25, 1.4, -0.25, 0.25, 1.9, 0.25, 0xD9A77E},
+        };
+        double c = Math.cos(yaw);
+        double sn = Math.sin(yaw);
+        int[][] order = {{0, 1, 3, 2}, {4, 6, 7, 5}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 5, 7, 3}};
+        double[] shade = {0.62, 0.62, 0.95, 0.45, 0.78, 0.78};
+        for (double[] b : boxes) {
+            double[][] corner = new double[8][3];
+            for (int i = 0; i < 8; i++) {
+                double vx = (i & 1) != 0 ? b[3] : b[0];
+                double vy = (i & 2) != 0 ? b[4] : b[1];
+                double vz = (i & 4) != 0 ? b[5] : b[2];
+                // into the blow's frame: about Y by -yaw (JOML: x' = x cos + z sin, z' = -x sin + z cos)
+                double lx = vx * Math.cos(-yaw) + vz * Math.sin(-yaw);
+                double lz = -vx * Math.sin(-yaw) + vz * Math.cos(-yaw);
+                lx *= shape[NikaBend.ACROSS];
+                double ly = vy * shape[NikaBend.UP];
+                lz *= shape[NikaBend.ALONG];
+                lz += shape[NikaBend.SHEAR] * ly + shape[NikaBend.BACK];
+                corner[i][0] = x + lx * c + lz * sn;
+                corner[i][1] = y + ly;
+                corner[i][2] = z - lx * sn + lz * c;
+            }
+            for (int k = 0; k < 6; k++) {
+                int col = FireMesh.argb(1.0, FireMesh.mix(0, (int) b[6], shade[k]));
+                double[] q = new double[12];
+                for (int i = 0; i < 4; i++) {
+                    System.arraycopy(corner[order[k][i]], 0, q, i * 3, 3);
                 }
                 sink.quad(q, new int[] {col, col, col, col});
             }

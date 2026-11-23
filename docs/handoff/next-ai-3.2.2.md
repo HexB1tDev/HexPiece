@@ -10,7 +10,7 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun), 8zp 3.2.7 (Dawn Whip), 8zq 3.2.8 (Giant's hold), 8zr 3.2.9 (Star Gun's rubber body; the owner wants GIFs).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
@@ -18,7 +18,7 @@ lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 
 white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
 and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the move lightning the release's own again, after the
 owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed and green; 3.2.7 (8zp: Dawn Whip's cartoon spin) is pushed and green; 3.2.8 (8zq: Giant holds
-what it grabs) is pushed (check its runs: section 9). Next is the
+what it grabs) is pushed and green; 3.2.9 (8zr: Star Gun's struck body as rubber) is pushed (check its runs: section 9). Next is the
 rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
@@ -1581,16 +1581,39 @@ Nothing tested in game: build, tests, the hold rendered (docs/handoff/nika-giant
   camera). The giant's own first person: the view's turn instead of the body's (PlayerAnimator's first-person arm turns with the view).
   A hold not heard of for 30 ticks, or whose giant or body is gone, ends.
 
-## 9. What to do next (after 3.2.8)
+## 8zr. Done (3.2.9): the Nika fruit, part 6: Star Gun's struck body as rubber; the owner wants GIFs
 
-1. Check 3.2.8's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika rework, part 6 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
-   Dawn Whip, Giant's hold); Star Gun's struck body more rubbery; Rubber World bending the real ground in waves; better Haki versions;
-   Toon Force everywhere. Render every clip in third person; first person stays.
-3. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
+The owner (8zj 2): "the Star Gun is okay. It could push the entities model a bit further and make it more like rubber, but it's good."
+And during 3.2.9's session: **"I want gifs when it's all done"**: at the end of the work, send GIFs of every move changed (SendUserFile),
+made from the previews (`tools/make_gif.py` turns FxPreview's frame folder, output ending in "/", into a looping GIF; kept in
+docs/gifs/). Done so far: docs/gifs/nika-giant-hold-3.2.8.gif (the fly-in, then the giant turning with the body in the fist),
+docs/gifs/nika-star-gun-rubber-3.2.9.gif. They are previews, not the game: say so.
+- The original: `GearServerController.starHit(player, target, damage, way, hold)` (damage capped at the target's health - 1) sends
+  `S2CRubberBend(id, strength = max(0.4, 1 - knockback resistance), yaw = atan2(way.x, way.z), hold = StretchStyle.STAR.hold 26, release
+  17)`; `RubberBendStates` keeps it by entity (ms clock: a 120 ms ramp, the hold, the release with a faint 0.35 sin(9u) wobble);
+  `RubberBendDeformer.applyBend` (RenderLivingEvent.Pre for non-players, RenderPlayerEvent.Pre for players) turned the pose to the way,
+  leaned it (m12 0.55 e), scaled 1/(1 + 0.5 e) across, 1 - 0.24 e up, 1 + 1.35 e along. Only Star Gun sends it.
+- `gear/NikaBend.shape(t, hold, release, strength)` (pure): the smack (2.4 ticks, out-back to 1 + 1.9 s along), the hold (quivering
+  0.16 e^(-t/6) sin 1.9t and pulsing 0.08 sin 0.8t; the lean from -0.45 x 0.55 s whipping forward past 0.55 s and swaying 0.14 s), the
+  let go (stretch and lean as damped springs: through a squash to rest), 14 more ticks; across = along^-0.55, up = along^-0.24 (the
+  squash stands taller), pushed back 0.38 per unit of stretch. HudTests.starRubber: from and to rest, no jumps, longer than 2.6, a
+  squash under 0.7, still quivering late in the hold, weaker blows bend less.
+- `client/gear/NikaBendClient` (patch/PiecePatch.starRubberStates: the head of RubberBendStates.accept; starRubberDeformer: applyBend's
+  body replaced by `return NikaBendClient.apply(pose, entity)`): its own hits by entity (ms clock, pruned), the pose turned to the
+  blow, pushed back, leaned (one static Matrix4f, only m12 set), scaled, turned back. FxPreview `|nbend:t[:strength]`.
+
+## 9. What to do next (after 3.2.9)
+
+1. Check 3.2.9's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika rework, part 7 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun,
+   Dawn Whip, Giant's hold, Star Gun's rubber body); Rubber World bending the real ground in waves; better Haki versions; Toon Force
+   everywhere. Render every clip in third person; first person stays.
+3. The owner: "I want gifs when it's all done" (8zr): a GIF of each move changed (tools/make_gif.py), sent at the end; previews, not
+   the game.
+4. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
    refill) and whether Gear 5 should spend energy too.
-4. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
+5. Still unanswered: 3.1.5 to 3.1.8 (the hound, Ryusei Kazan, the Light beam's drag, the Gura ultimate's lag on the phone), the
    first-person hands (3.1.4), 3.1.2's Gura fixes, the Light fruit and katana fixes (3.0.x to 3.1.0), 2.9.5's Conqueror sounds.
-5. POINT ONE for any new fruit: same style (meshes, clips without legs or head, first-person hands, CC0 sounds), the Conqueror's
+6. POINT ONE for any new fruit: same style (meshes, clips without legs or head, first-person hands, CC0 sounds), the Conqueror's
    lightning out of its explosions with Haki (UoMoves.explode does it for free; else ConquerorAura.exploded/mixed at the strike).
-6. Lag: the dragon's per-frame CPU skinning; ask the owner where they still see lag.
+7. Lag: the dragon's per-frame CPU skinning; ask the owner where they still see lag.
