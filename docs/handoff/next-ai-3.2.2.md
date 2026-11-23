@@ -40,7 +40,7 @@ Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new D
 leg drawn by HexPiece) is green (Build #191, Release #137). 3.4.7 (8zzg: the Giant's straight throw and our crash) is green (Build #192, Release #138). 3.4.8 (8zzg: /hexpiece style mastery,
 the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the owner's Gear 5 bug list) is green (Build #196,
 Release #140). 3.5.0 (8zzj: the owner's Ito list) is green (Build #197, Release #141). 3.5.1 (8zzk: the Awakening's tentacles made
-massive) is pushed: check its Build and Release runs.**
+massive) is green (Build #198, Release #142).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -3045,7 +3045,7 @@ ages 1 to 39; render docs/handoff/ito-tentacle-3.5.1.jpg, sent to the owner):
 
 ## 9. What to do next (after 3.3.7)
 
-1. 3.5.1 (8zzk) is pushed: check its Build and Release runs. Then wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito) and 3.5.1
+1. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito) and 3.5.1
    (the tentacles), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).

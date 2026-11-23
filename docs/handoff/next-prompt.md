@@ -16,8 +16,7 @@ render any lightning change beside the release from the same camera before pushi
 Where things stand: 3.4.9 (section 8zzh: the owner's Gear 5 list) is green (Build #196, Release #140). 3.5.0 (section 8zzj: the owner's
 Ito list, 8zzi verbatim) is green (Build #197, Release #141). 3.5.1 (section 8zzk: the Awakening's tentacles rebuilt massive: a giant
 rope of three thick twisted plies of white string shading lilac-purple, a Haki-black spear tip driven through the body, cords bursting
-from its foot; rooted beside a near body so it never comes up under the user) is pushed: check its Build and Release runs first and fix
-anything red.
+from its foot; rooted beside a near body so it never comes up under the user) is green (Build #198, Release #142).
 
 Next: wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 and 3.5.1 (Ito) and their lists for the other fruits. The fist is a right fist
 on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
