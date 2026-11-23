@@ -42,8 +42,8 @@ the optimization pass) is green (Build #194, Release #139). 3.4.9 (8zzh: the own
 Release #140). 3.5.0 (8zzj: the owner's Ito list) is green (Build #197, Release #141). 3.5.1 (8zzk: the Awakening's tentacles made
 massive) is green (Build #198, Release #142). 3.5.2 (8zzl: Sky Road rebuilt to the owner's rework request: one string at a time,
 a Spider-Man swing, leaps, climbing on string steps) is green (Build #200, Release #143); 3.5.3 (8zzl: one thin string a step, the
-owner's word) and 3.5.4 (8zzm: the Birdcage's closing frees everyone inside, only its wall cuts and sweeps) are pushed: check their Build
-and Release runs.**
+owner's word) is green (Build #201, Release #144); 3.5.4 (8zzm: the Birdcage's closing frees everyone inside, only its wall cuts and
+sweeps) is green (Build #202, Release #145).**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -3120,8 +3120,8 @@ and Gore.bleed to everyone it caught, then they are free. ItoKit's Birdcage text
 
 ## 9. What to do next (after 3.3.7)
 
-1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) and 3.5.4 (8zzm: the Birdcage's closing)
-   are pushed: check their Build and Release runs. 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito), 3.5.1
+1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);
+   3.5.4 (8zzm: the Birdcage's closing) is green (Build #202, Release #145). 3.5.1 (8zzk) is green (Build #198, Release #142). Wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0 (Ito), 3.5.1
    (the tentacles) and 3.5.2 (Sky Road), and their lists for the other fruits ("We got a lot of work to do on the other fruits as well").
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
