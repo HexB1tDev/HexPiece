@@ -208,6 +208,32 @@ public final class HudTests {
             Check.that(java.util.Arrays.stream(com.hexhaki.network.GearAction.values()).anyMatch(a -> a.name().equals(needed)),
                 "nika: the original has " + needed);
         }
+        // 3.2.6: the Bajrang Gun's slam clip turns the body and points the arm by gear/NikaSlam's very numbers (client/gear/NikaFist
+        // draws the fist where they say): at each key, the body's pitch (PlayerAnimator's: back positive) and the arm's
+        String clip;
+        try {
+            clip = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/assets/hexhaki/player_animation/gear5_bajrang_slam.json"));
+        } catch (java.io.IOException failure) {
+            throw new AssertionError(failure);
+        }
+        for (int k = 0; k < com.hexhaki.piece.gear.NikaSlam.T.length; k++) {
+            int tick = (int) com.hexhaki.piece.gear.NikaSlam.T[k];
+            double body = -com.hexhaki.piece.gear.NikaSlam.PITCH[k];
+            double arm = com.hexhaki.piece.gear.NikaSlam.armPitch(k);
+            Check.that(keyed(clip, tick, "body", fmt(body)), "nika: the slam's body pitch at " + tick + " is NikaSlam's (" + body + ")");
+            Check.that(keyed(clip, tick, "rightArm", fmt(arm)), "nika: the slam's arm pitch at " + tick + " is NikaSlam's (" + arm + ")");
+        }
+    }
+
+    /** Whether {@code clip} keys {@code part}'s pitch at {@code tick} to {@code value} (whatever the indentation). */
+    static boolean keyed(String clip, int tick, String part, String value) {
+        return java.util.regex.Pattern.compile("\"tick\":\\s*" + tick + ",\\s*\"easing\":\\s*\"inoutsine\",\\s*\"" + part
+            + "\":\\s*\\{\\s*\"pitch\":\\s*" + java.util.regex.Pattern.quote(value) + "\\s*\\}").matcher(clip).find();
+    }
+
+    /** A number as the clip writer (Python's json) writes it: 70.0, -12.0. */
+    static String fmt(double v) {
+        return String.valueOf(Math.round(v * 1000.0) / 1000.0);
     }
 
     static void ranks() throws Exception {

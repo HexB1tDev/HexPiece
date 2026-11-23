@@ -3,8 +3,8 @@ Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/pensive-heisenberg-mkr
 Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zn of next-ai-3.2.2.md
-(2.9.6 to 3.2.5); open the older next-ai-*.md only for a feature's detail.
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zo of next-ai-3.2.2.md
+(2.9.6 to 3.2.6); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -18,11 +18,12 @@ art in midair, the Magma X fix) is pushed and green. 3.2.3 (section 8zl: the Nik
 Whip, V Gatling, B Giant / Bajrang Gun, N Coil Spring / Lightning Lance, M Rubber World; the panel renaming them with Haki in Gear 5,
 white; the stretch moves untransformed; drums instead of the transformation music) is pushed and green. 3.2.4 (8zm: the transformation
 in about 4 s with a new animation, the punch's wobble gone) is pushed and green. 3.2.5 (8zn: the move lightning the release's own again)
-is pushed: first check its "Build HexPiece" and "Release HexPiece" runs.
+is pushed and green. 3.2.6 (8zo: the Bajrang Gun's rounded fist, swept down as the body turns head-first) is pushed: first check its
+"Build HexPiece" and "Release HexPiece" runs.
 
 Next: the rest of the Nika fruit (Gear 5) rework, the owner's biggest request (section 8zk lists all of it with the owner's answers;
 8zh item 8 and 8zj item 2 have their words verbatim, with their reference images described; section 9 says how): every third-person
-animation redone (Bajrang Gun from above (half built: section 9 item 2) with the body turning in the air to slam a big rounded fist down, Dawn Whip scrapped and redone as a
+animation redone (Dawn Whip scrapped and redone as a
 cartoon spin after Luffy vs Kizaru, Star Gun's struck body more rubbery), Giant holding bodies properly, Rubber World bending the real
 ground in rubbery waves, better Haki versions, Toon Force everywhere ("like a Bugs Bunny movie"); first person left alone. The owner
 loves the fruit, the transformation and the clouds: change carefully, in its own versions, rendering every clip.

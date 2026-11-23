@@ -25,9 +25,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gura_anims import write_parts  # noqa: E402
-from style_anims import OUT as ANIM_DIR, arm, mirror, p  # noqa: E402
+from style_anims import OUT as ANIM_DIR, PARTS, WRITTEN, arm, leg, mirror, p  # noqa: E402
 
-OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance"}
+OWNED = {"gear5_awaken", "gear5_pistol", "gear5_gatling", "gear5_stance", "gear5_bajrang_charge", "gear5_bajrang_slam"}
 
 # the transformation's beats on the real clock (the original's 170-tick clock at double speed: patch/PiecePatch.gearFast)
 LENGTH = 85
@@ -150,9 +150,69 @@ def calmed():
          "Nika: Gear 5's bouncy stance (the rubbery bob; the head the player's own).", keep={("body", "bend"), ("body", "y"), ("torso", "yaw")})
 
 
+# ------------------------------------------------------------------------------------------------------ 3.2.6: the Bajrang Gun
+
+# gear/NikaSlam's very numbers (HudTests.nika checks the clip against them): ticks into the slam, the fist's way in the world (0 up,
+# 90 ahead, 180 down) and the body's pitch (forward positive); the arm's own pitch is theta - 180 - pitch, so the fist the client draws
+# (client/gear/NikaFist) sits where the arm points at every moment
+SLAM_T = (0, 4, 10, 13, 16, 116, 142)
+SLAM_THETA = (-8, -30, 165, 180, 180, 180, 180)
+SLAM_PITCH = (-12, -22, 55, 72, 70, 70, 10)
+SLAM_LENGTH = 142
+CHARGE_PITCH = -12
+BAJRANG_PARTS = {"body": ("pitch", "bend"), "rightArm": ("pitch", "yaw", "roll", "bend"), "leftArm": ("pitch", "yaw", "roll", "bend"),
+                 "rightLeg": ("pitch", "yaw", "roll", "bend"), "leftLeg": ("pitch", "yaw", "roll", "bend")}
+
+
+def write_clip(name, duration, beats, description, parts, loop=False, return_tick=0):
+    """{parts}: {part: channels} keyed at every beat (never the head; the body by its pitch: the whole body turning in the air)."""
+    assert "head" not in parts, name + ": the head is the player's own"
+    moves = []
+    for tick, easing, q in beats:
+        for part, channels in parts.items():
+            values = q.get(part, {})
+            for channel in channels:
+                moves.append({"tick": tick, "easing": easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
+    moves.sort(key=lambda m: m["tick"])
+    data = {"version": 3, "name": name, "author": "HexPiece 3.2.6", "description": description,
+            "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration + 3, "isLoop": loop, "returnTick": return_tick,
+                      "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
+    WRITTEN[name] = data
+    save(name, data)
+
+
+def bajrang():
+    """The Bajrang Gun (the owner: "it should be coming first from above, and then the player slowly rotates it downwards and slams it
+    down ... rotate it mid-air to like, actually aim down instead of just standing still in the arm, just doing all the work")."""
+    balance = mirror(arm(-40, 10, 70, -20))
+    # PlayerAnimator's body pitch leans BACK when positive (the handoff's 2.9.7 note): NikaSlam's forward-positive pitch goes in negated
+    held = p(body={"pitch": -CHARGE_PITCH}, rightArm=arm(-176, 0, -6, -4), leftArm=balance, rightLeg=leg(-36, 0, 52), leftLeg=leg(8, 0, 12))
+    heave = p(held, body={"pitch": -(CHARGE_PITCH - 3)}, rightArm=arm(-170, 0, -8, -10), rightLeg=leg(-40, 0, 58))
+    write_clip("gear5_bajrang_charge", 26, [(0, "inoutsine", held), (13, "inoutsine", heave), (26, "inoutsine", held)],
+               "Nika: the Bajrang Gun charging: high in the air, leaning back, the giant fist held straight up.", BAJRANG_PARTS,
+               loop=True, return_tick=0)
+    others = [
+        (balance, leg(-36, 0, 52), leg(8, 0, 12)),            # still as it charged
+        (mirror(arm(-70, 0, 84, -30)), leg(24, 0, 46), leg(12, 0, 30)),  # wound back: arched, legs kicked back
+        (mirror(arm(30, 0, 60, -10)), leg(14, 0, 12), leg(-6, 0, 24)),   # the swing: the free arm flung back, legs trailing
+        (mirror(arm(42, 0, 30, -8)), leg(10, 0, 10), leg(-8, 0, 20)),    # head-first, straight down
+        (mirror(arm(42, 0, 30, -8)), leg(10, 0, 10), leg(-8, 0, 20)),
+        (mirror(arm(42, 0, 30, -8)), leg(10, 0, 10), leg(-8, 0, 20)),    # held through the impact
+        (mirror(arm(0, 0, 8, -6)), leg(0, 0, 0), leg(0, 0, 0)),          # the arm pulled in, upright again
+    ]
+    beats = []
+    for k, t in enumerate(SLAM_T):
+        free, right_leg, left_leg = others[k]
+        right = arm(SLAM_THETA[k] - 180.0 - SLAM_PITCH[k], 0, 0, 0)
+        beats.append((t, "inoutsine", p(body={"pitch": -SLAM_PITCH[k]}, rightArm=right, leftArm=free, rightLeg=right_leg, leftLeg=left_leg)))
+    write_clip("gear5_bajrang_slam", SLAM_LENGTH, beats, "Nika: the Bajrang Gun: wound back overhead, swung over the front as the body turns "
+               "head-first after it, slammed straight down and held there.", BAJRANG_PARTS)
+
+
 def main():
     awaken()
     calmed()
+    bajrang()
     print("wrote the Nika fruit's animations: " + ", ".join(sorted(OWNED)))
 
 

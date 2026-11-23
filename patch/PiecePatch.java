@@ -437,6 +437,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(CONTROLLER + ".class", transform(entries.get(CONTROLLER + ".class"), PiecePatch::conquerorHaki));
         entries.put(GEAR_KEYS + ".class", transform(entries.get(GEAR_KEYS + ".class"), PiecePatch::nikaKeys));
         entries.put(REMOTE_GEAR + ".class", transform(entries.get(REMOTE_GEAR + ".class"), PiecePatch::gearFastClient));
+        entries.put(BAJRANG_LAYER + ".class", transform(entries.get(BAJRANG_LAYER + ".class"), PiecePatch::nikaFist));
         entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), node -> {
             gearLightning(node);
             gearDrums(node);
@@ -1155,6 +1156,49 @@ public final class PiecePatch implements Opcodes {
         }
         if (steps != 1) {
             throw new AssertionError("RemoteGearStates.advance's transformation step is not the one inspected: " + steps);
+        }
+    }
+
+    /** 3.2.6: the Bajrang Gun's giant fist (client/gear/NikaFist). */
+    static final String BAJRANG_LAYER = "com/hexhaki/client/devilfruit/render/BajrangFistLayer";
+    static final String NIKA_FIST = "com/hexhaki/piece/client/gear/NikaFist";
+
+    /**
+     * 3.2.6 (the owner, on the Bajrang Gun: "The fist is like should be ... more shaped like a fist and more rounder ... a big one. And it
+     * should be coming first from above, and then the player slowly rotates it downwards and slams it down"): {@code BajrangFistLayer
+     * .render} first tells {@code NikaFist.begin(player, partialTick)} whose fist it draws; its {@code fistCentre(phase, reach, radius,
+     * flow)} becomes {@code NikaFist.centre} (the fist overhead, then swept over the front and down with the body's turn); its three
+     * {@code RubberLimbMesh.emit} calls (the skin, the sleeve, the Haki coat) become {@code NikaFist.emitSkin} (the first: the arm with its
+     * hand cube hidden, and the rounded fist) and {@code NikaFist.emitOther}. Exactly one centre and three emits, or the build fails.
+     */
+    static void nikaFist(ClassNode node) {
+        MethodNode render = method(node, "render", "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I"
+            + "Lnet/minecraft/client/player/AbstractClientPlayer;FFFFFF)V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, 4));
+        head.add(new VarInsnNode(FLOAD, 7));
+        head.add(new MethodInsnNode(INVOKESTATIC, NIKA_FIST, "begin", "(Lnet/minecraft/client/player/AbstractClientPlayer;F)V", false));
+        render.instructions.insert(head);
+        int centres = 0;
+        int emits = 0;
+        for (AbstractInsnNode insn = render.instructions.getFirst(); insn != null; insn = insn.getNext()) {
+            if (!(insn instanceof MethodInsnNode call) || call.getOpcode() != INVOKESTATIC) {
+                continue;
+            }
+            if (call.owner.equals(BAJRANG_LAYER) && call.name.equals("fistCentre")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, NIKA_FIST, "centre", call.desc, false);
+                render.instructions.set(call, ours);
+                insn = ours;
+                centres++;
+            } else if (call.owner.equals("com/hexhaki/client/devilfruit/render/RubberLimbMesh") && call.name.equals("emit")) {
+                MethodInsnNode ours = new MethodInsnNode(INVOKESTATIC, NIKA_FIST, emits == 0 ? "emitSkin" : "emitOther", call.desc, false);
+                render.instructions.set(call, ours);
+                insn = ours;
+                emits++;
+            }
+        }
+        if (centres != 1 || emits != 3) {
+            throw new AssertionError("BajrangFistLayer.render is not as inspected: " + centres + " centres, " + emits + " emits");
         }
     }
 

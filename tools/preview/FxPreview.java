@@ -381,7 +381,9 @@ public final class FxPreview {
             default -> {
                 if (!GuraShots.shot(sink, eye, move)) { // 3.1.1: the Gura fruit's (tools/preview/GuraShots)
                     if (!MaguShots.shot(sink, eye, move)) { // 3.1.3: the Magma fruit's (tools/preview/MaguShots)
-                        HieShots.shot(sink, eye, move); // 3.1.9: the Ice fruit's (tools/preview/HieShots)
+                        if (!HieShots.shot(sink, eye, move)) { // 3.1.9: the Ice fruit's (tools/preview/HieShots)
+                            NikaShots.shot(sink, eye, move); // 3.2.6: the Nika fruit's (tools/preview/NikaShots)
+                        }
                     }
                 }
             }

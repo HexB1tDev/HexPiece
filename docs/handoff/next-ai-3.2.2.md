@@ -10,15 +10,15 @@ requests for 3.1.5 and 3.1.6 (verbatim, both done), 8x what 3.1.5 did, 8y the Gu
 8za the owner's open requests, 8zb 3.1.8, 8zc to 8ze the Hie Hie no Mi (3.1.9: its plan, the owner's answers on real ice, as built),
 8zf 3.2.0 (the Devil Fruits tab, the rarity ranks, the fruit energy bar), 8zg 3.2.1, 8zh the owner's requests after 3.2.1, 8zi 3.2.2 as
 built, 8zj the owner's stress-test notes during 3.2.2 (the Magma X bug, done; the Nika fruit rework), 8zk the Nika plan and the
-owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it).
+owner's answers, 8zl 3.2.3 (Nika part 1), 8zm 3.2.4 (Nika part 2), 8zn 3.2.5 (the lightning again: read it), 8zo 3.2.6 (the Bajrang Gun).
 
 Branch `claude/pensive-heisenberg-mkr9cl` (fetch it first: it is the newest; it continues claude/nice-bell-gam7qf). **3.1.9, 3.2.0
 and 3.2.1 are pushed and green; 3.2.2 (8zi: the Ice fruit's crystal, frost punches and Ice World field, the Gura cone, thin Haki
 lightning, no ground art in midair, the Magma X fix) is pushed and green; 3.2.3 (8zl: the Nika fruit's keys Z X C V B N M, Haki names,
 white panel, stretch moves untransformed, drums instead of the music) is pushed and green; 3.2.4 (8zm: the four-second transformation
 and its new animation, the punch's wobble) is pushed and green; 3.2.5 (8zn: the move lightning the release's own again, after the
-owner's anger) is pushed (check its runs: section 9). Next is the rest of the Nika rework (section 9; the Bajrang Gun's fist and
-slam are half built in the scratchpad's bajrang-wip, written up in 9.2).** The cloud environment
+owner's anger) is pushed and green; 3.2.6 (8zo: the Bajrang Gun's fist and slam) is pushed (check its runs: section 9). Next is the
+rest of the Nika rework (section 9).** The cloud environment
 is the personal "HexPiece", env_01DEzkwiWiBUXF6hnQ29v2S5 since 3.2.3 (freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -1507,11 +1507,38 @@ wanted the lightning for the abilities that use hotkey [Haki]. You know what? I'
   Rendered from one third-person camera: the release round the player, a punch's blast 1.5 ahead and a big one 8 ahead: the same bolts
   (docs/handoff/lightning-same-3.2.5.png).
 
-## 9. What to do next (after 3.2.5)
+## 8zo. Done (3.2.6): the Nika fruit, part 3: the Bajrang Gun
 
-1. Check 3.2.5's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
-2. The Nika rework, part 3 on (8zk's list, in its own versions; the transformation and the wobble are done, 8zm): Bajrang Gun from
-   above with the body turning in the air and a big rounded fist; Dawn Whip redone as a cartoon spin after Luffy vs Kizaru; Star Gun's struck
+The owner (8zj 2): "Bajarang gun ... the animation needs work ... The fist is like should be, I don't know, perhaps like more shaped like a
+fist and more rounder. I'm not saying make it completely round, but like it should be a fist, a big one. And it should be coming first
+from above, and then the player slowly rotates it downwards and slams it down. This is one of the strongest moves in the entire game";
+8zh 8: "rotate it mid-air to like, actually aim down instead of just standing still in the arm, just doing all the work". Nothing tested
+in game: build, tests, renders (docs/handoff/nika-bajrang-3.2.6.jpg).
+- How the original works: B (STAR_GUN mapping) with dawn -> beginBajrang: ASCENT (climbs, BAJRANG_ALTITUDE 75), CHARGE (held aloft, the
+  fist growing 2.5 to 15), release -> SLAM 46 ticks (the arm stretching down to the ground: bajrangReach), IMPACT 70, retract 26, FALL;
+  clips gear5_bajrang_charge (at the start) and gear5_bajrang_slam (at the release) only. The client's `BajrangFistLayer` (a RenderLayer
+  on the player model) draws the stretched arm from the right arm's pivot to `fistCentre(phase, reach, radius, flow)` (model frame: x left,
+  y down, z behind; CHARGE up-out beside the head, else straight down by the reach) with `RubberLimbMesh.emit` three times (skin, sleeve,
+  Haki coat), the hand cube scaled `hand` = fist / 0.25 (its half size = the fist's radius) at the arm's end.
+- `gear/NikaSlam` (pure): the slam's keys T {0, 4, 10, 13, 16, 116, 142}, the fist's world way THETA {-8, -30, 165, 180, 180, 180, 180}
+  (0 up, 90 ahead, 180 down) and the body's forward pitch PITCH {-12, -22, 55, 72, 70, 70, 10}, in-out sine between keys; the arm's own
+  pitch = theta - 180 - pitch. tools/nika_anims.py writes gear5_bajrang_slam (142 ticks, the slam + impact + retract) and
+  gear5_bajrang_charge (loop 26: leaning back 12, the arm straight up, a knee raised) from the same numbers, the body's pitch NEGATED
+  (PlayerAnimator: positive leans back; the first render dived on its back); keys body pitch, both arms, both legs (a midair move: the
+  owner wants the whole body in it), never the head. HudTests.nika checks the clip against NikaSlam at every key.
+- `client/gear/NikaFist` + patch/PiecePatch.nikaFist (build.py PATCHED lists BajrangFistLayer): `begin(player, partial)` at the render's
+  start (remembers since when each player's SLAM/IMPACT/FALL has gone on), `centre` in place of fistCentre (CHARGE: straight up over the
+  shoulder, bobbing; the slam: the way theta - pitch in the turned body's frame, length k = 1.1 + radius during the swing, then the
+  reach), `emitSkin` (the first emit: the arm with its hand cube at HIDE 0.5, and gear/NikaArt.fist round it through client/render/Bulk
+  with the player's skin texel at the hand's end (u 50/64, slim 48.5/64, v 18/64), overlay none, an even normal) and `emitOther`.
+- `gear/NikaArt.fist` (pure; FxPreview `|nfist:radius[:way]`, tools/preview/NikaShots): a ballooned fist of superellipsoid lumps: the back
+  of the hand and palm, four fingers (first joints in a row, a knuckle over each, the curled tips under), the thumb across their lower
+  front and its ball at the side, the wrist; cel-shaded in four bands by NikaArt.light; ~1,000 quads (fine 1,260).
+
+## 9. What to do next (after 3.2.6)
+
+1. Check 3.2.6's runs on `claude/pensive-heisenberg-mkr9cl` ("Build HexPiece" and "Release HexPiece") ended green; if not, fix and push.
+2. The Nika rework, part 4 on (8zk's list, in its own versions; done: the keys, the transformation, the wobble, the Bajrang Gun); Dawn Whip redone as a cartoon spin after Luffy vs Kizaru; Star Gun's struck
    body more rubbery; Giant holding bodies properly; Rubber World bending the real ground in waves; Toon Force everywhere. Render every
    clip in third person; first person stays.
 3. Ask the owner how the Ice fruit plays after 3.2.2, how 3.2.3's Nika keys feel, how the energy feels (FruitEnergy.COSTS, the
