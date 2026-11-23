@@ -665,6 +665,16 @@ public final class DragonTests {
             Check.that(zip.getEntry("assets/hexhaki/textures/item/horo_horo_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/horo_horo_no_mi.json") != null, "the Horo fruit's icon and model");
             Check.that(zip.getEntry("assets/hexhaki/textures/mob_effect/gloom.png") != null, "Gloom's icon");
+            // 3.4.5: Broken Bones' icon and the owner's X-ray sheet (tools/bones_texture.py: 12 frames, 4 across, 3 down, 356 x 358 each)
+            Check.that(zip.getEntry("assets/hexhaki/textures/mob_effect/broken_bones.png") != null, "Broken Bones' icon");
+            ZipEntry bones = zip.getEntry("assets/hexhaki/textures/gui/broken_bones.png");
+            Check.that(bones != null, "the owner's bone-fracture X-ray in the jar");
+            try (InputStream in = zip.getInputStream(bones)) {
+                java.awt.image.BufferedImage sheet = javax.imageio.ImageIO.read(in);
+                Check.that(sheet.getWidth() == 356 * 4 && sheet.getHeight() == 358 * 3 && sheet.getColorModel().hasAlpha(),
+                    "the X-ray sheet: 12 frames of 356 x 358 with its black see-through");
+                Check.that((sheet.getRGB(2, 2) >>> 24) == 0, "the X-ray's black background clear");
+            }
             Check.that(zip.getEntry("assets/hexhaki/textures/item/ito_ito_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/ito_ito_no_mi.json") != null, "the Ito fruit's icon and model");
             try (InputStream in = zip.getInputStream(entry)) {

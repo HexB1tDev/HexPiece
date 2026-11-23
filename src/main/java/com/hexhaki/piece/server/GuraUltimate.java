@@ -189,6 +189,8 @@ public final class GuraUltimate {
                     } else {
                         GuraMoves.downOnLanding(level, body, DOWN);
                     }
+                    // 3.4.5 (the owner's Broken Bones): stunned and down as above, then the effect; a player sees their bones break
+                    BrokenBones.struck(level, body, haki ? STUN : DOWN);
                 }
                 ConquerorAura.mixed(player, com.hexhaki.piece.server.StyleCombat.middle(body), 2.6, 5, -1.0, false, 1.6);
             });

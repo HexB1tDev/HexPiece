@@ -163,6 +163,10 @@ public final class UoFx {
             com.hexhaki.piece.client.haki.ConquerorSparksClient.accept(m); // 2.9.1: the Conqueror's lightning off its user
             return;
         }
+        if (m.kind() == com.hexhaki.piece.server.BrokenBones.XRAY) {
+            com.hexhaki.piece.client.gura.BonesOverlay.accept(m); // 3.4.5: the Gura ultimate's X-ray on one's own screen
+            return;
+        }
         if (m.kind() >= 60 && m.kind() < 80) {
             com.hexhaki.piece.client.gura.GuraFx.accept(m); // 3.1.1: the Gura fruit's moves (60 to 79) share it too
             return;

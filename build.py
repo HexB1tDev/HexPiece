@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.4.4"
+VERSION = "3.4.5"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -150,6 +150,9 @@ NEW_PREFIXES = (
     "assets/hexhaki/dragon/",
     "assets/hexhaki/textures/mob_effect/transformed.png",
     "assets/hexhaki/textures/mob_effect/gloom.png",
+    # 3.4.5: Broken Bones' icon (tools/bones_icon.py) and the owner's bone-fracture GIF laid out for the X-ray (tools/bones_texture.py)
+    "assets/hexhaki/textures/mob_effect/broken_bones.png",
+    "assets/hexhaki/textures/gui/broken_bones.png",
     "assets/hexhaki/models/item/uo_uo_no_mi.json",
     "assets/hexhaki/textures/item/uo_uo_no_mi.png",
     # 3.1.9: the Hie Hie no Mi's item (PiecePatch.uoFruit adds it to the original's fruits)

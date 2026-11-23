@@ -34,8 +34,8 @@ the rubber ripples twice as high, every Gear 5 fall ripples) is pushed and green
 is green (Build #180, Release #130); 3.4.0 (8zze: the skin stretched through the body) is green (Build #181, Release #131); 3.4.1 (8zze:
 the looping arm, the slowing stretch, the straight launch, the crater) is pushed and green (Build #182, Release #132); 3.4.2 (8zzf: the
 owner's Ito notes, Supa's blades, the Horo projection) is pushed and green (Build #184, Release #133); 3.4.3 (8zzf: Noro's held cone, Ito's
-Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is pushed: check its runs. 3.4.5 (8zzg: the
-Gura ultimate's Broken Bones, the owner's GIF and answers) is next.**
+Sky Road) is green (Release #134, Build #187). 3.4.4 (8zzg: Goof Ball, the new Dawn Whip) is green (Build #188, Release #135). 3.4.5
+(8zzg: the Gura ultimate's Broken Bones) is pushed: check its runs.**
 The cloud environment is the personal "HexPiece" (env_01PmnEXrwDhxzij8M5q6P6bL in 3.3.6's session; freesound.org, cdn.freesound.org, opengameart.org); a session on
 Default is refused freesound.org: get_environment lists it under saved_for_session_repositories, switch_environment to it.
 
@@ -2761,15 +2761,28 @@ nika-goof-whip-clips-3.4.4.jpg):
   .goofAndDawnWhip (clips, timelines, kinds, budgets: Goof Ball's busiest under 16,000, Dawn Whip's too); SwordTests webSounds("gear",
   ..., 8).
 
+**3.4.5 as built** (Broken Bones; nothing tested in game: build EXIT 0 with 13 suites; the overlay rendered over a scene on a 2400 x 1080
+screen: docs/handoff/gura-broken-bones-3.4.5.jpg). 3.4.4's runs were green (Build #188, Release #135).
+- **server/BrokenBones** (a MobEffect, PieceEffects.BROKEN_BONES "broken_bones", "Broken Bones" in en_us, HARMFUL 0xD8CDB4): its own
+  MULTIPLY_TOTAL -0.15 movement-speed modifier (Slowness I); looked at every 5 ticks (m_6584_): each body's next fall in NEXT (game time),
+  then HakiFalls.knockDown FALL 30 ticks and the next LEAST 60 + up to SPREAD 60 later (3 to 6 s). `struck(level, body, stunned)`: the
+  effect TICKS 400 (20 s), the first fall only after the strike's own stun (STUN 200 with the Conqueror's Haki, DOWN 100 without), and
+  for a ServerPlayer S2CUoFx XRAY 73 sent to that player only (PieceNetwork.sendTo). server/GuraUltimate.strike calls it after a hit
+  lands (the stun and the fall there unchanged).
+- **client/gura/BonesOverlay** (UoFx routes 73 there, before the Gura route 60-79): one's own XRAY starts it (System.nanoTime, so each
+  frame is the GIF's 240 ms whatever the frame rate); RegisterGuiOverlaysEvent.registerAboveAll "hexpiece_broken_bones": the view dimmed
+  (fill, 0.62 of 0x05030A), the frame blitted (GuiGraphics.m_280411_ with the sheet's size) at 0.86 of the screen's height in the middle,
+  RenderSystem.setShaderColor's alpha for the fades (FADE_IN 150 ms, FADE_OUT 350 ms after the last frame); played once.
+- **Assets**: art/broken-bones.gif is the owner's file, unchanged; tools/bones_texture.py lays its 12 frames out 4 x 3
+  (textures/gui/broken_bones.png, 1424 x 1074) with the black made see-through (alpha from the brightest channel: clear at 10, solid at
+  72: the black background gone, the grey body half seen, the bones solid). tools/bones_icon.py draws the icon (a bone snapped in two,
+  18 x 18). build.py NEW_PREFIXES lists both. Tests: HudTests.brokenBones (20 s, 3 to 6 s, the kind its own, the name, the GIF's timing),
+  DragonTests (the icon, the sheet's size, alpha and clear background in the jar).
+
 ## 9. What to do next (after 3.3.7)
 
-1. 3.4.4 (8zzg: Goof Ball, Dawn Whip) is pushed: check its Build and Release runs and fix anything red. Then 3.4.5, the owner's
-   Broken Bones (8zzg, verbatim with the answers): when the Gura ultimate (N, server/GuraUltimate) strikes a player, the owner's GIF
-   (art/broken-bones.gif: 12 frames, 240 ms, a pixel X-ray skeleton cracking and shattering; the owner's own file, so its frames may go
-   into the jar as textures) plays once on that player's screen as an X-ray overlay (the skeleton big in the
-   middle, its black a dark see-through tint, a quick fade in and out); everyone struck (never the user) is stunned and ragdolled
-   (HakiFalls / Knockdowns / Tumbles) and gets a new effect Broken Bones for 20 s: Slowness I and a random ragdoll fall every 3 to 6 s.
-   Dawn Pistol (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3 and 3.4.4: still no word from the owner on how they play: ask once 3.4.5 is out.
+1. 3.4.5 (8zzg: Broken Bones) is pushed: check its Build and Release runs and fix anything red. Then ask the owner how Dawn Pistol
+   (3.3.9 to 3.4.1), Horo, 3.4.2, 3.4.3, Goof Ball and Dawn Whip (3.4.4) and Broken Bones (3.4.5) play, and work on what they say.
 2. The owner has not tested Horo (3.3.6) or Ito (3.3.7) yet (8zze): ask again how they play. Strings: keep them slim, solid and pointed
    at both ends (8zzd).
 3. (Done in 3.3.7: the Ito Ito no Mi, built as the Ice fruit was (8zc, 8ze) and Noro, Supa and Horo are

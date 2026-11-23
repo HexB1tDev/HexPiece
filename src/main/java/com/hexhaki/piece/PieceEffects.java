@@ -21,6 +21,8 @@ public final class PieceEffects {
     public static final RegistryObject<MobEffect> TRANSFORMED = EFFECTS.register("transformed", Transformed::new);
     /** 3.3.6: Gloom (server/Gloom), what a Negative Hollow leaves in whoever it passes through. */
     public static final RegistryObject<MobEffect> GLOOM = EFFECTS.register("gloom", com.hexhaki.piece.server.Gloom::new);
+    /** 3.4.5: Broken Bones, the Gura ultimate's (server/BrokenBones: slowed, the legs giving way at random). */
+    public static final RegistryObject<MobEffect> BROKEN_BONES = EFFECTS.register("broken_bones", com.hexhaki.piece.server.BrokenBones::new);
 
     private PieceEffects() {
     }

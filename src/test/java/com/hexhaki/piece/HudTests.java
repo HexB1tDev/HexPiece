@@ -230,6 +230,7 @@ public final class HudTests {
         rubberJump();
         dawnPistol();
         goofAndDawnWhip();
+        brokenBones();
     }
 
     /**
@@ -407,6 +408,42 @@ public final class HudTests {
         Check.that(quads[0] == 0, "goofWhip: every effect gone after its life");
         Check.that(com.hexhaki.piece.gear.NikaGoof.reach(0) < 0.01 && com.hexhaki.piece.gear.NikaGoof.reach(0.4) > 0.99
             && com.hexhaki.piece.gear.NikaGoof.reach(1.0) < 0.01, "goofWhip: a limb punches out and comes back in");
+    }
+
+    /**
+     * 3.4.5: Broken Bones (the owner: "slowness 1 and randomly fall into ragdoll at random times as long as the effect is active"; asked,
+     * 20 s and a fall every 3 to 6 s): its numbers, its own X-ray message kind (none of the Gura fruit's others), the GIF's timing (12
+     * frames of 240 ms, played once), its name.
+     */
+    static void brokenBones() {
+        Check.that(com.hexhaki.piece.server.BrokenBones.TICKS == 400, "brokenBones: 20 seconds");
+        Check.that(com.hexhaki.piece.server.BrokenBones.LEAST == 60 && com.hexhaki.piece.server.BrokenBones.LEAST
+            + com.hexhaki.piece.server.BrokenBones.SPREAD == 120, "brokenBones: a fall every 3 to 6 seconds");
+        Check.that(com.hexhaki.piece.server.BrokenBones.FALL > 0 && com.hexhaki.piece.server.BrokenBones.FALL < 60,
+            "brokenBones: each fall short (" + com.hexhaki.piece.server.BrokenBones.FALL + " ticks)");
+        int xray = com.hexhaki.piece.server.BrokenBones.XRAY;
+        int[] gura = {com.hexhaki.piece.server.GuraMoves.CRACK, com.hexhaki.piece.server.GuraMoves.BUBBLE_ON, com.hexhaki.piece.server.GuraMoves.BUBBLE_OFF,
+            com.hexhaki.piece.server.GuraMoves.SHOCK, com.hexhaki.piece.server.GuraMoves.QUAKE, com.hexhaki.piece.server.GuraMoves.SHAKE_ON,
+            com.hexhaki.piece.server.GuraMoves.SHAKE_OFF, com.hexhaki.piece.server.GuraMoves.RIFT, com.hexhaki.piece.server.GuraMoves.TSUNAMI,
+            com.hexhaki.piece.server.GuraMoves.LEAP, com.hexhaki.piece.server.GuraMoves.DASH, com.hexhaki.piece.server.GuraMoves.TREMOR,
+            com.hexhaki.piece.server.GuraMoves.HEAVE};
+        for (int k : gura) {
+            Check.that(k != xray, "brokenBones: the X-ray's kind is its own (" + k + ")");
+        }
+        Check.that(xray >= 60 && xray < 80, "brokenBones: the X-ray in the Gura fruit's kinds");
+        Check.that(text("src/main/resources/assets/hexhaki/lang/en_us.json").contains("\"effect.hexhaki.broken_bones\": \"Broken Bones\""),
+            "brokenBones: its name");
+        Check.that(text("src/main/java/com/hexhaki/piece/client/gura/BonesOverlay.java").contains("FRAMES = 12;")
+            && text("src/main/java/com/hexhaki/piece/client/gura/BonesOverlay.java").contains("FRAME_MS = 240L;"),
+            "brokenBones: the GIF's own timing (12 frames of 240 ms)");
+    }
+
+    static String text(String path) {
+        try {
+            return java.nio.file.Files.readString(java.nio.file.Path.of(path));
+        } catch (java.io.IOException failure) {
+            throw new AssertionError(failure);
+        }
     }
 
     static String clipText(String name) {
