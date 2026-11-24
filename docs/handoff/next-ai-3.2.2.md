@@ -3248,6 +3248,20 @@ trig_01SQWxmmxqSfBkLCfxSWkZe2 is deleted. Not tested in game: the owner's notes 
   clips (nika/coil1, nika/gatling1-2, supa/spin, gura/hit1, nika/slam1, nika/charge1, magu/whoosh1, magu/boom1, gura/rumble, horo/pop1).
   SwordTests.mixedSounds checks them.
 
+## 8zzq. 3.5.6: the Mochi arms and fists square (the owner after 3.5.5, verbatim)
+
+"I don't like the arm shape or the fists. Like, if you look at the reference again, you'll see that the arms are like squares. They're
+like basically rectangles that with the fist at the very edge."
+
+The reference (the anime's Haki mochi punches, scratchpad refs g6 and g10) shows long straight bars with flat sides and a cyan shine
+along their edges, each ending in a blocky fist barely wider than the bar. Done: MochiArt.bar (the tube's points drawn as a bar of
+rounded square section, BAR_SQUARE 0.3, one flat face up: its frame starts level across the way and is carried along it, both ends
+closed flat); MochiDraw.arm a straight bar of one width (PUNCH_ARM 0.21 half wide for a punch) running into the back of the hand;
+MochiArt.fist a block (the hand a box a little wider than the bar, four square knuckles across its front, the thumb folded under them on
+the inner side; left fists for the left arm and the Anemone's odd rings). Kaku Mochi's and the club's arms are bars too; the donuts'
+fists 0.55 / 0.78, the Anemone's 0.2 / 0.29. DragonTests checks the arm's section is square (corners 1.25 times its middle and more),
+one flat face up, and the fist its very end. Renders: docs/gifs/mochi-3.5.6-square-arms.png (previews).
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);

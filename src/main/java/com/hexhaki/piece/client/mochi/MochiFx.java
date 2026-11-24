@@ -628,7 +628,7 @@ public final class MochiFx {
             Vec3 way = user.m_20252_(partial);
             if (!far(from, cam)) {
                 MochiDraw.punch(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, way.f_82479_, way.f_82480_, way.f_82481_, p.reach,
-                    now - p.born, p.coat, p.seed);
+                    now - p.born, p.coat, p.seed, p.which == 1);
             }
         }
         for (Map.Entry<Integer, Held> e : HELD.entrySet()) {

@@ -18,6 +18,9 @@ public final class MochiDraw {
     /** A punch: out in {@link #PUNCH_OUT} ticks, held, back by {@link #PUNCH_LIFE}. */
     public static final double PUNCH_OUT = 3.0;
     public static final double PUNCH_LIFE = 9.0;
+    /** 3.5.5: a punch's arm, half its width (a bar), and its fist's half width (a little wider: the block at its end). */
+    public static final double PUNCH_ARM = 0.21;
+    public static final double PUNCH_FIST = 0.29;
     /** Mochi Tsuki's thrust: out in {@link #TSUKI_OUT}, gone by {@link #TSUKI_LIFE}. */
     public static final double TSUKI_OUT = 3.0;
     public static final double TSUKI_LIFE = 14.0;
@@ -61,12 +64,13 @@ public final class MochiDraw {
     // ------------------------------------------------------------------------------------------------------ the arm and fist
 
     /**
-     * A stretched mochi arm from the shoulder (sx, sy, sz) to the fist at (fx, fy, fz), {@code r} round at the shoulder (thinner as it
-     * stretches, a little thicker at the wrist), and the fist ({@code size} its half width, punching along the arm; black when
-     * {@code coat}). It sags a little in the middle as mochi does ({@code sag} blocks).
+     * A stretched mochi arm from the shoulder (sx, sy, sz) to the fist at (fx, fy, fz): 3.5.5 (the owner: "the arms are like squares.
+     * They're like basically rectangles that with the fist at the very edge"): a straight bar of rounded square section {@code r} half
+     * wide all along (one flat face up), ending in a block of a fist ({@code size} its half width, a little wider than the bar, punching
+     * along it; {@code left} a left fist). It sags a little in the middle as mochi does ({@code sag} blocks).
      */
     public static void arm(FireMesh.Sink sink, double sx, double sy, double sz, double fx, double fy, double fz, double r, double size,
-                           double sag, boolean coat, double time, int seed) {
+                           double sag, boolean coat, double time, int seed, boolean left) {
         double dx = fx - sx;
         double dy = fy - sy;
         double dz = fz - sz;
@@ -74,22 +78,22 @@ public final class MochiDraw {
         if (len < 1.0E-4) {
             return;
         }
-        double thin = Math.max(0.55, 1.0 - len * 0.04);
-        MochiArt.tubeBegin();
-        int n = Math.max(4, Math.min(12, (int) (len * 1.5)));
-        for (int k = 0; k <= n; k++) {
-            double t = k / (double) n;
-            double drop = sag * 4.0 * t * (1.0 - t);
-            double rr = r * (t < 0.15 ? 1.0 : thin + (1.0 - thin) * Math.max(0.0, (t - 0.8) / 0.2));
-            MochiArt.tubePoint(sx + dx * t, sy + dy * t - drop, sz + dz * t, rr);
-        }
-        // the owner: "The black fist is only with haki on, without haki on its fully white, and with haki on the entire fist and arm
-        // (thing connecting to the fist) as well are black"
-        MochiArt.tube(sink, 10, coat ? MochiArt.HAKI : MochiArt.MOCHI, 0.0, 0.0);
-        // the fist punching along the arm, its knuckles across it (the side: square to the arm and up)
         double ux = dx / len;
         double uy = dy / len;
         double uz = dz / len;
+        // the bar runs into the back of the hand (the fist is its very end)
+        double reach = Math.max(0.05, len - size * 0.5);
+        MochiArt.tubeBegin();
+        int n = sag > 0.0 ? 6 : 1;
+        for (int k = 0; k <= n; k++) {
+            double t = k / (double) n;
+            double drop = sag * 4.0 * t * (1.0 - t);
+            MochiArt.tubePoint(sx + ux * reach * t, sy + uy * reach * t - drop, sz + uz * reach * t, r);
+        }
+        // the owner: "The black fist is only with haki on, without haki on its fully white, and with haki on the entire fist and arm
+        // (thing connecting to the fist) as well are black"
+        MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
+        // the fist, its knuckles across the bar (level across the way: the bar's own side)
         double kx = -uz;
         double kz = ux;
         double kl = Math.sqrt(kx * kx + kz * kz);
@@ -98,7 +102,13 @@ public final class MochiDraw {
             kz = 0;
             kl = 1;
         }
-        MochiArt.fist(sink, fx + ux * size * 0.3, fy + uy * size * 0.3, fz + uz * size * 0.3, ux, uy, uz, kx / kl, 0, kz / kl, size, coat, time, seed);
+        MochiArt.fist(sink, fx, fy, fz, ux, uy, uz, kx / kl, 0, kz / kl, size, coat, time, seed, left);
+    }
+
+    /** As {@link #arm} with a right fist. */
+    public static void arm(FireMesh.Sink sink, double sx, double sy, double sz, double fx, double fy, double fz, double r, double size,
+                           double sag, boolean coat, double time, int seed) {
+        arm(sink, sx, sy, sz, fx, fy, fz, r, size, sag, coat, time, seed, false);
     }
 
     /**
@@ -107,12 +117,18 @@ public final class MochiDraw {
      */
     public static void punch(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double reach, double age,
                              boolean coat, int seed) {
+        punch(sink, x, y, z, wx, wy, wz, reach, age, coat, seed, false);
+    }
+
+    /** As {@link #punch}, {@code left} the left arm's (its fist a left fist). */
+    public static void punch(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double reach, double age,
+                             boolean coat, int seed, boolean left) {
         if (age < 0 || age > PUNCH_LIFE) {
             return;
         }
         double out = age < PUNCH_OUT ? ease(age / PUNCH_OUT) : age < PUNCH_OUT + 2 ? 1.0 : 1.0 - smooth((age - PUNCH_OUT - 2) / (PUNCH_LIFE - PUNCH_OUT - 2));
         double d = 0.4 + (reach - 0.4) * out;
-        arm(sink, x, y, z, x + wx * d, y + wy * d, z + wz * d, 0.16, 0.34, 0.0, coat, age, seed);
+        arm(sink, x, y, z, x + wx * d, y + wy * d, z + wz * d, PUNCH_ARM, PUNCH_FIST, 0.0, coat, age, seed, left);
     }
 
     // ------------------------------------------------------------------------------------------------------ Mochi Tsuki
@@ -287,7 +303,7 @@ public final class MochiDraw {
                 double arc = Math.sin(Math.PI * t) * 1.2 * (1.0 - back);
                 MochiArt.tubePoint(sx + (fx - sx) * t, y + (fy - y) * t + arc, sz + (fz - sz) * t, 0.2);
             }
-            MochiArt.tube(sink, 10, coat ? MochiArt.HAKI : MochiArt.MOCHI, 0.0, 0.0);
+            MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
             // the square block: flat-edged, squashed a little as it lands
             double s = 0.75 * (1.0 - back * 0.6);
             double squash = age > KAKU_SLAM && age < KAKU_SLAM + 3 ? 0.8 : 1.0;
@@ -452,7 +468,7 @@ public final class MochiDraw {
             double t = j / 8.0;
             MochiArt.tubePoint(x + (bx - x) * t, y + (by - y) * t + Math.sin(Math.PI * t) * 1.5 * (1.0 - back), z + (bz - z) * t, 0.26);
         }
-        MochiArt.tube(sink, 10, coat ? MochiArt.HAKI : MochiArt.MOCHI, 0.0, 0.0);
+        MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
         spiked(sink, bx, by, bz, r, coat, age, seed);
     }
 
@@ -531,7 +547,7 @@ public final class MochiDraw {
             double fx = R[0] + (tx - R[0]) * out;
             double fy = R[1] + (ty - R[1]) * out;
             double fz = R[2] + (tz - R[2]) * out;
-            arm(sink, R[0], R[1], R[2], fx, fy, fz, 0.19, 0.44, 0.0, coat, pa, seed + p);
+            arm(sink, R[0], R[1], R[2], fx, fy, fz, 0.2, 0.29, 0.0, coat, pa, seed + p, k % 2 == 1);
         }
     }
 
@@ -848,7 +864,7 @@ public final class MochiDraw {
                 double hx = D[0] + ax / al * reach * out;
                 double hy = D[1] + ay / al * reach * out;
                 double hz = D[2] + az / al * reach * out;
-                arm(sink, D[0], D[1], D[2], hx, hy, hz, 0.5, 1.25, 0.0, coat, pa, seed + k);
+                arm(sink, D[0], D[1], D[2], hx, hy, hz, 0.55, 0.78, 0.0, coat, pa, seed + k);
             }
         }
     }

@@ -276,6 +276,151 @@ public final class MochiArt {
         tubeCount = 0;
     }
 
+    // ------------------------------------------------------------------------------------------------------ the bar
+
+    /** A bar's cross-section: this many points round its rounded square, and how square (as {@link #blob}'s: toward 0 a sharp box). */
+    static final int BAR_AROUND = 16;
+    static final double BAR_SQUARE = 0.3;
+
+    /**
+     * 3.5.5 (the owner: "the arms are like squares. They're like basically rectangles that with the fist at the very edge"): the points
+     * given (tubePoint: {@code r} its half width there) drawn as a bar of rounded square section, one flat face up (its frame starts level
+     * across the way and is carried along it, so a bent arm never twists), {@code tall} its height to its width, both ends closed flat;
+     * banded as every solid of the house.
+     */
+    public static void bar(FireMesh.Sink sink, int[] bands, double tall) {
+        int n = tubeCount;
+        if (n < 2) {
+            return;
+        }
+        double tx = TP[3] - TP[0];
+        double ty = TP[4] - TP[1];
+        double tz = TP[5] - TP[2];
+        double tl = Math.max(1.0E-9, Math.sqrt(tx * tx + ty * ty + tz * tz));
+        tx /= tl;
+        ty /= tl;
+        tz /= tl;
+        // level across the way (the way x up); straight up or down: any side
+        double sx = -tz;
+        double sy = 0.0;
+        double sz = tx;
+        double sl = Math.sqrt(sx * sx + sz * sz);
+        if (sl < 1.0E-4) {
+            double[] q = Q;
+            FireMesh.basis(tx, ty, tz, q);
+            sx = q[0];
+            sy = q[1];
+            sz = q[2];
+        } else {
+            sx /= sl;
+            sz /= sl;
+        }
+        for (int j = 0; j < n; j++) {
+            int a = Math.max(0, j - 1);
+            int b = Math.min(n - 1, j + 1);
+            tx = TP[b * 3] - TP[a * 3];
+            ty = TP[b * 3 + 1] - TP[a * 3 + 1];
+            tz = TP[b * 3 + 2] - TP[a * 3 + 2];
+            tl = Math.max(1.0E-9, Math.sqrt(tx * tx + ty * ty + tz * tz));
+            tx /= tl;
+            ty /= tl;
+            tz /= tl;
+            double d = sx * tx + sy * ty + sz * tz;
+            sx -= d * tx;
+            sy -= d * ty;
+            sz -= d * tz;
+            sl = Math.sqrt(sx * sx + sy * sy + sz * sz);
+            if (sl < 1.0E-6) {
+                double[] q = Q;
+                FireMesh.basis(tx, ty, tz, q);
+                sx = q[0];
+                sy = q[1];
+                sz = q[2];
+            } else {
+                sx /= sl;
+                sy /= sl;
+                sz /= sl;
+            }
+            TF[j * 6] = sx;
+            TF[j * 6 + 1] = sy;
+            TF[j * 6 + 2] = sz;
+            TF[j * 6 + 3] = ty * sz - tz * sy;
+            TF[j * 6 + 4] = tz * sx - tx * sz;
+            TF[j * 6 + 5] = tx * sy - ty * sx;
+        }
+        int around = BAR_AROUND;
+        double e = BAR_SQUARE;
+        for (int start = 0; start < n - 1; start += RINGS_MOST) {
+            int end = Math.min(n - 1, start + RINGS_MOST);
+            for (int j = start; j <= end; j++) {
+                for (int i = 0; i <= around; i++) {
+                    int v = (j - start) * (around + 1) + i;
+                    barPoint(j, i, e, tall, v, bands);
+                }
+            }
+            grid(sink, end - start, around);
+        }
+        // the two ends closed flat
+        for (int k = 0; k < 2; k++) {
+            int j = k == 0 ? 0 : n - 1;
+            int a = k == 0 ? 0 : n - 2;
+            int b = k == 0 ? 1 : n - 1;
+            double wx = TP[b * 3] - TP[a * 3];
+            double wy = TP[b * 3 + 1] - TP[a * 3 + 1];
+            double wz = TP[b * 3 + 2] - TP[a * 3 + 2];
+            double wl = Math.max(1.0E-9, Math.sqrt(wx * wx + wy * wy + wz * wz));
+            double sign = k == 0 ? -1.0 : 1.0;
+            double nx = wx / wl * sign;
+            double ny = wy / wl * sign;
+            double nz = wz / wl * sign;
+            double cx = TP[j * 3];
+            double cy = TP[j * 3 + 1];
+            double cz = TP[j * 3 + 2];
+            int cc = shade(cx, cy, cz, nx, ny, nz, bands, 1.0);
+            for (int i = 0; i <= around; i++) {
+                barPoint(j, i, e, tall, i, bands);
+                GRID_C[i] = cc;
+            }
+            for (int i = 0; i < around; i += 2) {
+                if (k == 0) {
+                    FireMesh.quad(sink, cx, cy, cz, cc, GRID[(i + 2) * 3], GRID[(i + 2) * 3 + 1], GRID[(i + 2) * 3 + 2], cc, GRID[(i + 1) * 3],
+                        GRID[(i + 1) * 3 + 1], GRID[(i + 1) * 3 + 2], cc, GRID[i * 3], GRID[i * 3 + 1], GRID[i * 3 + 2], cc);
+                } else {
+                    FireMesh.quad(sink, cx, cy, cz, cc, GRID[i * 3], GRID[i * 3 + 1], GRID[i * 3 + 2], cc, GRID[(i + 1) * 3],
+                        GRID[(i + 1) * 3 + 1], GRID[(i + 1) * 3 + 2], cc, GRID[(i + 2) * 3], GRID[(i + 2) * 3 + 1], GRID[(i + 2) * 3 + 2], cc);
+                }
+            }
+        }
+        tubeCount = 0;
+    }
+
+    /** Point {@code i} round the bar's section at its point {@code j}, into GRID and GRID_C at {@code v}. */
+    private static void barPoint(int j, int i, double e, double tall, int v, int[] bands) {
+        // the section's flat faces square to the side and to the up of the frame (its rounded corners between)
+        double an = 2 * Math.PI * i / BAR_AROUND;
+        double ca = Math.cos(an);
+        double sa = Math.sin(an);
+        double a = spow(ca, e);
+        double b = spow(sa, e) * tall;
+        double na = spow(ca, 2.0 - e);
+        double nb = spow(sa, 2.0 - e) / tall;
+        double r = TR[j];
+        double ox = TF[j * 6] * a + TF[j * 6 + 3] * b;
+        double oy = TF[j * 6 + 1] * a + TF[j * 6 + 4] * b;
+        double oz = TF[j * 6 + 2] * a + TF[j * 6 + 5] * b;
+        double nx = TF[j * 6] * na + TF[j * 6 + 3] * nb;
+        double ny = TF[j * 6 + 1] * na + TF[j * 6 + 4] * nb;
+        double nz = TF[j * 6 + 2] * na + TF[j * 6 + 5] * nb;
+        double nl = Math.max(1.0E-9, Math.sqrt(nx * nx + ny * ny + nz * nz));
+        double x = TP[j * 3] + ox * r;
+        double y = TP[j * 3 + 1] + oy * r;
+        double z = TP[j * 3 + 2] + oz * r;
+        GRID[v * 3] = x;
+        GRID[v * 3 + 1] = y;
+        GRID[v * 3 + 2] = z;
+        GRID_C[v] = shade(x, y, z, nx / nl, ny / nl, nz / nl, bands, 1.0);
+    }
+
     // ------------------------------------------------------------------------------------------------------ the ring
 
     /**
@@ -338,32 +483,42 @@ public final class MochiArt {
     // ------------------------------------------------------------------------------------------------------ the fist
 
     /**
-     * A big mochi fist at (cx, cy, cz) punching along (fx, fy, fz) (unit), its knuckles' row along the side (sx, sy, sz) (unit, square
-     * to it), {@code size} its half width; {@code coat} Haki-black. A soft rounded box of a hand, four fingers rolled over its front, the
-     * thumb across them.
+     * A mochi fist at (cx, cy, cz) punching along (fx, fy, fz) (unit), its knuckles' row along the side (sx, sy, sz) (unit, square to it,
+     * the user's right), {@code size} its half width; {@code coat} Haki-black. 3.5.5 (the owner: "the arms are like squares. They're like
+     * basically rectangles that with the fist at the very edge"): a block of a fist, as square as the arm it ends: the hand a box a little
+     * wider than the arm, four square knuckles across its front, the thumb folded across under them on the inner side ({@code left}: a
+     * left fist, its thumb on the right).
      */
     public static void fist(FireMesh.Sink sink, double cx, double cy, double cz, double fx, double fy, double fz, double sx, double sy,
-                            double sz, double size, boolean coat, double time, int seed) {
+                            double sz, double size, boolean coat, double time, int seed, boolean left) {
         int[] bands = coat ? HAKI : MOCHI;
-        // up: square to the way and the side (the back of the hand)
-        double ux = fy * sz - fz * sy;
-        double uy = fz * sx - fx * sz;
-        double uz = fx * sy - fy * sx;
-        // the hand: a soft box, longer along the way than deep
-        blob(sink, cx - fx * size * 0.15, cy - fy * size * 0.15, cz - fz * size * 0.15, fx, fy, fz, ux, uy, uz, size * 0.9, size * 0.72,
-            size, 0.55, 0.0, time, seed, bands, 1.0);
-        // four fingers rolled over its front, a little apart
+        // up: the side across the way (the back of the hand)
+        double ux = sy * fz - sz * fy;
+        double uy = sz * fx - sx * fz;
+        double uz = sx * fy - sy * fx;
+        double h = size;
+        // the hand: a box, its back where the arm ends
+        blob(sink, cx - fx * h * 0.22, cy - fy * h * 0.22, cz - fz * h * 0.22, fx, fy, fz, ux, uy, uz, h * 0.62, h * 0.76, h * 0.96, 0.3, 0.0,
+            time, seed, bands, 1.0);
+        // four knuckles across its front, square, the middle two a little ahead
         for (int k = 0; k < 4; k++) {
-            double off = (k - 1.5) * size * 0.46;
-            double fwd = size * (0.62 - Math.abs(k - 1.5) * 0.05);
-            blob(sink, cx + fx * fwd + sx * off + ux * size * 0.12, cy + fy * fwd + sy * off + uy * size * 0.12, cz + fz * fwd + sz * off
-                + uz * size * 0.12, fx, fy, fz, ux, uy, uz, size * 0.3, size * 0.36, size * 0.22, 0.8, 0.0, time, seed + k, bands, 1.0);
+            double off = (k - 1.5) * h * 0.47;
+            double fwd = h * (0.52 + (k == 1 || k == 2 ? 0.05 : 0.0));
+            blob(sink, cx + fx * fwd + sx * off + ux * h * 0.14, cy + fy * fwd + sy * off + uy * h * 0.14, cz + fz * fwd + sz * off + uz * h * 0.14,
+                fx, fy, fz, ux, uy, uz, h * 0.3, h * 0.36, h * 0.21, 0.4, 0.0, time, seed + k, bands, 1.0);
         }
-        // the thumb across the fingers' front, low
-        double tx = cx + fx * size * 0.62 - ux * size * 0.42 - sx * size * 0.35;
-        double ty = cy + fy * size * 0.62 - uy * size * 0.42 - sy * size * 0.35;
-        double tz = cz + fz * size * 0.62 - uz * size * 0.42 - sz * size * 0.35;
-        blob(sink, tx, ty, tz, sx, sy, sz, fx, fy, fz, size * 0.42, size * 0.22, size * 0.2, 0.8, 0.0, time, seed + 7, bands, 1.0);
+        // the thumb folded across under the knuckles from the inner side
+        double in = left ? 1.0 : -1.0;
+        double tx = cx + fx * h * 0.5 - ux * h * 0.44 + sx * in * h * 0.22;
+        double ty = cy + fy * h * 0.5 - uy * h * 0.44 + sy * in * h * 0.22;
+        double tz = cz + fz * h * 0.5 - uz * h * 0.44 + sz * in * h * 0.22;
+        blob(sink, tx, ty, tz, sx, sy, sz, fx, fy, fz, h * 0.48, h * 0.2, h * 0.19, 0.4, 0.0, time, seed + 7, bands, 1.0);
+    }
+
+    /** As {@link #fist} with a right fist. */
+    public static void fist(FireMesh.Sink sink, double cx, double cy, double cz, double fx, double fy, double fz, double sx, double sy,
+                            double sz, double size, boolean coat, double time, int seed) {
+        fist(sink, cx, cy, cz, fx, fy, fz, sx, sy, sz, size, coat, time, seed, false);
     }
 
     // ------------------------------------------------------------------------------------------------------ the soft glow and splats

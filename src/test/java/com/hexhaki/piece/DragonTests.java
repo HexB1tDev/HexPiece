@@ -737,6 +737,35 @@ public final class DragonTests {
                 check(count[0], finite[0], "the Mochi moves" + (c ? " (coated)" : ""), age);
             }
         }
+        // 3.5.6 (the owner: "the arms are like squares. They're like basically rectangles that with the fist at the very edge"): the
+        // arm's section at the shoulder is a square (its corners stand out from its middle as a square's do, a round tube's would not),
+        // one flat face up, the same width all the way, and the fist is its very end
+        java.util.List<double[]> near = new java.util.ArrayList<>();
+        double[] far = {0};
+        com.hexhaki.piece.dragon.FireMesh.Sink section = (xyz, argb) -> {
+            for (int k = 0; k < 4; k++) {
+                if (Math.abs(xyz[k * 3 + 2]) < 1.0E-6) {
+                    near.add(new double[] {xyz[k * 3], xyz[k * 3 + 1]});
+                }
+                far[0] = Math.max(far[0], xyz[k * 3 + 2]);
+            }
+        };
+        com.hexhaki.piece.mochi.MochiDraw.punch(section, 0, 0, 0, 0, 0, 1, 6, 4, false, 9);
+        double least = 1e9;
+        double most = 0;
+        double top = 0;
+        for (double[] v : near) {
+            double d = Math.hypot(v[0], v[1]);
+            if (d > 1.0E-6) {
+                least = Math.min(least, d);
+                most = Math.max(most, d);
+                top = Math.max(top, v[1]);
+            }
+        }
+        Check.that(most / least > 1.25 && Math.abs(top - com.hexhaki.piece.mochi.MochiDraw.PUNCH_ARM) < 0.01,
+            "the mochi arm is a square bar, one flat face up (" + most / least + ")");
+        Check.that(far[0] > 6.0 && far[0] < 6.0 + com.hexhaki.piece.mochi.MochiDraw.PUNCH_FIST,
+            "the fist is the arm's very end (" + far[0] + ")");
         // the owner's rule: a punch's arm and fist all white without Haki, all black with it (no white left on it, no black without)
         for (int coat = 0; coat < 2; coat++) {
             boolean c = coat == 1;
