@@ -5,7 +5,8 @@ Read CLAUDE.md, then docs/handoff/next-ai-3.6.3.md WHOLE (newest: sections F to 
 base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi moves rebuilt (K), Buzz Cut Mochi (L, M), the owner's
 "use my imapct frame" and their notes on Buzz Cut, Lotus, the Mochi feeling dead and WiFi Haki (N), the chat that released 3.6.3 (O),
 the DoughV2 GIFs read frame by frame (P), 3.6.4 and 3.6.5 (Q), where the fourth Mochi chat stopped (R), the fifth chat's six awakened
-moves built on their GIFs and 3.6.6 (S) and where it stopped (T)), then docs/handoff/next-ai-3.6.0.md sections I to
+moves built on their GIFs and 3.6.6 (S), where it stopped (T), the Phoenix request (U), 3.6.7 (V), 3.6.8 (W) and the Phoenix so far
+(X)), then docs/handoff/next-ai-3.6.0.md sections I to
 N, then POINT ONE and sections 0 to 7 of docs/handoff/next-ai-3.2.2.md (every standing rule).
 
 POINT ONE (the owner's, never drop it, pass it on): every fruit in the style of the Light, Gura and Magma fruits (3D meshes, clips without
@@ -26,16 +27,21 @@ MochiArt.CHURN). Build every new move this way and judge every render for it.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.6.6 is the last release (check its Build and Release runs first): the Mochi Awakening's whole set on M, each
-move built frame by frame on its reference GIF and rendered beside it (next-ai-3.6.3.md S): V Power Mochi (two burning donuts, the
-left click their thick seamed Haki bars), Z Grilled Lance (held: the ball of cream Haki mochi, driven in, burns, two blasts), X Elastic
-Lasso (whirled, thrown, yanks them in, holds them), C Oblivion (stomp, surge, walls, star burst), B Blazing Storm (six burning Haki arms,
-aimed, the last strike, the blast), N Scorching Buzz Cut (held: the burning spiked wheel; let go: Buzz Cut's cinematic on fire, a bigger
-slam). The base kit and Trident Lacerations as before.
+Where things stand: 3.6.8 is the last release (Build #250, Release #159, green; 3.6.7 Build #249, Release #158): the Mochi
+Awakening's whole set (3.6.6), Mogura held mid-shaft and only while swinging, no impact frames in the Mochi fruit, Buzz Cut with no
+cutscene (3.6.7), Buzz Cut's whirl a spiral widening every turn, Scorching Buzz Cut spinning seven times with a far bigger crater and
+always catching, every dough sound real CC0 slime (3.6.8). The owner's next fruit: the Tori Tori no Mi, Model: Phoenix (Mythical Zoan;
+their own model input/marco_phoenix.zip; next-ai-3.6.3.md U and X): baked and animated in previews only (not a fruit in the game yet),
+sent to the owner as GIFs; the owner said to show the model animated BEFORE any move ("its a burning phoenix ... moving flames", "the
+animations have to be top tier").
 
-Do next (next-ai-3.6.3.md T): (1) check the last push's Build and Release runs; (2) the owner's notes on any move come first: write
-them verbatim into section N and fix them, rendering beside the GIF until it matches; (3) otherwise close the honest gaps listed at the
-end of section S (each awakened move compared at more of its GIF's beats).
+Do next (next-ai-3.6.3.md X): (1) check the last push's Build run; (2) the owner's word on the Phoenix previews comes first (write it
+verbatim into U, fix, render again); (3) then the fruit in game: registered (patch/PiecePatch's extra fruits, Mythical rank, its item),
+Z transforms and turns back with a cooldown (no meter: the owner's answer), the phoenix drawn on the player as the dragon is
+(client/dragon/DragonRenderer's way: CPU skinning, the cel ramp PhoenixLook.tint per vertex, the flames PhoenixForm.flame and the tongues
+PhoenixFire), its flight states from the player's motion, a transform in a cyan sphere of light; (4) then the moves on the wiki's GIFs
+(scratchpad pgifs/: Fujiazami, Talon Slam / Hawk Rush, Phoenix Inferno, Bluebird, both forms). Item 4 of the owner's Mochi note 22 came
+empty: ask for it.
 
 The cloud environment must be the personal "HexPiece" (it now also allows official-fruit-battlegrounds.fandom.com and
 static.wikia.nocookie.net for the reference GIFs; download them into the scratchpad as next-ai-3.6.3.md D says, never commit them). A

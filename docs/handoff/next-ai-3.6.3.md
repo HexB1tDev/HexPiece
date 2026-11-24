@@ -5,7 +5,8 @@ read I to N closely: the lightning rework and the whole Mochi story), then POINT
 `docs/handoff/next-ai-3.2.2.md` (every standing rule). Where they disagree, this file is newest and wins.
 
 Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.6** (released by the
-fifth Mochi chat: the Awakening's whole set, section S; check its Build and Release runs). Next: the owner's notes (section T).
+fifth Mochi chat: the Awakening's whole set, section S), then 3.6.7 (V) and **3.6.8** (W: Build #250, Release #159, green). The
+Phoenix fruit is in progress (U, X).
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
