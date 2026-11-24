@@ -223,22 +223,18 @@ public final class MochiShots {
                     ItoShots.posed(sink, "mochi_buzz", (float) t, 0.0, 0.0, rolled, 0.0, 0.9, rolled, ex, ey, ez, 0.0, 0.0);
                     com.hexhaki.piece.horo.AstralArt.hide = 0;
                 }
+                double[] bend = com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, new double[4]);
                 com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, arm[0] - ex, arm[1] - ey, arm[2] - ez, arm[3], arm[4], arm[5], arm[6],
-                    com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), t, 7);
+                    com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), bend[0], bend[1], bend[2], bend[3], t, 7);
                 // the one caught: before the blow where the wheel met them, after it stuck at the mace's end, in the crater after the slam
                 double bx = 0;
                 double by = 0;
                 double bz = 10.5;
-                if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT && t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM) {
-                    double d = arm[6] - 0.4;
-                    bx = arm[0] + arm[3] * d;
-                    by = arm[1] + arm[4] * d - 1.0;
-                    bz = arm[2] + arm[5] * d;
-                } else if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM) {
-                    double[] down = com.hexhaki.piece.mochi.MochiDraw.buzzArm(com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 0, 0, rolled, 0.0, new double[8]);
-                    bx = down[0] + down[3] * (down[6] - 0.4);
-                    by = 0;
-                    bz = down[2] + down[5] * (down[6] - 0.4);
+                if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT) {
+                    double[] st = com.hexhaki.piece.mochi.MochiDraw.buzzStuck(t, 0, 0, 0, rolled, 0.0, new double[3]);
+                    bx = st[0];
+                    by = st[1];
+                    bz = st[2];
                 }
                 HieShots.body(sink, bx - ex, by - ey, bz - ez);
                 if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT && t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL + 4) {

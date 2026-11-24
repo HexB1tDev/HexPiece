@@ -384,3 +384,22 @@ Left to do (the plan):
    pulling back after.
 3. Then look again, side by side with the GIF, at what the owner named (L 9 above): the wheel a bright motion-blurred white blur, the
    torn ground flat floor planks (not rocks), the crater a big black splatter star, the dust not greenish.
+10. The owner, on Buzz Cut's mace: "dude, the arm increases to insane ammounts and then slams into the ground" (with an anime frame:
+    Katakuri's Buzz Cut Mochi: his arm a long THIN WHITE band of stretched mochi, bowed like elastic, reaching far across the frame,
+    flaring at its end into a splash of dough that holds a DARK SPIKED BALL (the Haki mace head, round, spikes all round); not a thick
+    black club). So: the arm white and stretching to an insane length (about 16 overhead), the black spiked ball at its end, slammed
+    down from there into the ground far ahead (the crater where the ball lands).
+11. The owner uploaded a GIF (Officialref.zip, s9cBv2.gif, 601 frames, 320x180, plays forward then back): "this gif is from the
+    actual show" (Katakuri's Buzz Cut Mochi on Luffy). Read frame by frame: the mace ball is ENORMOUS (Luffy a tiny figure stuck among
+    its blunt conical spikes, frames 40 to 70; dark navy-black with pale highlights), at the end of the thin white elastic arm (10 to
+    30); Katakuri's arm swollen and raised high (120 to 140), whipped down in a white blur (220), a white flash (250); the slam leaves a
+    VAST FIELD OF GREY RUBBLE BLOCKS, the thin arm coming down from the sky into it, Luffy lying broken in the debris (270 to 340).
+- Done after L 10 and 11: the mace is the owner's frame and clip now (MochiDraw.buzzMace): a thin WHITE elastic band of dough bowed
+  behind its swing (buzzBend), flaring into tongues of dough round an ENORMOUS black crimson-lit spiked ball (buzzBall: up to BUZZ_BALL
+  2.5 with the reach; 14 spikes, crimson flickers); buzzReach 3.4 at the catch, 6.5 at the whirl's end (lift 0.3 so the ball clears
+  the ground), shot up to BUZZ_REACH_UP 16 as it is raised (straight up), slammed down to BUZZ_REACH_SLAM 13 ahead with its ball half
+  buried in the ground. The ones caught sit on the ball's top (buzzStuck: server and client both use it) and lie crushed under it from
+  the slam. The wheel at speed a bright white blur (a glow and blurred ring copies); the torn ground flat tan planks (MochiDraw.plank)
+  tumbling at their own angles; the crater a big black star (16 rays and drops, HAKI_CRIMSON), pale dust (FireMesh.shell), 24 rocks
+  thrown and (the show's) a field of 30 grey rubble blocks heaved up round it. Preview |mbuzz:age. STILL TO DO: the server and client
+  wiring of L 1 and 2 (the move in game still plays the old wheel and club).
