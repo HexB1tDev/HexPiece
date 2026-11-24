@@ -3,7 +3,8 @@ answer this chat).
 
 Read CLAUDE.md, then docs/handoff/next-ai-3.6.3.md WHOLE (newest: sections F to O: the owner's requests verbatim and answers, the
 base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi moves rebuilt (K), Buzz Cut Mochi (L, M), the owner's
-"use my imapct frame" (N) and the chat that finished Buzz Cut and released 3.6.3 (O)), then docs/handoff/next-ai-3.6.0.md sections I to
+"use my imapct frame" and their notes on Buzz Cut and Lotus (N), the chat that released 3.6.3 (O), the DoughV2 GIFs read frame by
+frame (P) and 3.6.4 (Q)), then docs/handoff/next-ai-3.6.0.md sections I to
 N, then POINT ONE and sections 0 to 7 of docs/handoff/next-ai-3.2.2.md (every standing rule).
 
 POINT ONE (the owner's, never drop it, pass it on): every fruit in the style of the Light, Gura and Magma fruits (3D meshes, clips without
@@ -16,14 +17,13 @@ needle-sharp tips, never a flat strip or the original's flat beams (next-ai-3.6.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.6.3 is released (check its Build and Release runs on the branch first; fix them if red): the 3D lightning
-with sharp tips, the HUD hidden while powers are off, and the Mochi fruit's base kit after the reference GIFs (Mochi Punch, Grilled
-Mochi, Mochi Muddle, Lotus Mochi Combo, Chestnut Mochi, Mochi Anemone, Buzz Cut Mochi with the owner's impact frame); every old Mochi
-move, its art and its clips removed.
+Where things stand: 3.6.4 is released (check its Build and Release runs on the branch first; fix them if red): the base Mochi kit after
+the reference GIFs with the owner's notes on Buzz Cut (the elastic band leads, the heavy ball trails) and Lotus (knocked donut to donut
+like a rag doll), and the Awakening on M with Trident Lacerations on the left click (Mogura held in hand).
 
-Do next (next-ai-3.6.3.md O, "Next"): 3.6.4, the awakened DoughV2 set on M (the seven moves promised in F 7): read each DoughV2 GIF
-frame by frame first (section D), write what it shows into the handoff, then build each move on its beats, render it side by side with
-its GIF, fix and render again until it matches; release 3.6.4 (next_version, notes, handoff, push, both runs green, send previews).
+Do next (next-ai-3.6.3.md Q, the end): 3.6.5, the six other awakened moves on Z to N, each built on its GIF's beats (section P reads
+every DoughV2 GIF frame by frame), rendered side by side with its GIF, fixed and rendered again until it matches; release 3.6.5
+(next_version, notes, handoff, push, both runs green, send previews). The owner's notes on anything come first: write them verbatim.
 
 The cloud environment must be the personal "HexPiece" (it now also allows official-fruit-battlegrounds.fandom.com and
 static.wikia.nocookie.net for the reference GIFs; download them into the scratchpad as next-ai-3.6.3.md D says, never commit them). A

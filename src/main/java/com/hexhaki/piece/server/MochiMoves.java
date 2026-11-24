@@ -282,7 +282,13 @@ public final class MochiMoves {
 
     /** A key (Z to N) while awakened: the DoughV2 move in its place. */
     static void pressAwake(ServerPlayer player, State s, int slot, long now) {
-        // the awakened moves are built one by one (3.6.4); a key with none yet does nothing
+        // 3.6.4 (the owner: "Release fixes now"): the left click's swings are in; the six others are built next (3.6.5)
+        for (com.hexhaki.fruit.FruitMove move : MochiKit.AWAKENED) {
+            if (move.slot() == slot && move != MochiKit.AWAKEN) {
+                player.m_5661_(net.minecraft.network.chat.Component.m_237113_(move.name() + " comes in the next version"), true);
+                return;
+            }
+        }
     }
 
     /**

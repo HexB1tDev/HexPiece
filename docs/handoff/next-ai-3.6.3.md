@@ -4,8 +4,8 @@ This is the newest handoff. Read it whole, then `docs/handoff/next-ai-3.6.0.md` 
 read I to N closely: the lightning rework and the whole Mochi story), then POINT ONE and sections 0 to 7 of
 `docs/handoff/next-ai-3.2.2.md` (every standing rule). Where they disagree, this file is newest and wins.
 
-Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.3** (released by the
-fourth Mochi chat: section O; check its Build and Release runs). Next: **3.6.4**, the awakened DoughV2 set (section O, "Next").
+Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.4** (released by the
+fourth Mochi chat: sections O and Q; check its Build and Release runs). Next: **3.6.5**, the rest of the awakened DoughV2 set (Q).
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -458,6 +458,16 @@ Next, in order:
     them, stuck to it, fast across to the next donut, whose fist strikes them on from the side it stands on, tumbling like a ragdoll;
     at the end the top donut's fist drives them straight down. (Also "either": Buzz Cut Mochi is not approved yet: N 13.)
 
+15. The owner's answer (AskUserQuestion, after N 13 and 14 were fixed and Trident Lacerations built): "Release fixes now
+    (Recommended)": 3.6.4 now with the Buzz Cut and Lotus fixes and M turning on the Awakening with Trident Lacerations on the left
+    click; Z to N while awakened come in 3.6.5 (until then they say so on the action bar).
+
+16. The owner (while 3.6.4 was being released): "overall I am happy but feels like mochi is dead, it should be more stretchy, more
+    animated, more squishy, it's mochi for god's sake, the arms should have more elasticity, etc" (the whole Mochi fruit: every arm,
+    donut and mass of dough to stretch, wobble, squash and spring like mochi, never stiff).
+17. The owner: "I also found traces of the old Haki in the wifi haki, it should use our latest one." (WiFi Haki still draws something
+    of the old Haki look: it must use the one 3D Haki lightning, POINT ONE.)
+
 ## O. The fourth Mochi chat: Buzz Cut judged and finished, the old Mochi art removed, 3.6.3 released
 
 Build #233 (the last push of the chat before) was green. Done, rendered and judged against the Buzzcut GIF, the owner's show clip
@@ -587,3 +597,13 @@ dough cream-ivory in Oblivion, white elsewhere.
   sparks where it strikes, the 5th breaks a raised shield and throws them up (white ring, speed streaks). Art in mochi/MochiV2.java;
   preview MochiShots |mtrident:k:age. Z to N while awakened do nothing yet (MochiMoves.pressAwake): Grilled Lance, Elastic Lasso,
   Oblivion, Power Mochi, Blazing Storm and Scorching Buzz Cut are still to build (section P has their GIFs read).
+
+Released after N 15: **3.6.4** (`.github/release-notes-3.6.4.md`): Buzz Cut's band (N 13), Lotus' donut-to-donut chain (N 14), the
+Awakening on M with Trident Lacerations. Next, **3.6.5**: the six other awakened moves on Z to N (MochiMoves.pressAwake says "comes in
+the next version" for each until then), each built on its GIF's beats as section P reads them, rendered beside its GIF, judged; in this
+order: V Power Mochi (it changes the left click), Z Grilled Lance, X Elastic Lasso, C Oblivion, B Blazing Storm, N Scorching Buzz Cut
+(reuse Buzz Cut's machinery: MochiMoves Wheel/Whirl, MochiDraw.buzz*, MochiFx Buzz, with fire, spikes on the wheel, three wide swings
+and a bigger slam). The owner may still send notes on the base kit: they come first (write them into N verbatim).
+
+Open after 3.6.4 (the owner's newest notes come before 3.6.5's awakened moves): N 16 (the Mochi alive: stretchy, squishy, elastic arms)
+and N 17 (WiFi Haki on the one 3D Haki lightning).
