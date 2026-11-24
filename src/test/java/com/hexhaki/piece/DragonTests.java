@@ -839,6 +839,20 @@ public final class DragonTests {
                 check(count[0], finite[0], "Power Mochi", age);
             }
         }
+        // 3.6.6: Grilled Lance: every tick of its charge, its flight, and everything where it strikes (both blasts), near and far
+        for (double eye : new double[] {3.0, 8.0}) {
+            for (int age = 0; age <= com.hexhaki.piece.mochi.MochiV2.LANCE_MOST; age++) {
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiV2.lanceCharge(sink, 0.4, -0.3, eye * 0.3, 0, 0, 1, age, 4);
+                com.hexhaki.piece.mochi.MochiV2.lanceFly(sink, 0.4, -0.3, eye, 0, 0, 1, age, 4);
+                check(count[0], finite[0], "Grilled Lance held and flying", age);
+            }
+            for (int age = 0; age <= com.hexhaki.piece.mochi.MochiV2.LANCE_LIFE; age++) {
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiV2.lanceHit(sink, 0, -0.6, eye, -1.6, age, 4);
+                check(count[0], finite[0], "Grilled Lance's strike and blasts", age);
+            }
+        }
         // 3.5.6 (the owner: "the arms are like squares. They're like basically rectangles that with the fist at the very edge"): the
         // arm's section at the shoulder is a square (its corners stand out from its middle as a square's do, a round tube's would not),
         // one flat face up, the same width all the way, and the fist is its very end

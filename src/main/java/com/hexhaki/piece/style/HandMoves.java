@@ -178,12 +178,12 @@ public final class HandMoves {
             case "ito_cage_close" -> new Move(DOWN, 0);
             case "ito_knight" -> new Move(POINT_TAP, 0);
             // 3.5.5: the Mochi fruit's own clips (tools/mochi_anims.py)
-            case "mochi_punch_1", "mochi_punch_2", "mochi_yaki_fire" -> new Move(JAB, 0);
+            case "mochi_punch_1", "mochi_punch_2", "mochi_yaki_fire", "mochi_lance_fire" -> new Move(JAB, 0);
             case "mochi_lotus" -> new Move(LOTUS, 0);
             case "mochi_muddle" -> new Move(MUDDLE, 0);
             case "mochi_chestnut" -> new Move(UP_END_HELD, 0);
             case "mochi_buzz" -> new Move(BUZZ, 0);
-            case "mochi_yaki_charge" -> new Move(DEEP, 1.2);
+            case "mochi_yaki_charge", "mochi_lance_charge" -> new Move(DEEP, 1.2);
             case "mochi_awaken" -> new Move(DOWN, 0);
             case "mochi_donuts" -> new Move(POINT, 0.4);
             // 3.6.4: the awakened left click, Mogura's five swings (client/mochi/MochiClient holds Mogura on this hand)

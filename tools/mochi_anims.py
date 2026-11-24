@@ -258,6 +258,28 @@ def power():
     ], "Mochi Mochi: awakened, Power Mochi: the left arm points as the left donut's fist fires.", ("body", "torso", "leftArm"))
 
 
+# ------------------------------------------------------------------------------------------------------ awakened Z: Grilled Lance
+
+def lance():
+    # 3.6.6 (the reference's Grilled Lance, frames 14 to 33): held (to MochiV2.LANCE_MOST, 60 ticks): the right arm (Mogura in its hand)
+    # thrust out at the crosshair in 4 ticks, the body turned a little into it, then a tremble as the ball of mochi swells round it;
+    # let go: drawn back an instant and driven out as the ball is launched
+    aim = p(rightArm=arm(-88, 4, 6, -4), body={"yaw": 14, "bend": 4})
+    beats = [(0, "linear", REST), (4, "outexpo", aim)]
+    beats += tremble(aim, 8, 60, 3, lambda b, s: p(b, rightArm={"pitch": -88 + 1.2 * s, "yaw": 4 + 0.8 * s}))
+    write_parts("mochi_lance_charge", 60, beats,
+                "Mochi Mochi: awakened, Grilled Lance held: the right arm thrust out while the mochi swells into a ball round it.",
+                ("body", "torso", "rightArm"))
+    write_parts("mochi_lance_fire", 10, [
+        (0, "constant", aim),
+        (1, "outsine", p(aim, rightArm={"pitch": -74}, body={"yaw": 22})),
+        (3, "outexpo", p(aim, rightArm={"pitch": -98}, body={"yaw": 4, "bend": 8})),
+        (6, "outsine", p(aim, rightArm={"pitch": -92})),
+        (10, "inoutsine", REST),
+    ], "Mochi Mochi: awakened, Grilled Lance let go: the arm drawn back and driven out as the ball is launched.",
+        ("body", "torso", "rightArm"))
+
+
 def main():
     punch()
     lotus()
@@ -269,6 +291,7 @@ def main():
     donuts()
     trident()
     power()
+    lance()
     names = sorted(n for n in WRITTEN if n.startswith("mochi_"))
     java_poses(names, "MochiPoses", "tools/mochi_anims.py", "the Mochi fruit's animations' keyframes")
     print(f"wrote {len(names)} Mochi animations and their poses")

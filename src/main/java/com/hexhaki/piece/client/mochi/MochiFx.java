@@ -118,6 +118,16 @@ public final class MochiFx {
     record PowerHit(int user, int side, Vec3 at, long born, int seed) {
     }
 
+    /** 3.6.6: Grilled Lance held (by user: since, until), in flight (by seed), and where it struck (the ground there). */
+    record LanceHeld(long born, long until) {
+    }
+
+    record LanceFly(Vec3 from, Vec3 step, long born, int flight, int seed) {
+    }
+
+    record LanceHit(Vec3 at, double ground, long born, int seed) {
+    }
+
     /** 3.6.3: Buzz Cut Mochi's blow (the ball where it struck) and its slam's ground. */
     record BuzzMark(Vec3 at, long born, int seed, boolean ground) {
     }
@@ -229,6 +239,10 @@ public final class MochiFx {
     /** 3.6.6: Power Mochi's donuts (by user) and their punches. */
     static final Map<Integer, PowerOn> POWERS = new HashMap<>();
     private static final List<PowerHit> POWER_HITS = new ArrayList<>();
+    /** 3.6.6: Grilled Lance. */
+    static final Map<Integer, LanceHeld> LANCES_HELD = new HashMap<>();
+    static final Map<Integer, LanceFly> LANCES = new HashMap<>();
+    private static final List<LanceHit> LANCE_HITS = new ArrayList<>();
     /** How long the Anemone's rings and the Awakening's ground take to shrink away once ended. */
     /** 3.6.3: how long a donut takes to form and to go (ticks). */
     static final double FORM = 6.0;
@@ -335,6 +349,19 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.POWER_PUNCH -> add(POWER_HITS, new PowerHit(m.user(), phase, at, clock, m.id()));
+            case MochiMoves.LANCE -> {
+                if (phase == MochiMoves.LANCE_HOLD) {
+                    put(LANCES_HELD, m.user(), new LanceHeld(clock, clock + m.ticks() + 2));
+                } else if (phase == MochiMoves.LANCE_FLY) {
+                    LANCES_HELD.remove(m.user());
+                    put(LANCES, m.id(), new LanceFly(at, a, clock, m.ticks(), m.id()));
+                } else if (phase == MochiMoves.LANCE_HIT) {
+                    LANCES.remove(m.id());
+                    add(LANCE_HITS, new LanceHit(at, m.by(), clock, m.id()));
+                } else {
+                    LANCES_HELD.remove(m.user());
+                }
+            }
             case MochiMoves.TRIDENT -> {
                 if (phase >= MochiMoves.TRIDENT_STRUCK) {
                     add(STRUCK, new Struck(at, phase - MochiMoves.TRIDENT_STRUCK, m.by(), clock, m.id()));
@@ -764,6 +791,9 @@ public final class MochiFx {
         POWERS.entrySet().removeIf(e -> e.getValue().gone >= 0 && clock - e.getValue().gone > com.hexhaki.piece.mochi.MochiV2.POWER_GONE + 1
             || clock - e.getValue().born > com.hexhaki.piece.mochi.MochiV2.POWER_TICKS + 2 * MochiMoves.AWAKE_RESEND || level.m_6815_(e.getKey()) == null);
         POWER_HITS.removeIf(h -> clock - h.born > com.hexhaki.piece.mochi.MochiV2.POWER_LIFE + 1);
+        LANCES_HELD.entrySet().removeIf(e -> clock > e.getValue().until || level.m_6815_(e.getKey()) == null);
+        LANCES.values().removeIf(f -> clock - f.born > f.flight + 1);
+        LANCE_HITS.removeIf(h -> clock - h.born > com.hexhaki.piece.mochi.MochiV2.LANCE_LIFE + 1);
     }
 
     static boolean empty() {
@@ -771,7 +801,8 @@ public final class MochiFx {
             && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty()
             && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
             && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null && BURSTS.isEmpty()
-            && SWINGS.isEmpty() && STRUCK.isEmpty() && POWERS.isEmpty() && POWER_HITS.isEmpty();
+            && SWINGS.isEmpty() && STRUCK.isEmpty() && POWERS.isEmpty() && POWER_HITS.isEmpty() && LANCES_HELD.isEmpty() && LANCES.isEmpty()
+            && LANCE_HITS.isEmpty();
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -1029,10 +1060,45 @@ public final class MochiFx {
             com.hexhaki.piece.mochi.MochiV2.powerPunch(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, h.at.f_82479_ - cx,
                 h.at.f_82480_ - cy, h.at.f_82481_ - cz, now - h.born, h.seed);
         }
+        drawLance(minecraft, level, cam, partial, now, cx, cy, cz);
         for (Struck k : STRUCK) {
             if (!far(k.at, cam)) {
                 com.hexhaki.piece.mochi.MochiV2.tridentMark(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, k.k, k.ground - cy,
                     now - k.born, k.seed);
+            }
+        }
+    }
+
+    /**
+     * 3.6.6: Grilled Lance (MochiV2.lance*): the charge at the user's hand (in one's own first person low and to the right, as Grilled
+     * Mochi's swell), the ball in flight, what it does where it strikes.
+     */
+    static void drawLance(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial, double now, double cx, double cy, double cz) {
+        for (Map.Entry<Integer, LanceHeld> e : LANCES_HELD.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            if (user == null) {
+                continue;
+            }
+            Vec3 look = user.m_20252_(partial);
+            Vec3 hand = ownView(minecraft, user) ? ownHand(user, OWN_SWELL, partial) : shoulder(minecraft, user, 0, partial).m_82549_(look.m_82490_(0.6));
+            if (!far(hand, cam)) {
+                com.hexhaki.piece.mochi.MochiV2.lanceCharge(SINK, hand.f_82479_ - cx, hand.f_82480_ - cy, hand.f_82481_ - cz, look.f_82479_,
+                    look.f_82480_, look.f_82481_, now - e.getValue().born, e.getKey());
+            }
+        }
+        for (LanceFly f : LANCES.values()) {
+            double age = now - f.born;
+            Vec3 p = f.from.m_82549_(f.step.m_82490_(age));
+            if (!far(p, cam)) {
+                Vec3 u = unit(f.step);
+                com.hexhaki.piece.mochi.MochiV2.lanceFly(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, u.f_82479_, u.f_82480_, u.f_82481_, age,
+                    f.seed);
+            }
+        }
+        for (LanceHit h : LANCE_HITS) {
+            if (!far(h.at, cam)) {
+                com.hexhaki.piece.mochi.MochiV2.lanceHit(SINK, h.at.f_82479_ - cx, h.at.f_82480_ - cy, h.at.f_82481_ - cz, h.ground - cy, now - h.born,
+                    h.seed);
             }
         }
     }
@@ -1359,6 +1425,9 @@ public final class MochiFx {
         STRUCK.clear();
         POWERS.clear();
         POWER_HITS.clear();
+        LANCES_HELD.clear();
+        LANCES.clear();
+        LANCE_HITS.clear();
         carry = null;
     }
 

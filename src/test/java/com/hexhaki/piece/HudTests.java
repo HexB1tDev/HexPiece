@@ -1097,6 +1097,17 @@ public final class HudTests {
                 && w[1] <= com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING, "Trident Lacerations: each blow inside its swing's sweep");
         }
         powerMochi();
+        // 3.6.6: Grilled Lance's beats (the reference's 1205.gif): the spin, the ink, full; struck, the first blast, then the second far
+        // bigger and harder; the ball as big as the reference's (bigger than the torso)
+        Check.that(com.hexhaki.piece.mochi.MochiV2.LANCE_SPIN < com.hexhaki.piece.mochi.MochiV2.LANCE_INK
+            && com.hexhaki.piece.mochi.MochiV2.LANCE_INK < com.hexhaki.piece.mochi.MochiV2.LANCE_FULL
+            && com.hexhaki.piece.mochi.MochiV2.LANCE_FULL < com.hexhaki.piece.mochi.MochiV2.LANCE_MOST,
+            "Grilled Lance: the mochi round the hand, the Haki spinning, the ink, the ball full, in order");
+        Check.that(com.hexhaki.piece.mochi.MochiV2.LANCE_BOOM > 15 && com.hexhaki.piece.mochi.MochiV2.LANCE_BOOM2 > com.hexhaki.piece.mochi.MochiV2.LANCE_BOOM + 15
+            && com.hexhaki.piece.mochi.MochiV2.LANCE_BOOM2_SIZE > com.hexhaki.piece.mochi.MochiV2.LANCE_BOOM_SIZE
+            && com.hexhaki.piece.server.MochiMoves.LANCE_BOOM2_HURT > com.hexhaki.piece.server.MochiMoves.LANCE_BOOM_HURT,
+            "Grilled Lance: it burns in them, explodes, then explodes again far bigger (\"explodes after a few seconds\")");
+        Check.that(com.hexhaki.piece.mochi.MochiV2.LANCE_BALL >= 0.6, "Grilled Lance: the ball bigger than the torso (the reference's frame 30)");
         float[][] rest = new float[6][8];
         double[] fist = com.hexhaki.piece.mochi.MochiV2.mogura(rest, 0, 0, new double[3]);
         double[] tip = com.hexhaki.piece.mochi.MochiV2.mogura(rest, com.hexhaki.piece.mochi.MochiV2.TIP, 0, new double[3]);

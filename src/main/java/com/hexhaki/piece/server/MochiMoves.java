@@ -176,6 +176,20 @@ public final class MochiMoves {
     static final float POWER_HURT = 6.0F;
     static final int POWER_BURN = 2;
     static final int POWER_COOL = 600;
+    /**
+     * 3.6.6: Grilled Lance (awakened Z, held; kind LANCE, bx: LANCE_HOLD the charge begins (ticks the longest hold), LANCE_FLY (x, y, z
+     * from, a the step a tick, ticks its flight, id its seed), LANCE_HIT where it struck (x, y, z, by the ground's height there, id its
+     * seed), LANCE_DROP the charge dropped): MochiV2.LANCE_* its beats. Let go before it is full, it goes as it fills.
+     */
+    public static final int LANCE = 287;
+    public static final int LANCE_HOLD = 0;
+    public static final int LANCE_FLY = 1;
+    public static final int LANCE_HIT = 2;
+    public static final int LANCE_DROP = 3;
+    static final float LANCE_STRIKE_HURT = 4.0F;
+    public static final float LANCE_BOOM_HURT = 8.0F;
+    public static final float LANCE_BOOM2_HURT = 14.0F;
+    static final int LANCE_COOL = 220;
     /** How often an awakened user's state is sent again (for whoever comes near later), the Awakening's cooldown after it comes on. */
     public static final int AWAKE_RESEND = 40;
     static final int AWAKEN_COOL = 40;
@@ -194,6 +208,9 @@ public final class MochiMoves {
         int trident = -1;
         long tridentLast;
         long tridentNext;
+        /** 3.6.6: Grilled Lance held since (-1 not), let go before it was full. */
+        long lanceSince = -1;
+        boolean lanceLetGo;
         /** 3.6.6: Power Mochi out until (-1 none), the next punch, which donut punches next. */
         long powerUntil = -1;
         long powerNext;
@@ -247,7 +264,7 @@ public final class MochiMoves {
     }
 
     static boolean busy(State s, long now) {
-        return s.yakiSince >= 0 || s.anemoneSince >= 0 || now < s.busyUntil;
+        return s.yakiSince >= 0 || s.anemoneSince >= 0 || s.lanceSince >= 0 || now < s.busyUntil;
     }
 
     /** A mochi blow on {@code body}: damage (a quarter more with Armament), a push, a splat where it lands, the Conqueror's lightning. */
@@ -288,6 +305,10 @@ public final class MochiMoves {
         s.trident = -1;
         if (!s.awakened) {
             powerEnd(player, s);
+            if (s.lanceSince >= 0) {
+                s.lanceSince = -1;
+                fx(player, LANCE, 0, player.m_20182_(), Vec3.f_82478_, LANCE_DROP, 0, 0, 0);
+            }
         }
         if (s.awakened) {
             ItoMoves.cool(player, MochiKit.AWAKEN, AWAKEN_COOL);
@@ -302,6 +323,10 @@ public final class MochiMoves {
     static void pressAwake(ServerPlayer player, State s, int slot, long now) {
         if (slot == MochiKit.POWER.slot()) {
             power(player, s, now);
+            return;
+        }
+        if (slot == MochiKit.LANCE.slot()) {
+            lanceHold(player, s, now);
             return;
         }
         // 3.6.4 (the owner: "Release fixes now"): the left click's swings are in; the six others are being built
@@ -319,7 +344,7 @@ public final class MochiMoves {
      * within {@link #TRIDENT_REACH} (the spin: all round); the 5th breaks a raised shield and throws them straight up.
      */
     static void tridentSwing(ServerPlayer player, State s, long now) {
-        if (now < s.tridentNext || now < s.busyUntil || s.yakiSince >= 0 || s.anemoneSince >= 0 || player.m_20159_()) {
+        if (now < s.tridentNext || now < s.busyUntil || s.yakiSince >= 0 || s.anemoneSince >= 0 || s.lanceSince >= 0 || player.m_20159_()) {
             return;
         }
         int k = s.trident < 0 || now - s.tridentLast > TRIDENT_RESET ? 0 : (s.trident + 1) % MochiV2.TRIDENT_SWINGS;
@@ -334,6 +359,115 @@ public final class MochiMoves {
         sound(player, ItoMoves.chest(player), k >= 3 ? com.hexhaki.piece.sword.SwordSounds.SWING_HEAVY : com.hexhaki.piece.sword.SwordSounds.SWING,
             0.9F, 1.05F - k * 0.04F);
         later(player, MochiV2.TRIDENT_HIT, () -> tridentHit(player, k));
+    }
+
+    /**
+     * Z awakened, held: Grilled Lance (mochi/MochiV2.lanceCharge, the reference's frames 14 to 30): mochi round the hand, Haki spinning
+     * round the arm, a burst of ink, the arm swollen into a great ball of Haki mochi.
+     */
+    static void lanceHold(ServerPlayer player, State s, long now) {
+        if (s.lanceSince >= 0 || !ItoMoves.ready(player, MochiKit.LANCE)) {
+            return;
+        }
+        s.lanceSince = now;
+        s.lanceLetGo = false;
+        animate(player, "mochi_lance_charge");
+        fx(player, LANCE, 0, ItoMoves.chest(player), player.m_20154_(), LANCE_HOLD, 0, 0, MochiV2.LANCE_MOST + 2);
+        sound(player, ItoMoves.chest(player), MochiSounds.INFLATE, 1.0F, 0.85F);
+    }
+
+    /** Let go: the ball is driven out along the look; it strikes the first body or block, or its range's end (Lance). */
+    static void lanceFire(ServerPlayer player, State s) {
+        long now = now(player);
+        s.lanceSince = -1;
+        s.lanceLetGo = false;
+        s.busyUntil = now + 6;
+        ItoMoves.cool(player, MochiKit.LANCE, LANCE_COOL);
+        Vec3 look = player.m_20154_();
+        Vec3 from = ItoMoves.chest(player).m_82549_(look.m_82490_(1.2));
+        Vec3 step = look.m_82490_(MochiV2.LANCE_SPEED);
+        int flight = (int) Math.ceil(MochiV2.LANCE_RANGE / MochiV2.LANCE_SPEED);
+        int seed = ++seeds;
+        animate(player, "mochi_lance_fire");
+        fx(player, LANCE, seed, from, step, LANCE_FLY, 0, 0, flight);
+        sound(player, from, MochiSounds.FIRE, 1.1F, 0.8F);
+        LIVE.add(new Lance((ServerLevel) player.m_9236_(), player, from, step, now + flight, seed));
+    }
+
+    /**
+     * Grilled Lance's ball in flight; where it strikes (the reference's frames 33 to 98): the one struck is held there burning, the
+     * first blast at MochiV2.LANCE_BOOM, the second far bigger at MochiV2.LANCE_BOOM2 (each with the Conqueror's lightning out of it:
+     * UoMoves.explode).
+     */
+    static final class Lance implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        Vec3 at;
+        final Vec3 step;
+        final long until;
+        final int seed;
+
+        Lance(ServerLevel level, ServerPlayer owner, Vec3 at, Vec3 step, long until, int seed) {
+            this.level = level;
+            this.owner = owner;
+            this.at = at;
+            this.step = step;
+            this.until = until;
+            this.seed = seed;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (!this.owner.m_6084_()) {
+                return true;
+            }
+            Vec3 next = this.at.m_82549_(this.step);
+            BlockHitResult block = this.level.m_45547_(new ClipContext(this.at, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+            Vec3 end = block.m_6662_() == HitResult.Type.BLOCK ? block.m_82450_() : next;
+            Vec3 u = this.step.m_82541_();
+            for (LivingEntity body : ItoMoves.foes(this.owner, this.at.m_82549_(end).m_82490_(0.5), this.step.m_82553_() * 0.5 + 1.5)) {
+                Vec3 d = StyleCombat.middle(body).m_82546_(this.at);
+                double along = Math.max(0.0, Math.min(this.step.m_82553_(), d.m_82526_(u)));
+                if (d.m_82546_(u.m_82490_(along)).m_82553_() < MochiV2.LANCE_BALL + 0.6) {
+                    // the reference: "It then is launched at the opponent. And explodes after a few seconds": held burning in them
+                    hit(this.owner, body, LANCE_STRIKE_HURT, Vec3.f_82478_);
+                    stick(this.owner, body, (int) MochiV2.LANCE_BOOM2 + 2, false);
+                    body.m_20254_(3);
+                    strike(StyleCombat.middle(body));
+                    return true;
+                }
+            }
+            if (block.m_6662_() == HitResult.Type.BLOCK || now >= this.until) {
+                strike(end);
+                return true;
+            }
+            this.at = next;
+            return false;
+        }
+
+        void strike(Vec3 where) {
+            ServerPlayer player = this.owner;
+            Vec3 u = this.step.m_82541_();
+            double ground = grounded(player, where).f_82480_;
+            fx(player, LANCE, this.seed, where, u, LANCE_HIT, ground, 0, 0);
+            sound(player, where, MochiSounds.FIRE, 1.0F, 1.2F);
+            boolean coat = coated(player);
+            later(player, (int) MochiV2.LANCE_BOOM, () -> {
+                UoMoves.explode(player, this.level, where, u, MochiV2.LANCE_BOOM_SIZE * 0.85, LANCE_BOOM_HURT * (coat ? 1.25F : 1.0F), 3, 0.25);
+                Impact.quake(this.level, where, 14.0, 0.45F, 8);
+                sound(player, where, MochiSounds.BOOM, 1.3F, 1.05F);
+            });
+            later(player, (int) MochiV2.LANCE_BOOM2, () -> {
+                UoMoves.explode(player, this.level, where, u, MochiV2.LANCE_BOOM2_SIZE, LANCE_BOOM2_HURT * (coat ? 1.25F : 1.0F), 5, 1.5);
+                Impact.quake(this.level, where, 24.0, 0.8F, 12);
+                sound(player, where, MochiSounds.BOOM, 2.0F, 0.75F);
+            });
+        }
     }
 
     /**
@@ -364,7 +498,7 @@ public final class MochiMoves {
 
     /** A Power Mochi punch (the awakened left click while the donuts are out): the next donut's burning fist at whom is aimed at. */
     static void powerPunch(ServerPlayer player, State s, long now) {
-        if (now < s.powerNext || player.m_20159_()) {
+        if (now < s.powerNext || s.lanceSince >= 0 || player.m_20159_()) {
             return;
         }
         s.powerNext = now + POWER_EVERY;
@@ -467,6 +601,13 @@ public final class MochiMoves {
         }
         if (s != null && slot == MochiKit.GRILLED.slot() && s.yakiSince >= 0) {
             yakiFire(player, s);
+        }
+        if (s != null && slot == MochiKit.LANCE.slot() && s.lanceSince >= 0) {
+            if (now(player) - s.lanceSince >= MochiV2.LANCE_FULL) {
+                lanceFire(player, s);
+            } else {
+                s.lanceLetGo = true; // it goes as soon as it is full
+            }
         }
     }
 
@@ -1151,13 +1292,20 @@ public final class MochiMoves {
 
     /** Glues {@code body} where it stands for {@code ticks} (once at a time: a body already stuck is held to its end). */
     static void stick(ServerPlayer player, LivingEntity body, int ticks) {
+        stick(player, body, ticks, true);
+    }
+
+    /** As {@link #stick}; {@code shown} false: held without the glue of mochi drawn round them (Grilled Lance holds them in its fire). */
+    static void stick(ServerPlayer player, LivingEntity body, int ticks, boolean shown) {
         long now = now(player);
         Long until = STUCK_UNTIL.get(body.m_19879_());
         if (until != null && now < until) {
             return;
         }
         STUCK_UNTIL.put(body.m_19879_(), now + ticks);
-        fx(player, STUCK, body.m_19879_(), body.m_20182_(), Vec3.f_82478_, 0, 0, body.m_20206_(), ticks);
+        if (shown) {
+            fx(player, STUCK, body.m_19879_(), body.m_20182_(), Vec3.f_82478_, 0, 0, body.m_20206_(), ticks);
+        }
         LIVE.add(new Stuck((ServerLevel) player.m_9236_(), player, body, body.m_20182_(), now + ticks));
     }
 
@@ -1220,6 +1368,9 @@ public final class MochiMoves {
         if (s.yakiSince >= 0 && now - s.yakiSince >= YAKI_MOST) {
             yakiFire(player, s); // held its longest: it goes by itself
         }
+        if (s.lanceSince >= 0 && (s.lanceLetGo && now - s.lanceSince >= MochiV2.LANCE_FULL || now - s.lanceSince >= MochiV2.LANCE_MOST)) {
+            lanceFire(player, s);
+        }
         if (s.anemoneSince >= 0) {
             anemoneTick(player, s, now);
         }
@@ -1236,6 +1387,10 @@ public final class MochiMoves {
         }
         if (s.anemoneSince >= 0) {
             anemoneEnd(player, s);
+        }
+        if (s.lanceSince >= 0) {
+            s.lanceSince = -1;
+            fx(player, LANCE, 0, player.m_20182_(), Vec3.f_82478_, LANCE_DROP, 0, 0, 0);
         }
         powerEnd(player, s);
         if (s.awakened) {

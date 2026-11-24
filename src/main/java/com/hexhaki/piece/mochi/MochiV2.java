@@ -377,6 +377,11 @@ public final class MochiV2 {
      * behind it, clear inside (where the thing hides them) and fading out past its outline, orange inside, red further out.
      */
     static void halo(FireMesh.Sink sink, double x, double y, double z, double big, double alpha) {
+        halo(sink, x, y, z, big, FIRE_GLOW, SPARK_RED, alpha);
+    }
+
+    /** As {@link #halo}, its inner and outer colours. */
+    static void halo(FireMesh.Sink sink, double x, double y, double z, double big, int inner, int outer, double alpha) {
         double d = Math.sqrt(x * x + y * y + z * z);
         if (d < big * 1.5 || alpha < 0.01) {
             return;
@@ -388,8 +393,8 @@ public final class MochiV2 {
         double cx = x - ex * back;
         double cy = y - ey * back;
         double cz = z - ez * back;
-        FireMesh.ring(sink, cx, cy, cz, ex, ey, ez, big * 1.1, big * 0.75, 0.0, FIRE_GLOW, alpha);
-        FireMesh.ring(sink, cx, cy, cz, ex, ey, ez, big * 1.35, big * 1.1, 0.0, SPARK_RED, alpha * 0.45);
+        FireMesh.ring(sink, cx, cy, cz, ex, ey, ez, big * 1.1, big * 0.75, 0.0, inner, alpha);
+        FireMesh.ring(sink, cx, cy, cz, ex, ey, ez, big * 1.35, big * 1.1, 0.0, outer, alpha * 0.45);
     }
 
     private static final double[] B6 = new double[6];
@@ -570,5 +575,336 @@ public final class MochiV2 {
         }
         return age < POWER_OUT ? MochiDraw.elastic(age / POWER_OUT) : age < POWER_OUT + 2.0 ? 1.0 + 0.05 * Math.sin((age - POWER_OUT) * 3.0)
             * Math.exp(-(age - POWER_OUT)) : 1.0 - smooth((age - POWER_OUT - 2.0) / (POWER_LIFE - POWER_OUT - 2.0));
+    }
+
+    // ------------------------------------------------------------------------------------------------------ Z: Grilled Lance
+
+    /**
+     * Grilled Lance (the reference's 1205.gif, a tick a frame from its frame 14; docs/handoff/next-ai-3.6.3.md P): held, ticks from the
+     * press: a white puff of mochi at the hand (to {@link #LANCE_SPIN}), a magenta ring of Haki spinning round the arm (to
+     * {@link #LANCE_INK}), a burst of black ink with magenta star flares, the arm swollen into a great smooth ball of cream mochi with
+     * magenta sparkles round it and fire at its base (full at {@link #LANCE_FULL}); held at most {@link #LANCE_MOST}. Let go: launched at
+     * {@link #LANCE_SPEED} blocks a tick. Where it strikes, ticks from the strike: it melts into fire burning in them, the first blast
+     * at {@link #LANCE_BOOM} (Grilled Mochi's rings of fire, rocks thrown), black Haki spikes standing in them with star flares, the
+     * second blast far bigger at {@link #LANCE_BOOM2} (a white-hot flash, long rays, great swirls of fire, rocks and embers flung out).
+     */
+    public static final double LANCE_SPIN = 4.0;
+    public static final double LANCE_INK = 11.0;
+    public static final double LANCE_FULL = 16.0;
+    public static final int LANCE_MOST = 60;
+    public static final double LANCE_SPEED = 1.6;
+    public static final double LANCE_RANGE = 18.0;
+    public static final double LANCE_BALL = 0.75;
+    public static final double LANCE_BOOM = 22.0;
+    public static final double LANCE_BOOM2 = 46.0;
+    public static final double LANCE_LIFE = LANCE_BOOM2 + 32.0;
+    /** The first blast's size (MochiDraw.boom), the second's reach. */
+    public static final double LANCE_BOOM_SIZE = 3.6;
+    public static final double LANCE_BOOM2_SIZE = 5.5;
+    static final int CHUNK = 0x4A2216;
+
+    /**
+     * Grilled Lance held, {@code age} ticks from the press: the hand at (x, y, z), the arm's way (wx, wy, wz) (unit, the look).
+     */
+    public static void lanceCharge(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, int seed) {
+        if (age < 0) {
+            return;
+        }
+        double[] b = B6;
+        FireMesh.basis(wx, wy, wz, b);
+        // the white puff of mochi round the hand (frame 14), swelling a little past its size and settling into the forearm
+        double puff = MochiDraw.springy(age / LANCE_SPIN);
+        double grow = smooth((age - LANCE_INK) / (LANCE_FULL - LANCE_INK));
+        double ball = LANCE_BALL * MochiDraw.springy((age - LANCE_INK + 1.0) / (LANCE_FULL - LANCE_INK + 1.0));
+        double cx = x + wx * (0.25 + 0.35 * grow);
+        double cy = y + wy * (0.25 + 0.35 * grow);
+        double cz = z + wz * (0.25 + 0.35 * grow);
+        // breathing once it is full (the mochi alive)
+        double breathe = 1.0 + 0.05 * Math.sin(age * 0.5 + seed) * grow;
+        double r = Math.max(0.3 * puff, ball) * breathe;
+        if (r > 0.03) {
+            MochiArt.ball(sink, cx, cy, cz, r, wx, wy, wz, 1.0 + 0.25 * (1.0 - grow), 0.35 * (1.0 - grow) + 0.06, age, seed, MochiArt.MOCHI);
+            // the forearm into it: a tapered tube of mochi from behind the hand
+            MochiArt.tubeBegin();
+            MochiArt.tubePoint(x - wx * 0.55, y - wy * 0.55, z - wz * 0.55, 0.09);
+            MochiArt.tubePoint(x - wx * 0.1, y - wy * 0.1, z - wz * 0.1, 0.12 + 0.1 * puff);
+            MochiArt.tubePoint(cx, cy, cz, r * 0.7);
+            MochiArt.tube(sink, 10, MochiArt.MOCHI, 0.0, age * 0.2);
+        }
+        // the magenta ring spinning round the arm (frames 18 to 22): two turns of a spiral, whirling
+        double spin = smooth((age - 2.0) / 2.0) * (1.0 - smooth((age - LANCE_INK) / 3.0));
+        if (spin > 0.02) {
+            for (int k = 0; k < 3; k++) {
+                double rr = 0.42 + 0.12 * k;
+                FireMesh.arc(sink, x + wx * (0.1 + 0.18 * k), y + wy * (0.1 + 0.18 * k), z + wz * (0.1 + 0.18 * k), wx, wy, wz, rr, 0.09, age * 1.1
+                    + k * 2.1, 4.4, 0.25, k == 1 ? PINK : MAGENTA, 0.9 * spin);
+            }
+            FireMesh.arc(sink, x, y, z, wx, wy, wz, 0.55, 0.05, -age * 0.9, 3.0, 0.2, PINK_LIGHT, 0.8 * spin);
+        }
+        // the burst of black ink with magenta star flares (frame 25): the Haki soaking into the mochi
+        double ink = age - LANCE_INK;
+        if (ink >= 0.0 && ink < 7.0) {
+            double f = ink / 7.0;
+            double fade = 1.0 - smooth((f - 0.2) / 0.8);
+            for (int k = 0; k < 12; k++) {
+                double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k + 200)) / 12.0;
+                double tilt = (FireMesh.rand(seed, k + 210) - 0.5) * 1.2;
+                double ox = (b[0] * Math.cos(a) + b[3] * Math.sin(a)) + wx * tilt;
+                double oy = (b[1] * Math.cos(a) + b[4] * Math.sin(a)) + wy * tilt;
+                double oz = (b[2] * Math.cos(a) + b[5] * Math.sin(a)) + wz * tilt;
+                double ol = Math.sqrt(ox * ox + oy * oy + oz * oz);
+                ox /= ol;
+                oy /= ol;
+                oz /= ol;
+                double d = 0.3 + (0.9 + 0.9 * FireMesh.rand(seed, k + 220)) * ease(f * 1.6);
+                double size = (0.14 + 0.16 * FireMesh.rand(seed, k + 230)) * fade;
+                if (size > 0.02) {
+                    MochiArt.ball(sink, cx + ox * d, cy + oy * d, cz + oz * d, size, ox, oy, oz, 2.2, 0.5, age, seed + k, MochiArt.INK);
+                }
+            }
+            for (int k = 0; k < 6; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 240);
+                double up = FireMesh.rand(seed, k + 250) - 0.5;
+                double d = 0.4 + 0.8 * FireMesh.rand(seed, k + 260);
+                flare(sink, cx + (b[0] * Math.cos(a) + b[3] * Math.sin(a)) * d + up * 0.6 * wx, cy + (b[1] * Math.cos(a) + b[4] * Math.sin(a)) * d
+                    + up * 0.6, cz + (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * d, 0.7 + 0.7 * FireMesh.rand(seed, k + 270), PINK,
+                    fade * (0.6 + 0.4 * Math.sin(ink * 2.0 + k)));
+            }
+        }
+        if (grow > 0.02) {
+            // magenta sparkles drifting round the ball, a magenta rim round it, fire licking at its base (frames 27 to 30)
+            halo(sink, cx, cy, cz, r, MAGENTA, PINK, 0.35 * grow);
+            for (int k = 0; k < 10; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 300) + age * (0.05 + 0.05 * FireMesh.rand(seed, k + 305));
+                double up = (FireMesh.rand(seed, k + 310) - 0.5) * 1.6;
+                double d = r * (1.3 + 0.9 * FireMesh.rand(seed, k + 320));
+                double tw = 0.5 + 0.5 * Math.sin(age * 0.9 + k * 1.7);
+                flare(sink, cx + Math.cos(a) * d, cy + up * r, cz + Math.sin(a) * d, 0.12 + 0.1 * tw, PINK, 0.85 * grow * tw);
+            }
+            for (int k = 0; k < 3; k++) {
+                double a = 2 * Math.PI * k / 3.0 + age * 0.3;
+                double ox = b[0] * Math.cos(a) + b[3] * Math.sin(a);
+                double oy = b[1] * Math.cos(a) + b[4] * Math.sin(a);
+                double oz = b[2] * Math.cos(a) + b[5] * Math.sin(a);
+                FireMesh.puff(sink, cx - wx * r * 0.6 + ox * r * 0.6, cy - wy * r * 0.6 + oy * r * 0.6 - r * 0.3, cz - wz * r * 0.6 + oz * r * 0.6,
+                    0.16 * grow, -wx, -wy + 0.6, -wz, 0.9, 0.7, 0.55, 0.5, true, 0.85 * grow, age, seed + k + 40);
+            }
+        }
+    }
+
+    /**
+     * Grilled Lance in flight at (x, y, z) going (wx, wy, wz) (unit), {@code age} ticks since it was let go: the ball of Haki mochi, its
+     * magenta rim, fire streaming behind it and its sparkles.
+     */
+    public static void lanceFly(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, int seed) {
+        if (age < 0) {
+            return;
+        }
+        double r = LANCE_BALL * (1.0 + 0.08 * Math.sin(age * 0.8));
+        MochiArt.ball(sink, x, y, z, r, wx, wy, wz, 1.15, 0.08, age, seed, MochiArt.MOCHI);
+        halo(sink, x, y, z, r, MAGENTA, PINK, 0.4);
+        // fire licking off its back as it flies (the GIF's flight is short: a few tongues, no long jet)
+        for (int k = 0; k < 3; k++) {
+            double t = (k + 0.5) / 3.0;
+            FireMesh.puff(sink, x - wx * (r * 0.8 + t * 0.6), y - wy * (r * 0.8 + t * 0.6) - r * 0.2, z - wz * (r * 0.8 + t * 0.6), r * (0.32 - 0.15 * t),
+                -wx, -wy + 0.3, -wz, 0.6, 0.6, 0.65 - 0.2 * t, 0.5, true, 0.85 * (1.0 - 0.5 * t), age, seed + k);
+        }
+        for (int k = 0; k < 6; k++) {
+            double a = 2 * Math.PI * k / 6.0 + age * 0.6;
+            double tw = 0.5 + 0.5 * Math.sin(age * 1.3 + k);
+            flare(sink, x + Math.cos(a) * r * 1.4, y + Math.sin(a) * r * 1.4, z - wz * 0.3, 0.14, PINK, 0.8 * tw);
+        }
+        // the launch's puff (frame 33): a ring of white mochi bursting off as it goes
+        if (age < 4.0) {
+            FireMesh.ring(sink, x - wx * 0.5, y - wy * 0.5, z - wz * 0.5, wx, wy, wz, r * (1.1 + 1.2 * ease(age / 4.0)), 0.35, -0.2, 0xFFFFFF,
+                0.8 * (1.0 - age / 4.0));
+        }
+    }
+
+    /**
+     * What Grilled Lance does where it strikes (x, y, z), the ground under it at {@code ground} (eye-relative y), {@code age} ticks from
+     * the strike: the ball melting into fire burning in them with orange star flares (frames 33 to 54), the first blast (56: Grilled
+     * Mochi's rings, rocks thrown, a magenta ring over the ground), black Haki spikes standing in them with white slashes and star flares
+     * (62 to 78), the second blast (80: a white-hot flash, long rays, swirls of fire sweeping out, rocks and embers flung far).
+     */
+    public static void lanceHit(FireMesh.Sink sink, double x, double y, double z, double ground, double age, int seed) {
+        if (age < 0 || age > LANCE_LIFE) {
+            return;
+        }
+        // ---- the ball melting into the fire that burns in them
+        if (age < 4.0) {
+            double f = age / 4.0;
+            MochiArt.ball(sink, x, y, z, LANCE_BALL * (1.0 - 0.6 * f), 0, 1, 0, 1.0, 0.2, age, seed, MochiArt.MOCHI);
+        }
+        double burn = smooth(age / 3.0) * (1.0 - smooth((age - LANCE_BOOM) / 3.0));
+        if (burn > 0.02) {
+            for (int k = 0; k < 5; k++) {
+                double a = 2 * Math.PI * k / 5.0 + age * 0.2;
+                double up = 0.3 * Math.sin(age * 0.4 + k);
+                FireMesh.puff(sink, x + Math.cos(a) * 0.35, y + up, z + Math.sin(a) * 0.35, 0.42 + 0.1 * Math.sin(age * 0.7 + k), 0, 1, 0, 0.7, 0.6, 0.6,
+                    0.55, true, 0.9 * burn, age, seed + k);
+            }
+            if (age < 8.0) {
+                // the ball bursting into fire (frames 33 to 38): a hot white-yellow heart
+                FireMesh.puff(sink, x, y, z, 0.6 + 0.3 * ease(age / 3.0), 0, 1, 0, 0.2, 0.4, 0.88, 0.5, false, 0.9 * (1.0 - smooth((age - 3.0) / 5.0)), age,
+                    seed + 9);
+            }
+            for (int k = 0; k < 3; k++) {
+                double tw = Math.max(0.0, Math.sin(age * 0.8 + k * 2.2));
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + (int) (age / 4.0) * 7);
+                flare(sink, x + Math.cos(a) * 0.6, y + 0.3 * (k - 1), z + Math.sin(a) * 0.6, 1.6 + 1.6 * tw, 0xFFB040, burn * tw);
+            }
+        }
+        // ---- the first blast: Grilled Mochi's rings, rocks thrown, a magenta ring over the ground
+        double b1 = age - LANCE_BOOM;
+        if (b1 >= 0.0) {
+            // the GIF's first blast is quick (its rings gone in about six frames, its fire in ten): Grilled Mochi's, played three times
+            // as fast, so the spikes after it show
+            MochiDraw.boom(sink, x, y, z, LANCE_BOOM_SIZE, b1 * 3.0, seed + 50);
+            chunks(sink, x, y, z, ground, b1, 14, 0.3, 0.9, seed + 60);
+            if (b1 < 14.0) {
+                FireMesh.ring(sink, x, ground + 0.08, z, 0, 1, 0, 1.0 + 3.2 * ease(b1 / 10.0), 0.3, 0.1, MAGENTA, 0.7 * (1.0 - b1 / 14.0));
+            }
+        }
+        // ---- black Haki spikes standing in them, white slashes and star flares (frames 62 to 78)
+        double sp = age - LANCE_BOOM - 2.0;
+        double spikes = smooth(sp / 3.0) * (1.0 - smooth((age - LANCE_BOOM2 + 2.0) / 3.0));
+        if (spikes > 0.02) {
+            for (int k = 0; k < 7; k++) {
+                double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k + 400)) / 7.0;
+                double d = 0.2 + 0.7 * FireMesh.rand(seed, k + 410);
+                double lean = 0.05 + 0.2 * FireMesh.rand(seed, k + 420);
+                double tall = (2.0 + 2.2 * FireMesh.rand(seed, k + 430)) * MochiDraw.springy(sp / 3.0);
+                double bx = x + Math.cos(a) * d;
+                double bz = z + Math.sin(a) * d;
+                MochiArt.cone(sink, bx, ground, bz, bx + Math.cos(a) * lean * tall, ground + tall, bz + Math.sin(a) * lean * tall, 0.11 * spikes,
+                    MochiArt.HAKI);
+            }
+            for (int k = 0; k < 2; k++) {
+                double s0 = sp - 4.0 - 6.0 * k;
+                if (s0 >= 0.0 && s0 < 5.0) {
+                    FireMesh.arc(sink, x, y + 0.2, z, Math.cos(k * 2.0 + seed), 0.4, Math.sin(k * 2.0 + seed), 0.7, 0.12, s0 * 0.6 + k, 2.2, 0.1, 0xFFFFFF,
+                        0.95 * (1.0 - s0 / 5.0));
+                }
+            }
+            for (int k = 0; k < 5; k++) {
+                double tw = Math.max(0.0, Math.sin(sp * 0.5 + k * 1.6));
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 440);
+                double d = 0.5 + 1.5 * FireMesh.rand(seed, k + 450);
+                flare(sink, x + Math.cos(a) * d, y + 1.8 * (FireMesh.rand(seed, k + 460) - 0.3), z + Math.sin(a) * d, 1.4 + 2.0 * tw, 0xFF9030,
+                    spikes * tw);
+            }
+        }
+        // ---- the second blast, far bigger (frames 80 to 98)
+        double b2 = age - LANCE_BOOM2;
+        if (b2 >= 0.0) {
+            double big = LANCE_BOOM2_SIZE;
+            if (b2 < 5.0) {
+                double f = b2 / 5.0;
+                MochiArt.glow(sink, x, y + 0.4, z, big * (0.8 + 0.6 * ease(f)), 0xFFF8E8, 0.95 * (1.0 - smooth(f)));
+                MochiArt.glow(sink, x, y + 0.4, z, big * 0.45, 0xFFFFFF, 1.0 - f);
+            }
+            if (b2 < 10.0) {
+                double f = b2 / 10.0;
+                for (int k = 0; k < 22; k++) {
+                    double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k + 500)) / 22.0;
+                    double up = (FireMesh.rand(seed, k + 510) - 0.25) * 1.2;
+                    double ul = Math.sqrt(1.0 + up * up);
+                    FireMesh.ray(sink, x, y + 0.3, z, Math.cos(a) / ul, up / ul, Math.sin(a) / ul, big * (0.8 + 0.9 * FireMesh.rand(seed, k + 520)) * ease(f
+                        * 3.0), 0.22, 0, 0.0, k % 3 == 0 ? 0xFFF29A : k % 3 == 1 ? 0xFFA215 : FIRE, 0.95 * (1.0 - smooth(f)));
+                }
+            }
+            // the swirls of fire sweeping out (frames 82 to 98): wide arcs on their own tilts, opening out and fading
+            double sw = smooth(b2 / 2.0) * (1.0 - smooth((b2 - 8.0) / 20.0));
+            if (sw > 0.02) {
+                for (int k = 0; k < 9; k++) {
+                    double a = 2 * Math.PI * FireMesh.rand(seed, k + 530);
+                    double tilt = 0.4 + 1.0 * FireMesh.rand(seed, k + 540);
+                    double ax = Math.cos(a) * Math.sin(tilt);
+                    double ay = Math.cos(tilt);
+                    double az = Math.sin(a) * Math.sin(tilt);
+                    double rad = big * (0.35 + 0.35 * FireMesh.rand(seed, k + 550)) * (0.5 + 0.9 * ease(b2 / 14.0));
+                    FireMesh.arc(sink, x, y + 0.5, z, ax, ay, az, rad, 0.5 + 0.5 * FireMesh.rand(seed, k + 560), FireMesh.rand(seed, k + 570) * 6.3 + b2
+                        * 0.12, 2.0 + 1.5 * FireMesh.rand(seed, k + 580), 0.6, k % 2 == 0 ? 0xF5651A : 0xFFA215, 0.85 * sw);
+                    FireMesh.arc(sink, x, y + 0.5, z, ax, ay, az, rad * 1.04, 0.18, FireMesh.rand(seed, k + 570) * 6.3 + b2 * 0.12 + 0.2, 1.6
+                        + 1.5 * FireMesh.rand(seed, k + 580), 0.6, 0xFFE88A, 0.8 * sw);
+                }
+                for (int k = 0; k < 7; k++) {
+                    double a = 2 * Math.PI * (k + FireMesh.rand(seed, k + 590)) / 7.0;
+                    double d = big * 0.35 * ease(b2 / 6.0);
+                    FireMesh.puff(sink, x + Math.cos(a) * d, y + 0.4 + 0.5 * FireMesh.rand(seed, k + 595), z + Math.sin(a) * d, 0.9 * (1.0 - b2 / 30.0)
+                        + 0.2, Math.cos(a), 0.4, Math.sin(a), 0.8, 0.5, 0.6 - 0.2 * Math.min(1.0, b2 / 20.0), 0.6, true, 0.9 * sw, age, seed + k + 600);
+                }
+            }
+            chunks(sink, x, y, z, ground, b2, 20, 0.5, 1.6, seed + 700);
+            // embers flung far
+            if (b2 < 30.0) {
+                for (int k = 0; k < 24; k++) {
+                    double a = 2 * Math.PI * FireMesh.rand(seed, k + 800);
+                    double up = 0.2 + 0.8 * FireMesh.rand(seed, k + 810);
+                    double sp2 = 0.25 + 0.35 * FireMesh.rand(seed, k + 820);
+                    double px = x + Math.cos(a) * sp2 * b2;
+                    double pz = z + Math.sin(a) * sp2 * b2;
+                    double py = y + up * sp2 * b2 - 0.012 * b2 * b2;
+                    if (py < ground) {
+                        continue;
+                    }
+                    FireMesh.streak(sink, px, py, pz, Math.cos(a), up - 0.024 * b2, Math.sin(a), 0.35, 0.03, FIRE, 0.9 * (1.0 - b2 / 30.0));
+                }
+            }
+        }
+    }
+
+    /**
+     * Rocks of the ground torn up and thrown out of a blast at (x, y, z) over the ground at {@code ground}, {@code age} ticks in:
+     * {@code n} dark brown chunks {@code size} across flung out at {@code speed}, falling back and lying a moment.
+     */
+    static void chunks(FireMesh.Sink sink, double x, double y, double z, double ground, double age, int n, double size, double speed, int seed) {
+        if (age < 0 || age > 36.0) {
+            return;
+        }
+        double fade = 1.0 - smooth((age - 26.0) / 10.0);
+        for (int k = 0; k < n; k++) {
+            double a = 2 * Math.PI * (k + FireMesh.rand(seed, k)) / n;
+            double up = 0.3 + 0.9 * FireMesh.rand(seed, k + 50);
+            double v = speed * (0.5 + 0.6 * FireMesh.rand(seed, k + 100));
+            double t = Math.min(age, 18.0);
+            double px = x + Math.cos(a) * v * t * 0.5;
+            double pz = z + Math.sin(a) * v * t * 0.5;
+            double py = Math.max(ground + size * 0.4, y + up * v * t * 0.5 - 0.035 * t * t);
+            FireMesh.shard(sink, px, py, pz, size * (0.6 + 0.8 * FireMesh.rand(seed, k + 150)), age * 0.3 * (py > ground + size ? 1.0 : 0.0) + k,
+                seed + k, CHUNK, fade);
+        }
+    }
+
+    /**
+     * A four-pointed star flare at (x, y, z) (eye-relative) turned to the eye: two thin crossed streaks of light {@code size} out each
+     * way, level and upright on the screen, a bright point in their middle.
+     */
+    static void flare(FireMesh.Sink sink, double x, double y, double z, double size, int rgb, double alpha) {
+        if (alpha < 0.02 || size < 0.02) {
+            return;
+        }
+        double d = Math.sqrt(x * x + y * y + z * z);
+        if (d < size) {
+            return;
+        }
+        double vx = x / d;
+        double vy = y / d;
+        double vz = z / d;
+        // level across the view, and upright on it
+        double rx = -vz;
+        double rz = vx;
+        double rl = Math.max(1.0E-6, Math.sqrt(rx * rx + rz * rz));
+        rx /= rl;
+        rz /= rl;
+        double ux = -rz * vy;
+        double uy = rz * vx - rx * vz;
+        double uz = rx * vy;
+        FireMesh.ray(sink, x, y, z, rx, 0, rz, size, size * 0.06, 0, 0.0, rgb, alpha);
+        FireMesh.ray(sink, x, y, z, -rx, 0, -rz, size, size * 0.06, 0, 0.0, rgb, alpha);
+        FireMesh.ray(sink, x, y, z, ux, uy, uz, size * 0.8, size * 0.06, 0, 0.0, rgb, alpha);
+        FireMesh.ray(sink, x, y, z, -ux, -uy, -uz, size * 0.8, size * 0.06, 0, 0.0, rgb, alpha);
+        MochiArt.glow(sink, x, y, z, size * 0.18, 0xFFFFFF, alpha * 0.9);
     }
 }

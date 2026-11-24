@@ -222,6 +222,29 @@ public final class MochiShots {
                     com.hexhaki.piece.mochi.MochiV2.powerPunch(sink, at[0] - ex, at[1] - ey, at[2] - ez, 0.3 - ex, 1.1 - ey, 5.5 - ez, punch, 21);
                 }
             }
+            case "mlance" -> {
+                // 3.6.6 |mlance:age: Grilled Lance from the press (let go at MochiV2.LANCE_FULL: a tap), the user at the origin facing +z,
+                // the ball flying onto a body 6 ahead, then what it does there
+                double full = com.hexhaki.piece.mochi.MochiV2.LANCE_FULL;
+                double speed = com.hexhaki.piece.mochi.MochiV2.LANCE_SPEED;
+                double hx = -0.36;
+                double hy = 1.35;
+                double hz = 0.7;
+                double to = 6.0;
+                double flight = (to - hz - 0.6) / speed;
+                user(sink, age < full ? "mochi_yaki_charge" : "mochi_yaki_fire", age < full ? age + 20 : age - full, ex, ey, ez);
+                if (age < full + flight + 6) {
+                    HieShots.body(sink, 0.0 - ex, -ey, to - ez);
+                }
+                if (age < full) {
+                    com.hexhaki.piece.mochi.MochiV2.lanceCharge(sink, hx - ex, hy - ey, hz - ez, 0, 0, 1, age, 5);
+                } else if (age < full + flight) {
+                    double t = age - full;
+                    com.hexhaki.piece.mochi.MochiV2.lanceFly(sink, hx - ex, hy - ey, hz + 0.6 + t * speed - ez, 0, 0, 1, t, 5);
+                } else {
+                    com.hexhaki.piece.mochi.MochiV2.lanceHit(sink, hx * 0.3 - ex, 1.0 - ey, to - ez, -ey, age - full - flight, 5);
+                }
+            }
             case "mpunch" -> {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);

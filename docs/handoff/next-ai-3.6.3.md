@@ -698,3 +698,23 @@ Build #243 (the handoff push before this chat) was checked first. The session wa
   - DragonTests: both donuts forming and every tick of a punch, near and far, under 16k (about 5.5k at most). HudTests.powerMochi:
     20 s, its reach, the donuts taking turns (each fist back before its donut punches again), one at each side head high, the punch
     springing past its reach and drawn back by its end.
+- **Grilled Lance** (awakened Z, held) built on 1205.gif read frame by frame (a tick a frame from its frame 14), rendered beside it
+  (MochiShots `|mlance:age`, the target 6 ahead, a tap: let go as it fills):
+  - Held (MochiV2.lanceCharge, LANCE_*): a white puff of mochi at the hand, a magenta ring of Haki spinning round the arm (4 to 11),
+    a burst of black ink blobs with big magenta star flares (11: MochiV2.flare, a four-pointed flare turned to the eye), the arm
+    swollen into a great smooth cream ball (LANCE_BALL 0.75, full at LANCE_FULL 16, breathing), magenta sparkles round it, a magenta
+    halo, fire at its base; held at most LANCE_MOST 60. Let go early: it goes the moment it is full.
+  - Flight (lanceFly): the ball at LANCE_SPEED 1.6 a tick, LANCE_RANGE 18, a few tongues of fire off its back (no long jet: the
+    first render's jet was a huge wedge), sparkles, a white ring as it leaves.
+  - Where it strikes (lanceHit, ticks from the strike): the ball bursting into fire burning in them with big orange star flares
+    (to LANCE_BOOM 22), the first blast (Grilled Mochi's boom at LANCE_BOOM_SIZE 3.6 played three times as fast: the GIF's rings
+    are gone in about six frames, so the spikes after it show), dark brown rocks thrown (MochiV2.chunks), a magenta ring over the
+    ground; black Haki spikes standing in them (cones up to 4.2 tall) with white slashes and orange star flares; the second blast at
+    LANCE_BOOM2 46 (a white-hot flash filling the view, 22 long rays, nine great swirls of fire opening out, bigger rocks, embers).
+  - Server (MochiMoves LANCE 287: LANCE_HOLD, LANCE_FLY, LANCE_HIT, LANCE_DROP; class Lance): the first body the ball meets is hit
+    (4), held where it is without the glue drawn (stick(..., false)) and set on fire; the blasts through UoMoves.explode (8 then 14,
+    a quarter more with Armament; each throws the Conqueror's lightning: POINT ONE) with quakes; no left clicks while it is held.
+    Cooldown 220 ticks.
+  - Clips mochi_lance_charge (the arm thrust out, a tremble) and mochi_lance_fire (drawn back, driven out); HandMoves DEEP and JAB.
+  - DragonTests: every tick of the charge, flight and strike, near and far, under 16k. HudTests: its beats in order, the second
+    blast bigger and harder, the ball as big as the GIF's.
