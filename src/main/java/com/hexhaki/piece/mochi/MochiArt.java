@@ -140,6 +140,8 @@ public final class MochiArt {
 
     /** While set, blobs are drawn coarse (a field of many lumps: the mochi ground). */
     public static boolean low;
+    /** 3.6.5: how fast the dough's lumps churn (noise units a tick; 0.05 before: "feels like mochi is dead"). */
+    public static final double CHURN = 0.11;
 
     /** x^e keeping the sign. */
     static double spow(double x, double e) {
@@ -179,7 +181,8 @@ public final class MochiArt {
                 double a = spow(cp, e) * spow(ct, e);
                 double b = spow(sp, e);
                 double c = spow(cp, e) * spow(st, e);
-                double bump = lump > 0.0 ? 1.0 + lump * FireMesh.noise(a * 1.7 + seed * 0.37, b * 1.7, c * 1.7 + time * 0.05, seed) : 1.0;
+                // 3.6.5 (the owner: "more animated, more squishy"): the dough's lumps churn twice as fast as they did
+                double bump = lump > 0.0 ? 1.0 + lump * FireMesh.noise(a * 1.7 + seed * 0.37, b * 1.7, c * 1.7 + time * CHURN, seed) : 1.0;
                 double px = cx + (ux * a * ru + vx * b * rv + wx * c * rw) * bump;
                 double py = cy + (uy * a * ru + vy * b * rv + wy * c * rw) * bump;
                 double pz = cz + (uz * a * ru + vz * b * rv + wz * c * rw) * bump;
@@ -592,7 +595,7 @@ public final class MochiArt {
             rows = Math.min(rows, 12);
             cols = Math.min(cols, 8);
         }
-        double tt = time * 0.04;
+        double tt = time * CHURN * 0.8;
         for (int j = 0; j <= rows; j++) {
             double u = 2 * Math.PI * j / rows + turn;
             double cu = Math.cos(u);

@@ -1067,6 +1067,14 @@ public final class HudTests {
         double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
         Check.that(d[0] > 2.0 && d[2] > 0.0, "Lotus: the donut stands at the user's left, a little ahead (facing +z, the left is +x)");
         buzzCut();
+        // 3.6.5 (the owner: "more stretchy, more animated, more squishy ... the arms should have more elasticity"): a punch shoots out past
+        // its reach and springs back onto it; the dough churns faster
+        double most = 0;
+        for (double u = 0; u <= 1.0; u += 0.01) {
+            most = Math.max(most, com.hexhaki.piece.mochi.MochiDraw.elastic(u));
+        }
+        Check.that(most > 1.05 && most < 1.25 && Math.abs(com.hexhaki.piece.mochi.MochiDraw.elastic(1.0) - 1.0) < 1.0E-9
+            && com.hexhaki.piece.mochi.MochiArt.CHURN >= 0.1, "Mochi: the arms overshoot and spring back (" + most + "), the dough alive");
         // 3.6.4 (the owner: "Dough base + V2 awakened"): M turns the Awakening on; its kit, the reference's DoughV2, in the same keys
         java.util.List<com.hexhaki.fruit.FruitMove> awake = com.hexhaki.piece.server.MochiKit.AWAKENED;
         String[] awakeNames = {"Trident Lacerations", "Grilled Lance", "Elastic Lasso", "Oblivion", "Power Mochi", "Blazing Storm",

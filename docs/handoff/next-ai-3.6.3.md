@@ -4,8 +4,8 @@ This is the newest handoff. Read it whole, then `docs/handoff/next-ai-3.6.0.md` 
 read I to N closely: the lightning rework and the whole Mochi story), then POINT ONE and sections 0 to 7 of
 `docs/handoff/next-ai-3.2.2.md` (every standing rule). Where they disagree, this file is newest and wins.
 
-Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.4** (released by the
-fourth Mochi chat: sections O and Q; check its Build and Release runs). Next: **3.6.5**, the rest of the awakened DoughV2 set (Q).
+Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.5** (released by the
+fourth Mochi chat: sections O and Q; check its Build and Release runs). Next: **3.6.6**, the rest of the awakened DoughV2 set (Q).
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -605,7 +605,7 @@ order: V Power Mochi (it changes the left click), Z Grilled Lance, X Elastic Las
 (reuse Buzz Cut's machinery: MochiMoves Wheel/Whirl, MochiDraw.buzz*, MochiFx Buzz, with fire, spikes on the wheel, three wide swings
 and a bigger slam). The owner may still send notes on the base kit: they come first (write them into N verbatim).
 
-Open after 3.6.4 (the owner's newest notes come before 3.6.5's awakened moves): N 16 (the Mochi alive: stretchy, squishy, elastic arms)
+Open after 3.6.4 (the owner's newest notes came first: both done in 3.6.5): N 16 (the Mochi alive: stretchy, squishy, elastic arms)
 and N 17 (WiFi Haki on the one 3D Haki lightning).
 
 3.6.4 green: Build #238, Release #155.
@@ -614,3 +614,13 @@ and N 17 (WiFi Haki on the one 3D Haki lightning).
   where it leaves the blade to the target, crawling out over the message's travel ticks, two or three forks, sharp tips) through
   HakiBolts.sparks: the one 3D Haki lightning in the user's Haki colour. Rendered beside the release (the scratchpad's WifiShot on
   SparkPreview.render): the same black lit tubes with the rim.
+- N 16 done (3.6.5): the Mochi alive: MochiDraw.arm (every mochi arm: punches, donut fists, Lotus, the Anemone's bars) thins in its
+  middle the further it is drawn out, carries a wave of wobble running along it (side to side and up and down; a third of it with Haki)
+  and sags under its weight, all eased to nothing at its two ends (DragonTests' square-section check reads the shoulder's ring); the
+  punch shoots out past its reach and springs back (MochiDraw.elastic), its fist squashing out as it lands; every donut breathes (ring
+  and tube out of step) and its tube swells as its arm pushes out; the dough's lumps churn twice as fast (MochiArt.CHURN); Buzz Cut's
+  band carries the same wave and thins as it stretches. HudTests checks the overshoot.
+- 3.6.5 released with N 16 and N 17 (the owner's precedent N 15: fixes ship at once). The six awakened moves come after: in the game
+  their keys say "is coming in a later version".
+- Next: **3.6.6**, the six awakened moves (V Power Mochi, Z Grilled Lance, X Elastic Lasso, C Oblivion, B Blazing Storm, N Scorching
+  Buzz Cut), as the end of section Q says; the owner's notes first whenever they come.

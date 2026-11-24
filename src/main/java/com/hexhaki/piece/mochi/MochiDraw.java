@@ -65,12 +65,40 @@ public final class MochiDraw {
         double uz = dz / len;
         // the bar runs into the back of the hand (the fist is its very end)
         double reach = Math.max(0.05, len - size * 0.5);
+        // 3.6.5 (the owner: "feels like mochi is dead, it should be more stretchy, more animated, more squishy ... the arms should have
+        // more elasticity"): drawn out, the bar thins in its middle the further it stretches (dough keeps its volume), a wave of wobble
+        // runs along it side to side and up and down, and it sags a little under its own weight; hardened by Haki it wobbles less
+        double stretch = clamp((len - 1.0) / 5.0);
+        double thin = (coat ? 0.18 : 0.34) * stretch;
+        double amp = Math.min(0.32, 0.04 + 0.035 * len) * (coat ? 0.4 : 1.0) * Math.min(1.0, len / 1.2);
+        double hang = sag + 0.025 * len;
+        // across the way, level, and the up square to both
+        double ax = -uz;
+        double az = ux;
+        double al = Math.sqrt(ax * ax + az * az);
+        if (al < 1.0E-4) {
+            ax = 1;
+            az = 0;
+            al = 1;
+        }
+        ax /= al;
+        az /= al;
+        double vx = -az * uy;
+        double vy = az * ux - ax * uz;
+        double vz = ax * uy;
+        double phase = seed * 1.7;
         MochiArt.tubeBegin();
-        int n = sag > 0.0 ? 6 : 1;
+        int n = len > 1.2 ? 10 : 3;
         for (int k = 0; k <= n; k++) {
             double t = k / (double) n;
-            double drop = sag * 4.0 * t * (1.0 - t);
-            MochiArt.tubePoint(sx + ux * reach * t, sy + uy * reach * t - drop, sz + uz * reach * t, r);
+            double belly = Math.sin(Math.PI * t);
+            // the wobble and the sag eased in and out at both ends: the bar leaves the shoulder and enters the fist square on its way
+            double held = smooth((t - 0.1) / 0.2) * smooth((0.9 - t) / 0.2);
+            double drop = hang * 4.0 * t * (1.0 - t) * held;
+            double side = amp * belly * held * Math.sin(2 * Math.PI * 1.3 * t - time * 1.1 + phase);
+            double rise = 0.6 * amp * belly * held * Math.cos(2 * Math.PI * 0.9 * t - time * 0.8 + phase * 0.6);
+            MochiArt.tubePoint(sx + ux * reach * t + ax * side + vx * rise, sy + uy * reach * t + vy * rise - drop, sz + uz * reach * t + az * side
+                + vz * rise, r * (1.0 - thin * belly));
         }
         // the owner: "The black fist is only with haki on, without haki on its fully white, and with haki on the entire fist and arm
         // (thing connecting to the fist) as well are black"
@@ -108,9 +136,14 @@ public final class MochiDraw {
         if (age < 0 || age > PUNCH_LIFE) {
             return;
         }
-        double out = age < PUNCH_OUT ? ease(age / PUNCH_OUT) : age < PUNCH_OUT + 2 ? 1.0 : 1.0 - smooth((age - PUNCH_OUT - 2) / (PUNCH_LIFE - PUNCH_OUT - 2));
+        // 3.6.5 (the owner: "more stretchy ... the arms should have more elasticity"): shot out past its reach and springing back to
+        // it, wobbling there, snapped back; the fist squashing out a little as it lands
+        double out = age < PUNCH_OUT ? elastic(age / PUNCH_OUT) : age < PUNCH_OUT + 2 ? 1.0 + 0.07 * Math.sin((age - PUNCH_OUT) * 3.0)
+            * Math.exp(-(age - PUNCH_OUT)) : 1.0 - smooth((age - PUNCH_OUT - 2) / (PUNCH_LIFE - PUNCH_OUT - 2));
         double d = PUNCH_REST + (reach - PUNCH_REST) * out;
-        arm(sink, x, y, z, x + wx * d, y + wy * d, z + wz * d, PUNCH_ARM, PUNCH_FIST, 0.0, coat, age, seed, left);
+        double land = age - PUNCH_OUT * 0.8;
+        double squash = 1.0 + 0.22 * Math.exp(-land * land * 0.8);
+        arm(sink, x, y, z, x + wx * d, y + wy * d, z + wz * d, PUNCH_ARM, PUNCH_FIST * squash, 0.0, coat, age, seed, left);
     }
 
     /**
@@ -453,6 +486,12 @@ public final class MochiDraw {
     /** 3.6.3: how lumpy a donut is (a share of its tube). */
     public static final double DONUT_LUMP = 0.34;
 
+    /** 3.6.5: an elastic shot out (0 to 1): fast, past its end by about a seventh, springing back onto it. */
+    public static double elastic(double t) {
+        double u = clamp(t);
+        return 1.0 - Math.pow(1.0 - u, 3.0) + 0.3 * Math.sin(Math.PI * u) * u * u;
+    }
+
     /** 3.6.3: soft dough's ease: up past its size a little and settling back (0 to 1). */
     public static double springy(double t) {
         double u = Math.max(0.0, Math.min(1.0, t));
@@ -487,9 +526,13 @@ public final class MochiDraw {
             return;
         }
         double f = Math.min(1.0, form);
+        // 3.6.5 (the owner: "more animated, more squishy"): the dough breathes (the ring and its tube swelling and easing, out of
+        // step), and the tube swells as its arm pushes out of the hole
+        double breathe = 1.0 + 0.04 * Math.sin(age * 0.42 + seed * 1.3);
+        double puff = 1.0 + 0.06 * Math.sin(age * 0.57 + seed * 0.7) + (punch > 0.0 ? 0.14 * Math.min(1.0, punch) : 0.0);
         double s = springy(f);
-        double thick = big * DONUT_THICK * s * (1.0 + 0.8 * (1.0 - f));
-        double ring = (big - big * DONUT_THICK) * s * Math.pow(f, 0.7);
+        double thick = big * DONUT_THICK * s * (1.0 + 0.8 * (1.0 - f)) * puff;
+        double ring = (big - big * DONUT_THICK) * s * Math.pow(f, 0.7) * breathe;
         // a forming lump slumps a little (it is soft until it has its shape)
         y -= (1.0 - f) * big * 0.25;
         MochiArt.donut(sink, x, y, z, ax, ay, az, ring, thick, DONUT_LUMP, turn, f > 0.8 ? drips : 0, age, seed, MochiArt.MOCHI);
@@ -2021,14 +2064,21 @@ public final class MochiDraw {
         // ball enormous: buzzBall, from the reach and the swell)
         double ball = 0.25 + (BUZZ_BALL - 0.25) * swell * Math.min(1.0, 0.45 + reach * 0.06);
         double end = Math.max(0.2, reach - ball * 0.6);
+        // 3.6.5 (the owner: "more stretchy, more animated ... the arms should have more elasticity"): a wave of wobble runs along the
+        // band across its bow, and it thins in its middle the longer it is drawn out
+        double[] wb = new double[6];
+        FireMesh.basis(dx, dy, dz, wb);
+        double wave = Math.min(0.5, 0.05 + 0.03 * reach);
+        double thin = 0.3 * clamp((reach - 2.0) / 10.0);
         MochiArt.tubeBegin();
         int n = Math.min(16, 6 + (int) (reach * 0.8));
         for (int k = 0; k <= n; k++) {
             double t = k / (double) n;
             double along = end * t;
             double sag = bow * 4.0 * t * (1.0 - t);
-            double r = 0.19 - 0.06 * t + (0.1 + 0.5 * swell) * Math.pow(t, 6.0);
-            MochiArt.tubePoint(sx + dx * along + bx * sag, sy + dy * along + by * sag, sz + dz * along + bz * sag, r);
+            double w = wave * Math.sin(Math.PI * t) * Math.sin(2 * Math.PI * 1.2 * t - age * 1.0 + seed);
+            double r = (0.19 - 0.06 * t) * (1.0 - thin * Math.sin(Math.PI * t)) + (0.1 + 0.5 * swell) * Math.pow(t, 6.0);
+            MochiArt.tubePoint(sx + dx * along + bx * sag + wb[3] * w, sy + dy * along + by * sag + wb[4] * w, sz + dz * along + bz * sag + wb[5] * w, r);
         }
         MochiArt.tube(sink, 10, MochiArt.MOCHI, 0.0, 0.0);
         double cx = sx + dx * reach;

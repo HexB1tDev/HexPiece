@@ -17,13 +17,15 @@ needle-sharp tips, never a flat strip or the original's flat beams (next-ai-3.6.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.6.4 is released (check its Build and Release runs on the branch first; fix them if red): the base Mochi kit after
-the reference GIFs with the owner's notes on Buzz Cut (the elastic band leads, the heavy ball trails) and Lotus (knocked donut to donut
-like a rag doll), and the Awakening on M with Trident Lacerations on the left click (Mogura held in hand).
+Where things stand: 3.6.5 is released (check its Build and Release runs on the branch first; fix them if red): the base Mochi kit after
+the reference GIFs with the owner's notes (Buzz Cut's elastic band leads the heavy ball; Lotus knocks them donut to donut like a rag
+doll; every mochi arm stretchy, wobbling and thinning as it stretches, the punch springing past its reach, the donuts breathing, the
+dough churning), WiFi Haki on the one 3D Haki lightning, and the Awakening on M with Trident Lacerations on the left click.
 
-Do next (next-ai-3.6.3.md Q, the end): 3.6.5, the six other awakened moves on Z to N, each built on its GIF's beats (section P reads
-every DoughV2 GIF frame by frame), rendered side by side with its GIF, fixed and rendered again until it matches; release 3.6.5
-(next_version, notes, handoff, push, both runs green, send previews). The owner's notes on anything come first: write them verbatim.
+Do next (next-ai-3.6.3.md Q, the end): 3.6.6, the six other awakened moves on Z to N (their keys now say "is coming in a later
+version"), each built on its GIF's beats (section P reads every DoughV2 GIF frame by frame), rendered side by side with its GIF, fixed
+and rendered again until it matches; release (next_version, notes, handoff, push, both runs green, send previews). The owner's notes
+on anything come first: write them verbatim into section N.
 
 The cloud environment must be the personal "HexPiece" (it now also allows official-fruit-battlegrounds.fandom.com and
 static.wikia.nocookie.net for the reference GIFs; download them into the scratchpad as next-ai-3.6.3.md D says, never commit them). A
