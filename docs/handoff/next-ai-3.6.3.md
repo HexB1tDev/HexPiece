@@ -488,8 +488,9 @@ Chestnut, the Anemone with a dozen bars, Buzz Cut's wheel over its whole torn ro
 Not done (honest): the classic impact frame cannot go fully grey on the owner's phone without a shader (it is not used here any
 more); the victims stay upright on the ball (other players' models are not turned); the whirl has no sound of its own (none asked).
 
-Released: **3.6.3** (`.github/release-notes-3.6.3.md`); previews sent to the owner (SendUserFile): the six base moves and Buzz Cut
-side by side with its reference frames.
+Released: **3.6.3** (`.github/release-notes-3.6.3.md`), green on GitHub: Build #234, Release #154. Previews sent to the owner
+(SendUserFile): Buzz Cut side by side with its reference frames, its slam, the owner's frame over the slam, the five other base moves.
+The DoughV2 GIFs are read frame by frame in section P (for 3.6.4).
 
 Next: **3.6.4, the awakened DoughV2 set on M** (F 7, as promised to the owner): M turns the Awakening on and swaps the kit to LMB
 Mogura Lacerations (five trident swings, the last breaks a block), Z Grilled Lance, X Elastic Lasso, C Oblivion, V Power Mochi, B
@@ -497,3 +498,54 @@ Blazing Storm, N Scorching Buzz Cut. First read each DoughV2 GIF frame by frame 
 Lasso were never looked at), write what each shows here, then build each move on its beats the way the base kit was built (art in
 MochiDraw, server in MochiMoves/MochiKit.AWAKENED, client in MochiFx, clips in tools/mochi_anims.py, hands in HandMoves, budget in
 DragonTests, beats in HudTests), render side by side with its GIF, fix, render again.
+
+## P. The DoughV2 GIFs read frame by frame (for 3.6.4; the awakened kit's target "to very minute detail")
+
+Every V2 GIF is an animated WebP at 600x450 (Scorching Buzzcut 500x375), about 50 ms a frame: one frame is about one game tick. The
+awakened colours: Haki MAGENTA-PINK (about FF66EE to C040FF) and black ink for the trident and the Haki; orange fire everywhere; the
+dough cream-ivory in Oblivion, white elsewhere.
+- **Trident Lacerations** (LMB, 9hkng3.gif, 100 frames; camera behind the user, the target 2 ahead): five swings, 10.5 each. f15 a
+  thrust: the trident's dark tip through the target in a jagged magenta burst; f18 magenta crescent arcs round the target, a white
+  flash on it; f27 a horizontal spin: a big black ink brush-stroke spiral on the ground round the user with a magenta arc inside;
+  f30 a magenta crescent slash level through the target, a white star spark; f39 a diagonal upward black ink crescent edged magenta;
+  f42 black ink claw streaks flying off up-left, grey dust trailing (f45 to 51); f54 a jagged magenta burst with black specks round
+  the target; f63 the black ink spiral on the ground again with a magenta ring; f66 a low magenta crescent sweep up (the 5th, the
+  one that breaks a block): the target LAUNCHED straight up very high, white vertical speed lines, a white ring on the ground (f69 to
+  78). The user holds the trident in the right hand (a long thin dark shaft, a pale three-pronged head).
+- **Grilled Lance** (Z, 1205.gif, 120 frames; behind the user, the target 1 to 2 ahead): f14 to 22 the arm out, a white puff of mochi,
+  a PURPLE Haki ring spinning round it; f24 to 26 black ink puffs bursting off it with a purple star flare; f28 to 34 the arm swollen
+  into a big smooth round cream-white ball (larger than the user's torso), purple sparkles flying round it, a purple rim, fire
+  licking its base (f34); f38 to 52 it is driven into the target: it turns into orange fire with star flares at the target (about a
+  second, the target burning, sparks); f56 a half-dome of concentric fire rings (Grilled Dough's explosion); f60 the explosion: brown
+  rock shards and fire; f64 to 76 a dark spike (the lance) standing in the target with white star flares, embers; f80 a SECOND, huge
+  white-hot flash filling the screen with orange rays ("explodes after a few seconds"); f84 to 96 huge orange fire swirls and arcs
+  sweeping past the camera, brown chunks flying (60 damage); f100 to 118 embers and fire streaks fading.
+- **Elastic Lasso** (X, Elastic_Lasso.gif, 60 frames): f12 the user spins: white wind arcs and PURPLE rings round them; f14 to 18 huge
+  white wind arcs and big purple swirl rings (the lasso swung round flat); f20 a black and purple burst at the user (the throw); f22 a
+  jagged pink burst; f24 to 26 white shards flying and a thin WHITE elastic band shot from the user's hand far out to the target (the
+  camera follows); f28 to 36 the band taut from the hand to the target (7.5), the target yanked back along it; f38 to 40 the target
+  arrives at the user; f40 to 42 a pink-and-black burst with white shards (22.5); f44 to 58 white bits falling.
+- **Oblivion** (C, Oblivion.gif, 80 frames; the target about 4 ahead): f15 the user stomps; f18 a CREAM surge of mochi erupts with a
+  pink burst; f21 a big cream eruption, white swirl rings on the ground; f24 a pink-and-black burst; f27 to 42 the cream mochi stands
+  as a wide jagged wall all round the target (a basin, about 2 high, 5 wide) holding it (18.8); f45 to 51 the walls sag and break into
+  bits, pink and black spikes in it; f54 to 57 pink lines, red lightning streaks; f60 a big black-and-magenta star burst; f63 to 69 cream
+  shards and pink streaks blown out everywhere (toward the camera), red lightning lines on the ground; f72 to 78 cream shards falling.
+- **Power Dough** (V, Power_Dough.gif, 160 frames): f15 two cream mochi splashes either side of the user (red streaks); f20 two big
+  orange fireballs; f25 two white lumpy DONUTS stand upright at the user's left and right (waist to chest high, facing forward), orange
+  fire arcs round them; f30 to 155 they hover there with a soft orange-red glow behind, a black fist in each hole; each punch (left
+  click): a jagged yellow-orange flash at the donut (f65, f90) and a LONG BLACK SQUARE BAR wrapped in orange and red fire shooting out
+  of it to the target about 5 away (f70, f90, f105), fire arcs swirling (f80), 22.5 a hit; the last throws the target far (f110,
+  32.5); about 20 s in all.
+- **Blazing Storm** (B, Blazing_Storm.gif, 140 frames; the target about 8 ahead): f16 a white puff at the user; f20 to 24 a fiery burst
+  with white mochi blobs round the user; f28 to 96 SIX long black square Haki arms thrust out of white mochi puffs at the user at the
+  target over and over (a barrage, 1.2 a hit, many hits), wrapped in orange fire streaks, converging on it (aimed); f100 to 108 the
+  last strike: all six fully out at once, each from its white puff, converging; f112 a big fire explosion at the target with white
+  mochi blobs and black shards; f116 to 124 an orange haze fading.
+- **Scorching Buzzcut** (N, Scorching_Buzzcut.gif, 218 frames; behind the user): f12 the user becomes an upright WHITE wheel with BLACK
+  SPIKES round its rim, wreathed in flames, white droplets flung; f18 to 60 it rolls away, fire spraying off the ground behind it, the
+  ground cracking, sparks, 2.2 a tick to whoever it rolls over; f72 the target whirled on a fire ring; f84 to 120 the whirl: a huge
+  ring of motion on the ground (white swirl streaks, a PURPLE Haki glow ring, an ORANGE FIRE swirl ring, purple orbs, black rocks
+  whirled round, red lightning) with the thin white arm round it, three wide swings; f126 a column of fire, the target flung up in
+  it; f132 to 150 the arm straight up like a pole, the target high on it with a ring of fire at its end; f156 to 162 two pale grey
+  impact frames; f168 the slam: a black crater, red lightning, rubble; f174 pink-purple rings orbiting a fiery ball at the impact;
+  f180 to 186 a huge block of the ground flung up past the camera; f192 to 216 the dust settling.
