@@ -1031,3 +1031,45 @@ make the overall phoenix bigger."
   base form (the user with white wings) charges blue fire at the feet (frames 15 to 24), dashes (27: a white shock ring on the ground,
   a streak of blue flame along the dash, 30 to 33), a great spray of blue and gold flames with a white smoke dome where it throws
   (36 to 48), thin shock arcs (45 to 54), back to standing by 57. The wiki's Move Info is in the scratchpad (wiki/phoenix.txt).
+
+## AD. The Phoenix's move GIFs read frame by frame (the wiki's Move Info: scratchpad wiki/phoenix.txt; sheets: scratchpad pread/)
+
+The reference game's own phoenix has the three long gold tail streamers dead straight (the owner's note), its wings blue with gold
+and red flame streaks. Base form: the user with white wings (the reference's player: a cosmetic) and, for Inferno and Bluebird,
+temporary phoenix wings and a gold tail of fire at their back. Frame numbers at 25 fps (40 ms), Inferno2 at 20.
+- X Fujiazami (base, Fujiazami.gif, 70 frames): standing (0 to 14); blue fire gathering at the feet (15 to 24); the dash (27: a
+  wide white shock ring on the ground at the start, 30 to 33: a long streak of blue and gold flame along the dash, the user gone ahead
+  in it), the throw (36 to 48: a great spray of blue and gold flame tongues and a dome of white smoke where it ends), thin shock arcs
+  round it (45 to 54), standing again by 57. Wiki: dashes forward in a burst of blue flames, pulls anyone in range along, throws them
+  forward at the end. 60 damage, stun 2.3 s.
+  Transformed (Fujiazami2.gif, 105): hovering, beating (0 to 28); the wings swept forward, flames scattering (32); the lunge (36): the
+  phoenix charges straight at the camera; 40 to 56: the screen filled by a huge burst of white, cyan and gold flame (it rams through);
+  60: flame streaming past with dust; 64 to 68: the phoenix turned side on, gliding round, wings swept; 72 on: hovering again. 75
+  damage, more range.
+- C Talon Slam (base, Talonslam.gif, 87): standing (0 to 12); a crouch and a white flash (15), the leap (18: white crescent rings on the
+  ground where it jumped), rising high (21 to 39, white streaks, the camera following up), at the top white wind rings swirling round
+  (42 to 54) as the right leg lights with blue fire; the slam (57: a white flash dome on the ground), a blast of blue and gold flame
+  (60), the ground a crater of blue fire (63 to 69: the floor dark blue, walls of blue flames licking round its rim), standing in the
+  dark blue crater (72 to 84). Wiki: jumps, stuns those near, lights the right leg, smashes down in front or below with an explosion of
+  blue flames. 7 then 70 damage.
+  Hawk Rush (transformed, Hawkrush.gif, 85): hovering (0 to 12); the wings wrapped forward with a flash at the chest (15); the rush
+  forward, low (18 to 24, white speed streaks); the grab (24 to 33: the claws on the target, wings swept up, a white swirl); a whirl
+  round with it (36 to 42: white rings, the wings sweeping in a circle), throwing it on; settling (45 to 51), hovering (54 on). Wiki:
+  flies until it touches someone, grabs them in its claws and knocks them forward; held, it flies longer (about 10 s). 95 damage.
+- V Phoenix Inferno (base, Inferno.gif, 114): standing (0 to 8); blue fire bursts round the user (12, 16), phoenix wings of blue and
+  gold and a gold and red tail form on their back; side on, a barrage of kicks (20 to 56: one leg a blur of fire, white air arcs and
+  rings round it); the last kick up (56 to 60), a backflip (64 to 72: upside down, legs up, wings spread), landing in a burst of blue
+  flame (76 to 80, the wings and tail flying apart into flames), gold embers (84), standing (88 on). 12 ticks of 2.5 then 75.
+  Transformed (Inferno2.gif, 174 at 20 fps): a vast whirlpool of cyan and white fire swirls round the phoenix, which spins round
+  inside it, white flame shapes flung round (12 to 96, about 4 s); it rises with a white ring (102), flies up (108 to 114, rings below),
+  dives (120: white spiral rings), hits the ground (126), a massive blast of blue, white and gold fire with blocks of ground flung up
+  (132), hovering over the crater and the debris (138 on). 42 ticks of 0.9, 75 for the leap, 75 for the slam.
+- B Bluebird (base, Bluebird.gif, 228): standing; blue flames burst (14); temporary phoenix wings spread low at the back and a gold
+  tail (21 to 35); held: a ball of yellow and blue fire in front of the chest, crackling with rays and swirling gold arcs, growing
+  (42 to 140); let go: the wings go (147), a burst of blue flame (154), an arc of fire (161), launched in a white flash (168), standing
+  (175 on). 45 damage, held grows its hitbox.
+  Transformed (Bluebird2.gif, 287): wings spread wide (16 to 24); blue and gold flames spraying round it, gathering (32 to 152); a
+  white glowing orb at its chest (160 to 168); fired: four balls, huge blasts of cyan and white fire coming at the camera (176 to 200),
+  hovering (208 on). Four balls of 45, slow, range up.
+- The owner: "add a wake up in 5 hours", then "4 hours actions" (read as: 4 hours instead). Done: a scheduled message back into this
+  session at 02:09 UTC on 25 November (4 hours after the request), to resume the Phoenix's moves from this handoff.
