@@ -1,7 +1,7 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest; push there: the owner's
 answer this chat).
 
-Read CLAUDE.md, then docs/handoff/next-ai-3.6.3.md WHOLE (newest: sections F to O: the owner's requests verbatim and answers, the
+Read CLAUDE.md, then docs/handoff/next-ai-3.6.3.md WHOLE (newest: sections F to R: the owner's requests verbatim and answers, the
 base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi moves rebuilt (K), Buzz Cut Mochi (L, M), the owner's
 "use my imapct frame" and their notes on Buzz Cut, Lotus, the Mochi feeling dead and WiFi Haki (N), the chat that released 3.6.3 (O),
 the DoughV2 GIFs read frame by frame (P), 3.6.4 and 3.6.5 (Q) and where it stopped (R)), then docs/handoff/next-ai-3.6.0.md sections I to
