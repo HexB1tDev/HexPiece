@@ -3772,7 +3772,8 @@ Done on the branch (local commits; build green):
 Finished in the next session (next-ai-3.6.0.md E 7): the lightning sounds (8zzv 6): conqueror_release -> strike1..3,
 armament_ambient_zap -> zap1..3, last_stand_lightning -> thunder, each 6 dB under the old at its loudest; haki/LightningGate and
 client/haki/LightningSounds (PlaySoundEvent) let one Haki lightning sound ring at a time; the full release plays one strike where its
-snap was. 3.6.0 versioned, released (release-notes-3.6.0.md) and pushed. Then 8zzv 9 (op mode), 11 (the Mochi list) and 10 (Buzz Cut
+snap was. And the owner's "JESUS WHY IS THE LIGHTNING SO THICK" (next-ai-3.6.0.md I and H0): ConquerorStorm.WIDEST 0.9 (was 3.6),
+runs zig-zag off the bolt's way, bolts spread level / up / down all round, BoltMesh.near. 3.6.0 is green (Build #219, Release #151). Then 8zzv 9 (op mode), 11 (the Mochi list) and 10 (Buzz Cut
 Mochi).
 
 ## 9. What to do next (after 3.3.7)

@@ -13,9 +13,10 @@ of every fruit throws the Conqueror's lightning, out of its end explosion when i
 game, the Conqueror's release's (G), crooked as 3.6.0 made it (ConquerorStorm.jagged / strike for every other maker), drawn in the
 player's chosen Haki colour. Never add another lightning look; render any lightning change beside the release from the same camera.
 
-Where things stand: 3.5.9 is released and green (Build #216, Release #150). 3.6.0 is released (check its runs in next-ai-3.6.0.md
+Where things stand: 3.5.9 is released and green (Build #216, Release #150). 3.6.0 is released and green (Build #219, Release #151; next-ai-3.6.0.md
 section H): the Haki colour and Ryou colour pages on the start menu (existing players get them once), one crooked Haki lightning
-everywhere (coated hits included), the coat past the elbow with a ragged edge, the arm glow fading up the arm, and the new bass-heavy
+everywhere (coated hits included), the coat past the elbow with a ragged edge, the arm glow fading up the arm, the lightning a quarter as thick, zig-zagging straight out of the player level, up and
+down all round (the owner: "JESUS WHY IS THE LIGHTNING SO THICK", next-ai-3.6.0.md I and H0), and the new bass-heavy
 CC0 lightning sounds (6 dB quieter, one lightning sound at a time through haki/LightningGate and client/haki/LightningSounds, the full
 release heard as one strike). The owner has been sent the colour pages and the seven-colour lightning sheet (previews).
 

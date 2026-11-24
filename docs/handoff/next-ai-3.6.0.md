@@ -305,9 +305,11 @@ What changed (one model: the release's, every blast's with it, POINT ONE 3 kept)
 
 ## H. 3.6.0 pushed (this file's last update)
 
-- 3.6.0 pushed with .github/release-notes-3.6.0.md: see the update below for its GitHub runs.
+- **3.6.0 is green on GitHub: Build HexPiece #219, Release HexPiece #151** (commit 47392ce).
 - Sent the owner (SendUserFile, said to be previews, not the game): the start menu's Haki colour page (creation-3) and Ryou colour page
-  (creation-4) from UiPreview, and the seven-colour lightning sheet from HakiColourShots.
+  (creation-4) from UiPreview, the seven-colour lightning sheet from HakiColourShots (after the thinning, the owner's own camera) and the
+  scratchpad's Burst sheet (the release round the player from the front, behind and far, and a blast). Wait for their word on the new
+  lightning before anything else touches it.
 - Next: section F steps 2 to 6 (ask the two open questions; /hp op on/off; the Mochi list after asking for the cut-off line; Buzz Cut
   Mochi).
 
