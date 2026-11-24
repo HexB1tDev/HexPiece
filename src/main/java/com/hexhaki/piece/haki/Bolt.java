@@ -105,8 +105,15 @@ public final class Bolt {
             : new Bolt(this.points, this.widths, tinted, this.kind, this.delay, this.duration, this.crawl, this.seed, this.dance);
     }
 
-    /** 2.2.6: a black body's colour for lightning of colour {@code rgb}: that colour, so dark it reads black (its hue kept). */
+    /**
+     * 2.2.6: a black body's colour for lightning of colour {@code rgb}: that colour, so dark it reads black (its hue kept). 3.6.0: a Haki
+     * colour whose body is not black (Gold and Yellow, Purple, Green, Blue, Red and Light Red) has its own ({@link HakiColour#bodyFor}).
+     */
     public static int body(int rgb) {
+        int own = HakiColour.bodyFor(rgb);
+        if (own != 0) {
+            return own;
+        }
         int r = (rgb >> 16) & 255;
         int g = (rgb >> 8) & 255;
         int b = rgb & 255;

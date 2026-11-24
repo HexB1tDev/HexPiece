@@ -1,7 +1,9 @@
 package com.hexhaki.piece.client.haki;
 
 import com.hexhaki.client.vfx.HakiVfx;
+import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.BoltPainter;
+import com.hexhaki.piece.haki.ConquerorStorm;
 import com.hexhaki.piece.haki.Jag;
 import com.lowdragmc.photon.client.fx.FX;
 import com.lowdragmc.photon.client.gameobject.IFXObject;
@@ -119,7 +121,16 @@ public final class HakiLightning {
         double[] a = {ax, ay, az};
         double[] b = {bx, by, bz};
         float start = pending.chain.start(a, delay);
-        BoltPainter.strokes(a, b, width, color, duration, start, forks, SALT, pending.bolts);
+        // 3.6.0 (the owner: "Haki Coated attacks from fruits and styles are to have the exact same LIGHTNING as the one in Conquerors's
+        // charge", "only 1 type and style of haki  model should be in use, THE CONQUEROR HAKI RELEASE (BUTTON G)"): each of the original's
+        // bolts (a glow, a body or core, and a hot heart laid on one line) is painted once, as the release's model on its crooked runs
+        // (ConquerorStorm.strike): from its body or core beam; its glow and its heart add nothing of their own
+        if (!bloom && Bolt.kindOf(color) != Bolt.AURA) {
+            int rim = Bolt.kindOf(color) == Bolt.BODY ? ConquerorStorm.EDGE & 0xFFFFFF : color & 0xFFFFFF;
+            long seed = Jag.seed(ax, ay, az, bx, by, bz, SALT);
+            float crawl = (float) Math.min(duration * 0.5, Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay) + (bz - az) * (bz - az)) / 10.0);
+            pending.bolts.addAll(ConquerorStorm.strike(a, b, width * 2.0F, 0.35F, rim, start, duration, crawl, seed));
+        }
         pending.chain.land(a, b, start, duration);
         double length = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay) + (bz - az) * (bz - az));
         int levels = Jag.levels(length);

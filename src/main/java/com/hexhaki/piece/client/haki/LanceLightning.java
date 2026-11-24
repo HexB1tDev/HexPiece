@@ -54,8 +54,10 @@ public final class LanceLightning {
                 double[] b = {p.b.f_82479_ - camera.f_82479_, p.b.f_82480_ - camera.f_82480_, p.b.f_82481_ - camera.f_82481_};
                 float w = Math.max(0.02F, p.width * 0.6F);
                 long seed = p.seed * 31L + flicker;
-                bolts.add(Bolt.crackled(a, b, w, 0.45F, ConquerorStorm.BODY, 0.0F, 8, 0.0F, seed, 0.35).tinted(color));
-                bolts.add(Bolt.crackled(a, b, w, 0.45F, 0xFF000000 | color, 0.0F, 8, 0.0F, seed, 0.35).tinted(color));
+                // 3.6.0: the one Haki lightning (ConquerorStorm.strike: the release's model, its crooked runs)
+                for (Bolt bolt : ConquerorStorm.strike(a, b, w, 0.45F, color, 0.0F, 8, 0.0F, seed)) {
+                    bolts.add(bolt.tinted(color));
+                }
             }
             double[] ages = new double[bolts.size()];
             java.util.Arrays.fill(ages, 2.0);

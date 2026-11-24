@@ -28,7 +28,13 @@ public final class ConquerorStorm {
     public static final int BODY = 0xF0050307;
     /** The rim's colour (tinted to the owner's Ryou colour at launch). */
     public static final int EDGE = 0xFFFF1433;
-    static final double STEP = 6.0;
+    /**
+     * 3.6.0 (the owner: "every lightning should be more croocked, its going too straight Look at haki references man"): the straight runs
+     * between kinks, about this long (was 6: long sticks), each turned hard off the last ({@link #WANDER}) and kinked again inside.
+     */
+    static final double STEP = 3.0;
+    /** 3.6.0: how hard each run turns off the last (was 0.42). */
+    static final double WANDER = 0.85;
     /** Where the bolts leave the flash (blocks from the chest). */
     static final double START = 2.2;
     /** The chest, above the feet. */
@@ -245,15 +251,26 @@ public final class ConquerorStorm {
         while (walked < length - 0.5) {
             double step = Math.min(length - walked, STEP * (0.6 + 0.8 * random.nextDouble()));
             double[] next;
+            boolean wasGrounded = grounded;
             if (!grounded) {
                 double[] wander = Sphere.unit(random);
-                h = normalise(new double[] {h[0] * 0.55 + dir[0] * 0.45 + wander[0] * 0.42, h[1] * 0.55 + dir[1] * 0.45 + wander[1] * 0.42,
-                    h[2] * 0.55 + dir[2] * 0.45 + wander[2] * 0.42});
+                // 3.6.0: each run turned hard off the last, pulled back toward the bolt's way (a jagged line, never a straight stick); on
+                // its glide down to where it lands as before (it must land out where it was sent, never back at the feet)
+                boolean gliding = land > 0.0 && walked < land;
+                double keep = gliding ? 0.55 : 0.35;
+                double pull = gliding ? 0.45 : 0.65;
+                double turn = gliding ? 0.42 : WANDER;
+                h = normalise(new double[] {h[0] * keep + dir[0] * pull + wander[0] * turn, h[1] * keep + dir[1] * pull + wander[1] * turn,
+                    h[2] * keep + dir[2] * pull + wander[2] * turn});
                 next = new double[] {a[0] + h[0] * step, a[1] + h[1] * step, a[2] + h[2] * step};
                 if (land > 0.0) {
                     // on its glide down to where it lands, wandering a little either side of it
                     double share = Math.min(1.0, (walked + step) / land);
                     next[1] = share >= 1.0 ? GROUND - 1.0 : CHEST + (GROUND - CHEST) * share + random.nextDouble(-0.3, 0.3) * (1.0 - share);
+                }
+                if (land <= 0.0 && next[1] < GROUND + 0.4 && Math.hypot(next[0], next[2]) < 3.5) {
+                    // 3.6.0: its harder turns never bring it down to the ground at the player's feet (that is a downward strand's, far out)
+                    next[1] = GROUND + 0.4;
                 }
                 if (next[1] < GROUND) {
                     // it struck the ground: from here it tears along it, outward
@@ -261,17 +278,19 @@ public final class ConquerorStorm {
                     next[1] = GROUND;
                 }
             } else {
-                yaw += random.nextDouble(-0.45, 0.45);
+                yaw += random.nextDouble(-0.6, 0.6);
                 next = new double[] {a[0] + Math.cos(yaw) * step, GROUND, a[2] + Math.sin(yaw) * step};
             }
             double t = Math.min(1.0, (walked + step) / length);
-            // a second, smaller kink about the run's middle (a kinked line, not a straight stick)
-            double[] mid = {(a[0] + next[0]) / 2, (a[1] + next[1]) / 2, (a[2] + next[2]) / 2};
+            // a second kink inside the run, off its middle (3.6.0: sharper, and not always halfway: a kinked line, not a straight stick)
+            double at = 0.35 + 0.3 * random.nextDouble();
+            double[] mid = {a[0] + (next[0] - a[0]) * at, a[1] + (next[1] - a[1]) * at, a[2] + (next[2] - a[2]) * at};
             double[] off = Sphere.unit(random);
-            double kink = step * 0.16;
-            mid = new double[] {mid[0] + off[0] * kink, grounded ? GROUND : Math.max(GROUND, mid[1] + off[1] * kink), mid[2] + off[2] * kink};
+            double kink = step * 0.3;
+            // 3.6.0: the run that strikes the ground keeps its inner kink in the air (only what is on the ground tears)
+            mid = new double[] {mid[0] + off[0] * kink, wasGrounded ? GROUND : Math.max(GROUND + 0.15, mid[1] + off[1] * kink), mid[2] + off[2] * kink};
             double tear = grounded ? 1.0 - 0.8 * t : 0.0;
-            b.add(mid, tear);
+            b.add(mid, wasGrounded ? tear : 0.0);
             b.add(next, tear);
             if (walked > Math.min(10.0, length * 0.35) && random.nextDouble() < (length < 40.0 ? 0.3 : 0.16)) {
                 branches.add(new Object[] {next.clone(), h.clone(), grounded, yaw, Math.min(length - walked, 8.0 + random.nextDouble() * 14.0),
@@ -296,18 +315,108 @@ public final class ConquerorStorm {
         double[] wander = Sphere.unit(random);
         double[] h = normalise(new double[] {heading[0] + wander[0] * 0.9, heading[1] + wander[1] * 0.9, heading[2] + wander[2] * 0.9});
         double turn = yaw + random.nextDouble(-1.0, 1.0);
-        int pieces = 2 + random.nextInt(2);
+        // 3.6.0: more, shorter runs, each turned hard (the owner: "more croocked")
+        int pieces = 3 + random.nextInt(3);
         for (int p = 0; p < pieces; p++) {
             double step = length / pieces;
             double[] next = grounded ? new double[] {a[0] + Math.cos(turn) * step, GROUND, a[2] + Math.sin(turn) * step}
                 : new double[] {a[0] + h[0] * step, Math.max(GROUND, a[1] + h[1] * step), a[2] + h[2] * step};
-            turn += random.nextDouble(-0.5, 0.5);
+            turn += random.nextDouble(-0.8, 0.8);
+            if (!grounded) {
+                double[] w2 = Sphere.unit(random);
+                h = normalise(new double[] {heading[0] * 0.5 + h[0] * 0.2 + w2[0] * 0.8, heading[1] * 0.5 + h[1] * 0.2 + w2[1] * 0.8,
+                    heading[2] * 0.5 + h[2] * 0.2 + w2[2] * 0.8});
+            }
             b.add(next, grounded ? 0.35 : 0.0);
             a = next;
         }
         // its width: the bolt's at the fork, tapering (Builder's taper on a branch's own length, scaled to the fork's width)
         Strand s = b.build(delay, 18 + random.nextInt(6), 1.0, width / 3.6, random.nextLong());
         out.add(s);
+    }
+
+    /**
+     * 3.6.0 (the owner: "Just make sure ALL haki is shared, only 1 type and style of haki  model should be in use, THE CONQUEROR HAKI
+     * RELEASE (BUTTON G)", and "every lightning should be more croocked"): the one Haki lightning's path from {@code a} to {@code b} at
+     * any size: the release's straight runs kinked hard off each other (a run of about {@link #STEP}, or a quarter of a short bolt),
+     * wandering off the line and pulled back to it, each run kinked again inside. The original's painted effects (a coated hit, the tap
+     * release, the ground storm), the sparks off a body and a blade, the sword's crackle and the lance all draw with it ({@link #strike}).
+     */
+    public static double[] jagged(double[] a, double[] b, long seed) {
+        double dx = b[0] - a[0];
+        double dy = b[1] - a[1];
+        double dz = b[2] - a[2];
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (length < 1.0E-6) {
+            return new double[] {a[0], a[1], a[2], b[0], b[1], b[2]};
+        }
+        SplittableRandom random = new SplittableRandom(seed ^ 0x4A41_4747_4544L);
+        double run = Math.min(STEP, Math.max(0.05, length / 4.0));
+        int runs = (int) Math.max(3, Math.min(24, Math.round(length / run)));
+        double[] across = Jag.across(dx, dy, dz);
+        double amp = length / runs * 0.55;
+        double[] out = new double[(runs * 2 + 1) * 3];
+        out[0] = a[0];
+        out[1] = a[1];
+        out[2] = a[2];
+        double ou = 0.0;
+        double ov = 0.0;
+        double[] prev = a.clone();
+        int k = 1;
+        for (int i = 1; i <= runs; i++) {
+            double t = i / (double) runs;
+            double[] end;
+            if (i < runs) {
+                t += random.nextDouble(-0.25, 0.25) / runs;
+                ou = ou * 0.35 + random.nextDouble(-1.0, 1.0) * amp;
+                ov = ov * 0.35 + random.nextDouble(-1.0, 1.0) * amp;
+                end = new double[] {a[0] + dx * t + across[0] * ou + across[3] * ov, a[1] + dy * t + across[1] * ou + across[4] * ov,
+                    a[2] + dz * t + across[2] * ou + across[5] * ov};
+            } else {
+                end = b.clone();
+            }
+            double at = 0.35 + 0.3 * random.nextDouble();
+            double piece = Math.sqrt((end[0] - prev[0]) * (end[0] - prev[0]) + (end[1] - prev[1]) * (end[1] - prev[1])
+                + (end[2] - prev[2]) * (end[2] - prev[2]));
+            double[] off = Sphere.unit(random);
+            for (int c = 0; c < 3; c++) {
+                out[k * 3 + c] = prev[c] + (end[c] - prev[c]) * at + off[c] * piece * 0.3;
+                out[(k + 1) * 3 + c] = end[c];
+            }
+            k += 2;
+            prev = end;
+        }
+        return out;
+    }
+
+    /**
+     * 3.6.0: one stroke of the one Haki lightning (the release's model: its black body and its rim on the same points, {@link #jagged}),
+     * {@code width} where it leaves (thin, swelling a little, tapering to {@code tip} of it at its end, as a release bolt does), its rim
+     * {@code rim} (tinted to its owner's Haki colour when it is let go).
+     */
+    public static List<Bolt> strike(double[] a, double[] b, float width, float tip, int rim, float delay, int duration, float crawl,
+                                    long seed) {
+        double[] p = jagged(a, b, seed);
+        int n = p.length / 3;
+        double[] walked = new double[n];
+        for (int i = 1; i < n; i++) {
+            double ddx = p[i * 3] - p[i * 3 - 3];
+            double ddy = p[i * 3 + 1] - p[i * 3 - 2];
+            double ddz = p[i * 3 + 2] - p[i * 3 - 1];
+            walked[i] = walked[i - 1] + Math.sqrt(ddx * ddx + ddy * ddy + ddz * ddz);
+        }
+        double total = Math.max(1.0E-6, walked[n - 1]);
+        float[] w = new float[n];
+        for (int i = 0; i < n; i++) {
+            double t = walked[i] / total;
+            double swell = Math.min(1.0, t / 0.3);
+            swell = swell * swell * (3 - 2 * swell);
+            w[i] = (float) (width * (0.6 + 0.4 * swell) * (1.0 - (1.0 - tip) * t));
+        }
+        List<Bolt> out = new ArrayList<>(2);
+        out.add(new Bolt(p, w, BODY, Bolt.BODY, delay, duration, crawl, seed, 0.05));
+        out.add(new Bolt(p, w, 0xFF000000 | rim, Bolt.EDGE, delay, duration, crawl, seed, 0.05));
+        return out;
     }
 
     /**

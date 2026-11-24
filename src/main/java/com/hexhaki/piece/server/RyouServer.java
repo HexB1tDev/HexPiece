@@ -62,6 +62,19 @@ public final class RyouServer {
         return color;
     }
 
+    /**
+     * 3.6.0 (the owner: "in the starter menu ... we'll add an option to choose haki colour"): the colour chosen on the start menu is the
+     * player's Haki colour for good: its rim is their Ryou colour everywhere it was used (every client told at once), its body and glow
+     * go with it (haki/HakiColour, client/haki/HakiBolts through haki/Bolt and BoltMesh).
+     */
+    public static void choose(ServerPlayer player, com.hexhaki.piece.haki.HakiColour colour) {
+        CompoundTag root = ProfileServer.root(player);
+        root.m_128405_(ProfileServer.HAKI_COLOUR, colour.code());
+        int color = 0xFF000000 | colour.rim;
+        root.m_128405_(COLOR, color);
+        PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color));
+    }
+
     /** End of the original's toggleArmament: Armament just came on and Ryou is unlocked, so Ryou comes on with it. */
     public static void afterArmament(ServerPlayer player) {
         if (!HakiData.flag(player, "armamentOn") || HakiData.flag(player, "acocOn") || !HakiProgression.advancedHakiUnlocked(player)) {

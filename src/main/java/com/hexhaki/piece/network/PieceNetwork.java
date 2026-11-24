@@ -23,8 +23,8 @@ public final class PieceNetwork {
      * (19). 14 (3.3.2): C2SNikaJump (20), Gear 5's jump. 15 (3.4.4): C2SNikaWhip (21), Goof Ball let go. 16, 17 (3.5.x): Sky Road's
      * C2SItoSky (22), S2CUoFx's two-byte kind. 18 (3.5.7): Fishman Karate removed and Iron Fist emptied: the styles' and their moves'
      * ordinals changed, S2CWater keeps only the knock-down and the air bullets. 19 (3.5.9): C2SPowers (23), R held: every power off
-     * or on. */
-    private static final String PROTOCOL = "19";
+     * or on. 20 (3.6.0): C2SCreate carries the Haki colour, S2COpenCreation the colour page alone. */
+    private static final String PROTOCOL = "20";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;

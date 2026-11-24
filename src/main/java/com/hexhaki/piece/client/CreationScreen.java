@@ -13,10 +13,16 @@ import net.minecraft.network.chat.Component;
 /** 2.1.1: the start menu ({@link CreationView}): male or female, pirate or marine, the fighting style; Set Sail sends the picks. */
 public final class CreationScreen extends Screen {
     private final long openedAt = System.currentTimeMillis();
-    private final CreationView.State state = new CreationView.State();
+    private final CreationView.State state;
 
-    public CreationScreen() {
+    public CreationScreen(boolean colourOnly) {
         super(Component.m_237113_("Set Sail"));
+        this.state = colourOnly ? CreationView.State.colourOnly() : new CreationView.State();
+    }
+
+    void send() {
+        PieceNetwork.toServer(new C2SCreate(this.state.gender.ordinal(), this.state.faction.ordinal(), this.state.style.ordinal(),
+            this.state.colour == null ? 0 : this.state.colour.code()));
     }
 
     private CreationView.Layout layout() {
@@ -43,7 +49,7 @@ public final class CreationScreen extends Screen {
             return false;
         }
         if (CreationView.click(this.state, at)) {
-            PieceNetwork.toServer(new C2SCreate(this.state.gender.ordinal(), this.state.faction.ordinal(), this.state.style.ordinal()));
+            this.send();
             Minecraft.m_91087_().m_91152_(null);
         }
         return true;
@@ -54,7 +60,7 @@ public final class CreationScreen extends Screen {
         switch (keyCode) {
             case 257, 335 -> {
                 if (CreationView.click(this.state, "next")) {
-                    PieceNetwork.toServer(new C2SCreate(this.state.gender.ordinal(), this.state.faction.ordinal(), this.state.style.ordinal()));
+                    this.send();
                     Minecraft.m_91087_().m_91152_(null);
                 }
                 return true;

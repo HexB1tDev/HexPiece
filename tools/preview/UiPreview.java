@@ -137,15 +137,19 @@ public class UiPreview {
         int w = 480;
         int h = 300;
         CreationView.Layout layout = CreationView.Layout.of(w, h);
-        for (int step = 0; step < 3; step++) {
+        for (int step = 0; step < CreationView.STEPS.length; step++) {
             CreationView.State state = new CreationView.State();
             state.step = step;
             state.gender = step >= 0 ? Gender.FEMALE : Gender.UNSET;
             state.faction = step >= 1 ? Faction.PIRATE : Faction.UNSET;
             state.style = step >= 2 ? FightingStyle.SIX_POWERS : FightingStyle.NONE;
+            state.colour = step >= 3 ? com.hexhaki.piece.haki.HakiColour.GOLD_YELLOW : null;
             int s = step;
-            save(dir, "creation-" + step, w, h, c -> CreationView.draw(c, layout, state, s == 2 ? "pick:0" : "next", 12.0 + s));
+            save(dir, "creation-" + step, w, h, c -> CreationView.draw(c, layout, state, s == 2 ? "pick:0" : s == 3 ? "pick:5" : "next", 12.0 + s));
         }
+        // 3.6.0: a player who set sail before the colour choice: the colour page alone, nothing picked yet
+        CreationView.State only = CreationView.State.colourOnly();
+        save(dir, "creation-colour-only", w, h, c -> CreationView.draw(c, layout, only, null, 20.0));
         // 2.2.4: the silhouettes as the game draws them at GUI scale 3 (a 1080p screen): quarter-pixel rows on real pixels
         CreationView.State genders = new CreationView.State();
         genders.gender = Gender.MALE;

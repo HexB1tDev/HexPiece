@@ -212,7 +212,8 @@ public final class DragonTests {
             }
             blastMost = Math.max(blastMost, bq[0]);
         }
-        Check.that(blastMost < 1600, "the biggest blast's lightning fits (" + blastMost + " quads)");
+        // 3.6.0 (the owner: "more croocked"): a kink every three blocks or so costs a quarter more than the old long runs (was < 1600)
+        Check.that(blastMost < 2200, "the biggest blast's lightning fits (" + blastMost + " quads)");
         // 3.2.5 (the owner: "The lightning is to be exactly the same as the one in Conqueror's Haki release"): a release bolt cut short:
         // as thin where it leaves the blast as the release's leaves the player (3.6 x 0.12 x 1.35 = 0.58), never wider than the release's
         // widest (3.6 x 1.35), and not the thin lines of 3.2.2 (it swells as it goes)

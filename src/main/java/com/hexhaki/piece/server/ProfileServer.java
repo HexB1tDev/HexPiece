@@ -7,6 +7,7 @@ import com.hexhaki.piece.PieceRules;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.network.S2COpenCreation;
 import com.hexhaki.piece.network.S2CProfile;
+import com.hexhaki.piece.haki.HakiColour;
 import com.hexhaki.piece.style.FightingStyle;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -53,13 +54,19 @@ public final class ProfileServer {
     }
 
     /** The start menu's picks: kept, the player told, everyone who sees them told. Refused once set sail (an operator can reset). */
-    public static void create(ServerPlayer player, Gender gender, Faction faction, FightingStyle style) {
+    public static void create(ServerPlayer player, Gender gender, Faction faction, FightingStyle style, HakiColour colour) {
         CompoundTag root = root(player);
         if (root.m_128471_("Chosen")) {
+            // 3.6.0: one who set sail before the Haki colour could be chosen picks it once (the colour page alone)
+            if (colour != null && HakiColour.byCode(root.m_128451_(HAKI_COLOUR)) == null) {
+                RyouServer.choose(player, colour);
+                player.m_5661_(Component.m_237113_("Your Haki: " + colour.display + "."), false);
+                return;
+            }
             player.m_5661_(Component.m_237113_("You have already set sail. An operator can let you choose again with /hexpiece reset."), false);
             return;
         }
-        if (!gender.choice() || !faction.choice() || !style.choice()) {
+        if (!gender.choice() || !faction.choice() || !style.choice() || colour == null) {
             PieceNetwork.sendTo(player, new S2COpenCreation(true));
             return;
         }
@@ -67,9 +74,19 @@ public final class ProfileServer {
         root.m_128405_("Faction", faction.ordinal());
         root.m_128405_("Style", style.code());
         root.m_128379_("Chosen", true);
+        RyouServer.choose(player, colour);
         sync(player);
         String side = faction == Faction.PIRATE ? "a pirate" : "a marine";
-        player.m_5661_(Component.m_237113_("You set sail as " + side + ", fighting with " + style.display() + "."), false);
+        player.m_5661_(Component.m_237113_("You set sail as " + side + ", fighting with " + style.display() + ", your Haki " + colour.display
+            + "."), false);
+    }
+
+    /** 3.6.0: the Haki colour chosen on the start menu (haki/HakiColour.code; 0: not chosen yet). */
+    static final String HAKI_COLOUR = "HakiColour";
+
+    /** 3.6.0: {@code player}'s Haki colour, or null while they have not chosen one. */
+    public static HakiColour hakiColour(ServerPlayer player) {
+        return HakiColour.byCode(root(player).m_128451_(HAKI_COLOUR));
     }
 
     public static void reset(ServerPlayer player) {
@@ -184,6 +201,9 @@ public final class ProfileServer {
             sync(player);
             if (!of(player).chosen()) {
                 PieceNetwork.sendTo(player, new S2COpenCreation(false));
+            } else if (hakiColour(player) == null) {
+                // 3.6.0 (the owner: "we'll add an option to choose haki colour"): set sail before the choice existed: its page alone
+                PieceNetwork.sendTo(player, new S2COpenCreation(false, true));
             }
         }
     }

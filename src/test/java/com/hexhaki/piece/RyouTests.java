@@ -15,7 +15,69 @@ public final class RyouTests {
         gloss();
         aura();
         skinCheck();
+        hakiColours();
+        creation();
         Check.done("RyouTests");
+    }
+
+    /**
+     * 3.6.0 (the owner's seven Haki colours, chosen on the start menu): seven sets, named by their colours alone, each rim its own and
+     * none an old random Ryou colour (so a stroke's rim tells its set); the lightning's body is the set's own (black for the two black
+     * ones), its glow the set's (cyan round the green rim of Green, Cyan and Black).
+     */
+    static void hakiColours() {
+        com.hexhaki.piece.haki.HakiColour[] all = com.hexhaki.piece.haki.HakiColour.values();
+        Check.that(all.length == 7, "the owner's seven Haki colours");
+        String[] names = {"Black and Red", "Gold and Yellow", "Purple", "Green", "Blue", "Green, Cyan and Black", "Red and Light Red"};
+        java.util.Set<Integer> rims = new java.util.HashSet<>();
+        for (int i = 0; i < all.length; i++) {
+            com.hexhaki.piece.haki.HakiColour c = all[i];
+            Check.that(c.display.equals(names[i]), "named by its colours: " + c.display);
+            Check.that(rims.add(c.rim) && !RyouPalette.given(0xFF000000 | c.rim), c.display + ": its rim is its own");
+            Check.that(com.hexhaki.piece.haki.HakiColour.byRim(0xFF000000 | c.rim) == c && com.hexhaki.piece.haki.HakiColour.byCode(c.code()) == c,
+                c.display + ": found again by its rim and its code");
+            int body = com.hexhaki.piece.haki.Bolt.body(c.rim);
+            Check.that(c.body == 0 ? Math.max((body >> 16) & 255, Math.max((body >> 8) & 255, body & 255)) <= 40 : body == c.body,
+                c.display + ": the lightning's body " + (c.body == 0 ? "black" : "its own colour"));
+            for (String who : new String[] {"Luffy", "Roger", "Kaido", "Zoro", "Shanks", "Whitebeard"}) {
+                Check.that(!c.display.contains(who), c.display + ": no character's name");
+            }
+        }
+        Check.that(com.hexhaki.piece.haki.HakiColour.glowFor(com.hexhaki.piece.haki.HakiColour.GREEN_CYAN_BLACK.rim) == 0x26EEFF,
+            "Green, Cyan and Black glows cyan round its green rim");
+        Check.that(com.hexhaki.piece.haki.HakiColour.bodyFor(0xFF2B3D) == 0 && com.hexhaki.piece.haki.HakiColour.byRim(0xFF2B3D) == null,
+            "an old random colour keeps the black body");
+        Check.that(com.hexhaki.piece.haki.HakiColour.byCode(0) == null && com.hexhaki.piece.haki.HakiColour.byCode(8) == null,
+            "no colour chosen yet reads as none");
+        Check.that(com.hexhaki.piece.haki.HakiColour.nearest(0xFFD93A) == com.hexhaki.piece.haki.HakiColour.GOLD_YELLOW
+            && com.hexhaki.piece.haki.HakiColour.nearest(0x2E9BFF) == com.hexhaki.piece.haki.HakiColour.BLUE,
+            "an old colour's nearest set");
+    }
+
+    /** 3.6.0: the start menu's fourth page is the Haki colour; a player who set sail before it gets that page alone. */
+    static void creation() {
+        com.hexhaki.piece.ui.CreationView.State state = new com.hexhaki.piece.ui.CreationView.State();
+        Check.that(com.hexhaki.piece.ui.CreationView.STEPS.length == 4, "four pages");
+        state.step = com.hexhaki.piece.ui.CreationView.COLOUR;
+        state.gender = com.hexhaki.piece.Gender.MALE;
+        state.faction = com.hexhaki.piece.Faction.PIRATE;
+        state.style = com.hexhaki.piece.style.FightingStyle.SWORDSMAN;
+        Check.that(!com.hexhaki.piece.ui.CreationView.click(state, "next"), "no colour picked: no setting sail");
+        com.hexhaki.piece.ui.CreationView.click(state, "pick:5");
+        Check.that(state.colour == com.hexhaki.piece.haki.HakiColour.GREEN_CYAN_BLACK, "a card picks its colour");
+        Check.that(com.hexhaki.piece.ui.CreationView.click(state, "next"), "the colour picked: Set Sail");
+        com.hexhaki.piece.ui.CreationView.State only = com.hexhaki.piece.ui.CreationView.State.colourOnly();
+        com.hexhaki.piece.ui.CreationView.click(only, "back");
+        Check.that(only.step == com.hexhaki.piece.ui.CreationView.COLOUR, "the colour page alone has nowhere to go back to");
+        com.hexhaki.piece.ui.CreationView.click(only, "pick:0");
+        Check.that(com.hexhaki.piece.ui.CreationView.click(only, "next") && only.colour == com.hexhaki.piece.haki.HakiColour.BLACK_RED,
+            "and sends the colour");
+        com.hexhaki.piece.ui.CreationView.Layout l = com.hexhaki.piece.ui.CreationView.Layout.of(427, 240);
+        for (int i = 0; i < 7; i++) {
+            int[] box = l.colourCardsForTests()[i];
+            Check.that(box[0] >= l.x0() && box[2] <= l.x1() && box[2] - box[0] >= 40 && box[3] - box[1] >= 40,
+                "colour card " + i + " fits a small screen");
+        }
     }
 
     /** 2.3.4: Armament blackens the hand in the skin itself: the arm's lowest rows and the fist's end, both layers, nothing else. */

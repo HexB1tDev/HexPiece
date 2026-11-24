@@ -325,7 +325,9 @@ public final class BoltMesh {
                 int hue = hue(color);
                 double bright = Math.min(1.0, flicker * (0.85 + 0.15 * fade) + 0.4 * flash);
                 inked(p, count, side, ink, inkLift, pointed, pixel, dist, sink);
-                tube3d(p, count, side, half, lift, bodyShade(hue, bright, flash), pixel, dist, sink);
+                // 3.6.0: a coloured body (a Haki colour whose body is not black: HakiColour.body) is shaded in its own colour
+                Shade shade = coloured(color) ? colouredBodyShade(color, bright, flash) : bodyShade(hue, bright, flash);
+                tube3d(p, count, side, half, lift, shade, pixel, dist, sink);
             }
             case Bolt.EDGE -> {
                 // round the black body (the same width rule as BODY's), a hot line in the colour hugging it, inked outside, and a wide
@@ -344,7 +346,8 @@ public final class BoltMesh {
                     ink[i] = rim[i] + (0.05 * body + 1.6 * pixel * dist[i]) * Math.min(1.0, fade * 1.6) * tip[i];
                     halo[i] = body * 2.3 + 0.12 * tip[i];
                 }
-                int glowColor = scale(color, (0.6 * bright * fade + 0.35 * flash) * shine);
+                // 3.6.0: the Haki colour's own glow (Green, Cyan and Black: cyan round a green rim)
+                int glowColor = scale(0xFF000000 | HakiColour.glowFor(color), (0.6 * bright * fade + 0.35 * flash) * shine);
                 glowBand(p, count, side, ink, halo, glowColor, sink);
                 int hot = mix(scale(color, bright), 0xFFFFFFFF, 0.3 + 0.35 * flash);
                 band(p, count, side, inner, rim, hot, scale(color, 0.75 + 0.25 * bright), -0.5, dist, sink);
@@ -473,6 +476,28 @@ public final class BoltMesh {
             int c = mix(deep, lit, smooth(-0.45, 0.35, lambert));
             c = mix(c, hot, 0.62 * Math.pow(facing, 5.0));
             c = mix(c, 0xFFFFFFFF, 0.85 * spec + 0.3 * flash);
+            return c;
+        };
+    }
+
+    /** 3.6.0: is a body stroke's colour one of the Haki colours' own bodies (bright enough not to read black)? */
+    static boolean coloured(int argb) {
+        int r = (argb >>> 16) & 255;
+        int g = (argb >>> 8) & 255;
+        int b = argb & 255;
+        return Math.max(r, Math.max(g, b)) > 45;
+    }
+
+    /** 3.6.0: a coloured body: glossy in its own colour, deep where the light leaves it, edge-lit brighter. */
+    static Shade colouredBodyShade(int color, double bright, double flash) {
+        int deep = mix(0xFF050407, color | 0xFF000000, 0.42);
+        int lit = scale(color | 0xFF000000, 0.75 + 0.25 * bright);
+        int gloss = mix(color | 0xFF000000, 0xFFFFFFFF, 0.5);
+        int rim = mix(color | 0xFF000000, 0xFFFFFFFF, 0.3);
+        return (facing, lambert, spec) -> {
+            int c = mix(deep, lit, smooth(-0.3, 0.9, lambert));
+            c = mix(c, gloss, 0.6 * spec);
+            c = mix(c, rim, Math.min(1.0, 0.8 * Math.pow(1.0 - facing, 4.5) + 0.2 * flash));
             return c;
         };
     }

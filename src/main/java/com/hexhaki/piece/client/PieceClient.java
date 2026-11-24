@@ -23,6 +23,8 @@ public final class PieceClient {
     private static final Map<Integer, S2CProfile> SEEN = new HashMap<>();
     private static PieceProfile self = PieceProfile.EMPTY;
     private static boolean pendingCreation;
+    /** 3.6.0: the start menu asked for is the Haki colour page alone. */
+    private static boolean pendingColourOnly;
 
     private PieceClient() {
     }
@@ -50,8 +52,9 @@ public final class PieceClient {
         return seen == null ? Faction.UNSET : Faction.byOrdinal(seen.faction());
     }
 
-    public static void openCreation(boolean again) {
+    public static void openCreation(boolean again, boolean colourOnly) {
         pendingCreation = true;
+        pendingColourOnly = colourOnly;
         tryOpen();
     }
 
@@ -59,7 +62,7 @@ public final class PieceClient {
         Minecraft minecraft = Minecraft.m_91087_();
         if (pendingCreation && minecraft.f_91074_ != null && minecraft.f_91080_ == null) {
             pendingCreation = false;
-            minecraft.m_91152_(new CreationScreen());
+            minecraft.m_91152_(new CreationScreen(pendingColourOnly));
         }
     }
 

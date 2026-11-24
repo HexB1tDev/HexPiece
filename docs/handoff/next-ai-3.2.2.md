@@ -3691,6 +3691,16 @@ With the prompt ("finish all four in one version 3.5.9"), then while 3.5.9 was b
     In the new Buzz Cut Mochi and Zan Giri mochi the rolling donut the player turns into it should look  like" (the message ends there:
     asked the owner to resend the rest).
 
+12. "also add a menu to pick the Ryou color / Colors: / Red & Orange. Used in the anime for Luffy's standard Armament aura (red) and
+    his advanced Ryuo "Flowing Sakura" aura (orange/red). / Purple & Black. Commonly used in the anime as a steam-like aura for Zoro,
+    Fujitora, Sanji, Vergo, and Marines, as well as a pure purple aura for Kin'emon. / Green. Appears in the anime as a flame-like aura
+    for Don Sai. / Pink. Used in the anime for Kanjuro's steam-like aura and Hyogoro's advanced Ryuo aura. / Red & Yellow. Appears as
+    the advanced Ryuo aura for Kawamatsu in Wano. / Blue. Shown in Sanji's Ifrit Jambe, where his black Armament lightning mixes with
+    his blue flames. / Gold. Appears when advanced Armament is combined with Supreme King (Conqueror's) infusion, such as Luffy against
+    Kaido. / Haki coating on the arm should be covering even higher up in the arm unevenly" (with a picture: both forearms coated
+    glossy black up past the elbow, the edge of the black uneven, a pink-red glow outlining the black arms). So: the Ryou colour (the
+    coated arms' glow) is its own choice beside the Haki colour (the lightning); in the game named by colours only.
+
 Where they stand: see section 8zzw (3.5.9 as built) for what is done; anything not listed there is still to do.
 
 ## 8zzw. 3.5.9 as built (8zzu's four requests and 8zzv items 1 to 4)

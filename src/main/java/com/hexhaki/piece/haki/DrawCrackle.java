@@ -82,9 +82,10 @@ public final class DrawCrackle {
         for (int p = 0; p < 2; p++) {
             float start = Math.max(delay, chain.start(pieces[p], 0));
             float w = width * (p == 0 ? 1.0F : 0.8F);
-            BoltPainter.strokes(pieces[p], pieces[p + 1], w * 2.6F, 0xEC000000 | Bolt.body(color), life, start, false, salt, out);
-            BoltPainter.strokes(pieces[p], pieces[p + 1], w, color, life, start, false, salt, out);
-            BoltPainter.strokes(pieces[p], pieces[p + 1], w * 0.3F, heart, life, start, false, salt, out);
+            // 3.6.0 (the owner: "only 1 type and style of haki  model should be in use, THE CONQUEROR HAKI RELEASE"): the release's
+            // model (its black body and rim, its crooked runs: ConquerorStorm.strike), as wide as the old glow
+            out.addAll(ConquerorStorm.strike(pieces[p], pieces[p + 1], w * 2.6F, 0.6F, color & 0xFFFFFF, start, life, 0.0F,
+                salt ^ p * 0x9E3779B97F4A7C15L));
             chain.land(pieces[p], pieces[p + 1], start, life);
         }
     }

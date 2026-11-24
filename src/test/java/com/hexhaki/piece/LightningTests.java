@@ -278,12 +278,12 @@ public final class LightningTests {
         }
         Check.that(!DrawCrackle.set(5L, 4, 0.0, 1.28, Double.NaN, 1.0, 0xFFFF1433).isEmpty(), "every window has its set");
         boolean body = false;
-        boolean core = false;
-        boolean heart = false;
+        boolean edge = false;
+        boolean other = false;
         for (Bolt bolt : one) {
             body |= bolt.kind == Bolt.BODY;
-            core |= bolt.kind == Bolt.CORE;
-            heart |= bolt.kind == Bolt.HEART;
+            edge |= bolt.kind == Bolt.EDGE;
+            other |= bolt.kind != Bolt.BODY && bolt.kind != Bolt.EDGE;
             Check.that(bolt.end() <= DrawCrackle.WINDOW + DrawCrackle.LIFE + 2, "a crackle bolt burns briefly");
             for (int p = 0; p < bolt.count(); p++) {
                 double y = bolt.points[p * 3 + 1];
@@ -291,7 +291,8 @@ public final class LightningTests {
                 Check.that(y > -0.2 && y < 1.5 && off < 0.4, "the crackle hugs the blade (" + y + ", " + off + ")");
             }
         }
-        Check.that(body && core && heart, "inked like the Conqueror's: black body, coloured core, hot heart");
+        // 3.6.0 (the owner: "only 1 type and style of haki  model should be in use, THE CONQUEROR HAKI RELEASE"): the release's model
+        Check.that(body && edge && !other, "the release's own model: a black body and its rim, nothing else");
         List<Bolt> mouth = DrawCrackle.set(9L, 1, 0.0, 0.3, 0.3, 1.0, 0xFFFF1433);
         boolean spark = false;
         for (Bolt bolt : mouth) {

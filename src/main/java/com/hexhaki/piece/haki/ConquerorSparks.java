@@ -71,8 +71,8 @@ public final class ConquerorSparks {
         float width = (float) (size * 0.18);
         float crawl = (float) (length / SPEED);
         long seed = random.nextLong();
-        out.add(Bolt.crackled(from, to, width, 0.25F, ConquerorStorm.BODY, delay, duration, crawl, seed, 0.42));
-        out.add(Bolt.crackled(from, to, width, 0.25F, 0xFF000000 | RED, delay, duration, crawl, seed, 0.42));
+        // 3.6.0: the one Haki lightning (the release's model and its crooked runs: ConquerorStorm.strike)
+        out.addAll(ConquerorStorm.strike(from, to, width, 0.25F, RED, delay, duration, crawl, seed));
         if (random.nextDouble() < 0.6) {
             double t = 0.35 + 0.3 * random.nextDouble();
             double[] mid = {from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t};
@@ -82,8 +82,7 @@ public final class ConquerorSparks {
             double[] end = {mid[0] + fork[0] * l, mid[1] + fork[1] * l, mid[2] + fork[2] * l};
             long forkSeed = random.nextLong();
             float d = delay + (float) (t * length / SPEED);
-            out.add(Bolt.crackled(mid, end, width * 0.6F, 0.2F, ConquerorStorm.BODY, d, duration - 1, (float) (l / SPEED), forkSeed, 0.45));
-            out.add(Bolt.crackled(mid, end, width * 0.6F, 0.2F, 0xFF000000 | RED, d, duration - 1, (float) (l / SPEED), forkSeed, 0.45));
+            out.addAll(ConquerorStorm.strike(mid, end, width * 0.6F, 0.2F, RED, d, duration - 1, (float) (l / SPEED), forkSeed));
         }
     }
 }
