@@ -906,8 +906,12 @@ public final class HudTests {
             "Galaxy Impact takes a share of the Haki energy");
         Check.that(com.hexhaki.piece.ironfist.IronMove.DIVIDE_LENGTH == 40.0 && com.hexhaki.piece.ironfist.IronMove.DIVIDE_HEIGHT == 20.0
             && com.hexhaki.piece.ironfist.IronMove.DIVIDE_WIDTH == 5.0, "Galaxy Divide: 40 forward, 20 up, 5 across (the owner's numbers)");
-        Check.that(com.hexhaki.piece.ironfist.IronMove.meteorCharge(0) > 0.0 && com.hexhaki.piece.ironfist.IronMove.meteorCharge(1000) == 1.0,
-            "Meteor Fist: a tap still throws, the hold fills it");
+        // 3.6.1 (the owner: speed and blast "Fixed too", "Full power always"): every throw is the full one, however long Z is held
+        for (int held = 0; held <= com.hexhaki.piece.ironfist.IronMove.METEOR_MOST; held++) {
+            Check.that(com.hexhaki.piece.ironfist.IronMove.meteorCharge(held) == 1.0, "Meteor Fist: full power at any hold (" + held + ")");
+        }
+        Check.that(com.hexhaki.piece.ironfist.IronMove.meteorSpeed(1.0) == 4.2 && com.hexhaki.piece.ironfist.IronMove.meteorBlast(1.0) == 6.0,
+            "Meteor Fist: the full hold's speed and 6-block blast");
         // 3.5.9: Meteor Fist's cannonball one size (the owner: "should not fucking increase size")
         Check.that(com.hexhaki.piece.ironfist.IronMove.METEOR_RADIUS > 0.3 && com.hexhaki.piece.ironfist.IronMove.METEOR_RADIUS < 1.0,
             "Meteor Fist: one cannonball size");

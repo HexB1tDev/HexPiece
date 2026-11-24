@@ -20,11 +20,11 @@ down all round (the owner: "JESUS WHY IS THE LIGHTNING SO THICK", next-ai-3.6.0.
 CC0 lightning sounds (6 dB quieter, one lightning sound at a time through haki/LightningGate and client/haki/LightningSounds, the full
 release heard as one strike). The owner has been sent the colour pages and the seven-colour lightning sheet (previews).
 
-Do next, in order (next-ai-3.6.0.md section F has the detail): (2) ask the owner the two open questions (the Quake ultimate's own
-impact frame; Meteor Fist's growing speed and blast) unless already asked; wait for their notes on 3.5.9 and 3.6.0; (3) make every new
-fruit and every style obey /hp op on/off; (4) the owner's Mochi list (ask for the end of their cut-off line about the rolling donut,
-with its picture, first); (5) Buzz Cut Mochi: references first, then plan, then build as one uninterrupted cinematic. The next version
-is 3.6.1.
+Do next, in order (next-ai-3.6.0.md section F has the detail; sections I and J the owner's newest messages and 3.6.1): 3.6.1 (Meteor
+Fist full power every throw, the owner's answer) is the newest version: check its GitHub runs if the last session could not. Then wait
+for the owner's word on 3.6.0's thinner lightning; (3) make every new fruit and every style obey /hp op on/off; (4) the owner's Mochi
+list (ask for the end of their cut-off line about the rolling donut, with its picture, first); (5) Buzz Cut Mochi: references first,
+then plan, then build as one uninterrupted cinematic. The next version is 3.6.2.
 
 The cloud environment must be the personal "HexPiece" (it allows freesound.org): if a session starts on Default, get_environment, then
 switch_environment to HexPiece (network_only, its switch_statement copied exactly).

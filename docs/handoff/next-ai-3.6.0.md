@@ -327,4 +327,18 @@ What changed (one model: the release's, every blast's with it, POINT ONE 3 kept)
 22. "notice that the green lines are always empty, you are never using those spaces, I been noticing that, its only shooting down and
     up, the middle is empty" (with our render, two green lines drawn level out to either side of the player at chest height: no bolt
     ever goes out sideways there; the release's bolts only rise into the sky or come down onto the ground.)
+23. The owner's answers (AskUserQuestion, after 3.6.0 was green): the Quake fruit's N ultimate's own impact frame: "Keep it"; Meteor
+    Fist's speed and blast growing with the hold: "Fixed too" (same speed and blast whatever the hold, like the size). Section F step 2
+    is done; 3.6.1 makes Meteor Fist's speed and blast fixed.
+24. Asked which fixed power (AskUserQuestion): "Full power always" (every throw the old full hold's: speed 4.2, blast 6, damage 22;
+    holding Z only aims).
+
+## J. 3.6.1 (the owner's answers 23 and 24)
+
+- `IronMove.meteorCharge` always 1.0 (was a third at a tap, full after METEOR_FULL 40 ticks): every Meteor Fist throw is the full hold's
+  (meteorSpeed 4.2, meteorBlast 6, damage 10 + 12, crater, debris, quake and boom at their full). Held METEOR_MOST 80 ticks it still
+  throws by itself. Its book text: "Every throw is at full power however long you hold." HudTests checks every hold is full.
+- The Quake fruit's N ultimate keeps its CLASSIC frame (S2CClash.framed): no change.
+- .github/release-notes-3.6.1.md. Next: section F steps 3 to 6 (/hp op on/off for every new fruit and style; the Mochi list after
+  asking for the cut-off line and its picture; Buzz Cut Mochi). Wait for the owner's word on 3.6.0's lightning first if it comes.
 

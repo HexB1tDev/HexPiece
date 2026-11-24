@@ -13,7 +13,7 @@ public enum IronMove {
             + " into an attack, carries on a combo."),
     METEOR("Meteor Fist", "Z hold", Need.NONE, 100,
         "Hold: a black iron cannonball in the right hand, pulled back behind the head like a pitcher's wind-up; let go to hurl it, faster"
-            + " than any shot, exploding on what it meets. The longer the hold, the faster and harder."),
+            + " than any shot, exploding on what it meets. Every throw is at full power however long you hold."),
     CRUSHER("Mountain Crusher", "X", Need.ARMAMENT, 160,
         "Low and wide, the coated fist clenched at the waist, then one tremendous step into an uppercut: launched up and away through"
             + " the blocks in their path. Breaks any guard."),
@@ -91,7 +91,7 @@ public enum IronMove {
     public static final int LOVE_TICKS = 8;
     public static final int LOVE_HIT = 2;
     public static final double LOVE_REACH = 3.4;
-    /** Meteor Fist: a full hold, the longest; the throw lets go on this tick of its clip. */
+    /** Meteor Fist: a full hold (before 3.6.1, when the hold still mattered), the longest; the throw lets go on this tick of its clip. */
     public static final int METEOR_FULL = 40;
     public static final int METEOR_MOST = 80;
     public static final int METEOR_THROW = 3;
@@ -108,9 +108,13 @@ public enum IronMove {
         return 3.0 + 3.0 * charge;
     }
 
-    /** How full Meteor Fist is after {@code held} ticks (a tap is a third). */
+    /**
+     * How full Meteor Fist is after {@code held} ticks: always full. 3.6.1 (the owner, asked whether the speed and blast should still grow
+     * with the hold: "Fixed too", at "Full power always"): every throw is the old full hold's (the fastest ball, the 6-block blast, its
+     * damage); holding Z only aims. (It was a third at a tap, full after {@link #METEOR_FULL} ticks.)
+     */
     public static double meteorCharge(double held) {
-        return Math.max(0.33, Math.min(1.0, held / METEOR_FULL));
+        return 1.0;
     }
 
     /** Mountain Crusher: the coil, the step and uppercut, its whole length, how far it reaches, how long the launched body tears blocks. */
