@@ -270,3 +270,11 @@ What was 2D (found by rendering the release and a move's blast close up, tools i
   chained pieces of the original's compositions and the blade crackle pass false: BoltPainter.point points their free ends), ClashBurst.
 - LightningTests.solid3d: in every Haki colour the blast's rim strokes are shaded tubes (many shades, not bands), the body strokes add
   nothing, every blast bolt is pointed at both ends, a strike at its far end, a chained piece keeps its end full.
+
+## J. Done in the next chat (committed; not yet versioned): no HUD while the powers are off (H 3)
+
+While every power is off (R held: server/Powers, the client's BindsClient.off through CombatMode.powersOff): the abilities panel
+(AbilityHud.draw), the fruit energy bar (EnergyBar.draw) and the old "POWERS OFF (hold R)" badge (CombatMode.powers) draw nothing; the
+only thing left is the small fill bar while R is held toward the switch (feedback for turning them back on). Everything is back the
+moment the powers are on. Screen flashes of effects (IronFx, ClashFx, FinisherFx) and the broken-bones overlay are effects, not HUD:
+left as they were.

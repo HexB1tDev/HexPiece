@@ -210,8 +210,8 @@ public final class CombatMode {
     }
 
     /**
-     * 3.5.9: over the hotbar's middle: while R is held, a bar filling toward the switch ("Powers off" or "Powers on" when it fills);
-     * while every power is off, a badge saying so and how to turn them back on.
+     * 3.5.9: over the hotbar's middle: while R is held, a bar filling toward the switch ("Powers off" or "Powers on" when it fills).
+     * 3.6.3: nothing else while every power is off (the whole HUD is gone until they are on again).
      */
     static void powers(GuiGraphics graphics, int width, int height, float partial) {
         Minecraft minecraft = Minecraft.m_91087_();
@@ -221,22 +221,20 @@ public final class CombatMode {
         Font font = minecraft.f_91062_;
         double fill = holding(partial);
         boolean off = powersOff();
-        if (fill < 0 && !off) {
+        if (fill < 0) {
+            // 3.6.3 (the owner: "when powers are turned off, the hud on the screen is to dissappear until the power is once again
+            // activated"): no badge while off, as no panel and no energy bar: only the fill while R is held toward the switch
             return;
         }
         String key = AbilityHud.name(HakiKeys.ARMAMENT);
-        String text = fill >= 0 ? (off ? "Hold " + key + ": powers on" : "Hold " + key + ": powers off") : "POWERS OFF  (hold " + key + ")";
+        String text = off ? "Hold " + key + ": powers on" : "Hold " + key + ": powers off";
         int w = font.m_92895_(text) + 16;
         int x = width / 2 - w / 2;
         int y = height - 74;
         graphics.m_280509_(x, y, x + w, y + 16, 0xB0101014);
         graphics.m_280509_(x, y + 14, x + w, y + 16, 0xFF2A2A30);
-        if (fill >= 0) {
-            graphics.m_280509_(x, y + 14, x + (int) Math.round(w * fill), y + 16, off ? 0xFF8CE07A : 0xFFE05050);
-        } else {
-            graphics.m_280509_(x, y, x + 3, y + 16, 0xFFE05050);
-        }
-        graphics.m_280056_(font, text, x + 8, y + 4, off && fill < 0 ? 0xFFFFB4B4 : 0xFFF4E8D0, true);
+        graphics.m_280509_(x, y + 14, x + (int) Math.round(w * fill), y + 16, off ? 0xFF8CE07A : 0xFFE05050);
+        graphics.m_280056_(font, text, x + 8, y + 4, 0xFFF4E8D0, true);
     }
 
     /** The badge over the hotbar's left end while combat mode is on: the style's colour and name, and its special keys. */

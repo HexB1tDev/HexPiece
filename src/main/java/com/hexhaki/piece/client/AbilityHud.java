@@ -72,6 +72,9 @@ public final class AbilityHud {
         if (player == null || minecraft.f_91080_ != null) {
             return;
         }
+        if (CombatMode.powersOff()) {
+            return; // 3.6.3 (the owner: "when powers are turned off, the hud on the screen is to dissappear until the power is once again activated")
+        }
         long now = System.nanoTime();
         if (now - keysAt > KEY_NANOS || keysAt == Long.MIN_VALUE) {
             keys = keys(minecraft);

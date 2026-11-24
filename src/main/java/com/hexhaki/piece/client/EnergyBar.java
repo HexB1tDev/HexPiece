@@ -72,8 +72,8 @@ public final class EnergyBar {
     static void draw(GuiGraphics graphics, int width, int height, float partial) {
         Minecraft minecraft = Minecraft.m_91087_();
         LocalPlayer player = minecraft.f_91074_;
-        if (player == null || !shows(player)) {
-            return;
+        if (player == null || !shows(player) || CombatMode.powersOff()) {
+            return; // 3.6.3: no HUD while every power is off (R held: server/Powers), back the moment they are on
         }
         int shift = player.m_20069_() ? 10 : 0;
         GuiCanvas canvas = new GuiCanvas(graphics, minecraft.f_91062_, null);
