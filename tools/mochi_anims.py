@@ -70,6 +70,24 @@ def lotus():
        "launch up.", ARMS)
 
 
+# ------------------------------------------------------------------------------------------------------ X: Mochi Muddle
+
+def muddle():
+    # 3.6.3, on the reference's beats (mochi/MochiDraw.MUDDLE_*, the splash on 28): both arms out to the sides gathering (to 22), swung
+    # up and forward (24), thrown down and ahead with the body leaning into the dive (27), held low in the pool, then back up
+    out = p(rightArm=arm(-10, 0, 80, -10), leftArm=mirror(arm(-10, 0, 80, -10)), body={"yaw": 0, "bend": -2})
+    beats = [(0, "linear", REST), (4, "outsine", out)]
+    beats += tremble(out, 8, 21, 3, lambda b, s: p(b, rightArm={"roll": 80 + 2.0 * s}, leftArm={"roll": -80 - 2.0 * s}))
+    beats += [
+        (24, "insine", p(rightArm=arm(-115, 0, 35, -10), leftArm=mirror(arm(-115, 0, 35, -10)), body={"yaw": 0, "bend": -6})),
+        (27, "outexpo", p(rightArm=arm(-55, 0, 14, -4), leftArm=mirror(arm(-55, 0, 14, -4)), body={"yaw": 0, "bend": 24})),
+        (40, "linear", p(rightArm=arm(-50, 0, 16, -6), leftArm=mirror(arm(-50, 0, 16, -6)), body={"yaw": 0, "bend": 20})),
+        (50, "inoutsine", REST),
+    ]
+    write_parts("mochi_muddle", 50, beats, "Mochi Mochi: Mochi Muddle: the arms out gathering, then the dive down into the splash of dough.",
+                ARMS)
+
+
 # ------------------------------------------------------------------------------------------------------ RMB: Mochi Tsuki
 
 # Mogura held low in both hands, its head forward: the right hand back by the hip on its shaft, the left forward guiding it
@@ -312,6 +330,7 @@ def dome():
 def main():
     punch()
     lotus()
+    muddle()
     tsuki()
     yanagi()
     kaku()

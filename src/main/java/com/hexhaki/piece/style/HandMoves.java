@@ -61,6 +61,9 @@ public final class HandMoves {
      * 3.6.3: Lotus Mochi Combo on its beats (mochi/MochiDraw.LOTUS_*): the hand flings the dough out to the left (4), held out at the
      * donut while it forms, drawn back with its flash (31), thrust with its punch (34), swept up with the launch (39), let down.
      */
+    /** 3.6.3: Mochi Muddle: the hand out to the side gathering, then thrown down and ahead into the dive (27), held low, back. */
+    static final double[][] MUDDLE = {{0, 0, 0, 0, 0, 0, 0}, {4, 0.26, 0.06, -0.04, 0, -38, -24}, {22, 0.27, 0.07, -0.04, 2, -40, -26},
+        {24, 0.04, 0.2, -0.06, 30, 0, 0}, {27, -0.04, -0.22, -0.26, -34, 0, 0}, {40, -0.04, -0.2, -0.24, -30, 0, 0}, {50, 0, 0, 0, 0, 0, 0}};
     static final double[][] LOTUS = {{0, 0, 0, 0, 0, 0, 0}, {2, 0.05, -0.04, 0.06, -6, -10, 0}, {4, -0.2, 0.12, -0.12, 10, 28, 10},
         {8, -0.16, 0.06, -0.1, 4, 22, 6}, {28, -0.15, 0.06, -0.1, 4, 20, 6}, {31, 0.1, 0.02, 0.08, -6, -8, -6}, {34, -0.16, 0.08, -0.3, 6, 10, 0},
         {39, 0.04, 0.3, -0.02, 45, 0, 0}, {46, 0, 0, 0, 0, 0, 0}};
@@ -170,6 +173,7 @@ public final class HandMoves {
             // 3.5.5: the Mochi fruit's own clips (tools/mochi_anims.py)
             case "mochi_punch_1", "mochi_punch_2", "mochi_yaki_fire" -> new Move(JAB, 0);
             case "mochi_lotus" -> new Move(LOTUS, 0);
+            case "mochi_muddle" -> new Move(MUDDLE, 0);
             case "mochi_tsuki_charge" -> new Move(DRAWN, 1.0);
             case "mochi_tsuki_thrust" -> new Move(THRUST, 0);
             case "mochi_yanagi" -> new Move(SIDE, 0.6);

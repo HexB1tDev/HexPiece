@@ -713,41 +713,147 @@ public final class MochiDraw {
 
     // ------------------------------------------------------------------------------------------------------ 3.6.3: the reference's moves
 
+    // ------------------------------------------------------------------------------------------------------ Mochi Muddle
+    // 3.6.3, after the reference's Dough Muddle read frame by frame (next-ai-3.6.3.md G), in ticks from the press: a charge with the
+    // arms out (to MUDDLE_START - 6), a dive, the user engulfed in a block of dough, a splash bursting up out of it (MUDDLE_START), a
+    // thick pool round them (sunk to the legs) that flattens, and from MUDDLE_RUN the puddle running out ahead past the one aimed at,
+    // spreading wider with spiky splashed edges, splats round it and faint swirls of wind over it; it lies, then sinks away.
+
+    /** The splash (ticks from the press), when the puddle starts to run out ahead (from the splash), how long it lies (from the splash). */
+    public static final int MUDDLE_START = 28;
+    public static final double MUDDLE_RUN = 14.0;
+    public static final double MUDDLE_LIE = 100.0;
+    /** The pool round the user, the puddle's length ahead of it, how fast it runs (blocks a tick), its width near and far. */
+    public static final double MUDDLE_POOL = 2.3;
+    public static final double MUDDLE_LENGTH = 10.0;
+    public static final double MUDDLE_SPEED = 0.6;
+    public static final double MUDDLE_NEAR = 3.0;
+    public static final double MUDDLE_FAR = 4.6;
+
+    /** How far ahead of the splash the Muddle puddle has run {@code age} ticks after the splash. */
+    public static double muddleReach(double age) {
+        return Math.max(0.0, Math.min(MUDDLE_LENGTH, (age - MUDDLE_RUN) * MUDDLE_SPEED));
+    }
+
+    /** The Muddle puddle's width {@code along} blocks ahead of the splash. */
+    public static double muddleWidth(double along) {
+        return MUDDLE_NEAR + (MUDDLE_FAR - MUDDLE_NEAR) * clamp(along / MUDDLE_LENGTH);
+    }
+
     /**
-     * Mochi Muddle (X): the trail of dough poured out from (x, y, z) (on the ground) along (wx, wz) (flat, unit), {@code reach} of its
-     * {@code length} spread so far (its front a swelling lip), {@code width} across, {@code fade} 0 to 1 (it sinks away flat at its end);
-     * lumpy flattened dough, spatters thrown off its front.
+     * Mochi Muddle (X): its splash at (x, y, z) (the ground at the user's feet) and the puddle running from it along (wx, wz) (flat,
+     * unit); {@code age} ticks from the splash (from -4: the dough engulfing the user just before it).
      */
-    public static void muddle(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double length, double reach, double width,
-                              double fade, double age, int seed) {
-        if (fade < 0.02 || reach < 0.1) {
+    public static void muddle(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double age, int seed) {
+        if (age < -4.0 || age > MUDDLE_LIE) {
             return;
         }
         double px = -wz;
         double pz = wx;
-        int n = (int) Math.ceil(reach / 0.9);
-        for (int k = 0; k <= n; k++) {
-            double d = Math.min(reach, k * 0.9);
-            double front = Math.max(0.0, 1.0 - (reach - d) / 1.6);
-            double wob = (FireMesh.rand(seed, k) - 0.5) * width * 0.35;
-            double r = width * (0.42 + 0.12 * FireMesh.rand(seed, k + 40)) * (1.0 + 0.2 * front);
-            double h = (0.22 + 0.25 * front) * fade;
-            MochiArt.blob(sink, x + wx * d + px * wob, y + h * 0.35, z + wz * d + pz * wob, wx, 0, wz, 0, 1, 0, r * 0.75, h, r, 0.8, 0.18,
-                age, seed + k, MochiArt.MOCHI, 1.0);
-            // lumps welling up along it
-            if (k % 2 == 0 && fade > 0.3) {
-                double side = (FireMesh.rand(seed, k + 80) - 0.5) * width * 0.7;
-                MochiArt.ball(sink, x + wx * d + px * side, y + h * 0.8, z + wz * d + pz * side, 0.18 + 0.12 * FireMesh.rand(seed, k + 90), 0, 1, 0,
-                    0.8, 0.1, age, seed + k + 100, MochiArt.MOCHI);
+        double fade = 1.0 - smooth((age - MUDDLE_LIE + 14.0) / 14.0);
+        // ---- the user engulfed in a block of dough (frame 48), bursting into the splash
+        if (age < 3.0) {
+            double g = smooth((age + 4.0) / 3.0) * (1.0 - smooth((age - 0.5) / 2.5));
+            if (g > 0.03) {
+                MochiArt.blob(sink, x, y + 1.0, z, wx, 0, wz, 0, 1, 0, 0.85 * g + 0.1, 1.15 * g + 0.1, 0.85 * g + 0.1, 0.45, 0.25, age, seed,
+                    MochiArt.MOCHI, 1.0);
             }
         }
-        // the front pouring on: drops thrown ahead of it while it spreads
-        if (reach < length - 0.2) {
-            for (int k = 0; k < 4; k++) {
-                double t = (age * 0.35 + k * 0.25) % 1.0;
-                double side = (FireMesh.rand(seed + (int) age, k) - 0.5) * width;
-                MochiArt.ball(sink, x + wx * (reach + 0.4 + t * 1.2) + px * side, y + 0.25 + Math.sin(Math.PI * t) * 0.8,
-                    z + wz * (reach + 0.4 + t * 1.2) + pz * side, 0.12, wx, 0.3, wz, 1.3, 0.0, age, seed + k, MochiArt.MOCHI);
+        if (age < 0) {
+            return;
+        }
+        // ---- the splash (frames 50 to 58): a column of dough thrown up and falling back, a crown of splashes, droplets flung everywhere
+        if (age < 16.0) {
+            double up = Math.sin(Math.PI * Math.min(1.0, age / 14.0));
+            double top = 3.8 * up;
+            if (top > 0.2) {
+                MochiArt.tubeBegin();
+                for (int k = 0; k <= 8; k++) {
+                    double t = k / 8.0;
+                    double wob = 0.18 * Math.sin(t * 5.0 + age * 0.6) * t;
+                    MochiArt.tubePoint(x + px * wob - wx * 0.4 * t * t, y + top * t, z + pz * wob - wz * 0.4 * t * t, (0.75 - 0.45 * t) * (0.5 + 0.5 * up));
+                }
+                MochiArt.tube(sink, 12, MochiArt.MOCHI, 0.0, 0.0);
+                MochiArt.ball(sink, x - wx * 0.4, y + top, z - wz * 0.4, 0.45 * up + 0.1, 0, 1, 0, 1.1, 0.25, age, seed + 3, MochiArt.MOCHI);
+            }
+            for (int k = 0; k < 12; k++) {
+                double a = 2 * Math.PI * (k + FireMesh.rand(seed, k + 10)) / 12.0;
+                double t = age / 16.0;
+                double sp = 2.0 + 3.0 * FireMesh.rand(seed, k + 20);
+                double h = (1.5 + 2.5 * FireMesh.rand(seed, k + 30)) * t * 4.0 - 7.0 * t * t * 4.0 * 0.6;
+                if (h < -0.1 && t > 0.3) {
+                    continue;
+                }
+                MochiArt.ball(sink, x + Math.cos(a) * sp * t * 1.6, y + 0.3 + Math.max(0.0, h), z + Math.sin(a) * sp * t * 1.6,
+                    0.18 * (1.0 - 0.5 * t) + 0.05, Math.cos(a), 0.5, Math.sin(a), 1.5, 0.1, age, seed + 40 + k, MochiArt.MOCHI);
+            }
+            // the crown: splashes standing up round the column's foot, leaning out
+            double crown = Math.sin(Math.PI * Math.min(1.0, age / 10.0));
+            for (int k = 0; k < 9 && crown > 0.05; k++) {
+                double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k + 60)) / 9.0;
+                double r = 0.9 + 0.5 * crown;
+                double bx = x + Math.cos(a) * r;
+                double bz = z + Math.sin(a) * r;
+                double h = (0.7 + 0.6 * FireMesh.rand(seed, k + 70)) * crown;
+                MochiArt.cone(sink, bx, y + 0.05, bz, bx + Math.cos(a) * h * 0.6, y + h, bz + Math.sin(a) * h * 0.6, 0.16, MochiArt.MOCHI);
+            }
+        }
+        // ---- the pool round the user (frames 56 to 66): a thick mound round their legs at first, flattening into the puddle
+        double pool = ease(age / 5.0) * fade;
+        double mound = 1.0 - smooth((age - 12.0) / 10.0);
+        if (pool > 0.02) {
+            MochiArt.blob(sink, x, y + 0.06, z, wx, 0, wz, 0, 1, 0, MUDDLE_POOL * pool, (0.14 + 0.45 * mound) * pool, MUDDLE_POOL * 0.9 * pool, 0.85,
+                0.35, age, seed + 5, MochiArt.MOCHI, 1.0);
+            if (mound > 0.05) {
+                MochiArt.blob(sink, x, y + 0.3 * mound, z, wx, 0, wz, 0, 1, 0, 0.9, 0.6 * mound, 0.8, 0.7, 0.4, age, seed + 6, MochiArt.MOCHI, 1.0);
+            }
+        }
+        // ---- the puddle running out ahead (frames 70 to 82), spreading wider (to 128)
+        double reach = muddleReach(age);
+        int n = (int) Math.ceil(reach / 1.1);
+        for (int k = 1; k <= n; k++) {
+            double d = Math.min(reach, k * 1.1);
+            double front = Math.max(0.0, 1.0 - (reach - d) / 1.8);
+            double w = muddleWidth(d) * (0.75 + 0.25 * smooth((age - MUDDLE_RUN - d / MUDDLE_SPEED) / 12.0));
+            double wob = (FireMesh.rand(seed, k + 80) - 0.5) * w * 0.25;
+            double h = (0.1 + 0.16 * front) * fade;
+            MochiArt.blob(sink, x + wx * d + px * wob, y + 0.05, z + wz * d + pz * wob, wx, 0, wz, 0, 1, 0, 0.8, h, w * 0.5, 0.85, 0.3, age,
+                seed + 100 + k, MochiArt.MOCHI, 1.0);
+        }
+        // ---- the spiky splashed edges (frames 100 to 128): flat spikes of dough radiating out from the puddle's rim, like spilled paint
+        double spread = smooth((age - 4.0) / 10.0) * fade;
+        int spikes = 36;
+        for (int k = 0; k < spikes && spread > 0.02; k++) {
+            double t = FireMesh.rand(seed, k + 200);
+            double along = -MUDDLE_POOL * 0.6 + t * (MUDDLE_POOL * 0.6 + Math.max(0.5, reach));
+            if (along > MUDDLE_POOL * 0.6 && along > reach) {
+                continue;
+            }
+            double side = k % 2 == 0 ? 1.0 : -1.0;
+            double half = along < MUDDLE_POOL * 0.6 ? MUDDLE_POOL * 0.85 : muddleWidth(along) * 0.45;
+            double out = (0.5 + 1.3 * FireMesh.rand(seed, k + 210)) * spread;
+            double ox = x + wx * along + px * side * (half + out * 0.5);
+            double oz = z + wz * along + pz * side * (half + out * 0.5);
+            double ang = (FireMesh.rand(seed, k + 220) - 0.5) * 0.9;
+            double dx = px * side * Math.cos(ang) + wx * Math.sin(ang);
+            double dz = pz * side * Math.cos(ang) + wz * Math.sin(ang);
+            MochiArt.blob(sink, ox, y + 0.04, oz, dx, 0, dz, 0, 1, 0, out * 0.75 + 0.1, 0.035, 0.09 + 0.06 * FireMesh.rand(seed, k + 230), 0.9, 0.1,
+                age, seed + 240 + k, MochiArt.MOCHI, 1.0);
+        }
+        // ---- splats thrown round it
+        for (int k = 0; k < 8 && spread > 0.02; k++) {
+            double a = 2 * Math.PI * FireMesh.rand(seed, k + 300);
+            double d = 2.4 + 2.4 * FireMesh.rand(seed, k + 310);
+            double r = (0.18 + 0.22 * FireMesh.rand(seed, k + 320)) * spread;
+            MochiArt.blob(sink, x + Math.cos(a) * d + wx * reach * 0.4, y + 0.04, z + Math.sin(a) * d + wz * reach * 0.4, Math.cos(a), 0, Math.sin(a), 0, 1,
+                0, r * 1.5, 0.04, r, 0.8, 0.3, age, seed + 330 + k, MochiArt.MOCHI, 1.0);
+        }
+        // ---- faint swirls of wind over the pool (frames 60 to 96)
+        if (age > 2.0 && age < 50.0) {
+            double sw = Math.sin(Math.PI * (age - 2.0) / 48.0);
+            for (int k = 0; k < 3; k++) {
+                double r = 2.4 + 0.9 * k + 0.03 * age;
+                FireMesh.ring(sink, x, y + 0.25 + 0.15 * k, z, 0, 1, 0, r, 0.06, 0.04, 0xFFFFFF, 0.22 * sw);
             }
         }
     }

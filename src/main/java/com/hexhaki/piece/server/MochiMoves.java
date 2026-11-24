@@ -112,10 +112,6 @@ public final class MochiMoves {
     }
 
     /** Mochi Muddle: the trail's length and width, how fast it spreads (blocks a tick), how long it lies, the hurt at its start and end. */
-    public static final double MUDDLE_LENGTH = 13.0;
-    public static final double MUDDLE_WIDTH = 2.6;
-    public static final double MUDDLE_SPREAD = 2.2;
-    public static final int MUDDLE_TICKS = 90;
     static final float MUDDLE_HURT_NEAR = 7.0F;
     static final float MUDDLE_HURT_FAR = 4.0F;
     static final int MUDDLE_STUCK = 40;
@@ -403,21 +399,30 @@ public final class MochiMoves {
     /**
      * Mochi Muddle (the reference: "User forms a trail of dough on the ground, stunning any player that walks inside it. Damage decreases
      * the farther the player is from the beginning of the trail"): a trail of dough poured out along the ground ahead, spreading
-     * {@link #MUDDLE_SPREAD} blocks a tick; whoever it reaches or who walks in is glued fast and hurt, less the further along it.
+     * blocks a tick; whoever it reaches or who walks in is glued fast and hurt, less the further along it. 3.6.3, on the reference's beats
+     * (MochiDraw.MUDDLE_*): the charge with the arms out, the dive into a splash at the user's feet, a pool round them, the puddle
+     * running out ahead from MUDDLE_RUN.
      */
     static void muddle(ServerPlayer player, State s, long now) {
         if (!ItoMoves.ready(player, MochiKit.MUDDLE)) {
             return;
         }
-        ItoMoves.cool(player, MochiKit.MUDDLE, 200);
-        s.busyUntil = now + 8;
-        Vec3 f = ItoMoves.flat(player);
-        Vec3 from = grounded(player, player.m_20182_().m_82549_(f.m_82490_(1.2)));
+        ItoMoves.cool(player, MochiKit.MUDDLE, 240);
+        // 3.6.3 (the reference's beats: MochiDraw.MUDDLE_*): the charge with the arms out, the dive, the splash at MUDDLE_START
+        s.busyUntil = now + MochiDraw.MUDDLE_START + 14;
         int seed = ++seeds;
-        animate(player, "mochi_nagare");
-        fx(player, MUDDLE, seed, from, f, 0, 0, MUDDLE_LENGTH, MUDDLE_TICKS);
-        sound(player, from, MochiSounds.SQUISH, 1.1F, 0.8F);
-        LIVE.add(new Muddle((ServerLevel) player.m_9236_(), player, from, f, now));
+        animate(player, "mochi_muddle");
+        sound(player, ItoMoves.chest(player), MochiSounds.INFLATE, 0.8F, 0.8F);
+        later(player, MochiDraw.MUDDLE_START - 4, () -> {
+            Vec3 f = ItoMoves.flat(player);
+            Vec3 from = grounded(player, player.m_20182_());
+            // drawn from 4 ticks before the splash (the dough engulfing the user)
+            fx(player, MUDDLE, seed, from, f, 0, 0, MochiDraw.MUDDLE_LENGTH, (int) MochiDraw.MUDDLE_LIE + 4);
+            later(player, 4, () -> {
+                sound(player, from, MochiSounds.SQUISH, 1.3F, 0.7F);
+                LIVE.add(new Muddle((ServerLevel) player.m_9236_(), player, from, f, now(player)));
+            });
+        });
     }
 
     /** The trail lying on the ground: who is on it is glued and hurt (each once). */
@@ -445,25 +450,29 @@ public final class MochiMoves {
         @Override
         public boolean tick(long now) {
             long age = now - this.born;
-            if (!this.owner.m_6084_() || age >= MUDDLE_TICKS) {
+            if (!this.owner.m_6084_() || age >= MochiDraw.MUDDLE_LIE - 10) {
                 return true;
             }
             if (age % 2 != 0) {
                 return false;
             }
-            double reach = Math.min(MUDDLE_LENGTH, MUDDLE_SPREAD * (age + 1));
+            // 3.6.3: the pool round the splash at once, the puddle running out ahead from MUDDLE_RUN, as the art draws it
+            double reach = MochiDraw.muddleReach(age);
+            double pool = age >= 3 ? MochiDraw.MUDDLE_POOL : 0.0;
             Vec3 side = new Vec3(-this.way.f_82481_, 0, this.way.f_82479_);
             Vec3 mid = this.from.m_82549_(this.way.m_82490_(reach * 0.5));
-            for (LivingEntity body : ItoMoves.foes(this.owner, mid, reach * 0.5 + MUDDLE_WIDTH)) {
+            for (LivingEntity body : ItoMoves.foes(this.owner, mid, reach * 0.5 + MochiDraw.MUDDLE_FAR + pool)) {
                 Vec3 d = body.m_20182_().m_82546_(this.from);
                 double along = d.m_82526_(this.way);
-                if (along < -0.5 || along > reach || Math.abs(d.m_82526_(side)) > MUDDLE_WIDTH * 0.5 + body.m_20205_() * 0.5
-                    || Math.abs(body.m_20186_() - this.from.f_82480_) > 1.2) {
+                double across = Math.abs(d.m_82526_(side));
+                boolean inPool = d.f_82479_ * d.f_82479_ + d.f_82481_ * d.f_82481_ < pool * pool;
+                boolean inTrail = along >= 0.0 && along <= reach && across <= MochiDraw.muddleWidth(along) * 0.5 + body.m_20205_() * 0.5;
+                if (!inPool && !inTrail || Math.abs(body.m_20186_() - this.from.f_82480_) > 1.2) {
                     continue;
                 }
                 stick(this.owner, body, MUDDLE_STUCK);
                 if (this.struck.add(body.m_19879_())) {
-                    double t = Math.max(0.0, Math.min(1.0, along / MUDDLE_LENGTH));
+                    double t = Math.max(0.0, Math.min(1.0, along / MochiDraw.MUDDLE_LENGTH));
                     hit(this.owner, body, (float) (MUDDLE_HURT_NEAR + (MUDDLE_HURT_FAR - MUDDLE_HURT_NEAR) * t), new Vec3(0, 0.05, 0));
                 }
             }

@@ -311,3 +311,10 @@ left as they were.
   rings turned to the eye (orange fire rings with yellow-white inner edges, dark scorched rings between, a white-hot outer edge: the
   reference's tunnel of rings, the ground hiding the lower half), Magma's black-brown smoke puffs (FireMesh.SMOKE) off its rim, small
   white droplets, embers, then a pale grey dome of smoke lingering while the fire dies; the burn 6 s (UoMoves.explode fire 6).
+- Mochi Muddle after its GIF (MochiDraw.MUDDLE_*, ticks from the press): the charge with both arms out (clip mochi_muddle, to 22), the
+  dive (24 to 27, the body leaning in), a block of dough engulfing the user (MUDDLE_START - 4), the splash at their feet (MUDDLE_START
+  28: a column of dough thrown up 3.8 and falling back, a crown of splashes, droplets everywhere), a thick pool round them (MUDDLE_POOL
+  2.3, a mound over their legs that flattens), from MUDDLE_RUN 14 the puddle running out ahead at 0.6 a tick to 10 long (3 wide near,
+  4.6 far), spiky splashed edges (36 flat spikes), splats round it, faint swirl rings; it lies MUDDLE_LIE 100 ticks then sinks. Server:
+  the splash at the user's own feet (no longer 1.2 ahead), the pool and the trail glue and hurt as drawn (muddleReach, muddleWidth).
+  First-person hand: HandMoves.MUDDLE.

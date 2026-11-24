@@ -65,15 +65,16 @@ public final class MochiShots {
                 com.hexhaki.piece.mochi.MochiDraw.donut(sink, 2.8 - ex, 1.6 - ey, -ez, -0.2, 0, -0.98, 0.7, 0.0, 2, 0.0, 0, 0, 0, coat, age, 3, true);
             }
             case "mmuddle" -> {
-                // 3.6.3 |mmuddle:age: Mochi Muddle's trail poured along +z from 1.2 ahead
-                user(sink, "mochi_nagare", age, ex, ey, ez);
-                double reach = Math.min(com.hexhaki.piece.server.MochiMoves.MUDDLE_LENGTH, com.hexhaki.piece.server.MochiMoves.MUDDLE_SPREAD * (age + 1));
-                double fade = Math.min(1.0, (com.hexhaki.piece.server.MochiMoves.MUDDLE_TICKS - age) / 12.0);
-                HieShots.body(sink, 0.4 - ex, -ey, 7.0 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.muddle(sink, -ex, -ey, 1.2 - ez, 0, 1, com.hexhaki.piece.server.MochiMoves.MUDDLE_LENGTH, reach,
-                    com.hexhaki.piece.server.MochiMoves.MUDDLE_WIDTH, fade, age, 3);
-                if (age > 4) {
-                    com.hexhaki.piece.mochi.MochiDraw.stuck(sink, 0.4 - ex, -ey, 7.0 - ez, 1.8, Math.min(1.0, (age - 4) / 3.0), age, 4);
+                // 3.6.3 |mmuddle:age: Mochi Muddle from the press (the reference's beats: MochiDraw.MUDDLE_*), the user at the origin
+                // facing +z, a body 6 ahead stuck once the puddle reaches it
+                user(sink, "mochi_muddle", Math.min(age, 60), ex, ey, ez);
+                double a = age - com.hexhaki.piece.mochi.MochiDraw.MUDDLE_START;
+                HieShots.body(sink, 0.4 - ex, -ey, 6.0 - ez);
+                com.hexhaki.piece.mochi.MochiDraw.muddle(sink, -ex, -ey, -ez, 0, 1, a, 3);
+                double reached = com.hexhaki.piece.mochi.MochiDraw.muddleReach(a);
+                if (reached >= 6.0) {
+                    double since = a - (com.hexhaki.piece.mochi.MochiDraw.MUDDLE_RUN + 6.0 / com.hexhaki.piece.mochi.MochiDraw.MUDDLE_SPEED);
+                    com.hexhaki.piece.mochi.MochiDraw.stuck(sink, 0.4 - ex, -ey, 6.0 - ez, 1.8, Math.min(1.0, since / 3.0), since, 4);
                 }
             }
             case "mlotus" -> {

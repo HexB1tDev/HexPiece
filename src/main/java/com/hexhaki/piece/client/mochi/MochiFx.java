@@ -488,7 +488,7 @@ public final class MochiFx {
         WHEELS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().ticks + 2 || level.m_6815_(e.getKey()) == null);
         CLUBS.removeIf(c -> clock - c.born > MochiDraw.CLUB_LIFE + 1);
         STUCKS.values().removeIf(s -> clock - s.born > s.ticks + 1);
-        MUDDLES.removeIf(u -> clock - u.born > u.ticks + 1);
+        MUDDLES.removeIf(u -> clock - u.born > MochiDraw.MUDDLE_LIE + 1);
         LOTUSES.removeIf(l -> clock - l.born > MochiDraw.LOTUS_LIFE + 1);
         SLAMS.removeIf(l -> clock - l.born > MochiDraw.LOTUS_SLAM_LIFE + 1);
         RISES.removeIf(r -> clock - r.born > MochiDraw.LOTUS_GROUND - MochiDraw.LOTUS_LAUNCH + 2);
@@ -689,11 +689,8 @@ public final class MochiFx {
             if (far(u.at, cam) && far(u.at.m_82549_(u.way.m_82490_(u.length)), cam)) {
                 continue;
             }
-            double age = now - u.born;
-            double reach = Math.min(u.length, MochiMoves.MUDDLE_SPREAD * (age + 1.0));
-            double fade = Math.min(1.0, (u.ticks - age) / 12.0);
-            MochiDraw.muddle(SINK, u.at.f_82479_ - cx, u.at.f_82480_ - cy, u.at.f_82481_ - cz, u.way.f_82479_, u.way.f_82481_, u.length, reach,
-                MochiMoves.MUDDLE_WIDTH, fade, age, u.seed);
+            // 3.6.3: drawn from just before its splash (the dough engulfing the user), on the reference's beats
+            MochiDraw.muddle(SINK, u.at.f_82479_ - cx, u.at.f_82480_ - cy, u.at.f_82481_ - cz, u.way.f_82479_, u.way.f_82481_, now - u.born, u.seed);
         }
         for (Map.Entry<Integer, Stuck> e : STUCKS.entrySet()) {
             Stuck s = e.getValue();
