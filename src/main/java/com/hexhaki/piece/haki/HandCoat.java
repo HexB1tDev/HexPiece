@@ -17,8 +17,40 @@ package com.hexhaki.piece.haki;
 public final class HandCoat {
     /** The arm boxes' corners (u, v) on a 64-wide skin: the right arm, the left, the right sleeve, the left sleeve. */
     static final int[][] ARMS = {{40, 16}, {32, 48}, {40, 32}, {48, 48}};
-    /** How black each of the arm's 12 rows of sides is, from the shoulder down. */
+    /** How black each of the arm's 12 rows of sides was, from the shoulder down (until 3.6.0: the hand and the wrist only). */
     static final float[] ROWS = {0, 0, 0, 0, 0, 0, 0.15F, 0.45F, 0.8F, 1, 1, 1};
+    /**
+     * 3.6.0 (the owner: "Haki coating on the arm should be covering even higher up in the arm unevenly", with a picture of both forearms
+     * black past the elbow, the black's edge ragged): the coat reaches past the elbow (row 6), its edge a different row in every column
+     * round the arm (between {@link #EDGE_HIGH} and {@link #EDGE_LOW}), a pixel of fade above it and now and then a tongue of black
+     * reaching one row higher.
+     */
+    static final int EDGE_HIGH = 2;
+    static final int EDGE_LOW = 5;
+
+    /** 3.6.0: how black row {@code row} of column {@code column} round the arm is (the ragged edge: the same on every skin). */
+    static float coat(int column, int row) {
+        int h = column * 0x9E3779B1 ^ 0x5BD1E995;
+        h ^= h >>> 15;
+        h *= 0x2C1B3C6D;
+        h ^= h >>> 12;
+        int n = column + 1;
+        int g = n * 0x27D4EB2D;
+        g ^= g >>> 15;
+        // the edge wanders round the arm: a column's edge near its neighbour's, now and then a step
+        double wave = 0.5 + 0.35 * Math.sin(column * 1.9 + 0.7) + 0.15 * ((h & 255) / 255.0 - 0.5) * 2.0;
+        int edge = EDGE_HIGH + (int) Math.round(Math.max(0.0, Math.min(1.0, wave)) * (EDGE_LOW - EDGE_HIGH));
+        if (row > edge) {
+            return 1.0F;
+        }
+        if (row == edge) {
+            return 0.7F;
+        }
+        if (row == edge - 1 && (g & 3) == 0) {
+            return 0.45F; // a tongue of black above the edge
+        }
+        return 0.0F;
+    }
     static final int DEPTH = 4;
     static final int HEIGHT = 12;
 
@@ -40,7 +72,7 @@ public final class HandCoat {
             int u = ARMS[i][0];
             int v = ARMS[i][1];
             if (px >= u && px < u + 2 * DEPTH + 2 * w && py >= v + DEPTH && py < v + DEPTH + HEIGHT) {
-                best = Math.max(best, ROWS[py - v - DEPTH]);
+                best = Math.max(best, coat(px - u, py - v - DEPTH));
             }
             if (px >= u + DEPTH + w && px < u + DEPTH + 2 * w && py >= v && py < v + DEPTH) {
                 best = 1.0F;
@@ -73,8 +105,8 @@ public final class HandCoat {
             int u = ARMS[i][0];
             int v = ARMS[i][1];
             if (px >= u && px < u + 2 * DEPTH + 2 * w && py >= v + DEPTH && py < v + DEPTH + HEIGHT) {
-                // the sides: the lowest row (11) first, up to the wrist (row 6)
-                row = Math.max(row, (HEIGHT - 1 - (py - v - DEPTH)) / 5.0F);
+                // the sides: the lowest row (11) first, up past the elbow (3.6.0: to its ragged edge, row 2 at the highest)
+                row = Math.max(row, (HEIGHT - 1 - (py - v - DEPTH)) / 9.0F);
             }
         }
         int h = (x * 73856093) ^ (y * 19349663);

@@ -34,7 +34,19 @@ public final class FistAura {
     static final float PX = 1.0F / 16.0F;
     /** The aura's body (pixels): the sleeve layer's size round the arm box, from {@link #TOP} up the forearm to the fist's end. */
     static final float GROW = 0.25F;
+    /**
+     * Where the aura's body starts up the arm. 3.6.0 (the owner, circling where the glow stopped: "make sure the haki glow fades
+     * properly, its ending too shortly all of a sudden"): the coat runs past the elbow (HandCoat), and on a straight arm so does the
+     * aura ({@link #TOP_STRAIGHT}), fading out slowly up it; an arm bent at the elbow keeps it below the bend ({@link #TOP}: its outline
+     * is the bent box's, which must not fold across the bend), easing between the two as the elbow bends ({@link #top}).
+     */
     static final float TOP = 4.6F;
+    static final float TOP_STRAIGHT = 1.2F;
+
+    /** 3.6.0: where the aura starts on an arm bent {@code amount} radians at the elbow. */
+    static float top(float amount) {
+        return TOP_STRAIGHT + (TOP - TOP_STRAIGHT) * smooth(0.0, 0.3, Math.abs(amount));
+    }
     static final float END = 10.0F;
     /** The rings across the strip (pixels out from the outline before the flame and the reach), their alphas, their colours. */
     static final float[] RINGS = {-0.75F, -0.22F, 0.0F, 0.42F, 1.1F, 2.0F, 3.1F, 4.3F};
@@ -100,6 +112,16 @@ public final class FistAura {
 
     /** The rim's, the band's and the haze's colours (opaque; alpha is laid on per ring) from the Ryou colour. */
     static int[] colours(int rgb) {
+        RyouColour chosen = RyouColour.byBand(rgb);
+        if (chosen != null) {
+            // 3.6.0: a chosen Ryou colour: its band, its own haze (Red & Orange's orange, Purple & Black's black smoke), the rim the band
+            // most of the way to white
+            float cr = ((chosen.band >> 16) & 255) / 255.0F;
+            float cg = ((chosen.band >> 8) & 255) / 255.0F;
+            float cb = (chosen.band & 255) / 255.0F;
+            int hot = pack(cr + (1 - cr) * 0.72F, cg + (1 - cg) * 0.72F, cb + (1 - cb) * 0.72F);
+            return new int[] {hot, chosen.band, chosen.haze};
+        }
         float r = ((rgb >> 16) & 255) / 255.0F;
         float g = ((rgb >> 8) & 255) / 255.0F;
         float b = (rgb & 255) / 255.0F;
@@ -132,6 +154,8 @@ public final class FistAura {
         final double[] centre = new double[3];
         /** Up the arm (from the fist toward the elbow), bent. */
         final double[] back;
+        /** 3.6.0: where the aura starts up this arm (pixels, {@link #top}). */
+        final float top;
 
         Frame(float axis, float amount, boolean slim, boolean right, double[] view, boolean mirrored) {
             this.axis = axis;
@@ -141,6 +165,7 @@ public final class FistAura {
             this.minX = middle - half;
             this.maxX = middle + half;
             this.mirrored = mirrored;
+            this.top = top(amount);
             this.view = view[3] > 0.5 ? new double[] {view[0] / PX, view[1] / PX, view[2] / PX, 1} : unit(new double[] {view[0], view[1],
                 view[2]}, 0);
             double x0 = this.minX - GROW;
@@ -149,7 +174,7 @@ public final class FistAura {
             double z1 = 2 + GROW;
             double[][] square = {{x0, z0}, {x1, z0}, {x1, z1}, {x0, z1}};
             for (int i = 0; i < 8; i++) {
-                double y = i < 4 ? TOP : END + GROW;
+                double y = i < 4 ? this.top : END + GROW;
                 this.unbent[i] = new double[] {square[i & 3][0], y, square[i & 3][1]};
                 this.corner[i] = this.bend(this.unbent[i]);
                 for (int k = 0; k < 3; k++) {
@@ -157,7 +182,7 @@ public final class FistAura {
                 }
             }
             double mid = (this.minX + this.maxX) / 2.0;
-            this.back = norm(sub(this.bend(new double[] {mid, TOP, 0}), this.bend(new double[] {mid, END, 0})));
+            this.back = norm(sub(this.bend(new double[] {mid, this.top, 0}), this.bend(new double[] {mid, END, 0})));
         }
 
         /** A point of the arm (pixels, unbent) where the bent arm has it (pixels). */
@@ -331,8 +356,11 @@ public final class FistAura {
     // ----------------------------------------------------------------------------------------------------------------- the strip
 
     /** How strongly the aura shows at arm height {@code y} (pixels): nothing up the forearm, full from the wrist down. */
-    static float along(double y) {
-        return smooth(TOP, TOP + 2.6, y);
+    static float along(double y, float top) {
+        // 3.6.0: a long, soft fade up the arm (was 2.6 pixels: it stopped short, all of a sudden)
+        double fade = Math.max(2.6, (END - top) * 0.62);
+        float k = smooth(top, top + fade, y);
+        return k * k * (3.0F - 2.0F * k) * 0.35F + k * 0.65F;
     }
 
     /** How wide it is at arm height {@code y}: thinner along the forearm, thickest round the fist. */
@@ -369,7 +397,7 @@ public final class FistAura {
         for (int i = 0; i < n; i++) {
             Station s = loop.get(i);
             double grow = Math.max(1.0, f.distance(s.p()) / FAR);
-            float fade = along(s.y()) * strength;
+            float fade = along(s.y(), f.top) * strength;
             float wide = width(s.y());
             float fl = flames[i];
             double tongue = reach[i];
@@ -477,7 +505,7 @@ public final class FistAura {
             }
             double grow = Math.max(1.0, f.distance(h) / FAR);
             side = scale(side, 0.1 * grow / sl);
-            float alpha = (float) (Math.pow(Math.sin(Math.PI * t), 0.7) * strength * along(y));
+            float alpha = (float) (Math.pow(Math.sin(Math.PI * t), 0.7) * strength * along(y, f.top));
             int a = Math.round(Math.max(0.0F, Math.min(1.0F, alpha)) * 255.0F) << 24;
             double[][] at = {sub(tl, scale(side, 0.3)), add(tl, scale(side, 0.3)), add(h, side), sub(h, side)};
             float[][] placed = new float[4][];

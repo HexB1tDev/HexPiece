@@ -3743,6 +3743,35 @@ Where they stand: see section 8zzw (3.5.9 as built) for what is done; anything n
 
 3.5.9 is green (Build #216, Release #150).
 
+## 8zzx. 3.6.0 in progress (8zzv 5, 7, 8, 12 and the owner's glow note), NOT pushed yet
+
+The owner after the arm render (circling the forearm's sides above where the glow stopped): "make sure the haki glow fades properly,its
+ending too shortly all of a sudden."
+
+Done on the branch (local commits; build green):
+- haki/HakiColour (7 sets: body, rim, glow; named by colours; no rim one of RyouPalette's) chosen on the start menu's page 4
+  (ui/CreationView COLOUR: cards four over three, a crooked forked bolt in each drawn as the game's: glow, ink, rim, body); Bolt.body and
+  Bolt.tinted give the set's body (BoltMesh.colouredBodyShade for a non-black body), BoltMesh's EDGE glow HakiColour.glowFor.
+  RyouServer.choose stores HakiColour and sets RyouColor (the lightning's colour) to the set's rim.
+- haki/RyouColour (7: band and haze; "Red & Orange", "Purple & Black", "Green", "Pink", "Red & Yellow", "Blue", "Gold") on page 5 (RYOU:
+  a coated fist in its glow per card); RyouServer.chooseRyou stores "RyouAura"; S2CRyou carries color (the Haki colour: lightning,
+  slashes) and aura (the Ryou colour: RyouColors.aura, used by RyouHands' glow and RyouFx); FistAura.colours takes the set's band and
+  haze. C2SCreate carries both (codes); a player who set sail before gets pages 4 and 5 alone at login (S2COpenCreation colourOnly,
+  ProfileServer.coloured). PROTOCOL 20.
+- The lightning more crooked and one model everywhere: ConquerorStorm STEP 3 (was 6), WANDER 0.85 (was 0.42; gentle on a downward
+  strand's glide to where it lands), inner kink 0.3 of a run off its middle, branches 3 to 5 runs; ConquerorStorm.jagged/strike (the
+  release's model at any size: black body and rim on crooked runs) used by HakiLightning.draw (the original's painted effects: one strike
+  per original bolt, from its body or core beam; its glow and heart add nothing), ConquerorSparks.arc, DrawCrackle.stroke and
+  LanceLightning. DragonTests' biggest blast budget 2200 quads (was 1600). LightningTests.crackle checks the release's model.
+  Renders: tools/preview/HakiColourShots (the release and a blast in all seven sets), SparkPreview (sparks, blasts, release),
+  BoltPreview wifi, UiPreview creation-3 and creation-4.
+- The coat (HandCoat.coat): past the elbow, its edge a ragged row 2 to 5 per column, a fade row and tongues; the arm's glow (FistAura)
+  starts at FistAura.top(bend) (1.2 px on a straight arm, 4.6 below the elbow when bent) and fades over 62 % of the arm below it
+  (along): no longer stopping short. tools/ryou_preview.py renders it.
+
+Still to do for 3.6.0: the lightning sounds (8zzv 6: bass-heavier CC0 web recordings, quieter, one sound on the full release), then
+release notes, version 3.6.0, push, CI. Then 8zzv 9 (op mode), 11 (the Mochi list) and 10 (Buzz Cut Mochi).
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);

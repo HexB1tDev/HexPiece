@@ -22,7 +22,7 @@ public final class CreationScreen extends Screen {
 
     void send() {
         PieceNetwork.toServer(new C2SCreate(this.state.gender.ordinal(), this.state.faction.ordinal(), this.state.style.ordinal(),
-            this.state.colour == null ? 0 : this.state.colour.code()));
+            this.state.colour == null ? 0 : this.state.colour.code(), this.state.ryou == null ? 0 : this.state.ryou.code()));
     }
 
     private CreationView.Layout layout() {

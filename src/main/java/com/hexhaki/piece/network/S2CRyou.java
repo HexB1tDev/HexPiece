@@ -11,14 +11,16 @@ import net.minecraftforge.network.NetworkEvent;
  * 2.1.3: a player's Ryou glow colour (ARGB; 0 none yet) for every client that sees them: sent when it is given, at login, respawn and
  * a change of dimension, and to everyone who starts seeing them. Every Ryou effect of that player is drawn in it.
  */
-public record S2CRyou(int entity, int color) {
+public record S2CRyou(int entity, int color, int aura) {
+    /** 3.6.0: {@code color} is the Haki colour's rim (the lightning, the slashes), {@code aura} the Ryou colour's band (0: as color). */
     public static void encode(S2CRyou message, FriendlyByteBuf buffer) {
         buffer.writeInt(message.entity);
         buffer.writeInt(message.color);
+        buffer.writeInt(message.aura);
     }
 
     public static S2CRyou decode(FriendlyByteBuf buffer) {
-        return new S2CRyou(buffer.readInt(), buffer.readInt());
+        return new S2CRyou(buffer.readInt(), buffer.readInt(), buffer.readInt());
     }
 
     public static void handle(S2CRyou message, Supplier<NetworkEvent.Context> supplier) {

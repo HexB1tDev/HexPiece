@@ -234,7 +234,7 @@ public final class RyouHands {
             return;
         }
         int id = player.m_19879_();
-        int color = RyouColors.orNeutral(id);
+        int color = RyouColors.aura(id); // 3.6.0: the Ryou colour
         float strength = Math.min(1.0F, pulse(age, id) + RyouFx.flare(id));
         float punch = player.m_21324_(net.minecraft.client.Minecraft.m_91087_().m_91296_());
         pose.m_85836_();

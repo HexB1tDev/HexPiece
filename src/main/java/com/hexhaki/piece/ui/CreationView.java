@@ -13,9 +13,12 @@ import com.hexhaki.piece.style.StyleMove;
  * you fight (the four styles, their moves). Back and Next under it; the last page's Next is "Set Sail".
  */
 public final class CreationView {
-    public static final String[] STEPS = {"Who are you?", "Which flag do you sail under?", "How do you fight?", "What colour is your Haki?"};
+    public static final String[] STEPS = {"Who are you?", "Which flag do you sail under?", "How do you fight?", "What colour is your Haki?",
+        "What colour is your Ryou?"};
     /** 3.6.0: the last page, the Haki colour (the owner: "in the starter menu ... we'll add an option to choose haki colour"). */
     public static final int COLOUR = 3;
+    /** 3.6.0: the Ryou colour's page (the owner: "also add a menu to pick the Ryou color"), the last. */
+    public static final int RYOU = 4;
 
     /** What is picked so far and which page is open. */
     public static final class State {
@@ -25,6 +28,8 @@ public final class CreationView {
         public FightingStyle style = FightingStyle.NONE;
         /** 3.6.0: the Haki colour (null until picked). */
         public com.hexhaki.piece.haki.HakiColour colour;
+        /** 3.6.0: the Ryou colour (null until picked). */
+        public com.hexhaki.piece.haki.RyouColour ryou;
         /** 3.6.0: a player who set sail before the choice existed: the colour page alone. */
         public boolean colourOnly;
 
@@ -33,7 +38,8 @@ public final class CreationView {
                 case 0 -> this.gender.choice();
                 case 1 -> this.faction.choice();
                 case 2 -> this.style.choice();
-                default -> this.colour != null;
+                case COLOUR -> this.colour != null;
+                default -> this.ryou != null;
             };
         }
 
@@ -128,7 +134,7 @@ public final class CreationView {
         if (inside(layout.next(), x, y)) {
             return "next";
         }
-        int[][] cards = state.step == COLOUR ? layout.colourCards() : layout.cards(state.step == 2 ? FightingStyle.choices().length : 2);
+        int[][] cards = state.step >= COLOUR ? layout.colourCards() : layout.cards(state.step == 2 ? FightingStyle.choices().length : 2);
         for (int i = 0; i < cards.length; i++) {
             if (inside(cards[i], x, y)) {
                 return "pick:" + i;
@@ -143,12 +149,12 @@ public final class CreationView {
             return false;
         }
         if (what.equals("back")) {
-            state.step = state.colourOnly ? COLOUR : Math.max(0, state.step - 1);
+            state.step = Math.max(state.colourOnly ? COLOUR : 0, state.step - 1);
         } else if (what.equals("next")) {
             if (!state.pageDone()) {
                 return false;
             }
-            if (state.step == COLOUR) {
+            if (state.step == RYOU) {
                 return true;
             }
             state.step++;
@@ -158,8 +164,10 @@ public final class CreationView {
                 case 0 -> state.gender = index == 0 ? Gender.MALE : Gender.FEMALE;
                 case 1 -> state.faction = index == 0 ? Faction.PIRATE : Faction.MARINE;
                 case 2 -> state.style = FightingStyle.choices()[Math.max(0, Math.min(FightingStyle.choices().length - 1, index))];
-                default -> state.colour = com.hexhaki.piece.haki.HakiColour.values()[Math.max(0,
+                case COLOUR -> state.colour = com.hexhaki.piece.haki.HakiColour.values()[Math.max(0,
                     Math.min(com.hexhaki.piece.haki.HakiColour.values().length - 1, index))];
+                default -> state.ryou = com.hexhaki.piece.haki.RyouColour.values()[Math.max(0,
+                    Math.min(com.hexhaki.piece.haki.RyouColour.values().length - 1, index))];
             }
         }
         return false;
@@ -194,18 +202,20 @@ public final class CreationView {
             case 0 -> genders(c, l, state, hover);
             case 1 -> flags(c, l, state, hover, time);
             case 2 -> styles(c, l, state, hover);
-            default -> colours(c, l, state, hover, time);
+            case COLOUR -> colours(c, l, state, hover, time);
+            default -> ryous(c, l, state, hover, time);
         }
         int[] back = l.back();
         int[] next = l.next();
-        PirateUi.ropeButton(c, back[0], back[1], back[2], back[3], "Back", "back".equals(hover), state.step > 0 && !state.colourOnly);
-        PirateUi.ropeButton(c, next[0], next[1], next[2], next[3], state.step == COLOUR ? (state.colourOnly ? "Choose" : "Set Sail!") : "Next",
+        PirateUi.ropeButton(c, back[0], back[1], back[2], back[3], "Back", "back".equals(hover), state.step > (state.colourOnly ? COLOUR : 0));
+        PirateUi.ropeButton(c, next[0], next[1], next[2], next[3], state.step == RYOU ? (state.colourOnly ? "Choose" : "Set Sail!") : "Next",
             "next".equals(hover), state.pageDone());
-        String colour = state.colour == null ? "?" : state.colour.display;
-        String summary = state.colourOnly ? "Haki: " + colour : (state.gender.choice() ? state.gender.display() : "?") + "  /  "
+        String colour = "Haki " + (state.colour == null ? "?" : state.colour.display) + "  /  Ryou " + (state.ryou == null ? "?"
+            : state.ryou.display);
+        String summary = state.colourOnly ? colour : (state.gender.choice() ? state.gender.display() : "?") + "  /  "
             + (state.faction.choice() ? state.faction.display() : "?") + "  /  " + (state.style.choice() ? state.style.display() : "?")
             + "  /  " + colour;
-        c.centered(summary, (l.x0 + l.x1) / 2, l.y1 - 20, PirateUi.INK_SOFT, false);
+        c.centered(c.fit(summary, next[0] - back[2] - 10), (back[2] + next[0]) / 2, l.y1 - 20, PirateUi.INK_SOFT, false);
     }
 
     static void genders(UiCanvas c, Layout l, State state, String hover) {
@@ -387,6 +397,66 @@ public final class CreationView {
             stroke(c, line[0], line[1], 4.6F * thin, 0xFF07020A);
             stroke(c, line[0], line[1], 3.4F * thin, 0xFF000000 | colour.rim);
             stroke(c, line[0], line[1], 1.8F * thin, body);
+        }
+    }
+
+    /**
+     * 3.6.0: the seven Ryou colours (haki/RyouColour), each a card with its name and a coated fist in it as the game draws one: glossy
+     * black, a hot rim at its edge, the band in the colour, the haze beyond (Purple & Black's black smoke, Red & Orange's orange).
+     */
+    static void ryous(UiCanvas c, Layout l, State state, String hover, double time) {
+        com.hexhaki.piece.haki.RyouColour[] options = com.hexhaki.piece.haki.RyouColour.values();
+        int[][] cards = l.colourCards();
+        for (int i = 0; i < options.length; i++) {
+            int[] b = cards[i];
+            com.hexhaki.piece.haki.RyouColour colour = options[i];
+            PirateUi.card(c, b[0], b[1], b[2], b[3], state.ryou == colour, ("pick:" + i).equals(hover), 0xFF000000 | colour.band);
+            int cx = (b[0] + b[2]) / 2;
+            c.centered(c.fit(colour.display, b[2] - b[0] - 6), cx, b[1] + 6, PirateUi.INK, false);
+            int top = b[1] + 18;
+            int bottom = b[3] - 6;
+            c.gradient(b[0] + 5, top, b[2] - 5, bottom, 0xFF141821, 0xFF262B36);
+            fist(c, cx, (top + bottom) / 2, Math.min(b[2] - b[0], bottom - top) * 0.22F, colour, time + i);
+        }
+    }
+
+    /** A coated fist and forearm (a black block, rounded) in its glow: haze, band, hot rim, black, a glint on the knuckles. */
+    static void fist(UiCanvas c, int cx, int cy, float size, com.hexhaki.piece.haki.RyouColour colour, double time) {
+        int band = 0xFF000000 | colour.band;
+        int haze = colour.haze;
+        int hot = BoltMeshColours.hot(colour.band);
+        float breathe = (float) (1.0 + 0.06 * Math.sin(time * 2.0));
+        // the haze: many faint layers, so it fades out softly (each drawn over the last, the inner ones in the band)
+        for (int k = 0; k < 8; k++) {
+            float reach = 2.3F - k * 0.13F;
+            int alpha = 0x10 + k * 0x06;
+            int tint = k < 5 ? haze : band & 0xFFFFFF;
+            box(c, cx, cy, size * reach * (k < 5 ? breathe : 1.0F), alpha << 24 | tint);
+        }
+        box(c, cx, cy, size * 1.18F, band);
+        box(c, cx, cy, size * 1.08F, 0xFF000000 | hot);
+        box(c, cx, cy, size, 0xFF0B0A0E);
+        // the forearm up from the fist, black, its glow fading up it
+        c.fill(cx - (int) (size * 0.55F), cy - (int) (size * 2.4F), cx + (int) (size * 0.55F), cy - (int) size, 0xFF0B0A0E);
+        c.fill(cx - (int) (size * 0.55F) - 2, cy - (int) (size * 2.4F), cx - (int) (size * 0.55F), cy - (int) size, 0x80000000 | (band & 0xFFFFFF));
+        c.fill(cx + (int) (size * 0.55F), cy - (int) (size * 2.4F), cx + (int) (size * 0.55F) + 2, cy - (int) size, 0x80000000 | (band & 0xFFFFFF));
+        c.fill(cx - (int) (size * 0.6F), cy - (int) (size * 0.75F), cx - (int) (size * 0.1F), cy - (int) (size * 0.55F), 0xFFDCE2EC);
+    }
+
+    /** A square of half-side {@code half} round ({@code cx}, {@code cy}), its corners cut (a rounded block). */
+    static void box(UiCanvas c, int cx, int cy, float half, int argb) {
+        float cut = half * 0.3F;
+        c.polygon(new float[] {cx - half + cut, cx + half - cut, cx + half, cx + half, cx + half - cut, cx - half + cut, cx - half, cx - half},
+            new float[] {cy - half, cy - half, cy - half + cut, cy + half - cut, cy + half, cy + half, cy + half - cut, cy - half + cut}, argb);
+    }
+
+    /** The rim's hot colour for a band: most of the way to white (as the arms' glow draws it). */
+    static final class BoltMeshColours {
+        static int hot(int rgb) {
+            int r = (rgb >> 16) & 255;
+            int g = (rgb >> 8) & 255;
+            int b = rgb & 255;
+            return (int) (r + (255 - r) * 0.72) << 16 | (int) (g + (255 - g) * 0.72) << 8 | (int) (b + (255 - b) * 0.72);
         }
     }
 

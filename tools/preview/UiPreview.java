@@ -144,8 +144,9 @@ public class UiPreview {
             state.faction = step >= 1 ? Faction.PIRATE : Faction.UNSET;
             state.style = step >= 2 ? FightingStyle.SIX_POWERS : FightingStyle.NONE;
             state.colour = step >= 3 ? com.hexhaki.piece.haki.HakiColour.GOLD_YELLOW : null;
+            state.ryou = step >= 4 ? com.hexhaki.piece.haki.RyouColour.RED_ORANGE : null;
             int s = step;
-            save(dir, "creation-" + step, w, h, c -> CreationView.draw(c, layout, state, s == 2 ? "pick:0" : s == 3 ? "pick:5" : "next", 12.0 + s));
+            save(dir, "creation-" + step, w, h, c -> CreationView.draw(c, layout, state, s == 2 ? "pick:0" : s == 3 ? "pick:5" : s == 4 ? "pick:3" : "next", 12.0 + s));
         }
         // 3.6.0: a player who set sail before the colour choice: the colour page alone, nothing picked yet
         CreationView.State only = CreationView.State.colourOnly();

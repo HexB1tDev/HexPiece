@@ -13,16 +13,17 @@ import net.minecraftforge.network.NetworkEvent;
  * The start menu's picks: gender, side and fighting style (ordinals), and (3.6.0) the Haki colour (haki/HakiColour.code). The server
  * checks each is a real choice; a player who already set sail sends only the colour (the colour page alone).
  */
-public record C2SCreate(int gender, int faction, int style, int colour) {
+public record C2SCreate(int gender, int faction, int style, int colour, int ryou) {
     public static void encode(C2SCreate message, FriendlyByteBuf buffer) {
         buffer.writeByte(message.gender);
         buffer.writeByte(message.faction);
         buffer.writeByte(message.style);
         buffer.writeByte(message.colour);
+        buffer.writeByte(message.ryou);
     }
 
     public static C2SCreate decode(FriendlyByteBuf buffer) {
-        return new C2SCreate(buffer.readByte(), buffer.readByte(), buffer.readByte(), buffer.readByte());
+        return new C2SCreate(buffer.readByte(), buffer.readByte(), buffer.readByte(), buffer.readByte(), buffer.readByte());
     }
 
     public static void handle(C2SCreate message, Supplier<NetworkEvent.Context> supplier) {
@@ -30,7 +31,8 @@ public record C2SCreate(int gender, int faction, int style, int colour) {
         ServerPlayer sender = context.getSender();
         if (sender != null) {
             context.enqueueWork(() -> ProfileServer.create(sender, Gender.byOrdinal(message.gender), Faction.byOrdinal(message.faction),
-                FightingStyle.byOrdinal(message.style), com.hexhaki.piece.haki.HakiColour.byCode(message.colour)));
+                FightingStyle.byOrdinal(message.style), com.hexhaki.piece.haki.HakiColour.byCode(message.colour),
+                com.hexhaki.piece.haki.RyouColour.byCode(message.ryou)));
         }
         context.setPacketHandled(true);
     }

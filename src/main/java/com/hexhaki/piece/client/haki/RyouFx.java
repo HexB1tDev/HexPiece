@@ -80,7 +80,7 @@ public final class RyouFx {
         if (!PieceFx.near(entity.m_20182_(), 48.0)) {
             return;
         }
-        int color = RyouColors.orNeutral(entity.m_19879_());
+        int color = RyouColors.aura(entity.m_19879_());
         int faded = color & 0x00FFFFFF;
         for (boolean right : new boolean[] {true, false}) {
             if (RANDOM.nextFloat() < 0.55F) {
@@ -96,7 +96,7 @@ public final class RyouFx {
         if (!PieceFx.near(player.m_20182_(), 64.0)) {
             return;
         }
-        int color = RyouColors.orNeutral(player.m_19879_());
+        int color = RyouColors.aura(player.m_19879_());
         int faded = color & 0x00FFFFFF;
         for (boolean right : new boolean[] {true, false}) {
             Vec3 at = fist(player, right);
@@ -115,7 +115,7 @@ public final class RyouFx {
         if (moved.m_82556_() < 0.06 || !PieceFx.near(player.m_20182_(), 40.0)) {
             return;
         }
-        int color = RyouColors.orNeutral(player.m_19879_());
+        int color = RyouColors.aura(player.m_19879_());
         int faded = color & 0x00FFFFFF;
         for (boolean right : new boolean[] {true, false}) {
             PieceFx.at(PieceFx.STREAK, true, 5, fist(player, right)).velocity(moved.m_82490_(-0.35)).colors((color & 0x00FFFFFF) | 0xA0000000,

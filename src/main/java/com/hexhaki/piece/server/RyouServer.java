@@ -57,7 +57,7 @@ public final class RyouServer {
         if (color == 0) {
             color = RyouPalette.pick(player.m_217043_().m_188503_(RyouPalette.COLORS.length));
             root.m_128405_(COLOR, color);
-            PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color));
+            PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color, aura(player)));
         }
         return color;
     }
@@ -72,7 +72,22 @@ public final class RyouServer {
         root.m_128405_(ProfileServer.HAKI_COLOUR, colour.code());
         int color = 0xFF000000 | colour.rim;
         root.m_128405_(COLOR, color);
-        PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color));
+        PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color, aura(player)));
+    }
+
+    /** 3.6.0: the Ryou colour chosen on the start menu (haki/RyouColour.code; 0: not chosen yet). */
+    static final String AURA = "RyouAura";
+
+    /** 3.6.0: {@code player}'s Ryou glow colour (the band of their chosen Ryou colour), or 0 (drawn in their Haki colour). */
+    public static int aura(ServerPlayer player) {
+        com.hexhaki.piece.haki.RyouColour colour = com.hexhaki.piece.haki.RyouColour.byCode(ProfileServer.root(player).m_128451_(AURA));
+        return colour == null ? 0 : 0xFF000000 | colour.band;
+    }
+
+    /** 3.6.0 (the owner: "also add a menu to pick the Ryou color"): the Ryou colour chosen, kept for good, every client told. */
+    public static void chooseRyou(ServerPlayer player, com.hexhaki.piece.haki.RyouColour colour) {
+        ProfileServer.root(player).m_128405_(AURA, colour.code());
+        PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color(player), aura(player)));
     }
 
     /** End of the original's toggleArmament: Armament just came on and Ryou is unlocked, so Ryou comes on with it. */
@@ -101,7 +116,7 @@ public final class RyouServer {
     static void tell(ServerPlayer player) {
         int color = color(player);
         if (color != 0) {
-            PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color));
+            PieceNetwork.around(player, new S2CRyou(player.m_19879_(), color, aura(player)));
         }
     }
 
@@ -132,7 +147,7 @@ public final class RyouServer {
         if (event.getEntity() instanceof ServerPlayer viewer && event.getTarget() instanceof ServerPlayer subject) {
             int color = color(subject);
             if (color != 0) {
-                PieceNetwork.sendTo(viewer, new S2CRyou(subject.m_19879_(), color));
+                PieceNetwork.sendTo(viewer, new S2CRyou(subject.m_19879_(), color, aura(subject)));
             }
         }
     }

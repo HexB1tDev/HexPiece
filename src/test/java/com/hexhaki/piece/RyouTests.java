@@ -57,7 +57,7 @@ public final class RyouTests {
     /** 3.6.0: the start menu's fourth page is the Haki colour; a player who set sail before it gets that page alone. */
     static void creation() {
         com.hexhaki.piece.ui.CreationView.State state = new com.hexhaki.piece.ui.CreationView.State();
-        Check.that(com.hexhaki.piece.ui.CreationView.STEPS.length == 4, "four pages");
+        Check.that(com.hexhaki.piece.ui.CreationView.STEPS.length == 5, "five pages (3.6.0: the Haki colour and the Ryou colour last)");
         state.step = com.hexhaki.piece.ui.CreationView.COLOUR;
         state.gender = com.hexhaki.piece.Gender.MALE;
         state.faction = com.hexhaki.piece.Faction.PIRATE;
@@ -65,13 +65,29 @@ public final class RyouTests {
         Check.that(!com.hexhaki.piece.ui.CreationView.click(state, "next"), "no colour picked: no setting sail");
         com.hexhaki.piece.ui.CreationView.click(state, "pick:5");
         Check.that(state.colour == com.hexhaki.piece.haki.HakiColour.GREEN_CYAN_BLACK, "a card picks its colour");
-        Check.that(com.hexhaki.piece.ui.CreationView.click(state, "next"), "the colour picked: Set Sail");
+        Check.that(!com.hexhaki.piece.ui.CreationView.click(state, "next") && state.step == com.hexhaki.piece.ui.CreationView.RYOU,
+            "the Haki colour picked: on to the Ryou colour");
+        Check.that(!com.hexhaki.piece.ui.CreationView.click(state, "next"), "no Ryou colour picked: no setting sail");
+        com.hexhaki.piece.ui.CreationView.click(state, "pick:1");
+        Check.that(state.ryou == com.hexhaki.piece.haki.RyouColour.PURPLE_BLACK && com.hexhaki.piece.ui.CreationView.click(state, "next"),
+            "both picked: Set Sail");
         com.hexhaki.piece.ui.CreationView.State only = com.hexhaki.piece.ui.CreationView.State.colourOnly();
         com.hexhaki.piece.ui.CreationView.click(only, "back");
-        Check.that(only.step == com.hexhaki.piece.ui.CreationView.COLOUR, "the colour page alone has nowhere to go back to");
+        Check.that(only.step == com.hexhaki.piece.ui.CreationView.COLOUR, "the colour pages alone have nowhere further back to go");
         com.hexhaki.piece.ui.CreationView.click(only, "pick:0");
-        Check.that(com.hexhaki.piece.ui.CreationView.click(only, "next") && only.colour == com.hexhaki.piece.haki.HakiColour.BLACK_RED,
-            "and sends the colour");
+        com.hexhaki.piece.ui.CreationView.click(only, "next");
+        com.hexhaki.piece.ui.CreationView.click(only, "pick:6");
+        Check.that(com.hexhaki.piece.ui.CreationView.click(only, "next") && only.colour == com.hexhaki.piece.haki.HakiColour.BLACK_RED
+            && only.ryou == com.hexhaki.piece.haki.RyouColour.GOLD, "and sends both colours");
+        com.hexhaki.piece.haki.RyouColour[] ryous = com.hexhaki.piece.haki.RyouColour.values();
+        String[] names = {"Red & Orange", "Purple & Black", "Green", "Pink", "Red & Yellow", "Blue", "Gold"};
+        Check.that(ryous.length == 7, "the owner's seven Ryou colours");
+        java.util.Set<Integer> bands = new java.util.HashSet<>();
+        for (int i = 0; i < ryous.length; i++) {
+            Check.that(ryous[i].display.equals(names[i]) && bands.add(ryous[i].band), "named by its colours, its band its own: " + names[i]);
+            Check.that(com.hexhaki.piece.haki.RyouColour.byBand(0xFF000000 | ryous[i].band) == ryous[i]
+                && com.hexhaki.piece.haki.RyouColour.byCode(ryous[i].code()) == ryous[i], names[i] + " found again");
+        }
         com.hexhaki.piece.ui.CreationView.Layout l = com.hexhaki.piece.ui.CreationView.Layout.of(427, 240);
         for (int i = 0; i < 7; i++) {
             int[] box = l.colourCardsForTests()[i];
@@ -84,8 +100,20 @@ public final class RyouTests {
     static void handCoat() {
         java.util.function.IntBinaryOperator wide = (x, y) -> Math.round(com.hexhaki.piece.haki.HandCoat.amount(x, y, 64, 64, false) * 100);
         Check.that(wide.applyAsInt(44, 31) == 100 && wide.applyAsInt(40, 29) == 100, "the right hand's last rows are black");
-        Check.that(wide.applyAsInt(44, 20) == 0 && wide.applyAsInt(44, 25) == 0, "the arm above the wrist keeps its skin");
-        Check.that(wide.applyAsInt(44, 27) == 45 && wide.applyAsInt(44, 28) == 80, "fading in over the wrist");
+        // 3.6.0 (the owner: "Haki coating on the arm should be covering even higher up in the arm unevenly"): past the elbow (row 6),
+        // the edge ragged round the arm, the shoulder's rows untouched
+        Check.that(wide.applyAsInt(44, 20) == 0 && wide.applyAsInt(44, 21) == 0, "the top of the shoulder keeps its skin");
+        java.util.Set<Integer> edges = new java.util.HashSet<>();
+        for (int x = 40; x < 56; x++) {
+            Check.that(wide.applyAsInt(x, 26) == 100 && wide.applyAsInt(x, 30) == 100, "black past the elbow in column " + x);
+            int edge = 0;
+            while (edge < 12 && wide.applyAsInt(x, 20 + edge) < 70) {
+                edge++;
+            }
+            Check.that(edge >= 2 && edge <= 5, "its edge between rows 2 and 5 in column " + x + " (" + edge + ")");
+            edges.add(edge);
+        }
+        Check.that(edges.size() >= 3, "the edge is ragged round the arm (" + edges + ")");
         Check.that(wide.applyAsInt(48, 16) == 100 && wide.applyAsInt(44, 16) == 0, "the fist's end black, the shoulder's top not");
         Check.that(wide.applyAsInt(36, 63) == 100 && wide.applyAsInt(52, 63) == 100 && wide.applyAsInt(44, 47) == 100,
             "the left hand and both sleeves too");
