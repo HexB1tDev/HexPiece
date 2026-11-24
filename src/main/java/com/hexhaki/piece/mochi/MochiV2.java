@@ -87,9 +87,47 @@ public final class MochiV2 {
     public static final double GRIP_Y = 9.5;
     public static final double GRIP_Z = 0.0;
     public static final double TILT = 5.0;
-    public static final double BACK = 8.0;
-    public static final double CROSS = 33.0;
-    public static final double TIP = 44.0;
+    /** 3.6.7 (the owner: "should not be held at the tip of the rod it it should be in the middle of the hand"): gripped at its middle. */
+    public static final double BACK = 20.0;
+    public static final double CROSS = 21.0;
+    public static final double TIP = 32.0;
+    /**
+     * 3.6.7 (the owner: "should disappear when not using M1s, and manist from a mochi only when using M1s"): Mogura forms out of mochi in
+     * the hand as the swings begin ({@link #MOGURA_FORM} ticks), stays while they go on and {@link #MOGURA_LINGER} ticks after the last
+     * one's clip ends, then goes back into mochi ({@link #MOGURA_GONE}).
+     */
+    public static final double MOGURA_FORM = 2.5;
+    public static final double MOGURA_LINGER = 10.0;
+    public static final double MOGURA_GONE = 5.0;
+
+    /** How much of Mogura is out (0 to 1, past 1 a little as it springs) {@code first} ticks since the swings began, {@code last} since the last one began. */
+    public static double moguraForm(double first, double last) {
+        if (first < 0 || last < 0) {
+            return 0.0;
+        }
+        double gone = 1.0 - smooth((last - TRIDENT_SWING - MOGURA_LINGER) / MOGURA_GONE);
+        return MochiDraw.springy(first / MOGURA_FORM) * gone;
+    }
+
+    /**
+     * The mochi Mogura forms out of and goes back into, along its shaft from the butt (bx, by, bz) to the tip (tx, ty, tz) (eye-relative,
+     * as far as it is out now): a lumpy tube of dough over it, thickest while it is half formed ({@code form}), a lump in the hand.
+     */
+    public static void moguraMochi(FireMesh.Sink sink, double bx, double by, double bz, double tx, double ty, double tz, double hx, double hy,
+                                   double hz, double form, double age, int seed) {
+        double wrap = Math.sin(Math.PI * Math.max(0.0, Math.min(1.0, form)));
+        if (wrap < 0.03) {
+            return;
+        }
+        MochiArt.tubeBegin();
+        for (int k = 0; k <= 6; k++) {
+            double t = k / 6.0;
+            double bulge = 0.5 + 0.5 * Math.sin(Math.PI * t);
+            MochiArt.tubePoint(bx + (tx - bx) * t, by + (ty - by) * t, bz + (tz - bz) * t, (0.05 + 0.09 * bulge) * wrap);
+        }
+        MochiArt.tube(sink, 8, MochiArt.MOCHI, 0.0, age * 0.3);
+        MochiArt.ball(sink, hx, hy, hz, 0.2 * wrap, 0, 1, 0, 1.1, 0.4, age, seed, MochiArt.MOCHI);
+    }
 
     /**
      * The point {@code px} px along Mogura from the grip (negative: behind it), {@code side} px across toward the prongs' spread (the arm's

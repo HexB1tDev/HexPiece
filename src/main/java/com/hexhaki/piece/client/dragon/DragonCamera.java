@@ -39,7 +39,7 @@ public final class DragonCamera {
                 }
             }
             // 3.5.8: Galaxy Impact's low shot round its user (client/ironfist/IronFx)
-            // 3.6.3: Buzz Cut Mochi's cutscene (client/mochi/MochiFx)
+            // 3.6.7: Buzz Cut Mochi's camera rising with the lift (client/mochi/MochiFx; its cutscene is gone at the owner's word)
             Vec3 mochi = com.hexhaki.piece.client.mochi.MochiFx.camera(entity, partial);
             if (mochi != null) {
                 return mochi;

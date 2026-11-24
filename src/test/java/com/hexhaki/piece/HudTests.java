@@ -1153,8 +1153,18 @@ public final class HudTests {
         float[][] rest = new float[6][8];
         double[] fist = com.hexhaki.piece.mochi.MochiV2.mogura(rest, 0, 0, new double[3]);
         double[] tip = com.hexhaki.piece.mochi.MochiV2.mogura(rest, com.hexhaki.piece.mochi.MochiV2.TIP, 0, new double[3]);
-        Check.that(tip[2] - fist[2] > 2.5 && Math.abs(tip[1] - fist[1]) < 0.5 && fist[1] > 0.5,
-            "Mogura at rest: held at the hand, pointing ahead, its tip about three blocks out (" + (tip[2] - fist[2]) + ")");
+        double[] butt = com.hexhaki.piece.mochi.MochiV2.mogura(rest, -com.hexhaki.piece.mochi.MochiV2.BACK, 0, new double[3]);
+        // 3.6.7 (the owner: "it should be in the middle of the hand"): gripped at the middle of its shaft, as much of it behind the hand as
+        // ahead of it to the crossbar
+        Check.that(tip[2] - fist[2] > 1.6 && Math.abs(tip[1] - fist[1]) < 0.5 && fist[1] > 0.5 && fist[2] - butt[2] > 1.0
+            && Math.abs(com.hexhaki.piece.mochi.MochiV2.BACK - com.hexhaki.piece.mochi.MochiV2.CROSS) <= 2.0,
+            "Mogura at rest: gripped at the middle of its shaft, pointing ahead (" + (tip[2] - fist[2]) + " ahead, " + (fist[2] - butt[2]) + " behind)");
+        // 3.6.7 (the owner: "should disappear when not using M1s, and manist from a mochi only when using M1s"): none before the swings,
+        // formed by the first swing's blow, gone after the last
+        Check.that(com.hexhaki.piece.mochi.MochiV2.moguraForm(-1, -1) == 0.0
+            && com.hexhaki.piece.mochi.MochiV2.moguraForm(com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT, com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT) > 0.95
+            && com.hexhaki.piece.mochi.MochiV2.moguraForm(60, com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING + com.hexhaki.piece.mochi.MochiV2.MOGURA_LINGER
+            + com.hexhaki.piece.mochi.MochiV2.MOGURA_GONE) < 1.0E-6, "Mogura: out only while its swings go on");
     }
 
     /**
@@ -1232,15 +1242,6 @@ public final class HudTests {
         }
         com.hexhaki.piece.mochi.MochiDraw.buzzBend(com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM + 2, 0.0, bend);
         Check.that(bend[1] < -0.5 && bend[3] > 0.3, "Buzz Cut: after the slam the band hangs under the straight way to the ball");
-        // the cutscene camera, through the whole cinematic, never inside the rubble field round the crater (radius 9.5)
-        double[] cam = new double[6];
-        for (double t = 0; t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_END; t += 0.5) {
-            com.hexhaki.piece.mochi.MochiDraw.buzzCamera(t, 0, 0, 0, 0.0, cam);
-            if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_DOWN) {
-                Check.that(Math.hypot(cam[0] - bx, cam[2] - bz) > 9.6, "Buzz Cut: the slam's camera stays clear of the rubble, at " + t);
-            }
-            Check.that(cam[1] > 0.5, "Buzz Cut: the camera above the ground, at " + t);
-        }
         Check.that(com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILE_GAP <= 0.7 && com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILES >= 80.0
             && com.hexhaki.piece.mochi.MochiDraw.BUZZ_PATH_MOST * com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILE_GAP
             >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_ROLL * com.hexhaki.piece.mochi.MochiDraw.BUZZ_SPEED,

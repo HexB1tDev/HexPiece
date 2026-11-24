@@ -483,6 +483,17 @@ Next, in order:
     and splats when it hits. Build every new piece this way (MochiDraw.arm, elastic, springy, donut's breathing, MochiArt.CHURN are the
     tools) and judge every render for it as hard as for the reference's look.
 
+22. The owner (after 3.6.6, while the Phoenix was being started: "btw before proceeding to the Phoenix, Mochi has some issues:"):
+    "1. Trident in the awakening should not be held at the tip of the rod it it should be in the middle of the hand and should disappear
+    when not using M1s, and manist from a mochi only when using M1s.
+    2. I want 0 impact frames in this fruit, IMPACT FRAMES ARE ONLY FOR CLASHES.
+    3. Buzz Cut Mochi is no longer a cutscene, you can look around, but the camera adapts to the height of the vertical lift of the move,
+    the hit player(s)  dont get any special camera.
+    4." (item 4 arrived empty: ask for it.) So: Mogura held by the middle of its shaft in the hand, shown only while the left click's
+    swings are going (it forms out of mochi as they start and goes back into it after); no impact frame anywhere in the Mochi fruit
+    (Buzz Cut's two are removed: N 12 is overruled); Buzz Cut's cutscene camera gone: the user looks around freely, the camera only
+    rising with the arm's lift (third person), the ones caught get no camera of their own.
+
 ## O. The fourth Mochi chat: Buzz Cut judged and finished, the old Mochi art removed, 3.6.3 released
 
 Build #233 (the last push of the chat before) was green. Done, rendered and judged against the Buzzcut GIF, the owner's show clip
@@ -818,3 +829,20 @@ the glowing parts as glow) decimated for the phone, the flame flicker done in th
 (DragonForm, DragonRenderer, flight, camera) for a Phoenix form; write its clips (hover, takeoff, soar and wingbeat, glide, dive, the
 wings wrapped round between beats as in the GIF, transform in a cyan sphere of light, back); then the moves: X Fujiazami, C Talon Slam
 (transformed Hawk Rush), V Phoenix Inferno, B Bluebird, both forms each, on the GIFs read frame by frame.
+
+## V. 3.6.7: the owner's three Mochi notes (N 22), done before the Phoenix
+
+- Mogura (MochiV2.BACK 20, CROSS 21, TIP 32: gripped at the middle of its 41 px shaft; HudTests checks as much behind the hand as ahead
+  to the crossbar). Shown only while the swings go on: client/mochi/MochiFx.MOGURA (by user: the first swing's tick, the last's, which)
+  and MochiV2.moguraForm (springy out over MOGURA_FORM 2.5 ticks from the first swing, gone over MOGURA_GONE 5 after MOGURA_LINGER 10
+  past the last swing's clip); MochiClient scales it out of the grip by it (third and first person); MochiFx.drawMogura draws the white
+  wrap of mochi it forms out of and goes back into (MochiV2.moguraMochi, along the shaft as the swing's clip holds it; not in one's own
+  first person). Preview |mtrident:0:age shows the forming.
+- No impact frame anywhere in the Mochi fruit (the owner: "IMPACT FRAMES ARE ONLY FOR CLASHES"; N 12's frames on Buzz Cut removed).
+- Buzz Cut Mochi (and Scorching): the cutscene is gone (MochiDraw.buzzCamera, MochiFx's filmed/cinema/filmAngles and its test removed):
+  no forced third person, no forced view angles, no look lock; the user's body still turns with the arm (its yBodyRot set for
+  drawing, every client) and stands where it caught (input held: MochiFx.swinging); in third person (back) one's own camera rises and
+  pulls back with how high the giant ball is over the feet (MochiFx.camera: up 0.6 and back 0.45 a block of height past 2.5); the ones
+  caught get nothing.
+- 3.6.7 released (`.github/release-notes-3.6.7.md`). The owner's item 4 came empty: ask for it.
+- The Phoenix work so far: tools/phoenix_bake.py written (bpy; not yet run to the end nor wired); see U for the plan.

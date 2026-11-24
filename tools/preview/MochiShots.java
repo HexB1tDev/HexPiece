@@ -174,9 +174,15 @@ public final class MochiShots {
                 user(sink, clip, Math.min(t, com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING), ex, ey, ez);
                 double by = k == 4 && t > com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT ? Math.min(9.0, 1.7 * (t - com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT)) : 0.0;
                 HieShots.body(sink, -ex, by - ey, 2.6 - ez);
-                double[] a = com.hexhaki.piece.mochi.MochiV2.mogura(pose, -com.hexhaki.piece.mochi.MochiV2.BACK, 0, new double[3]);
-                double[] h = com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.CROSS, 0, new double[3]);
-                double[] sd = com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.CROSS, 4, new double[3]);
+                // 3.6.7: Mogura formed out of mochi as the swings begin (swing 0's first ticks), as client/mochi/MochiClient scales it
+                double form = k == 0 ? Math.min(1.0, com.hexhaki.piece.mochi.MochiV2.moguraForm(t, t)) : 1.0;
+                double[] a = com.hexhaki.piece.mochi.MochiV2.mogura(pose, -com.hexhaki.piece.mochi.MochiV2.BACK * form, 0, new double[3]);
+                double[] h = com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.CROSS * form, 0, new double[3]);
+                double[] sd = com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.CROSS * form, 4, new double[3]);
+                double[] tp = com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.TIP * form, 0, new double[3]);
+                double[] hd = com.hexhaki.piece.mochi.MochiV2.mogura(pose, 0, 0, new double[3]);
+                com.hexhaki.piece.mochi.MochiV2.moguraMochi(sink, a[0] - ex, a[1] - ey, a[2] - ez, tp[0] - ex, tp[1] - ey, tp[2] - ez, hd[0] - ex, hd[1] - ey,
+                    hd[2] - ez, k == 0 ? com.hexhaki.piece.mochi.MochiV2.moguraForm(t, t) : 1.0, t, 3);
                 double sl = Math.sqrt((sd[0] - h[0]) * (sd[0] - h[0]) + (sd[1] - h[1]) * (sd[1] - h[1]) + (sd[2] - h[2]) * (sd[2] - h[2]));
                 com.hexhaki.piece.mochi.MochiDraw.trident(sink, a[0] - ex, a[1] - ey, a[2] - ez, h[0] - ex, h[1] - ey, h[2] - ez, (sd[0] - h[0]) / sl,
                     (sd[1] - h[1]) / sl, (sd[2] - h[2]) / sl);

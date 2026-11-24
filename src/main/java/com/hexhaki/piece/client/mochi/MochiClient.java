@@ -20,8 +20,9 @@ import net.minecraft.nbt.CompoundTag;
 /**
  * 3.5.5: the Mochi Mochi no Mi on the client (client/mochi/MochiFx puts it in the original's ClientKits): its moves for the panel and
  * the log; while one's own Awakening is on, the awakened set in Z to B's places (the owner: "M toggles a mode"). No stance. 3.6.4: while
- * a body is awakened it holds Mogura in its right hand (the reference's DoughV2: the trident always in hand), drawn on the arm itself
- * as Supa's blades are, in third and first person.
+ * a body is awakened it holds Mogura in its right hand, drawn on the arm itself as Supa's blades are, in third and first person; 3.6.7
+ * (the owner: "should disappear when not using M1s, and manist from a mochi only when using M1s"): only while its swings go on
+ * (MochiFx.moguraForm), gripped at the middle of its shaft.
  */
 final class MochiClient implements ClientKit {
     /** Mogura's dark iron shaft and its pale head (the reference's), a little coated toward the Haki's dark violet. */
@@ -50,18 +51,20 @@ final class MochiClient implements ClientKit {
     @Override
     public void renderBody(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, PlayerModel<AbstractClientPlayer> model,
                            CompoundTag state, float partial, boolean inWorld) {
-        if (!MochiFx.awakened(player.m_19879_())) {
+        double form = MochiFx.awakened(player.m_19879_()) ? MochiFx.moguraForm(player.m_19879_(), partial) : 0.0;
+        if (form < 0.02) {
             return;
         }
         pose.m_85836_();
         model.f_102811_.m_104299_(pose);
-        mogura(pose, buffers, light);
+        mogura(pose, buffers, light, (float) form);
         pose.m_85849_();
     }
 
     @Override
     public boolean firstPerson(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player, float partial) {
-        if (!MochiFx.awakened(player.m_19879_())) {
+        double form = MochiFx.awakened(player.m_19879_()) ? MochiFx.moguraForm(player.m_19879_(), partial) : 0.0;
+        if (form < 0.02) {
             return false;
         }
         pose.m_85836_();
@@ -69,7 +72,7 @@ final class MochiClient implements ClientKit {
         for (int i = 0; i < 8; i++) {
             step(pose, LightArt.FIRST_PERSON_GRIP[i]);
         }
-        mogura(pose, buffers, light);
+        mogura(pose, buffers, light, (float) form);
         pose.m_85849_();
         return false;
     }
@@ -88,10 +91,12 @@ final class MochiClient implements ClientKit {
      * Mogura in the right arm's frame (MochiV2.GRIP_*: the fist, its shaft out of the fist's front tipped MochiV2.TILT degrees down the
      * arm; the trails in MochiFx follow the same points): the shaft, the crossbar and three prongs, the middle one longest (model px).
      */
-    static void mogura(PoseStack pose, MultiBufferSource buffers, int light) {
+    static void mogura(PoseStack pose, MultiBufferSource buffers, int light, float form) {
         pose.m_85837_(MochiV2.GRIP_X / 16.0, MochiV2.GRIP_Y / 16.0, MochiV2.GRIP_Z / 16.0);
         // the shaft along +y from here: turned about x so +y runs out of the fist's front (-z), MochiV2.TILT down the arm
         pose.m_252781_(Axis.f_252529_.m_252977_((float) (MochiV2.TILT - 90.0)));
+        // 3.6.7: grown out of the hand as it forms (its mochi drawn over it: MochiFx), drawn back into it as it goes
+        pose.m_85841_(form, form, form);
         KatanaRenderer.steelBox(pose, buffers, SHAFT, "mogura_shaft", SHAFT_BOX, light, SHINE, SHAFT_COAT);
         for (int i = 0; i < HEAD_BOXES.length; i++) {
             KatanaRenderer.steelBox(pose, buffers, HEAD, "mogura_head" + i, HEAD_BOXES[i], light, SHINE, HEAD_COAT);
