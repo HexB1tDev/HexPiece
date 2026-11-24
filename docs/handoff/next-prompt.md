@@ -36,7 +36,8 @@ is deleted.
 
 3.5.8 (sections 8zzs verbatim with the owner's answers, 8zzt as built): Iron Fist remade as Garp's style (LMB punches, RMB Fist of
 Love, Z Meteor Fist held, X Mountain Crusher, C Blue Hole, V Galaxy Divide, B Infinitum Explosion, N Galaxy Impact; the torn ground
-regrows), and the owner's own impact frame (art/impact-frame.gif) in place of every impact frame but the Gura ultimate's.
+regrows), and the owner's own impact frame (art/impact-frame.gif) in place of every impact frame but the Gura ultimate's; green
+(Build #213, Release #149).
 
 Next: wait for the owner's notes on 3.5.8 (Iron Fist, the impact frame), 3.5.6 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their
 lists for the other fruits. The fist is a right fist

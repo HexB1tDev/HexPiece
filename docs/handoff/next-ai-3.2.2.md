@@ -3493,6 +3493,7 @@ round rim so the white flash never shows the GIF's square). clash/ImpactSprite (
 client/fx/ClashFx.sprite draw it over the view centred on the blow, a dark veil falling with the white flash (sheet frame FLASH 5) and
 lifting over 8 ticks. S2CClash.CLASSIC (flag 8) keeps the old ImpactFrame: only server/GuraUltimate sends it. HudTests.impactSprite.
 Preview: docs/gifs/impact-frame-3.5.8.png (composited over a render, not the game).
+3.5.8 is green (Build #213, Release #149).
 
 ## 9. What to do next (after 3.3.7)
 
