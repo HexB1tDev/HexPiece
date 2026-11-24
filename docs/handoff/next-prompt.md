@@ -29,7 +29,8 @@ one version (base moves on LMB RMB Z X C V B N, the Awakening on M a 30 s mode w
 on a double tap of sneak, Haki-black fists and arms only with Armament) is green (Build #207, Release #146); its hourly resume task
 is deleted.
 
-3.5.6 (section 8zzq): the Mochi arms square bars with the fist a block at their very end, as the owner asked after 3.5.5.
+3.5.6 (section 8zzq): the Mochi arms square bars with the fist a block at their very end, as the owner asked after 3.5.5; green
+(Build #209, Release #147).
 
 Next: wait for the owner's notes on 3.5.6 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
 on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
