@@ -1097,6 +1097,24 @@ public final class HudTests {
                 && w[1] <= com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING, "Trident Lacerations: each blow inside its swing's sweep");
         }
         powerMochi();
+        // 3.6.8 (the owner: Scorching Buzz Cut "has a ton of trouble catching people into the full move"): the wheel meets whoever is
+        // within its own size and more (they are carried under it until it is let go)
+        // 3.6.8 (the owner: "with the more it spins the wider it should get"; "the awakened version ... spin 2 more times"): the whirl a
+        // spiral widening every turn, for both; Scorching's two turns more, ending facing the way it began
+        double wasReach = 0;
+        for (double t = com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT; t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL; t += 1.0) {
+            double r = com.hexhaki.piece.mochi.MochiDraw.buzzReach(t);
+            Check.that(r >= wasReach - 1.0E-9, "Buzz Cut: the whirl widens as it spins, at " + t);
+            wasReach = r;
+        }
+        Check.that(wasReach > 12.0, "Buzz Cut: the whirl ends wide (" + wasReach + ")");
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.SCORCH_TURNS == com.hexhaki.piece.mochi.MochiDraw.BUZZ_TURNS + 2
+            && Math.abs(com.hexhaki.piece.mochi.MochiDraw.buzzTurn(com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL, com.hexhaki.piece.mochi.MochiDraw.SCORCH_TURNS)
+            - 2 * Math.PI * com.hexhaki.piece.mochi.MochiDraw.SCORCH_TURNS) < 1.0E-9 && com.hexhaki.piece.mochi.MochiDraw.SCORCH_CRATER_SCALE >= 1.8
+            && com.hexhaki.piece.server.MochiMoves.SCORCH_CRATER > 7.0, "Scorching Buzz Cut: two turns more and a far bigger crater");
+        Check.that(com.hexhaki.piece.server.MochiMoves.SCORCH_MEET > com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHEEL + 1.0
+            && com.hexhaki.piece.server.MochiMoves.SCORCH_NEAR > com.hexhaki.piece.server.MochiMoves.SCORCH_MEET,
+            "Scorching Buzz Cut: the wheel meets whoever is near it, and lets go of none it met");
         // 3.6.6: Grilled Lance's beats (the reference's 1205.gif): the spin, the ink, full; struck, the first blast, then the second far
         // bigger and harder; the ball as big as the reference's (bigger than the torso)
         Check.that(com.hexhaki.piece.mochi.MochiV2.LANCE_SPIN < com.hexhaki.piece.mochi.MochiV2.LANCE_INK

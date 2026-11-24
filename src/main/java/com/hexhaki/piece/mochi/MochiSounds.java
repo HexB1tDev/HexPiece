@@ -2,9 +2,10 @@ package com.hexhaki.piece.mochi;
 
 /**
  * 3.5.5: the Mochi Mochi no Mi's own sound events ({@code hexhaki:piece.mochi.*}, the merged sounds.json). Every clip a CC0 recording
- * from Freesound.org: most are the mod's own already (a rubber stretch, kung-fu punches, a balloon filling, a fire blast, a rumble, a
- * pop: their folders' SOURCES.txt credit them), two new ones cut by tools/mochi_sounds.py (sounds/piece/mochi). Broadband, never a
- * pitched line. Pure: names only (PieceSounds registers them).
+ * from Freesound.org. 3.6.8 (the owner: "literally every sound of dough sounds like shit, get new ones from the web of slime, viscous
+ * stuff, dough etc"): every dough sound is real slime, goo and clay now (tools/mochi_sounds.py, sounds/piece/mochi: stretched, slapped,
+ * squished, splatted, squeezed); the fire, the blast and the wheel's rumble are the mod's own as before. Broadband, never a pitched
+ * line. Pure: names only (PieceSounds registers them).
  */
 public final class MochiSounds {
     private MochiSounds() {
@@ -37,8 +38,9 @@ public final class MochiSounds {
 
     /** Every event and its clips (assets/hexhaki/sounds/piece/{clip}.ogg: a folder and a name). */
     public static final String[][] EVENTS = {
-        {STRETCH, "nika/coil1"}, {PUNCH, "nika/gatling1", "nika/gatling2"}, {SQUISH, "mochi/squish1"}, {SPLAT, "mochi/splat1"},
-        {DRILL, "supa/spin"}, {STOMP, "gura/hit1"}, {SLAM, "nika/slam1"}, {INFLATE, "nika/charge1"}, {FIRE, "magu/whoosh1"},
-        {BOOM, "magu/boom1"}, {ROLL, "gura/rumble"}, {POP, "horo/pop1"},
+        {STRETCH, "mochi/stretch1", "mochi/stretch2"}, {PUNCH, "mochi/slap1", "mochi/slap2", "mochi/slap3"},
+        {SQUISH, "mochi/squish1", "mochi/squish2"}, {SPLAT, "mochi/splat1", "mochi/splat2"}, {DRILL, "supa/spin"}, {STOMP, "mochi/stamp1"},
+        {SLAM, "mochi/slam1"}, {INFLATE, "mochi/swell1"}, {FIRE, "magu/whoosh1"}, {BOOM, "magu/boom1"}, {ROLL, "gura/rumble"},
+        {POP, "horo/pop1"},
     };
 }

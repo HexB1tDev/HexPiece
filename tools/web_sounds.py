@@ -45,6 +45,8 @@ def fetch(user, sid):
 # low end lifted (a +7 dB shelf at 120 Hz, the 80 to 200 Hz speakers play) and nothing under 45 Hz kept (never sub: 2.4.8's lesson).
 # An equaliser on the recording itself: nothing is added to it.
 BASS = "highpass=f=45:poles=2,bass=g=7:f=120:w=0.9"
+# 3.6.8: the room's low hum (a steady line under 90 Hz some recordings carry) filtered out: an equaliser on the recording, nothing added
+HUM = "highpass=f=95:poles=2,highpass=f=95:poles=2"
 
 
 def pcm(src, start, length, eq=None):
@@ -159,7 +161,8 @@ def build(sounds, clips, loops, out_dir, title, only=None, level=None):
             _, start, length, fade_in, fade_out = spec[:5]
             eq = spec[5] if len(spec) > 5 else None
             seconds = clip(path, start, length, fade_in, fade_out, scratch, gain, louder, eq)
-            what = f"from {start:.1f} s, {seconds:.2f} s long" + (", its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)" if eq else "")
+            what = f"from {start:.1f} s, {seconds:.2f} s long" + (", its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)" if eq == BASS
+                                                               else ", the room's hum under 95 Hz filtered out" if eq == HUM else "")
         if gain:
             what += f", {-gain:.1f} dB quieter"
         if louder:

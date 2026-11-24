@@ -77,8 +77,12 @@ public final class MochiFx {
         int count;
         double rolled;
         Vec3 last;
-        /** 3.6.6: Scorching Buzz Cut's (the fire over it: MochiV2.scorch*). */
+        /** 3.6.6: Scorching Buzz Cut's (the fire over it: MochiV2.scorch*; 3.6.8: two more turns, a bigger crater). */
         boolean scorch;
+
+        double turns() {
+            return this.scorch ? MochiDraw.SCORCH_TURNS : MochiDraw.BUZZ_TURNS;
+        }
 
         Buzz(long born, int ticks, int seed) {
             this.born = born;
@@ -502,7 +506,7 @@ public final class MochiFx {
             if (b.caught >= 0 && clock - b.caught < MochiDraw.BUZZ_END && user instanceof LivingEntity body) {
                 // the body turns with the arm (the whirl is its own turn), drawn so; 3.6.7 (the owner: "Buzz Cut Mochi is no longer a
                 // cutscene, you can look around"): the look is the player's own, never turned
-                double[] arm = MochiDraw.buzzArm(clock - b.caught, 0, 0, 0, b.yaw0, new double[8]);
+                double[] arm = MochiDraw.buzzArm(clock - b.caught, 0, 0, 0, b.yaw0, new double[8], b.turns());
                 body.f_20884_ = body.f_20883_;
                 body.f_20883_ = (float) arm[7];
                 if (user == self) {
@@ -537,7 +541,7 @@ public final class MochiFx {
             return null;
         }
         // how high the giant ball is over the feet past a body's height (the arm shot up to 16 overhead lifts the camera most)
-        double[] arm = MochiDraw.buzzArm(t, 0, 0, 0, b.yaw0, CAM_ARM);
+        double[] arm = MochiDraw.buzzArm(t, 0, 0, 0, b.yaw0, CAM_ARM, b.turns());
         double lift = Math.max(0.0, arm[1] + arm[4] * arm[6] - 2.5);
         if (lift < 0.05) {
             return null;
@@ -577,6 +581,7 @@ public final class MochiFx {
                 if (b != null) {
                     b.caught = clock;
                     b.feet = at;
+                    b.scorch |= m.size() > 0.5F;
                     b.yaw0 = m.by();
                     b.victims.add(m.id());
                 }
@@ -1355,8 +1360,8 @@ public final class MochiFx {
                 if (t > MochiDraw.BUZZ_END) {
                     continue;
                 }
-                double[] arm = MochiDraw.buzzArm(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, BUZZ_ARM);
-                double[] bend = MochiDraw.buzzBend(t, b.yaw0, BUZZ_BEND);
+                double[] arm = MochiDraw.buzzArm(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, BUZZ_ARM, b.turns());
+                double[] bend = MochiDraw.buzzBend(t, b.yaw0, BUZZ_BEND, b.turns());
                 MochiDraw.buzzMace(SINK, arm[0] - cx, arm[1] - cy, arm[2] - cz, arm[3], arm[4], arm[5], arm[6], MochiDraw.buzzSwell(t), bend[0],
                     bend[1], bend[2], bend[3], t, b.seed);
                 if (b.scorch) {
@@ -1383,7 +1388,8 @@ public final class MochiFx {
             }
             double age = now - k.born;
             if (k.ground) {
-                MochiDraw.buzzCrater(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, age, k.seed);
+                MochiDraw.buzzCrater(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, age, k.seed,
+                    k.scorch ? MochiDraw.SCORCH_CRATER_SCALE : 1.0);
                 if (k.scorch) {
                     com.hexhaki.piece.mochi.MochiV2.scorchCrater(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, age, k.seed + 15);
                 }

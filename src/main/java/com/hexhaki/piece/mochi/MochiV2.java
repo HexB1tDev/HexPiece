@@ -1648,8 +1648,9 @@ public final class MochiV2 {
             return;
         }
         double gy = y + 0.06;
-        for (int k = 0; k < 5; k++) {
-            double rad = reach * (0.32 + 0.15 * k);
+        // 3.6.8: four bands (the spiral now reaches 14 out: five cost too much at its widest)
+        for (int k = 0; k < 4; k++) {
+            double rad = reach * (0.32 + 0.19 * k);
             FireMesh.arc(sink, x, gy + 0.02 * k, z, 0, 1, 0, rad, reach * 0.2, turn - 5.0, 5.0, 0.0, k % 2 == 1 ? 0xFFA215 : FIRE, 0.95 * alpha);
             FireMesh.arc(sink, x, gy + 0.02 * k + 0.01, z, 0, 1, 0, rad, reach * 0.06, turn - 4.6, 4.6, 0.0, 0xFFE070, 0.9 * alpha);
             FireMesh.arc(sink, x, gy + 0.01, z, 0, 1, 0, rad + reach * 0.075, reach * 0.06, turn - 4.0, 3.8, 0.0, INK, 0.75 * alpha);
@@ -1677,6 +1678,8 @@ public final class MochiV2 {
         return smooth((t - MochiDraw.BUZZ_WHIRL + 10.0) / 4.0) * (1.0 - smooth((t - MochiDraw.BUZZ_RAISED - 2.0) / 4.0));
     }
 
+    private static final MochiDraw.Scaled SCORCH_SCALED = new MochiDraw.Scaled();
+
     /** The column of fire up out of the whirl's middle (frames 114 to 126) from the ground at (x, y, z), {@code top} high; {@code alpha}. */
     public static void scorchColumn(FireMesh.Sink sink, double x, double y, double z, double top, double alpha, double age, int seed) {
         if (alpha < 0.02) {
@@ -1696,10 +1699,11 @@ public final class MochiV2 {
         if (r < 0.05) {
             return;
         }
-        for (int k = 0; k < 6; k++) {
-            double a = 2 * Math.PI * k / 6.0 + age * 0.3;
+        // 3.6.8: five tongues (six with the wider spiral overran the phone's budget at its heaviest)
+        for (int k = 0; k < 5; k++) {
+            double a = 2 * Math.PI * k / 5.0 + age * 0.3;
             double up = Math.sin(a * 1.7) * 0.6;
-            FireMesh.puff(sink, x + Math.cos(a) * r * 0.95, y + up * r, z + Math.sin(a) * r * 0.95, r * 0.4, Math.cos(a), 0.5, Math.sin(a), 1.0, 0.8, 0.62,
+            FireMesh.puff(sink, x + Math.cos(a) * r * 0.95, y + up * r, z + Math.sin(a) * r * 0.95, r * 0.42, Math.cos(a), 0.5, Math.sin(a), 1.0, 0.8, 0.62,
                 0.55, true, 0.85, age, seed + k);
         }
         halo(sink, x, y, z, r * 1.2, FIRE_GLOW, SPARK_RED, 0.45);
@@ -1711,6 +1715,17 @@ public final class MochiV2 {
      */
     public static void scorchCrater(FireMesh.Sink sink, double x, double y, double z, double age, int seed) {
         if (age < 0 || age > 40.0) {
+            return;
+        }
+        // 3.6.8 (the owner: "a much bigger crater"): drawn as big as the crater it burns in (MochiDraw.SCORCH_CRATER_SCALE)
+        if (sink != SCORCH_SCALED) {
+            SCORCH_SCALED.target = sink;
+            SCORCH_SCALED.cx = x;
+            SCORCH_SCALED.cy = y;
+            SCORCH_SCALED.cz = z;
+            SCORCH_SCALED.scale = MochiDraw.SCORCH_CRATER_SCALE;
+            scorchCrater(SCORCH_SCALED, x, y, z, age, seed);
+            SCORCH_SCALED.target = null;
             return;
         }
         if (age < 16.0) {

@@ -368,7 +368,8 @@ public final class MochiShots {
                     return true;
                 }
                 double t = age - caught;
-                double[] arm = com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, 0, rolled, 0.0, new double[8]);
+                double turns = scorch ? com.hexhaki.piece.mochi.MochiDraw.SCORCH_TURNS : com.hexhaki.piece.mochi.MochiDraw.BUZZ_TURNS;
+                double[] arm = com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, 0, rolled, 0.0, new double[8], turns);
                 boolean armOut = t <= com.hexhaki.piece.mochi.MochiDraw.BUZZ_END;
                 if (t >= 2) {
                     // the right arm is the mace until the move ends (MochiFx.mochiArms), then the player's own again
@@ -376,7 +377,7 @@ public final class MochiShots {
                     ItoShots.posed(sink, "mochi_buzz", (float) t, 0.0, 0.0, rolled, 0.0, 0.9, rolled, ex, ey, ez, 0.0, 0.0);
                     com.hexhaki.piece.horo.AstralArt.hide = 0;
                 }
-                double[] bend = com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, new double[4]);
+                double[] bend = com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, new double[4], turns);
                 if (armOut) com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, arm[0] - ex, arm[1] - ey, arm[2] - ez, arm[3], arm[4], arm[5], arm[6],
                     com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), bend[0], bend[1], bend[2], bend[3], t, 7);
                 if (scorch && armOut) {
@@ -392,7 +393,7 @@ public final class MochiShots {
                 double by = 0;
                 double bz = 10.5;
                 if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT) {
-                    double[] st = com.hexhaki.piece.mochi.MochiDraw.buzzStuck(t, 0, 0, 0, rolled, 0.0, new double[3]);
+                    double[] st = com.hexhaki.piece.mochi.MochiDraw.buzzStuck(t, 0, 0, 0, rolled, 0.0, new double[3], turns);
                     bx = st[0];
                     by = st[1];
                     bz = st[2];
@@ -408,7 +409,8 @@ public final class MochiShots {
                     }
                 }
                 if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM) {
-                    com.hexhaki.piece.mochi.MochiDraw.buzzCrater(sink, bx - ex, -ey, bz - ez, t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 11);
+                    com.hexhaki.piece.mochi.MochiDraw.buzzCrater(sink, bx - ex, -ey, bz - ez, t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 11,
+                        scorch ? com.hexhaki.piece.mochi.MochiDraw.SCORCH_CRATER_SCALE : 1.0);
                     if (scorch) {
                         com.hexhaki.piece.mochi.MochiV2.scorchCrater(sink, bx - ex, -ey, bz - ez, t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 15);
                     }

@@ -494,6 +494,22 @@ Next, in order:
     (Buzz Cut's two are removed: N 12 is overruled); Buzz Cut's cutscene camera gone: the user looks around freely, the camera only
     rising with the arm's lift (third person), the ones caught get no camera of their own.
 
+25. The owner (while the Phoenix was being started): "Also buzz Cut mochi in the awakening state has a ton of trouble catching people
+    into the full move, a lot of times it doesnt count the full move." (Scorching Buzz Cut: whoever the wheel rolled over was often not
+    caught when N was let go: the wheel kept rolling on past them, more than SCORCH_NEAR behind, and the hits knocked them away.)
+
+27. The owner (with a sketch: a spiral drawn from a small square at its middle (the user) widening outward over about two and a half
+    turns): "Buzz cut is great, but with the more it spins the wider it should get, this applies for every version. I just want the thing
+    to be wider" So: Buzz Cut Mochi and Scorching Buzz Cut: the whirl spirals outward, the arm reaching further with every turn, the
+    whole thing much wider at its end.
+28. The owner: "also literally every sound of dough sounds like shit, get new ones from the web of slime, viscous stuff, dough etc" So:
+    every Mochi dough sound replaced by CC0 web recordings of slime, viscous goo, dough (stretch, squish, splat, the fists landing, the
+    swell, the slam and stamp of dough).
+29. The owner: "Tente novamente" ("try again": the session's worker had restarted; carry on).
+
+30. The owner: "the awakened version of Buzz Cut should create a much bigger crater and spin 2 more times" (Scorching Buzz Cut: seven
+    turns of the whirl, Buzz Cut's five; its crater far bigger than Buzz Cut's).
+
 ## O. The fourth Mochi chat: Buzz Cut judged and finished, the old Mochi art removed, 3.6.3 released
 
 Build #233 (the last push of the chat before) was green. Done, rendered and judged against the Buzzcut GIF, the owner's show clip
@@ -813,6 +829,18 @@ close the honest gaps above.
     short cooldown after turning back, as the dragon fruit does); the size: "Like the GIF (Recommended)" (wingspan about 7 blocks, the
     body about as tall as the player).
 
+23. The owner (while the Phoenix model was being baked): "Like I said before doing any move on phoenix I wanna see the model with your
+    lively animations, its a burning phoenix, so get references yourself first of Marco the phoenix," So: no move yet; first the
+    owner's model animated and alive (burning: its blue and gold flames moving all the time), after references of Marco's phoenix
+    gathered and read, shown to the owner in previews.
+
+24. The owner: "the animations have to be top tier" (the Phoenix's: judge every render as hard as the house rule says).
+
+26. The owner (interrupting the first motion work): "again, cant stress this enough, the body is made of flames, my model did not burn,
+    which is what I want. moving flames" So: the phoenix's body IS fire: every flame part (wings, mantle lobes, mane, tail fans and
+    streamers) licking and flowing all the time, strongest at the tips, and tongues of cyan and gold fire streaming off the body
+    continuously; the owner's file has no burning: we add it. Judge every render for it first.
+
 What the zip holds (read with Blender's own Python module: `python3 -m venv <scratch>/venv/bpy && <venv>/bin/pip install bpy` (5.3,
 Python 3.13); it opens the owner's .blend as it is): Marco_Phoenix.blend (Blender 4.3 file, zstd): 213 mesh parts (bill, eyes, feet,
 claws, 18 tail fans and their shafts, 98 tail flame parts, mane, mantle, wings), about 88k vertices and 175k triangles, each part
@@ -846,3 +874,21 @@ wings wrapped round between beats as in the GIF, transform in a cyan sphere of l
   caught get nothing.
 - 3.6.7 released (`.github/release-notes-3.6.7.md`). The owner's item 4 came empty: ask for it.
 - The Phoenix work so far: tools/phoenix_bake.py written (bpy; not yet run to the end nor wired); see U for the plan.
+
+## W. 3.6.8: the owner's Mochi notes 25, 27, 28, 30
+
+- Scorching Buzz Cut's catch (N 25): MochiMoves.Wheel.scorchTick: whoever comes within SCORCH_MEET 2.7 of the wheel (now and half a
+  step back) is rolled over and carried pinned under its front (set where the wheel's front is each tick), hurt 1 and burning every 3
+  ticks; let go (or at BUZZ_ROLL), every one carried plus anyone within SCORCH_NEAR 4 is caught: the full move always follows.
+- The spiral (N 27, both versions): MochiDraw.buzzReach in the whirl grows with how far round it has turned (to BUZZ_REACH_MOST 14, was
+  6.5), buzzLift keeps the ball just over the ground at any reach. Rendered from above: widening every turn.
+- Scorching (N 30): SCORCH_TURNS 7 (MochiDraw.buzzTurn/buzzArm/buzzBend/buzzStuck take the turns; Buzz Cut 5); its crater drawn
+  SCORCH_CRATER_SCALE 1.9 times as big (MochiDraw.Scaled: a sink scaling what it gets about a point, no extra quads; the scorch fire
+  too), Craters.open 7.5 and the burning blast 8.5 round it. The client knows Scorching from BUZZ_ROLLING's by or BUZZ_CAUGHT's size.
+- The dough sounds (N 28): tools/mochi_sounds.py rewritten: 12 clips from 5 CC0 slime/goo/clay recordings (greenlinker's slime
+  stretching and slapping, rubberduck9999's slime squishing, Funky_Audio's clay slaps, Eneasz's squishes), every one +4.3 dB over noise
+  at most as cut (tools/tonal_lines.py), the room's hum under 95 Hz filtered (web_sounds.HUM: a 4-pole high-pass; the bass lift brought
+  hums back: not used); sounds.json and MochiSounds.EVENTS point at them (stretch1-2, slap1-3, squish1-2, splat1-2, swell1, slam1, stamp1).
+- Budget: the wider spiral made Scorching's every-piece-at-once frame 16.4k: its fire ring four bands, the burning ball five tongues
+  (about 15.3k now).
+- build.py NEW_PREFIXES allows assets/hexhaki/phoenix/ (the Phoenix model, unused until the fruit is registered).

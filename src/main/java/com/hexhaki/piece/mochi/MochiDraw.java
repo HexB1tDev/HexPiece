@@ -1614,8 +1614,13 @@ public final class MochiDraw {
     public static final double BUZZ_CRATER_LIFE = 110.0;
     /** The whirl's turns, the mace's reach: unrolled, whirling at its longest. */
     public static final double BUZZ_TURNS = 5.0;
+    /** 3.6.8 (the owner: "the awakened version of Buzz Cut should create a much bigger crater and spin 2 more times"): Scorching's. */
+    public static final double SCORCH_TURNS = 7.0;
+    /** How much bigger Scorching Buzz Cut's crater is than Buzz Cut's (every piece of it scaled about its middle). */
+    public static final double SCORCH_CRATER_SCALE = 1.9;
     public static final double BUZZ_REACH = 3.4;
-    public static final double BUZZ_REACH_MOST = 6.5;
+    /** 3.6.8 (the owner: "with the more it spins the wider it should get ... I just want the thing to be wider"): 6.5 before. */
+    public static final double BUZZ_REACH_MOST = 14.0;
     /** 3.6.3 (the owner: "the arm increases to insane ammounts and then slams into the ground"): raised overhead, then slammed this far. */
     public static final double BUZZ_REACH_UP = 16.0;
     public static final double BUZZ_REACH_SLAM = 13.0;
@@ -1627,6 +1632,11 @@ public final class MochiDraw {
 
     /** The mace arm's swing round the user, radians from the way they faced when they caught (counter-clockwise seen from above). */
     public static double buzzTurn(double t) {
+        return buzzTurn(t, BUZZ_TURNS);
+    }
+
+    /** As {@link #buzzTurn(double)}, whirled round {@code turns} times (Scorching: {@link #SCORCH_TURNS}). */
+    public static double buzzTurn(double t, double turns) {
         if (t < BUZZ_UNROLL) {
             return -1.75;
         }
@@ -1640,9 +1650,9 @@ public final class MochiDraw {
             double u = (t - BUZZ_HIT) / (BUZZ_WHIRL - BUZZ_HIT);
             double k = 0.3;
             double g = u < k ? u * u / (2 * k) : k / 2 + (u - k);
-            return 2 * Math.PI * BUZZ_TURNS * g / (1.0 - k / 2);
+            return 2 * Math.PI * turns * g / (1.0 - k / 2);
         }
-        return 2 * Math.PI * BUZZ_TURNS;
+        return 2 * Math.PI * turns;
     }
 
     /**
@@ -1652,9 +1662,13 @@ public final class MochiDraw {
     public static double buzzLift(double t) {
         // its giant ball half buried in the ground at the slam (the shoulder 1.4 over the ground)
         double down = Math.asin(Math.max(-0.9, Math.min(0.9, (buzzBall(BUZZ_SLAM) * 0.5 - 1.4) / BUZZ_REACH_SLAM)));
+        if (t < BUZZ_HIT) {
+            return 0.12;
+        }
         if (t < BUZZ_WHIRL) {
-            // high enough that the giant ball clears the ground as it whirls
-            return t < BUZZ_HIT ? 0.12 : 0.3;
+            // just high enough that the giant ball skims over the ground as it whirls, however far out the spiral has swung it
+            double r = buzzReach(t);
+            return Math.max(0.04, Math.asin(Math.max(-0.9, Math.min(0.9, (buzzBall(t) * 1.05 + 0.2 - 1.4) / Math.max(1.0, r)))));
         }
         if (t < BUZZ_RAISED) {
             return 0.3 + (1.62 - 0.3) * smooth((t - BUZZ_WHIRL) / (BUZZ_RAISED - BUZZ_WHIRL));
@@ -1679,7 +1693,10 @@ public final class MochiDraw {
         }
         double r;
         if (t < BUZZ_WHIRL) {
-            r = BUZZ_REACH + (BUZZ_REACH_MOST - BUZZ_REACH) * clamp((t - BUZZ_HIT) / (BUZZ_WHIRL - BUZZ_HIT));
+            // 3.6.8: a spiral: the further round it has whirled, the further out the arm has stretched (the owner's sketch: a spiral
+            // widening from the user outward)
+            double turned = t < BUZZ_HIT ? 0.0 : buzzTurn(t) / (2 * Math.PI * BUZZ_TURNS);
+            r = BUZZ_REACH + (BUZZ_REACH_MOST - BUZZ_REACH) * Math.pow(clamp(turned), 0.9);
         } else if (t < BUZZ_DOWN) {
             r = BUZZ_REACH_MOST + (BUZZ_REACH_UP - BUZZ_REACH_MOST) * ease((t - BUZZ_WHIRL) / (BUZZ_RAISED - BUZZ_WHIRL));
         } else if (t < BUZZ_SLAM) {
@@ -1705,7 +1722,12 @@ public final class MochiDraw {
      * the ground"); into out (x, y, z).
      */
     public static double[] buzzStuck(double t, int k, double fx, double fy, double fz, double yaw0, double[] out) {
-        double[] arm = buzzArm(Math.min(t, BUZZ_SLAM), fx, fy, fz, yaw0, new double[8]);
+        return buzzStuck(t, k, fx, fy, fz, yaw0, out, BUZZ_TURNS);
+    }
+
+    /** As {@link #buzzStuck(double, int, double, double, double, double, double[])}, whirled round {@code turns} times. */
+    public static double[] buzzStuck(double t, int k, double fx, double fy, double fz, double yaw0, double[] out, double turns) {
+        double[] arm = buzzArm(Math.min(t, BUZZ_SLAM), fx, fy, fz, yaw0, new double[8], turns);
         double ball = buzzBall(Math.min(t, BUZZ_SLAM));
         double cx = arm[0] + arm[3] * arm[6];
         double cy = arm[1] + arm[4] * arm[6];
@@ -1741,7 +1763,12 @@ public final class MochiDraw {
      * the user's own yaw now in degrees).
      */
     public static double[] buzzArm(double t, double fx, double fy, double fz, double yaw0, double[] out) {
-        double yaw = yaw0 - Math.toDegrees(buzzTurn(t));
+        return buzzArm(t, fx, fy, fz, yaw0, out, BUZZ_TURNS);
+    }
+
+    /** As {@link #buzzArm(double, double, double, double, double, double[])}, whirled round {@code turns} times. */
+    public static double[] buzzArm(double t, double fx, double fy, double fz, double yaw0, double[] out, double turns) {
+        double yaw = yaw0 - Math.toDegrees(buzzTurn(t, turns));
         double r = Math.toRadians(yaw);
         double fwx = -Math.sin(r);
         double fwz = Math.cos(r);
@@ -1768,8 +1795,13 @@ public final class MochiDraw {
      * slam where the owner drew it hanging under).
      */
     public static double[] buzzBend(double t, double yaw0, double[] out) {
-        double[] now = buzzArm(t, 0, 0, 0, yaw0, BEND_NOW);
-        double[] before = buzzArm(Math.max(0.0, t - 1.5), 0, 0, 0, yaw0, BEND_BEFORE);
+        return buzzBend(t, yaw0, out, BUZZ_TURNS);
+    }
+
+    /** As {@link #buzzBend(double, double, double[])}, whirled round {@code turns} times. */
+    public static double[] buzzBend(double t, double yaw0, double[] out, double turns) {
+        double[] now = buzzArm(t, 0, 0, 0, yaw0, BEND_NOW, turns);
+        double[] before = buzzArm(Math.max(0.0, t - 1.5), 0, 0, 0, yaw0, BEND_BEFORE, turns);
         double mx = now[3] - before[3];
         double my = now[4] - before[4];
         double mz = now[5] - before[5];
@@ -2171,6 +2203,46 @@ public final class MochiDraw {
      * fractures, flying block debris, dense dust clouds and a large impact crater"): a white flash, a black star of splattered dough
      * and cracks spreading out of it, red sparks, a ring of shock, dust, rocks thrown; it lies, then fades; {@code age} ticks in.
      */
+    /**
+     * 3.6.8: the crater {@code scale} times as big (Scorching Buzz Cut's: {@link #SCORCH_CRATER_SCALE}): every piece of it scaled about
+     * its middle (no more quads).
+     */
+    public static void buzzCrater(FireMesh.Sink sink, double x, double y, double z, double age, int seed, double scale) {
+        if (scale == 1.0) {
+            buzzCrater(sink, x, y, z, age, seed);
+            return;
+        }
+        SCALED.target = sink;
+        SCALED.cx = x;
+        SCALED.cy = y;
+        SCALED.cz = z;
+        SCALED.scale = scale;
+        buzzCrater(SCALED, x, y, z, age, seed);
+        SCALED.target = null;
+    }
+
+    /** A sink drawing what it is given scaled about a point (the render thread only: reused). */
+    public static final class Scaled implements FireMesh.Sink {
+        public FireMesh.Sink target;
+        public double cx;
+        public double cy;
+        public double cz;
+        public double scale = 1.0;
+        private final double[] xyz = new double[12];
+
+        @Override
+        public void quad(double[] p, int[] argb) {
+            for (int k = 0; k < 4; k++) {
+                this.xyz[k * 3] = this.cx + (p[k * 3] - this.cx) * this.scale;
+                this.xyz[k * 3 + 1] = this.cy + (p[k * 3 + 1] - this.cy) * this.scale;
+                this.xyz[k * 3 + 2] = this.cz + (p[k * 3 + 2] - this.cz) * this.scale;
+            }
+            this.target.quad(this.xyz, argb);
+        }
+    }
+
+    static final Scaled SCALED = new Scaled();
+
     public static void buzzCrater(FireMesh.Sink sink, double x, double y, double z, double age, int seed) {
         if (age < 0 || age > BUZZ_CRATER_LIFE) {
             return;

@@ -159,9 +159,10 @@ public final class MochiMoves {
     static final float SCORCH_ROLL_HURT = 1.0F;
     static final float SCORCH_BLOW_HURT = 10.0F;
     static final float SCORCH_SLAM_HURT = 26.0F;
-    public static final double SCORCH_CRATER = 5.5;
-    /** Whom the wheel rolled over stays caught while still this near when it is let go. */
-    static final double SCORCH_NEAR = 4.0;
+    public static final double SCORCH_CRATER = 7.5;
+    /** 3.6.8: how near the wheel's middle a body is met (rolled over and carried), and anyone this near when it is let go is caught too. */
+    public static final double SCORCH_MEET = 2.7;
+    public static final double SCORCH_NEAR = 4.0;
 
     /**
      * 3.6.4: the Awakening (M: the reference's DoughV2 kit) and its left click, Trident Lacerations (kind TRIDENT, bx the swing 0 to 4
@@ -1417,35 +1418,52 @@ public final class MochiMoves {
             this.born = born;
         }
 
-        /** Scorching: roll over whoever it meets (hurt and burning), and when let go catch them (or unroll if none is near). */
+        /**
+         * Scorching: whoever the wheel meets is rolled over and carried along pinned under its front (hurt and burning every few
+         * ticks), so whoever it rolled over is still there when N is let go; let go, they are caught, with anyone near (or it unrolls if
+         * none). 3.6.8 (the owner: "buzz Cut mochi in the awakening state has a ton of trouble catching people into the full move, a lot
+         * of times it doesnt count the full move"): before, the wheel rolled on past them and the hits knocked them off, more than
+         * SCORCH_NEAR behind it by the time it was let go, so the swing never came.
+         */
         boolean scorchTick(long now, long age, Vec3 at) {
-            if (age % SCORCH_ROLL_EVERY == 0) {
-                for (LivingEntity body : ItoMoves.foes(this.owner, at, MochiDraw.BUZZ_WHEEL + 0.8)) {
-                    if (MaguMoves.hurt(this.owner, body, SCORCH_ROLL_HURT * (coated(this.owner) ? 1.25F : 1.0F))) {
-                        body.m_20254_(2);
-                    }
-                    if (!this.rolled.contains(body)) {
+            // met: round the wheel now and half a step back along its way (it rolls fast)
+            Vec3 f = ItoMoves.flat(this.owner);
+            for (Vec3 c : new Vec3[] {at, at.m_82546_(f.m_82490_(0.8))}) {
+                for (LivingEntity body : ItoMoves.foes(this.owner, c, SCORCH_MEET)) {
+                    if (!this.rolled.contains(body) && this.rolled.size() < BUZZ_MOST) {
                         this.rolled.add(body);
                     }
                 }
-                if (!this.rolled.isEmpty()) {
-                    ItoMoves.lightning(this.owner, at);
+            }
+            this.rolled.removeIf(b -> !b.m_6084_() || b.m_9236_() != this.level);
+            // carried pinned under the front of the wheel
+            Vec3 front = this.owner.m_20182_().m_82549_(f.m_82490_(MochiDraw.BUZZ_WHEEL + 0.3));
+            for (int k = 0; k < this.rolled.size(); k++) {
+                LivingEntity body = this.rolled.get(k);
+                Vec3 side = new Vec3(-f.f_82481_, 0, f.f_82479_).m_82490_((k - (this.rolled.size() - 1) * 0.5) * 0.7);
+                body.m_20256_(Vec3.f_82478_);
+                body.f_19864_ = true;
+                body.f_19789_ = 0.0F;
+                body.m_6021_(front.f_82479_ + side.f_82479_, this.owner.m_20186_(), front.f_82481_ + side.f_82481_);
+            }
+            if (age % SCORCH_ROLL_EVERY == 0 && !this.rolled.isEmpty()) {
+                for (LivingEntity body : this.rolled) {
+                    if (MaguMoves.hurt(this.owner, body, SCORCH_ROLL_HURT * (coated(this.owner) ? 1.25F : 1.0F))) {
+                        body.m_20254_(2);
+                    }
                 }
+                ItoMoves.lightning(this.owner, at);
             }
             if (this.scorch.scorchHeld && age < MochiDraw.BUZZ_ROLL) {
                 return false;
             }
-            List<LivingEntity> caught = new ArrayList<>();
-            for (LivingEntity body : this.rolled) {
-                if (body.m_6084_() && body.m_20182_().m_82554_(this.owner.m_20182_()) < SCORCH_NEAR && caught.size() < BUZZ_MOST) {
-                    caught.add(body);
-                }
-            }
-            for (LivingEntity body : ItoMoves.foes(this.owner, at, 2.8)) {
+            List<LivingEntity> caught = new ArrayList<>(this.rolled);
+            for (LivingEntity body : ItoMoves.foes(this.owner, at, SCORCH_NEAR)) {
                 if (!caught.contains(body) && caught.size() < BUZZ_MOST) {
                     caught.add(body);
                 }
             }
+
             if (caught.isEmpty()) {
                 fx(this.owner, WHEEL, 0, this.owner.m_20182_(), Vec3.f_82478_, BUZZ_MISSED, 0, 0, 0);
             } else {
@@ -1547,7 +1565,8 @@ public final class MochiMoves {
             }
             this.owner.f_19789_ = 0.0F;
             this.caught.removeIf(b -> !b.m_6084_() || b.m_9236_() != this.level);
-            double[] arm = MochiDraw.buzzArm(t, this.feet.f_82479_, this.feet.f_82480_, this.feet.f_82481_, this.yaw0, new double[8]);
+            double turns = this.scorch ? MochiDraw.SCORCH_TURNS : MochiDraw.BUZZ_TURNS;
+            double[] arm = MochiDraw.buzzArm(t, this.feet.f_82479_, this.feet.f_82480_, this.feet.f_82481_, this.yaw0, new double[8], turns);
             Vec3 ball = new Vec3(arm[0] + arm[3] * arm[6], arm[1] + arm[4] * arm[6], arm[2] + arm[5] * arm[6]);
             if (!this.struck && t >= MochiDraw.BUZZ_HIT) {
                 this.struck = true;
@@ -1574,7 +1593,7 @@ public final class MochiMoves {
                 double[] at = new double[3];
                 for (int k = 0; k < this.caught.size(); k++) {
                     LivingEntity body = this.caught.get(k);
-                    MochiDraw.buzzStuck(t, k, this.feet.f_82479_, this.feet.f_82480_, this.feet.f_82481_, this.yaw0, at);
+                    MochiDraw.buzzStuck(t, k, this.feet.f_82479_, this.feet.f_82480_, this.feet.f_82481_, this.yaw0, at, turns);
                     body.m_20256_(Vec3.f_82478_);
                     body.f_19864_ = true;
                     body.f_19789_ = 0.0F;
@@ -1588,7 +1607,7 @@ public final class MochiMoves {
                 double[] at = new double[3];
                 for (int k = 0; k < this.caught.size(); k++) {
                     LivingEntity body = this.caught.get(k);
-                    MochiDraw.buzzStuck(t, k, this.feet.f_82479_, ground.f_82480_, this.feet.f_82481_, this.yaw0, at);
+                    MochiDraw.buzzStuck(t, k, this.feet.f_82479_, ground.f_82480_, this.feet.f_82481_, this.yaw0, at, turns);
                     body.m_6021_(at[0], ground.f_82480_, at[2]);
                     hit(this.owner, body, this.scorch ? SCORCH_SLAM_HURT : BUZZ_SLAM_HURT, new Vec3(0, -0.6, 0));
                     HakiFalls.knockDown(this.level, body, 60, false);
