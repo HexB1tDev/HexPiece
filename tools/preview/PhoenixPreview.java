@@ -156,7 +156,7 @@ public final class PhoenixPreview {
                 q[16] = mx * mx + my * my + mz * mz;
                 quads.add(q);
             };
-            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, pts, count, t * 20.0, 0.0, 0.0, wind, 1.0, 7);
+            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, pts, shape.anchorSize, count, t * 20.0, 0.0, 0.0, wind, 1.0, 7);
             quads.sort((x, y) -> Double.compare(y[16], x[16]));
             for (double[] q : quads) {
                 ra.blend(q);

@@ -37,6 +37,8 @@ public final class PhoenixForm {
         public final boolean[] fire;
         public final float[][] reach;
         public final int[] anchors;
+        /** Each fire point's tongues' size (1 the wings' and the mantle's). */
+        public final float[] anchorSize;
 
         public Shape(DragonModel m) {
             this.parent = m.parent;
@@ -53,7 +55,14 @@ public final class PhoenixForm {
             int np = m.parts.length;
             this.fire = new boolean[np];
             this.reach = new float[np][];
-            java.util.List<int[]> tips = new java.util.ArrayList<>();
+            // the fire points by body part (the reference: the flames stream off the wings' edges most, then the mantle, the crest
+            // and the tail): each group's candidates, then each group's share of the tongues spread evenly over them
+            String[] groups = {"Wing L", "Wing R", "Mantle", "Mane", "Blue tail fan", "Tail"};
+            int[] quota = {16, 16, 10, 8, 6, 8};
+            java.util.List<java.util.List<int[]>> pools = new java.util.ArrayList<>();
+            for (int g = 0; g < groups.length; g++) {
+                pools.add(new java.util.ArrayList<>());
+            }
             for (int i = 0; i < np; i++) {
                 DragonModel.Part part = m.parts[i];
                 String name = part.name;
@@ -80,22 +89,41 @@ public final class PhoenixForm {
                     this.reach[i][v] /= most;
                 }
                 if (this.fire[i]) {
-                    // the far half of every fire part streams tongues: its points there, a few a part
-                    int step = Math.max(1, nv / 3);
-                    for (int v = step / 2; v < nv; v += step) {
-                        if (this.reach[i][v] > 0.55F) {
-                            tips.add(new int[] {i, v});
+                    int g = -1;
+                    for (int k = 0; k < groups.length && g < 0; k++) {
+                        if (name.startsWith(groups[k])) {
+                            g = k;
+                        }
+                    }
+                    if (g >= 0) {
+                        // the far part of it (its edge and tips), a few points a part
+                        int step = Math.max(1, nv / 12);
+                        for (int v = step / 2; v < nv; v += step) {
+                            if (this.reach[i][v] > 0.6F) {
+                                pools.get(g).add(new int[] {i, v});
+                            }
                         }
                     }
                 }
             }
-            // spread evenly over every part, at most TONGUES of them
-            int keep = Math.min(TONGUES, tips.size());
-            this.anchors = new int[keep * 2];
-            for (int k = 0; k < keep; k++) {
-                int[] t = tips.get((int) ((long) k * tips.size() / keep));
-                this.anchors[k * 2] = t[0];
-                this.anchors[k * 2 + 1] = t[1];
+            java.util.List<int[]> chosen = new java.util.ArrayList<>();
+            java.util.List<Integer> group = new java.util.ArrayList<>();
+            for (int g = 0; g < groups.length; g++) {
+                java.util.List<int[]> pool = pools.get(g);
+                int keep = Math.min(quota[g], pool.size());
+                for (int k = 0; k < keep; k++) {
+                    chosen.add(pool.get((int) ((long) (2 * k + 1) * pool.size() / (2L * keep))));
+                    group.add(g);
+                }
+            }
+            this.anchors = new int[chosen.size() * 2];
+            this.anchorSize = new float[chosen.size()];
+            for (int k = 0; k < chosen.size(); k++) {
+                this.anchors[k * 2] = chosen.get(k)[0];
+                this.anchors[k * 2 + 1] = chosen.get(k)[1];
+                int g = group.get(k);
+                // the wings' and the mantle's tongues the biggest, the crest's and tail's smaller
+                this.anchorSize[k] = g <= 2 ? 1.0F : g == 3 ? 0.75F : 0.6F;
             }
             this.root = m.bone("root");
             this.body = m.bone("body");
@@ -236,7 +264,9 @@ public final class PhoenixForm {
             pose.clip(m.clips.get("soar"), seconds, true, glide);
         }
         float flap = (1.0F - glide) * (1.0F - dive);
-        float amp = (42.0F - 12.0F * speed) * flap;
+        float amp = (34.0F - 10.0F * speed) * flap;
+        // the power stroke: the downstroke quick, the recovery slower (the phase run faster through the downstroke's middle)
+        beat = beat + 0.35F * (float) Math.sin(beat);
         float sb = (float) Math.sin(beat);
         float cb = (float) Math.cos(beat);
         // the upstroke (the wing rising: sin falling) folds it in
@@ -246,7 +276,8 @@ public final class PhoenixForm {
             float m0 = s == 0 ? 1.0F : -1.0F;
             int[] w = sh.wing[s];
             // the rest's raised wings levelled out for flight, the flap, its forward sweep down and back up, the dive's sweep
-            turn(pose, sh, w[0], m0 * (amp * sb + 14.0F * speed + 22.0F * dive), 0, 0, 1);
+            // the stroke centred a little under the rest's raised wings: about 52 degrees up at its top, 16 under level at its bottom
+            turn(pose, sh, w[0], m0 * (amp * sb + 12.0F * flap + 14.0F * speed + 22.0F * dive), 0, 0, 1);
             turn(pose, sh, w[0], m0 * (-9.0F * cb * flap + 55.0F * dive + 8.0F * speed), 0, 1, 0);
             // the follow-through: every joint out along the wing a little later, the wave running out to the tips
             turn(pose, sh, w[1], m0 * amp * 0.32F * (float) Math.sin(beat - 0.6F), 0, 0, 1);
@@ -258,22 +289,23 @@ public final class PhoenixForm {
             turn(pose, sh, w[3], -m0 * fold * 58.0F, 0, 1, 0);
             turn(pose, sh, w[4], -m0 * fold * 25.0F, 0, 1, 0);
             // the legs tucked up and back in flight, hanging under the hover
-            turn(pose, sh, sh.leg[s], 35.0F * speed + 6.0F * flap * (float) Math.sin(beat - 2.0F), 1, 0, 0);
+            // (about the model's x a negative turn swings a hanging part back: the head is toward -Z)
+            turn(pose, sh, sh.leg[s], -45.0F * speed - 30.0F * dive + 6.0F * flap * (float) Math.sin(beat - 2.0F), 1, 0, 0);
         }
         // the body: lifted with each downstroke, rocked by it; leaning into the flight at speed and nose down in the dive
         pose.t[sh.root * 3 + 1] += 0.32F * flap * (float) Math.sin(beat - 1.0F);
-        turn(pose, sh, sh.root, -55.0F * speed - 30.0F * dive, 1, 0, 0);
+        turn(pose, sh, sh.root, -65.0F * speed - 30.0F * dive, 1, 0, 0);
         turn(pose, sh, sh.body, 4.5F * flap * (float) Math.sin(beat - 0.4F), 1, 0, 0);
         // the head held steady against the body's rock, lifted back up to look ahead when it leans
-        turn(pose, sh, sh.neck, -4.0F * flap * (float) Math.sin(beat - 0.4F) + 30.0F * speed + 15.0F * dive, 1, 0, 0);
+        turn(pose, sh, sh.neck, -4.0F * flap * (float) Math.sin(beat - 0.4F) + 38.0F * speed + 15.0F * dive, 1, 0, 0);
         turn(pose, sh, sh.head, 2.0F * (float) Math.sin(seconds * 0.9F) + 10.0F * speed, 1, 0, 0);
         turn(pose, sh, sh.head, 6.0F * (float) Math.sin(seconds * 0.43F), 0, 1, 0);
         // the tail: swinging late behind the beat, streaming out behind at speed; its three streamers swaying on their own
-        turn(pose, sh, sh.tailRoot, 8.0F * flap * (float) Math.sin(beat - 1.7F) + 25.0F * speed + 30.0F * dive, 1, 0, 0);
+        turn(pose, sh, sh.tailRoot, 8.0F * flap * (float) Math.sin(beat - 1.7F) - 30.0F * speed - 30.0F * dive, 1, 0, 0);
         for (int k = 0; k < 3; k++) {
             turn(pose, sh, sh.tail[k], 9.0F * (float) Math.sin(seconds * 1.9F + k * 1.3F) * (1.0F - 0.5F * speed), 0, 0, 1);
-            turn(pose, sh, sh.tail[k], 7.0F * (float) Math.sin(seconds * 1.4F + k * 2.1F) + 6.0F * flap * (float) Math.sin(beat - 2.4F - k * 0.4F),
-                1, 0, 0);
+            turn(pose, sh, sh.tail[k], 7.0F * (float) Math.sin(seconds * 1.4F + k * 2.1F) + 6.0F * flap * (float) Math.sin(beat - 2.4F - k * 0.4F)
+                - 22.0F * speed, 1, 0, 0);
         }
         pose.solve();
     }

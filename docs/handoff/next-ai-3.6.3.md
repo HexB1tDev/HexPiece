@@ -892,3 +892,28 @@ wings wrapped round between beats as in the GIF, transform in a cyan sphere of l
 - Budget: the wider spiral made Scorching's every-piece-at-once frame 16.4k: its fire ring four bands, the burning ball five tongues
   (about 15.3k now).
 - build.py NEW_PREFIXES allows assets/hexhaki/phoenix/ (the Phoenix model, unused until the fruit is registered).
+
+## X. The Phoenix so far (unversioned, not registered as a fruit yet: the owner asked to see it animated before any move)
+
+- tools/phoenix_bake.py (run with Blender's own Python module bpy 5.3 in a scratch venv; its outputs committed): input/marco_phoenix.zip
+  (the owner's Marco_Phoenix.blend, kept as sent) baked to assets/hexhaki/phoenix/marco.sry (the dragon's model format: 213 parts, each
+  rigid on one of the 21 bones, decimated to 11.5k faces: 24.6k was over the phone budget; the take "soar" = the file's soaring
+  wingbeat, 73 frames) and textures/piece/phoenix/marco.png (a 1024 atlas: the file's three fire textures and a palette of every flat
+  colour). The model's space: +Y up, head toward -Z, its left wing toward -X.
+- phoenix/PhoenixLook: the file's cel look (every material unlit, the base colour times a colour ramp of dot(normal, LIGHT)); the two
+  ramps (cool kind 0, warm kind 2); SCALE 0.4 blocks a unit (wingspan about 7: the owner's "Like the GIF").
+- phoenix/PhoenixForm: Shape (bones, the fire parts: all but bill, eyes, feet, legs, insignia and the head/breast mesh; each vertex's
+  reach from its bone; the fire points by body part: wings 16+16, mantle 10, crest 8, tail fans 6, streamers 8, sizes by part);
+  flame() (the owner: "the body is made of flames ... moving flames": every fire part flows all the time, waves running out to its
+  tips, licking up, fluttering, the tips most); turn() (a bone turned about the MODEL's axes through its parent's rest frame: a
+  negative turn about x swings a hanging part back); pose() with Motion (speed, glide, dive, form): the powered wingbeat (a quick
+  downstroke, slower recovery folding at the wrist, about 52 degrees up to 16 under level, joints following late so a wave runs to the
+  tips), the body lifting with each downstroke, the head held steady, levelled into the flight with speed (root -65 degrees), the tail
+  and legs trailing behind, the streamers swaying on their own; glide = the owner's own take; dive = wings swept back, nose down.
+- phoenix/PhoenixFire: tongues of flame streaming off the fire points (curling tapered banded tubes in cyan and gold, rising and
+  streaming back with the wind, the root letting go and lifting away): about 2.6k quads; the model 11.5k: about 14k with the fire.
+- tools/preview/PhoenixPreview (states rest, soar, hover, fly, fast, glide, dive; t* the axis test turns), the scratchpad's pprev.sh.
+- Previews sent to the owner (SendUserFile): phoenix-hover, -fly, -glide, -dive and a close-up, as GIFs (scratchpad gif/, rebuilt from
+  PhoenixPreview frames with PIL). Next: the owner's word on them; then the game side (DragonForm-like flight: Z transform/detransform
+  with a cooldown, the client renderer with the cel ramp, the fire and the flight states from the player's motion, the camera), a
+  transform animation (the reference's: a cyan sphere of light, the phoenix opening out of it), then the moves on the wiki's GIFs.

@@ -5,12 +5,12 @@ model format (sea/DragonModel: tools/dragon_mesh.py writes the dragon's), read b
 
 Run it with Blender's own Python module (CI does not need it: its outputs are committed):
     python3 -m venv /tmp/bpy && /tmp/bpy/bin/pip install bpy     (bpy 5.3, Python 3.13)
-    /tmp/bpy/bin/python tools/phoenix_bake.py [--ratio 0.14]
+    /tmp/bpy/bin/python tools/phoenix_bake.py [--ratio 0.065]
 It writes src/main/resources/assets/hexhaki/phoenix/marco.sry and src/main/resources/assets/hexhaki/textures/piece/phoenix/marco.png.
 
 What it keeps of the owner's file, exactly: every one of the 213 parts in its own place and colour, each skinned to its bone of the
 21-bone rig, and the take "Marco | soaring wingbeat" (73 frames at 30 a second). What it changes for the phone: each part decimated
-(collapse; at least FLOOR triangles a part) from about 175k triangles to about 20k. Its look: every material of the file is unlit, an
+(collapse; at least FLOOR triangles a part) from about 175k triangles to about 11.5k (the dragon is about 10k). Its look: every material of the file is unlit, an
 emission whose colour is its base colour (or its fire texture) times a colour ramp of how much the surface faces one fixed light
 (dot(normal, LIGHT) * 0.5 + 0.5); the two ramps of the file (cool: plumage, bill, eyes; warm: tail, mane, wings, fire) are written into
 the model's part kinds (0 the cool ramp, 2 the warm one, which also ripples like flame in the game) and PhoenixForm keeps their stops.
@@ -50,7 +50,7 @@ C_INV = C.inverted()
 
 
 def args():
-    ratio = 0.14
+    ratio = 0.065
     if "--ratio" in sys.argv:
         ratio = float(sys.argv[sys.argv.index("--ratio") + 1])
     return ratio
