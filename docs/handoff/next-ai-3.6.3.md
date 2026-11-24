@@ -718,3 +718,32 @@ Build #243 (the handoff push before this chat) was checked first. The session wa
   - Clips mochi_lance_charge (the arm thrust out, a tremble) and mochi_lance_fire (drawn back, driven out); HandMoves DEEP and JAB.
   - DragonTests: every tick of the charge, flight and strike, near and far, under 16k. HudTests: its beats in order, the second
     blast bigger and harder, the ball as big as the GIF's.
+- **Elastic Lasso** (awakened X) on Elastic_Lasso.gif (a tick a frame from its frame 12; `|mlasso:age[:miss]`): the lasso band whirled
+  round the user at the chest inside white wind arcs and magenta rings, black bits on the ground (MochiV2.lassoWhirl, to LASSO_THROW
+  8); the throw's pink-and-black burst (MochiV2.pinkBurst: the awakened Haki's pink fire cut in PINK_BANDS, black splinters, white
+  shards, a white ring; played twice as fast for the throw); the band (lassoBand: thick white bar, a wave running down it, a zig-zag
+  kink by its end) shoots out past its reach in LASSO_SHOOT 3 (lassoOut: elastic), a loop round the one caught, a small burst there;
+  held LASSO_HOLD 2, they are yanked back along it in LASSO_PULL 7 (server Yank: velocity toward 1.6 in front of the user, lifted a
+  little mid-pull) and land in a big pink burst (hit 7, held LASSO_STUN 16 ticks: "allowing itself as a combo extender"); the band
+  back into the hand in LASSO_BACK 3; a miss springs back. Server MochiMoves LASSO 288 (LASSO_WHIRL, LASSO_THROWN with the caught
+  body's id, LASSO_ARRIVED); catch 2.5 (hit: the Conqueror's lightning). Clip mochi_lasso (the arm whirling overhead out to the side:
+  the lint caught the first try through the head; thrown; hauled), HandMoves THROW.
+- **Oblivion** (awakened C) on Oblivion.gif (`|mobliv:age`, the one held 5 ahead): a stomp (rings of white and pink at the feet, the
+  clip's body and arms: legs are never keyed), a big cream eruption at the user's front (twice their height) with pink rays and cream
+  bits, the surge of cream lumps running along the ground to them (OBL_SURGE 5 to OBL_GRAB 10), a pink-and-black burst there and white
+  swirls on the ground, ten jagged cream slabs rising round them one after another into a basin (OBL_WALL 2.2, OBL_TALL 1.9, CREAM
+  bands: the GIF's ivory), breathing, foam at their feet; from OBL_BREAK 31 the walls sag, tip out and break into splats, bits lying on
+  the ground, black Haki spikes and pink streaks standing in them, pink rings; OBL_BURST 43: a black-and-magenta star (solid black
+  cones flung out, magenta rays, a pink heart) and 36 cream shards blown out everywhere. Server OBLIVION 289 (a, the feet to theirs):
+  OBL_RANGE 8, the grab hits 6 and holds whoever is within the walls (not drawn as glue), the burst UoMoves.explode 12 (POINT ONE).
+  Clip mochi_oblivion, HandMoves DOWN.
+- **Blazing Storm** (awakened B) on Blazing_Storm.gif (`|mstorm:age`, the point 8 ahead; rendered beside frames 44 and 104): six
+  mochi tendrils sprouting out of the user's back into six white puffs (MochiV2.stormRoot: three a side at the shoulders), a burst of
+  fire and dough; from STORM_FORM 8 to STORM_BARRAGE 80 each arm jabs out of its puff onto the point (stormOut: a STORM_JAB 5 cycle,
+  out of step) as a black Haki bar wrapped in long glowing bands of orange and yellow and a dark smear of speed, fire crescents curling
+  at the user's front; STORM_LAST 84 all six fully out, thicker, held; STORM_BOOM 94 an explosion where they meet (a white flash, fire,
+  arcs of fire, white blobs and black shards). Server STORM 290: a volley every 4 ticks re-aimed at what the user looks at (STORM_AIM:
+  "can be aimed"; the client eases between aims), 1 a hit on fire, the lightning; the last strike 6; the explosion UoMoves.explode 10.
+  Clip mochi_storm (both arms driving, a shake each volley), HandMoves PUSH.
+- All three: DragonTests budgets every tick (Elastic Lasso, Oblivion near and far, Blazing Storm near and far: all under 16k, Blazing
+  Storm the heaviest at about 9.5k close); HudTests checks their beats.

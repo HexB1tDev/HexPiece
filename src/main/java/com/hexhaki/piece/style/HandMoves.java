@@ -193,6 +193,9 @@ public final class HandMoves {
             case "mochi_trident_5" -> new Move(UP, 0);
             // 3.6.6: Power Mochi: the arms flung out as the donuts burst out; each punch a point of the arm on its side
             case "mochi_power" -> new Move(UP_DOWN, 0);
+            case "mochi_lasso" -> new Move(THROW, 0);
+            case "mochi_oblivion" -> new Move(DOWN, 0);
+            case "mochi_storm" -> new Move(PUSH, 0.6);
             case "mochi_power_1", "mochi_power_2" -> new Move(POINT, 0);
             default -> null;
         };

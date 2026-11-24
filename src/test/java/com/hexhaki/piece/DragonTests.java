@@ -839,6 +839,33 @@ public final class DragonTests {
                 check(count[0], finite[0], "Power Mochi", age);
             }
         }
+        // 3.6.6: Elastic Lasso: the whirl, the throw's burst, the band out to 12 with its loop, the arrival's burst, every tick
+        for (int age = 0; age <= (int) com.hexhaki.piece.mochi.MochiV2.LASSO_LIFE + 4; age++) {
+            count[0] = 0;
+            double t = age - com.hexhaki.piece.mochi.MochiV2.LASSO_THROW;
+            com.hexhaki.piece.mochi.MochiV2.lassoWhirl(sink, 0, -1.6, 2.0, -0.4, -0.2, 2.4, age, 3);
+            com.hexhaki.piece.mochi.MochiV2.pinkBurst(sink, -0.4, -0.2, 2.8, 1.4, t * 2.0, 4);
+            com.hexhaki.piece.mochi.MochiV2.lassoBand(sink, -0.4, -0.2, 2.4, 0.2, -0.6, 14.0, t, true, -1.0, 5);
+            com.hexhaki.piece.mochi.MochiV2.pinkBurst(sink, 0.2, -0.6, 14.0, 0.8, t - 3.0, 6);
+            com.hexhaki.piece.mochi.MochiV2.pinkBurst(sink, 0.2, -0.6, 3.6, 1.8, t - 12.0, 7);
+            check(count[0], finite[0], "Elastic Lasso", age);
+        }
+        // 3.6.6: Oblivion: every tick from the stomp to the last shard, near and far
+        for (double eye : new double[] {4.0, 9.0}) {
+            for (int age = 0; age <= (int) com.hexhaki.piece.mochi.MochiV2.OBL_LIFE; age++) {
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiV2.oblivion(sink, 0, -1.6, 1.0, 0.3, -1.6, eye, age, 3);
+                check(count[0], finite[0], "Oblivion", age);
+            }
+        }
+        // 3.6.6: Blazing Storm: every tick, near and far (six arms, their smears, the explosion)
+        for (double eye : new double[] {4.0, 9.0}) {
+            for (int age = 0; age <= (int) com.hexhaki.piece.mochi.MochiV2.STORM_LIFE; age++) {
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiV2.storm(sink, 0, -1.6, 1.0, 0, 1, 0.2, -0.6, eye + 4.0, age, 3);
+                check(count[0], finite[0], "Blazing Storm", age);
+            }
+        }
         // 3.6.6: Grilled Lance: every tick of its charge, its flight, and everything where it strikes (both blasts), near and far
         for (double eye : new double[] {3.0, 8.0}) {
             for (int age = 0; age <= com.hexhaki.piece.mochi.MochiV2.LANCE_MOST; age++) {

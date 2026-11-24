@@ -190,6 +190,42 @@ public final class MochiMoves {
     public static final float LANCE_BOOM_HURT = 8.0F;
     public static final float LANCE_BOOM2_HURT = 14.0F;
     static final int LANCE_COOL = 220;
+    /**
+     * 3.6.6: Elastic Lasso (awakened X; kind LASSO, bx: LASSO_WHIRL the whirl begins (x, y, z the feet), LASSO_THROWN (x, y, z where its end
+     * goes, id the one it catches or -1), LASSO_ARRIVED (x, y, z the one yanked in)): MochiV2.LASSO_* its beats.
+     */
+    public static final int LASSO = 288;
+    public static final int LASSO_WHIRL = 0;
+    public static final int LASSO_THROWN = 1;
+    public static final int LASSO_ARRIVED = 2;
+    static final float LASSO_CATCH_HURT = 2.5F;
+    public static final float LASSO_ARRIVE_HURT = 7.0F;
+    static final int LASSO_COOL = 200;
+    /** Held a moment where they land in front of the user (the reference: "allowing itself as a combo extender"). */
+    public static final int LASSO_STUN = 16;
+    /** How far in front of the user the one yanked in lands. */
+    public static final double LASSO_LAND = 1.6;
+    /**
+     * 3.6.6: Oblivion (awakened C; kind OBLIVION: x, y, z the user's feet, a from them to the feet of the one it holds): MochiV2.OBL_*
+     * its beats.
+     */
+    public static final int OBLIVION = 289;
+    public static final float OBL_GRAB_HURT = 6.0F;
+    public static final float OBL_BURST_HURT = 12.0F;
+    static final int OBL_COOL = 260;
+    /**
+     * 3.6.6: Blazing Storm (awakened B; kind STORM, bx: STORM_ON (x, y, z the point aimed at), STORM_AIM the point aimed at now, sent with
+     * every volley: the move can be aimed): MochiV2.STORM_* its beats.
+     */
+    public static final int STORM = 290;
+    public static final int STORM_ON = 0;
+    public static final int STORM_AIM = 1;
+    static final int STORM_EVERY = 4;
+    static final float STORM_HIT_HURT = 1.0F;
+    public static final float STORM_LAST_HURT = 6.0F;
+    public static final float STORM_BOOM_HURT = 10.0F;
+    static final double STORM_HIT_RADIUS = 1.7;
+    static final int STORM_COOL = 400;
     /** How often an awakened user's state is sent again (for whoever comes near later), the Awakening's cooldown after it comes on. */
     public static final int AWAKE_RESEND = 40;
     static final int AWAKEN_COOL = 40;
@@ -208,6 +244,9 @@ public final class MochiMoves {
         int trident = -1;
         long tridentLast;
         long tridentNext;
+        /** 3.6.6: Blazing Storm since (-1 not), the point it batters. */
+        long stormSince = -1;
+        Vec3 stormAim;
         /** 3.6.6: Grilled Lance held since (-1 not), let go before it was full. */
         long lanceSince = -1;
         boolean lanceLetGo;
@@ -327,6 +366,18 @@ public final class MochiMoves {
         }
         if (slot == MochiKit.LANCE.slot()) {
             lanceHold(player, s, now);
+            return;
+        }
+        if (slot == MochiKit.LASSO.slot()) {
+            lasso(player, s, now);
+            return;
+        }
+        if (slot == MochiKit.OBLIVION.slot()) {
+            oblivion(player, s, now);
+            return;
+        }
+        if (slot == MochiKit.STORM.slot()) {
+            storm(player, s, now);
             return;
         }
         // 3.6.4 (the owner: "Release fixes now"): the left click's swings are in; the six others are being built
@@ -467,6 +518,178 @@ public final class MochiMoves {
                 Impact.quake(this.level, where, 24.0, 0.8F, 12);
                 sound(player, where, MochiSounds.BOOM, 2.0F, 0.75F);
             });
+        }
+    }
+
+    /**
+     * X awakened: Elastic Lasso (mochi/MochiV2.lassoWhirl, lassoBand, pinkBurst; the reference's frames 12 to 44): a lasso of mochi
+     * whirled round the user, thrown at whom is aimed at within MochiV2.LASSO_REACH; caught, they are yanked back along it to land in
+     * front of the user, hurt and held a moment (a combo extender).
+     */
+    static void lasso(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.LASSO)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.LASSO, LASSO_COOL);
+        s.busyUntil = now + (long) MochiV2.LASSO_THROW + 4;
+        animate(player, "mochi_lasso");
+        fx(player, LASSO, ++seeds, player.m_20182_(), Vec3.f_82478_, LASSO_WHIRL, 0, 0, 0);
+        sound(player, ItoMoves.chest(player), MochiSounds.STRETCH, 0.9F, 0.75F);
+        later(player, (int) MochiV2.LASSO_THROW, () -> {
+            Vec3 look = player.m_20154_();
+            LivingEntity aimed = PikaMoves.aimed(player, MochiV2.LASSO_REACH, 0.9);
+            Vec3 aim = aimed != null ? StyleCombat.middle(aimed) : ItoMoves.chest(player).m_82549_(look.m_82490_(MochiV2.LASSO_REACH));
+            fx(player, LASSO, aimed != null ? aimed.m_19879_() : -1, aim, look, LASSO_THROWN, 0, 0, 0);
+            sound(player, ItoMoves.chest(player), MochiSounds.STRETCH, 1.0F, 1.15F);
+            if (aimed == null) {
+                return;
+            }
+            later(player, (int) MochiV2.LASSO_SHOOT, () -> {
+                if (!aimed.m_6084_()) {
+                    return;
+                }
+                hit(player, aimed, LASSO_CATCH_HURT, Vec3.f_82478_);
+                long from = now(player) + (long) MochiV2.LASSO_HOLD;
+                LIVE.add(new Yank((ServerLevel) player.m_9236_(), player, aimed, from, from + (long) MochiV2.LASSO_PULL));
+            });
+        });
+    }
+
+    /**
+     * C awakened: Oblivion (mochi/MochiV2.oblivion, the reference's frames 14 to 76): a stomp sends a surge of mochi along the ground to
+     * whom is aimed at within MochiV2.OBL_RANGE (or the ground looked at); its walls close round whoever stands there, hurt and held in
+     * them, then burst (with the Conqueror's lightning out of it: UoMoves.explode).
+     */
+    static void oblivion(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.OBLIVION)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.OBLIVION, OBL_COOL);
+        s.busyUntil = now + (long) MochiV2.OBL_GRAB + 4;
+        Vec3 feet = player.m_20182_();
+        LivingEntity aimed = PikaMoves.aimed(player, MochiV2.OBL_RANGE, 0.9);
+        Vec3 there = aimed != null ? aimed.m_20182_() : grounded(player, ItoMoves.looked(player, MochiV2.OBL_RANGE));
+        animate(player, "mochi_oblivion");
+        fx(player, OBLIVION, ++seeds, feet, there.m_82546_(feet), 0, 0, 0, 0);
+        later(player, (int) MochiV2.OBL_STOMP, () -> {
+            sound(player, feet, MochiSounds.STOMP, 1.1F, 0.8F);
+            Impact.quake((ServerLevel) player.m_9236_(), feet, 8.0, 0.25F, 4);
+        });
+        later(player, (int) MochiV2.OBL_SURGE, () -> sound(player, feet, MochiSounds.SQUISH, 1.2F, 0.7F));
+        later(player, (int) MochiV2.OBL_GRAB, () -> {
+            for (LivingEntity body : ItoMoves.foes(player, there.m_82520_(0, 1, 0), MochiV2.OBL_WALL)) {
+                hit(player, body, OBL_GRAB_HURT, Vec3.f_82478_);
+                stick(player, body, (int) (MochiV2.OBL_BURST - MochiV2.OBL_GRAB) + 2, false);
+            }
+            sound(player, there, MochiSounds.SQUISH, 1.3F, 0.9F);
+        });
+        later(player, (int) MochiV2.OBL_BURST, () -> {
+            boolean coat = coated(player);
+            Vec3 heart = there.m_82520_(0, 1, 0);
+            UoMoves.explode(player, (ServerLevel) player.m_9236_(), heart, new Vec3(0, 1, 0), MochiV2.OBL_WALL + 0.8,
+                OBL_BURST_HURT * (coat ? 1.25F : 1.0F), 0, 1.2);
+            Impact.quake((ServerLevel) player.m_9236_(), heart, 14.0, 0.5F, 8);
+            sound(player, heart, MochiSounds.BOOM, 1.4F, 1.2F);
+        });
+    }
+
+    /**
+     * B awakened: Blazing Storm (mochi/MochiV2.storm, the reference's frames 16 to 112): six burning Haki arms batter the point aimed
+     * at (followed as the user turns: "This move can be aimed") every {@link #STORM_EVERY} ticks, then all six strike at once and it
+     * explodes there.
+     */
+    static void storm(ServerPlayer player, State s, long now) {
+        if (s.stormSince >= 0 || !ItoMoves.ready(player, MochiKit.STORM)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.STORM, STORM_COOL);
+        s.stormSince = now;
+        s.busyUntil = now + (long) MochiV2.STORM_BOOM;
+        s.stormAim = target(player, MochiV2.STORM_RANGE);
+        animate(player, "mochi_storm");
+        fx(player, STORM, ++seeds, s.stormAim, ItoMoves.flat(player), STORM_ON, 0, 0, (int) MochiV2.STORM_LIFE);
+        sound(player, ItoMoves.chest(player), MochiSounds.FIRE, 1.1F, 0.85F);
+    }
+
+    static void stormTick(ServerPlayer player, State s, long now) {
+        long t = now - s.stormSince;
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        boolean coat = coated(player);
+        if (t >= MochiV2.STORM_FORM && t <= MochiV2.STORM_BARRAGE && (t - (long) MochiV2.STORM_FORM) % STORM_EVERY == 0) {
+            s.stormAim = target(player, MochiV2.STORM_RANGE);
+            fx(player, STORM, 0, s.stormAim, Vec3.f_82478_, STORM_AIM, 0, 0, 0);
+            for (LivingEntity body : ItoMoves.foes(player, s.stormAim, STORM_HIT_RADIUS)) {
+                if (MaguMoves.hurt(player, body, STORM_HIT_HURT * (coat ? 1.25F : 1.0F))) {
+                    body.m_20254_(1);
+                }
+            }
+            ItoMoves.lightning(player, s.stormAim);
+            if ((t / STORM_EVERY) % 2 == 0) {
+                sound(player, s.stormAim, MochiSounds.PUNCH, 0.7F, 1.2F);
+            }
+        } else if (t == (long) MochiV2.STORM_LAST) {
+            s.stormAim = target(player, MochiV2.STORM_RANGE);
+            fx(player, STORM, 0, s.stormAim, Vec3.f_82478_, STORM_AIM, 0, 0, 0);
+            for (LivingEntity body : ItoMoves.foes(player, s.stormAim, STORM_HIT_RADIUS + 0.5)) {
+                hit(player, body, STORM_LAST_HURT, ItoMoves.flat(player).m_82490_(0.2));
+            }
+            sound(player, s.stormAim, MochiSounds.SLAM, 1.1F, 0.9F);
+        } else if (t >= (long) MochiV2.STORM_BOOM) {
+            s.stormSince = -1;
+            UoMoves.explode(player, level, s.stormAim, ItoMoves.flat(player), 3.2, STORM_BOOM_HURT * (coat ? 1.25F : 1.0F), 4, 1.3);
+            Impact.quake(level, s.stormAim, 16.0, 0.55F, 9);
+            sound(player, s.stormAim, MochiSounds.BOOM, 1.5F, 1.0F);
+        }
+    }
+
+    /** One caught by Elastic Lasso yanked back along its band to land in front of the user (Yank). */
+    static final class Yank implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final LivingEntity body;
+        final long from;
+        final long until;
+
+        Yank(ServerLevel level, ServerPlayer owner, LivingEntity body, long from, long until) {
+            this.level = level;
+            this.owner = owner;
+            this.body = body;
+            this.from = from;
+            this.until = until;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (!this.owner.m_6084_() || !this.body.m_6084_()) {
+                return true;
+            }
+            if (now < this.from) {
+                return false;
+            }
+            Vec3 f = ItoMoves.flat(this.owner);
+            Vec3 land = this.owner.m_20182_().m_82549_(f.m_82490_(LASSO_LAND));
+            if (now >= this.until) {
+                this.body.m_20256_(Vec3.f_82478_);
+                this.body.f_19864_ = true;
+                hit(this.owner, this.body, LASSO_ARRIVE_HURT, f.m_82490_(0.15));
+                stick(this.owner, this.body, LASSO_STUN);
+                fx(this.owner, LASSO, 0, StyleCombat.middle(this.body), f, LASSO_ARRIVED, 0, 0, 0);
+                sound(this.owner, StyleCombat.middle(this.body), MochiSounds.SLAM, 1.0F, 1.2F);
+                return true;
+            }
+            // pulled along the band, a little lifted off the ground in the middle of the pull (as the band snaps taut)
+            double left = Math.max(1.0, this.until - now);
+            Vec3 d = land.m_82546_(this.body.m_20182_());
+            double rise = now - this.from < (this.until - this.from) / 2 ? 0.12 : -0.05;
+            this.body.m_20256_(new Vec3(d.f_82479_ / left, d.f_82480_ / left + rise, d.f_82481_ / left));
+            this.body.f_19864_ = true;
+            this.body.f_19789_ = 0.0F;
+            return false;
         }
     }
 
@@ -1368,6 +1591,9 @@ public final class MochiMoves {
         if (s.yakiSince >= 0 && now - s.yakiSince >= YAKI_MOST) {
             yakiFire(player, s); // held its longest: it goes by itself
         }
+        if (s.stormSince >= 0) {
+            stormTick(player, s, now);
+        }
         if (s.lanceSince >= 0 && (s.lanceLetGo && now - s.lanceSince >= MochiV2.LANCE_FULL || now - s.lanceSince >= MochiV2.LANCE_MOST)) {
             lanceFire(player, s);
         }
@@ -1392,6 +1618,7 @@ public final class MochiMoves {
             s.lanceSince = -1;
             fx(player, LANCE, 0, player.m_20182_(), Vec3.f_82478_, LANCE_DROP, 0, 0, 0);
         }
+        s.stormSince = -1;
         powerEnd(player, s);
         if (s.awakened) {
             fx(player, AWAKEN, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);

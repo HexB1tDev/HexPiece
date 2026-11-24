@@ -1108,6 +1108,48 @@ public final class HudTests {
             && com.hexhaki.piece.server.MochiMoves.LANCE_BOOM2_HURT > com.hexhaki.piece.server.MochiMoves.LANCE_BOOM_HURT,
             "Grilled Lance: it burns in them, explodes, then explodes again far bigger (\"explodes after a few seconds\")");
         Check.that(com.hexhaki.piece.mochi.MochiV2.LANCE_BALL >= 0.6, "Grilled Lance: the ball bigger than the torso (the reference's frame 30)");
+        // 3.6.6: Elastic Lasso (the reference: thrown "at an opponent to bring them towards the user, allowing itself as a combo extender"):
+        // whirled, thrown, caught, yanked in, in the reference's beats; it reaches far, lands them in front of the user and holds them a moment
+        Check.that(com.hexhaki.piece.mochi.MochiV2.LASSO_THROW >= 6 && com.hexhaki.piece.mochi.MochiV2.LASSO_SHOOT <= 4
+            && com.hexhaki.piece.mochi.MochiV2.LASSO_PULL >= 5 && com.hexhaki.piece.mochi.MochiV2.LASSO_REACH >= 12.0,
+            "Elastic Lasso: whirled, shot out fast, yanked in, far reaching");
+        Check.that(com.hexhaki.piece.server.MochiMoves.LASSO_LAND > 1.0 && com.hexhaki.piece.server.MochiMoves.LASSO_LAND < 2.5
+            && com.hexhaki.piece.server.MochiMoves.LASSO_STUN >= 10, "Elastic Lasso: they land in front of the user, held a moment (a combo extender)");
+        double lassoMost = 0;
+        for (double t = 0; t <= com.hexhaki.piece.mochi.MochiV2.LASSO_SHOOT; t += 0.1) {
+            lassoMost = Math.max(lassoMost, com.hexhaki.piece.mochi.MochiV2.lassoOut(t, true));
+        }
+        Check.that(lassoMost > 1.03 && com.hexhaki.piece.mochi.MochiV2.lassoOut(20.0, false) < 1.0E-6,
+            "Elastic Lasso: the band shoots past its reach and springs back (the mochi alive); a miss goes back into the hand");
+        // 3.6.6: Oblivion (the reference: "User stomps the ground, sending a surge of mochi in its path with low range, grabbing the opponent
+        // and exploding on them if caught"): its beats in order, a low range, walls round the one held, the burst harder than the grab
+        Check.that(com.hexhaki.piece.mochi.MochiV2.OBL_STOMP < com.hexhaki.piece.mochi.MochiV2.OBL_SURGE
+            && com.hexhaki.piece.mochi.MochiV2.OBL_SURGE < com.hexhaki.piece.mochi.MochiV2.OBL_GRAB
+            && com.hexhaki.piece.mochi.MochiV2.OBL_GRAB < com.hexhaki.piece.mochi.MochiV2.OBL_BREAK
+            && com.hexhaki.piece.mochi.MochiV2.OBL_BREAK < com.hexhaki.piece.mochi.MochiV2.OBL_BURST,
+            "Oblivion: the stomp, the surge, the grab, the walls breaking, the burst, in order");
+        Check.that(com.hexhaki.piece.mochi.MochiV2.OBL_RANGE <= 10.0 && com.hexhaki.piece.mochi.MochiV2.OBL_WALL > 1.5
+            && com.hexhaki.piece.server.MochiMoves.OBL_BURST_HURT > com.hexhaki.piece.server.MochiMoves.OBL_GRAB_HURT,
+            "Oblivion: a low range, walls round the one held, the burst the harder blow");
+        // 3.6.6: Blazing Storm (the reference: "6 Haki coloured flaming dough arms that barrage the opponent violently, ending with a final
+        // strike"): six arms, a barrage, then all six out at once, then the explosion; each arm jabs out and back again and again
+        Check.that(com.hexhaki.piece.mochi.MochiV2.STORM_ARMS == 6 && com.hexhaki.piece.mochi.MochiV2.STORM_FORM < com.hexhaki.piece.mochi.MochiV2.STORM_BARRAGE
+            && com.hexhaki.piece.mochi.MochiV2.STORM_BARRAGE < com.hexhaki.piece.mochi.MochiV2.STORM_LAST
+            && com.hexhaki.piece.mochi.MochiV2.STORM_LAST < com.hexhaki.piece.mochi.MochiV2.STORM_BOOM, "Blazing Storm: six arms, the barrage, the last strike, the explosion");
+        for (int i = 0; i < 6; i++) {
+            int jabs = 0;
+            boolean wasOut = false;
+            for (double t = com.hexhaki.piece.mochi.MochiV2.STORM_FORM; t <= com.hexhaki.piece.mochi.MochiV2.STORM_BARRAGE; t += 0.25) {
+                boolean out = com.hexhaki.piece.mochi.MochiV2.stormOut(i, t) > 0.9;
+                if (out && !wasOut) {
+                    jabs++;
+                }
+                wasOut = out;
+            }
+            Check.that(jabs >= 10, "Blazing Storm: arm " + i + " jabs again and again (" + jabs + ")");
+            Check.that(com.hexhaki.piece.mochi.MochiV2.stormOut(i, com.hexhaki.piece.mochi.MochiV2.STORM_LAST + 4) > 0.95,
+                "Blazing Storm: every arm fully out in the last strike");
+        }
         float[][] rest = new float[6][8];
         double[] fist = com.hexhaki.piece.mochi.MochiV2.mogura(rest, 0, 0, new double[3]);
         double[] tip = com.hexhaki.piece.mochi.MochiV2.mogura(rest, com.hexhaki.piece.mochi.MochiV2.TIP, 0, new double[3]);

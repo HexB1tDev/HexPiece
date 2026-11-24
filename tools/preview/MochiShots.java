@@ -245,6 +245,50 @@ public final class MochiShots {
                     com.hexhaki.piece.mochi.MochiV2.lanceHit(sink, hx * 0.3 - ex, 1.0 - ey, to - ez, -ey, age - full - flight, 5);
                 }
             }
+            case "mlasso" -> {
+                // 3.6.6 |mlasso:age[:miss]: Elastic Lasso from the press, the user at the origin facing +z, a body 9 ahead caught and yanked
+                // back to 1.6 ahead (or missed: the band springs back)
+                boolean miss = move.length > 2 && move[2].equals("miss");
+                double thrown = com.hexhaki.piece.mochi.MochiV2.LASSO_THROW;
+                double caughtAt = thrown + com.hexhaki.piece.mochi.MochiV2.LASSO_SHOOT;
+                double pullFrom = caughtAt + com.hexhaki.piece.mochi.MochiV2.LASSO_HOLD;
+                double arrive = pullFrom + com.hexhaki.piece.mochi.MochiV2.LASSO_PULL;
+                double bz = miss ? 15.0 : age <= pullFrom ? 9.0 : age >= arrive ? 1.6 : 9.0 - 7.4 * (age - pullFrom) / (arrive - pullFrom);
+                double by = miss ? 0.0 : age > pullFrom && age < arrive ? 0.5 * Math.sin(Math.PI * (age - pullFrom) / (arrive - pullFrom)) : 0.0;
+                user(sink, "mochi_lasso", age, ex, ey, ez);
+                HieShots.body(sink, 0.2 - ex, by - ey, bz - ez);
+                double hx = -0.36;
+                double hy = 1.5;
+                double hz = 0.4;
+                com.hexhaki.piece.mochi.MochiV2.lassoWhirl(sink, -ex, -ey, -ez, hx - ex, hy - ey, hz - ez, age, 7);
+                if (age >= thrown) {
+                    // the throw's burst is quick (frames 21 to 23): played twice as fast
+                    com.hexhaki.piece.mochi.MochiV2.pinkBurst(sink, hx - ex, hy - ey, hz + 0.4 - ez, 1.4, (age - thrown) * 2.0, 8);
+                    double ez0 = miss ? com.hexhaki.piece.mochi.MochiV2.LASSO_REACH : bz;
+                    com.hexhaki.piece.mochi.MochiV2.lassoBand(sink, hx - ex, hy - ey, hz - ez, 0.2 - ex, (miss ? 1.2 : by + 1.0) - ey, ez0 - ez, age - thrown,
+                        !miss, !miss && age >= arrive ? age - arrive : -1.0, 9);
+                }
+                if (!miss && age >= caughtAt) {
+                    com.hexhaki.piece.mochi.MochiV2.pinkBurst(sink, 0.2 - ex, 1.0 - ey, 9.0 - ez, 0.8, age - caughtAt, 10);
+                }
+                if (!miss && age >= arrive) {
+                    com.hexhaki.piece.mochi.MochiV2.pinkBurst(sink, 0.2 - ex, 1.0 - ey, 1.6 - ez, 1.8, age - arrive, 11);
+                }
+            }
+            case "mobliv" -> {
+                // 3.6.6 |mobliv:age: Oblivion from the press, the user at the origin facing +z, the one it holds 5 ahead
+                user(sink, "mochi_oblivion", age, ex, ey, ez);
+                if (age < com.hexhaki.piece.mochi.MochiV2.OBL_BURST + 3) {
+                    HieShots.body(sink, 0.2 - ex, -ey, 5.0 - ez);
+                }
+                com.hexhaki.piece.mochi.MochiV2.oblivion(sink, -ex, -ey, -ez, 0.2 - ex, -ey, 5.0 - ez, age, 7);
+            }
+            case "mstorm" -> {
+                // 3.6.6 |mstorm:age: Blazing Storm from the press, the user at the origin facing +z, the point aimed at 8 ahead
+                user(sink, "mochi_storm", age, ex, ey, ez);
+                HieShots.body(sink, 0.0 - ex, -ey, 8.0 - ez);
+                com.hexhaki.piece.mochi.MochiV2.storm(sink, -ex, -ey, -ez, 0, 1, -ex, 1.0 - ey, 8.0 - ez, age, 7);
+            }
             case "mpunch" -> {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);

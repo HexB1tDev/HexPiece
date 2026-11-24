@@ -280,6 +280,70 @@ def lance():
         ("body", "torso", "rightArm"))
 
 
+# ------------------------------------------------------------------------------------------------------ awakened X: Elastic Lasso
+
+def lasso():
+    # 3.6.6 (the reference's Elastic Lasso, frames 12 to 42): the right arm raised and whirling the lasso round overhead (to
+    # MochiV2.LASSO_THROW, 8), thrown forward (9), held out as the band reaches them, then hauled back with the body leaning into it
+    # (13 to 20) as they are yanked in
+    up = p(rightArm=arm(-130, 0, 62, -10), body={"yaw": 8, "bend": -4})
+    beats = [(0, "linear", REST), (2, "outsine", up)]
+    for k, t in enumerate((3, 4, 5, 6, 7)):
+        beats.append((t, "linear", p(up, rightArm={"yaw": (-25 if k % 2 == 0 else 10), "roll": 62 + (10 if k % 2 == 0 else -6)})))
+    throw = p(rightArm=arm(-82, 0, 6, -4), body={"yaw": 18, "bend": 8})
+    haul = p(rightArm=arm(-40, 10, 20, -60), body={"yaw": -6, "bend": -8})
+    beats += [
+        (9, "outexpo", throw),
+        (13, "linear", throw),
+        (17, "insine", haul),
+        (20, "linear", haul),
+        (26, "inoutsine", REST),
+    ]
+    write_parts("mochi_lasso", 26, beats,
+                "Mochi Mochi: awakened, Elastic Lasso: the lasso whirled overhead, thrown, and the one it catches hauled back in.",
+                ("body", "torso", "rightArm"))
+
+
+# ------------------------------------------------------------------------------------------------------ awakened C: Oblivion
+
+def oblivion():
+    # 3.6.6 (the reference's Oblivion, frames 14 to 24): a stomp, shown in the body and arms (the house never keys a leg: the legs are
+    # the player's own): the body rising, the arms lifted out, then on tick 3 the weight driven down, the arms flung down and back;
+    # held, then let go
+    up = p(rightArm=arm(-40, 0, 40, -30), leftArm=mirror(arm(-40, 0, 40, -30)), body={"yaw": 0, "bend": -6})
+    down = p(rightArm=arm(30, 0, 30, -10), leftArm=mirror(arm(30, 0, 30, -10)), body={"yaw": 0, "bend": 14})
+    write_parts("mochi_oblivion", 22, [
+        (0, "linear", REST),
+        (2, "outsine", up),
+        (3, "inexpo", down),
+        (12, "linear", p(down, body={"bend": 10})),
+        (22, "inoutsine", REST),
+    ], "Mochi Mochi: awakened, Oblivion: the stomp that sends the surge of mochi out.", ("body", "torso", "rightArm", "leftArm"))
+
+
+# ------------------------------------------------------------------------------------------------------ awakened B: Blazing Storm
+
+def storm():
+    # 3.6.6 (the reference's Blazing Storm, frames 16 to 112): the arms flung back and out as the six arms of mochi sprout (to 6), then
+    # both thrust at the point aimed at, the body leaning into the barrage, a small shake with every volley (to 80); the last strike
+    # (84) driven further in, held, let go after the explosion
+    sprout = p(rightArm=arm(-20, 0, 70, -10), leftArm=mirror(arm(-20, 0, 70, -10)), body={"yaw": 0, "bend": -8})
+    drive = p(rightArm=arm(-84, 10, 14, -4), leftArm=mirror(arm(-84, 10, 14, -4)), body={"yaw": 0, "bend": 10})
+    beats = [(0, "linear", REST), (3, "outexpo", sprout), (8, "outsine", drive)]
+    t = 10
+    k = 0
+    while t < 80:
+        beats.append((t, "linear", p(drive, rightArm={"pitch": -84 + (5 if k % 2 == 0 else -3)}, leftArm={"pitch": -84 + (-3 if k % 2 == 0 else 5)},
+                                      body={"bend": 10 + (2 if k % 2 == 0 else 0)})))
+        t += 4
+        k += 1
+    last = p(drive, rightArm={"pitch": -92}, leftArm={"pitch": -92}, body={"bend": 16})
+    beats += [(84, "outexpo", last), (98, "linear", last), (110, "inoutsine", REST)]
+    write_parts("mochi_storm", 110, beats,
+                "Mochi Mochi: awakened, Blazing Storm: the arms thrust at the point aimed at while six burning Haki arms batter it.",
+                ("body", "torso", "rightArm", "leftArm"))
+
+
 def main():
     punch()
     lotus()
@@ -292,6 +356,9 @@ def main():
     trident()
     power()
     lance()
+    lasso()
+    oblivion()
+    storm()
     names = sorted(n for n in WRITTEN if n.startswith("mochi_"))
     java_poses(names, "MochiPoses", "tools/mochi_anims.py", "the Mochi fruit's animations' keyframes")
     print(f"wrote {len(names)} Mochi animations and their poses")

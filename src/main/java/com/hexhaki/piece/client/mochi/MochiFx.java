@@ -128,6 +128,43 @@ public final class MochiFx {
     record LanceHit(Vec3 at, double ground, long born, int seed) {
     }
 
+    /** 3.6.6: Elastic Lasso (by user): whirled since, thrown when (-1 not yet), whom it caught (-1 none), where it goes, when they arrived. */
+    static final class Lasso {
+        final long born;
+        long thrown = -1;
+        int body = -1;
+        Vec3 aim;
+        long arrived = -1;
+
+        Lasso(long born) {
+            this.born = born;
+        }
+    }
+
+    record Burst(Vec3 at, double size, long born, int seed) {
+    }
+
+    /** 3.6.6: Blazing Storm (by user): since when, the point it batters (eased from the last one over a volley). */
+    static final class Storm {
+        final long born;
+        final int seed;
+        Vec3 aim;
+        Vec3 was;
+        long aimed;
+
+        Storm(long born, int seed, Vec3 aim) {
+            this.born = born;
+            this.seed = seed;
+            this.aim = aim;
+            this.was = aim;
+            this.aimed = born;
+        }
+    }
+
+    /** 3.6.6: Oblivion: the user's feet, the feet of the one it holds. */
+    record Oblivion(Vec3 feet, Vec3 there, long born, int seed) {
+    }
+
     /** 3.6.3: Buzz Cut Mochi's blow (the ball where it struck) and its slam's ground. */
     record BuzzMark(Vec3 at, long born, int seed, boolean ground) {
     }
@@ -243,6 +280,11 @@ public final class MochiFx {
     static final Map<Integer, LanceHeld> LANCES_HELD = new HashMap<>();
     static final Map<Integer, LanceFly> LANCES = new HashMap<>();
     private static final List<LanceHit> LANCE_HITS = new ArrayList<>();
+    /** 3.6.6: Elastic Lasso, and the awakened Haki's pink bursts (the lasso's arrivals). */
+    static final Map<Integer, Lasso> LASSOS = new HashMap<>();
+    private static final List<Burst> PINK_BURSTS = new ArrayList<>();
+    private static final List<Oblivion> OBLIVIONS = new ArrayList<>();
+    static final Map<Integer, Storm> STORMS = new HashMap<>();
     /** How long the Anemone's rings and the Awakening's ground take to shrink away once ended. */
     /** 3.6.3: how long a donut takes to form and to go (ticks). */
     static final double FORM = 6.0;
@@ -349,6 +391,37 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.POWER_PUNCH -> add(POWER_HITS, new PowerHit(m.user(), phase, at, clock, m.id()));
+            case MochiMoves.LASSO -> {
+                if (phase == MochiMoves.LASSO_WHIRL) {
+                    put(LASSOS, m.user(), new Lasso(clock));
+                } else if (phase == MochiMoves.LASSO_THROWN) {
+                    Lasso l = LASSOS.get(m.user());
+                    if (l != null) {
+                        l.thrown = clock;
+                        l.body = m.id();
+                        l.aim = at;
+                    }
+                } else {
+                    Lasso l = LASSOS.get(m.user());
+                    if (l != null) {
+                        l.arrived = clock;
+                    }
+                    add(PINK_BURSTS, new Burst(at, 1.8, clock, m.user() + (int) clock));
+                }
+            }
+            case MochiMoves.OBLIVION -> add(OBLIVIONS, new Oblivion(at, at.m_82549_(a), clock, m.id()));
+            case MochiMoves.STORM -> {
+                if (phase == MochiMoves.STORM_ON) {
+                    put(STORMS, m.user(), new Storm(clock, m.id(), at));
+                } else {
+                    Storm st = STORMS.get(m.user());
+                    if (st != null) {
+                        st.was = st.aim;
+                        st.aim = at;
+                        st.aimed = clock;
+                    }
+                }
+            }
             case MochiMoves.LANCE -> {
                 if (phase == MochiMoves.LANCE_HOLD) {
                     put(LANCES_HELD, m.user(), new LanceHeld(clock, clock + m.ticks() + 2));
@@ -794,6 +867,12 @@ public final class MochiFx {
         LANCES_HELD.entrySet().removeIf(e -> clock > e.getValue().until || level.m_6815_(e.getKey()) == null);
         LANCES.values().removeIf(f -> clock - f.born > f.flight + 1);
         LANCE_HITS.removeIf(h -> clock - h.born > com.hexhaki.piece.mochi.MochiV2.LANCE_LIFE + 1);
+        LASSOS.entrySet().removeIf(e -> clock - e.getValue().born > com.hexhaki.piece.mochi.MochiV2.LASSO_LIFE + 12
+            || e.getValue().arrived >= 0 && clock - e.getValue().arrived > com.hexhaki.piece.mochi.MochiV2.LASSO_BACK + 1
+            || level.m_6815_(e.getKey()) == null);
+        PINK_BURSTS.removeIf(b -> clock - b.born > com.hexhaki.piece.mochi.MochiV2.BURST_LIFE + 1);
+        OBLIVIONS.removeIf(o -> clock - o.born > com.hexhaki.piece.mochi.MochiV2.OBL_LIFE + 1);
+        STORMS.entrySet().removeIf(e -> clock - e.getValue().born > com.hexhaki.piece.mochi.MochiV2.STORM_LIFE + 1 || level.m_6815_(e.getKey()) == null);
     }
 
     static boolean empty() {
@@ -802,7 +881,7 @@ public final class MochiFx {
             && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
             && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null && BURSTS.isEmpty()
             && SWINGS.isEmpty() && STRUCK.isEmpty() && POWERS.isEmpty() && POWER_HITS.isEmpty() && LANCES_HELD.isEmpty() && LANCES.isEmpty()
-            && LANCE_HITS.isEmpty();
+            && LANCE_HITS.isEmpty() && LASSOS.isEmpty() && PINK_BURSTS.isEmpty() && OBLIVIONS.isEmpty() && STORMS.isEmpty();
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -1061,6 +1140,7 @@ public final class MochiFx {
                 h.at.f_82480_ - cy, h.at.f_82481_ - cz, now - h.born, h.seed);
         }
         drawLance(minecraft, level, cam, partial, now, cx, cy, cz);
+        drawLasso(minecraft, level, cam, partial, now, cx, cy, cz);
         for (Struck k : STRUCK) {
             if (!far(k.at, cam)) {
                 com.hexhaki.piece.mochi.MochiV2.tridentMark(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, k.k, k.ground - cy,
@@ -1099,6 +1179,70 @@ public final class MochiFx {
             if (!far(h.at, cam)) {
                 com.hexhaki.piece.mochi.MochiV2.lanceHit(SINK, h.at.f_82479_ - cx, h.at.f_82480_ - cy, h.at.f_82481_ - cz, h.ground - cy, now - h.born,
                     h.seed);
+            }
+        }
+    }
+
+    /**
+     * 3.6.6: Elastic Lasso (MochiV2.lasso*): the whirl round the user, the throw's burst at the hand, the band from the hand to the one
+     * it caught (where they are now: the server yanks them) or where it reached, the catch's burst, the arrivals' bursts.
+     */
+    static void drawLasso(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial, double now, double cx, double cy, double cz) {
+        for (Map.Entry<Integer, Lasso> e : LASSOS.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            Lasso l = e.getValue();
+            if (user == null) {
+                continue;
+            }
+            Vec3 feet = user.m_20318_(partial);
+            if (far(feet, cam)) {
+                continue;
+            }
+            Vec3 look = user.m_20252_(partial);
+            Vec3 hand = ownView(minecraft, user) ? ownHand(user, 0.9, partial) : shoulder(minecraft, user, 0, partial).m_82549_(look.m_82490_(0.4));
+            com.hexhaki.piece.mochi.MochiV2.lassoWhirl(SINK, feet.f_82479_ - cx, feet.f_82480_ - cy, feet.f_82481_ - cz, hand.f_82479_ - cx,
+                hand.f_82480_ - cy, hand.f_82481_ - cz, now - l.born, e.getKey());
+            if (l.thrown < 0) {
+                continue;
+            }
+            double age = now - l.thrown;
+            // the throw's burst is quick (the reference's frames 21 to 23)
+            com.hexhaki.piece.mochi.MochiV2.pinkBurst(SINK, hand.f_82479_ - cx + look.f_82479_ * 0.4, hand.f_82480_ - cy + look.f_82480_ * 0.4,
+                hand.f_82481_ - cz + look.f_82481_ * 0.4, 1.4, age * 2.0, e.getKey() + 3);
+            Entity body = l.body >= 0 ? level.m_6815_(l.body) : null;
+            Vec3 end = body != null ? body.m_20318_(partial).m_82520_(0.0, body.m_20206_() * 0.5, 0.0) : l.aim;
+            com.hexhaki.piece.mochi.MochiV2.lassoBand(SINK, hand.f_82479_ - cx, hand.f_82480_ - cy, hand.f_82481_ - cz, end.f_82479_ - cx,
+                end.f_82480_ - cy, end.f_82481_ - cz, age, body != null, l.arrived >= 0 ? now - l.arrived : -1.0, e.getKey());
+            if (body != null && age >= com.hexhaki.piece.mochi.MochiV2.LASSO_SHOOT) {
+                com.hexhaki.piece.mochi.MochiV2.pinkBurst(SINK, l.aim.f_82479_ - cx, l.aim.f_82480_ - cy, l.aim.f_82481_ - cz, 0.8,
+                    age - com.hexhaki.piece.mochi.MochiV2.LASSO_SHOOT, e.getKey() + 5);
+            }
+        }
+        for (Oblivion o : OBLIVIONS) {
+            if (!far(o.there, cam) || !far(o.feet, cam)) {
+                com.hexhaki.piece.mochi.MochiV2.oblivion(SINK, o.feet.f_82479_ - cx, o.feet.f_82480_ - cy, o.feet.f_82481_ - cz, o.there.f_82479_ - cx,
+                    o.there.f_82480_ - cy, o.there.f_82481_ - cz, now - o.born, o.seed);
+            }
+        }
+        for (Map.Entry<Integer, Storm> e : STORMS.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            Storm st = e.getValue();
+            if (user == null) {
+                continue;
+            }
+            Vec3 feet = user.m_20318_(partial);
+            if (far(feet, cam)) {
+                continue;
+            }
+            Vec3 f = flat(user.m_20252_(partial));
+            double u = Math.max(0.0, Math.min(1.0, (now - st.aimed) / 4.0));
+            Vec3 aim = st.was.m_82549_(st.aim.m_82546_(st.was).m_82490_(u));
+            com.hexhaki.piece.mochi.MochiV2.storm(SINK, feet.f_82479_ - cx, feet.f_82480_ - cy, feet.f_82481_ - cz, f.f_82479_, f.f_82481_, aim.f_82479_ - cx,
+                aim.f_82480_ - cy, aim.f_82481_ - cz, now - st.born, st.seed);
+        }
+        for (Burst b : PINK_BURSTS) {
+            if (!far(b.at, cam)) {
+                com.hexhaki.piece.mochi.MochiV2.pinkBurst(SINK, b.at.f_82479_ - cx, b.at.f_82480_ - cy, b.at.f_82481_ - cz, b.size, now - b.born, b.seed);
             }
         }
     }
@@ -1428,6 +1572,10 @@ public final class MochiFx {
         LANCES_HELD.clear();
         LANCES.clear();
         LANCE_HITS.clear();
+        LASSOS.clear();
+        PINK_BURSTS.clear();
+        OBLIVIONS.clear();
+        STORMS.clear();
         carry = null;
     }
 
