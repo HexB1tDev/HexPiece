@@ -67,6 +67,10 @@ public final class HandMoves {
     /** 3.6.3: Chestnut Mochi: the hand flung straight up (4), held while the disc forms (to 12), let down. */
     static final double[][] UP_END_HELD = {{0, 0, 0, 0, 0, 0, 0}, {2, 0.04, -0.08, 0.06, -12, 0, 0}, {4, 0.04, 0.3, -0.02, 45, 0, 0},
         {12, 0.04, 0.29, -0.02, 43, 0, 0}, {22, 0, 0, 0, 0, 0, 0}};
+    /** 3.6.3: Buzz Cut Mochi from the catch: back to the right (3), swung round (7), held out in the whirl, raised (60), slammed (66). */
+    static final double[][] BUZZ = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.26, 0.06, -0.04, 0, -38, -24}, {7, -0.16, 0.08, -0.28, 6, 10, 0},
+        {52, -0.15, 0.07, -0.26, 5, 8, 0}, {60, 0.04, 0.3, -0.02, 45, 0, 0}, {63, 0.04, 0.32, 0.0, 48, 0, 0}, {66, -0.04, -0.22, -0.26, -34, 0, 0},
+        {76, -0.04, -0.2, -0.24, -30, 0, 0}, {86, 0, 0, 0, 0, 0, 0}};
     static final double[][] LOTUS = {{0, 0, 0, 0, 0, 0, 0}, {2, 0.05, -0.04, 0.06, -6, -10, 0}, {4, -0.2, 0.12, -0.12, 10, 28, 10},
         {8, -0.16, 0.06, -0.1, 4, 22, 6}, {28, -0.15, 0.06, -0.1, 4, 20, 6}, {31, 0.1, 0.02, 0.08, -6, -8, -6}, {34, -0.16, 0.08, -0.3, 6, 10, 0},
         {39, 0.04, 0.3, -0.02, 45, 0, 0}, {46, 0, 0, 0, 0, 0, 0}};
@@ -178,6 +182,7 @@ public final class HandMoves {
             case "mochi_lotus" -> new Move(LOTUS, 0);
             case "mochi_muddle" -> new Move(MUDDLE, 0);
             case "mochi_chestnut" -> new Move(UP_END_HELD, 0);
+            case "mochi_buzz" -> new Move(BUZZ, 0);
             case "mochi_tsuki_charge" -> new Move(DRAWN, 1.0);
             case "mochi_tsuki_thrust" -> new Move(THRUST, 0);
             case "mochi_yanagi" -> new Move(SIDE, 0.6);

@@ -342,3 +342,45 @@ left as they were.
   over it, a dark crater and rocks; let go: a last flash, the dome bursts into splashes, the donuts puff away, 14 white splats lie over
   the ground fading (ANEMONE_LINGER 50). Its many donuts are drawn coarse (MochiArt.low: coarser rings, each fist one rounded block):
   about 6k quads without the bars (it was 12.8k).
+8. The owner's answer (AskUserQuestion) on Buzz Cut Mochi's swing (the GIF whirls the stuck victims round the user horizontally; the
+   owner's 8zzv 10 text said three vertical windmill rotations): "GIF: horizontal whirl" (the victims whirled round the user level
+   with the ground in a white vortex of motion rings, then the arm raised overhead and slammed into a black star crater). Everything
+   else of 8zzv 10 stands where the GIF agrees (the wheel, the fluid unroll, the spiked Haki forearm, others near caught too, the two
+   black-and-white impact frames, the crater, the 5-minute cooldown).
+9. The owner (while Buzz Cut's first renders were shown): "thats not the final look right? I mean have you looked at the reference and
+   at yours?" Answered: no, not final; the gaps named: the GIF's wheel is a bright motion-blurred white blur (ours a clean donut), the
+   torn ground is flat floor planks flipped in a double row (ours brown rocks), the crater is a big black splatter star (ours smaller,
+   navy, greenish dust), the user turning with the whirl, the impact frames and the camera not in the preview yet.
+
+## L. Buzz Cut Mochi: in progress (art, clip and hand committed; the server and client NOT yet switched over)
+
+Built (MochiDraw "Buzz Cut Mochi" section, pure; preview MochiShots |mbuzz:age plays the whole thing from the press):
+- The timeline from the catch (BUZZ_*): unrolled 4, the swing's blow 7, whirled 5 turns to 52 (buzzTurn: speeding up over its first
+  third, ending where it began), raised overhead by 60 (buzzLift 1.95 rad), a beat to 63, slammed down by 66 (lift -0.42: onto the
+  ground ahead), held to 76, the arm back by 86. buzzReach 3.4 to 5.4 (stretching in the whirl), buzzSwell. buzzArm(t, feet, yaw0):
+  the right shoulder, the arm's way, its reach and THE USER'S OWN YAW NOW (yaw0 - turn in degrees: the user turns with the arm).
+- buzzWheel (an upright donut of BUZZ_WHEEL 1.3 rolling, pressed on the ground, white arcs of motion round its rim, black wind
+  lines, smoke), arc (an arc of light in any plane), buzzTiles (a double row of chunks flipped up behind the wheel along its path,
+  BUZZ_TILES 70), buzzMace (the spiked forearm: white upper arm, a long black tube swelling to 0.65 thick, a rounded end, 6 rings of 6
+  spikes and 5 out of its end, crimson flickers; the material MochiArt.HAKI_CRIMSON: Haki black lit crimson, the owner's "deep crimson
+  highlights"), buzzVortex (white rings of motion on the ground spiralling behind the arm, a thick trail behind its end), buzzCrater
+  (a white flash, a black star of splats and cracks, red sparks and a ring, dust, rocks; BUZZ_CRATER_LIFE 110).
+- Clip mochi_buzz (from the catch; arms and body; lint clean) and HandMoves.BUZZ.
+
+Left to do (the plan):
+1. Server (MochiMoves.buzzCut, Wheel): the roll BUZZ_ROLL 60 ticks max (the client moves its own player along its LOOK each tick,
+   speed ramping to BUZZ_SPEED: steerable like the GIF's winding path; MochiFx.Carry/roll to rewrite), the server checks foes within
+   BUZZ_WHEEL + 0.6 each tick; on contact catch them and anyone within 2.8 (and later anyone the mace end passes within 1.5 of, up to
+   6): a new Live (Whirl) positions every victim along the mace each tick (MochiDraw.buzzArm), the blow at BUZZ_HIT (8 each, the
+   impact frame, the lightning), the slam at BUZZ_SLAM (18 each, knockDown 60, Craters.open 3.5, ConquerorAura.exploded, Impact.quake),
+   done at BUZZ_END. Messages (kind WHEEL): phase 1 roll, 0 roll ended (no catch: unroll), 2 caught (at the feet, by yaw0, id the
+   first victim), 3 the slam's ground, 4 the swing's blow (at the mace end), 6 a victim attached (id).
+2. Client (MochiFx): replace the Wheel record by a Buzz record (path history for buzzTiles, caught time, feet, yaw0, victims); hide
+   the user's model while rolling (asWheel) and the right arm from the catch to BUZZ_END (hideArms, mochiArms); the local user's own
+   yaw set each tick to buzzArm()[7] and their input frozen (steady); the impact frames on phase 4 and 3 for the user and the victims
+   (ClashFx needs a public frame(at, power, colours, seed, classic) setting its Shown); the cutscene camera for the user and victims
+   (like IronFx.camera/filmAngles/cinema, called from client/dragon/DragonCamera.position): a low side shot at the catch, high above
+   looking down in the whirl (the GIF's top-down vortex), low in front looking up at the raised arm and the slam (frames 150 to 160),
+   pulling back after.
+3. Then look again, side by side with the GIF, at what the owner named (L 9 above): the wheel a bright motion-blurred white blur, the
+   torn ground flat floor planks (not rocks), the crater a big black splatter star, the dust not greenish.

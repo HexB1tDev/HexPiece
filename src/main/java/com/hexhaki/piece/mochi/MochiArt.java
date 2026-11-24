@@ -23,6 +23,8 @@ public final class MochiArt {
     /** Mochi: its heart (lit, square to the eye) to its rim. */
     public static final int[] MOCHI = {0xFFFFFF, 0xFFFAF0, 0xF4EADF, 0xDDCFCC, 0xB7A5B4};
     /** Haki-coated: black, a little lighter where lit, a cold blue rim and a blue-white shine where the light catches it. */
+    /** 3.6.3: Buzz Cut Mochi's mace (the owner: "glossy, jet-black Armament Haki, with deep crimson highlights"): Haki lit in crimson. */
+    public static final int[] HAKI_CRIMSON = {0xFF6070, 0x3A1A22, 0x24141A, 0x150B10, 0x8E1020};
     public static final int[] HAKI = {0x8FA8FF, 0x3A3B4E, 0x24242F, 0x15151C, 0x4D5FCB};
     /** Mogura, the trident: dark iron, its edge lit. */
     public static final int[] IRON = {0xB8B8C4, 0x6E6E7C, 0x464652, 0x2C2C36, 0x82829A};
@@ -53,7 +55,7 @@ public final class MochiArt {
     static int shade(double x, double y, double z, double nx, double ny, double nz, int[] bands, double alpha) {
         double el = Math.max(1.0E-6, Math.sqrt(x * x + y * y + z * z));
         double facing = Math.abs((nx * x + ny * y + nz * z) / el);
-        if (bands == MOCHI || bands == HAKI || bands == IRON) {
+        if (bands == MOCHI || bands == HAKI || bands == HAKI_CRIMSON || bands == IRON) {
             // the side of the surface turned to the eye (a solid's inside seen through its open end lit as its outside)
             double s = (nx * x + ny * y + nz * z) > 0.0 ? -1.0 : 1.0;
             return FireMesh.argb(alpha, lit(nx * s, ny * s, nz * s, -x / el, -y / el, -z / el, bands));
@@ -99,12 +101,13 @@ public final class MochiArt {
             double shine = Math.pow(half, 26.0) * 0.55 + Math.pow(half, 6.0) * 0.08;
             return FireMesh.mix(c, 0xFFFFFF, Math.min(1.0, shine));
         }
-        if (bands == HAKI) {
+        if (bands == HAKI || bands == HAKI_CRIMSON) {
+            boolean red = bands == HAKI_CRIMSON;
             double diff = Math.max(0.0, lam) * 0.8 + 0.2 * (0.5 + 0.5 * ny);
             int c = FireMesh.mix(HAKI_BODY, HAKI_LIT, diff);
-            c = FireMesh.mix(c, HAKI_RIM, Math.pow(edge, 4.0) * 0.75);
+            c = FireMesh.mix(c, red ? 0x8E1020 : HAKI_RIM, Math.pow(edge, 4.0) * (red ? 0.85 : 0.75));
             double shine = Math.pow(half, 70.0) * 0.95 + Math.pow(half, 10.0) * 0.18;
-            return FireMesh.mix(c, HAKI_SHINE, Math.min(1.0, shine));
+            return FireMesh.mix(c, red ? 0xFF6070 : HAKI_SHINE, Math.min(1.0, shine));
         }
         double diff = Math.max(0.0, lam) * 0.75 + 0.25 * (0.5 + 0.5 * ny);
         int c = FireMesh.mix(0x2A2A33, 0x8A8A98, diff);

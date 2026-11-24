@@ -104,6 +104,34 @@ def chestnut():
         ("body", "torso", "rightArm"))
 
 
+# ------------------------------------------------------------------------------------------------------ N: Buzz Cut Mochi
+
+def buzz():
+    # 3.6.3, from the catch on (mochi/MochiDraw.BUZZ_*; the right arm itself is the mace, hidden and drawn by MochiDraw.buzzMace): the
+    # body re-formed out of the wheel twisted back (3), the heavy swing round into the one caught (7), leaning back against the whirl
+    # with the left arm out (to 52; the whole body turns with the arm: the yaw is the user's own), the arm raised overhead (60), a beat
+    # leaning back (63), slammed down leaning in (66), held, let down
+    whirl = p(rightArm=arm(-86, 0, 6, -2), leftArm=mirror(arm(-25, 0, 65, -12)), body={"yaw": 6, "bend": -8})
+    over = p(rightArm=arm(-130, 0, 60, -4), leftArm=mirror(arm(-10, 0, 45, -20)), body={"yaw": 0, "bend": -12})
+    beats = [
+        (0, "linear", REST),
+        (3, "outsine", p(rightArm=arm(-80, 0, 30, -10), leftArm=mirror(arm(-30, 0, 40, -30)), body={"yaw": -40, "bend": 2})),
+        (7, "inexpo", p(rightArm=arm(-88, 0, 8, -2), leftArm=mirror(arm(-20, 0, 55, -20)), body={"yaw": 28, "bend": 8})),
+        (11, "outsine", whirl),
+    ]
+    beats += tremble(whirl, 14, 50, 3, lambda b, s: p(b, body={"yaw": 6 + 3.0 * s, "bend": -8}))
+    beats += [
+        (52, "linear", whirl),
+        (60, "outsine", over),
+        (63, "linear", p(over, body={"bend": -15})),
+        (66, "inexpo", p(rightArm=arm(-55, 0, 10, -2), leftArm=mirror(arm(-30, 0, 40, -20)), body={"yaw": 4, "bend": 30})),
+        (76, "linear", p(rightArm=arm(-52, 0, 10, -2), leftArm=mirror(arm(-28, 0, 40, -20)), body={"yaw": 4, "bend": 26})),
+        (86, "inoutsine", REST),
+    ]
+    write_parts("mochi_buzz", 86, beats, "Mochi Mochi: Buzz Cut Mochi: out of the wheel, the heavy swing, leaning back in the whirl, the arm "
+                "raised overhead and slammed down.", ARMS)
+
+
 # ------------------------------------------------------------------------------------------------------ RMB: Mochi Tsuki
 
 # Mogura held low in both hands, its head forward: the right hand back by the hip on its shaft, the left forward guiding it
@@ -348,6 +376,7 @@ def main():
     lotus()
     muddle()
     chestnut()
+    buzz()
     tsuki()
     yanagi()
     kaku()

@@ -172,6 +172,85 @@ public final class MochiShots {
                         age - 6, 5);
                 }
             }
+            case "mbuzz" -> {
+                // 3.6.3 |mbuzz:age: Buzz Cut Mochi from the press: the wheel rolling along +z from the origin (speeding up), the body 10
+                // ahead caught when the wheel reaches it, then the cinematic (MochiDraw.BUZZ_*): unroll, swing, whirl, raise, slam
+                double rolled = 0.0;
+                double speed = 0.0;
+                double caught = -1.0;
+                double[] path = new double[3 * 64];
+                double[] ages = new double[64];
+                int count = 0;
+                double next = 0.0;
+                for (int t = 0; t <= Math.min(age, 200); t++) {
+                    speed = Math.min(1.0, (t + 2) / 12.0);
+                    if (caught < 0 && rolled >= 9.0) {
+                        caught = t;
+                    }
+                    if (caught >= 0) {
+                        break;
+                    }
+                    rolled += com.hexhaki.piece.mochi.MochiDraw.BUZZ_SPEED * speed;
+                    while (next <= rolled && count < 64) {
+                        path[count * 3] = 0;
+                        path[count * 3 + 1] = 0;
+                        path[count * 3 + 2] = next;
+                        ages[count] = t;
+                        count++;
+                        next += 1.1;
+                    }
+                }
+                for (int k = 0; k < count; k++) {
+                    ages[k] = age - ages[k];
+                    path[k * 3] -= ex;
+                    path[k * 3 + 1] -= ey;
+                    path[k * 3 + 2] -= ez;
+                }
+                com.hexhaki.piece.mochi.MochiDraw.buzzTiles(sink, path, ages, count, 5);
+                double r = com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHEEL;
+                if (caught < 0 || age < caught + 3) {
+                    double form = Math.min(1.0, age / 4.0) * (caught < 0 ? 1.0 : 1.0 - (age - caught) / 3.0);
+                    com.hexhaki.piece.mochi.MochiDraw.buzzWheel(sink, -ex, r - ey, rolled - ez, 0, 1, rolled, caught < 0 ? speed : 0.3, form, age, 3);
+                }
+                if (caught < 0) {
+                    HieShots.body(sink, -ex, -ey, 10.5 - ez);
+                    return true;
+                }
+                double t = age - caught;
+                double[] arm = com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, 0, rolled, 0.0, new double[8]);
+                if (t >= 2) {
+                    com.hexhaki.piece.horo.AstralArt.hide = 1;
+                    ItoShots.posed(sink, "mochi_buzz", (float) t, 0.0, 0.0, rolled, 0.0, 0.9, rolled, ex, ey, ez, 0.0, 0.0);
+                    com.hexhaki.piece.horo.AstralArt.hide = 0;
+                }
+                com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, arm[0] - ex, arm[1] - ey, arm[2] - ez, arm[3], arm[4], arm[5], arm[6],
+                    com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), t, 7);
+                // the one caught: before the blow where the wheel met them, after it stuck at the mace's end, in the crater after the slam
+                double bx = 0;
+                double by = 0;
+                double bz = 10.5;
+                if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT && t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM) {
+                    double d = arm[6] - 0.4;
+                    bx = arm[0] + arm[3] * d;
+                    by = arm[1] + arm[4] * d - 1.0;
+                    bz = arm[2] + arm[5] * d;
+                } else if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM) {
+                    double[] down = com.hexhaki.piece.mochi.MochiDraw.buzzArm(com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 0, 0, rolled, 0.0, new double[8]);
+                    bx = down[0] + down[3] * (down[6] - 0.4);
+                    by = 0;
+                    bz = down[2] + down[5] * (down[6] - 0.4);
+                }
+                HieShots.body(sink, bx - ex, by - ey, bz - ez);
+                if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT && t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL + 4) {
+                    double turn = Math.atan2(arm[5], arm[3]);
+                    double a = Math.min(1.0, (t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT) / 6.0)
+                        * (1.0 - Math.max(0.0, (t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL) / 4.0));
+                    com.hexhaki.piece.mochi.MochiDraw.buzzVortex(sink, -ex, -ey, rolled - ez, turn, arm[6], a);
+                }
+                if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM) {
+                    com.hexhaki.piece.mochi.MochiDraw.buzzCrater(sink, bx - ex, -ey, bz - ez, t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 11);
+                }
+            }
             case "mwheel" -> {
                 com.hexhaki.piece.mochi.MochiDraw.wheel(sink, -ex, 2.2 - ey, -ez, 0, 1, 2.2, age * 0.5, age, 6);
             }
