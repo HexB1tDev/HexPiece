@@ -693,29 +693,16 @@ public final class LogbookView {
                 entries.add(Entry.of(move.display(), key, info, move.description(), open, "Opens at style mastery " + move.mastery()));
             }
         }
+        if (entries.isEmpty()) {
+            // 3.5.7 (the owner: "Remove all abilities from Iron Fist, we're making this shit anew"): a style with no moves yet
+            return new Section(style.display(), mastery + "/" + PieceRules.MAX_MASTERY, style.colour(), mastery / (float) PieceRules.MAX_MASTERY,
+                List.of("Being made anew: no moves yet. Until then your hands throw the game's own punch."), entries);
+        }
         return new Section(style.display(), mastery + "/" + PieceRules.MAX_MASTERY, style.colour(), mastery / (float) PieceRules.MAX_MASTERY,
             List.of("Mastery " + mastery + "/" + PieceRules.MAX_MASTERY + ": " + damage + ".",
                 "Combat mode (R) puts the style on your hands: M1 the string, the right button the signature, Z and X the specials, C, V "
                     + "and B the show's own moves.",
                 "Landing blows trains it; heavier moves train it faster."), entries);
-    }
-
-    /**
-     * 2.3.7 (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU haki. ONLY for iron fist."): an
-     * Iron Fist page gains the Galaxy Fist (the original's Haki Projection), bindable to its quick slot ({@code quick}) on {@code key},
-     * {@code open} once Ryou can be raised, else {@code lock} says what opens it. Any other style's page is left as it is.
-     */
-    public static Section galaxy(Section style, FightingStyle fighting, boolean open, String key, String lock, int quick) {
-        if (fighting != FightingStyle.BRAWLER) {
-            return style;
-        }
-        List<Entry> entries = new ArrayList<>(style.entries());
-        entries.add(Entry.of(GALAXY, key, "with Ryou up: hold its quick slot", "Ryou up, the fist wound back and the galaxy drawn into "
-            + "it: a tap throws a short burst; a full hold launches you up and brings the fist down as a galaxy that detonates where it "
-            + "lands, the sky's lightning striking round it. Iron Fist's alone.", open, lock).bindable(quick));
-        List<String> about = new ArrayList<>(style.about());
-        about.add("With Ryou up, the Galaxy Fist is Iron Fist's: put it on a quick slot.");
-        return new Section(style.title(), style.status(), style.colour(), style.progress(), about, entries);
     }
 
     /** 2.3.7: the original's Haki Projection, as HexPiece names it. */
@@ -764,7 +751,7 @@ public final class LogbookView {
                 Entry.of("Amaterasu", "-", "hold", "A sphere of light that burns everything it touches.", false, "Fruit mastery 650").bindable(3))));
         }
         String[] keys = {"G", "K", "L", "M", "B", "Z", "C", "N", "H"};
-        // 2.3.7: the Galaxy Fist (the original's Haki Projection) is Iron Fist's now: not this Six Powers sample's
+        // 2.3.7: the Galaxy Fist (the original's Haki Projection) is not this Six Powers sample's
         String[] names = nika ? new String[] {"King's Awakening", "Haki Grip", "WiFi Haki", "", "", "", "", "", ""}
             : new String[] {"Light Beam", "Light Speed Kick", "", "", "King's Awakening", "Haki Grip", "WiFi Haki", "", ""};
         int[] abilities = nika ? new int[] {100, 101, 102, -1, -1, -1, -1, -1, -1} : new int[] {0, 1, -1, -1, 100, 101, 102, -1, -1};

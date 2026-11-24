@@ -51,12 +51,18 @@ public final class NpcTests {
             }
             Check.that(SeaRules.title(side, 2).contains("Captain"), "the captain is named so");
         }
-        // 2.1.4: pirates fight with Fishman Karate, Iron Fist and the sword; marines as before
+        // 2.1.4: pirates fight with kicks and the sword; marines with the Six Powers. 3.5.7: no Fishman Karate (gone) nor Iron Fist
+        // (no moves until it is remade); every style a fighter takes has moves
         java.util.List<FightingStyle> pirates = java.util.Arrays.asList(SeaRules.styles(Faction.PIRATE));
-        Check.that(pirates.contains(FightingStyle.FISHMAN_KARATE) && pirates.contains(FightingStyle.BRAWLER)
-            && pirates.contains(FightingStyle.SWORDSMAN), "pirates use Fishman Karate, Iron Fist and Swordsman");
-        Check.that(java.util.Arrays.equals(SeaRules.styles(Faction.MARINE), new FightingStyle[] {FightingStyle.SIX_POWERS,
-            FightingStyle.SIX_POWERS, FightingStyle.BRAWLER}), "marines unchanged");
+        Check.that(pirates.contains(FightingStyle.BLACK_LEG) && pirates.contains(FightingStyle.SWORDSMAN)
+            && !pirates.contains(FightingStyle.BRAWLER), "pirates use Black Leg and Swordsman");
+        Check.that(java.util.Arrays.equals(SeaRules.styles(Faction.MARINE), new FightingStyle[] {FightingStyle.SIX_POWERS}),
+            "marines use the Six Powers");
+        for (Faction side : new Faction[] {Faction.PIRATE, Faction.MARINE}) {
+            for (FightingStyle style : SeaRules.styles(side)) {
+                Check.that(style.armed(), side + " fighters' " + style + " has moves");
+            }
+        }
         for (int rank = 0; rank < 3; rank++) {
             for (int pick = 0; pick < 30; pick++) {
                 com.hexhaki.piece.sword.Katana k = SeaRules.katana(rank, pick);

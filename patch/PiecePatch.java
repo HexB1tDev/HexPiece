@@ -217,6 +217,7 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentGroundStorm", GROUND_STORM, RYOU_FX, "groundStorm", 1},
         // 2.3.7 (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU haki. ONLY for iron fist."):
         // the Galaxy Fist's start (its "convergence") goes through HexPiece, which lets only an Iron Fist fighter with Ryou up throw it
+        // (3.5.7: no one, while Iron Fist is remade: server/GalaxyFist)
         {CONTROLLER, "onAction", CONTROLLER, "beginConvergence", "(Lnet/minecraft/server/level/ServerPlayer;)V", GALAXY, "begin", 1},
         // 2.4.5 (the owner: "Conqueror Haki full release lags a ton when releasing the full charge"): the release's range lightning goes
         // through HexPiece, which leaves out the supreme release's second pass (the same bolts again from a second seed, 7 ticks

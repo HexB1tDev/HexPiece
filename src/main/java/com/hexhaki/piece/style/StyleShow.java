@@ -94,10 +94,10 @@ public final class StyleShow {
         };
     }
 
-    /** Whether the 3D show draws this move (the moves with their own effects keep them: the Water Bullet, Prison, Brick Fist ...). */
+    /** Whether the 3D show draws this move (the moves with their own effects keep them: the Air Blade, Iron Body, Shave). */
     public static boolean shown(StyleMove move) {
         return switch (move) {
-            case FK_BULLET, FK_PRISON, FK_BRICK_FIST, SP_BLADE, SP_IRON, SP_SHAVE, IF_CHARGE -> false;
+            case SP_BLADE, SP_IRON, SP_SHAVE -> false;
             case SP_MOON, SP_PAPER -> true; // 2.8.4: no blows, their own show (special)
             default -> move.style() != FightingStyle.SWORDSMAN && move.style() != FightingStyle.NONE && move.hits().length > 0;
         };
@@ -152,12 +152,7 @@ public final class StyleShow {
             double spin = Math.abs(now[StyleRig.BODY][4] * now[StyleRig.BODY][7] - before[StyleRig.BODY][4] * before[StyleRig.BODY][7]);
             boolean straight = along > 0.6 && spin < 30.0;
             double[] dir = straight ? new double[] {axis[0] / al, axis[1] / al, axis[2] / al} : way;
-            // the Rising Knee strikes with the knee, not the foot
-            double point = move == StyleMove.FK_KNEE ? 0.5 : 1.0;
-            if (point < 1.0) {
-                dir = new double[] {0.0, 0.5, Math.sqrt(0.75)}; // a knee drives up and on into them
-            }
-            out[h] = new Strike(tick, best, straight && point == 1.0, dir, size(hits[h].weight()), point);
+            out[h] = new Strike(tick, best, straight, dir, size(hits[h].weight()), 1.0);
         }
         STRIKES.put(move, out);
         return out;
@@ -197,7 +192,6 @@ public final class StyleShow {
                 smear(sink, name, limb, ticks, poser, place, look);
             }
         }
-        boolean water = move.style() == FightingStyle.FISHMAN_KARATE;
         double[] at = new double[3];
         double[] dir = new double[3];
         for (int i = 0; i < strikes.length; i++) {
@@ -213,21 +207,6 @@ public final class StyleShow {
             if (s.straight() && age >= 0.0 && (move.style() != FightingStyle.SIX_POWERS || move == StyleMove.SP_KING)) {
                 StyleArt.thrust(sink, at, dir, age, s.size() * (own ? OWN : 1.0), look, seed * 17 + i);
             }
-            if (water) {
-                if (s.limb() <= StyleRig.LEFT_ARM) {
-                    // the water wound round the arm into the blow, then thrown on out of the hand
-                    float[][] pose = poser.sample(name, Math.max(0.0F, ticks));
-                    double[] from = new double[3];
-                    double[] to = new double[3];
-                    place.put(StyleRig.limb(pose, s.limb(), 0.0, 0.35, 0.0), from);
-                    place.put(tip(pose, s.limb()), to);
-                    double strength = age < 0.0 ? StyleArt.smooth((age + 4.0) / 4.0) : 1.0 - StyleArt.smooth(age / 5.0);
-                    StyleArt.helix(sink, from, to, ticks, strength, look);
-                }
-                if (age >= 0.0) {
-                    StyleArt.splash(sink, at, dir, age, s.size() * 0.6 * (own ? OWN : 1.0), look, seed * 13 + i);
-                }
-            }
             if (haki && age > -2.0 && age < 4.0) {
                 float[][] pose = poser.sample(name, Math.max(0.0F, ticks));
                 double[] end = new double[3];
@@ -241,8 +220,7 @@ public final class StyleShow {
 
     /**
      * 2.8.4: the extras' own: Moon Walk's air stamped down under the feet, Paper Art's sheets drifting round the body, the Six King
-     * Gun's sphere of shock out of both fists, the Five-Thousand Brick Fist's wave of water and the Fist of Love's of shocked dust along
-     * the ground from where the fist came down.
+     * Gun's sphere of shock out of both fists.
      */
     static void special(FireMesh.Sink sink, StyleMove move, boolean haki, float ticks, Poser poser, Place place, int seed, StyleArt.Look look) {
         double[] at = new double[3];
@@ -267,14 +245,6 @@ public final class StyleShow {
                     StyleArt.sphere(sink, at, ticks - hit, 2.6, look);
                 }
             }
-            case FK_FIVE, IF_LOVE -> {
-                Strike s = strikes(move, poser)[0];
-                if (ticks >= s.tick()) {
-                    double[] fist = tip(poser.sample(move.animation(), s.tick()), s.limb());
-                    place.put(new double[] {fist[0], 0.02, fist[2]}, at);
-                    StyleArt.wave(sink, at, ticks - s.tick(), move == StyleMove.FK_FIVE ? 6.5 : 3.0, look);
-                }
-            }
             default -> {
             }
         }
@@ -282,13 +252,8 @@ public final class StyleShow {
 
     /** 2.8.4: what a line move throws (StyleArt.shot): "spear", "drill", "ball", "tunnel"; null: its shot is drawn elsewhere. */
     public static String shotKind(StyleMove move) {
-        return switch (move) {
-            case FK_SPEAR -> "spear";
-            case FK_DRILL -> "drill";
-            case IF_METEOR -> "ball";
-            case IF_HONESTY -> "tunnel";
-            default -> null;
-        };
+        // 3.5.7: none now (Fishman Karate's spear and drill went with it, Iron Fist's cannonball and tunnel with its old moves)
+        return null;
     }
 
     /** How long a thrown shot shows ({@code length} blocks out), ticks. */
@@ -344,12 +309,12 @@ public final class StyleShow {
 
     /** How long a landed blow shows (ticks). */
     public static double landedLife(StyleMove move) {
-        return move.style() == FightingStyle.FISHMAN_KARATE ? StyleArt.SPLASH_LIFE : StyleArt.IMPACT_LIFE;
+        return StyleArt.IMPACT_LIFE;
     }
 
     /**
      * Where a blow of {@code move} landed ({@code at}, eye-relative, struck along {@code dir}), {@code age} ticks on: the impact star
-     * in the style's look, Fishman Karate's water thrown open, Armament's bolts crackling out of it.
+     * in the style's look, Armament's bolts crackling out of it.
      */
     public static void landed(FireMesh.Sink out, StyleMove move, boolean haki, double age, double[] at, double[] dir, double size, int seed) {
         if (!shown(move)) {
@@ -358,9 +323,6 @@ public final class StyleShow {
         FireMesh.Sink sink = faded(out);
         StyleArt.Look look = look(move, haki);
         StyleArt.impact(sink, at, dir, age, size, look, seed);
-        if (move.style() == FightingStyle.FISHMAN_KARATE) {
-            StyleArt.splash(sink, at, dir, age, size, look, seed + 7);
-        }
         if (haki && age < 6.0) {
             StyleArt.crackle(sink, at, dir, (int) Math.floor(age), 5, 0.9 * size, 1.0 - age / 6.0, seed + 3);
         }

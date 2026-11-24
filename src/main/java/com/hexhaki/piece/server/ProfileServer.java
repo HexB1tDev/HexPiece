@@ -48,7 +48,7 @@ public final class ProfileServer {
             mastery[style.ordinal()] = PieceRules.clampMastery(root.m_128451_("Mastery_" + style.id()));
         }
         return new PieceProfile(Gender.byOrdinal(root.m_128451_("Gender")), Faction.byOrdinal(root.m_128451_("Faction")),
-            FightingStyle.byOrdinal(root.m_128451_("Style")), root.m_128471_("Chosen"), mastery, root.m_128454_("Renown"),
+            FightingStyle.byCode(root.m_128451_("Style")), root.m_128471_("Chosen"), mastery, root.m_128454_("Renown"),
             com.hexhaki.piece.Alignment.clamp(root.m_128451_("Alignment")));
     }
 
@@ -65,7 +65,7 @@ public final class ProfileServer {
         }
         root.m_128405_("Gender", gender.ordinal());
         root.m_128405_("Faction", faction.ordinal());
-        root.m_128405_("Style", style.ordinal());
+        root.m_128405_("Style", style.code());
         root.m_128379_("Chosen", true);
         sync(player);
         String side = faction == Faction.PIRATE ? "a pirate" : "a marine";
@@ -173,6 +173,13 @@ public final class ProfileServer {
     @SubscribeEvent
     public static void loggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            CompoundTag root = root(player);
+            if (root.m_128471_("Chosen") && !FightingStyle.byCode(root.m_128451_("Style")).choice()) {
+                // 3.5.7: their style is gone (Fishman Karate, the owner: "Remove FIshman karate from the game entirely"): they set
+                // sail again and pick another
+                root.m_128379_("Chosen", false);
+                player.m_5661_(Component.m_237113_("Fishman Karate is no more: choose a new fighting style."), false);
+            }
             sync(player);
             if (!of(player).chosen()) {
                 PieceNetwork.sendTo(player, new S2COpenCreation(false));

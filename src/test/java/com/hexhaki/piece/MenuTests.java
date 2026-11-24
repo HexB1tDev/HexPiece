@@ -146,23 +146,19 @@ public final class MenuTests {
         }
         state.picked = open;
         Check.that(LogbookView.bindable(data, state) == 100, "a quick power picked can go on a slot (King's Awakening, 100)");
-        // 2.3.7: the Galaxy Fist (the original's Haki Projection, 103) is no longer Armament's: Iron Fist's page has it, with Ryou
+        // 2.3.7: the Galaxy Fist (the original's Haki Projection, 103) is no longer Armament's; 3.5.7: nor Iron Fist's (its moves are
+        // gone until it is remade): no page offers it
         for (LogbookView.Section section : data.styleHaki()) {
             for (LogbookView.Entry e : section.entries()) {
-                Check.that(e.ability() != 103, "no Haki page offers the Galaxy Fist (" + section.title() + ")");
+                Check.that(e.ability() != 103, "no page offers the Galaxy Fist (" + section.title() + ")");
             }
         }
-        LogbookView.Section six = data.styleHaki().get(0);
-        Check.that(LogbookView.galaxy(six, com.hexhaki.piece.style.FightingStyle.SIX_POWERS, true, "N", "", 103) == six,
-            "another style's page is left as it is");
         int[] mastery = new int[com.hexhaki.piece.style.FightingStyle.values().length];
         com.hexhaki.piece.PieceProfile iron = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE,
             com.hexhaki.piece.style.FightingStyle.BRAWLER, true, mastery, 0L, 0);
-        LogbookView.Section ironPage = LogbookView.galaxy(LogbookView.style(iron), com.hexhaki.piece.style.FightingStyle.BRAWLER, true, "N", "", 103);
-        LogbookView.Entry galaxy = ironPage.entries().get(ironPage.entries().size() - 1);
-        Check.that(galaxy.ability() == 103 && galaxy.open() && LogbookView.GALAXY.equals(galaxy.name()), "Iron Fist's page offers the Galaxy Fist");
-        Check.that(!LogbookView.galaxy(LogbookView.style(iron), com.hexhaki.piece.style.FightingStyle.BRAWLER, false, "N", "Opens with Ryou", 103)
-            .entries().get(ironPage.entries().size() - 1).open(), "locked until Ryou can be raised");
+        LogbookView.Section ironPage = LogbookView.style(iron);
+        Check.that(ironPage.entries().isEmpty() && ironPage.about().get(0).contains("made anew"),
+            "Iron Fist's page: no moves, being made anew");
         state.picked = locked;
         Check.that(LogbookView.bindable(data, state) == -1, "a locked one cannot");
         state.picked = 0;

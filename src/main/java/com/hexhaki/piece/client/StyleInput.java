@@ -39,7 +39,7 @@ public final class StyleInput {
         }
         PieceProfile self = PieceClient.self();
         boolean hand = player.m_21205_().m_41619_() || self.style().sword() && KatanaItem.of(player.m_21205_()) != null;
-        return hand && CombatMode.on() && self.chosen() && self.style().choice() && !GearClientState.devilFruitMode();
+        return hand && CombatMode.on() && self.chosen() && self.style().choice() && self.style().armed() && !GearClientState.devilFruitMode();
     }
 
     static boolean swordsman() {

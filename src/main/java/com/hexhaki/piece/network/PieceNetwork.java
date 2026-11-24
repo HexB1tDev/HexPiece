@@ -20,8 +20,10 @@ public final class PieceNetwork {
      * every client draws) and its shape changed, so the two sides must be the same version. 9 (2.4.6): S2CProfile carries the
      * player's alignment. 10 (2.7.0): S2CDragon (16), the Uo Uo no Mi's dragon form. 11 (2.7.1):
      * S2CDragon carries the dragon's colour. 12 (2.7.2): S2CUoFx (17), C2SDragon (18), the Uo Uo no Mi's moves. 13 (3.2.0): S2CEnergy
-     * (19). 14 (3.3.2): C2SNikaJump (20), Gear 5's jump. 15 (3.4.4): C2SNikaWhip (21), Goof Ball let go. */
-    private static final String PROTOCOL = "17";
+     * (19). 14 (3.3.2): C2SNikaJump (20), Gear 5's jump. 15 (3.4.4): C2SNikaWhip (21), Goof Ball let go. 16, 17 (3.5.x): Sky Road's
+     * C2SItoSky (22), S2CUoFx's two-byte kind. 18 (3.5.7): Fishman Karate removed and Iron Fist emptied: the styles' and their moves'
+     * ordinals changed, S2CWater keeps only the knock-down and the air bullets. */
+    private static final String PROTOCOL = "18";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;

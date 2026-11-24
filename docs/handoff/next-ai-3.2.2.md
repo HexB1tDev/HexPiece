@@ -3262,6 +3262,25 @@ the inner side; left fists for the left arm and the Anemone's odd rings). Kaku M
 fists 0.55 / 0.78, the Anemone's 0.2 / 0.29. DragonTests checks the arm's section is square (corners 1.25 times its middle and more),
 one flat face up, and the fist its very end. Renders: docs/gifs/mochi-3.5.6-square-arms.png (previews).
 
+## 8zzr. 3.5.7: Fishman Karate removed, Iron Fist emptied (the owner, verbatim)
+
+"Remove FIshman karate from the game entirely." / "Remove all abilities from Iron Fist, we're making this shit anew".
+
+- Styles are saved by FightingStyle.code() now (fixed for good: NONE 0, BLACK_LEG 1, SIX_POWERS 2, BRAWLER 4, SWORDSMAN 5; 3 was
+  Fishman Karate and must never be reused): ProfileServer and SeaFighter read byCode. A player whose saved style is gone gets the start
+  menu again at login; a saved sea fighter of a style no longer fought takes another of its side's (SeaRules.styles: pirates Black Leg
+  and Swordsman, marines Six Powers). Network PROTOCOL 18.
+- Gone: FightingStyle.FISHMAN_KARATE, every FK_ and IF_ StyleMove, the effects BULLETS, SHOCKWAVE, PRISON and WATER, water/WaterBullet,
+  WaterPrison, BrickFist, server/WaterPrisons, WaterServer's drops (it keeps closest() only), S2CWater's drop, prison, shock and splash
+  kinds (it keeps KNOCKED and the air bullets), WaterFx's drawing (it keeps the spray the knocked rag doll sheds), StyleFx's and
+  StyleShow's water, the 22 style_fishman_karate_ and style_brawler_ clips (tools/style_anims.py no longer writes them;
+  client/npc/StylePoses regenerated), tools/preview/WaterPreview. Kept as shared: Knockdowns, Tumble and Tumbles (the rag doll), WaterMesh
+  (the air's meshes), the clash, quake and air code.
+- Iron Fist: still a choice on the start menu, FightingStyle.armed() false: no combat mode, R and M1 stay the game's (CombatMode.styled,
+  StyleInput.ready, StyleServer.combat); its logbook page says it is being made anew; the Galaxy Fist (the original's Haki Projection,
+  2.3.7 Iron Fist's) is no one's (PieceRules.galaxyFist false, GalaxyFist.begin says so). Tests: StyleTests.removed, movesets, NpcTests,
+  MenuTests, ClashTests.
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);

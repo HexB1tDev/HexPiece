@@ -66,73 +66,10 @@ public enum StyleMove {
         + "flutters past.", 40, 40, 200, 100, Motion.NONE, Effect.DODGE),
     SP_KING(FightingStyle.SIX_POWERS, Slot.EXTRA_B, "Six King Gun", "Both fists pressed against them and the whole body's force let go "
         + "at once: a shockwave through them.", 24, 24, 300, 250, Motion.lunge(8, 0.45), Effect.QUAKE,
-        Hit.finisher(14, 3.2, 14.0F).wide(35).throwing(2.2, 0.35).stunning(40)),
+        Hit.finisher(14, 3.2, 14.0F).wide(35).throwing(2.2, 0.35).stunning(40));
 
-
-    // --- Fishman Karate: open hands, water and shock --------------------------------------------------------------------------
-    FK_PALM(FightingStyle.FISHMAN_KARATE, Slot.M1_1, "Shark Palm", "An open palm thrust from the hip.", 9, 6, 0, 0,
-        Motion.lunge(2, 0.2), Effect.NONE, Hit.medium(4, 3.3, 5.0F).wide(45).throwing(0.55, 0.1)),
-    FK_BACKFIST(FightingStyle.FISHMAN_KARATE, Slot.M1_2, "Back Fist", "The same arm snaps back across.", 10, 7, 0, 0,
-        Motion.NONE, Effect.NONE, Hit.light(5, 3.2, 4.5F).wide(60)),
-    FK_KNEE(FightingStyle.FISHMAN_KARATE, Slot.M1_3, "Rising Knee", "A knee driven up through the guard.", 10, 7, 0, 0,
-        Motion.lunge(2, 0.2), Effect.NONE, Hit.medium(5, 2.8, 5.0F).wide(45).throwing(0.15, 0.45)),
-    FK_BRICK(FightingStyle.FISHMAN_KARATE, Slot.M1_4, "Thousand-Brick Fist", "A fist whose shock passes through them like a wave.", 16, 14,
-        0, 0, Motion.lunge(6, 0.35), Effect.NONE, Hit.finisher(9, 3.6, 10.0F).wide(40).throwing(1.6, 0.2)),
-    // 2.3.8 (the owner's rework): five drops gathered out of the air over the raised fist, fired one a tick, each homing on a foe in
-    // front (water/WaterBullet, server/WaterServer); its hits are the shots' ticks and each drop's damage, flown by WaterServer
-    FK_BULLET(FightingStyle.FISHMAN_KARATE, Slot.HEAVY, "Water Bullet", "The hand raised to the sky: five drops of water gather over it "
-        + "out of the air. Pushed forward, they fire, each locking onto a foe in front.", 28, 28, 90, 0, Motion.NONE, Effect.BULLETS,
-        bullets()),
-    // 2.3.9 (the owner's rework): a punch where he looks, its water shockwave striking all in its path, knocking them off their feet.
-    // 2.4.4 (the owner: "it doesn't look very strong"): stepped into harder (a 0.4 lunge, was 0.22), lands as a finisher (hit-stop, shake)
-    // (water/BrickFist, style/Tumble); in the Shark Skin Counter's place
-    FK_BRICK_FIST(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_A, "Brick Fist", "A punch where you look: a shockwave of water rushes out of "
-        + "the fist, throwing everything in its path off its feet.", 18, 18, 140, 60, Motion.lunge(6, 0.4), Effect.SHOCKWAVE,
-        Hit.line(com.hexhaki.piece.water.BrickFist.STRIKE, com.hexhaki.piece.water.BrickFist.REACH, com.hexhaki.piece.water.BrickFist.RADIUS,
-            9.0F, Weight.FINISHER).throwing(1.5, 0.5)),
-    // 2.4.0 (the owner's rework): both hands to the sky, the one in your sights sealed in a floating ball of water for 5 s
-    // (water/WaterPrison, server/WaterPrisons); in the Five-Thousand Brick Wave's place. No blow: it holds
-    FK_PRISON(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B, "Water Prison", "Both hands to the sky: the one in your sights is sealed in a "
-        + "ball of water and held floating off the ground for 5 seconds, free only to look around. Enough damage, or their Conqueror's "
-        + "Haki, bursts it.", 22, 22, 400, 200, Motion.NONE, Effect.PRISON),
-    FK_SPEAR(FightingStyle.FISHMAN_KARATE, Slot.EXTRA_C, "Spear Wave", "The water in the air gathered in the hand and thrown as a spear: "
-        + "it runs straight through everything in its line.", 20, 20, 120, 20, Motion.NONE, Effect.NONE,
-        Hit.line(11, 20.0, 0.9, 8.0F, Weight.HEAVY).throwing(0.7, 0.15)),
-    FK_DRILL(FightingStyle.FISHMAN_KARATE, Slot.EXTRA_V, "Vagabond Drill", "A whirlpool spun up between the hands and thrust out: a drill "
-        + "of water that drives them back.", 22, 22, 180, 100, Motion.lunge(10, 0.2), Effect.NONE,
-        Hit.line(12, 11.0, 1.4, 10.0F, Weight.FINISHER).throwing(1.4, 0.2).stunning(30)),
-    FK_FIVE(FightingStyle.FISHMAN_KARATE, Slot.EXTRA_B, "Five-Thousand Brick Fist", "A fist driven into the ground: its shock runs out "
-        + "through the water in everything round you, throwing them all.", 26, 26, 280, 250, Motion.hop(4, 0.0, 0.45), Effect.QUAKE,
-        Hit.finisher(14, 6.5, 12.0F).wide(180).throwing(1.2, 0.7)),
-
-
-    // --- Iron Fist: pirate boxing ---------------------------------------------------------------------------------------------
-    IF_JAB(FightingStyle.BRAWLER, Slot.M1_1, "Jab", "A quick lead-hand jab.", 7, 4, 0, 0,
-        Motion.lunge(1, 0.18), Effect.NONE, Hit.light(3, 3.1, 3.5F).wide(35)),
-    IF_CROSS(FightingStyle.BRAWLER, Slot.M1_2, "Cross", "The rear hand, the hips turned through it.", 9, 6, 0, 0,
-        Motion.lunge(2, 0.22), Effect.NONE, Hit.medium(4, 3.3, 5.0F).wide(40).throwing(0.4, 0.05)),
-    IF_HOOK(FightingStyle.BRAWLER, Slot.M1_3, "Hook", "A tight hook round the guard.", 10, 7, 0, 0,
-        Motion.NONE, Effect.NONE, Hit.medium(5, 3.1, 5.5F).wide(75).throwing(0.35, 0.1)),
-    IF_UPPER(FightingStyle.BRAWLER, Slot.M1_4, "Uppercut", "Dropped low and driven up through the chin: they leave the ground.", 14, 12,
-        0, 0, Motion.lunge(3, 0.2), Effect.NONE, Hit.finisher(6, 3.1, 7.5F).wide(45).throwing(0.2, 1.05)),
-    IF_HAYMAKER(FightingStyle.BRAWLER, Slot.HEAVY, "Haymaker", "The arm wound all the way back, then everything behind one punch.", 20, 20,
-        70, 0, Motion.lunge(10, 0.5), Effect.QUAKE, Hit.finisher(13, 3.6, 12.0F).wide(45).throwing(1.8, 0.25)),
-    IF_GATLING(FightingStyle.BRAWLER, Slot.SPECIAL_A, "Gatling Jabs", "A storm of jabs too fast to count, and a straight to end it.", 26,
-        26, 160, 60, Motion.NONE, Effect.NONE, gatling()),
-    IF_CHARGE(FightingStyle.BRAWLER, Slot.SPECIAL_B, "Shoulder Charge", "Head down, shoulder first: through the crowd.", 18, 18, 200, 200,
-        Motion.dash(3, 12, 1.15), Effect.ONCE,
-        Hit.heavy(4, 2.2, 5.0F).wide(75).throwing(1.0, 0.3), Hit.heavy(6, 2.2, 5.0F).wide(75).throwing(1.0, 0.3),
-        Hit.heavy(8, 2.2, 5.0F).wide(75).throwing(1.0, 0.3), Hit.heavy(10, 2.2, 5.0F).wide(75).throwing(1.0, 0.3),
-        Hit.heavy(12, 2.2, 5.0F).wide(75).throwing(1.0, 0.3)),
-    IF_LOVE(FightingStyle.BRAWLER, Slot.EXTRA_C, "Fist of Love", "A fist brought down on their head like a scolding: it drives them "
-        + "into the ground.", 16, 16, 120, 20, Motion.lunge(4, 0.25), Effect.QUAKE,
-        Hit.heavy(9, 3.2, 8.0F).wide(40).throwing(0.1, -0.6).stunning(40)),
-    IF_METEOR(FightingStyle.BRAWLER, Slot.EXTRA_V, "Fist Meteor", "A cannonball pitched overhand, hard enough to hole a ship: it flies "
-        + "straight and bursts on what it meets.", 20, 20, 160, 100, Motion.NONE, Effect.NONE,
-        Hit.line(10, 24.0, 0.8, 10.0F, Weight.HEAVY).throwing(1.2, 0.3)),
-    IF_HONESTY(FightingStyle.BRAWLER, Slot.EXTRA_B, "Honesty Impact", "Everything in one straight punch: its shock blows a tunnel through "
-        + "the air ahead, throwing all in its path.", 26, 26, 300, 250, Motion.lunge(12, 0.4), Effect.QUAKE,
-        Hit.line(14, 10.0, 1.8, 13.0F, Weight.FINISHER).throwing(2.0, 0.4).stunning(30));
+    // 3.5.7: Fishman Karate is gone from the game (the owner: "Remove FIshman karate from the game entirely"); Iron Fist has no moves
+    // (the owner: "Remove all abilities from Iron Fist, we're making this shit anew")
 
     /** What else a move does besides its blows. */
     public enum Effect {
@@ -141,20 +78,12 @@ public enum StyleMove {
         QUAKE,
         /** Its blows set what they hit on fire. */
         FIRE,
-        /** Water splashes with its blows. */
-        WATER,
         /** Unseen for the dash. */
         VANISH,
         /** Blows taken barely land; attackers are thrown back. */
         GUARD,
         /** Each body is hit once by the whole move, however many of its blows pass through it. */
         ONCE,
-        /** 2.3.8: its blows are drops of water gathered over the fist and fired as homing shots (server/WaterServer). */
-        BULLETS,
-        /** 2.3.9: its blow is a shockwave of water along the look: all it strikes are knocked off their feet (server/Knockdowns). */
-        SHOCKWAVE,
-        /** 2.4.0: no blow: the one in the user's sights is sealed in a ball of water and held (server/WaterPrisons). */
-        PRISON,
         /** 2.8.4: no blow: Moon Walk, a step off the air (its hop works in the air too; the fall forgotten). */
         AIR_STEP,
         /** 2.8.4: no blow: Paper Art, every blow aimed at the user while it holds flutters past (server/StyleServer.dodge). */
@@ -188,16 +117,6 @@ public enum StyleMove {
         this.hits = hits;
     }
 
-    /** 2.3.8: the Water Bullet's five shots, one a tick from {@code WaterBullet.FIRE}: each drop flies as far as it reaches. */
-    private static Hit[] bullets() {
-        Hit[] hits = new Hit[com.hexhaki.piece.water.WaterBullet.COUNT];
-        for (int i = 0; i < hits.length; i++) {
-            hits[i] = Hit.line(com.hexhaki.piece.water.WaterBullet.fireTick(i), com.hexhaki.piece.water.WaterBullet.RANGE,
-                com.hexhaki.piece.water.WaterBullet.RADIUS, 3.5F, Weight.LIGHT);
-        }
-        return hits;
-    }
-
     /** 2.8.4: Premier Hachis: eight blazing kicks two ticks apart once the leg is heated, a roundhouse to end it. */
     private static Hit[] hachis() {
         List<Hit> hits = new ArrayList<>();
@@ -205,15 +124,6 @@ public enum StyleMove {
             hits.add(Hit.light(tick, 3.3, 1.8F).wide(45).throwing(0.08, 0.03).stunning(6));
         }
         hits.add(Hit.finisher(28, 3.6, 7.0F).wide(70).throwing(1.4, 0.3));
-        return hits.toArray(new Hit[0]);
-    }
-
-    private static Hit[] gatling() {
-        List<Hit> hits = new ArrayList<>();
-        for (int tick = 4; tick <= 22; tick += 2) {
-            hits.add(Hit.light(tick, 3.2, 1.6F).wide(45).throwing(0.06, 0.02).stunning(5));
-        }
-        hits.add(Hit.medium(24, 3.3, 4.0F).wide(45).throwing(0.9, 0.15));
         return hits.toArray(new Hit[0]);
     }
 

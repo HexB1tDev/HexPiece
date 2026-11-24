@@ -21,9 +21,8 @@ public final class StyleTests {
         combo();
         rules();
         galaxy();
-        waterBullet();
-        brickFist();
-        prison();
+        removed();
+        tumble();
         air();
         show();
         hands();
@@ -34,6 +33,14 @@ public final class StyleTests {
         for (FightingStyle style : FightingStyle.choices()) {
             if (style.sword()) {
                 continue; // 2.1.4: the sword's moves are SwordMove's (SwordTests)
+            }
+            if (style == FightingStyle.BRAWLER) {
+                // 3.5.7 (the owner: "Remove all abilities from Iron Fist, we're making this shit anew"): none until it is remade
+                for (Slot slot : Slot.values()) {
+                    Check.that(StyleMove.of(style, slot) == null, "Iron Fist has no move for " + slot + " until it is remade");
+                }
+                Check.that(!style.armed() && style.choice(), "Iron Fist: still picked, nothing to throw (the game's own punch)");
+                continue;
             }
             for (Slot slot : Slot.values()) {
                 StyleMove move = StyleMove.of(style, slot);
@@ -57,7 +64,7 @@ public final class StyleTests {
                     Check.that(hit.damage() > 0 && hit.damage() <= 14, move + ": damage in range");
                     Check.that(hit.reach() > 0 && hit.reach() <= 25, move + ": reach in range");
                 }
-                boolean defensive = move.effect() == StyleMove.Effect.GUARD || move.effect() == StyleMove.Effect.PRISON
+                boolean defensive = move.effect() == StyleMove.Effect.GUARD
                     || move.effect() == StyleMove.Effect.AIR_STEP || move.effect() == StyleMove.Effect.DODGE;
                 Check.that(defensive || move.hits().length > 0, move + ": an attack has blows");
                 Check.that(move.animation().startsWith("style_" + style.id() + "_"), move + ": its animation is named for its style");
@@ -82,13 +89,14 @@ public final class StyleTests {
                 Check.that(json.contains("\"tick\": " + hit.tick() + ","), move + ": its animation has a keyframe on its hit tick " + hit.tick());
             }
         }
-        // 2.3.9: the Shark Skin Counter gave its place to the Brick Fist: its stance and its answering palm are gone
-        Check.that(!Files.exists(ANIMATIONS.resolve("style_fishman_karate_counter_strike.json"))
-            && !Files.exists(ANIMATIONS.resolve("style_fishman_karate_counter.json")), "the counter's animations are gone with it");
+        // 3.5.7: Fishman Karate's clips gone with it, Iron Fist's with its moves
+        try (var files = Files.list(ANIMATIONS)) {
+            Check.that(files.map(f -> f.getFileName().toString()).noneMatch(n -> n.startsWith("style_fishman_karate_") || n.startsWith("style_brawler_")),
+                "no Fishman Karate or Iron Fist clip left");
+        }
         // 2.1.2: combat mode's stances: one per style, a loop, the arms only (walking, the body and the head stay the game's)
         Pattern part = Pattern.compile("\"(body|torso|head|rightLeg|leftLeg|rightItem|leftItem)\":");
-        Check.that(FightingStyle.FISHMAN_KARATE.stance() == null && FightingStyle.BRAWLER.stance() == null,
-            "Fishman Karate and Iron Fist hold no stance: no attacking pose while idle, walking or sprinting");
+        Check.that(FightingStyle.BRAWLER.stance() == null, "Iron Fist holds no stance: no attacking pose while idle, walking or sprinting");
         for (FightingStyle style : FightingStyle.choices()) {
             if (style.stance() == null) {
                 Check.that(!Files.exists(ANIMATIONS.resolve("style_" + style.id() + "_stance.json")), style + ": no stance file left over");
@@ -101,34 +109,20 @@ public final class StyleTests {
             Check.that(json.contains("\"rightArm\":") && json.contains("\"leftArm\":"), style + ": its stance holds both arms");
             Check.that(!part.matcher(json).find(), style + ": its stance moves the arms only");
         }
-        // 2.1.3: the punches raise the arms only for the blow (no tick-0 pose: they ease in from the player's own arms) and leave the
-        // legs to the game
-        Pattern legs = Pattern.compile("\"(rightLeg|leftLeg)\":");
-        for (StyleMove move : StyleMove.values()) {
-            if (move.style() != FightingStyle.FISHMAN_KARATE && move.style() != FightingStyle.BRAWLER) {
-                continue;
-            }
-            String json = Files.readString(ANIMATIONS.resolve(move.animation() + ".json"));
-            Check.that(!json.contains("\"tick\": 0,"), move + ": no pose forced on tick 0, the arms rise from where they are");
-            // 2.4.4: the Brick Fist is planted and stepped into (the owner: "it doesn't look very strong")
-            boolean legged = move == StyleMove.FK_KNEE || move == StyleMove.IF_CHARGE || move == StyleMove.FK_BRICK_FIST
-                || move.slot().extra(); // 2.8.4: the extras are whole-body moves (a throw's stride, a hop into the ground)
-            Check.that(legged == legs.matcher(json).find(), move + (legged ? ": its legs are part of the blow" : ": the legs stay the game's"));
-        }
     }
 
     static void combo() {
-        StyleMove first = StyleMove.of(FightingStyle.BRAWLER, Slot.M1_1);
+        StyleMove first = StyleMove.of(FightingStyle.SIX_POWERS, Slot.M1_1);
         Check.that(StyleCombo.startFor(null, 0, 100) == 100, "a first press starts at once");
         StyleMove hook = StyleMove.of(FightingStyle.BLACK_LEG, Slot.M1_2);
         Check.that(StyleCombo.startFor(hook, 100, 101) == -1, "a press early in a long blow's wind-up is dropped");
-        Check.that(StyleCombo.startFor(first, 100, 101) == 100 + first.cancel(), "a short jab's press is buffered to its cancel tick");
         long cancel = 100 + first.cancel();
+        Check.that(StyleCombo.startFor(first, 100, cancel - StyleCombo.BUFFER) == cancel, "a quick blow's press is buffered to its cancel tick");
         Check.that(StyleCombo.startFor(first, 100, cancel - 2) == cancel, "a press just before the cancel tick waits for it (buffered)");
         Check.that(StyleCombo.startFor(first, 100, cancel + 1) == cancel + 1, "a press after the cancel tick starts at once");
         Check.that(StyleCombo.next(first, 100, cancel) == Slot.M1_2, "the string goes on");
         Check.that(StyleCombo.next(first, 100, 100 + first.duration() + StyleCombo.WINDOW + 1) == Slot.M1_1, "too late: it starts over");
-        StyleMove finisher = StyleMove.of(FightingStyle.BRAWLER, Slot.M1_4);
+        StyleMove finisher = StyleMove.of(FightingStyle.SIX_POWERS, Slot.M1_4);
         Check.that(StyleCombo.next(finisher, 100, 200) == Slot.M1_1, "after the finisher it starts over");
         Check.that(StyleCombo.startFor(finisher, 100, 100 + finisher.duration()) == -1, "the finisher rests before a new string");
     }
@@ -146,11 +140,10 @@ public final class StyleTests {
         Check.that(Faction.PIRATE.enemy() == Faction.MARINE && Faction.MARINE.enemy() == Faction.PIRATE, "the two sides");
     }
 
-    /** 2.3.7: the Galaxy Fist is Iron Fist's alone, with Ryou up. */
+    /** 2.3.7: the Galaxy Fist was Iron Fist's alone, with Ryou up; 3.5.7: gone with Iron Fist's other moves until it is remade. */
     static void galaxy() throws Exception {
         for (FightingStyle style : FightingStyle.values()) {
-            Check.that(PieceRules.galaxyFist(style, true) == (style == FightingStyle.BRAWLER), style + ": the Galaxy Fist only for Iron Fist");
-            Check.that(!PieceRules.galaxyFist(style, false), style + ": never without Ryou up");
+            Check.that(!PieceRules.galaxyFist(style, true) && !PieceRules.galaxyFist(style, false), style + ": no Galaxy Fist while Iron Fist is remade");
         }
         Check.that(!PieceRules.galaxyFist(null, true), "no style chosen: no Galaxy Fist");
         String patch = java.nio.file.Files.readString(java.nio.file.Path.of("patch/PiecePatch.java"));
@@ -158,94 +151,26 @@ public final class StyleTests {
             && patch.contains("{CONTROLLER, \"beginConvergence\", 520, 0, 2}"), "the original's start goes through HexPiece, its mastery gone");
     }
 
-    /** 2.3.8: the Water Bullet: five drops gathered over the raised fist, fired one a tick, homing. */
-    static void waterBullet() {
-        StyleMove move = StyleMove.of(FightingStyle.FISHMAN_KARATE, Slot.HEAVY);
-        Check.that(move == StyleMove.FK_BULLET && move.effect() == StyleMove.Effect.BULLETS, "the signature is the Water Bullet");
-        Hit[] hits = move.hits();
-        Check.that(hits.length == com.hexhaki.piece.water.WaterBullet.COUNT, "five drops");
-        for (int i = 0; i < hits.length; i++) {
-            int fire = com.hexhaki.piece.water.WaterBullet.fireTick(i);
-            Check.that(hits[i].tick() == fire, "drop " + i + " fires on its tick");
-            Check.that(com.hexhaki.piece.water.WaterBullet.grown(i, fire) == 1.0, "drop " + i + " is whole before it is fired");
-            Check.that(com.hexhaki.piece.water.WaterBullet.grown(i, com.hexhaki.piece.water.WaterBullet.gathers(i)) == 0.0,
-                "drop " + i + " starts as mist");
-            Check.that(com.hexhaki.piece.water.WaterBullet.gathers(i) >= com.hexhaki.piece.water.WaterBullet.RAISED, "it gathers once the hand is up");
+    /**
+     * 3.5.7 (the owner: "Remove FIshman karate from the game entirely"): no Fishman Karate left: not a style, no move of it, old saves'
+     * code for it read as no style (and no other style takes its number); styles keep their save codes.
+     */
+    static void removed() {
+        for (FightingStyle style : FightingStyle.values()) {
+            Check.that(!style.id().contains("fishman") && !style.display().toLowerCase(java.util.Locale.ROOT).contains("fishman"),
+                style + ": not Fishman Karate");
+            Check.that(FightingStyle.byCode(style.code()) == style, style + ": its save code reads back");
         }
-        double[] a = com.hexhaki.piece.water.WaterBullet.formation(0);
-        double[] m = com.hexhaki.piece.water.WaterBullet.formation(2);
-        double[] e = com.hexhaki.piece.water.WaterBullet.formation(4);
-        Check.that(a[0] < m[0] && m[0] < e[0] && m[1] > a[1] && Math.abs(a[1] - e[1]) < 1e-9 && a[2] == m[2],
-            "a flat arch across the fist, its middle highest, level across");
-        Check.that(m[1] > com.hexhaki.piece.water.WaterBullet.FIST[1], "over the fist");
-        // 2.4.4 (the owner: "not in the center, like above the head"): centred over the head, above its top (1.875 blocks)
-        Check.near((a[0] + e[0]) * 0.5, 0.0, 1e-9, "the arch centred over the head, not the fist");
-        Check.that(a[1] - com.hexhaki.piece.water.WaterBullet.RADIUS > 1.875 + 0.3, "every drop well above the head");
-        for (int targets = 0; targets <= 7; targets++) {
-            for (int i = 0; i < 5; i++) {
-                int t = com.hexhaki.piece.water.WaterBullet.target(i, targets);
-                Check.that(targets == 0 ? t == -1 : t >= 0 && t < targets, "each drop locks onto one of the foes, or none");
-            }
+        Check.that(FightingStyle.byCode(3) == FightingStyle.NONE, "Fishman Karate's old save code reads as no style");
+        Check.that(FightingStyle.BLACK_LEG.code() == 1 && FightingStyle.SIX_POWERS.code() == 2 && FightingStyle.BRAWLER.code() == 4
+            && FightingStyle.SWORDSMAN.code() == 5, "every other style keeps its old save number");
+        for (StyleMove move : StyleMove.values()) {
+            Check.that(!move.name().startsWith("FK_") && !move.name().startsWith("IF_"), move + ": not a Fishman Karate nor an old Iron Fist move");
         }
-        Check.that(com.hexhaki.piece.water.WaterBullet.target(0, 3) == 0 && com.hexhaki.piece.water.WaterBullet.target(3, 3) == 0,
-            "the nearest first, round again");
-        double[] v = com.hexhaki.piece.water.WaterBullet.steer(new double[] {0, 0, 1}, new double[] {1, 0, 0});
-        double turned = Math.toDegrees(Math.acos(v[2] / Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])));
-        Check.near(turned, Math.toDegrees(com.hexhaki.piece.water.WaterBullet.TURN), 1e-6, "it turns after its target a little a tick");
-        Check.near(Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]), com.hexhaki.piece.water.WaterBullet.SPEED, 1e-9, "at its speed");
-        double[] straight = com.hexhaki.piece.water.WaterBullet.steer(new double[] {0, 0, 1}, new double[] {0.1, 0, 1});
-        Check.that(straight[0] > 0 && Math.abs(straight[0] / straight[2] - 0.1) < 1e-9, "a small turn is made at once");
-        Check.that(com.hexhaki.piece.water.WaterBullet.ahead(0, 1, 0.2, 5) && !com.hexhaki.piece.water.WaterBullet.ahead(0, 1, 5, -1),
-            "it locks onto foes in front, not behind");
-        double[] w = com.hexhaki.piece.water.WaterBullet.world(new double[] {1, 0, 0}, 0, 0, 0, 0);
-        Check.that(w[0] < -0.99, "the user's right at yaw 0 is west (-x), as the game turns players");
     }
 
-    /** 2.3.9: the Brick Fist and the rag doll it makes. */
-    static void brickFist() {
-        StyleMove move = StyleMove.of(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_A);
-        Check.that(move == StyleMove.FK_BRICK_FIST && move.effect() == StyleMove.Effect.SHOCKWAVE, "Y is the Brick Fist");
-        Hit hit = move.hits()[0];
-        Check.that(hit.line() && hit.tick() == com.hexhaki.piece.water.BrickFist.STRIKE && hit.reach() == com.hexhaki.piece.water.BrickFist.REACH,
-            "its shockwave along the look, from the punch, as far as it reaches");
-        Check.that(hit.back() > 1.0 && hit.up() > 0.2, "it throws hard");
-        double last = -1;
-        for (double d = 0; d <= com.hexhaki.piece.water.BrickFist.REACH; d += 0.5) {
-            double open = com.hexhaki.piece.water.BrickFist.major(0, d);
-            Check.that(open >= last, "its ring opens as it goes");
-            last = open;
-            Check.that(com.hexhaki.piece.water.BrickFist.minor(0, d) > 0 && com.hexhaki.piece.water.BrickFist.minor(0, d) < open,
-                "a ring of water, thinner than it is wide");
-        }
-        Check.that(com.hexhaki.piece.water.BrickFist.travelled(0, 0) == 0 && com.hexhaki.piece.water.BrickFist.travelled(1, 0) == -1
-            && com.hexhaki.piece.water.BrickFist.travelled(0, 100) == -1, "its rings set out one a tick and are gone at its reach");
-        Check.that(com.hexhaki.piece.water.BrickFist.left(0) == 1.0 && com.hexhaki.piece.water.BrickFist.left(com.hexhaki.piece.water.BrickFist.REACH) == 0.0,
-            "whole as it sets out, gone at its reach");
-        // 2.4.4 (the owner: "it doesn't look very strong"): heavy rings, a torrent under them, a finisher's blow
-        Check.that(com.hexhaki.piece.water.BrickFist.rings() >= 5 && com.hexhaki.piece.water.BrickFist.major(0, com.hexhaki.piece.water.BrickFist.REACH) >= 2.5
-            && com.hexhaki.piece.water.BrickFist.minor(0, 0) >= 0.4, "five heavy rings, opening wide");
-        for (int k = 0; k < com.hexhaki.piece.water.BrickFist.rings(); k++) {
-            Check.that(com.hexhaki.piece.water.BrickFist.major(k, 1.0) > com.hexhaki.piece.water.BrickFist.minor(k, 1.0) * 1.5
-                && com.hexhaki.piece.water.BrickFist.minor(k, 1.0) > 0, "ring " + k + ": still a ring");
-            Check.that(com.hexhaki.piece.water.BrickFist.travelled(k, k + 0.5) > 0, "ring " + k + " sets out");
-        }
-        double[] jet = com.hexhaki.piece.water.BrickFist.torrent(1.0);
-        Check.that(jet != null && jet[0] > com.hexhaki.piece.water.BrickFist.travelled(0, 1.0) && jet[1] >= 0 && jet[1] < jet[0],
-            "the torrent's head just ahead of the first ring, its tail behind");
-        Check.that(com.hexhaki.piece.water.BrickFist.torrent(-1) == null && com.hexhaki.piece.water.BrickFist.torrent(30) == null,
-            "no torrent before the punch or long after");
-        double lastHead = 0;
-        for (double age = 0; age < 30; age += 0.25) {
-            double[] t = com.hexhaki.piece.water.BrickFist.torrent(age);
-            if (t == null) {
-                continue;
-            }
-            Check.that(t[0] >= lastHead - 1e-9 && t[0] <= com.hexhaki.piece.water.BrickFist.REACH + 0.5 + 1e-9, "the torrent only rushes out, no further than it reaches");
-            lastHead = t[0];
-        }
-        Check.that(com.hexhaki.piece.water.BrickFist.torrentRadius(1) > com.hexhaki.piece.water.BrickFist.torrentRadius(0),
-            "thicker at its head than at the fist");
-        Check.that(hit.weight() == Hit.Weight.FINISHER, "it lands like a finisher (hit-stop, shake)");
+    /** 2.3.9: the rag doll a knocked body becomes (HexGhoul's; kept for every fall). */
+    static void tumble() {
         // the rag doll (HexGhoul's)
         com.hexhaki.piece.style.Tumble.Frame start = com.hexhaki.piece.style.Tumble.at(0, Double.NaN);
         Check.that(start.tumble() == 0 && start.flat() == 0, "upright the instant it is struck");
@@ -259,30 +184,6 @@ public final class StyleTests {
         com.hexhaki.piece.style.Tumble.Frame up = com.hexhaki.piece.style.Tumble.at(10 + com.hexhaki.piece.style.Tumble.DOWN_TICKS
             + com.hexhaki.piece.style.Tumble.GETUP_TICKS, 10);
         Check.that(up.flat() < 1.0e-6 && Math.abs(up.head()) < 1.0e-9, "and stands as it was");
-    }
-
-    /** 2.4.0: the Water Prison. */
-    static void prison() {
-        StyleMove move = StyleMove.of(FightingStyle.FISHMAN_KARATE, Slot.SPECIAL_B);
-        Check.that(move == StyleMove.FK_PRISON && move.effect() == StyleMove.Effect.PRISON && move.hits().length == 0, "U is the Water Prison");
-        Check.that(move.duration() > com.hexhaki.piece.water.WaterPrison.SEAL, "it seals before its move ends");
-        Check.that(com.hexhaki.piece.water.WaterPrison.HOLD == 100, "5 seconds");
-        Check.that(com.hexhaki.piece.water.WaterPrison.radius(1.8, 0.6) > 0.9 + 0.1 && com.hexhaki.piece.water.WaterPrison.radius(1.8, 0.6) < 1.8,
-            "a bubble a bit bigger than the body");
-        Check.that(com.hexhaki.piece.water.WaterPrison.grown(com.hexhaki.piece.water.WaterPrison.GATHER) == 0.0
-            && com.hexhaki.piece.water.WaterPrison.grown(com.hexhaki.piece.water.WaterPrison.SEAL) == 1.0, "it swells out of nothing to whole");
-        double[] eye = {0, 1.6, 0};
-        double[] look = {0, 0, 1};
-        Check.near(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {-0.3, 0, 5}, new double[] {0.3, 1.8, 5.6}),
-            5 - com.hexhaki.piece.water.WaterPrison.AIM, 1e-9, "the one in your sights");
-        Check.that(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {2, 0, 5}, new double[] {2.6, 1.8, 5.6}) < 0,
-            "not one beside your look");
-        Check.that(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {-0.3, 0, 20}, new double[] {0.3, 1.8, 20.6}) < 0,
-            "not one out of reach");
-        Check.that(com.hexhaki.piece.water.WaterPrison.sights(eye, look, new double[] {-0.3, 0, -6}, new double[] {0.3, 1.8, -5.4}) < 0,
-            "not one behind");
-        Check.that(!com.hexhaki.piece.water.WaterPrison.bursts(13.9F) && com.hexhaki.piece.water.WaterPrison.bursts(14F),
-            "enough damage bursts it");
     }
 
     /** 2.4.1: Six Powers' air in 3D. */
@@ -357,8 +258,6 @@ public final class StyleTests {
                 }
             }
         }
-        Check.that(com.hexhaki.piece.style.StyleArt.of(FightingStyle.FISHMAN_KARATE, true) != com.hexhaki.piece.style.StyleArt.WATER,
-            "Fishman Karate's water turns black with Haki");
         Check.that(com.hexhaki.piece.style.StyleArt.of(FightingStyle.BRAWLER, true) == com.hexhaki.piece.style.StyleArt.HAKI,
             "Iron Fist turns black with Haki");
     }

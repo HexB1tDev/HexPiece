@@ -120,7 +120,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
     protected void m_8097_() {
         super.m_8097_();
         this.f_19804_.m_135372_(LOOK, 0);
-        this.f_19804_.m_135372_(STYLE, FightingStyle.BRAWLER.ordinal());
+        this.f_19804_.m_135372_(STYLE, FightingStyle.BLACK_LEG.ordinal());
         this.f_19804_.m_135372_(MOVE, 0);
         this.f_19804_.m_135372_(MOVE_START, 0);
         this.f_19804_.m_135372_(KATANA, 0);
@@ -267,7 +267,7 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         this.m_6593_(Component.m_237113_(SeaRules.title(this.faction(), rank)));
         CompoundTag saved = new CompoundTag();
         saved.m_128405_("Look", look);
-        saved.m_128405_("Style", style.ordinal());
+        saved.m_128405_("Style", style.code());
         saved.m_128405_("Katana", katana == null ? -1 : katana.ordinal());
         this.getPersistentData().m_128365_(SAVED, saved);
         // 2.3.1 (the owner: "NPCS for now only spawn with the Marine Armor"): a Marine in the Marine outfit, head to feet (not again
@@ -287,7 +287,12 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         CompoundTag data = this.getPersistentData();
         if (data.m_128441_(SAVED)) {
             CompoundTag saved = data.m_128469_(SAVED);
-            FightingStyle style = FightingStyle.byOrdinal(saved.m_128451_("Style"));
+            FightingStyle style = FightingStyle.byCode(saved.m_128451_("Style"));
+            if (!java.util.Arrays.asList(SeaRules.styles(this.faction())).contains(style)) {
+                // 3.5.7: a fighter of a style no longer fought (Fishman Karate gone, Iron Fist being remade) takes another of its side's
+                FightingStyle[] styles = SeaRules.styles(this.faction());
+                style = styles[this.m_217043_().m_188503_(styles.length)];
+            }
             Katana katana = saved.m_128441_("Katana") ? Katana.byOrdinal(saved.m_128451_("Katana")) : null;
             if (style.sword() && katana == null) {
                 katana = SeaRules.katana(SeaRules.rankOf(saved.m_128451_("Look")), this.m_217043_().m_188503_(64));
@@ -412,16 +417,6 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         this.face(this.foe);
         if (now >= this.nextAttack && !com.hexhaki.piece.server.Clashes.staggered(this, now)) {
             StyleMove next = this.choose(now);
-            if (next != null && next.effect() == StyleMove.Effect.PRISON) {
-                if (this.foe == null || this.foe.m_20280_(this) > com.hexhaki.piece.water.WaterPrison.RANGE * com.hexhaki.piece.water.WaterPrison.RANGE
-                    || com.hexhaki.piece.server.WaterPrisons.held(this.foe)) {
-                    next = StyleMove.of(this.style(), Slot.M1_1);
-                } else {
-                    this.begin(next, now);
-                    com.hexhaki.piece.server.WaterPrisons.aim(this, this.foe);
-                    return;
-                }
-            }
             this.begin(next, now);
         }
     }
@@ -486,14 +481,6 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
         StyleCombat.carry(this, this.move, tick);
         int mastery = SeaRules.MASTERY[this.rank()];
         DamageSource source = this.m_269291_().m_269333_(this);
-        if (this.move.effect() == StyleMove.Effect.BULLETS) {
-            com.hexhaki.piece.server.WaterServer.bullets(this, this.move, tick, this.moveStart, mastery, this::foe, source);
-            return;
-        }
-        if (this.move.effect() == StyleMove.Effect.PRISON) {
-            com.hexhaki.piece.server.WaterPrisons.tick(this, tick);
-            return;
-        }
         for (Hit hit : this.move.hits()) {
             if (hit.tick() == tick) {
                 if (com.hexhaki.piece.server.Clashes.landing(this, now, this::foe)) {
@@ -746,7 +733,6 @@ public class SeaFighter extends PathfinderMob implements SeaNpc {
      * else simply dropped (a blade came through its bare blow).
      */
     public void clashed(long now, boolean recoil) {
-        com.hexhaki.piece.server.WaterPrisons.stop(this);
         if (this.move != null) {
             this.move = null;
             this.f_19804_.m_135381_(MOVE, recoil ? CLASH_MOVE : 0);

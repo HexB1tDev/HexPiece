@@ -37,7 +37,7 @@ STANCE = {"slot": "STANCE", "name": "combat mode"}
 
 
 def stance_pose(stance, tick):
-    """The stance loop at tick (arms only; every other part standing); a style without one (2.1.3: Fishman Karate, Iron Fist) rests
+    """The stance loop at tick (arms only; every other part standing); a style without one rests
     with its arms hanging, the game's own."""
     return neutral() if stance is None else stance.pose(tick % max(1, stance.end))
 
@@ -124,7 +124,7 @@ def render(style, moves, out):
     stance_file = os.path.join(ANIMS, f"style_{style}_stance.json")
     frames = timeline(moves, anim.load(stance_file) if os.path.exists(stance_file) else None)
     title_font, label_font, small = font(17), font(15), font(12)
-    accent = {"black_leg": (232, 116, 58), "six_powers": (90, 160, 230), "fishman_karate": (40, 170, 150), "brawler": (210, 70, 70)}[style]
+    accent = {"black_leg": (232, 116, 58), "six_powers": (90, 160, 230)}[style]
     images = []
     previous = None
     for index, (pose, move, hit) in enumerate(frames):
@@ -164,7 +164,8 @@ def main():
     out_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "docs/images")
     moves = json.load(open(os.path.join(ROOT, "build/preview/styles.json"), encoding="utf-8"))
     os.makedirs(out_dir, exist_ok=True)
-    for style in ("black_leg", "six_powers", "fishman_karate", "brawler"):
+    # 3.5.7: Fishman Karate removed, Iron Fist without moves until it is remade
+    for style in ("black_leg", "six_powers"):
         mine = [m for m in moves if m["style"] == style]
         order = ["M1_1", "M1_2", "M1_3", "M1_4", "HEAVY", "SPECIAL_A", "SPECIAL_B"]
         mine.sort(key=lambda m: order.index(m["slot"]))

@@ -25,7 +25,7 @@ import net.minecraftforge.fml.common.Mod;
 /**
  * 2.8.2 (the owner: "give the current M1s a first person (some are missing, like 6 powers, black leg, water kungfu and iron first)"):
  * in first person PlayerAnimator draws the arms of a move and never the legs, so a kick showed nothing. While the local player's style
- * move kicks (its animation moves a leg: Black Leg's every blow, Six Powers' Storm Leg and Air Blade, Fishman Karate's knee ...), its
+ * move kicks (its animation moves a leg: Black Leg's every blow, Six Powers' Storm Leg and Air Blade ...), its
  * legs are drawn here in the player's own skin and trousers, posed by the same keyframes (client/npc/StylePoser, style/KickLeg: the
  * knee bending), lifted and brought forward into the view as the game's first-person arms are (a kick at the hip would be under the
  * bottom of the screen), turned with the body's own twist. Through the game's entity type, lit as the player stands.

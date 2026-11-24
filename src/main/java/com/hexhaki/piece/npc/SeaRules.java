@@ -58,12 +58,12 @@ public final class SeaRules {
     }
 
     /**
-     * The styles a side fights with: pirates kick, box, do karate and (2.1.4) carry katanas (two in five); marines use the Six Powers
-     * and box (unchanged).
+     * The styles a side fights with: pirates kick and (2.1.4) carry katanas (two in five); marines use the Six Powers. 3.5.7: no more
+     * Fishman Karate (removed) nor Iron Fist (no moves until it is remade).
      */
     public static FightingStyle[] styles(Faction side) {
-        return side == Faction.MARINE ? new FightingStyle[] {FightingStyle.SIX_POWERS, FightingStyle.SIX_POWERS, FightingStyle.BRAWLER}
-            : new FightingStyle[] {FightingStyle.BLACK_LEG, FightingStyle.BRAWLER, FightingStyle.FISHMAN_KARATE, FightingStyle.SWORDSMAN,
+        return side == Faction.MARINE ? new FightingStyle[] {FightingStyle.SIX_POWERS}
+            : new FightingStyle[] {FightingStyle.BLACK_LEG, FightingStyle.BLACK_LEG, FightingStyle.BLACK_LEG, FightingStyle.SWORDSMAN,
                 FightingStyle.SWORDSMAN};
     }
 

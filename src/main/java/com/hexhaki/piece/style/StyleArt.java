@@ -56,7 +56,6 @@ public final class StyleArt {
         Look look = switch (style) {
             case BLACK_LEG -> KICK;
             case SIX_POWERS -> AIR;
-            case FISHMAN_KARATE -> WATER;
             default -> SHOCK;
         };
         return haki ? haki(look) : look;

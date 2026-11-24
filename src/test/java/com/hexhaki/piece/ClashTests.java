@@ -84,12 +84,6 @@ public final class ClashTests {
         Check.that(ClashRules.WINDUP <= 4, "two blows meet only when both strike at about the same moment");
         for (StyleMove move : StyleMove.values()) {
             Hit[] hits = move.hits();
-            if (move.effect() == StyleMove.Effect.BULLETS) {
-                for (int tick = 0; tick < move.duration(); tick++) {
-                    Check.that(ClashBlows.style(move, tick) == null, move + ": its drops fly on their own, no blow of the body's to clash");
-                }
-                continue;
-            }
             for (int tick = 0; tick < move.duration(); tick++) {
                 ClashBlows.Window w = ClashBlows.style(move, tick);
                 Hit next = null;
@@ -111,9 +105,9 @@ public final class ClashTests {
             }
         }
         Check.that(ClashBlows.style(StyleMove.SP_IRON, 5) == null, "Iron Body throws no blow to clash");
-        Check.that(ClashBlows.kind(StyleMove.BL_SNAP) == Kind.KICK && ClashBlows.kind(StyleMove.IF_JAB) == Kind.FIST, "kicks and fists");
-        ClashBlows.Window gatling = ClashBlows.style(StyleMove.IF_GATLING, 8);
-        Check.that(gatling.began() == 7 && gatling.lands() == 8, "each jab of the gatling sets out after the one before");
+        Check.that(ClashBlows.kind(StyleMove.BL_SNAP) == Kind.KICK && ClashBlows.kind(StyleMove.SP_FINGER_R) == Kind.FIST, "kicks and fists");
+        ClashBlows.Window hachis = ClashBlows.style(StyleMove.BL_HACHIS, 11);
+        Check.that(hachis.began() == 10 && hachis.lands() == 11, "each kick of Premier Hachis sets out after the one before");
         for (SwordMove move : SwordMove.values()) {
             SwordMove.Cut[] cuts = move.cuts();
             for (int tick = 0; tick < move.duration(); tick++) {
@@ -130,7 +124,7 @@ public final class ClashTests {
         Check.that(ClashBlows.bladeReach("no such animation", 0, 5, 0.8, 2.5) == 2.5, "no path: the fallback reach");
         Check.that(ClashBlows.release(3, 3.0, 9.0) != null && ClashBlows.release(5, 3.0, 9.0) == null, "the charged cut is one blow");
         Check.that(ClashBlows.quick(8, 0.0, 9.0).reach() == ClashBlows.QUICK_REACH, "the quick draw is one blow along its run");
-        Blow at = ClashBlows.style(StyleMove.IF_JAB, 0).at(100, 4.0, true, 0xFF3366FF);
+        Blow at = ClashBlows.style(StyleMove.SP_FINGER_R, 0).at(100, 4.0, true, 0xFF3366FF);
         Check.that(at.began() == 100 && at.lands() == 103 && at.armed() && at.ryou() == 0xFF3366FF && at.hit() == 4.0,
             "a window placed in the world at its move's start");
     }
@@ -236,8 +230,8 @@ public final class ClashTests {
             "a blade's recoil lasts as long as a fist's");
         Check.that(ClashRules.RECOIL <= ClashRules.STAGGER, "the recoil is over by the end of the stagger");
         for (com.hexhaki.piece.style.FightingStyle style : com.hexhaki.piece.style.FightingStyle.values()) {
-            if (!style.choice() || style.sword()) {
-                continue;
+            if (!style.choice() || style.sword() || !style.armed()) {
+                continue; // 3.5.7: Iron Fist throws no blow to clash until it is remade
             }
             java.nio.file.Path file = anims.resolve(ClashRules.recoil(style) + ".json");
             Check.that(java.nio.file.Files.exists(file), style + ": its recoil");

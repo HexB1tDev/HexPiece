@@ -28,9 +28,8 @@ public final class GalaxyFist {
         PieceProfile profile = ProfileServer.of(player);
         boolean ryou = ryou(player);
         if (!PieceRules.galaxyFist(profile.chosen() ? profile.style() : null, ryou)) {
-            boolean iron = profile.chosen() && profile.style() == com.hexhaki.piece.style.FightingStyle.BRAWLER;
-            player.m_5661_(Component.m_237113_(iron ? "Galaxy Fist: Ryou must be up (Armament, then Ryou)"
-                : "Galaxy Fist: Iron Fist's alone, with Ryou up"), true);
+            // 3.5.7: Iron Fist's moves are gone until it is remade, the Galaxy Fist with them
+            player.m_5661_(Component.m_237113_("Galaxy Fist: not available while Iron Fist is being remade"), true);
             return;
         }
         HakiServerController.beginConvergence(player);

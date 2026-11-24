@@ -68,15 +68,11 @@ def p(*pieces, **parts):
 # FREE_LEGS: the legs are left out of the file, so the game keeps walking, sprinting or standing them; the body is never raised or
 #   lowered (it would lift or sink the walking feet), its turn, lean and the arms carry the blow. Kicks, the knee, the ground punch
 #   and the shoulder charge keep their legs.
-PUNCHES = ("style_fishman_karate_palm", "style_fishman_karate_backfist", "style_fishman_karate_brick", "style_fishman_karate_bullet",
-           "style_fishman_karate_prison", "style_brawler_jab", "style_brawler_cross",
-           "style_brawler_hook", "style_brawler_upper", "style_brawler_haymaker", "style_brawler_gatling",
-           "style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
+# 3.5.7: Fishman Karate's clips are gone with it (the owner: "Remove FIshman karate from the game entirely"), Iron Fist's with its
+# moves (the owner: "Remove all abilities from Iron Fist, we're making this shit anew")
+PUNCHES = ("style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
 # 2.4.4: the Brick Fist eases in like a punch but plants its legs (it is stepped into: the owner, "it doesn't look very strong")
-EASE_IN = set(PUNCHES) | {"style_fishman_karate_knee", "style_brawler_charge", "style_fishman_karate_brick_fist",
-                          # 2.8.4: the extras of the two styles that hold no stance
-                          "style_fishman_karate_spear", "style_fishman_karate_drill", "style_fishman_karate_five", "style_brawler_love",
-                          "style_brawler_meteor", "style_brawler_honesty"}
+EASE_IN = set(PUNCHES)
 FREE_LEGS = set(PUNCHES)
 
 
@@ -342,190 +338,6 @@ def six_powers():
           "Six Powers: Iron Body, every muscle locked, arms crossed and legs planted, trembling with the strain.")
 
 
-# ------------------------------------------------------------------------------------------------------------- Fishman Karate
-# A wide, low stance: the left palm forward, the right chambered at the hip.
-FK = p(arms(right=arm(20, 0, 12, -100), left=arm(-70, 10, -6, -24)), legs(30, 14), body={"y": -0.12, "yaw": -14})
-
-
-def fishman_karate():
-    s = "style_fishman_karate_"
-    write(s + "palm", 9, [
-        (0, "linear", FK),
-        (2, "inoutsine", p(FK, rightArm=arm(28, 0, 12, -108), leftArm=arm(-60, 10, -6, -30), body={"y": -0.13, "yaw": -24})),
-        (4, "outexpo", p(FK, rightArm=arm(-88, -4, 4, -6), leftArm=arm(24, 0, -12, -100), body={"y": -0.12, "yaw": 22, "z": -0.1})),
-        (5, "outback", p(FK, rightArm=arm(-91, -4, 4, -4), leftArm=arm(26, 0, -12, -102), body={"y": -0.12, "yaw": 25, "z": -0.11})),
-        (7, "inoutsine", p(FK, rightArm=arm(-40, 0, 8, -60), body={"y": -0.12, "yaw": 0})),
-        (9, "inoutsine", FK),
-    ], "Fishman Karate: an open palm thrust from the hip.")
-    write(s + "backfist", 10, [
-        (0, "linear", FK),
-        (2, "inoutsine", p(FK, rightArm=arm(-62, -54, 16, -108), body={"y": -0.12, "yaw": 22})),
-        (5, "outexpo", p(FK, rightArm=arm(-86, 34, 14, -12), body={"y": -0.12, "yaw": -22}, head={"yaw": 8})),
-        (6, "outback", p(FK, rightArm=arm(-88, 40, 16, -8), body={"y": -0.12, "yaw": -26}, head={"yaw": 9})),
-        (8, "inoutsine", p(FK, rightArm=arm(-30, 10, 10, -70), body={"y": -0.12, "yaw": -10})),
-        (10, "inoutsine", FK),
-    ], "Fishman Karate: the same arm snaps back across.")
-    write(s + "knee", 10, [
-        (0, "linear", FK),
-        (2, "inoutsine", p(FK, arms(right=arm(-82, -10, 4, -50), left=arm(-82, 10, -4, -50)), body={"y": -0.06, "yaw": 0},
-                           rightLeg=leg(4, 6, 20), leftLeg=leg(-6, -6, 20))),
-        (5, "outexpo", p(FK, arms(right=arm(-44, -10, 6, -84), left=arm(-44, 10, -6, -84)), body={"y": 0.02, "pitch": -8, "bend": 6},
-                         rightLeg=leg(-104, 4, 124), leftLeg=leg(4, -3, 8), head={"pitch": 6})),
-        (6, "outback", p(FK, arms(right=arm(-40, -10, 6, -88), left=arm(-40, 10, -6, -88)), body={"y": 0.03, "pitch": -9, "bend": 7},
-                         rightLeg=leg(-110, 4, 126), leftLeg=leg(4, -3, 8), head={"pitch": 7})),
-        (8, "inoutsine", p(FK, body={"y": -0.06}, rightLeg=leg(-30, 8, 50), leftLeg=leg(0, -10, 24))),
-        (10, "inoutsine", FK),
-    ], "Fishman Karate: a knee driven up through the guard.")
-    write(s + "brick", 16, [
-        (0, "linear", FK),
-        (3, "inoutsine", p(FK, rightArm=arm(42, 10, 16, -112), leftArm=arm(-74, 14, -6, -16), body={"y": -0.16, "yaw": -40},
-                           head={"yaw": 30})),
-        (6, "insine", p(FK, rightArm=arm(38, 10, 16, -116), leftArm=arm(-78, 14, -6, -12), body={"y": -0.16, "yaw": -42, "z": -0.1},
-                        head={"yaw": 32})),
-        (9, "outexpo", p(FK, rightArm=arm(-90, -4, 2, -2), leftArm=arm(30, 0, -12, -104), body={"y": -0.12, "yaw": 30, "z": -0.26, "bend": 8},
-                         head={"yaw": -12})),
-        (10, "outback", p(FK, rightArm=arm(-93, -4, 2, 0), leftArm=arm(32, 0, -12, -106), body={"y": -0.12, "yaw": 33, "z": -0.28, "bend": 9},
-                          head={"yaw": -13})),
-        (13, "inoutsine", p(FK, rightArm=arm(-50, 0, 8, -50), body={"y": -0.12, "yaw": 6, "z": -0.1})),
-        (16, "inoutsine", FK),
-    ], "Fishman Karate: the Thousand-Brick Fist, its shock passing through them like a wave.")
-    # 2.3.8 (the owner: "Water Bullet: The user pulls the right hand up into the sky and 5 dropplets of water form on top of the first
-    # in a horizontal arch line over the fist, then the user pushes the hand forward (pointing forward) and the bullets auto fire"): the
-    # right hand straight up to the sky by tick 4 (water/WaterBullet.RAISED), held, trembling a little as the drops gather over it
-    # (4-12), the eyes on them; pushed forward, pointing, at 14-15; held pointing as the five fire one a tick (16-20), each kicking it
-    # back a hair; then down
-    # 2.4.4 (the owner: the drops "way too ... to the right side of the player, not in the center, like above the head"): the arch is
-    # centred over the head now (WaterBullet.CROWN), its right end over the raised fist; the arm stays straight up (any pose that brings
-    # a Minecraft fist nearer the middle puts it in front of the forehead, through the head as it looks up, not up in the sky)
-    sky = p(FK, rightArm=arm(-176, 0, 6, -4), leftArm=arm(-40, 22, -12, -84), body={"bend": -5, "yaw": 4}, head={"pitch": -16})
-    point = p(FK, rightArm=arm(-92, -6, 4, 0), leftArm=arm(-30, 18, -14, -70), body={"bend": 4, "yaw": 12, "z": -0.06}, head={"pitch": 0})
-    kick = p(point, rightArm=arm(-97, -6, 4, -6), body={"bend": 3, "yaw": 11, "z": -0.04})
-    beats = [(2, "insine", p(FK, rightArm=arm(-120, 0, 8, -60), leftArm=arm(-50, 18, -10, -70), body={"bend": -2}, head={"pitch": -8})),
-             (4, "outexpo", sky)]
-    beats += shake(sky, [7, 10, 12], 0.8, (("rightArm", "roll"),))
-    beats += [(14, "insine", p(FK, rightArm=arm(-140, -4, 6, -20), leftArm=arm(-36, 20, -12, -76), body={"bend": -2, "yaw": 6})),
-              (15, "outexpo", point)]
-    for t in range(16, 21):
-        beats.append((t, "outsine", kick if t % 2 == 0 else point))
-    beats += [(23, "inoutsine", p(point, rightArm=arm(-60, 0, 8, -40))), (28, "inoutsine", FK)]
-    write(s + "bullet", 28, beats, "Fishman Karate: the hand raised to the sky, five drops of water gathered over it out of the air, then "
-          "pushed forward and fired, each locked onto a foe in front.")
-    # 2.3.9 (the owner: "Brick Fist: The user punches where he's looking creating a water shockwave"): the right fist drawn back to the
-    # hip and the body wound away from the look, the left hand out ahead sighting (2-6); driven straight out along the look on tick 8
-    # (water/BrickFist.STRIKE), the whole body turned through behind it, held out as the shockwave rushes off it, then back.
-    # 2.4.4 (the owner: "it doesn't look very strong"): planted and stepped into: the feet set wide (the left forward, knee bent), the
-    # body sunk and wound further away (yaw -50), held a beat; then the rear leg drives straight, the hips and shoulders turn through
-    # (yaw 40), the body lunges 0.36 forward behind the fist and stays sunk while the wave rushes off it
-    stance = {"rightLeg": leg(16, 4, 14), "leftLeg": leg(-20, -4, 22)}
-    loaded = {"rightLeg": leg(20, 5, 20), "leftLeg": leg(-24, -4, 30)}
-    driven = {"rightLeg": leg(30, 4, 2), "leftLeg": leg(-32, -4, 34)}
-    write(s + "brick_fist", 18, [
-        (2, "inoutsine", p(FK, stance, rightArm=arm(36, 8, 14, -114), leftArm=arm(-82, 12, -6, -10), body={"yaw": -38, "bend": 3, "y": -0.05},
-                           head={"yaw": 28})),
-        (6, "insine", p(FK, loaded, rightArm=arm(44, 12, 18, -124), leftArm=arm(-88, 16, -6, -4), body={"yaw": -50, "bend": 6, "z": 0.08,
-                        "y": -0.08}, head={"yaw": 34})),
-        (7, "linear", p(FK, loaded, rightArm=arm(45, 12, 18, -125), leftArm=arm(-88, 16, -6, -4), body={"yaw": -51, "bend": 6, "z": 0.09,
-                        "y": -0.08}, head={"yaw": 35})),
-        (8, "outexpo", p(FK, driven, rightArm=arm(-90, -4, 2, 0), leftArm=arm(34, 0, -14, -108), body={"yaw": 36, "z": -0.32, "bend": 10,
-                         "y": -0.08}, head={"yaw": -16})),
-        (9, "outback", p(FK, driven, rightArm=arm(-94, -4, 2, 0), leftArm=arm(36, 0, -14, -110), body={"yaw": 40, "z": -0.36, "bend": 11,
-                         "y": -0.08}, head={"yaw": -18})),
-        (12, "inoutsine", p(FK, driven, rightArm=arm(-89, -2, 3, -4), leftArm=arm(28, 0, -12, -102), body={"yaw": 31, "z": -0.3, "bend": 8,
-                            "y": -0.07}, head={"yaw": -12})),
-        (15, "inoutsine", p(FK, rightArm=arm(-46, 0, 8, -50), body={"yaw": 6, "z": -0.08})),
-        (18, "inoutsine", FK),
-    ], "Fishman Karate: the Brick Fist, a punch where he looks, stepped into, a shockwave of water rushing out of it.")
-    # 2.4.0 (the owner: "Water Prison: The user pulls both hands up into the sky (Needs an entity to target) the entity selected gets
-    # trapped"): both hands up to the sky by tick 4 (water/WaterPrison.GATHER), spread, the head up, held, trembling as the water
-    # gathers round the target (4-12); on the seal (14) both brought down and forward together, the hands closing on it; then down
-    sky = p(FK, rightArm=arm(-176, 0, 8, -6), leftArm=arm(-176, 0, -8, -6), body={"bend": -6}, head={"pitch": -14})
-    write(s + "prison", 22, [
-        (2, "insine", p(FK, rightArm=arm(-120, 0, 12, -50), leftArm=arm(-120, 0, -12, -50), body={"bend": -3}, head={"pitch": -8})),
-        (4, "outexpo", sky)] + shake(sky, [7, 10], 0.9, (("rightArm", "roll"), ("leftArm", "roll"))) + [
-        (12, "inoutsine", p(sky, rightArm=arm(-179, 0, 5, -4), leftArm=arm(-179, 0, -5, -4))),
-        (14, "outexpo", p(FK, rightArm=arm(-92, -18, 6, -10), leftArm=arm(-92, 18, -6, -10), body={"bend": 6, "z": -0.06}, head={"pitch": 2})),
-        (15, "outback", p(FK, rightArm=arm(-90, -20, 6, -6), leftArm=arm(-90, 20, -6, -6), body={"bend": 7, "z": -0.07}, head={"pitch": 2})),
-        (18, "inoutsine", p(FK, rightArm=arm(-60, -10, 8, -40), leftArm=arm(-60, 10, -8, -40), body={"bend": 3})),
-        (22, "inoutsine", FK),
-    ], "Fishman Karate: both hands to the sky, the one in your sights sealed in a ball of water.")
-
-
-# ------------------------------------------------------------------------------------------------------------- Iron Fist
-# A boxer's guard: fists at the chin, elbows in, the left foot and shoulder forward.
-IF = p(arms(right=arm(-66, -24, 12, -116), left=arm(-76, 20, -10, -104)), rightLeg=leg(12, 3, 18), leftLeg=leg(-14, -3, 16),
-       body={"y": -0.05, "yaw": -16}, head={"pitch": 6})
-
-
-def iron_fist():
-    s = "style_brawler_"
-    write(s + "jab", 7, [
-        (0, "linear", IF),
-        (3, "outexpo", p(IF, leftArm=arm(-90, 6, -2, -4), body={"y": -0.05, "yaw": -24, "z": -0.05}, leftLeg=leg(-18, -3, 18))),
-        (4, "outback", p(IF, leftArm=arm(-93, 6, -2, -2), body={"y": -0.05, "yaw": -26, "z": -0.06}, leftLeg=leg(-18, -3, 18))),
-        (7, "inoutsine", IF),
-    ], "Iron Fist: a quick lead-hand jab.")
-    write(s + "cross", 9, [
-        (0, "linear", IF),
-        (1, "inoutsine", p(IF, body={"y": -0.06, "yaw": -22})),
-        (4, "outexpo", p(IF, rightArm=arm(-90, -6, 2, -2), body={"y": -0.05, "yaw": 26, "z": -0.1}, rightLeg=leg(14, 3, 14, yaw=20),
-                         head={"yaw": -14})),
-        (5, "outback", p(IF, rightArm=arm(-93, -6, 2, 0), body={"y": -0.05, "yaw": 29, "z": -0.11}, rightLeg=leg(14, 3, 14, yaw=22),
-                         head={"yaw": -15})),
-        (9, "inoutsine", IF),
-    ], "Iron Fist: the rear hand, the hips turned through it.")
-    write(s + "hook", 10, [
-        (0, "linear", IF),
-        (2, "inoutsine", p(IF, body={"y": -0.07, "yaw": -32}, leftArm=arm(-70, -10, -40, -96))),
-        (5, "outexpo", p(IF, leftArm=arm(-88, 58, -64, -92), body={"y": -0.06, "yaw": 22}, leftLeg=leg(-14, -3, 18, yaw=-18),
-                         head={"yaw": -10})),
-        (6, "outback", p(IF, leftArm=arm(-88, 64, -66, -90), body={"y": -0.06, "yaw": 27}, leftLeg=leg(-14, -3, 18, yaw=-20),
-                         head={"yaw": -12})),
-        (10, "inoutsine", IF),
-    ], "Iron Fist: a tight hook round the guard.")
-    write(s + "upper", 14, [
-        (0, "linear", IF),
-        (2, "inoutsine", p(IF, rightArm=arm(14, -6, 12, -104), body={"y": -0.2, "bend": 12, "yaw": -24}, rightLeg=leg(12, 3, 40),
-                           leftLeg=leg(-16, -3, 40))),
-        (6, "outexpo", p(IF, rightArm=arm(-150, -14, 6, -72), body={"y": 0.06, "pitch": 10, "yaw": 22}, rightLeg=leg(10, 3, 4),
-                         leftLeg=leg(-14, -3, 6), head={"pitch": -10})),
-        (7, "outback", p(IF, rightArm=arm(-156, -14, 6, -70), body={"y": 0.07, "pitch": 11, "yaw": 25}, rightLeg=leg(10, 3, 4),
-                         leftLeg=leg(-14, -3, 6), head={"pitch": -11})),
-        (10, "inoutsine", p(IF, rightArm=arm(-90, -20, 10, -100), body={"y": -0.02, "pitch": 4, "yaw": 6})),
-        (14, "inoutsine", IF),
-    ], "Iron Fist: dropped low and driven up through the chin.")
-    wound = p(IF, rightArm=arm(46, 6, 30, -64), body={"y": -0.08, "yaw": -58, "bend": -4}, rightLeg=leg(16, 3, 30), leftLeg=leg(-18, -3, 14),
-              head={"yaw": 40})
-    write(s + "haymaker", 20, [(0, "linear", IF), (4, "inoutsine", wound)] + shake(wound, [6, 8, 10], 1.0, (("rightArm", "roll"),))
-          + [(13, "outexpo", p(IF, rightArm=arm(-94, -8, 4, 0), leftArm=arm(26, 0, -12, -100), body={"y": -0.06, "yaw": 46, "z": -0.3, "bend": 10},
-                               rightLeg=leg(16, 3, 10, yaw=24), leftLeg=leg(-26, -3, 24), head={"yaw": -18})),
-             (14, "outback", p(IF, rightArm=arm(-97, -8, 4, 0), leftArm=arm(28, 0, -12, -102), body={"y": -0.06, "yaw": 50, "z": -0.32, "bend": 11},
-                               rightLeg=leg(16, 3, 10, yaw=26), leftLeg=leg(-26, -3, 24), head={"yaw": -19})),
-             (17, "inoutsine", p(IF, body={"y": -0.05, "yaw": 10, "z": -0.1})),
-             (20, "inoutsine", IF)],
-          "Iron Fist: the arm wound all the way back, then everything behind one punch.")
-    beats = [(0, "linear", IF), (2, "inoutsine", p(IF, body={"y": -0.07, "yaw": -10, "bend": 8}))]
-    right_out = arm(-90, -8, 2, -4)
-    left_out = arm(-90, 8, -2, -4)
-    right_in = arm(-70, -24, 12, -112)
-    left_in = arm(-76, 20, -10, -104)
-    for t in range(3, 24):
-        right = t % 2 == 0
-        beats.append((t, "outsine", p(IF, rightArm=right_out if right else right_in, leftArm=left_in if right else left_out,
-                                      body={"y": -0.07, "yaw": 10 if right else -12, "bend": 8, "z": -0.04})))
-    beats += [(24, "outexpo", p(IF, rightArm=arm(-93, -8, 2, 0), leftArm=arm(26, 0, -12, -100), body={"y": -0.06, "yaw": 28, "z": -0.14, "bend": 6})),
-              (25, "outback", p(IF, rightArm=arm(-96, -8, 2, 0), leftArm=arm(28, 0, -12, -102), body={"y": -0.06, "yaw": 30, "z": -0.15, "bend": 6})),
-              (26, "inoutsine", IF)]
-    write(s + "gatling", 26, beats, "Iron Fist: a storm of jabs too fast to count, and a straight to end it.")
-    charge = p(arms(right=arm(24, 0, 10, -112), left=arm(-40, 20, -24, -118)), body={"bend": 30, "yaw": -36, "y": -0.08}, head={"pitch": -16})
-    beats = [(0, "linear", IF), (2, "outexpo", p(charge, rightLeg=leg(-10, 3, 40), leftLeg=leg(-10, -3, 40)))]
-    for i, t in enumerate(range(4, 13, 2)):
-        forward = i % 2 == 0
-        beats.append((t, "inoutsine", p(charge, rightLeg=leg(-48 if forward else 28, 2, 60 if forward else 40),
-                                        leftLeg=leg(28 if forward else -48, -2, 40 if forward else 60))))
-    beats += [(14, "inoutsine", p(IF, body={"y": -0.06, "yaw": -10, "bend": 6})), (18, "inoutsine", IF)]
-    write(s + "charge", 18, beats, "Iron Fist: head down, shoulder first, through the crowd.")
-
-
 # ------------------------------------------------------------------------------------------------------------- clash recoils
 # 2.3.6 (the owner: "every move is clashable ... I want a impact frame whenever a clash happens"): a blow met by another's (server/
 # Clashes) stops dead and the fighter is knocked back from it: the arms (or Black Leg's kicking leg) flung up and back by the shock,
@@ -555,8 +367,6 @@ def clash_recoils():
 
     bare(SP, "style_six_powers_clash", "Six Powers: the blow met and stopped dead, knocked back, the left hand still behind the back.",
          left_behind=True)
-    bare(FK, "style_fishman_karate_clash", "Fishman Karate: the blow met and stopped dead, knocked back, the stance found again.")
-    bare(IF, "style_brawler_clash", "Iron Fist: the punch met and stopped dead, knocked back, the guard found again.")
     # Black Leg: the hands stay behind the back; the kicking leg is thrown back down and the body hops back off it
     write("style_black_leg_clash", RECOIL, [
         (0, "linear", p(BL, rightLeg=leg(-42, 6, 18), leftLeg=leg(-6, -2, 16), body={"z": 0.08, "bend": -10, "yaw": -4},
@@ -721,93 +531,10 @@ def extras():
           + [(21, "inoutsine", p(SP, body={"y": -0.05})), (24, "inoutsine", SP)],
           "Six Powers: Six King Gun, both fists pressed against them and the whole body's force let go at once.")
 
-    s = "style_fishman_karate_"
-    # Spear Wave: the water in the air gathered in the raised hand and thrown like a javelin
-    write(s + "spear", 20, [
-        (0, "linear", FK),
-        (3, "inoutsine", p(FK, rightArm=arm(-150, 6, 20, 40), leftArm=arm(-80, 14, -6, -10), body={"y": -0.1, "yaw": -34, "pitch": 4},
-                           rightLeg=leg(14, 4, 20), leftLeg=leg(-26, -4, 24))),
-        (8, "inoutsine", p(FK, rightArm=arm(-160, 10, 24, 44), leftArm=arm(-86, 18, -6, -6), body={"y": -0.1, "yaw": -44, "pitch": 6},
-                           rightLeg=leg(18, 4, 22), leftLeg=leg(-30, -4, 26))),
-        (11, "outexpo", p(FK, rightArm=arm(-84, -6, 6, -4), leftArm=arm(22, 0, -12, -96), body={"y": -0.12, "yaw": 26, "z": -0.14, "bend": 10},
-                          rightLeg=leg(18, 4, 14, yaw=20), leftLeg=leg(-32, -4, 24), head={"yaw": -14})),
-        (13, "outback", p(FK, rightArm=arm(-62, -30, 8, -8), leftArm=arm(24, 0, -12, -98), body={"y": -0.12, "yaw": 32, "z": -0.16, "bend": 14},
-                          rightLeg=leg(18, 4, 14, yaw=22), leftLeg=leg(-32, -4, 24), head={"yaw": -16})),
-        (17, "inoutsine", p(FK, rightArm=arm(-30, 0, 10, -60), body={"y": -0.12, "yaw": 0})),
-        (20, "inoutsine", FK),
-    ], "Fishman Karate: Spear Wave, the water in the air gathered in the hand and thrown as a spear.")
-    # Vagabond Drill: a whirlpool spun up between the hands at the hip, then both palms thrust out together
-    cup_a = p(FK, rightArm=arm(-34, -20, 14, -70), leftArm=arm(-52, -46, -4, -80), body={"y": -0.14, "yaw": -32})
-    cup_b = p(FK, rightArm=arm(-50, -40, 10, -84), leftArm=arm(-30, -22, -14, -64), body={"y": -0.15, "yaw": -38})
-    write(s + "drill", 22, [
-        (0, "linear", FK), (3, "inoutsine", cup_a), (5, "inoutsine", cup_b), (7, "inoutsine", cup_a), (9, "inoutsine", cup_b),
-        (12, "outexpo", p(FK, arms(right=arm(-90, -10, 2, -2), left=arm(-90, 10, -2, -2)), body={"y": -0.12, "yaw": 0, "z": -0.18, "bend": 8},
-                          head={"pitch": -4})),
-        (14, "outback", p(FK, arms(right=arm(-92, -10, 2, 0), left=arm(-92, 10, -2, 0)), body={"y": -0.12, "yaw": 0, "z": -0.2, "bend": 9},
-                          head={"pitch": -4})),
-        (18, "inoutsine", p(FK, arms(right=arm(-40, 0, 10, -60), left=arm(-50, 0, -10, -40)), body={"y": -0.12, "yaw": -6})),
-        (22, "inoutsine", FK),
-    ], "Fishman Karate: Vagabond Drill, a whirlpool spun up between the hands and thrust out as a drill of water.")
-    # Five-Thousand Brick Fist: a hop, the fist raised high, then driven down into the ground
-    write(s + "five", 26, [
-        (0, "linear", FK),
-        (3, "inoutsine", p(FK, rightArm=arm(-40, 0, 14, -90), body={"y": -0.2, "bend": 10}, rightLeg=leg(-10, 4, 60), leftLeg=leg(-30, -4, 60))),
-        (7, "outsine", p(FK, rightArm=arm(-172, 0, 14, -46), leftArm=arm(-60, 30, -30, -20), body={"y": 0.14, "pitch": 6},
-                         rightLeg=leg(10, 4, 30), leftLeg=leg(-40, -4, 50), head={"pitch": -8})),
-        (11, "insine", p(FK, rightArm=arm(-150, 0, 10, -20), leftArm=arm(-40, 30, -30, -20), body={"y": -0.2, "bend": 26},
-                         rightLeg=leg(20, 4, 50), leftLeg=leg(-50, -4, 80), head={"pitch": 16})),
-        (14, "outexpo", p(FK, rightArm=arm(8, 0, 8, -2), leftArm=arm(-20, 30, -34, -24), body={"y": -0.5, "bend": 40},
-                          rightLeg=leg(34, 4, 70), leftLeg=leg(-60, -4, 110), head={"pitch": 22})),
-        (17, "outback", p(FK, rightArm=arm(10, 0, 8, 0), leftArm=arm(-20, 30, -34, -24), body={"y": -0.52, "bend": 42},
-                          rightLeg=leg(34, 4, 72), leftLeg=leg(-60, -4, 112), head={"pitch": 22})),
-        (22, "inoutsine", p(FK, body={"y": -0.16, "bend": 10})),
-        (26, "inoutsine", FK),
-    ], "Fishman Karate: Five-Thousand Brick Fist, a fist driven into the ground, its shock running out through everything round.")
-
-    s = "style_brawler_"
-    # Fist of Love: the fist raised overhead and brought down on their head like a scolding
-    write(s + "love", 16, [
-        (0, "linear", IF),
-        (4, "inoutsine", p(IF, rightArm=arm(-170, 4, 16, -96), body={"y": 0.02, "pitch": 6, "yaw": -6}, head={"pitch": -4})),
-        (6, "insine", p(IF, rightArm=arm(-176, 4, 16, -104), body={"y": 0.03, "pitch": 8, "yaw": -6}, head={"pitch": -6})),
-        (9, "outexpo", p(IF, rightArm=arm(-50, -4, 6, -8), body={"y": -0.1, "bend": 24, "z": -0.12, "yaw": 6}, head={"pitch": 14},
-                         rightLeg=leg(16, 3, 22), leftLeg=leg(-24, -3, 26))),
-        (11, "outback", p(IF, rightArm=arm(-46, -4, 6, -6), body={"y": -0.12, "bend": 26, "z": -0.13, "yaw": 6}, head={"pitch": 15},
-                          rightLeg=leg(16, 3, 22), leftLeg=leg(-24, -3, 26))),
-        (16, "inoutsine", IF),
-    ], "Iron Fist: Fist of Love, a fist brought down on their head like a scolding, driving them into the ground.")
-    # Fist Meteor: a cannonball pitched overhand: the front knee lifted, the stride, the arm whipped through
-    write(s + "meteor", 20, [
-        (0, "linear", IF),
-        (3, "inoutsine", p(IF, rightArm=arm(26, 0, 18, -40), leftArm=arm(-60, 30, -16, -50), body={"yaw": -40, "y": 0.0},
-                           leftLeg=leg(-74, -3, 86), rightLeg=leg(2, 3, 14))),
-        (6, "inoutsine", p(IF, rightArm=arm(-160, 14, 24, 40), leftArm=arm(-84, 30, -10, -12), body={"yaw": -34, "y": -0.06},
-                           leftLeg=leg(-34, -3, 26), rightLeg=leg(24, 3, 30))),
-        (8, "insine", p(IF, rightArm=arm(-176, 10, 20, 48), leftArm=arm(-70, 20, -10, -30), body={"yaw": -20, "y": -0.08, "pitch": 6},
-                        leftLeg=leg(-36, -3, 26), rightLeg=leg(26, 3, 30))),
-        (10, "outexpo", p(IF, rightArm=arm(-80, -10, 6, -6), leftArm=arm(20, 0, -14, -80), body={"yaw": 28, "y": -0.1, "bend": 16, "z": -0.1},
-                          leftLeg=leg(-38, -3, 26), rightLeg=leg(28, 3, 24, yaw=20), head={"yaw": -12})),
-        (13, "outback", p(IF, rightArm=arm(-36, -44, 10, -20), leftArm=arm(22, 0, -14, -80), body={"yaw": 36, "y": -0.12, "bend": 20, "z": -0.12},
-                          leftLeg=leg(-38, -3, 28), rightLeg=leg(-6, 3, 40, yaw=24), head={"yaw": -14})),
-        (20, "inoutsine", IF),
-    ], "Iron Fist: Fist Meteor, a cannonball pitched overhand hard enough to hole a ship.")
-    # Honesty Impact: the fist pulled far back and held, trembling with all of it, then one straight punch
-    cocked = p(IF, rightArm=arm(30, 0, 20, -110), leftArm=arm(-80, 16, -8, -30), body={"yaw": -42, "y": -0.12, "bend": 4},
-               rightLeg=leg(22, 3, 30), leftLeg=leg(-28, -3, 32), head={"yaw": 14})
-    struck = p(IF, rightArm=arm(-92, -6, 2, 0), leftArm=arm(26, 0, -12, -96), body={"yaw": 30, "y": -0.1, "z": -0.26, "bend": 10},
-               rightLeg=leg(24, 3, 16, yaw=24), leftLeg=leg(-34, -3, 26), head={"yaw": -14})
-    write(s + "honesty", 26, [(0, "linear", IF), (4, "inoutsine", cocked)]
-          + shake(cocked, [6, 7, 8, 9, 10, 11], 1.0, (("body", "roll"), ("rightArm", "roll")))
-          + [(12, "insine", p(cocked, body={"yaw": -46})), (14, "outexpo", struck), (16, "outback", p(struck, body={"z": -0.28})),
-             (22, "inoutsine", p(IF, body={"yaw": 4})), (26, "inoutsine", IF)],
-          "Iron Fist: Honesty Impact, everything in one straight punch, its shock blowing a tunnel through the air.")
-
 
 def main():
     black_leg()
     six_powers()
-    fishman_karate()
-    iron_fist()
     extras()
     clash_recoils()
     stances()

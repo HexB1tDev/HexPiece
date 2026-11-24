@@ -197,18 +197,16 @@ public class UiPreview {
         swordState.picked = 4;
         LogbookView.Layout swordLayout = LogbookView.Layout.of(640, 360);
         save(dir, "logbook-swordsman", 640, 360, c -> LogbookView.draw(c, swordLayout, swordLog, swordState, "row:2", 7.0));
-        // 2.3.7: an Iron Fist page with the Galaxy Fist on it (Ryou unlocked), its quick slot picked
+        // 3.5.7: Iron Fist's page while it is remade (no moves; the Galaxy Fist gone with them)
         int[] ironMastery = new int[FightingStyle.values().length];
-        ironMastery[FightingStyle.BRAWLER.ordinal()] = 520;
         com.hexhaki.piece.PieceProfile iron = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE, FightingStyle.BRAWLER, true,
             ironMastery, 300_000_000L, 100);
         java.util.List<LogbookView.Section> ironPage = new java.util.ArrayList<>(base.styleHaki());
-        ironPage.set(0, LogbookView.galaxy(LogbookView.style(iron), FightingStyle.BRAWLER, true, "N", "Opens with Ryou", 103));
+        ironPage.set(0, LogbookView.style(iron));
         LogbookView.Data ironLog = new LogbookView.Data("HexB1t", iron, base.haki(), base.hakiRanks(), "", 0, ironPage, java.util.List.of(),
             base.slotKeys(), base.slotNames(), base.slotAbilities(), -1);
         LogbookView.State ironState = new LogbookView.State(LogbookView.STYLE_HAKI);
-        ironState.picked = 8;
-        save(dir, "logbook-iron-fist-galaxy", 640, 360, c -> LogbookView.draw(c, swordLayout, ironLog, ironState, "row:8", 7.0));
+        save(dir, "logbook-iron-fist", 640, 360, c -> LogbookView.draw(c, swordLayout, ironLog, ironState, "", 7.0));
         // 2.2.2: the one abilities panel on the left (HexGhoul's), in each mode, at the game's scale over a scene and a chat
         java.util.Map<String, String> keys = java.util.Map.of("attack", "LMB", "use", "RMB", "special_a", "Y", "special_b", "U", "toggle", "R",
             "armament", "Ctrl+R", "observation", "V", "menu", "P");

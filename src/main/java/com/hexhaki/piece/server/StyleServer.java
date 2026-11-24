@@ -99,7 +99,7 @@ public final class StyleServer {
      */
     public static void combat(ServerPlayer player, boolean on) {
         PieceProfile profile = ProfileServer.of(player);
-        if (on && (!profile.chosen() || !profile.style().choice())) {
+        if (on && (!profile.chosen() || !profile.style().choice() || !profile.style().armed())) {
             return;
         }
         State state = state(player);
@@ -171,19 +171,7 @@ public final class StyleServer {
         if (state.move != null && !(state.move.slot().string() && now >= state.start + state.move.cancel())) {
             return;
         }
-        LivingEntity target = null;
-        if (move.effect() == StyleMove.Effect.PRISON) {
-            // 2.4.0: the Water Prison needs someone in your sights (no one there: nothing thrown, nothing spent)
-            target = WaterPrisons.sights(player, other -> FruitUtil.foe(player, other));
-            if (target == null) {
-                player.m_5661_(Component.m_237113_(move.display() + ": no one in your sights"), true);
-                return;
-            }
-        }
         begin(player, state, move, now);
-        if (target != null) {
-            WaterPrisons.aim(player, target);
-        }
     }
 
     static void begin(ServerPlayer player, State state, StyleMove move, long now) {
@@ -239,16 +227,6 @@ public final class StyleServer {
             return;
         }
         StyleCombat.carry(player, move, tick);
-        if (move.effect() == StyleMove.Effect.PRISON) {
-            WaterPrisons.tick(player, tick); // 2.4.0: the water gathers round its target, then seals it in
-            return;
-        }
-        if (move.effect() == StyleMove.Effect.BULLETS) {
-            // 2.3.8: the Water Bullet's drops are gathered and flown by WaterServer (homing shots, not blows landing here)
-            WaterServer.bullets(player, move, tick, state.start, ProfileServer.of(player).mastery(move.style()),
-                other -> FruitUtil.foe(player, other), StyleCombat.of(player));
-            return;
-        }
         PieceProfile profile = null;
         for (Hit hit : move.hits()) {
             if (hit.tick() == tick) {
@@ -308,7 +286,6 @@ public final class StyleServer {
         FightingStyle style = state.move.style();
         state.move = null;
         state.queuedAt = -1;
-        WaterPrisons.stop(player);
         FruitUtil.animate(player, recoil ? ClashRules.recoil(style) : "__clear__", recoil ? 2 : 3);
     }
 
@@ -329,7 +306,6 @@ public final class StyleServer {
         }
         state.move = null;
         state.queuedAt = -1;
-        WaterPrisons.stop(player);
         FruitUtil.animate(player, "__clear__", 3);
     }
 

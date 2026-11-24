@@ -66,10 +66,10 @@ public final class CombatMode {
         switchingUntil = 0;
     }
 
-    /** The player has set sail with a fighting style: R is HexPiece's. */
+    /** The player has set sail with a fighting style that has moves (3.5.7: Iron Fist has none yet): R is HexPiece's. */
     static boolean styled() {
         PieceProfile self = PieceClient.self();
-        return self.chosen() && self.style().choice();
+        return self.chosen() && self.style().choice() && self.style().armed();
     }
 
     /** Combat mode is there for a styled player outside Devil Fruit mode. */

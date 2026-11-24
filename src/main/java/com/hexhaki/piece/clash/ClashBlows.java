@@ -44,8 +44,8 @@ public final class ClashBlows {
 
     /** The blow {@code move} has on its way {@code tick} ticks in (the next one to land, or one landed a tick ago), or null. */
     public static Window style(StyleMove move, int tick) {
-        if (move == null || move.effect() == StyleMove.Effect.BULLETS) {
-            return null; // 2.3.8: the Water Bullet's drops fly on their own (server/WaterServer), no blow of the body's
+        if (move == null) {
+            return null;
         }
         int previous = -1;
         for (Hit hit : move.hits()) {

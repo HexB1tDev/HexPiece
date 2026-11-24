@@ -27,7 +27,6 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class StyleFx {
     static final int WHITE = 0xC8FFFFFF;
-    static final int WATER = 0xE8C4ECFF;
     static final int WATER_DEEP = 0xE07CC4F0;
     static final int DUST = 0x70D8CFC0;
     static final Random RANDOM = new Random();
@@ -43,10 +42,6 @@ public final class StyleFx {
         }
         switch (message.stage()) {
             case 0 -> {
-                if (move.effect() == StyleMove.Effect.BULLETS) {
-                    // 2.3.8: the Water Bullet's drops gather over the fist from the move's start
-                    com.hexhaki.piece.client.fx.WaterFx.gather(message.entity(), level.m_46467_());
-                }
                 com.hexhaki.piece.client.fx.StyleVfx.started(message.entity(), move); // 2.8.3: the blows in 3D
                 var self = Minecraft.m_91087_().f_91074_;
                 if (self != null && self.m_19879_() == message.entity()) {
@@ -85,19 +80,15 @@ public final class StyleFx {
         return (RANDOM.nextDouble() - 0.5) * 2.0 * spread;
     }
 
-    static boolean water(StyleMove move) {
-        return move.style() == FightingStyle.FISHMAN_KARATE;
-    }
-
     /** How high a move's blows travel (blocks above the feet): kicks low or high, punches at the chest, ground strikes at the ground. */
     static double height(StyleMove move) {
         return switch (move) {
             case BL_SWEEP -> 0.35;
             case BL_SKY -> 0.15;
             case BL_FLAME -> 0.6;
-            case BL_SNAP, FK_KNEE -> 1.0;
+            case BL_SNAP -> 1.0;
             case BL_HOOK, BL_MUTTON -> 1.2;
-            case BL_NECK, SP_STORM, SP_BLADE, IF_UPPER -> 1.55;
+            case BL_NECK, SP_STORM, SP_BLADE -> 1.55;
             default -> 1.35;
         };
     }
@@ -150,10 +141,6 @@ public final class StyleFx {
         if (weight >= 2 || move.effect() == StyleMove.Effect.QUAKE) {
             dust(feet, round ? null : facing, 8 + weight * 3);
         }
-        if (water(move) && !modern) {
-            Vec3 from = round ? feet.m_82520_(0, h, 0) : feet.m_82549_(facing.m_82490_(1.2)).m_82520_(0, h, 0);
-            droplets(from, round ? null : facing, 8 + weight * 5, 0.45 + weight * 0.08);
-        }
         if (move.effect() == StyleMove.Effect.FIRE) {
             flames(feet.m_82520_(0, h, 0), 1.3, 14);
         }
@@ -195,43 +182,14 @@ public final class StyleFx {
                 .drag(0.85).bloom(0).spawn();
         }
         PieceFx.at(PieceFx.RING, true, 5, at).colors(0x90FFF0D0, 0x00FFFFFF).size(0.2, 1.3F + 0.3F * weight).bloom(0).spawn();
-        if (water(move)) {
-            splash(at, facing, 1.0 + weight * 0.25);
-        }
         if (move.effect() == StyleMove.Effect.FIRE) {
             flames(at, 0.4, 12);
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------------- water
-
-    /** Water droplets thrown from {@code at}, along {@code facing} (null: all round), arcing down. */
-    static void droplets(Vec3 at, Vec3 facing, int wanted, double speed) {
-        int n = PieceFx.count(wanted);
-        for (int i = 0; i < n; i++) {
-            Vec3 direction = facing == null ? new Vec3(r(1), 0, r(1)) : facing.m_82549_(new Vec3(r(0.45), 0, r(0.45)));
-            Vec3 velocity = direction.m_82541_().m_82490_(speed * (0.5 + RANDOM.nextDouble() * 0.6)).m_82520_(0, 0.08 + RANDOM.nextDouble() * 0.22, 0);
-            PieceFx.at(PieceFx.DROP, false, 16 + RANDOM.nextInt(8), at.m_82520_(r(0.2), r(0.2), r(0.2))).velocity(velocity)
-                .colors(WATER, 0x30C4ECFF).size(0.17F, 0.08F).fall(0.045F).drag(0.97F).bloom(0).spawn();
-        }
-    }
-
-    /** A splash where water strikes: droplets every way, a blue ring, a cloud of spray. */
-    static void splash(Vec3 at, Vec3 facing, double strength) {
-        droplets(at, null, (int) (14 * strength), 0.35 * strength);
-        droplets(at, facing, (int) (8 * strength), 0.5 * strength);
-        PieceFx.at(PieceFx.RING, false, 8, at).colors(0xB0A8DCFF, 0x00A8DCFF).size(0.3, 1.8F * (float) strength).bloom(0).spawn();
-        int n = PieceFx.count((float) (6 * strength));
-        for (int i = 0; i < n; i++) {
-            PieceFx.at(PieceFx.STEAM, false, 18 + RANDOM.nextInt(10), at.m_82520_(r(0.3), r(0.3), r(0.3)))
-                .velocity(new Vec3(r(0.06), 0.02 + RANDOM.nextDouble() * 0.04, r(0.06))).colors(0x70E4F6FF, 0x00E4F6FF).size(0.5, 1.4)
-                .drag(0.92).spawn();
-        }
-    }
-
     // ------------------------------------------------------------------------------------------------------------- shots
 
-    /** A shot along {@code from} to {@code to}: the Air Blade's crescent, or a water bullet. */
+    /** A shot along {@code from} to {@code to}: the Air Blade's crescent, or a streak of cut air. */
     static void shot(StyleMove move, Vec3 from, Vec3 to) {
         if (move.style() == FightingStyle.SIX_POWERS) {
             com.hexhaki.piece.client.fx.AirFx.blade(from, to); // 2.4.1: the Air Blade, a crescent of air in 3D, twice as fast
@@ -240,46 +198,29 @@ public final class StyleFx {
         Vec3 path = to.m_82546_(from);
         double distance = Math.max(0.5, path.m_82553_());
         Vec3 direction = path.m_82490_(1.0 / distance);
-        boolean water = water(move);
-        double speed = water ? 2.4 : 2.2;
+        double speed = 2.2;
         int life = (int) Math.ceil(distance / speed);
         Vec3 start = from.m_82549_(direction.m_82490_(1.0));
-        if (water) {
-            PieceFx.at(PieceFx.DROP, false, life, start).velocity(direction.m_82490_(speed)).colors(0xFFDDF4FF, 0xE0BDE6FF).size(0.36, 0.3)
-                .drag(1.0F).bloom(0).spawn();
-        } else {
-            PieceFx.at(PieceFx.SLASH, true, life, start).velocity(direction.m_82490_(speed)).colors(0xE0EEF6FF, 0x80FFFFFF).size(1.8, 2.6)
-                .drag(1.0F).bloom(0).spawn();
-            for (int ghost = 1; ghost <= 2; ghost++) {
-                int g = ghost;
-                PieceFx.later(g, () -> PieceFx.at(PieceFx.SLASH, false, Math.max(1, life - g), start).velocity(direction.m_82490_(speed))
-                    .colors(0x60FFFFFF, 0x00FFFFFF).size(1.6F - 0.25F * g, 2.0F).drag(1.0F).bloom(0).spawn());
-            }
+        PieceFx.at(PieceFx.SLASH, true, life, start).velocity(direction.m_82490_(speed)).colors(0xE0EEF6FF, 0x80FFFFFF).size(1.8, 2.6)
+            .drag(1.0F).bloom(0).spawn();
+        for (int ghost = 1; ghost <= 2; ghost++) {
+            int g = ghost;
+            PieceFx.later(g, () -> PieceFx.at(PieceFx.SLASH, false, Math.max(1, life - g), start).velocity(direction.m_82490_(speed))
+                .colors(0x60FFFFFF, 0x00FFFFFF).size(1.6F - 0.25F * g, 2.0F).drag(1.0F).bloom(0).spawn());
         }
         for (int t = 0; t <= life; t++) {
             Vec3 here = start.m_82549_(direction.m_82490_(Math.min(distance - 1.0, speed * t)));
             PieceFx.later(t, () -> {
-                if (water) {
-                    for (int i = 0; i < PieceFx.count(3); i++) {
-                        PieceFx.at(PieceFx.DROP, false, 10, here.m_82520_(r(0.1), r(0.1), r(0.1))).velocity(new Vec3(r(0.03), 0.02, r(0.03)))
-                            .colors(WATER, 0x20C4ECFF).size(0.1, 0.05).fall(0.035F).bloom(0).spawn();
-                    }
-                } else {
-                    for (int i = 0; i < PieceFx.count(5); i++) {
-                        PieceFx.at(PieceFx.STREAK, false, 6, here.m_82520_(r(0.4), r(0.4), r(0.4)))
-                            .velocity(direction.m_82490_(-0.08).m_82520_(r(0.06), r(0.06), r(0.06))).colors(0xA0FFFFFF, 0x00FFFFFF).size(0.34, 0.06)
-                            .drag(0.85).bloom(0).spawn();
-                    }
+                for (int i = 0; i < PieceFx.count(5); i++) {
+                    PieceFx.at(PieceFx.STREAK, false, 6, here.m_82520_(r(0.4), r(0.4), r(0.4)))
+                        .velocity(direction.m_82490_(-0.08).m_82520_(r(0.06), r(0.06), r(0.06))).colors(0xA0FFFFFF, 0x00FFFFFF).size(0.34, 0.06)
+                        .drag(0.85).bloom(0).spawn();
                 }
             });
         }
         PieceFx.later(life, () -> {
-            if (water) {
-                splash(to, direction, 0.8);
-            } else {
-                PieceFx.at(PieceFx.RING, false, 7, to).colors(0x90FFFFFF, 0x00FFFFFF).size(0.4, 3.0).bloom(0).spawn();
-                dust(to.m_82520_(0, -0.5, 0), direction, 8);
-            }
+            PieceFx.at(PieceFx.RING, false, 7, to).colors(0x90FFFFFF, 0x00FFFFFF).size(0.4, 3.0).bloom(0).spawn();
+            dust(to.m_82520_(0, -0.5, 0), direction, 8);
         });
     }
 
