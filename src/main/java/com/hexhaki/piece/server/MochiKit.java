@@ -54,9 +54,10 @@ public final class MochiKit extends FruitKit {
         "Two burning donuts of mochi stand at your shoulders for twenty seconds: your left click becomes their long Haki fists.");
     public static final FruitMove STORM = new FruitMove("Blazing Storm", "[B]", 0, "mochi_storm",
         "Six burning Haki arms batter the place you aim at, over and over, and end in one great strike.");
-    public static final FruitMove SCORCH = new FruitMove("Scorching Buzz Cut", "[N]", 0, "mochi_scorch",
-        "Buzz Cut Mochi on fire: a burning spiked wheel that rolls over whoever it meets, three wide swings of the giant spiked ball and"
-            + " a far bigger slam. Five minutes to come back.");
+    public static final FruitMove SCORCH = new FruitMove("Scorching Buzz Cut", "[N] hold", 0, "mochi_scorch",
+        "Hold: you become a burning spiked wheel of mochi, rolling over and burning whoever you meet; let go and they are caught on your"
+            + " arm, now a giant spiked ball on fire, whirled round you in a ring of fire and slammed down in a far bigger blast. Five minutes"
+            + " to come back.");
     /** The moves as the panel and the Ability Book list them. */
     public static final List<FruitMove> MOVES = List.of(PUNCH, GRILLED, MUDDLE, LOTUS, CHESTNUT, ANEMONE, BUZZ_CUT, AWAKEN);
     /** 3.6.4: the awakened set (the reference's DoughV2) in the base kit's places. */

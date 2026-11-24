@@ -4,8 +4,8 @@ This is the newest handoff. Read it whole, then `docs/handoff/next-ai-3.6.0.md` 
 read I to N closely: the lightning rework and the whole Mochi story), then POINT ONE and sections 0 to 7 of
 `docs/handoff/next-ai-3.2.2.md` (every standing rule). Where they disagree, this file is newest and wins.
 
-Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.5** (released by the
-fourth Mochi chat: sections O and Q; check its Build and Release runs). Next: **3.6.6**, the rest of the awakened DoughV2 set (Q).
+Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.6** (released by the
+fifth Mochi chat: the Awakening's whole set, section S; check its Build and Release runs). Next: the owner's notes (section T).
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -731,8 +731,9 @@ Build #243 (the handoff push before this chat) was checked first. The session wa
 - **Oblivion** (awakened C) on Oblivion.gif (`|mobliv:age`, the one held 5 ahead): a stomp (rings of white and pink at the feet, the
   clip's body and arms: legs are never keyed), a big cream eruption at the user's front (twice their height) with pink rays and cream
   bits, the surge of cream lumps running along the ground to them (OBL_SURGE 5 to OBL_GRAB 10), a pink-and-black burst there and white
-  swirls on the ground, ten jagged cream slabs rising round them one after another into a basin (OBL_WALL 2.2, OBL_TALL 1.9, CREAM
-  bands: the GIF's ivory), breathing, foam at their feet; from OBL_BREAK 31 the walls sag, tip out and break into splats, bits lying on
+  swirls on the ground, eight broad cream slabs rising round them one after another into a low basin (OBL_WALL 2.8, OBL_TALL 1.7,
+  CREAM bands: the GIF's ivory; first drawn as a tight tall crown of ten, widened after the side-by-side with frame 40), breathing,
+  foam at their feet; from OBL_BREAK 31 the walls sag, tip out and break into splats, bits lying on
   the ground, black Haki spikes and pink streaks standing in them, pink rings; OBL_BURST 43: a black-and-magenta star (solid black
   cones flung out, magenta rays, a pink heart) and 36 cream shards blown out everywhere. Server OBLIVION 289 (a, the feet to theirs):
   OBL_RANGE 8, the grab hits 6 and holds whoever is within the walls (not drawn as glue), the burst UoMoves.explode 12 (POINT ONE).
@@ -747,3 +748,36 @@ Build #243 (the handoff push before this chat) was checked first. The session wa
   Clip mochi_storm (both arms driving, a shake each volley), HandMoves PUSH.
 - All three: DragonTests budgets every tick (Elastic Lasso, Oblivion near and far, Blazing Storm near and far: all under 16k, Blazing
   Storm the heaviest at about 9.5k close); HudTests checks their beats.
+- **Scorching Buzz Cut** (awakened N, held) on Scorching_Buzzcut.gif (`|mscorch:age`: |mbuzz with the fire): Buzz Cut Mochi's own
+  machinery with a scorch flag (server Wheel.scorch/scorchTick and Whirl.scorch; client Buzz.scorch, BuzzMark.scorch; the BUZZ_ROLLING
+  and BUZZ_GROUND messages carry by 1) and MochiV2's pieces over it: scorchWheel (twelve black Haki spikes round the rim turning with
+  it, a fire halo, flames round the rim, fire and sparks spraying off the ground behind, a burning trail), scorchBall (the giant ball on
+  fire the whole cinematic), scorchWhirl (five bands of fire trailing the arm with yellow hearts and dark bands between, a white swirl
+  in the middle, a thick magenta ring round the edge, purple orbs and black rocks whirled round; Buzz Cut's white swirl drawn at 0.4
+  under it), scorchColumn (a column of fire up out of the middle late in the whirl to just after the raise: scorchColumnAlpha),
+  scorchCrater (a fiery dark ball in four magenta and pink rings orbiting outside the giant ball, fire round the crater, a great block
+  of the ground thrown up past the eye and falling). Server: N held rolls the wheel (no catch on contact): every 3 ticks whoever it
+  rolls over is hurt 1 and set on fire (the lightning); let go (MochiMoves.pressUp sets scorchHeld false) or at BUZZ_ROLL: whoever it
+  rolled over still within 4 and anyone within 2.8 are caught, else it unrolls; the blow 10 (on fire), the slam 26, a crater 5.5 and a
+  burning UoMoves.explode round it (the "larger AOE"). Book: "[N] hold". The whirl keeps Buzz Cut's five turns (the owner chose the
+  horizontal whirl for Buzz Cut; the reference's "3 times" is not split out yet: ask if the owner wants exactly three).
+  DragonTests: every piece at once, every tick of the cinematic, under 16k (about 9k).
+
+**Released: 3.6.6** (`.github/release-notes-3.6.6.md`): the Awakening's whole set (V Power Mochi, Z Grilled Lance, X Elastic Lasso,
+C Oblivion, B Blazing Storm, N Scorching Buzz Cut). Previews sent to the owner (SendUserFile): each move's GIF frames over our renders
+(scratchpad final/1-6, gone with the session; rebuild with tools like the scratchpad's compose.py: GIF frames on top, the preview's
+renders under them).
+
+Also after the side-by-sides: Grilled Lance's ball cream (the GIF's ivory) and ten magenta flares in its ink burst; Scorching Buzz
+Cut's slam rings moved outside the giant ball (3.3 out) so they show round it as in frame 186.
+
+Honest gaps (judge them first if the owner says a move is off): the GIF's red jagged streaks in Power Mochi, Oblivion and Scorching Buzz
+Cut are left to the one Haki lightning (POINT ONE: never another lightning look); the moves' sounds reuse the Mochi set (INFLATE, FIRE,
+BOOM, SLAM, STRETCH, SQUISH, PUNCH, STOMP); Blazing Storm's GIF barrage is denser and brighter than ours; Grilled Lance's GIF camera is
+much closer, so its blasts fill the view there; none of it is tested in game.
+
+## T. Where the fifth Mochi chat stopped
+
+3.6.6 pushed with its release notes (check its Build and Release runs first). Next: the owner's notes on the awakened moves (write them
+verbatim into section N, fix them first); otherwise compare each awakened move again against its GIF at more beats (section P) and
+close the honest gaps above.

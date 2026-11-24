@@ -77,6 +77,8 @@ public final class MochiFx {
         int count;
         double rolled;
         Vec3 last;
+        /** 3.6.6: Scorching Buzz Cut's (the fire over it: MochiV2.scorch*). */
+        boolean scorch;
 
         Buzz(long born, int ticks, int seed) {
             this.born = born;
@@ -166,7 +168,7 @@ public final class MochiFx {
     }
 
     /** 3.6.3: Buzz Cut Mochi's blow (the ball where it struck) and its slam's ground. */
-    record BuzzMark(Vec3 at, long born, int seed, boolean ground) {
+    record BuzzMark(Vec3 at, long born, int seed, boolean ground, boolean scorch) {
     }
 
     record Stuck(Vec3 at, double height, long born, int ticks) {
@@ -573,6 +575,7 @@ public final class MochiFx {
         switch (phase) {
             case MochiMoves.BUZZ_ROLLING -> {
                 Buzz rolling = new Buzz(clock, m.ticks(), m.id());
+                rolling.scorch = m.by() > 0.5F;
                 put(WHEELS, m.user(), rolling);
                 // the wheel's rumble only while it rolls (faded out the moment it catches or stops: never outlasting the roll)
                 net.minecraft.client.multiplayer.ClientLevel level = Minecraft.m_91087_().f_91073_;
@@ -608,7 +611,7 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.BUZZ_BLOW, MochiMoves.BUZZ_GROUND -> {
-                add(MARKS, new BuzzMark(at, clock, m.id(), phase == MochiMoves.BUZZ_GROUND));
+                add(MARKS, new BuzzMark(at, clock, m.id(), phase == MochiMoves.BUZZ_GROUND, b != null && b.scorch || m.by() > 0.5F));
                 // the owner: "a violent black-and-white impact frame" at the blow and at the slam, for the user and the ones caught
                 net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
                 if (self != null && b != null && (self.m_19879_() == m.user() || b.victims.contains(self.m_19879_()))) {
@@ -1312,6 +1315,10 @@ public final class MochiFx {
                 double speed = b.caught < 0 && b.missed < 0 ? Math.min(1.0, (age + 2) / 12.0) : 0.3;
                 MochiDraw.buzzWheel(SINK, feet.f_82479_ - cx, feet.f_82480_ + r - cy, feet.f_82481_ - cz, way.f_82479_, way.f_82481_, b.rolled, speed,
                     Math.max(0.0, form), age, b.seed);
+                if (b.scorch) {
+                    com.hexhaki.piece.mochi.MochiV2.scorchWheel(SINK, feet.f_82479_ - cx, feet.f_82480_ + r - cy, feet.f_82481_ - cz, way.f_82479_,
+                        way.f_82481_, b.rolled, speed, Math.max(0.0, form), age, b.seed);
+                }
             }
             if (b.caught >= 0 && b.feet != null) {
                 double t = now - b.caught;
@@ -1322,9 +1329,21 @@ public final class MochiFx {
                 double[] bend = MochiDraw.buzzBend(t, b.yaw0, BUZZ_BEND);
                 MochiDraw.buzzMace(SINK, arm[0] - cx, arm[1] - cy, arm[2] - cz, arm[3], arm[4], arm[5], arm[6], MochiDraw.buzzSwell(t), bend[0],
                     bend[1], bend[2], bend[3], t, b.seed);
+                if (b.scorch) {
+                    com.hexhaki.piece.mochi.MochiV2.scorchBall(SINK, arm[0] + arm[3] * arm[6] - cx, arm[1] + arm[4] * arm[6] - cy,
+                        arm[2] + arm[5] * arm[6] - cz, MochiDraw.buzzBall(t), t, b.seed);
+                    com.hexhaki.piece.mochi.MochiV2.scorchColumn(SINK, b.feet.f_82479_ - cx, b.feet.f_82480_ - cy, b.feet.f_82481_ - cz, 6.5,
+                        com.hexhaki.piece.mochi.MochiV2.scorchColumnAlpha(t), t, b.seed + 13);
+                }
                 if (t >= MochiDraw.BUZZ_HIT && t < MochiDraw.BUZZ_WHIRL + 4) {
                     double a = Math.min(1.0, (t - MochiDraw.BUZZ_HIT) / 6.0) * (1.0 - Math.max(0.0, (t - MochiDraw.BUZZ_WHIRL) / 4.0));
-                    MochiDraw.buzzVortex(SINK, b.feet.f_82479_ - cx, b.feet.f_82480_ - cy, b.feet.f_82481_ - cz, Math.atan2(arm[5], arm[3]), arm[6], a);
+                    // Scorching: the white swirl faint under its ring of fire (the reference's disc is fire and dark bands)
+                    MochiDraw.buzzVortex(SINK, b.feet.f_82479_ - cx, b.feet.f_82480_ - cy, b.feet.f_82481_ - cz, Math.atan2(arm[5], arm[3]), arm[6],
+                        b.scorch ? a * 0.4 : a);
+                    if (b.scorch) {
+                        com.hexhaki.piece.mochi.MochiV2.scorchWhirl(SINK, b.feet.f_82479_ - cx, b.feet.f_82480_ - cy, b.feet.f_82481_ - cz,
+                            Math.atan2(arm[5], arm[3]), arm[6], a, t, b.seed + 9);
+                    }
                 }
             }
         }
@@ -1335,6 +1354,9 @@ public final class MochiFx {
             double age = now - k.born;
             if (k.ground) {
                 MochiDraw.buzzCrater(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, age, k.seed);
+                if (k.scorch) {
+                    com.hexhaki.piece.mochi.MochiV2.scorchCrater(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, age, k.seed + 15);
+                }
             } else if (age < 12.0) {
                 // the swing's blow: a burst of white and a ring of shock off the ball
                 MochiDraw.splat(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, 0, 1, 0, 1.6, age, k.seed);

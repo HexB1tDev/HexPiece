@@ -310,7 +310,10 @@ public final class MochiShots {
                         age - 6, 5);
                 }
             }
-            case "mbuzz" -> {
+            case "mbuzz", "mscorch" -> {
+                // 3.6.6 |mscorch:age: Scorching Buzz Cut (the same, the wheel spiked and on fire, the whirl's ring of fire and Haki, the
+                // column of fire, the ball on fire, the slam's fire and the great block)
+                boolean scorch = move[0].equals("mscorch");
                 // 3.6.3 |mbuzz:age: Buzz Cut Mochi from the press: the wheel rolling along +z from the origin (speeding up), the body 10
                 // ahead caught when the wheel reaches it, then the cinematic (MochiDraw.BUZZ_*): unroll, swing, whirl, raise, slam
                 double rolled = 0.0;
@@ -350,6 +353,9 @@ public final class MochiShots {
                 if (caught < 0 || age < caught + 3) {
                     double form = Math.min(1.0, age / 4.0) * (caught < 0 ? 1.0 : 1.0 - (age - caught) / 3.0);
                     com.hexhaki.piece.mochi.MochiDraw.buzzWheel(sink, -ex, r - ey, rolled - ez, 0, 1, rolled, caught < 0 ? speed : 0.3, form, age, 3);
+                    if (scorch) {
+                        com.hexhaki.piece.mochi.MochiV2.scorchWheel(sink, -ex, r - ey, rolled - ez, 0, 1, rolled, caught < 0 ? speed : 0.3, form, age, 3);
+                    }
                 }
                 if (caught < 0) {
                     HieShots.body(sink, -ex, -ey, 10.5 - ez);
@@ -367,6 +373,14 @@ public final class MochiShots {
                 double[] bend = com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, new double[4]);
                 if (armOut) com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, arm[0] - ex, arm[1] - ey, arm[2] - ez, arm[3], arm[4], arm[5], arm[6],
                     com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), bend[0], bend[1], bend[2], bend[3], t, 7);
+                if (scorch && armOut) {
+                    com.hexhaki.piece.mochi.MochiV2.scorchBall(sink, arm[0] + arm[3] * arm[6] - ex, arm[1] + arm[4] * arm[6] - ey, arm[2] + arm[5] * arm[6] - ez,
+                        com.hexhaki.piece.mochi.MochiDraw.buzzBall(t), t, 7);
+                }
+                if (scorch) {
+                    double col = com.hexhaki.piece.mochi.MochiV2.scorchColumnAlpha(t);
+                    com.hexhaki.piece.mochi.MochiV2.scorchColumn(sink, -ex, -ey, rolled - ez, 6.5, col, t, 13);
+                }
                 // the one caught: before the blow where the wheel met them, after it stuck at the mace's end, in the crater after the slam
                 double bx = 0;
                 double by = 0;
@@ -382,10 +396,16 @@ public final class MochiShots {
                     double turn = Math.atan2(arm[5], arm[3]);
                     double a = Math.min(1.0, (t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT) / 6.0)
                         * (1.0 - Math.max(0.0, (t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL) / 4.0));
-                    com.hexhaki.piece.mochi.MochiDraw.buzzVortex(sink, -ex, -ey, rolled - ez, turn, arm[6], a);
+                    com.hexhaki.piece.mochi.MochiDraw.buzzVortex(sink, -ex, -ey, rolled - ez, turn, arm[6], scorch ? a * 0.4 : a);
+                    if (scorch) {
+                        com.hexhaki.piece.mochi.MochiV2.scorchWhirl(sink, -ex, -ey, rolled - ez, turn, arm[6], a, t, 9);
+                    }
                 }
                 if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM) {
                     com.hexhaki.piece.mochi.MochiDraw.buzzCrater(sink, bx - ex, -ey, bz - ez, t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 11);
+                    if (scorch) {
+                        com.hexhaki.piece.mochi.MochiV2.scorchCrater(sink, bx - ex, -ey, bz - ez, t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 15);
+                    }
                 }
             }
             case "mfirst" -> {

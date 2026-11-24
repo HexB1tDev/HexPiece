@@ -866,6 +866,24 @@ public final class DragonTests {
                 check(count[0], finite[0], "Blazing Storm", age);
             }
         }
+        // 3.6.6: Scorching Buzz Cut: its fire over Buzz Cut's heaviest (the wheel at speed, the whirl, the column, the ball, the slam)
+        for (int t = 0; t <= (int) com.hexhaki.piece.mochi.MochiDraw.BUZZ_END; t++) {
+            count[0] = 0;
+            com.hexhaki.piece.mochi.MochiDraw.buzzWheel(sink, 0, -0.3, 6.0, 0, 1, t * 0.9, 1.0, 1.0, t, 3);
+            com.hexhaki.piece.mochi.MochiV2.scorchWheel(sink, 0, -0.3, 6.0, 0, 1, t * 0.9, 1.0, 1.0, t, 3);
+            double[] sArm = com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, -1.6, 8.0, 0.0, new double[8]);
+            double[] sBend = com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, new double[4]);
+            com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, sArm[0], sArm[1], sArm[2], sArm[3], sArm[4], sArm[5], sArm[6],
+                com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), sBend[0], sBend[1], sBend[2], sBend[3], t, 4);
+            com.hexhaki.piece.mochi.MochiV2.scorchBall(sink, sArm[0] + sArm[3] * sArm[6], sArm[1] + sArm[4] * sArm[6], sArm[2] + sArm[5] * sArm[6],
+                com.hexhaki.piece.mochi.MochiDraw.buzzBall(t), t, 4);
+            com.hexhaki.piece.mochi.MochiDraw.buzzVortex(sink, 0, -1.6, 8.0, Math.atan2(sArm[5], sArm[3]), sArm[6], 1.0);
+            com.hexhaki.piece.mochi.MochiV2.scorchWhirl(sink, 0, -1.6, 8.0, Math.atan2(sArm[5], sArm[3]), sArm[6], 1.0, t, 5);
+            com.hexhaki.piece.mochi.MochiV2.scorchColumn(sink, 0, -1.6, 8.0, 6.5, 1.0, t, 6);
+            com.hexhaki.piece.mochi.MochiDraw.buzzCrater(sink, 0, -1.6, 14.0, t, 7);
+            com.hexhaki.piece.mochi.MochiV2.scorchCrater(sink, 0, -1.6, 14.0, t, 8);
+            check(count[0], finite[0], "Scorching Buzz Cut (every piece at once)", t);
+        }
         // 3.6.6: Grilled Lance: every tick of its charge, its flight, and everything where it strikes (both blasts), near and far
         for (double eye : new double[] {3.0, 8.0}) {
             for (int age = 0; age <= com.hexhaki.piece.mochi.MochiV2.LANCE_MOST; age++) {

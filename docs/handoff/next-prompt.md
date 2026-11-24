@@ -4,7 +4,8 @@ answer this chat).
 Read CLAUDE.md, then docs/handoff/next-ai-3.6.3.md WHOLE (newest: sections F to R: the owner's requests verbatim and answers, the
 base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi moves rebuilt (K), Buzz Cut Mochi (L, M), the owner's
 "use my imapct frame" and their notes on Buzz Cut, Lotus, the Mochi feeling dead and WiFi Haki (N), the chat that released 3.6.3 (O),
-the DoughV2 GIFs read frame by frame (P), 3.6.4 and 3.6.5 (Q) and where it stopped (R)), then docs/handoff/next-ai-3.6.0.md sections I to
+the DoughV2 GIFs read frame by frame (P), 3.6.4 and 3.6.5 (Q), where the fourth Mochi chat stopped (R), the fifth chat's six awakened
+moves built on their GIFs and 3.6.6 (S) and where it stopped (T)), then docs/handoff/next-ai-3.6.0.md sections I to
 N, then POINT ONE and sections 0 to 7 of docs/handoff/next-ai-3.2.2.md (every standing rule).
 
 POINT ONE (the owner's, never drop it, pass it on): every fruit in the style of the Light, Gura and Magma fruits (3D meshes, clips without
@@ -25,17 +26,16 @@ MochiArt.CHURN). Build every new move this way and judge every render for it.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.6.5 is the last release (Build #240, Release #156, green; check the last push's Build run first): the base Mochi kit after the reference GIFs with the owner's notes (Buzz Cut's elastic
-band leads the heavy ball; Lotus knocks them donut to donut like a rag doll; every mochi arm stretchy, wobbling and thinning as it
-stretches, the punch springing past its reach, the donuts breathing, the dough churning), WiFi Haki on the one 3D Haki lightning, and
-the Awakening on M with Trident Lacerations on the left click (Mogura held in hand). Committed after it, unversioned: Power Mochi
-(awakened V) built, its last render not yet judged (next-ai-3.6.3.md R).
+Where things stand: 3.6.6 is the last release (check its Build and Release runs first): the Mochi Awakening's whole set on M, each
+move built frame by frame on its reference GIF and rendered beside it (next-ai-3.6.3.md S): V Power Mochi (two burning donuts, the
+left click their thick seamed Haki bars), Z Grilled Lance (held: the ball of cream Haki mochi, driven in, burns, two blasts), X Elastic
+Lasso (whirled, thrown, yanks them in, holds them), C Oblivion (stomp, surge, walls, star burst), B Blazing Storm (six burning Haki arms,
+aimed, the last strike, the blast), N Scorching Buzz Cut (held: the burning spiked wheel; let go: Buzz Cut's cinematic on fire, a bigger
+slam). The base kit and Trident Lacerations as before.
 
-Do next (next-ai-3.6.3.md R): (1) check the last push's Build run; (2) finish Power Mochi: render and judge it beside Power_Dough.gif (frames 30,
-66 to 70), its budget in DragonTests and beats in HudTests, first person; (3) Z Grilled Lance, X Elastic Lasso, C Oblivion, B Blazing
-Storm, N Scorching Buzz Cut, each built on its GIF's beats (section P), rendered side by side with its GIF, fixed and rendered again
-until it matches; (4) release 3.6.6 (next_version, notes, handoff, push, both runs green, send previews). The owner's notes on anything
-come first: write them verbatim into section N.
+Do next (next-ai-3.6.3.md T): (1) check the last push's Build and Release runs; (2) the owner's notes on any move come first: write
+them verbatim into section N and fix them, rendering beside the GIF until it matches; (3) otherwise close the honest gaps listed at the
+end of section S (each awakened move compared at more of its GIF's beats).
 
 The cloud environment must be the personal "HexPiece" (it now also allows official-fruit-battlegrounds.fandom.com and
 static.wikia.nocookie.net for the reference GIFs; download them into the scratchpad as next-ai-3.6.3.md D says, never commit them). A

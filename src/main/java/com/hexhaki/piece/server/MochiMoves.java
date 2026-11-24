@@ -149,6 +149,19 @@ public final class MochiMoves {
     static final float BUZZ_BLOW_HURT = 8.0F;
     static final float BUZZ_SLAM_HURT = 20.0F;
     public static final int BUZZ_COOLDOWN = 6000;
+    /**
+     * 3.6.6: Scorching Buzz Cut (awakened N, held; the reference: "rolling the opponent over (If the user holds the move). If the user
+     * stops holding the move, they will begin to swing their arm ... before finally slamming them down with a larger AOE"): the burning
+     * wheel hurts whoever it rolls over every {@link #SCORCH_ROLL_EVERY} ticks; let go, whoever it rolled over (and anyone near) is caught
+     * and swung; the slam harder and wider.
+     */
+    static final int SCORCH_ROLL_EVERY = 3;
+    static final float SCORCH_ROLL_HURT = 1.0F;
+    static final float SCORCH_BLOW_HURT = 10.0F;
+    static final float SCORCH_SLAM_HURT = 26.0F;
+    public static final double SCORCH_CRATER = 5.5;
+    /** Whom the wheel rolled over stays caught while still this near when it is let go. */
+    static final double SCORCH_NEAR = 4.0;
 
     /**
      * 3.6.4: the Awakening (M: the reference's DoughV2 kit) and its left click, Trident Lacerations (kind TRIDENT, bx the swing 0 to 4
@@ -244,6 +257,8 @@ public final class MochiMoves {
         int trident = -1;
         long tridentLast;
         long tridentNext;
+        /** 3.6.6: Scorching Buzz Cut's key held (the wheel rolls while it is). */
+        boolean scorchHeld;
         /** 3.6.6: Blazing Storm since (-1 not), the point it batters. */
         long stormSince = -1;
         Vec3 stormAim;
@@ -378,6 +393,10 @@ public final class MochiMoves {
         }
         if (slot == MochiKit.STORM.slot()) {
             storm(player, s, now);
+            return;
+        }
+        if (slot == N_SLOT) {
+            scorch(player, s, now);
             return;
         }
         // 3.6.4 (the owner: "Release fixes now"): the left click's swings are in; the six others are being built
@@ -824,6 +843,9 @@ public final class MochiMoves {
         }
         if (s != null && slot == MochiKit.GRILLED.slot() && s.yakiSince >= 0) {
             yakiFire(player, s);
+        }
+        if (s != null && slot == N_SLOT) {
+            s.scorchHeld = false; // Scorching Buzz Cut: let go, the wheel swings
         }
         if (s != null && slot == MochiKit.LANCE.slot() && s.lanceSince >= 0) {
             if (now(player) - s.lanceSince >= MochiV2.LANCE_FULL) {
@@ -1360,16 +1382,76 @@ public final class MochiMoves {
         LIVE.add(new Wheel((ServerLevel) player.m_9236_(), player, now));
     }
 
+    /**
+     * N awakened, held: Scorching Buzz Cut (MochiV2.scorch*, over Buzz Cut Mochi's own): the burning spiked wheel rolls while N is held,
+     * hurting and burning whoever it rolls over; let go (or at its longest), they are caught and swung.
+     */
+    static void scorch(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.SCORCH)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.SCORCH, BUZZ_COOLDOWN);
+        s.busyUntil = now + MochiDraw.BUZZ_ROLL + (long) MochiDraw.BUZZ_END + 4;
+        s.scorchHeld = true;
+        player.f_19789_ = 0.0F;
+        // by 1: scorching (the client draws the fire over Buzz Cut's own)
+        fx(player, WHEEL, ++seeds, player.m_20182_(), player.m_20154_(), BUZZ_ROLLING, 1, MochiDraw.BUZZ_WHEEL, MochiDraw.BUZZ_ROLL);
+        sound(player, player.m_20182_(), MochiSounds.FIRE, 1.2F, 0.8F);
+        Wheel w = new Wheel((ServerLevel) player.m_9236_(), player, now);
+        w.scorch = s;
+        LIVE.add(w);
+    }
+
     /** The wheel rolling (the user's own client moves it): the first foe it meets caught, with anyone near them. */
     static final class Wheel implements UoMoves.Live {
         final ServerLevel level;
         final ServerPlayer owner;
         final long born;
+        /** 3.6.6: Scorching Buzz Cut's: its user's state (rolls while the key is held), whom it has rolled over. */
+        State scorch;
+        final List<LivingEntity> rolled = new ArrayList<>();
 
         Wheel(ServerLevel level, ServerPlayer owner, long born) {
             this.level = level;
             this.owner = owner;
             this.born = born;
+        }
+
+        /** Scorching: roll over whoever it meets (hurt and burning), and when let go catch them (or unroll if none is near). */
+        boolean scorchTick(long now, long age, Vec3 at) {
+            if (age % SCORCH_ROLL_EVERY == 0) {
+                for (LivingEntity body : ItoMoves.foes(this.owner, at, MochiDraw.BUZZ_WHEEL + 0.8)) {
+                    if (MaguMoves.hurt(this.owner, body, SCORCH_ROLL_HURT * (coated(this.owner) ? 1.25F : 1.0F))) {
+                        body.m_20254_(2);
+                    }
+                    if (!this.rolled.contains(body)) {
+                        this.rolled.add(body);
+                    }
+                }
+                if (!this.rolled.isEmpty()) {
+                    ItoMoves.lightning(this.owner, at);
+                }
+            }
+            if (this.scorch.scorchHeld && age < MochiDraw.BUZZ_ROLL) {
+                return false;
+            }
+            List<LivingEntity> caught = new ArrayList<>();
+            for (LivingEntity body : this.rolled) {
+                if (body.m_6084_() && body.m_20182_().m_82554_(this.owner.m_20182_()) < SCORCH_NEAR && caught.size() < BUZZ_MOST) {
+                    caught.add(body);
+                }
+            }
+            for (LivingEntity body : ItoMoves.foes(this.owner, at, 2.8)) {
+                if (!caught.contains(body) && caught.size() < BUZZ_MOST) {
+                    caught.add(body);
+                }
+            }
+            if (caught.isEmpty()) {
+                fx(this.owner, WHEEL, 0, this.owner.m_20182_(), Vec3.f_82478_, BUZZ_MISSED, 0, 0, 0);
+            } else {
+                catchThem(caught);
+            }
+            return true;
         }
 
         @Override
@@ -1385,6 +1467,9 @@ public final class MochiMoves {
             this.owner.f_19789_ = 0.0F;
             long age = now - this.born;
             Vec3 at = this.owner.m_20182_().m_82520_(0, MochiDraw.BUZZ_WHEEL, 0);
+            if (this.scorch != null) {
+                return scorchTick(now, age, at);
+            }
             if (age >= 3) {
                 List<LivingEntity> met = ItoMoves.foes(this.owner, at, MochiDraw.BUZZ_WHEEL + 0.6);
                 if (!met.isEmpty()) {
@@ -1410,13 +1495,15 @@ public final class MochiMoves {
             ServerPlayer player = this.owner;
             Vec3 feet = player.m_20182_();
             float yaw0 = player.m_146908_();
-            fx(player, WHEEL, caught.get(0).m_19879_(), feet, Vec3.f_82478_, BUZZ_CAUGHT, yaw0, 0, (int) MochiDraw.BUZZ_END);
+            fx(player, WHEEL, caught.get(0).m_19879_(), feet, Vec3.f_82478_, BUZZ_CAUGHT, yaw0, this.scorch != null ? 1 : 0, (int) MochiDraw.BUZZ_END);
             for (int k = 1; k < caught.size(); k++) {
                 fx(player, WHEEL, caught.get(k).m_19879_(), feet, Vec3.f_82478_, BUZZ_STUCK, 0, 0, 0);
             }
             animate(player, "mochi_buzz");
             sound(player, feet, MochiSounds.SQUISH, 1.2F, 0.8F);
-            LIVE.add(new Whirl(this.level, player, caught, feet, yaw0, now(player)));
+            Whirl whirl = new Whirl(this.level, player, caught, feet, yaw0, now(player));
+            whirl.scorch = this.scorch != null;
+            LIVE.add(whirl);
         }
     }
 
@@ -1435,6 +1522,8 @@ public final class MochiMoves {
         final long born;
         boolean struck;
         boolean slammed;
+        /** 3.6.6: Scorching Buzz Cut's: harder blows, set on fire, a bigger crater and blast. */
+        boolean scorch;
 
         Whirl(ServerLevel level, ServerPlayer owner, List<LivingEntity> caught, Vec3 feet, float yaw0, long born) {
             this.level = level;
@@ -1464,7 +1553,10 @@ public final class MochiMoves {
                 this.struck = true;
                 fx(this.owner, WHEEL, ++seeds, ball, Vec3.f_82478_, BUZZ_BLOW, 0, 0, 0);
                 for (LivingEntity body : this.caught) {
-                    hit(this.owner, body, BUZZ_BLOW_HURT, Vec3.f_82478_);
+                    hit(this.owner, body, this.scorch ? SCORCH_BLOW_HURT : BUZZ_BLOW_HURT, Vec3.f_82478_);
+                    if (this.scorch) {
+                        body.m_20254_(4);
+                    }
                 }
                 sound(this.owner, ball, MochiSounds.SLAM, 1.4F, 1.0F);
             }
@@ -1492,18 +1584,23 @@ public final class MochiMoves {
             if (!this.slammed && t >= MochiDraw.BUZZ_SLAM) {
                 this.slammed = true;
                 Vec3 ground = grounded(this.owner, new Vec3(ball.f_82479_, this.feet.f_82480_ + 2.0, ball.f_82481_));
-                fx(this.owner, WHEEL, ++seeds, ground, Vec3.f_82478_, BUZZ_GROUND, 0, 0, (int) MochiDraw.BUZZ_CRATER_LIFE);
+                fx(this.owner, WHEEL, ++seeds, ground, Vec3.f_82478_, BUZZ_GROUND, this.scorch ? 1 : 0, 0, (int) MochiDraw.BUZZ_CRATER_LIFE);
                 double[] at = new double[3];
                 for (int k = 0; k < this.caught.size(); k++) {
                     LivingEntity body = this.caught.get(k);
                     MochiDraw.buzzStuck(t, k, this.feet.f_82479_, ground.f_82480_, this.feet.f_82481_, this.yaw0, at);
                     body.m_6021_(at[0], ground.f_82480_, at[2]);
-                    hit(this.owner, body, BUZZ_SLAM_HURT, new Vec3(0, -0.6, 0));
+                    hit(this.owner, body, this.scorch ? SCORCH_SLAM_HURT : BUZZ_SLAM_HURT, new Vec3(0, -0.6, 0));
                     HakiFalls.knockDown(this.level, body, 60, false);
                 }
-                Craters.open(this.level, this.owner, ground.m_82520_(0, -0.8, 0), 4.0);
-                // POINT ONE: the slam's explosion throws the Conqueror's lightning out of it
-                ConquerorAura.exploded(this.owner, this.level, ground.m_82520_(0, 0.6, 0), 4.5);
+                Craters.open(this.level, this.owner, ground.m_82520_(0, -0.8, 0), this.scorch ? SCORCH_CRATER : 4.0);
+                if (this.scorch) {
+                    // the reference's "larger AOE than its predecessor": a burning blast round the slam (its own lightning: UoMoves.explode)
+                    UoMoves.explode(this.owner, this.level, ground.m_82520_(0, 0.6, 0), new Vec3(0, 1, 0), SCORCH_CRATER + 1.0, 8.0F, 5, 1.2);
+                } else {
+                    // POINT ONE: the slam's explosion throws the Conqueror's lightning out of it
+                    ConquerorAura.exploded(this.owner, this.level, ground.m_82520_(0, 0.6, 0), 4.5);
+                }
                 Impact.quake(this.level, ground, 24.0, 0.8F, 14);
                 sound(this.owner, ground, MochiSounds.SLAM, 2.0F, 0.7F);
             }
