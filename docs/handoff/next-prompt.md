@@ -32,7 +32,10 @@ is deleted.
 3.5.6 (section 8zzq): the Mochi arms square bars with the fist a block at their very end, as the owner asked after 3.5.5; green
 (Build #209, Release #147).
 
-Next: wait for the owner's notes on 3.5.6 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
+3.5.7 (section 8zzr): Fishman Karate removed, Iron Fist emptied; green (Build #211, Release #148).
+
+Next: the owner's Iron Fist remake (section 8zzs verbatim with their answers: seven Garp moves, all at once, terrain regrowing). Then wait
+for the owner's notes on 3.5.6 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
 on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
 polygons are not acceptable; hot strings use ItoArt's HOT tint; never lay a see-through ribbon over or through an opaque body (it punches
 holes in it: 8zzk).

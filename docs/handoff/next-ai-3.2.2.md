@@ -3279,7 +3279,181 @@ one flat face up, and the fist its very end. Renders: docs/gifs/mochi-3.5.6-squa
 - Iron Fist: still a choice on the start menu, FightingStyle.armed() false: no combat mode, R and M1 stay the game's (CombatMode.styled,
   StyleInput.ready, StyleServer.combat); its logbook page says it is being made anew; the Galaxy Fist (the original's Haki Projection,
   2.3.7 Iron Fist's) is no one's (PieceRules.galaxyFist false, GalaxyFist.begin says so). Tests: StyleTests.removed, movesets, NpcTests,
-  MenuTests, ClashTests.
+  MenuTests, ClashTests. 3.5.7 is green (Build #211, Release #148).
+
+## 8zzs. The owner's Iron Fist remake (verbatim, during 3.5.7) and their answers
+
+Iron Fist's New Moves:
+
+1 - Fist of Love
+
+The weakest and fastest ability in Garp's moveset. The player raises their right fist above their head and delivers an extremely quick downward punch directly onto the opponent's head. The player's upper body bends forward slightly during the impact, transferring their physical strength into the strike. Upon impact, the opponent is briefly stunned and pushed downwards. A small white pressure ring appears around the point of impact, accompanied by a heavy punching sound, subtle black Haki sparks and a brief camera shake. The ability should have almost no wind-up, making it extremely useful for interrupting attacks and extending M1 combos.
+
+2 - Meteor Fist
+
+The player summons a large black iron cannonball into their right hand. They position their left leg forward, rotate their upper body backwards and pull the cannonball behind their head before violently throwing it forward. The animation should resemble an exaggerated professional baseball pitch. The cannonball travels significantly faster than conventional projectiles, generating continuous white wind trails and circular air distortions along its trajectory. Upon colliding with an entity or block, the cannonball generates a powerful explosion, destroying nearby terrain and violently knocking enemies backwards. Holding down the ability increases the cannonball's size, projectile velocity and destructive power.
+
+3 - Mountain Crusher (Requires at least regular haki or Ryou)
+
+Based on Garp's legendary punch against Don Chinjao. The player spreads their legs, lowers their body and tightly clenches their right fist near their waist. The entire forearm becomes coated in black Armament Haki while the surrounding atmosphere begins distorting around the knuckles. The player takes an extremely powerful step forward, rotates their hips and shoulders and delivers a devastating uppercut. Upon impact, the opponent is launched diagonally upwards at tremendous speed, breaking through destructible blocks along their trajectory. A massive cone of compressed air erupts from the fist, accompanied by thick black impact lines, red Haki lightning and a brief black-and-white impact frame. This ability should completely break conventional blocking and heavily damage defensive abilities.
+
+4 - Blue Hole (Requires Ryou)
+
+The player suddenly lowers their body before disappearing forward with explosive acceleration, leaving behind a circular shockwave and a cloud of dust. Upon reaching an opponent, the player violently grabs them directly by the face with their right hand. The opponent's entire body trails behind the player's hand due to the momentum of the initial dash.
+
+The player lifts the opponent off the ground while their right hand becomes completely coated in black Armament Haki. Violent black lightning with crimson outlines begins surrounding both characters. The player then rotates their shoulder forward and violently swings their entire arm downwards, throwing the opponent directly into the ground with overwhelming force.
+
+The opponent is propelled approximately 15 blocks underground, creating a deep, irregular vertical hole. The surrounding terrain fractures upon impact, with chunks of stone violently erupting upwards. A large circular pressure wave expands across the ground while dust and debris obscure the entrance of the hole.
+
+The opponent remains stunned at the bottom of the hole for several seconds. The player finishes the animation standing at the edge of the hole, slightly leaning forward while looking down at their defeated opponent.
+
+5 - Galaxy Divide (Requires Ryou)
+
+The player bends their knees before explosively launching themselves diagonally upwards towards their target. While airborne, the player rotates their upper body backwards, pulling their right fist behind their shoulder while extending their left arm forward for balance. Their legs remain bent in an aggressive airborne fighting pose.
+
+The right fist becomes coated in black Armament Haki, surrounded by an extremely bright golden-white glow and violent black lightning with crimson outlines. The surrounding atmosphere begins distorting as the player compresses an enormous amount of Haki into their fist.
+
+The player violently rotates their entire body forward and delivers a devastating punch into the air. Instead of creating a conventional spherical explosion, the punch releases an enormous vertically elongated shockwave that travels directly forward.
+
+The shockwave should appear almost invisible at its center, with its shape defined by distorted air, white pressure lines, golden flashes and thick, irregular bolts of black and red lightning.
+
+As the shockwave travels forward, it progressively tears apart the terrain, creating a gigantic vertical fracture through mountains, buildings and other obstacles. The destruction should extend approximately 40 blocks forward, 20 blocks vertically and 5 blocks horizontally.
+
+The terrain must split progressively as the shockwave travels through it rather than being destroyed simultaneously. Large chunks of terrain are thrown towards both sides of the fracture. Enemies caught directly in the attack receive devastating damage and are violently knocked away.
+
+The ability should feel like the player has physically punched the world apart rather than launched a magical projectile.
+
+6 - Infinitum Explosion (Requires Ryou)
+
+The player assumes an aggressive boxing stance, spreading their legs and lowering their center of gravity while tightly clenching both fists. Both forearms become completely coated in glossy black Armament Haki. Violent electrical discharges begin appearing around the player's shoulders and hands.
+
+The player rotates their left arm before suddenly unleashing an overwhelming barrage of alternating left and right punches. Every punch involves aggressive shoulder movement, upper-body rotation and physical recoil.
+
+The barrage progressively accelerates until the player's arms become nearly impossible to distinguish individually. Temporary translucent fist afterimages appear around the player's upper body to communicate the ridiculous punching speed. These afterimages should disappear almost immediately and never resemble additional permanent arms.
+
+Every punch releases a concentrated blast of compressed air, accompanied by golden-white impact flashes, red and black Haki lightning and circular pressure distortions. Enemies caught within the barrage are continuously damaged, staggered and prevented from escaping.
+
+The player slowly advances throughout the attack, progressively tearing apart the terrain in front of them. The punching sounds become increasingly rapid until they almost merge into a continuous thunderous rumble.
+
+At the end of the barrage, the player suddenly stops punching, pulls their right fist completely backwards and concentrates the remaining Haki into a single devastating finishing punch.
+
+The final punch releases a massive directional explosion, launching every affected enemy away and destroying a large portion of the terrain ahead. The finishing punch should have significantly more weight, recoil and visual intensity than the individual punches throughout the barrage.
+
+7 - Galaxy Impact (Ultimate) (Requires Conqueror's Haki and Ryou)
+
+Galaxy Impact must be the most visually impressive, destructive and cinematic ability in Garp's entire moveset. It must closely resemble Garp's Galaxy Impact from episode 1114 of One Piece, emphasizing the absolutely ridiculous amount of destructive power released through a single physical punch.
+
+The entire sequence should last approximately 7 to 8 seconds.
+
+Upon activation, the player stops moving, spreads their legs and slowly clenches their right fist. Their knees bend deeply while their upper body leans forward. Their right arm retracts towards their waist while their left arm extends slightly outwards.
+
+Small black and red electrical discharges begin appearing around their body. The ground beneath their feet begins fracturing, small stones tremble and dust starts rising around them. A deep rumbling sound progressively increases in intensity.
+
+The player suddenly pushes against the ground with overwhelming strength, explosively launching themselves approximately 35 blocks into the sky. The initial jump creates an enormous horizontal shockwave that expands rapidly from the player's original position. The ground beneath the player partially collapses from the force of the jump, sending chunks of terrain and dust flying in every direction.
+
+During the ascent, the player travels extremely quickly, leaving behind white atmospheric trails and occasional flashes of black and red lightning. Their ascent progressively slows as they approach the highest point of the jump.
+
+Upon reaching maximum altitude, the player remains temporarily suspended in midair and transitions into Garp's iconic Galaxy Impact pose.
+
+The player's body must be positioned diagonally towards the ground, with their chest pushed forward and their upper body aggressively twisted backwards. Their right arm is pulled behind their shoulder, with their elbow bent and their fist tightly clenched beside and slightly behind their head. Their left arm extends forward and downwards to counterbalance the wind-up. One knee is pulled towards their abdomen while the opposite leg extends diagonally backwards.
+
+The player should look like they are preparing to throw their entire body weight into the punch. They must not simply stand upright in midair with their arm raised.
+
+The camera should transition into a cinematic low-angle perspective, looking upwards towards the player and slowly moving around their body to emphasize the pose and accumulating Haki.
+
+The player's right hand and forearm become completely coated in glossy black Armament Haki. A small but extremely bright red glow begins forming around their knuckles. The glow progressively intensifies, developing a brilliant white center surrounded by golden, orange and crimson energy.
+
+The Haki should remain tightly concentrated around the fist. Do not create a gigantic magical energy ball that the player appears to be holding. The fist itself must be the source of the energy.
+
+Long, thick and extremely irregular bolts of black lightning surrounded by crimson outlines begin violently erupting from the player's fist. These lightning bolts should extend approximately 15 to 25 blocks away from the player, rapidly disappearing and regenerating in completely different shapes and directions.
+
+Some bolts should travel across the sky horizontally, while others strike downwards towards the battlefield. Smaller electrical branches should continuously emerge from the larger bolts.
+
+The lightning must feel chaotic, violent and unpredictable. It should never resemble straight lines or symmetrical electrical patterns.
+
+Multiple translucent circular pressure waves begin contracting towards the player's fist, creating the impression that the surrounding atmosphere is being pulled towards and compressed into a single point.
+
+As the charging continues, the environment gradually darkens. The player's fist becomes the primary visual source of light, illuminating their body with red and golden highlights. Nearby clouds and atmospheric particles should appear to distort from the accumulating pressure.
+
+On the ground below, dust begins rising from the terrain. Small rocks levitate and vibrate. Nearby enemies experience increasing camera shake and subtle movement restrictions, as though the overwhelming pressure of the player's Haki is physically weighing them down.
+
+The charging sound should consist of extremely deep bass, aggressive electrical cracking, atmospheric rumbling and a progressively intensifying high-pitched pressure sound.
+
+During the final moments of the charge, the player's fist becomes almost completely white from its brightness, surrounded by enormous crimson and black electrical discharges. The energy should pulse violently several times before reaching maximum intensity.
+
+Immediately before releasing the punch, all charging sounds abruptly stop. The environment becomes almost completely silent for approximately 0.2 seconds.
+
+The player then violently rotates their hips, chest and shoulders forward. Their right shoulder moves aggressively towards the ground as their right arm extends at extraordinary speed. Their left arm is pulled backwards while both legs extend slightly from the tremendous physical recoil.
+
+The entire animation must communicate that every part of the player's body is transferring its strength into this single punch.
+
+At the exact moment the fist reaches full extension, a very brief black-and-white impact frame appears, emphasizing the player's silhouette, the clenched fist and the enormous electrical discharges surrounding them.
+
+An absolutely gigantic release of compressed Haki erupts from the fist towards the battlefield below.
+
+The player must remain airborne throughout the attack. Their fist never physically touches the ground.
+
+The emitted force should not resemble a laser beam, fireball or conventional magical projectile. It should resemble an expanding mass of violently compressed atmosphere, surrounded by enormous curved pressure lines, golden-white flashes and gigantic bolts of black and red Conqueror's Haki lightning.
+
+The recoil from releasing the punch briefly pushes the player's entire body backwards.
+
+When the emitted force reaches the ground, an extremely bright point of golden-white energy appears at the center of the targeted area. For a fraction of a second, the ground begins collapsing inwards towards that point.
+
+Gigantic fractures immediately spread outwards across the surrounding terrain. These fractures should branch into smaller irregular cracks, progressively extending through buildings, roads, mountains and other structures.
+
+Blocks near the center of the impact begin lifting from their original positions before being violently thrown upwards.
+
+Then the main explosion occurs.
+
+An absolutely enormous hemispherical dome of golden-white energy erupts from the impact point, progressively expanding until it reaches approximately 50 blocks in radius.
+
+The center of the explosion should be almost pure white, transitioning into bright golden yellow, orange and crimson towards its outer edges. The dome should have an irregular, continuously distorted surface that visually communicates the overwhelming pressure contained within it.
+
+Gigantic bolts of black lightning tear through the explosion, extending far beyond the boundaries of the dome. These lightning bolts should be visible even through the brightest portions of the explosion.
+
+Several enormous horizontal shockwave rings expand from the center at different speeds. The fastest shockwave should travel significantly further than the visible explosion, violently shaking the cameras of players observing from a distance.
+
+A massive wall of dust, smoke and debris follows behind the expanding energy dome. Large chunks of terrain are violently launched upwards and outwards, rotating through the air before eventually falling back down.
+
+The explosion should briefly illuminate the entire surrounding environment. Players observing from hundreds of blocks away should be able to see the enormous flash, expanding dome and electrical discharges.
+
+The terrain destruction must be progressive and synchronized with the expansion of the shockwave.
+
+Within the central 15-block radius, the ground should completely collapse, creating a deep and irregular crater approximately 8 to 12 blocks deep.
+
+Within the middle destruction radius, buildings should be torn apart, trees uprooted and large portions of the terrain destroyed.
+
+Towards the outer edges of the attack, destruction becomes increasingly scattered, with powerful knockback, ground fractures, falling debris and atmospheric pressure effects.
+
+The resulting crater must look natural and violent rather than resembling a perfectly symmetrical hemisphere carved out of the world.
+
+Enemies closest to the impact receive the maximum possible damage. Enemies further away receive progressively reduced damage but still experience tremendous knockback and temporary stunning.
+
+The sound of the main explosion must be extremely deep and powerful, consisting of a catastrophic initial impact followed by several overlapping thunderous sounds and a prolonged rumble that gradually fades into the distance.
+
+As the energy dome disappears, the entire battlefield remains covered in an enormous cloud of dust. Residual red and black Haki lightning occasionally flickers across the destroyed terrain. Large chunks of debris continue falling from the sky.
+
+The player remains suspended above the battlefield for a brief moment, with their right fist still extended and coated in black Armament Haki.
+
+They then slowly descend towards the ground, gradually relaxing their punching arm. Upon landing, a smaller circular dust shockwave appears beneath their feet. The player straightens their back, lowers their fist and allows the remaining Haki to dissipate.
+
+The camera smoothly returns to its normal perspective, leaving the player standing in front of the devastated battlefield.
+
+Galaxy Impact should have a 180-second cooldown and consume a significant portion of the player's Haki reserves.
+
+Use custom emissive meshes, animated pressure rings, procedural lightning, atmospheric distortion, cinematic camera movement and custom sound effects. Vanilla Minecraft explosion particles must never be the primary visual effect.
+
+All terrain destruction should be processed in configurable batches on the server, with a strict limit on physical debris entities to prevent multiplayer performance issues. Bedrock, protected regions and indestructible blocks must remain unaffected.
+
+Above everything else, Galaxy Impact must communicate that the player has not cast a spell, fired a beam or detonated a bomb. They have simply punched so unbelievably hard that the atmosphere and everything beneath them could not withstand the force.
+
+(Two diagrams came with it: "Airborne release" over a "Central impact crater" with a "Radial shockwave" and red lightning either side of a golden
+column; and a top view of rings at 18 m (red core), 35 m and 50 m with orange fractures radiating from the centre.)
+
+The owner's answers (AskUserQuestion): keys **LMB a plain left punch, then right, and back** ("simple left punch, right punch and vice
+versa, no need for complicated m1s"), **RMB Fist of Love, Z Meteor Fist (hold), X Mountain Crusher, C Blue Hole, V Galaxy Divide,
+B Infinitum Explosion, N Galaxy Impact**; terrain **regrows after a while** (as the Conqueror release's fissures); **all at once**, one
+version.
 
 ## 9. What to do next (after 3.3.7)
 
