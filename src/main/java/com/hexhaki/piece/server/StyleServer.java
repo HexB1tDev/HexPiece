@@ -108,11 +108,27 @@ public final class StyleServer {
         }
         state.combat = on;
         if (!on) {
+            IronFist.forget(player); // 3.5.8: a held cannonball let go of, the air given back
+        }
+        if (!on) {
             interrupt(player, state);
             SwordServer.stop(player);
         }
         PieceNetwork.around(player, stance(player, on ? profile.style() : null));
         player.m_5661_(Component.m_237113_(on ? "Combat stance: " + profile.style().display() : "Combat stance dropped"), true);
+    }
+
+    /** 3.5.8: an Iron Fist key let go (Meteor Fist's hold) or N (Galaxy Impact): {@code code} as C2SStyleAction carries it. */
+    public static void ironInput(ServerPlayer player, int code) {
+        PieceProfile profile = ProfileServer.of(player);
+        if (!profile.chosen() || profile.style() != FightingStyle.BRAWLER || !player.m_6084_() || player.m_5833_()) {
+            return;
+        }
+        State state = state(player);
+        if (!state.combat && code < IronFist.RELEASE) {
+            return;
+        }
+        IronFist.press(player, code);
     }
 
     public static void press(ServerPlayer player, Slot slot) {
@@ -137,6 +153,10 @@ public final class StyleServer {
         long now = now(player);
         if (Clashes.staggered(player, now)) {
             return; // 2.3.6: knocked back by a clash, nothing thrown until it has passed
+        }
+        if (style == FightingStyle.BRAWLER) {
+            IronFist.press(player, slot.ordinal()); // 3.5.8: Garp's Iron Fist is its own (server/IronFist)
+            return;
         }
         if (slot.string()) {
             if (state.move != null && !state.move.slot().string()) {

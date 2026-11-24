@@ -3,6 +3,7 @@ package com.hexhaki.piece.client.fx;
 import com.hexhaki.HexHaki;
 import com.hexhaki.piece.clash.ClashRules;
 import com.hexhaki.piece.clash.ImpactFrame;
+import com.hexhaki.piece.clash.ImpactSprite;
 import com.hexhaki.piece.client.haki.HakiBolts;
 import com.hexhaki.piece.network.S2CClash;
 import com.mojang.blaze3d.pipeline.RenderTarget;
@@ -57,8 +58,11 @@ public final class ClashFx {
     private static double fov = 70.0;
 
     /** The clash on screen: where, how hard, both Ryou colours, its seed, and when it began (client level ticks). */
-    record Shown(double x, double y, double z, float power, int colorA, int colorB, long seed, long start) {
+    record Shown(double x, double y, double z, float power, int colorA, int colorB, long seed, long start, boolean classic) {
     }
+
+    /** 3.5.8: the owner's impact frame (clash/ImpactSprite, tools/impact_texture.py). */
+    static final ResourceLocation SPRITE = HexHaki.id("textures/piece/impact/impact_frame.png");
 
     private ClashFx() {
     }
@@ -87,7 +91,8 @@ public final class ClashFx {
         }
         Camera camera = minecraft.f_91063_ == null ? null : minecraft.f_91063_.m_109153_();
         if (camera == null || camera.m_90583_().m_82554_(at) <= ClashRules.frameReach(message.power())) {
-            shown = new Shown(at.f_82479_, at.f_82480_, at.f_82481_, message.power(), message.ryouA(), message.ryouB(), seed, level.m_46467_());
+            shown = new Shown(at.f_82479_, at.f_82480_, at.f_82481_, message.power(), message.ryouA(), message.ryouB(), seed, level.m_46467_(),
+                message.classic());
         }
     }
 
@@ -162,7 +167,7 @@ public final class ClashFx {
             return;
         }
         double age = level.m_46467_() - clash.start() + partial;
-        if (age >= ImpactFrame.length(clash.power()) || age < -1.0) {
+        if (age >= (clash.classic() ? ImpactFrame.length(clash.power()) : ImpactSprite.length()) || age < -1.0) {
             shown = null;
             return;
         }
@@ -173,6 +178,10 @@ public final class ClashFx {
         Vector3f left = camera.m_252775_();
         double[] point = ImpactFrame.onScreen(new double[] {clash.x(), clash.y(), clash.z()}, new double[] {eye.f_82479_, eye.f_82480_, eye.f_82481_},
             new double[] {look.x, look.y, look.z}, new double[] {up.x, up.y, up.z}, new double[] {left.x, left.y, left.z}, fov, width, height);
+        if (!clash.classic()) {
+            sprite(graphics, width, height, clash, age, point);
+            return;
+        }
         List<ImpactFrame.Batch> batches = ImpactFrame.at(age, width, height, point[0], point[1], clash.power(), clash.colorA(), clash.colorB(),
             clash.seed());
         if (batches.isEmpty()) {
@@ -208,6 +217,34 @@ public final class ClashFx {
             }
         } finally {
             RenderSystem.defaultBlendFunc();
+            RenderSystem.disableBlend();
+            RenderSystem.enableDepthTest();
+        }
+    }
+
+    /**
+     * 3.5.8: the owner's impact frame: a dark veil falling over the view with the flash and lifting again, the burst drawn over it at
+     * the art's own pixels (alpha blended: its black is clear), centred where the blow landed, bigger for a harder one.
+     */
+    static void sprite(GuiGraphics graphics, int width, int height, Shown clash, double age, double[] point) {
+        int f = ImpactSprite.frame(age);
+        if (f < 0) {
+            return;
+        }
+        RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        try {
+            double veil = ImpactSprite.veil(age, clash.power());
+            if (veil > 0.01) {
+                graphics.m_280509_(0, 0, width, height, (int) Math.round(veil * 255) << 24 | 0x02030A);
+            }
+            int side = ImpactSprite.side(clash.power(), width, height);
+            double px = Math.max(0.0, Math.min(width, point[0]));
+            double py = Math.max(0.0, Math.min(height, point[1]));
+            graphics.m_280411_(SPRITE, (int) Math.round(px - side / 2.0), (int) Math.round(py - side / 2.0), side, side, ImpactSprite.u(f),
+                ImpactSprite.v(f), ImpactSprite.CELL, ImpactSprite.CELL, ImpactSprite.SHEET, ImpactSprite.SHEET);
+        } finally {
             RenderSystem.disableBlend();
             RenderSystem.enableDepthTest();
         }

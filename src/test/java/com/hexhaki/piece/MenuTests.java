@@ -157,8 +157,8 @@ public final class MenuTests {
         com.hexhaki.piece.PieceProfile iron = new com.hexhaki.piece.PieceProfile(Gender.MALE, Faction.PIRATE,
             com.hexhaki.piece.style.FightingStyle.BRAWLER, true, mastery, 0L, 0);
         LogbookView.Section ironPage = LogbookView.style(iron);
-        Check.that(ironPage.entries().isEmpty() && ironPage.about().get(0).contains("made anew"),
-            "Iron Fist's page: no moves, being made anew");
+        Check.that(ironPage.entries().size() == 8 && "Galaxy Impact".equals(ironPage.entries().get(7).name()),
+            "Iron Fist's page: Garp's eight, Galaxy Impact last (3.5.8)");
         state.picked = locked;
         Check.that(LogbookView.bindable(data, state) == -1, "a locked one cannot");
         state.picked = 0;

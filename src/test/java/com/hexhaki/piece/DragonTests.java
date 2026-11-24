@@ -796,6 +796,49 @@ public final class DragonTests {
         }
     }
 
+    /** 3.5.8: Iron Fist's heaviest frames (Galaxy Impact's dome with its quake, rings, dust and rocks; Galaxy Divide; the cannonball). */
+    static void ironArt() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double dome = com.hexhaki.piece.ironfist.IronMove.IMPACT_DOME;
+        double[] t = new double[4];
+        for (int age = 0; age <= 60; age += 2) {
+            count[0] = 0;
+            double u = Math.min(1.0, age / (double) com.hexhaki.piece.ironfist.IronMove.IMPACT_DOME_TICKS);
+            double grow = 1.0 - (1.0 - u) * (1.0 - u);
+            com.hexhaki.piece.ironfist.IronArt.point(sink, 0, 0.5, 0, 1.2 + age * 0.3, 1.0, age, 19);
+            com.hexhaki.piece.gura.GuraArt.quake(sink, 0, 0, 0, dome, 1.0, age * 0.8, 19);
+            com.hexhaki.piece.ironfist.IronArt.dome(sink, 0, 0, 0, Math.max(0.5, dome * grow), 1.0, age, 19);
+            for (double reach : new double[] {dome * 1.05, 90.0, 140.0}) {
+                com.hexhaki.piece.ironfist.IronArt.groundRing(sink, 0, 0, 0, reach * grow, 0.8);
+            }
+            // the game's three walls of dust (IronFx.strike) and the force still falling, all at once, the user in their middle
+            com.hexhaki.piece.ironfist.IronArt.dustWall(sink, 0, 0, 0, dome * grow * 0.96, 6.0 + 8.0 * grow, 0.75, age, 19);
+            com.hexhaki.piece.ironfist.IronArt.dustWall(sink, 0, 0, 0, dome * 0.55, 10.0, 0.6, age, 24);
+            com.hexhaki.piece.ironfist.IronArt.dustWall(sink, 0, 0, 0, com.hexhaki.piece.ironfist.IronMove.IMPACT_CRATER * 0.8, 8.0, 0.5, age, 28);
+            com.hexhaki.piece.gura.GuraArt.shock(sink, 0, 35, 0, 0, -1, 0, 37.0, 0.4, 1.0, com.hexhaki.piece.ironfist.IronMove.IMPACT_FALL, age, 3);
+            for (int k = 0; k < 120; k++) {
+                com.hexhaki.piece.ironfist.IronArt.thrown(k, 5, 30.0, 12.0, age, t);
+                com.hexhaki.piece.ironfist.IronArt.chunk(sink, t[0], t[1], t[2], 0.6, t[3], 5 + k, 1.0);
+            }
+            check(count[0], finite[0], "Galaxy Impact", age);
+            count[0] = 0;
+            com.hexhaki.piece.ironfist.IronArt.shockSheet(sink, 0, 0, Math.min(40.0, age * 2.0), 0, 1, 20.0, 5.0, 1.0, age, 13);
+            com.hexhaki.piece.ironfist.IronArt.cannonball(sink, 0, 2, age * 4.0, 0.85, age, age, 3);
+            com.hexhaki.piece.ironfist.IronArt.trail(sink, 0, 2, age * 4.0, 0, 0, 1, 4.2, 0.85, age, 3);
+            com.hexhaki.piece.ironfist.IronArt.afterimages(sink, 0, 1.3, 0, 0, 1, Math.min(1.0, age / 40.0), age, 15);
+            com.hexhaki.piece.ironfist.IronArt.impactLines(sink, 0, 1.5, 3, 0, 0.5, 0.86, 4.5, age % 9, 9.0, 9);
+            com.hexhaki.piece.ironfist.IronArt.pressure(sink, 0, 1.5, 3, 0, 0, 1, 2.4, age % 8, 8.0);
+            check(count[0], finite[0], "Galaxy Divide, Meteor Fist and the barrage", age);
+        }
+    }
+
     static void check(int quads, boolean finite, String what, int age) {
         Check.that(finite, what + " is finite at " + age);
         Check.that(quads < 16000, what + " fits a phone's budget at " + age + " (" + quads + " quads)");
@@ -851,6 +894,7 @@ public final class DragonTests {
         horoGhosts();
         itoStrings();
         mochiArt();
+        ironArt();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

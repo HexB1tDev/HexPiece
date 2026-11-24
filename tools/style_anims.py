@@ -70,7 +70,9 @@ def p(*pieces, **parts):
 #   and the shoulder charge keep their legs.
 # 3.5.7: Fishman Karate's clips are gone with it (the owner: "Remove FIshman karate from the game entirely"), Iron Fist's with its
 # moves (the owner: "Remove all abilities from Iron Fist, we're making this shit anew")
-PUNCHES = ("style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm")
+PUNCHES = ("style_six_powers_finger_r", "style_six_powers_finger_l", "style_six_powers_palm",
+           # 3.5.8: Garp's Iron Fist made anew: the plain punches and the Fist of Love leave the legs to the game
+           "style_brawler_punch_l", "style_brawler_punch_r", "style_brawler_love")
 # 2.4.4: the Brick Fist eases in like a punch but plants its legs (it is stepped into: the owner, "it doesn't look very strong")
 EASE_IN = set(PUNCHES)
 FREE_LEGS = set(PUNCHES)
@@ -338,6 +340,122 @@ def six_powers():
           "Six Powers: Iron Body, every muscle locked, arms crossed and legs planted, trembling with the strain.")
 
 
+# ------------------------------------------------------------------------------------------------------------- Iron Fist (3.5.8)
+# The owner's remake (docs/handoff 8zzs): Garp's boxing. A guard with both fists up; every big blow thrown with the whole body (the
+# legs planted and driven, the hips and shoulders turned through it). Beats as ironfist/IronMove has them.
+IF = p(arms(right=arm(-62, -22, 12, -112), left=mirror(arm(-70, -18, 12, -104))), legs(12, 6), body={"y": -0.04, "yaw": -12})
+
+
+def iron_fist():
+    s = "style_brawler_"
+    # LMB: a left, then a right (they land on tick 2)
+    jab_l = p(IF, leftArm=mirror(arm(-90, -6, 4, -2)), rightArm=arm(-58, -26, 12, -116), body={"yaw": -20, "bend": 4})
+    write(s + "punch_l", 6, [(1, "insine", p(IF, leftArm=mirror(arm(-60, -14, 12, -90)))), (2, "outexpo", jab_l),
+                             (4, "outsine", p(jab_l, leftArm={"pitch": -84})), (6, "inoutsine", IF)],
+          "Iron Fist: a plain left punch.")
+    jab_r = p(IF, rightArm=arm(-90, -6, 4, -2), leftArm=mirror(arm(-58, -26, 12, -116)), body={"yaw": 22, "bend": 4})
+    write(s + "punch_r", 6, [(1, "insine", p(IF, rightArm=arm(-58, -14, 14, -92), body={"yaw": -18})), (2, "outexpo", jab_r),
+                             (4, "outsine", p(jab_r, rightArm={"pitch": -84})), (6, "inoutsine", IF)],
+          "Iron Fist: a plain right punch.")
+    # RMB: Fist of Love: the fist up overhead (by the side, never through the face) and straight down on the head, the body bent into it
+    up = p(IF, rightArm=arm(-24, 0, 150, -70), body={"yaw": -6, "bend": -4})
+    down = p(IF, rightArm=arm(-62, -12, 8, -8), leftArm=mirror(arm(-40, -10, 12, -70)), body={"yaw": 10, "bend": 18})
+    write(s + "love", 8, [(1, "insine", up), (2, "outexpo", down), (4, "outsine", p(down, body={"bend": 20})), (8, "inoutsine", IF)],
+          "Iron Fist: Fist of Love, the fist raised overhead and brought straight down on their head.")
+    # Z held: Meteor Fist's wind-up, a pitcher's: the left leg forward, the upper body turned back, the cannonball behind the head
+    windup = p(rightArm=arm(18, 0, 118, -104), leftArm=mirror(arm(-84, -28, 12, -8)), rightLeg=leg(18, 4, 24), leftLeg=leg(-38, -4, 30),
+               body={"yaw": -42, "bend": -6, "y": -0.06}, head={"yaw": 30})
+    beats = [(0, "linear", IF), (6, "outsine", windup)]
+    sign = 1
+    for t in range(10, 81, 6):
+        beats.append((t, "inoutsine", p(windup, rightArm={"pitch": 18 + 2 * sign}, body={"yaw": -42 - sign})))
+        sign = -sign
+    write(s + "meteor_hold", 80, beats, "Iron Fist: Meteor Fist held, a pitcher's wind-up, the iron cannonball behind the head.")
+    thrown = p(rightArm=arm(-72, -14, 10, -4), leftArm=mirror(arm(22, 0, 20, -40)), rightLeg=leg(46, 6, 30), leftLeg=leg(-30, -4, 40),
+               body={"yaw": 40, "bend": 24, "y": -0.12, "z": -0.18}, head={"yaw": -16})
+    write(s + "meteor_throw", 12, [(0, "constant", windup), (2, "insine", p(windup, rightArm=arm(-30, 0, 140, -60), body={"yaw": -10})),
+                                   (3, "outexpo", thrown), (6, "outsine", p(thrown, rightArm={"pitch": -56}, body={"bend": 28})),
+                                   (12, "inoutsine", IF)],
+          "Iron Fist: Meteor Fist, the cannonball hurled like a fastball, the whole body following through.")
+    # X: Mountain Crusher: low and wide, the fist clenched at the waist; one huge step, the hips and shoulders turned into an uppercut
+    coil = p(legs(70, 18), rightArm=arm(24, 0, 16, -104), leftArm=mirror(arm(-70, -20, 10, -60)), body={"y": -0.42, "yaw": -30, "bend": 14})
+    upper = p(rightArm=arm(-108, -4, 42, -58), leftArm=mirror(arm(16, 0, 18, -50)), rightLeg=leg(24, 6, 20), leftLeg=leg(-46, -6, 36),
+              body={"y": -0.08, "yaw": 34, "bend": -6, "z": -0.32})
+    beats = [(0, "linear", IF), (4, "outsine", coil)]
+    for t, sgn in ((6, 1), (8, -1), (10, 1)):
+        beats.append((t, "inoutsine", p(coil, rightArm={"pitch": 24 + 2 * sgn}, body={"yaw": -30 - sgn})))
+    beats += [(12, "insine", p(coil, rightArm=arm(-10, 0, 40, -100), body={"z": -0.2, "y": -0.36}, leftLeg=leg(-40, -6, 60))),
+              (13, "outexpo", upper),
+              (17, "outsine", p(upper, rightArm={"pitch": -112}, body={"bend": -10})), (24, "inoutsine", IF)]
+    write(s + "crusher", 24, beats, "Iron Fist: Mountain Crusher, a devastating uppercut stepped into from low and wide.")
+    # C: Blue Hole: low, gone forward, the face grabbed, lifted, thrown down into the ground; left at the edge looking down at them
+    crouch = p(IF, legs(64, 10), body={"y": -0.44, "bend": 24})
+    rush = p(rightArm=arm(-92, -6, 6, -10), leftArm=mirror(arm(30, 0, 20, -30)), rightLeg=leg(30, 4, 40), leftLeg=leg(-40, -4, 50),
+             body={"pitch": 26, "y": -0.2})
+    grab = p(legs(16, 8), rightArm=arm(-112, -8, 10, -24), leftArm=mirror(arm(-10, 0, 24, -40)), body={"yaw": 10, "bend": -4})
+    lift = p(grab, rightArm=arm(-128, -2, 48, -34), body={"yaw": 6, "bend": -10})
+    slam = p(legs(44, 14), rightArm=arm(-34, -12, 10, -6), leftArm=mirror(arm(26, 0, 30, -30)), body={"yaw": 22, "bend": 36, "y": -0.28})
+    look = p(IF, legs(20, 10), body={"bend": 22, "y": -0.08}, head={"pitch": 30})
+    write(s + "blue_hole", 36, [(0, "linear", IF), (3, "outsine", crouch), (5, "outexpo", rush), (10, "inoutsine", rush), (11, "outback", grab),
+                                (20, "inoutsine", lift), (23, "insine", p(lift, rightArm={"roll": 58}, body={"bend": -12})),
+                                (24, "outexpo", slam), (28, "outsine", p(slam, body={"bend": 38})), (32, "inoutsine", look),
+                                (36, "linear", look)],
+          "Iron Fist: Blue Hole, a burst of speed, a face grabbed and lifted, then thrown straight down into the ground.")
+    # V: Galaxy Divide: knees bent, launched up at them, the fist pulled back behind the shoulder in the air; the punch into the air
+    low = p(IF, legs(80, 12), body={"y": -0.5, "bend": 22})
+    air = p(rightArm=arm(40, 0, 64, -112), leftArm=mirror(arm(-88, -22, 10, -12)), rightLeg=leg(-62, 6, 86), leftLeg=leg(-24, -6, 96),
+            body={"yaw": -36, "bend": -6})
+    punch = p(rightArm=arm(-96, -8, 4, -2), leftArm=mirror(arm(30, 0, 22, -40)), rightLeg=leg(-30, 6, 50), leftLeg=leg(10, -6, 40),
+              body={"yaw": 36, "bend": 10, "z": -0.2})
+    beats = [(0, "linear", IF), (5, "outsine", low), (8, "outexpo", air)]
+    for t, sgn in ((11, 1), (14, -1), (17, 1)):
+        beats.append((t, "inoutsine", p(air, rightArm={"pitch": 40 + 2 * sgn}, body={"yaw": -36 - 1.5 * sgn})))
+    beats += [(19, "insine", p(air, body={"yaw": -40})), (20, "outexpo", punch), (24, "outsine", p(punch, rightArm={"pitch": -92})),
+              (30, "inoutsine", IF)]
+    write(s + "divide", 30, beats, "Iron Fist: Galaxy Divide, a leap with the fist loaded behind the shoulder, then a punch into the air.")
+    # B: Infinitum Explosion: a wide stance, both fists up; left and right faster and faster on the barrage's own beats; the right
+    # pulled all the way back and one devastating punch to finish
+    wide = p(legs(40, 16), arms(right=arm(-70, -20, 14, -100), left=mirror(arm(-70, -20, 14, -100))), body={"y": -0.24, "yaw": 0, "bend": 8})
+    beats = [(0, "linear", IF), (8, "outsine", wide)]
+    tick = 10
+    k = 0
+    while tick < 70:
+        right = k % 2 == 0
+        hit = p(wide, rightArm=arm(-92, -6, 4, -2) if right else arm(-60, -22, 14, -100),
+                leftArm=mirror(arm(-92, -6, 4, -2)) if not right else mirror(arm(-60, -22, 14, -100)),
+                body={"yaw": 18 if right else -18, "bend": 10})
+        beats.append((tick, "outexpo", hit))
+        k += 1
+        nxt = max(1.0, 4.0 - (k - 1) * 0.12)
+        tick = int(round(10 + sum(max(1.0, 4.0 - i * 0.12) for i in range(k))))
+    cocked = p(wide, rightArm=arm(40, 0, 30, -112), leftArm=mirror(arm(-84, -24, 10, -10)), body={"yaw": -46, "bend": 2, "y": -0.3})
+    finish = p(rightArm=arm(-94, -6, 4, 0), leftArm=mirror(arm(30, 0, 24, -40)), rightLeg=leg(30, 6, 24), leftLeg=leg(-44, -6, 40),
+               body={"yaw": 42, "bend": 14, "z": -0.34, "y": -0.2})
+    beats += [(72, "inoutsine", wide), (78, "outsine", cocked), (79, "inoutsine", p(cocked, body={"yaw": -48})), (80, "outexpo", finish),
+              (86, "outsine", p(finish, rightArm={"pitch": -90})), (94, "inoutsine", IF)]
+    write(s + "infinitum", 94, beats, "Iron Fist: Infinitum Explosion, a barrage too fast to follow, ended by one devastating punch.")
+    # N: Galaxy Impact: crouched deep, the fist drawn to the waist; the leap; in the sky the pose: diagonal to the ground, the chest
+    # pushed out, the upper body wrenched back, the fist cocked beside and behind the head, the left arm out and down, a knee up and the
+    # other leg back; then everything turned into one punch at the world below, held, and down to land
+    gather = p(legs(96, 16), rightArm=arm(28, 0, 14, -104), leftArm=mirror(arm(-36, 0, 44, -10)), body={"y": -0.56, "bend": 30})
+    leap = p(legs(4, 6), rightArm=arm(30, 0, 30, -60), leftArm=mirror(arm(20, 0, 30, -20)), body={"bend": -6})
+    pose = p(rightArm=arm(-20, 0, 132, -128), leftArm=mirror(arm(-58, -26, 16, -6)), rightLeg=leg(-92, 6, 104), leftLeg=leg(44, -4, 22),
+             body={"pitch": 38, "yaw": -44, "bend": -14}, head={"pitch": 10, "yaw": 34})
+    blow = p(rightArm=arm(-74, -10, 6, 0), leftArm=mirror(arm(40, 0, 34, -30)), rightLeg=leg(-36, 6, 14), leftLeg=leg(34, -4, 6),
+             body={"pitch": 52, "yaw": 34, "bend": 14}, head={"pitch": 24})
+    beats = [(0, "linear", IF), (12, "inoutsine", gather), (28, "inoutsine", p(gather, body={"y": -0.6, "bend": 32})), (30, "outexpo", leap),
+             (46, "inoutsine", p(leap, legs(30, 8))), (58, "inoutsine", pose)]
+    sign = 1
+    for t in range(62, 101, 4):
+        beats.append((t, "inoutsine", p(pose, rightArm={"pitch": -20 + 1.5 * sign}, body={"yaw": -44 - 1.5 * sign, "pitch": 38 + sign})))
+        sign = -sign
+    beats += [(103, "insine", p(pose, body={"yaw": -48, "pitch": 36})), (104, "outexpo", blow), (108, "outsine", p(blow, body={"pitch": 50})),
+              (150, "inoutsine", p(blow, body={"pitch": 44})),
+              (172, "inoutsine", p(IF, legs(30, 10), rightArm=arm(-30, -10, 10, -20), body={"bend": 4})),
+              (176, "outsine", p(IF, legs(60, 12), body={"y": -0.3, "bend": 14})), (180, "inoutsine", IF)]
+    write(s + "impact", 180, beats, "Iron Fist: Galaxy Impact, a leap into the sky, the pose, and one punch at the world below.")
+
+
 # ------------------------------------------------------------------------------------------------------------- clash recoils
 # 2.3.6 (the owner: "every move is clashable ... I want a impact frame whenever a clash happens"): a blow met by another's (server/
 # Clashes) stops dead and the fighter is knocked back from it: the arms (or Black Leg's kicking leg) flung up and back by the shock,
@@ -535,6 +653,7 @@ def extras():
 def main():
     black_leg()
     six_powers()
+    iron_fist()
     extras()
     clash_recoils()
     stances()

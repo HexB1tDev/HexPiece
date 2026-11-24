@@ -670,6 +670,14 @@ public final class LogbookView {
             for (String[] row : rows) {
                 entries.add(Entry.of(row[1], row[0], "", row[2], true, ""));
             }
+        } else if (style == FightingStyle.BRAWLER) {
+            // 3.5.8: Garp's Iron Fist (server/IronFist): its moves open with Haki, not with mastery
+            for (com.hexhaki.piece.ironfist.IronMove move : com.hexhaki.piece.ironfist.IronMove.PANEL) {
+                String info = move.cooldown() > 0 ? String.format(java.util.Locale.ROOT, "recharges in %.1fs", move.cooldown() / 20.0) : "a press each";
+                String need = move.need().text.isEmpty() ? "" : "Needs " + move.need().text + " on";
+                entries.add(Entry.of(move.display(), move.key(), need.isEmpty() ? info : info + "; " + need.toLowerCase(java.util.Locale.ROOT),
+                    move.description(), true, ""));
+            }
         } else {
             for (Slot slot : Slot.values()) {
                 StyleMove move = StyleMove.of(style, slot);

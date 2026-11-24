@@ -201,7 +201,7 @@ public final class GuraUltimate {
             Vec3 at = com.hexhaki.piece.server.StyleCombat.middle(first);
             GuraMoves.later(player, (int) (at.m_82554_(base) / WAVE), () -> PieceNetwork.around(player, new com.hexhaki.piece.network.S2CClash(
                 GuraMoves.frame(), at.f_82479_, at.f_82480_, at.f_82481_, (float) flat.f_82479_, (float) flat.f_82481_, 3.0F, 0, 0,
-                player.m_19879_(), first.m_19879_(), 0)));
+                player.m_19879_(), first.m_19879_(), com.hexhaki.piece.network.S2CClash.CLASSIC)));
         }
         // the wave front: the ground groaning along it, and (with the Conqueror's Haki) thick lightning out of the breaking ground
         GuraMoves.live(new Front(level, player, base, flat, reach, haki, seed));

@@ -83,6 +83,11 @@ public final class PieceSounds {
             String name = event[0];
             BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
         }
+        // 3.5.8: Iron Fist's (the mod's own CC0 clips, ironfist/IronSounds)
+        for (String[] event : com.hexhaki.piece.ironfist.IronSounds.EVENTS) {
+            String name = event[0];
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
         // 3.5.5: the Mochi Mochi no Mi's (CC0 recordings from Freesound.org, mochi/MochiSounds)
         for (String[] event : com.hexhaki.piece.mochi.MochiSounds.EVENTS) {
             String name = event[0];

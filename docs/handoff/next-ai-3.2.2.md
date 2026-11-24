@@ -3455,6 +3455,45 @@ versa, no need for complicated m1s"), **RMB Fist of Love, Z Meteor Fist (hold), 
 B Infinitum Explosion, N Galaxy Impact**; terrain **regrows after a while** (as the Conqueror release's fissures); **all at once**, one
 version.
 
+## 8zzt. 3.5.8 as built: Iron Fist remade (8zzs) and the owner's impact frame
+
+The owner during 3.5.8 (verbatim, with art/impact-frame.gif, their own GIF, unchanged in the repository): "new impact frames template,
+this will replace every impact frame in the game (but the Quake N ultimate move). this is my own custom made impact frame, so feel free
+to edit it to your heart's content, change color, speed or whatever is needed for it to look good."
+
+Iron Fist (FightingStyle.BRAWLER, armed() true again, combat mode and R as the other styles):
+- ironfist/IronMove (pure): the eight rows of the panel (PUNCH LMB, LOVE RMB, METEOR Z hold, CRUSHER X needs ARMAMENT (or Ryou), BLUE_HOLE
+  C, DIVIDE V, INFINITUM B need RYOU, IMPACT N needs CONQUEROR_RYOU, 3600 ticks' cooldown, IMPACT_ENERGY 0.6 of the Haki energy), every
+  beat (PUNCH_EVERY, LOVE_HIT, METEOR_FULL, CRUSHER_HIT, HOLE_*, DIVIDE_* 40 x 20 x 5 at 2 blocks a tick, INF_* and barrageTick,
+  IMPACT_* and impactRise / impactCharge / impactLanding). HudTests.ironFist checks the keys, needs and beats.
+- server/IronFist: press(player, slot) from StyleServer.press; Z's release and N come as C2SStyleAction codes >= RELEASE 16 (N_KEY 32)
+  to StyleServer.ironInput (client/StyleInput ironZ / ironN watch the keys' edges). One S2CUoFx message per thing to draw, kinds 320 to
+  330 (PUNCH LOVE METEOR BALL BALL_END CRUSHER HOLE DIVIDE INF IMPACT DEBRIS), routed by client/dragon/UoFx. Terrain through Scars (it
+  regrows; budgets, protected and unbreakable blocks, mobGriefing) torn progressively by Dig (order and blocks a tick); Craters for the
+  bowls. Airborne moves set abilities.mayfly while in the air (no flying kick) and safeFall after. The Ryou moves throw ConquerorAura.bolts
+  (the release's own bolts, sent whether or not the Conqueror's is awakened); Meteor Fist's burst calls ConquerorAura.exploded.
+- client/ironfist/IronFx: every effect on IronMove's beats; Carry moves the user's own body on the dash, the leap and Galaxy Impact (and
+  zeroes their movement input); Galaxy Impact's camera (DragonCamera.position chain, IronFx.camera first) is third person from tick 52 to
+  150 with its own angles, the screen darkened then flashed white by the GUI overlay "hexpiece_iron"; the charge's rumble a LoopSound.
+- ironfist/IronArt (pure, the house style): cannonball and trail, pressure rings, manga impact lines square to the eye, sparks, the fist's
+  glow (tight, short rays between the knuckles), gather, afterimages, Galaxy Divide's shock sheet (clear middle, white edges and arcs,
+  golden flashes), Galaxy Impact's dome (white heart to crimson foot, rolling), ground rings, dust wall, chunks and thrown rocks.
+  The dust walls are drawn a level coarser (FireMesh.quality times 0.4 for their puffs): Galaxy Impact draws three around its user at
+  once, 30k quads before. DragonTests.ironArt keeps the heaviest frames (the game's own set) under 16000 quads. Previews: tools/preview/IronShots (iball iboom icrush ihole idivide iinf
+  iglow idome), docs/gifs/ironfist-3.5.8.png.
+- ironfist/IronSounds: ten events on the mod's own CC0 clips (sword whooshes, clash impacts, nika throw/slam/rocket, gura boom/charge/
+  quake/rumble). Clips: tools/style_anims.py iron_fist() writes style_brawler_ punch_l punch_r love meteor_hold meteor_throw crusher
+  blue_hole divide infinitum impact (lint-clean; the punches leave the legs free; client/npc/StylePoses regenerated); first person shows
+  both arms (FirstPersonLight.fist takes style_brawler_).
+- PieceRules.galaxyFist stays false (the old Haki Projection is no one's). The logbook's Iron page lists IronMove (MenuTests).
+
+The impact frame: tools/impact_texture.py lays the GIF out as textures/piece/impact/impact_frame.png (58 frames of 252 px, 8 across: the
+GIF's frames 26 to 29, 30 to 60, then every other one to 106; 50 a second, 1.16 s; black see-through by brightness, the edge faded to a
+round rim so the white flash never shows the GIF's square). clash/ImpactSprite (pure: frame, u, v, side by power, veil) and
+client/fx/ClashFx.sprite draw it over the view centred on the blow, a dark veil falling with the white flash (sheet frame FLASH 5) and
+lifting over 8 ticks. S2CClash.CLASSIC (flag 8) keeps the old ImpactFrame: only server/GuraUltimate sends it. HudTests.impactSprite.
+Preview: docs/gifs/impact-frame-3.5.8.png (composited over a render, not the game).
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);

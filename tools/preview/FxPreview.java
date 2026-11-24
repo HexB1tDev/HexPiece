@@ -387,7 +387,9 @@ public final class FxPreview {
                                     if (!SupaShots.shot(sink, eye, move)) { // 3.3.5: the Supa fruit's (tools/preview/SupaShots)
                                         if (!HoroShots.shot(sink, eye, move)) { // 3.3.6: the Horo fruit's (tools/preview/HoroShots)
                                             if (!ItoShots.shot(sink, eye, move)) { // 3.3.7: the Ito fruit's (tools/preview/ItoShots)
-                                                MochiShots.shot(sink, eye, move); // 3.5.5: the Mochi fruit's (tools/preview/MochiShots)
+                                                if (!MochiShots.shot(sink, eye, move)) { // 3.5.5: the Mochi fruit's (tools/preview/MochiShots)
+                                                    IronShots.shot(sink, eye, move); // 3.5.8: Iron Fist's (tools/preview/IronShots)
+                                                }
                                             }
                                         }
                                     }

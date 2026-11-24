@@ -230,8 +230,8 @@ public final class ClashTests {
             "a blade's recoil lasts as long as a fist's");
         Check.that(ClashRules.RECOIL <= ClashRules.STAGGER, "the recoil is over by the end of the stagger");
         for (com.hexhaki.piece.style.FightingStyle style : com.hexhaki.piece.style.FightingStyle.values()) {
-            if (!style.choice() || style.sword() || !style.armed()) {
-                continue; // 3.5.7: Iron Fist throws no blow to clash until it is remade
+            if (!style.choice() || style.sword() || style == com.hexhaki.piece.style.FightingStyle.BRAWLER) {
+                continue; // 3.5.8: Iron Fist's blows are its own (server/IronFist), thrown outside the style clashes
             }
             java.nio.file.Path file = anims.resolve(ClashRules.recoil(style) + ".json");
             Check.that(java.nio.file.Files.exists(file), style + ": its recoil");

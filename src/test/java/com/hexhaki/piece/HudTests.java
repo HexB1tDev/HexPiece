@@ -855,6 +855,8 @@ public final class HudTests {
         skyRoad();
         birdcage();
         mochi();
+        ironFist();
+        impactSprite();
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.HORO) == com.hexhaki.piece.FruitRanks.Rank.COMMON,
             "ranks: the Horo fruit Common (the owner: \"Horo Horo No Mi (common)\")");
         // 3.3.6 (the owner: "make sure gloom is it's own custom effect ... miss often"; they chose 8 in 10 and 8 seconds)
@@ -882,6 +884,85 @@ public final class HudTests {
      * 3.5.5 (the owner: "research katakuris mochi fruit and add it ... Legendary fruit"; their answers: the Awakening on M a 30 s mode
      * whose Z X C V B are its own five techniques, the dodge a three-second window on a double tap of sneak with a 20 s cooldown).
      */
+    /** 3.5.8: Iron Fist remade (the owner's seven moves, their keys, needs and beats). */
+    static void ironFist() {
+        com.hexhaki.piece.ironfist.IronMove[] panel = com.hexhaki.piece.ironfist.IronMove.PANEL;
+        String[] keys = {"LMB", "RMB", "Z hold", "X", "C", "V", "B", "N"};
+        Check.that(panel.length == keys.length, "Iron Fist: the punches and the seven moves");
+        for (int i = 0; i < keys.length; i++) {
+            Check.that(panel[i].key().equals(keys[i]), "Iron Fist: " + panel[i].display() + " on " + keys[i] + " (as the owner chose)");
+        }
+        com.hexhaki.piece.ironfist.IronMove.Need none = com.hexhaki.piece.ironfist.IronMove.Need.NONE;
+        com.hexhaki.piece.ironfist.IronMove.Need ryou = com.hexhaki.piece.ironfist.IronMove.Need.RYOU;
+        Check.that(panel[0].need() == none && panel[1].need() == none && panel[2].need() == none, "Iron Fist: the punches, Fist of Love and "
+            + "Meteor Fist need nothing");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.CRUSHER.need() == com.hexhaki.piece.ironfist.IronMove.Need.ARMAMENT,
+            "Mountain Crusher needs Armament (or Ryou)");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.BLUE_HOLE.need() == ryou && com.hexhaki.piece.ironfist.IronMove.DIVIDE.need() == ryou
+            && com.hexhaki.piece.ironfist.IronMove.INFINITUM.need() == ryou, "Blue Hole, Galaxy Divide and Infinitum Explosion need Ryou");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.IMPACT.need() == com.hexhaki.piece.ironfist.IronMove.Need.CONQUEROR_RYOU
+            && com.hexhaki.piece.ironfist.IronMove.IMPACT.cooldown() == 3600, "Galaxy Impact: Conqueror's and Ryou, three minutes' cooldown");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.IMPACT_ENERGY > 0.0 && com.hexhaki.piece.ironfist.IronMove.IMPACT_ENERGY <= 1.0,
+            "Galaxy Impact takes a share of the Haki energy");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.DIVIDE_LENGTH == 40.0 && com.hexhaki.piece.ironfist.IronMove.DIVIDE_HEIGHT == 20.0
+            && com.hexhaki.piece.ironfist.IronMove.DIVIDE_WIDTH == 5.0, "Galaxy Divide: 40 forward, 20 up, 5 across (the owner's numbers)");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.meteorCharge(0) > 0.0 && com.hexhaki.piece.ironfist.IronMove.meteorCharge(1000) == 1.0,
+            "Meteor Fist: a tap still throws, the hold fills it");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.HOLE_RANGE == 20.0, "Blue Hole dashes about 20 blocks");
+        int n = com.hexhaki.piece.ironfist.IronMove.barrageCount();
+        Check.that(n >= 18, "Infinitum Explosion: a barrage (" + n + " punches)");
+        for (int k = 1; k < n; k++) {
+            Check.that(com.hexhaki.piece.ironfist.IronMove.barrageTick(k) >= com.hexhaki.piece.ironfist.IronMove.barrageTick(k - 1)
+                && com.hexhaki.piece.ironfist.IronMove.barrageTick(k) < com.hexhaki.piece.ironfist.IronMove.INF_END,
+                "the barrage's punches come in order before its end");
+        }
+        Check.that(com.hexhaki.piece.ironfist.IronMove.INF_END < com.hexhaki.piece.ironfist.IronMove.INF_FINISH
+            && com.hexhaki.piece.ironfist.IronMove.INF_FINISH < com.hexhaki.piece.ironfist.IronMove.INF_TICKS, "the barrage, then the last punch");
+        double top = com.hexhaki.piece.ironfist.IronMove.IMPACT_HEIGHT;
+        Check.that(com.hexhaki.piece.ironfist.IronMove.impactRise(0) == 0.0
+            && com.hexhaki.piece.ironfist.IronMove.impactRise(com.hexhaki.piece.ironfist.IronMove.IMPACT_TOP) == top
+            && com.hexhaki.piece.ironfist.IronMove.impactRise(com.hexhaki.piece.ironfist.IronMove.IMPACT_PUNCH) == top
+            && com.hexhaki.piece.ironfist.IronMove.impactRise(com.hexhaki.piece.ironfist.IronMove.IMPACT_TICKS) == 0.0,
+            "Galaxy Impact: up, held in the sky through the punch, back down");
+        double last = 0.0;
+        for (int t = 0; t <= com.hexhaki.piece.ironfist.IronMove.IMPACT_TICKS; t++) {
+            double h = com.hexhaki.piece.ironfist.IronMove.impactRise(t);
+            Check.that(h >= 0.0 && h <= top && Math.abs(h - last) < 6.0, "Galaxy Impact's flight is smooth at " + t);
+            last = h;
+        }
+        Check.that(com.hexhaki.piece.ironfist.IronMove.impactCharge(com.hexhaki.piece.ironfist.IronMove.IMPACT_TOP) == 0.0
+            && com.hexhaki.piece.ironfist.IronMove.impactCharge(com.hexhaki.piece.ironfist.IronMove.IMPACT_SILENCE) == 1.0,
+            "Galaxy Impact's fist fills while it hangs");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.impactLanding(top) < com.hexhaki.piece.ironfist.IronMove.IMPACT_DESCEND,
+            "Galaxy Impact's force lands before the body comes down");
+    }
+
+    /** 3.5.8: the owner's impact frame: plays once, its veil falls with the white flash and lifts, it fits the screen. */
+    static void impactSprite() {
+        double length = com.hexhaki.piece.clash.ImpactSprite.length();
+        Check.that(length > 15.0 && length < 40.0, "the impact frame plays about a second (" + length + " ticks)");
+        Check.that(com.hexhaki.piece.clash.ImpactSprite.frame(0.0) == 0 && com.hexhaki.piece.clash.ImpactSprite.frame(length + 0.01) == -1,
+            "the impact frame plays from its first frame once");
+        int prev = 0;
+        for (double age = 0.0; age < length; age += 0.05) {
+            int f = com.hexhaki.piece.clash.ImpactSprite.frame(age);
+            Check.that(f >= prev && f < com.hexhaki.piece.clash.ImpactSprite.FRAMES, "the impact frame's frames in order");
+            Check.that(com.hexhaki.piece.clash.ImpactSprite.u(f) + com.hexhaki.piece.clash.ImpactSprite.CELL <= com.hexhaki.piece.clash.ImpactSprite.SHEET
+                && com.hexhaki.piece.clash.ImpactSprite.v(f) + com.hexhaki.piece.clash.ImpactSprite.CELL <= com.hexhaki.piece.clash.ImpactSprite.SHEET,
+                "the impact frame's frame " + f + " is on the sheet");
+            prev = f;
+        }
+        double flash = com.hexhaki.piece.clash.ImpactSprite.FLASH / com.hexhaki.piece.clash.ImpactSprite.PER_SECOND * 20.0;
+        for (float power = 1.0F; power <= 5.0F; power += 1.0F) {
+            Check.that(com.hexhaki.piece.clash.ImpactSprite.veil(flash - 0.1, power) == 0.0
+                && com.hexhaki.piece.clash.ImpactSprite.veil(flash, power) > 0.3
+                && com.hexhaki.piece.clash.ImpactSprite.veil(flash + 8.0, power) == 0.0, "the veil falls with the flash and lifts");
+            int side = com.hexhaki.piece.clash.ImpactSprite.side(power, 1920, 1080);
+            Check.that(side >= 700 && side <= 1080 * 1.45 + 1, "the impact frame's size on a 1080p screen (" + side + ")");
+        }
+        Check.that(com.hexhaki.piece.network.S2CClash.CLASSIC == 8, "the Gura ultimate keeps the old impact frame (S2CClash.CLASSIC)");
+    }
+
     static void mochi() {
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.MOCHI) == com.hexhaki.piece.FruitRanks.Rank.LEGENDARY,
             "ranks: the Mochi fruit Legendary (the owner: \"Legendary fruit\")");

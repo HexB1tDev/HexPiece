@@ -17,6 +17,12 @@ public record S2CClash(int id, double x, double y, double z, float dx, float dz,
     public static final int BLADE_A = 1;
     public static final int BLADE_B = 2;
     public static final int OVERWHELMED = 4;
+    /** 3.5.8: the old impact frame (clash/ImpactFrame), the Gura ultimate's alone; every other is the owner's (clash/ImpactSprite). */
+    public static final int CLASSIC = 8;
+
+    public boolean classic() {
+        return (this.flags & CLASSIC) != 0;
+    }
 
     public boolean blades() {
         return (this.flags & (BLADE_A | BLADE_B)) == (BLADE_A | BLADE_B);

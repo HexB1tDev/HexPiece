@@ -111,9 +111,15 @@ public final class AbilityHud {
         FightingStyle style = PieceClient.self().style();
         boolean combat = CombatMode.on();
         List<String> moves = new ArrayList<>();
-        for (Slot slot : new Slot[] {Slot.M1_1, Slot.HEAVY, Slot.SPECIAL_A, Slot.SPECIAL_B, Slot.EXTRA_C, Slot.EXTRA_V, Slot.EXTRA_B}) {
-            StyleMove move = StyleMove.of(style, slot);
-            moves.add(move == null ? "" : slot == Slot.M1_1 ? "Combo" : move.display());
+        if (style == FightingStyle.BRAWLER) {
+            for (com.hexhaki.piece.ironfist.IronMove move : com.hexhaki.piece.ironfist.IronMove.PANEL) {
+                moves.add(move.display()); // 3.5.8: Garp's Iron Fist, N its ultimate
+            }
+        } else {
+            for (Slot slot : new Slot[] {Slot.M1_1, Slot.HEAVY, Slot.SPECIAL_A, Slot.SPECIAL_B, Slot.EXTRA_C, Slot.EXTRA_V, Slot.EXTRA_B}) {
+                StyleMove move = StyleMove.of(style, slot);
+                moves.add(move == null ? "" : slot == Slot.M1_1 ? "Combo" : move.display());
+            }
         }
         String sword = null;
         if (style.sword() && SwordClient.katana(player.m_19879_()) != null) {
@@ -240,6 +246,7 @@ public final class AbilityHud {
         out.put("extra_c", name(PieceKeys.EXTRA_C));
         out.put("extra_v", name(PieceKeys.EXTRA_V));
         out.put("extra_b", name(PieceKeys.EXTRA_B));
+        out.put("extra_n", name(PieceKeys.FRUIT_N));
         out.put("toggle", name(HakiKeys.ARMAMENT));
         out.put("armament", "Ctrl+" + name(HakiKeys.ARMAMENT));
         out.put("observation", name(HakiKeys.OBSERVATION));

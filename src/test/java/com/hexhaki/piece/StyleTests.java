@@ -35,11 +35,11 @@ public final class StyleTests {
                 continue; // 2.1.4: the sword's moves are SwordMove's (SwordTests)
             }
             if (style == FightingStyle.BRAWLER) {
-                // 3.5.7 (the owner: "Remove all abilities from Iron Fist, we're making this shit anew"): none until it is remade
+                // 3.5.7: the old moves gone; 3.5.8: Garp's are its own (server/IronFist), none of StyleMove's
                 for (Slot slot : Slot.values()) {
-                    Check.that(StyleMove.of(style, slot) == null, "Iron Fist has no move for " + slot + " until it is remade");
+                    Check.that(StyleMove.of(style, slot) == null, "Iron Fist's " + slot + " is server/IronFist's, not StyleMove's");
                 }
-                Check.that(!style.armed() && style.choice(), "Iron Fist: still picked, nothing to throw (the game's own punch)");
+                Check.that(style.armed() && style.choice(), "Iron Fist: picked and armed with Garp's moves");
                 continue;
             }
             for (Slot slot : Slot.values()) {
@@ -89,10 +89,15 @@ public final class StyleTests {
                 Check.that(json.contains("\"tick\": " + hit.tick() + ","), move + ": its animation has a keyframe on its hit tick " + hit.tick());
             }
         }
-        // 3.5.7: Fishman Karate's clips gone with it, Iron Fist's with its moves
+        // 3.5.7: Fishman Karate's clips gone with it, Iron Fist's old ones with its old moves (3.5.8: Garp's own in their place)
         try (var files = Files.list(ANIMATIONS)) {
-            Check.that(files.map(f -> f.getFileName().toString()).noneMatch(n -> n.startsWith("style_fishman_karate_") || n.startsWith("style_brawler_")),
-                "no Fishman Karate or Iron Fist clip left");
+            Check.that(files.map(f -> f.getFileName().toString()).noneMatch(n -> n.startsWith("style_fishman_karate_")
+                || n.equals("style_brawler_jab.json") || n.equals("style_brawler_gatling.json") || n.equals("style_brawler_honesty.json")),
+                "no Fishman Karate clip left, nor the old Iron Fist's");
+        }
+        for (String clip : new String[] {"punch_l", "punch_r", "love", "meteor_hold", "meteor_throw", "crusher", "blue_hole", "divide", "infinitum",
+            "impact"}) {
+            Check.that(Files.exists(ANIMATIONS.resolve("style_brawler_" + clip + ".json")), "Iron Fist's " + clip + " clip");
         }
         // 2.1.2: combat mode's stances: one per style, a loop, the arms only (walking, the body and the head stay the game's)
         Pattern part = Pattern.compile("\"(body|torso|head|rightLeg|leftLeg|rightItem|leftItem)\":");

@@ -123,7 +123,7 @@ public final class AbilityPanel {
 
     /** A fighting style's lines: its string, its heavy, its two specials, its three extras (2.8.4). */
     static void style(Input in, List<Row> rows) {
-        String[] slots = {"attack", "use", "special_a", "special_b", "extra_c", "extra_v", "extra_b"};
+        String[] slots = {"attack", "use", "special_a", "special_b", "extra_c", "extra_v", "extra_b", "extra_n"};
         for (int i = 0; i < Math.min(slots.length, in.styleMoves().size()); i++) {
             String name = in.styleMoves().get(i);
             if (name != null && !name.isEmpty()) {

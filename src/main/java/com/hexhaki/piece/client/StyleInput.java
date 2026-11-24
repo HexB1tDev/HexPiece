@@ -91,6 +91,9 @@ public final class StyleInput {
         }
     }
 
+    private static boolean ironZ;
+    private static boolean ironN;
+
     @SubscribeEvent
     public static void tick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) {
@@ -107,8 +110,24 @@ public final class StyleInput {
                 PieceNetwork.toServer(new C2SSword(C2SSword.RELEASE));
             }
         }
+        // 3.5.8: Iron Fist's Z is held (Meteor Fist) and N is its ultimate (Galaxy Impact): pressed and let go are sent
+        boolean iron = ready && PieceClient.self().style() == com.hexhaki.piece.style.FightingStyle.BRAWLER;
+        boolean zHeld = iron && PieceKeys.SPECIAL_A.m_90857_();
+        if (zHeld != ironZ) {
+            if (zHeld) {
+                PieceNetwork.toServer(new C2SStyleAction(Slot.SPECIAL_A.ordinal()));
+            } else if (minecraft.f_91074_ != null) {
+                PieceNetwork.toServer(new C2SStyleAction(Slot.SPECIAL_A.ordinal() + com.hexhaki.piece.server.IronFist.RELEASE));
+            }
+            ironZ = zHeld;
+        }
+        boolean nHeld = iron && PieceKeys.FRUIT_N.m_90857_();
+        if (nHeld && !ironN) {
+            PieceNetwork.toServer(new C2SStyleAction(com.hexhaki.piece.server.IronFist.N_KEY));
+        }
+        ironN = nHeld;
         while (PieceKeys.SPECIAL_A.m_90859_()) {
-            if (ready) {
+            if (ready && !iron) {
                 PieceNetwork.toServer(new C2SStyleAction(Slot.SPECIAL_A.ordinal()));
             }
         }

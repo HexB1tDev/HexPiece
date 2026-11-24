@@ -593,7 +593,8 @@ public final class SwordTests {
                 || java.util.Arrays.stream(com.hexhaki.piece.supa.SupaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.horo.HoroSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.ito.ItoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
-                || java.util.Arrays.stream(com.hexhaki.piece.mochi.MochiSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                || java.util.Arrays.stream(com.hexhaki.piece.mochi.MochiSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.ironfist.IronSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
@@ -670,6 +671,16 @@ public final class SwordTests {
         webSounds("ito", com.hexhaki.piece.ito.ItoSounds.EVENTS, 9);
         // 3.5.5: the Mochi Mochi no Mi's (tools/mochi_sounds.py: two of its own; the rest the mod's own CC0 clips, folder and name)
         mixedSounds("mochi", com.hexhaki.piece.mochi.MochiSounds.EVENTS, 2);
+        // 3.5.8: Iron Fist's: every clip one of the mod's own already (folder and name), each event subtitled
+        String sjson = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
+        String slang = Files.readString(Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
+        for (String[] event : com.hexhaki.piece.ironfist.IronSounds.EVENTS) {
+            Check.that(sjson.contains("\"" + event[0] + "\": {") && slang.contains("\"subtitles.hexhaki." + event[0] + "\""), event[0] + ": defined, subtitled");
+            for (int i = 1; i < event.length; i++) {
+                Check.that(Files.exists(Path.of("src/main/resources/assets/hexhaki/sounds/piece/" + event[i] + ".ogg"))
+                    && sjson.contains("\"hexhaki:piece/" + event[i] + "\""), event[0] + ": plays " + event[i]);
+            }
+        }
     }
 
     /**

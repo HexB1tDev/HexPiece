@@ -1552,5 +1552,115 @@
         "attenuation_distance": 24
       }
     ]
+  },
+  "piece.iron.swing": {
+    "subtitle": "subtitles.hexhaki.piece.iron.swing",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/sword/whoosh1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "hexhaki:piece/sword/whoosh2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.iron.punch": {
+    "subtitle": "subtitles.hexhaki.piece.iron.punch",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/clash/impact1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "hexhaki:piece/clash/impact2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "hexhaki:piece/clash/impact3",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.iron.iron": {
+    "subtitle": "subtitles.hexhaki.piece.iron.iron",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/sword/guard_click1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.iron.throw": {
+    "subtitle": "subtitles.hexhaki.piece.iron.throw",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/throw1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.iron.boom": {
+    "subtitle": "subtitles.hexhaki.piece.iron.boom",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/boom1",
+        "attenuation_distance": 96
+      },
+      {
+        "name": "hexhaki:piece/gura/boom2",
+        "attenuation_distance": 96
+      }
+    ]
+  },
+  "piece.iron.charge": {
+    "subtitle": "subtitles.hexhaki.piece.iron.charge",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/charge",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.iron.smash": {
+    "subtitle": "subtitles.hexhaki.piece.iron.smash",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/slam1",
+        "attenuation_distance": 64
+      },
+      {
+        "name": "hexhaki:piece/clash/impact4",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.iron.dash": {
+    "subtitle": "subtitles.hexhaki.piece.iron.dash",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/rocket1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.iron.slam": {
+    "subtitle": "subtitles.hexhaki.piece.iron.slam",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/quake1",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.iron.rumble": {
+    "subtitle": "subtitles.hexhaki.piece.iron.rumble",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/rumble",
+        "attenuation_distance": 96
+      }
+    ]
   }
 }

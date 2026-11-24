@@ -258,6 +258,7 @@ m_21205_ ()Lcfz;
 m_21206_ ()Lcfz;
 m_21223_ ()F
 m_21233_ ()F
+m_21254_ ()Z
 m_21324_ (F)F
 m_213780_ ()Lapf;
 m_213877_ ()Z
@@ -317,6 +318,7 @@ m_286007_ (Ljava/lang/Runnable;)V
 m_35942_ ()F
 m_35943_ (F)V
 m_36316_ ()Lcom/mojang/authlib/GameProfile;
+m_36384_ (Z)V
 m_41487_ (I)Lcfu$a;
 m_41497_ (Lcgq;)Lcfu$a;
 m_41619_ ()Z

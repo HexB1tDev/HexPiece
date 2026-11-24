@@ -38,6 +38,11 @@ public final class DragonCamera {
                     return dragon;
                 }
             }
+            // 3.5.8: Galaxy Impact's low shot round its user (client/ironfist/IronFx)
+            Vec3 iron = com.hexhaki.piece.client.ironfist.IronFx.camera(entity, partial);
+            if (iron != null) {
+                return iron;
+            }
             // 3.4.9: Gear 5's giant has a camera its size (client/gear/GiantCamera)
             return com.hexhaki.piece.client.gear.GiantCamera.position(entity, partial);
         } catch (RuntimeException e) {

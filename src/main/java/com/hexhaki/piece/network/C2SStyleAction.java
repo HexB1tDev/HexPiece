@@ -7,7 +7,10 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
-/** A fighting-style input: M1 (any string slot: the server picks the blow), the right click, or a special key ({@link Slot} ordinal). */
+/**
+ * A fighting-style input: M1 (any string slot: the server picks the blow), the right click, or a special key ({@link Slot} ordinal).
+ * 3.5.8: Iron Fist's also a key let go (its ordinal + server/IronFist.RELEASE: Meteor Fist's hold) and N (IronFist.N_KEY: Galaxy Impact).
+ */
 public record C2SStyleAction(int slot) {
     public static void encode(C2SStyleAction message, FriendlyByteBuf buffer) {
         buffer.writeByte(message.slot);
@@ -25,7 +28,11 @@ public record C2SStyleAction(int slot) {
                 // 3.4.2 (the owner, on the Horo fruit's Astral Projection: "in this form the user can do everything normal from minecraft,
                 // but cant use style or haki at all")
                 if (!com.hexhaki.piece.server.HoroMoves.astral(sender)) {
-                    StyleServer.press(sender, Slot.byOrdinal(message.slot));
+                    if (message.slot >= com.hexhaki.piece.server.IronFist.RELEASE) {
+                        StyleServer.ironInput(sender, message.slot);
+                    } else {
+                        StyleServer.press(sender, Slot.byOrdinal(message.slot));
+                    }
                 }
             });
         }

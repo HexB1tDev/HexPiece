@@ -194,6 +194,30 @@ public final class ConquerorAura {
         }
     }
 
+    /**
+     * 3.5.8 (the owner's Iron Fist remake: "red Haki lightning", "black lightning with crimson outlines" on its Ryou moves): the very same
+     * burst of the Conqueror's release's own bolts as {@link #mixed}, thrown whenever the move asks (it has checked Ryou itself), not
+     * only with the Conqueror's Haki awakened. Visual only.
+     */
+    public static void bolts(ServerPlayer player, Vec3 at, double radius, int count, double floor, double thick) {
+        try {
+            int seed = (int) (player.m_217043_().m_188500_() * Integer.MAX_VALUE);
+            PieceNetwork.around(player, new S2CUoFx(MIXED, count, player.m_19879_(), at.f_82479_, at.f_82480_, at.f_82481_, (float) thick, 0, 0,
+                (float) floor, 0, 0.0F, (float) radius, seed));
+        } catch (RuntimeException failure) {
+            // lightning never stops a move
+        }
+    }
+
+    /** Whether {@code player} has the Conqueror's Haki awakened (Galaxy Impact asks for it). */
+    public static boolean conqueror(ServerPlayer player) {
+        try {
+            return HakiProgression.conquerorAwakened(player);
+        } catch (RuntimeException failure) {
+            return false;
+        }
+    }
+
     /** 3.1.5: at most one small explosion's lightning a player this often (ticks); a big one (radius 4 and up) always throws it. */
     static final int BLAST_GAP = 6;
     private static final Map<UUID, Long> BLAST_NEXT = new HashMap<>();

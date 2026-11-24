@@ -19,7 +19,8 @@ public enum FightingStyle {
         "The marines' superhuman art: finger pistols, legs that cut the air, a step so fast it vanishes and a body hard as iron."),
     // code 3 was Fishman Karate (removed in 3.5.7): never give it to another style
     BRAWLER(4, "brawler", "Iron Fist", Faction.UNSET, 0xFFD94848,
-        "Pirate street boxing, being made anew: no moves yet, the game's own punch until then."),
+        "Garp's fists: a Fist of Love, a cannonball hurled, Mountain Crusher, Blue Hole, Galaxy Divide, a barrage of Infinitum and, with "
+            + "the Conqueror's Haki, Galaxy Impact."),
     /** 2.1.4: the sword, one-handed (the owner: "the entire moveset is now right handed only"); its moves are {@code sword/SwordMove}. */
     SWORDSMAN(5, "swordsman", "Swordsman", Faction.UNSET, 0xFF6F8BAE,
         "One katana, the right hand: a draw that cuts before the eye sees it, a string of heavy cuts on the ground, on the run and in "
@@ -94,8 +95,8 @@ public enum FightingStyle {
      * mode and R to the game, as no style does.
      */
     public boolean armed() {
-        if (this.sword()) {
-            return true;
+        if (this.sword() || this == BRAWLER) {
+            return true; // 3.5.8: Iron Fist's are its own (server/IronFist, ironfist/IronMove)
         }
         for (StyleMove move : StyleMove.values()) {
             if (move.style() == this) {
