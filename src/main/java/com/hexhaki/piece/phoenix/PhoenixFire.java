@@ -254,6 +254,25 @@ public final class PhoenixFire {
     }
 
     /**
+     * 3.7.1 (the owner: "I also want a landing animation"): the touchdown, {@code ticks} after the claws touch the ground at (x, y, z)
+     * (eye-relative): a ring of blue fire running out over the ground and fading, eight low tongues flung out along it.
+     */
+    public static void touchdown(FireMesh.Sink sink, double x, double y, double z, double ticks, int seed) {
+        if (ticks < 0.0 || ticks > 14.0) {
+            return;
+        }
+        double f = ticks / 14.0;
+        double out = 1.0 - Math.pow(1.0 - f, 2.5);
+        FireMesh.ring(sink, x, y + 0.05, z, 0, 1, 0, 0.8 + 4.2 * out, 0.7 * (1.0 - 0.5 * f), 0.15, 0x46DDF5, 0.75 * (1.0 - f));
+        for (int k = 0; k < 8; k++) {
+            double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k + 150)) / 8.0;
+            double r = 0.6 + 3.8 * out;
+            tongue(sink, x + Math.cos(a) * r, y + 0.05, z + Math.sin(a) * r, Math.cos(a) * 0.12, 0.0, Math.sin(a) * 0.12, ticks, 14.0,
+                0.9 * (1.0 - 0.4 * f), k % 3 == 0, seed + k * 19);
+        }
+    }
+
+    /**
      * 3.7.0 (the owner: "it should also glow"): the phoenix's glow, soft cyan light round its body and along its wings ({@code points}:
      * eye-relative, {@code count} of them, each {@code size} across), clear at its edge: it never hides the body, only haloes it.
      */

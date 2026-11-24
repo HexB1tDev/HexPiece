@@ -997,3 +997,37 @@ make the overall phoenix bigger."
   16k beside the model; grows from nothing only once the human is fire, never shrinking, to 1; the human hidden only once every limb
   is fire; shaped as the human where it takes its place; the arms out then let down).
 - Sent to the owner: the transformation (both ways) and the phoenix from below (glow, no shade) as GIFs.
+
+## AB. The owner, after 3.7.0's previews were sent: "Proceed" (go on to the Phoenix's moves on the wiki's GIFs)
+- The owner, while the move GIFs were being read: "I also want a landing animation and being on ground/walk animation, not just flying"
+  (the phoenix form: a landing (wings flared to brake, the claws reaching down, the touchdown), standing on the ground and walking on
+  its claws, not only the flight).
+- The owner (with an in-game screenshot of the phoenix flying, seen from above and behind: three green lines drawn from the base of its
+  tail straight back behind it, fanning a little: left, middle, right): "also when flying the tails should go straight" (the three
+  gold tail streamers trail straight out behind in flight, not hanging and curling).
+
+## AC. 3.7.1: the tail straight in flight, landing, standing and walking (the owner's two notes in AB)
+
+- Tails: the three streamers (tail.1 to tail.3, 31 to 35 flame ovals and cores each, all rigid on their bone, modelled hanging and
+  curling) laid out straight: PhoenixForm.straighten orders each streamer's parts from its bone's pivot (nearest left), takes each
+  one's way along the curl and how far along it is, and gives it the rigid move (3 x 4, rest space) onto a straight line from the pivot
+  (Shape.straight: TAIL_WAY, down along the upright body and a little back, fanned 0.2 out: in flight the body leans forward so down
+  is back; Shape.lying: TAIL_GROUND, back along the ground, fanned 0.32), turned by the least turn (onto: Rodrigues). PhoenixForm.skin
+  blends the two by perch, a slow wave down each, and skins from those rest positions (DragonPose.skin's new overload). The client and
+  the preview skin every part through it.
+- Ground: Motion.walk, stride, flare, land; perch now means on the ground (any pace): the wings folded (tuck: TUCK_DOWN 58, TUCK_BACK
+  60, TUCK_ELBOW 75, TUCK_HAND 100, TUCK_TIP 30; opened a little now and then: settle), no beat; walking: each leg swinging STEP 24
+  degrees in turn, the body bobbing and rolling, leaning 9, the neck pumping at twice the stride; STRIDE 2.6 blocks a stride. The
+  client (PhoenixFx.follow): ground = player.onGround; flight speed, dive and glide only off the ground; walk = pace / 0.2; the stride
+  run on by the distance walked; flare when dropping (vy < -0.05) within FLARE_HEIGHT 3.5 of the ground (groundBelow: a clip 8 down);
+  the touchdown (a fall faster than 0.12 a tick ending on the ground) stamps entry.landed: PhoenixForm.landing (up in 3 ticks, gone by
+  14) dips the body, sweeps the wings down then folds them, PhoenixFire.touchdown (a ring of blue fire running out 5 blocks, eight low
+  tongues).
+- Preview states: walk, flare, land, landseq (0.6 s dropping in braking, the touchdown, standing). GIFs sent: walk, landing, flying
+  from behind (the straight tails).
+- Tests: DragonTests.phoenix: every new state finite; the 98 streamer flames laid straight (nothing else); the touchdown's envelope;
+  the touchdown's fire in the budget loop.
+- Next: the Phoenix's moves. Their GIFs are in the scratchpad (pgifs/; pread/ holds the frame sheets); Fujiazami.gif read so far: the
+  base form (the user with white wings) charges blue fire at the feet (frames 15 to 24), dashes (27: a white shock ring on the ground,
+  a streak of blue flame along the dash, 30 to 33), a great spray of blue and gold flames with a white smoke dome where it throws
+  (36 to 48), thin shock arcs (45 to 54), back to standing by 57. The wiki's Move Info is in the scratchpad (wiki/phoenix.txt).

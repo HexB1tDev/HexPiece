@@ -139,6 +139,16 @@ public final class PhoenixForm {
         public final float chest;
         /** 3.7.0: its wings' roots' height (held at the human's shoulders while it is shaped as the human: the change). */
         public final float shoulder;
+        /**
+         * 3.7.1 (the owner: "when flying the tails should go straight"): each tail streamer's flame (its parts, a chain of ovals hanging
+         * and curling as modelled) laid out straight: per part (null for the rest) the rigid move (3 x 4, rest space) that takes it
+         * from its place on the curl to its place as far along a straight line from its streamer's root, turned to lie along it; and
+         * how far along its streamer it is (0 at the root, 1 at the tip).
+         */
+        public final float[][] straight;
+        /** The same, the line lying back along the ground behind it as it stands (its tip on the ground). */
+        public final float[][] lying;
+        public final float[] along;
         /** Every bone's parent, and its rest rotation in the model's space (3 x 3 row-major): bends are given in the model's axes. */
         final int[] parent;
         final float[] restRot;
@@ -279,7 +289,203 @@ public final class PhoenixForm {
             at.solve();
             this.chest = bodyBone < 0 ? (lo + hi) * 0.5F : at.global[bodyBone * 12 + 7] + 0.6F;
             this.shoulder = this.wing[0][0] < 0 ? this.chest : at.global[this.wing[0][0] * 12 + 7];
+            this.straight = new float[np][];
+            this.lying = new float[np][];
+            this.along = new float[np];
+            for (int k = 0; k < 3; k++) {
+                straighten(m, at, k, TAIL_WAY[k], this.straight, this.along);
+                straighten(m, at, k, TAIL_GROUND[k], this.lying, this.along);
+            }
         }
+    }
+
+    /**
+     * The streamer {@code k}'s straight line (Shape.straight): its parts ordered from its root along the curl (each to the nearest
+     * left, from the bone's pivot), each one's way along the curl (from the one before to the one after), how far along it is; its
+     * place on the line from the pivot along {@link #TAIL_WAY} (fanned out: the first streamer to the right, the last to the left) as
+     * far as it was along the curl, turned by the least turn that takes its way onto the line's.
+     */
+    static void straighten(DragonModel m, DragonPose rest, int k, float[] way, float[][] out, float[] along) {
+        int bone = m.bone("tail." + (k + 1));
+        if (bone < 0) {
+            return;
+        }
+        java.util.List<Integer> parts = new java.util.ArrayList<>();
+        for (int i = 0; i < m.parts.length; i++) {
+            if (m.parts[i].name.startsWith("Tail " + (k + 1)) && m.parts[i].vertices() > 0) {
+                parts.add(i);
+            }
+        }
+        int n = parts.size();
+        if (n < 2) {
+            return;
+        }
+        float[][] c = new float[n][3];
+        for (int j = 0; j < n; j++) {
+            DragonModel.Part part = m.parts[parts.get(j)];
+            int nv = part.vertices();
+            for (int v = 0; v < nv; v++) {
+                for (int r = 0; r < 3; r++) {
+                    c[j][r] += part.pos[v * 3 + r] / nv;
+                }
+            }
+        }
+        // the chain, from the pivot
+        int[] order = new int[n];
+        float[] s = new float[n];
+        boolean[] used = new boolean[n];
+        float px = rest.global[bone * 12 + 3];
+        float py = rest.global[bone * 12 + 7];
+        float pz = rest.global[bone * 12 + 11];
+        float cx = px;
+        float cy = py;
+        float cz = pz;
+        float run = 0.0F;
+        for (int j = 0; j < n; j++) {
+            int best = -1;
+            float bd = Float.MAX_VALUE;
+            for (int q = 0; q < n; q++) {
+                if (!used[q]) {
+                    float d = dist(c[q], cx, cy, cz);
+                    if (d < bd) {
+                        bd = d;
+                        best = q;
+                    }
+                }
+            }
+            used[best] = true;
+            order[j] = best;
+            run += bd;
+            s[j] = run;
+            cx = c[best][0];
+            cy = c[best][1];
+            cz = c[best][2];
+        }
+        float total = Math.max(1.0E-3F, run);
+        float wl = (float) Math.sqrt(way[0] * way[0] + way[1] * way[1] + way[2] * way[2]);
+        float dx = way[0] / wl;
+        float dy = way[1] / wl;
+        float dz = way[2] / wl;
+        for (int j = 0; j < n; j++) {
+            int q = order[j];
+            // its way along the curl: from the one before (or the pivot) to the one after (or itself), past any at the same place
+            float[] a = j > 0 ? c[order[j - 1]] : new float[] {px, py, pz};
+            float[] b = c[order[Math.min(n - 1, j + 1)]];
+            for (int f = j + 1; f < n && dist(b, a[0], a[1], a[2]) < 0.05F; f++) {
+                b = c[order[f]];
+            }
+            float tx = b[0] - a[0];
+            float ty = b[1] - a[1];
+            float tz = b[2] - a[2];
+            float tl = (float) Math.sqrt(tx * tx + ty * ty + tz * tz);
+            float[] r = tl < 1.0E-4F ? new float[] {1, 0, 0, 0, 1, 0, 0, 0, 1} : onto(tx / tl, ty / tl, tz / tl, dx, dy, dz);
+            float gx = px + dx * s[j];
+            float gy = py + dy * s[j];
+            float gz = pz + dz * s[j];
+            float[] mv = new float[12];
+            for (int row = 0; row < 3; row++) {
+                mv[row * 4] = r[row * 3];
+                mv[row * 4 + 1] = r[row * 3 + 1];
+                mv[row * 4 + 2] = r[row * 3 + 2];
+            }
+            // v' = R (v - c) + g
+            mv[3] = gx - (r[0] * c[q][0] + r[1] * c[q][1] + r[2] * c[q][2]);
+            mv[7] = gy - (r[3] * c[q][0] + r[4] * c[q][1] + r[5] * c[q][2]);
+            mv[11] = gz - (r[6] * c[q][0] + r[7] * c[q][1] + r[8] * c[q][2]);
+            out[parts.get(q)] = mv;
+            along[parts.get(q)] = s[j] / total;
+        }
+    }
+
+    static float dist(float[] p, float x, float y, float z) {
+        float dx = p[0] - x;
+        float dy = p[1] - y;
+        float dz = p[2] - z;
+        return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    /** The least turn (3 x 3 row-major) taking unit a onto unit b (Rodrigues; half a turn about a square axis when opposite). */
+    static float[] onto(float ax, float ay, float az, float bx, float by, float bz) {
+        float vx = ay * bz - az * by;
+        float vy = az * bx - ax * bz;
+        float vz = ax * by - ay * bx;
+        float c = ax * bx + ay * by + az * bz;
+        if (c < -0.9999F) {
+            // opposite: half a turn about any axis square to a
+            float ux = Math.abs(ax) < 0.9F ? 1 : 0;
+            float uy = ux == 1 ? 0 : 1;
+            float kx = ay * 0 - az * uy;
+            float ky = az * ux - ax * 0;
+            float kz = ax * uy - ay * ux;
+            float kl = (float) Math.sqrt(kx * kx + ky * ky + kz * kz);
+            kx /= kl;
+            ky /= kl;
+            kz /= kl;
+            return new float[] {2 * kx * kx - 1, 2 * kx * ky, 2 * kx * kz, 2 * ky * kx, 2 * ky * ky - 1, 2 * ky * kz, 2 * kz * kx, 2 * kz * ky,
+                2 * kz * kz - 1};
+        }
+        float f = 1.0F / (1.0F + c);
+        return new float[] {1 - f * (vy * vy + vz * vz), -vz + f * vx * vy, vy + f * vx * vz, vz + f * vx * vy, 1 - f * (vx * vx + vz * vz),
+            -vx + f * vy * vz, -vy + f * vx * vz, vx + f * vy * vz, 1 - f * (vx * vx + vy * vy)};
+    }
+
+    /**
+     * The three streamers' straight lines (rest space: down along the upright body, a little back, fanned): in flight the body leans
+     * forward into it, so down is back: they stream out straight behind it (the owner's drawing: the middle one straight back, the
+     * outer two a little out to each side).
+     */
+    static final float[][] TAIL_WAY = {{0.2F, -1.0F, 0.22F}, {0.0F, -1.0F, 0.25F}, {-0.2F, -1.0F, 0.22F}};
+    /** Standing: back and down from the root to the ground behind it, fanned wider. */
+    static final float[][] TAIL_GROUND = {{0.32F, -0.5F, 1.0F}, {0.0F, -0.5F, 1.0F}, {-0.32F, -0.5F, 1.0F}};
+
+    private static float[] restPos = new float[0];
+    private static float[] restNrm = new float[0];
+
+    /**
+     * A part skinned (DragonPose.skin), a tail streamer's flame first laid out on its straight line: streaming down behind it in the air
+     * (Shape.straight), lying back along the ground {@code ground} (0 to 1) of the way as it stands (Shape.lying); a slow wave running
+     * down it so it is never stiff. One thread (the render thread; the previews and tests one each).
+     */
+    public static void skin(Shape sh, DragonPose pose, int index, DragonModel.Part part, float[] pos, float[] nrm, float ground, float seconds) {
+        float[] air = sh.straight[index];
+        float[] lie = sh.lying[index];
+        if (air == null || lie == null) {
+            pose.skin(part, pos, nrm);
+            return;
+        }
+        int nv = part.vertices();
+        if (restPos.length < nv * 3) {
+            restPos = new float[nv * 3];
+            restNrm = new float[nv * 3];
+        }
+        float g = clamp(ground);
+        float u = sh.along[index];
+        // the wave: side to side, growing toward the tip (slower lying on the ground)
+        float wave = (0.35F - 0.2F * g) * u * (float) Math.sin(u * 5.0F - seconds * (4.2F - 2.0F * g) + index * 0.05F);
+        for (int v = 0; v < nv; v++) {
+            float x = part.pos[v * 3];
+            float y = part.pos[v * 3 + 1];
+            float z = part.pos[v * 3 + 2];
+            float ax = air[0] * x + air[1] * y + air[2] * z + air[3];
+            float ay = air[4] * x + air[5] * y + air[6] * z + air[7];
+            float az = air[8] * x + air[9] * y + air[10] * z + air[11];
+            float lx = lie[0] * x + lie[1] * y + lie[2] * z + lie[3];
+            float ly = lie[4] * x + lie[5] * y + lie[6] * z + lie[7];
+            float lz = lie[8] * x + lie[9] * y + lie[10] * z + lie[11];
+            restPos[v * 3] = ax + (lx - ax) * g + wave;
+            restPos[v * 3 + 1] = ay + (ly - ay) * g;
+            restPos[v * 3 + 2] = az + (lz - az) * g;
+            float nx = part.nrm[v * 3];
+            float ny = part.nrm[v * 3 + 1];
+            float nz = part.nrm[v * 3 + 2];
+            float anx = air[0] * nx + air[1] * ny + air[2] * nz;
+            float any = air[4] * nx + air[5] * ny + air[6] * nz;
+            float anz = air[8] * nx + air[9] * ny + air[10] * nz;
+            restNrm[v * 3] = anx + (lie[0] * nx + lie[1] * ny + lie[2] * nz - anx) * g;
+            restNrm[v * 3 + 1] = any + (lie[4] * nx + lie[5] * ny + lie[6] * nz - any) * g;
+            restNrm[v * 3 + 2] = anz + (lie[8] * nx + lie[9] * ny + lie[10] * nz - anz) * g;
+        }
+        pose.skin(part, restPos, restNrm, pos, nrm);
     }
 
     /**
@@ -378,6 +584,17 @@ public final class PhoenixForm {
         pose.bend(bone, degrees, lx / l, ly / l, lz / l);
     }
 
+    /** 3.7.1: the wings folded at the sides (degrees: let down, swept back, the elbow back, the hand forward, the tip back). */
+    static final float TUCK_DOWN = 58.0F;
+    static final float TUCK_BACK = 60.0F;
+    static final float TUCK_ELBOW = 75.0F;
+    static final float TUCK_HAND = 100.0F;
+    static final float TUCK_TIP = 30.0F;
+    /** How far each leg swings forward and back walking (degrees). */
+    static final float STEP = 24.0F;
+    /** Blocks walked for one stride (a step of each foot), at its full size. */
+    public static final float STRIDE = 2.6F;
+
     /** How far the rest's raised wings are let down to hold them out level as arms (degrees). */
     static final float ARMS_LEVEL = 36.0F;
 
@@ -394,8 +611,18 @@ public final class PhoenixForm {
         public float dive;
         /** 0 to 1: how far it has its own shape (the change: 0 shaped as the human, upright, its wings out level as arms). */
         public float form = 1.0F;
-        /** 0 to 1: standing on the ground, wings folded. */
+        /** 0 to 1: on the ground (3.7.1: its wings folded at its sides, standing or walking on its claws). */
         public float perch;
+        /**
+         * 3.7.1 (the owner: "I also want a landing animation and being on ground/walk animation, not just flying"): 0 to 1 walking on
+         * the ground (its pace), its stride's phase (radians: one step of each foot a turn), braking to land (0 to 1: dropping close
+         * over the ground: its wings flared up and forward, its claws reaching down and forward, its body reared back) and the
+         * touchdown (0 to 1: rising fast on the landing, falling away: the body dipping, the wings swept down then folding).
+         */
+        public float walk;
+        public float stride;
+        public float flare;
+        public float land;
     }
 
     /**
@@ -418,8 +645,14 @@ public final class PhoenixForm {
             pose.clip(m.clips.get("soar"), seconds, true, glide);
         }
         float perch = clamp(mo.perch);
-        // standing (the reference's phoenix on the ground, frames 96 to 144): on its claws, its wings still beating, slower and gentler
-        float flap = (1.0F - glide) * (1.0F - dive) * (1.0F - human);
+        // 3.7.1: on the ground its wings are folded at its sides (tucked), opening a little now and then as a bird settles its feathers;
+        // braking to land they flare; the touchdown sweeps them down before they fold
+        float walk = clamp(mo.walk) * perch;
+        float flare = clamp(mo.flare) * (1.0F - perch) * (1.0F - human);
+        float land = clamp(mo.land) * (1.0F - human);
+        float settle = (float) Math.pow(Math.max(0.0F, Math.sin(seconds * 0.55F)), 14.0F) * (1.0F - walk);
+        float tuck = perch * (1.0F - human) * (1.0F - land) * (1.0F - 0.45F * settle);
+        float flap = (1.0F - glide) * (1.0F - dive) * (1.0F - human) * (1.0F - tuck) * (1.0F - 0.85F * flare) * (1.0F - land);
         float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch);
         // the power stroke: the downstroke quick, the recovery slower (the phase run faster through the downstroke's middle)
         beat = beat + 0.35F * (float) Math.sin(beat);
@@ -446,10 +679,29 @@ public final class PhoenixForm {
             turn(pose, sh, w[4], -m0 * fold * 25.0F, 0, 1, 0);
             // shaped as the human: the rest's raised wings let down level and straight out to the sides (the arms held out)
             turn(pose, sh, w[0], m0 * human * ARMS_LEVEL, 0, 0, 1);
+            // 3.7.1 folded at its sides on the ground: the wing let down and swept back along the body, the elbow back, the hand
+            // forward along the forearm, the tip back; bouncing a little with each step
+            turn(pose, sh, w[0], m0 * tuck * (TUCK_DOWN + 5.0F * walk * (float) Math.sin(2.0F * mo.stride)), 0, 0, 1);
+            turn(pose, sh, w[0], m0 * tuck * TUCK_BACK, 0, 1, 0);
+            turn(pose, sh, w[1], m0 * tuck * TUCK_ELBOW, 0, 1, 0);
+            turn(pose, sh, w[3], -m0 * tuck * TUCK_HAND, 0, 1, 0);
+            turn(pose, sh, w[4], -m0 * tuck * TUCK_TIP, 0, 1, 0);
+            // braking to land: raised high, swept forward, the hand cupped; the touchdown: swept down to catch the ground
+            turn(pose, sh, w[0], -m0 * flare * 18.0F + m0 * land * 30.0F, 0, 0, 1);
+            turn(pose, sh, w[0], -m0 * flare * 22.0F - m0 * land * 10.0F, 0, 1, 0);
+            turn(pose, sh, w[3], m0 * flare * 20.0F, 0, 0, 1);
             // the legs tucked up and back in flight, hanging under the hover
             // (about the model's x a negative turn swings a hanging part back: the head is toward -Z)
             turn(pose, sh, sh.leg[s], -45.0F * speed - 30.0F * dive + 6.0F * flap * (float) Math.sin(beat - 2.0F), 1, 0, 0);
+            // 3.7.1: walking, each leg stepping forward and back in turn; braking, both claws reaching forward for the ground
+            turn(pose, sh, sh.leg[s], m0 * STEP * walk * (float) Math.sin(mo.stride) + 38.0F * flare - 12.0F * land, 1, 0, 0);
         }
+        // walking: the body bobbing up as each foot passes under it, rolling over the standing foot, leaning a little into the walk;
+        // the neck pumping forward and back as a bird's does; braking: reared back; the touchdown: dipping forward
+        pose.t[sh.root * 3 + 1] += walk * (0.18F * Math.abs((float) Math.sin(mo.stride)) - 0.1F) - 0.35F * land;
+        turn(pose, sh, sh.root, 4.0F * walk * (float) Math.sin(mo.stride), 0, 0, 1);
+        turn(pose, sh, sh.root, -9.0F * walk + 16.0F * flare - 14.0F * land, 1, 0, 0);
+        turn(pose, sh, sh.neck, 9.0F * walk * (float) Math.sin(2.0F * mo.stride + 0.7F) + 10.0F * land - 8.0F * flare, 1, 0, 0);
         // the body: lifted with each downstroke, rocked by it; leaning into the flight at speed and nose down in the dive
         pose.t[sh.root * 3 + 1] += 0.32F * flap * (1.0F - perch) * (float) Math.sin(beat - 1.0F);
         turn(pose, sh, sh.root, -65.0F * speed - 30.0F * dive, 1, 0, 0);
@@ -466,6 +718,17 @@ public final class PhoenixForm {
                 - 22.0F * speed, 1, 0, 0);
         }
         pose.solve();
+    }
+
+    /** The previews' walk: the stride as at the full size. */
+    static final float SCALE_WALK = 1.0F;
+
+    /** 3.7.1: the touchdown's rise and fall, {@code ticks} after the claws touch (0 to 1: up in 3 ticks, gone by 14). */
+    public static float landing(float ticks) {
+        if (ticks < 0.0F) {
+            return 0.0F;
+        }
+        return ticks < 3.0F ? ticks / 3.0F : Math.max(0.0F, 1.0F - smooth((ticks - 3.0F) / 11.0F));
     }
 
     /** How fast the wings beat (radians a second): slow and deep hovering, quicker and shallower at speed. */
@@ -501,6 +764,31 @@ public final class PhoenixForm {
                 mo.perch = 1.0F;
                 lift = 0.0F;
             }
+            case "walk" -> {
+                mo.perch = 1.0F;
+                mo.walk = 1.0F;
+                mo.stride = seconds * (float) (2 * Math.PI) * 4.3F / (STRIDE * SCALE_WALK);
+                lift = 0.0F;
+            }
+            case "flare" -> {
+                mo.flare = 1.0F;
+                lift = 0.6F;
+            }
+            case "landseq" -> {
+                // dropping in braking for 0.6 s, the touchdown, standing
+                float drop = clamp(seconds / 0.6F);
+                mo.flare = seconds < 0.6F ? smooth(seconds / 0.25F) : 0.0F;
+                mo.speed = 0.25F * (1.0F - drop);
+                mo.perch = seconds < 0.6F ? 0.0F : Math.min(1.0F, (seconds - 0.6F) * 5.0F);
+                mo.land = landing((seconds - 0.6F) * 20.0F);
+                lift = seconds < 0.6F ? 3.2F * (1.0F - drop * drop) : 0.0F;
+            }
+            case "land" -> {
+                // seconds into the touchdown
+                mo.perch = Math.min(1.0F, seconds * 4.0F);
+                mo.land = landing(seconds * 20.0F);
+                lift = 0.0F;
+            }
             case "human" -> mo.form = 0.0F;
             default -> lift = 0.0F;
         }
@@ -518,7 +806,12 @@ public final class PhoenixForm {
             pose(m, shape, pose, mo, seconds * beatRate(mo), seconds);
         }
         float s = PhoenixLook.SCALE;
-        float base = state.equals("perch") ? -shape.feet * s : -shape.floor * s + lift;
+        boolean ground = state.equals("perch") || state.equals("walk") || state.equals("land");
+        float base = ground ? -shape.feet * s : -shape.floor * s + lift;
+        if (state.equals("landseq")) {
+            // the claws over the ground by the lift, on it from the touchdown
+            base = -shape.feet * s + lift;
+        }
         float[] p = {s, 0, 0, 0, 0, s, 0, base, 0, 0, s, 0};
         System.arraycopy(p, 0, place, 0, 12);
     }

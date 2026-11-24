@@ -27,6 +27,9 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -70,6 +73,11 @@ public final class PhoenixFx {
         final PhoenixForm.Motion was = new PhoenixForm.Motion();
         float beat;
         float beatO;
+        /** 3.7.1: its stride's phase walking, and when its claws last touched down (the clock), whether it stood on the ground. */
+        float stride;
+        float strideO;
+        long landed = -100;
+        boolean grounded;
         float yaw;
         float yawO;
         boolean turned;
@@ -82,6 +90,8 @@ public final class PhoenixFx {
         double vy;
         double vz;
         boolean placed;
+        /** Its fall last tick (blocks a tick, down negative): a touchdown is a fall ending on the ground. */
+        double fell;
         DragonPose pose;
         float[][] pos;
         float[][] nrm;
@@ -226,16 +236,41 @@ public final class PhoenixFx {
         was.glide = mo.glide;
         was.dive = mo.dive;
         was.perch = mo.perch;
+        was.walk = mo.walk;
+        was.flare = mo.flare;
+        was.land = mo.land;
         double flat = Math.sqrt(entry.vx * entry.vx + entry.vz * entry.vz);
-        float speed = (float) Math.min(1.0, flat / 0.9);
-        float dive = (float) Math.max(0.0, Math.min(1.0, (-entry.vy - 0.35) / 0.45));
-        float glide = speed > 0.7F && entry.vy < 0.05 && entry.vy > -0.35 ? 1.0F : 0.0F;
-        float perch = player.m_20096_() && flat < 0.25 ? 1.0F : 0.0F;
+        // 3.7.1 (the owner: "I also want a landing animation and being on ground/walk animation, not just flying"): on the ground it
+        // stands and walks on its claws (wings folded), in the air it flies; dropping close over the ground it brakes, wings flared,
+        // and the touchdown dips it
+        boolean ground = player.m_20096_();
+        float speed = ground ? 0.0F : (float) Math.min(1.0, flat / 0.9);
+        float dive = ground ? 0.0F : (float) Math.max(0.0, Math.min(1.0, (-entry.vy - 0.35) / 0.45));
+        float glide = !ground && speed > 0.7F && entry.vy < 0.05 && entry.vy > -0.35 ? 1.0F : 0.0F;
+        float perch = ground ? 1.0F : 0.0F;
+        float walk = ground ? (float) Math.min(1.0, flat / 0.2) : 0.0F;
+        float flare = !ground && entry.vy < -0.05 && groundBelow(player) < FLARE_HEIGHT ? 1.0F : 0.0F;
+        if (ground && !entry.grounded && entry.fell < -0.12) {
+            entry.landed = clock;
+        }
+        entry.grounded = ground;
+        entry.fell = entry.vy;
         mo.speed += (speed - mo.speed) * 0.15F;
         mo.dive += (dive - mo.dive) * 0.12F;
         // a glide sets in slowly (a few beats at speed first) and breaks off quickly
         mo.glide += (glide - mo.glide) * (glide > mo.glide ? 0.025F : 0.12F);
-        mo.perch += (perch - mo.perch) * 0.2F;
+        mo.perch += (perch - mo.perch) * (perch > mo.perch ? 0.3F : 0.2F);
+        mo.walk += (walk - mo.walk) * 0.3F;
+        mo.flare += (flare - mo.flare) * 0.25F;
+        mo.land = PhoenixForm.landing(clock - entry.landed);
+        entry.strideO = entry.stride;
+        if (ground) {
+            entry.stride += (float) (flat / PhoenixForm.STRIDE * 2.0 * Math.PI);
+            if (entry.stride > 2000.0F * Math.PI) {
+                entry.stride -= (float) (2000.0 * Math.PI);
+                entry.strideO -= (float) (2000.0 * Math.PI);
+            }
+        }
         entry.beatO = entry.beat;
         entry.beat += PhoenixForm.beatRate(mo) / 20.0F;
         if (entry.phase == PhoenixForm.FORMING) {
@@ -393,6 +428,10 @@ public final class PhoenixFx {
         mo.glide = a.glide + (b.glide - a.glide) * partial;
         mo.dive = a.dive + (b.dive - a.dive) * partial;
         mo.perch = a.perch + (b.perch - a.perch) * partial;
+        mo.walk = a.walk + (b.walk - a.walk) * partial;
+        mo.flare = a.flare + (b.flare - a.flare) * partial;
+        mo.land = PhoenixForm.landing(clock + partial - entry.landed);
+        mo.stride = entry.strideO + (entry.stride - entry.strideO) * partial;
         float shaped = PhoenixForm.shaped(entry.phase, t);
         mo.form = shaped;
         float seconds = (clock + partial) / 20.0F + (id % 17) * 0.31F;
@@ -433,7 +472,7 @@ public final class PhoenixFx {
         float upZ = ny.z;
         for (int i = 0; i < m.parts.length; i++) {
             DragonModel.Part part = m.parts[i];
-            entry.pose.skin(part, entry.pos[i], entry.nrm[i]);
+            PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], mo.perch, seconds);
             PhoenixForm.flame(shape, i, part, entry.pos[i], entry.nrm[i], seconds);
             emit(out, shape, i, part, entry.pos[i], entry.nrm[i], mat, upX, upY, upZ, seconds);
         }
@@ -462,6 +501,17 @@ public final class PhoenixFx {
             }
         }
         entry.shown = true;
+    }
+
+    /** How high over the ground (blocks) it starts to brake to land when dropping. */
+    static final double FLARE_HEIGHT = 3.5;
+
+    /** How far below the player's feet the ground is (blocks; more than 8: none near). */
+    static double groundBelow(Player player) {
+        Vec3 from = player.m_20182_();
+        Vec3 to = from.m_82520_(0.0, -8.0, 0.0);
+        BlockHitResult hit = player.m_9236_().m_45547_(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, player));
+        return hit.m_6662_() == HitResult.Type.BLOCK ? from.f_82480_ - hit.m_82450_().f_82480_ : 9.0;
     }
 
     /** Its glow's size round each point (model units: the blocks it covers grow with it). */
@@ -615,15 +665,19 @@ public final class PhoenixFx {
                         -entry.vz * 0.5, Math.min(1.0, grow), e.getKey());
                     PhoenixFire.glow(SINK, entry.glow, GLOW_BONES, GLOW_SIZE * entry.drawnScale, clock + partial);
                 }
+                double fx = player.f_19790_ + (player.m_20185_() - player.f_19790_) * partial - cam.f_82479_;
+                double fy = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial - cam.f_82480_;
+                double fz = player.f_19792_ + (player.m_20189_() - player.f_19792_) * partial - cam.f_82481_;
+                // 3.7.1: the touchdown's fire spreading over the ground round its claws
+                if (entry.phase == PhoenixForm.PHOENIX) {
+                    PhoenixFire.touchdown(SINK, fx, fy, fz, clock + partial - entry.landed, e.getKey());
+                }
                 if (player == minecraft.f_91074_ && firstPerson) {
                     continue; // the eye would be inside the figure of fire
                 }
                 // the human turned to fire, the phoenix opening out of it (forming) and closing back into it (going)
-                double x = player.f_19790_ + (player.m_20185_() - player.f_19790_) * partial - cam.f_82479_;
-                double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial - cam.f_82480_;
-                double z = player.f_19792_ + (player.m_20189_() - player.f_19792_) * partial - cam.f_82481_;
                 float bodyYaw = player.f_20884_ + wrap(player.f_20883_ - player.f_20884_) * partial;
-                PhoenixFire.change(SINK, x, y, z, bodyYaw, entry.phase, t, e.getKey());
+                PhoenixFire.change(SINK, fx, fy, fz, bodyYaw, entry.phase, t, e.getKey());
             }
         } catch (RuntimeException failure) {
             HexPiece.LOGGER.error("HexPiece: a phoenix's fire could not be drawn", failure);

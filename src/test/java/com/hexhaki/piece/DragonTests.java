@@ -973,7 +973,20 @@ public final class DragonTests {
             && shape.feet > shape.floor - 1.0E-3 && shape.chest > shape.feet && shape.shoulder > shape.chest - 2.0F,
             "the phoenix's fire points (fewer), its claws, its chest and its wings' roots");
         com.hexhaki.piece.dragon.DragonPose pose = new com.hexhaki.piece.dragon.DragonPose(m);
-        String[] states = {"hover", "fly", "fast", "glide", "dive", "perch", "human"};
+        String[] states = {"hover", "fly", "fast", "glide", "dive", "perch", "human", "walk", "flare", "land", "landseq"};
+        // 3.7.1 (the owner: "when flying the tails should go straight"): every one of the three streamers' flames has its straight line
+        // in the air and lying on the ground, ordered root to tip
+        int laid = 0;
+        for (int i = 0; i < m.parts.length; i++) {
+            if (m.parts[i].name.startsWith("Tail ")) {
+                laid += shape.straight[i] != null && shape.lying[i] != null && shape.along[i] >= 0.0F && shape.along[i] <= 1.0F ? 1 : 0;
+            } else {
+                Check.that(shape.straight[i] == null, "only the tail's streamers are laid straight (" + m.parts[i].name + ")");
+            }
+        }
+        Check.that(laid == 98, "the three tail streamers' 98 flames laid straight (" + laid + ")");
+        Check.that(com.hexhaki.piece.phoenix.PhoenixForm.landing(-1.0F) == 0.0F && com.hexhaki.piece.phoenix.PhoenixForm.landing(3.0F) > 0.99F
+            && com.hexhaki.piece.phoenix.PhoenixForm.landing(14.0F) < 0.01F, "the touchdown rises in 3 ticks and is gone by 14");
         for (String state : states) {
             for (int k = 0; k < 8; k++) {
                 float[] place = new float[12];
@@ -983,7 +996,7 @@ public final class DragonTests {
                     com.hexhaki.piece.dragon.DragonModel.Part part = m.parts[i];
                     float[] pos = new float[part.vertices() * 3];
                     float[] nrm = new float[part.vertices() * 3];
-                    pose.skin(part, pos, nrm);
+                    com.hexhaki.piece.phoenix.PhoenixForm.skin(shape, pose, i, part, pos, nrm, k / 7.0F, k * 0.13F);
                     com.hexhaki.piece.phoenix.PhoenixForm.flame(shape, i, part, pos, nrm, k * 0.13F);
                     for (float v : pos) {
                         ok &= Float.isFinite(v);
@@ -1022,6 +1035,7 @@ public final class DragonTests {
                 com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, shape.anchorSize, n, t, 0.0, 0.0, 0.3, 1.0, 5);
                 com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 3.2 * com.hexhaki.piece.phoenix.PhoenixLook.SCALE, t);
                 com.hexhaki.piece.phoenix.PhoenixFire.change(sink, 0.0, -1.2, 4.0, 180.0F, phase, t, 5);
+                com.hexhaki.piece.phoenix.PhoenixFire.touchdown(sink, 0.0, -1.2, 4.0, t * 0.5, 5);
                 check(count[0] + faces, finite[0], "the phoenix with its fire (phase " + phase + ")", t);
             }
         }

@@ -191,6 +191,11 @@ public final class DragonPose {
      * its bones' skinning matrices (the normal by the same blend, renormalized: the rig has no shear).
      */
     public void skin(DragonModel.Part part, float[] pos, float[] nrm) {
+        skin(part, part.pos, part.nrm, pos, nrm);
+    }
+
+    /** 3.7.1: as {@link #skin(DragonModel.Part, float[], float[])}, from the rest positions and normals given (a part re-shaped first). */
+    public void skin(DragonModel.Part part, float[] restPos, float[] restNrm, float[] pos, float[] nrm) {
         float[] sk = this.skin;
         int nv = part.vertices();
         for (int v = 0; v < nv; v++) {
@@ -214,15 +219,15 @@ public final class DragonPose {
                 m10 += sk[o + 10] * wt;
                 m11 += sk[o + 11] * wt;
             }
-            float x = part.pos[v * 3];
-            float y = part.pos[v * 3 + 1];
-            float z = part.pos[v * 3 + 2];
+            float x = restPos[v * 3];
+            float y = restPos[v * 3 + 1];
+            float z = restPos[v * 3 + 2];
             pos[v * 3] = m0 * x + m1 * y + m2 * z + m3;
             pos[v * 3 + 1] = m4 * x + m5 * y + m6 * z + m7;
             pos[v * 3 + 2] = m8 * x + m9 * y + m10 * z + m11;
-            float nx = part.nrm[v * 3];
-            float ny = part.nrm[v * 3 + 1];
-            float nz = part.nrm[v * 3 + 2];
+            float nx = restNrm[v * 3];
+            float ny = restNrm[v * 3 + 1];
+            float nz = restNrm[v * 3 + 2];
             float rx = m0 * nx + m1 * ny + m2 * nz;
             float ry = m4 * nx + m5 * ny + m6 * nz;
             float rz = m8 * nx + m9 * ny + m10 * nz;

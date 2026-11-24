@@ -105,7 +105,14 @@ public final class PhoenixPreview {
         for (DragonModel.Part part : model.parts) {
             float[] pos = new float[part.vertices() * 3];
             float[] nrm = new float[part.vertices() * 3];
-            pose.skin(part, pos, nrm);
+            // 3.7.1: in the air the tail's streamers laid out straight (PhoenixForm.skin), on the ground as modelled
+            boolean ground = change || state.equals("perch") || state.equals("walk") || state.equals("land")
+                || state.equals("landseq") && t >= 0.6;
+            if (state.equals("rest") || state.equals("soar") || state.startsWith("t")) {
+                pose.skin(part, pos, nrm);
+            } else {
+                PhoenixForm.skin(shape, pose, skinned.size() / 3, part, pos, nrm, ground ? 1.0F : 0.0F, (float) t);
+            }
             if (!state.equals("rest") && !state.startsWith("t")) {
                 PhoenixForm.flame(shape, model, part, pos, nrm, (float) t);
             }
