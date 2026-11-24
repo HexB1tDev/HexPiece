@@ -83,6 +83,11 @@ public final class PieceSounds {
             String name = event[0];
             BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
         }
+        // 3.5.5: the Mochi Mochi no Mi's (CC0 recordings from Freesound.org, mochi/MochiSounds)
+        for (String[] event : com.hexhaki.piece.mochi.MochiSounds.EVENTS) {
+            String name = event[0];
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
         // 3.2.3: the Nika fruit's transformation drums (CC0 recordings from Freesound.org, gear/GearSounds)
         for (String[] event : com.hexhaki.piece.gear.GearSounds.EVENTS) {
             String name = event[0];

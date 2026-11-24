@@ -1,0 +1,6 @@
+The Mochi Mochi no Mi's sounds (tools/mochi_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+squish1.ogg: "Slime 27.wav" by Archos, https://freesound.org/people/Archos/sounds/433840/ (CC0 1.0), from 0.1 s, 0.60 s long, 3.0 dB quieter
+splat1.ogg: "Step on a slug (Splat!) 2" by Breviceps, https://freesound.org/people/Breviceps/sounds/447930/ (CC0 1.0), from 0.1 s, 0.50 s long

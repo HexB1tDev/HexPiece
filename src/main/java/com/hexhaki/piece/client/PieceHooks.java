@@ -20,7 +20,8 @@ public final class PieceHooks {
      */
     public static boolean fruitClip(String name) {
         return name != null && (name.startsWith("pika_") || name.startsWith("uo_") || name.startsWith("gura_") || name.startsWith("magu_") || name.startsWith("hie_") || name.startsWith("ito_") && !name.startsWith("ito_sky_")
-            || name.startsWith("ito_")); // 3.4.2: the String fruit's own clips
+            || name.startsWith("ito_") // 3.4.2: the String fruit's own clips
+            || name.startsWith("mochi_")); // 3.5.5: the Mochi fruit's
     }
 
     /**

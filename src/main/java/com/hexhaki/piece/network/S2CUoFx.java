@@ -52,7 +52,8 @@ public record S2CUoFx(int kind, int id, int user, double x, double y, double z, 
     }
 
     public static void encode(S2CUoFx m, FriendlyByteBuf buffer) {
-        buffer.writeByte(m.kind);
+        // 3.5.5: two bytes (the Ito fruit took the one byte's last kinds; the Mochi fruit's are 256 to 319)
+        buffer.writeShort(m.kind);
         buffer.writeInt(m.id);
         buffer.writeInt(m.user);
         buffer.writeDouble(m.x);
@@ -69,8 +70,8 @@ public record S2CUoFx(int kind, int id, int user, double x, double y, double z, 
     }
 
     public static S2CUoFx decode(FriendlyByteBuf buffer) {
-        // 3.1.9: the kind read back unsigned (the Ice fruit's kinds run to 139, past a signed byte)
-        return new S2CUoFx(buffer.readByte() & 0xFF, buffer.readInt(), buffer.readInt(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
+        // 3.1.9: the kind read back unsigned (the Ice fruit's kinds run to 139, past a signed byte); 3.5.5: two bytes
+        return new S2CUoFx(buffer.readShort() & 0xFFFF, buffer.readInt(), buffer.readInt(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
             buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(), buffer.readFloat(),
             buffer.readFloat(), buffer.readInt());
     }

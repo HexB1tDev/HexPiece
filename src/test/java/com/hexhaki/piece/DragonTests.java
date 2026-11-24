@@ -676,6 +676,97 @@ public final class DragonTests {
         }
     }
 
+    /**
+     * 3.5.5: the Mochi fruit at its busiest stays within a phone's budget (one user: the Awakening's ground with the dome, the rain, the
+     * donuts' fists, the wave and the walls at once; or the base moves: the Anemone punching, a punch, Tsuki's drill, the club, a blast,
+     * splats, a glob and a body stuck), coated and not, every vertex finite. The owner's rule: "The black fist is only with haki on,
+     * without haki on its fully white, and with haki on the entire fist and arm (thing connecting to the fist) as well are black".
+     */
+    static void mochiArt() {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double[] cells = new double[com.hexhaki.piece.mochi.MochiDraw.GROUND_MOST * 4];
+        int n = com.hexhaki.piece.mochi.MochiDraw.groundLumps(0.3, 0.2, com.hexhaki.piece.server.MochiMoves.AWAKEN_RADIUS, cells);
+        Check.that(n > 20 && n <= com.hexhaki.piece.mochi.MochiDraw.GROUND_MOST, "the Mochi ground: its lumps capped (" + n + ")");
+        double[] lumps = new double[n * 5];
+        for (int k = 0; k < n; k++) {
+            lumps[k * 5] = cells[k * 4];
+            lumps[k * 5 + 1] = -1.6;
+            lumps[k * 5 + 2] = cells[k * 4 + 1];
+            lumps[k * 5 + 3] = cells[k * 4 + 2];
+            lumps[k * 5 + 4] = cells[k * 4 + 3];
+        }
+        double[] punches = new double[20];
+        for (int k = 0; k < 4; k++) {
+            punches[k * 5] = k;
+            punches[k * 5 + 1] = k * 2 - 3;
+            punches[k * 5 + 2] = -0.4;
+            punches[k * 5 + 3] = 5;
+            punches[k * 5 + 4] = k;
+        }
+        for (int coat = 0; coat < 2; coat++) {
+            boolean c = coat == 1;
+            for (int age = 0; age <= 40; age += 2) {
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiDraw.ground(sink, lumps, n, 1.0, age);
+                com.hexhaki.piece.mochi.MochiDraw.dome(sink, 0, -1.6, 10, 6, 1.0, 0.0, age, 3);
+                com.hexhaki.piece.mochi.MochiDraw.rain(sink, 6, -1.6, 12, 6, 14, 15, 2, age, 4);
+                com.hexhaki.piece.mochi.MochiDraw.donuts(sink, 0, -1.6, 0, 0, 0, 14, age, 1.0, 6, 4, c, 5);
+                com.hexhaki.piece.mochi.MochiDraw.wave(sink, 0, -1.6, 0, 0, 1, 2 + age * 0.7, 8, 3.6, age, 6);
+                com.hexhaki.piece.mochi.MochiDraw.walls(sink, -6, -1.6, 8, 0, 1, 4, age % 34, 7);
+                check(count[0], finite[0], "the Mochi Awakening" + (c ? " (coated)" : ""), age);
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiDraw.anemone(sink, 0, -1.6, 0, age, 1.0, punches, 4, c, 8);
+                com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36, -0.2, 0, 0, 0, 1, 6, age % 9, c, 9);
+                com.hexhaki.piece.mochi.MochiDraw.tsuki(sink, -0.36, -0.25, 0.4, 0, 0, 1, 16, age % 14, 1.0, age, c);
+                com.hexhaki.piece.mochi.MochiDraw.club(sink, -0.36, -0.1, 0, 0, -1.6, 4, age % 18, c, 10);
+                com.hexhaki.piece.mochi.MochiDraw.boom(sink, 0, -0.6, 14, 2.3, age % 18, 11);
+                com.hexhaki.piece.mochi.MochiDraw.kaku(sink, 0, -0.2, 0, 0, -1.6, 4.5, 0, 1, age % 20, c, 12);
+                for (int k = 0; k < 4; k++) {
+                    com.hexhaki.piece.mochi.MochiDraw.splat(sink, k - 2, -0.6, 5, 0, 0, -1, 1.4, (age + k * 3) % 12, k);
+                }
+                com.hexhaki.piece.mochi.MochiDraw.glob(sink, 0, -0.2, 3 + age % 10, 0, 0, 1, age, 13);
+                com.hexhaki.piece.mochi.MochiDraw.stuck(sink, 2, -1.6, 6, 1.8, 1.0, age, 14);
+                com.hexhaki.piece.mochi.MochiDraw.wheel(sink, 4, 0.6, 2, 0, 1, 2.2, age * 0.5, age, 15);
+                check(count[0], finite[0], "the Mochi moves" + (c ? " (coated)" : ""), age);
+            }
+        }
+        // the owner's rule: a punch's arm and fist all white without Haki, all black with it (no white left on it, no black without)
+        for (int coat = 0; coat < 2; coat++) {
+            boolean c = coat == 1;
+            int[] light = {0};
+            int[] dark = {0};
+            com.hexhaki.piece.dragon.FireMesh.Sink colours = (xyz, argb) -> {
+                for (int v : argb) {
+                    int r = (v >>> 16) & 255;
+                    int g = (v >>> 8) & 255;
+                    int b = v & 255;
+                    int lum = (r * 3 + g * 6 + b) / 10;
+                    // white mochi: light and grey-white (Haki's blue shine streak, light but blue, is not white)
+                    if (lum > 150 && Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b)) < 70) {
+                        light[0]++;
+                    } else if (lum < 90) {
+                        dark[0]++;
+                    }
+                }
+            };
+            com.hexhaki.piece.mochi.MochiDraw.punch(colours, -0.36, -0.2, 0, 0, 0, 1, 6, 4, c, 9);
+            com.hexhaki.piece.mochi.MochiDraw.club(colours, -0.36, -0.1, 0, 0, -1.6, 4, 10, c, 10);
+            com.hexhaki.piece.mochi.MochiDraw.kaku(colours, 0, -0.2, 0, 0, -1.6, 4.5, 0, 1, 10, c, 12);
+            if (c) {
+                Check.that(light[0] == 0 && dark[0] > 0, "with Haki the whole fist and arm are black (" + light[0] + " white corners)");
+            } else {
+                Check.that(dark[0] == 0 && light[0] > 0, "without Haki the fist and arm are fully white (" + dark[0] + " dark corners)");
+            }
+        }
+    }
+
     static void check(int quads, boolean finite, String what, int age) {
         Check.that(finite, what + " is finite at " + age);
         Check.that(quads < 16000, what + " fits a phone's budget at " + age + " (" + quads + " quads)");
@@ -712,6 +803,8 @@ public final class DragonTests {
             }
             Check.that(zip.getEntry("assets/hexhaki/textures/item/ito_ito_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/ito_ito_no_mi.json") != null, "the Ito fruit's icon and model");
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/mochi_mochi_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/mochi_mochi_no_mi.json") != null, "the Mochi fruit's icon and model");
             try (InputStream in = zip.getInputStream(entry)) {
                 model = DragonModel.read(in);
             }
@@ -728,6 +821,7 @@ public final class DragonTests {
         supaCuts();
         horoGhosts();
         itoStrings();
+        mochiArt();
         Check.that(model.parts.length == 6 && model.bones() >= 92, "every mesh and bone of the owner's model");
         for (String clip : new String[] {"idle", "form", "unform"}) {
             Check.that(model.clips.get(clip) != null, "the take " + clip);

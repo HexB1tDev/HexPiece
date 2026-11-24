@@ -139,8 +139,12 @@ public final class UoFx {
             com.hexhaki.piece.client.horo.HoroFx.accept(m); // 3.3.6: the Horo fruit's (220 to 239)
             return;
         }
-        if (m.kind() >= 240) {
-            com.hexhaki.piece.client.ito.ItoFx.accept(m); // 3.3.7: the Ito fruit's (240 to 255: the kind is one byte)
+        if (m.kind() >= 256 && m.kind() < 320) {
+            com.hexhaki.piece.client.mochi.MochiFx.accept(m); // 3.5.5: the Mochi fruit's (256 to 319: the kind is two bytes now)
+            return;
+        }
+        if (m.kind() >= 240 && m.kind() < 256) {
+            com.hexhaki.piece.client.ito.ItoFx.accept(m); // 3.3.7: the Ito fruit's (240 to 255)
             return;
         }
         if (m.kind() == com.hexhaki.piece.server.NikaJump.HOP || m.kind() == com.hexhaki.piece.server.NikaJump.LAND) {

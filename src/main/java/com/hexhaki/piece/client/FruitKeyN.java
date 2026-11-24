@@ -32,6 +32,10 @@ public final class FruitKeyN {
      * (it alone moves the body and forgets the fall, so no fall damage is taken for the height walked).
      */
     public static final int ABILITY_SKY = 42;
+    /** 3.5.5: sneak tapped twice with the Mochi fruit (Future Sight, server/MochiMoves.DODGE_SLOT). */
+    public static final int ABILITY_DODGE = 43;
+    private static boolean sneakWas;
+    private static long lastSneak = Long.MIN_VALUE / 2;
     private static boolean down;
     private static boolean downM;
     private static boolean jumpWas;
@@ -119,5 +123,18 @@ public final class FruitKeyN {
             com.hexhaki.piece.client.ito.SkyRoad.startLocal(minecraft.f_91074_);
         }
         jumpWas = jump;
+        // 3.5.5 (the owner, the Mochi fruit's dodge: "Double-tap Shift"): the second of two presses of sneak DOUBLE_TAP ticks apart or
+        // less, with the Mochi fruit, opens Future Sight's window
+        boolean sneak = minecraft.f_91074_ != null && minecraft.f_91074_.m_6144_();
+        boolean tapped = sneak && !sneakWas;
+        boolean again = tapped && clock - lastSneak <= DOUBLE_TAP;
+        if (tapped) {
+            lastSneak = again ? Long.MIN_VALUE / 2 : clock;
+        }
+        sneakWas = sneak;
+        if (again && minecraft.f_91080_ == null && PieceHooks.fruitKeysActive()
+            && FruitClient.fruit(minecraft.f_91074_.m_19879_()) == com.hexhaki.fruit.Fruit.MOCHI) {
+            FruitKeys.send(0, ABILITY_DODGE, FruitKeys.flags(minecraft));
+        }
     }
 }

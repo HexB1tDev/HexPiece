@@ -3190,10 +3190,63 @@ Keys (the owner: the base kit as proposed, the Awakening **"M toggles a mode"**)
   ends it.
 - Haki (the owner: **"Every fist and club"**): with Armament on every mochi fist, block, club and donut fist glossy Haki-black, 25 % more
   damage; without it cream-white mochi.
+- The owner, next (verbatim): **"The black fist is only with haki on, without haki on its fully white, and with haki on the entire fist and
+  arm (thing connecting to the fist) as well are black"**: MochiDraw.arm, Kaku's arms, the club's arm and Yaki's swollen forearm take
+  MochiArt.HAKI with the fist when coated; everything white without Haki (the legs, tendrils, waves, walls and donut rings stay white).
 - Pseudo-Intangibility (the owner: **"Key window"**, on **"Double-tap Shift"**): 3 s in which every blow passes through holes opening in the
   mochi body (no damage, a ring-hole closing back), then a 20 s cooldown.
+- The owner went to sleep ("do not stop working, i wanna wake up with a work of art done, go get references though seriously") and asked
+  that the work resume on its own when usage resets: a scheduled task "Resume Mochi fruit build" (trig_01SQWxmmxqSfBkLCfxSWkZe2, hourly
+  at :09) wakes this session; **delete it (delete_trigger) once the Mochi fruit is pushed and green.**
 - Build (the owner: **"All at once"**): one version with everything. Legendary (four stars). The effect kinds: S2CUoFx's kind widened
   to two bytes (PieceNetwork PROTOCOL bumped); the Mochi fruit's kinds 256 to 299.
+
+## 8zzp. 3.5.5 as built: the Mochi Mochi no Mi (Legendary, everything in one version, the owner's answers in 8zzo)
+
+State: built, rendered and judged (previews, never the game: docs/gifs/mochi-3.5.5-previews.png), the full build green locally at
+3.5.5 (13 suites), release notes .github/release-notes-3.5.5.md; pushed (see the header for the runs). Once green, the scheduled task
+trig_01SQWxmmxqSfBkLCfxSWkZe2 is deleted. Not tested in game: the owner's notes come next.
+
+- Renders judged (tools/preview/MochiShots, FxPreview; the user posed in each clip by ItoShots.posed): the punch, Tsuki held and
+  thrust, Yanagi, Kaku's slam, Yaki swelling (first a ball that swallowed the body: now a long swollen forearm), flying and its blast,
+  the wheel, the club, the Anemone, the glob, patch and stuck body, Future Sight's hole, the ground, wave, walls, rain, donuts and dome,
+  coated and not. First person (|mfirst): one's own arm now leaves from below and right of the view (0.45 ahead, 0.4 right, 0.45
+  down: its open end off screen); Tsuki's coils, its drill and Yaki's forearm sit further out, low and right (MochiFx.ownHand: 1.7,
+  2.8 and 1.4 ahead), the Anemone's rings 0.9 lower round oneself (a ring before the eye filled the view).
+- Tests: HudTests.mochi (Legendary, the keys, the awakened set on the same slots, 30 s, the dodge key, Tsuki's charge), the energy list
+  takes MochiKit.ALL, DragonTests.mochiArt (the busiest Awakening and the busiest base moves under 16k quads, coated and not; the
+  owner's black-arm rule: no white corner on a coated fist, arm, club or block, no dark one uncoated; Haki's blue shine is not white),
+  the icon and model in the jar, SwordTests.mixedSounds.
+- Future Sight lets only blows from someone pass (a hit, a shot, a blast): never a fall, the void, drowning or a command.
+
+- Wiring: patch/PiecePatch.MOCHI (the enum's eleventh fruit, "Mochi Mochi no Mi", F2E6CF), FruitRanks LEGENDARY, the item model and
+  icon (tools/mochi_icon.py), HexPiece.init registers server/MochiKit, PieceSounds registers mochi/MochiSounds, the name §6 and the
+  subtitles in en_us.json, sounds.json (folder-qualified clips), FruitEnergy's mochi_* costs. S2CUoFx's kind is two bytes (PROTOCOL 17);
+  client/dragon/UoFx hands kinds 256 to 319 to client/mochi/MochiFx.
+- Server (server/MochiMoves, numbers at the top of the class): LMB Mochi Punch (right then left, every 8 ticks, reach 6, hit on tick 3);
+  RMB Mochi Tsuki held (full at 40, by itself at 70; reach 8 to 16, 7 to 16 damage, a line 1.4 wide); Z Yanagi Mochi (5 stamps every 4
+  ticks, 1 to 7 ahead, 3 each side); X Kaku Mochi (slam on 8, 12 damage radius 3.2, knocked down 30, quake, the Conqueror's
+  lightning out of it); C Yaki Mochi (swells 16 ticks, the fist flies 2.2 a tick up to 40, explodes radius 3.5 with fire through
+  UoMoves.explode, which throws the lightning); V Zan Giri Mochi (the user's own client rolls the body 16 blocks over 18 ticks, the
+  first foe within 3 snagged, glued and slammed by the club on 7, 16 damage, knocked down 40); B Mochi Anemone held (up to 100 ticks,
+  every 4 ticks the two nearest within 8 punched, 3.5 each); N Sticky Mochi (a glob 1.4 a tick up to 30: a body glued 3 s, else a
+  sticky patch 5 s gluing who steps in; shots flying into either held fast); M the Awakening (a 30 s mode; M again ends it; while on
+  Z X C V B are Nagare Mochi (a wave 8 wide rolling 0.7 a tick to 22, engulfing and gluing), Kagami Mochi (walls either side of the
+  target shut on 14, 16 damage), Amadare Mochi (15 tendrils over radius 6, one every 2 ticks), Muso Donuts (five giant fists from
+  rings, one every 4 ticks from 6, each an explosion), Mochi Ginkaku (a dome radius 6 for 5 s holding everyone in, squeezing, crushing
+  them as it falls in)); Future Sight on a double tap of sneak (client/FruitKeyN.ABILITY_DODGE 43): 3 s in which every blow passes
+  through a hole in the mochi body (MochiKit.blocks), 20 s cooldown. Armament: a quarter more damage (MochiMoves.hit).
+- Client (client/mochi/MochiFx, MochiClient): every effect drawn from the user's shoulders as they are now; one's own wheel carried
+  like Supa's dash, the body (and one's own hand) hidden while it rolls, one's own wheel and holes not drawn in first person (they would
+  close round the view); the Awakening's ground follows the user over the world's fixed lumps, each on its column's ground; the panel
+  shows the awakened set while one's own Awakening is on.
+- Clips (tools/mochi_anims.py, client/npc/MochiPoses): 17, arms and upper body only (no leg, no head: Yanagi's leg is drawn as the
+  tendrils, the clip leans the body back over it), every one lint-clean; overhead arms rise by the sides, never through the face.
+  First-person hand moves for every clip (style/HandMoves: SLAM_UP and UP_DOWN new).
+- Sounds: two new CC0 clips (tools/mochi_sounds.py: "Slime 27.wav" by Archos +3.7 dB over noise, "Step on a slug (Splat!) 2" by
+  Breviceps +1.1); refused a slime squish's 11.2 kHz whine (+15.4) and a slime slap's 43 Hz hum (+29.3). The rest reuse the mod's CC0
+  clips (nika/coil1, nika/gatling1-2, supa/spin, gura/hit1, nika/slam1, nika/charge1, magu/whoosh1, magu/boom1, gura/rumble, horo/pop1).
+  SwordTests.mixedSounds checks them.
 
 ## 9. What to do next (after 3.3.7)
 

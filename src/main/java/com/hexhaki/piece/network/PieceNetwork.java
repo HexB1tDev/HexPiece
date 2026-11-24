@@ -21,7 +21,7 @@ public final class PieceNetwork {
      * player's alignment. 10 (2.7.0): S2CDragon (16), the Uo Uo no Mi's dragon form. 11 (2.7.1):
      * S2CDragon carries the dragon's colour. 12 (2.7.2): S2CUoFx (17), C2SDragon (18), the Uo Uo no Mi's moves. 13 (3.2.0): S2CEnergy
      * (19). 14 (3.3.2): C2SNikaJump (20), Gear 5's jump. 15 (3.4.4): C2SNikaWhip (21), Goof Ball let go. */
-    private static final String PROTOCOL = "16";
+    private static final String PROTOCOL = "17";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;

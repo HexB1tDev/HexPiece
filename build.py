@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.5.4"
+VERSION = "3.5.5"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -172,6 +172,9 @@ NEW_PREFIXES = (
     # 3.3.7: the Ito Ito no Mi's item
     "assets/hexhaki/models/item/ito_ito_no_mi.json",
     "assets/hexhaki/textures/item/ito_ito_no_mi.png",
+    # 3.5.5: the Mochi Mochi no Mi's item
+    "assets/hexhaki/models/item/mochi_mochi_no_mi.json",
+    "assets/hexhaki/textures/item/mochi_mochi_no_mi.png",
     KATANA_MESHES,
     KATANA_TEXTURES,
     KATANA_MODELS,

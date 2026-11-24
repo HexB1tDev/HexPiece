@@ -592,7 +592,8 @@ public final class SwordTests {
                 || java.util.Arrays.stream(com.hexhaki.piece.noro.NoroSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.supa.SupaSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.horo.HoroSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
-                || java.util.Arrays.stream(com.hexhaki.piece.ito.ItoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
+                || java.util.Arrays.stream(com.hexhaki.piece.ito.ItoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.mochi.MochiSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }
         Set<String> used = new HashSet<>();
@@ -667,6 +668,50 @@ public final class SwordTests {
         webSounds("horo", com.hexhaki.piece.horo.HoroSounds.EVENTS, 6);
         // 3.3.7: the Ito Ito no Mi's (tools/ito_sounds.py)
         webSounds("ito", com.hexhaki.piece.ito.ItoSounds.EVENTS, 9);
+        // 3.5.5: the Mochi Mochi no Mi's (tools/mochi_sounds.py: two of its own; the rest the mod's own CC0 clips, folder and name)
+        mixedSounds("mochi", com.hexhaki.piece.mochi.MochiSounds.EVENTS, 2);
+    }
+
+    /**
+     * 3.5.5: a fruit whose events play clips of other folders too ({@code events}: the event, then its clips as folder/name under
+     * sounds/piece): every clip played exists, every event subtitled, every clip of its own folder played, credited and mono.
+     */
+    static void mixedSounds(String folder, String[][] events, int least) throws Exception {
+        Path root = Path.of("src/main/resources/assets/hexhaki/sounds/piece");
+        Path dir = root.resolve(folder);
+        String json = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
+        String lang = Files.readString(Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));
+        String sources = Files.readString(dir.resolve("SOURCES.txt"));
+        Set<String> played = new HashSet<>();
+        for (String[] event : events) {
+            Check.that(json.contains("\"" + event[0] + "\": {"), event[0] + ": defined in sounds.json");
+            Check.that(lang.contains("\"subtitles.hexhaki." + event[0] + "\""), event[0] + ": its subtitle");
+            for (int i = 1; i < event.length; i++) {
+                Check.that(event[i].contains("/"), event[0] + ": " + event[i] + " names its folder");
+                Check.that(json.contains("\"hexhaki:piece/" + event[i] + "\""), event[0] + ": plays " + event[i]);
+                Check.that(Files.exists(root.resolve(event[i] + ".ogg")), event[i] + ".ogg exists");
+                played.add(event[i]);
+            }
+        }
+        int files = 0;
+        try (java.util.stream.Stream<Path> list = Files.list(dir)) {
+            for (Path file : (Iterable<Path>) list::iterator) {
+                String name = file.getFileName().toString();
+                if (!name.endsWith(".ogg")) {
+                    continue;
+                }
+                files++;
+                Check.that(played.contains(folder + "/" + name.substring(0, name.length() - 4)), name + ": played by some event");
+                Matcher credit = Pattern.compile("(?m)^" + Pattern.quote(name)
+                    + ": \".+\" by \\S+, https://freesound\\.org/people/\\S+/sounds/\\d+/ \\(CC0 1\\.0\\)").matcher(sources);
+                Check.that(credit.find(), name + ": credited in SOURCES.txt (its title, author, page and CC0 licence)");
+                byte[] data = Files.readAllBytes(file);
+                int at = indexOf(data, "\u0001vorbis".getBytes(java.nio.charset.StandardCharsets.ISO_8859_1));
+                Check.that(data[0] == 'O' && data[1] == 'g' && data[2] == 'g' && data[3] == 'S' && at >= 0 && data[at + 11] == 1,
+                    name + ": mono Ogg Vorbis");
+            }
+        }
+        Check.that(files >= least, "every " + folder + " clip of its own is played (" + files + " clips)");
     }
 
     /** One fruit's web sounds (sounds/piece/{folder}): as {@link #dragonSounds} checks them, at least {@code least} clips. */

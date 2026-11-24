@@ -854,6 +854,7 @@ public final class HudTests {
             "the M key and the air step reach the kit");
         skyRoad();
         birdcage();
+        mochi();
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.HORO) == com.hexhaki.piece.FruitRanks.Rank.COMMON,
             "ranks: the Horo fruit Common (the owner: \"Horo Horo No Mi (common)\")");
         // 3.3.6 (the owner: "make sure gloom is it's own custom effect ... miss often"; they chose 8 in 10 and 8 seconds)
@@ -867,13 +868,51 @@ public final class HudTests {
         for (java.util.List<com.hexhaki.fruit.FruitMove> moves : java.util.List.of(com.hexhaki.piece.server.GuraKit.MOVES,
             com.hexhaki.piece.server.HieKit.MOVES, com.hexhaki.piece.server.MaguKit.MOVES, com.hexhaki.piece.server.NoroKit.MOVES,
             com.hexhaki.piece.server.PikaKit.MOVES, com.hexhaki.piece.server.SupaKit.MOVES, com.hexhaki.piece.server.HoroKit.MOVES,
-            com.hexhaki.piece.server.ItoKit.MOVES,
+            com.hexhaki.piece.server.ItoKit.MOVES, com.hexhaki.piece.server.MochiKit.ALL,
             com.hexhaki.piece.server.UoKit.MOVES)) {
             for (com.hexhaki.fruit.FruitMove move : moves) {
                 if (move.cooldown() != null) {
                     Check.that(com.hexhaki.piece.server.FruitEnergy.listed(move), "energy: " + move.name() + " has its cost listed");
                 }
             }
+        }
+    }
+
+    /**
+     * 3.5.5 (the owner: "research katakuris mochi fruit and add it ... Legendary fruit"; their answers: the Awakening on M a 30 s mode
+     * whose Z X C V B are its own five techniques, the dodge a three-second window on a double tap of sneak with a 20 s cooldown).
+     */
+    static void mochi() {
+        Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.MOCHI) == com.hexhaki.piece.FruitRanks.Rank.LEGENDARY,
+            "ranks: the Mochi fruit Legendary (the owner: \"Legendary fruit\")");
+        java.util.List<com.hexhaki.fruit.FruitMove> base = com.hexhaki.piece.server.MochiKit.MOVES;
+        java.util.List<com.hexhaki.fruit.FruitMove> awake = com.hexhaki.piece.server.MochiKit.AWAKENED;
+        Check.that(base.size() == 10 && awake.size() == 10, "the Mochi keys: ten moves, ten awakened");
+        for (int i = 0; i < base.size(); i++) {
+            String k = base.get(i).key();
+            Check.that(awake.get(i).key().startsWith(k.substring(0, k.indexOf(']') + 1)), "the Mochi keys: the awakened set takes "
+                + k + "'s place");
+        }
+        String[] keys = {"[Z]", "[X]", "[C]", "[V]", "[B]"};
+        for (int i = 0; i < 5; i++) {
+            Check.that(base.get(2 + i).key().startsWith(keys[i]) && awake.get(2 + i).key().equals(keys[i]) && base.get(2 + i) != awake.get(2 + i),
+                "the Mochi keys: " + keys[i] + " is " + base.get(2 + i).name() + ", awakened " + awake.get(2 + i).name());
+        }
+        Check.that(com.hexhaki.piece.server.MochiKit.AWAKEN.key().equals("[M]") && com.hexhaki.piece.server.MochiKit.STICKY.key().equals("[N]")
+            && com.hexhaki.piece.server.MochiKit.PUNCH.key().equals("[LMB]") && com.hexhaki.piece.server.MochiKit.TSUKI.key().startsWith("[RMB]"),
+            "the Mochi keys as accepted");
+        Check.that(com.hexhaki.piece.server.MochiMoves.AWAKEN_TICKS == 600, "the Awakening: thirty seconds");
+        Check.that(com.hexhaki.piece.server.MochiMoves.DODGE_TICKS == 60 && com.hexhaki.piece.server.MochiMoves.DODGE_SLOT
+            == com.hexhaki.piece.client.FruitKeyN.ABILITY_DODGE, "Future Sight: three seconds, on its own key (the double tap of sneak)");
+        Check.that(com.hexhaki.piece.server.MochiMoves.tsukiCharge(0) >= 0.2 && com.hexhaki.piece.server.MochiMoves.tsukiCharge(1000) == 1.0
+            && com.hexhaki.piece.server.MochiMoves.tsukiCharge(com.hexhaki.piece.server.MochiMoves.TSUKI_FULL) == 1.0,
+            "Mochi Tsuki: a tap still thrusts, the hold fills it");
+        // the server strikes where and when every client draws (the rain's tendrils, the donuts' fists, the punches)
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.DONUTS == 5 && com.hexhaki.piece.mochi.MochiDraw.PUNCH_OUT == 3.0,
+            "the Mochi fruit's strikes land on the drawn beats");
+        for (int i = 2; i < 7; i++) {
+            Check.that(base.get(i).slot() >= 0 && base.get(i).slot() == awake.get(i).slot(), base.get(i).name() + " and "
+                + awake.get(i).name() + ": on the same quick slot");
         }
     }
 

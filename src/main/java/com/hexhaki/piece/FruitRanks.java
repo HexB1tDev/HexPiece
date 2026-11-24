@@ -57,6 +57,9 @@ public final class FruitRanks {
         if (fruit == Fruit.ITO) {
             return Rank.RARE; // 3.3.7 (the owner: "New Rare Fruit: Ito Ito No Mi (Rare)")
         }
+        if (fruit == Fruit.MOCHI) {
+            return Rank.LEGENDARY; // 3.5.5 (the owner: "research katakuris mochi fruit and add it ... Legendary fruit")
+        }
         if (fruit == Fruit.SUPA) {
             return Rank.UNCOMMON; // 3.3.5 (the owner: "Supa Supa No Mi (UnCommon)")
         }

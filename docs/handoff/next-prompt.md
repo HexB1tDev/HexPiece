@@ -24,8 +24,12 @@ only 1 string not more", "No its a normal string. Not a thick one": one thin str
 now they move freely inside, only touching its strings cuts them and the closing wall sweeps them in, the full damage when it shuts)
 are green (3.5.3: Build #201, Release #144; 3.5.4: Build #202, Release #145).
 
-Next: the owner's new Legendary fruit, the Mochi Mochi no Mi (8zzn verbatim, 8zzo the plan and their answers: build it all in one
-version). Then wait for the owner's notes on 3.4.9 (Gear 5), 3.5.0, 3.5.1 and 3.5.2 (Ito) and their lists for the other fruits. The fist is a right fist
+3.5.5 (sections 8zzn verbatim, 8zzo the plan and the owner's answers, 8zzp as built): the Legendary Mochi Mochi no Mi, everything in
+one version (base moves on LMB RMB Z X C V B N, the Awakening on M a 30 s mode with its own five techniques on Z X C V B, Future Sight
+on a double tap of sneak, Haki-black fists and arms only with Armament). Check its runs are green; the scheduled task "Resume Mochi
+fruit build" (trig_01SQWxmmxqSfBkLCfxSWkZe2) must be deleted once they are (delete_trigger).
+
+Next: wait for the owner's notes on 3.5.5 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
 on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
 polygons are not acceptable; hot strings use ItoArt's HOT tint; never lay a see-through ribbon over or through an opaque body (it punches
 holes in it: 8zzk).

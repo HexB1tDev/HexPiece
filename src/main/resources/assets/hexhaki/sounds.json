@@ -1440,5 +1440,117 @@
         "attenuation_distance": 40
       }
     ]
+  },
+  "piece.mochi.stretch": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.stretch",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/coil1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.punch": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.punch",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/gatling1",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "hexhaki:piece/nika/gatling2",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.squish": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.squish",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/mochi/squish1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.splat": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.splat",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/mochi/splat1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.drill": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.drill",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/supa/spin",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.stomp": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.stomp",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/hit1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.slam": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.slam",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/slam1",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.mochi.inflate": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.inflate",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/nika/charge1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.fire": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.fire",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/whoosh1",
+        "attenuation_distance": 24
+      }
+    ]
+  },
+  "piece.mochi.boom": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.boom",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/magu/boom1",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.mochi.roll": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.roll",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/rumble",
+        "attenuation_distance": 40
+      }
+    ]
+  },
+  "piece.mochi.pop": {
+    "subtitle": "subtitles.hexhaki.piece.mochi.pop",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/horo/pop1",
+        "attenuation_distance": 24
+      }
+    ]
   }
 }

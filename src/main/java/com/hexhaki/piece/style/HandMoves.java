@@ -61,6 +61,12 @@ public final class HandMoves {
         {8, -0.04, -0.2, -0.24, -30, 0, 0}, {14, 0, 0, 0, 0, 0, 0}};
     static final double[][] DOWN = {{0, 0, 0, 0, 0, 0, 0}, {2, 0.04, 0.28, -0.02, 45, 0, 0}, {4, -0.04, -0.22, -0.26, -34, 0, 0},
         {8, -0.04, -0.2, -0.24, -30, 0, 0}, {16, 0, 0, 0, 0, 0, 0}};
+    /** 3.5.5: Kaku Mochi's and the club's: the fist raised overhead from the hand's place, slammed down on 7 to 8, then let down. */
+    static final double[][] SLAM_UP = {{0, 0, 0, 0, 0, 0, 0}, {4, 0.04, 0.3, -0.02, 45, 0, 0}, {6, 0.04, 0.34, 0.0, 52, 0, 0},
+        {8, -0.04, -0.22, -0.26, -34, 0, 0}, {12, -0.04, -0.2, -0.24, -30, 0, 0}, {18, 0, 0, 0, 0, 0, 0}};
+    /** 3.5.5: Amadare Mochi's and Mochi Ginkaku's: the fist raised to the sky, then brought down pointing at the place. */
+    static final double[][] UP_DOWN = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.04, 0.3, -0.02, 45, 0, 0}, {7, 0.04, 0.32, -0.02, 48, 0, 0},
+        {10, -0.12, 0.06, -0.24, 6, 8, 0}, {14, -0.12, 0.06, -0.24, 6, 8, 0}, {18, 0, 0, 0, 0, 0, 0}};
     static final double[][] SWEEP = {{0, 0, 0, 0, 0, 0, 0}, {1, 0.22, 0.06, 0.0, 0, -30, 0}, {3, -0.4, 0.0, -0.18, 0, 40, 12},
         {8, 0, 0, 0, 0, 0, 0}};
     static final double[][] SWEEP_BACK = {{0, 0, 0, 0, 0, 0, 0}, {1, -0.36, 0.04, -0.14, 0, 34, 10}, {3, 0.26, 0.0, -0.08, 0, -34, -6},
@@ -154,6 +160,20 @@ public final class HandMoves {
             case "ito_cage_cast" -> new Move(UP_END, 0);
             case "ito_cage_close" -> new Move(DOWN, 0);
             case "ito_knight" -> new Move(POINT_TAP, 0);
+            // 3.5.5: the Mochi fruit's own clips (tools/mochi_anims.py)
+            case "mochi_punch_1", "mochi_punch_2", "mochi_yaki_fire" -> new Move(JAB, 0);
+            case "mochi_tsuki_charge" -> new Move(DRAWN, 1.0);
+            case "mochi_tsuki_thrust" -> new Move(THRUST, 0);
+            case "mochi_yanagi" -> new Move(SIDE, 0.6);
+            case "mochi_kaku", "mochi_club" -> new Move(SLAM_UP, 0);
+            case "mochi_yaki_charge" -> new Move(DEEP, 1.2);
+            case "mochi_anemone" -> new Move(SIDE, 1.4);
+            case "mochi_throw" -> new Move(THROW, 0);
+            case "mochi_awaken" -> new Move(DOWN, 0);
+            case "mochi_wave" -> new Move(PUSH, 0.4);
+            case "mochi_walls" -> new Move(SWEEP, 0);
+            case "mochi_rain", "mochi_dome" -> new Move(UP_DOWN, 0);
+            case "mochi_donuts" -> new Move(POINT, 0.4);
             default -> null;
         };
     }
