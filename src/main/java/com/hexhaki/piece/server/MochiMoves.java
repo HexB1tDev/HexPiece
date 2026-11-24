@@ -390,7 +390,7 @@ public final class MochiMoves {
             // 3.6.3: the longer it was held, the bigger and harder its explosion
             double radius = yakiRadius(this.charge);
             float damage = (float) (9.0 + 11.0 * this.charge) * (coat ? 1.25F : 1.0F);
-            UoMoves.explode(this.owner, this.level, where, this.step.m_82541_(), radius, damage, 4, 1.0 + 0.6 * this.charge);
+            UoMoves.explode(this.owner, this.level, where, this.step.m_82541_(), radius, damage, 6, 1.0 + 0.6 * this.charge);
             fx(this.owner, YAKI, this.seed, where, Vec3.f_82478_, YAKI_DROP, 0, 0, 0);
             fx(this.owner, BOOM, this.seed, where, Vec3.f_82478_, 0, 0, radius * 0.65, 0);
             Impact.quake(this.level, where, 12.0 + 12.0 * this.charge, (float) (0.35 + 0.4 * this.charge), 9);

@@ -34,7 +34,7 @@ public final class MochiDraw {
     public static final double KAKU_LIFE = 20.0;
     /** A splat of mochi (an impact), a boom of fire. */
     public static final double SPLAT_LIFE = 12.0;
-    public static final double BOOM_LIFE = 18.0;
+    public static final double BOOM_LIFE = 70.0;
     /** Zan Giri Mochi's club: raised, slammed at {@link #CLUB_SLAM}, gone by {@link #CLUB_LIFE}. */
     public static final double CLUB_SLAM = 7.0;
     public static final double CLUB_LIFE = 18.0;
@@ -365,57 +365,99 @@ public final class MochiDraw {
     }
 
     /**
-     * Yaki Mochi's blast where the burning fist lands (x, y, z), {@code size} its scale, {@code age} ticks in: the house's banded fire
-     * (FireMesh.puff, the Magma and Dragon fire's) bursting out, white mochi flung, a ring of shock round it.
+     * Grilled Mochi's explosion where the burning fist lands (x, y, z), {@code size} its scale, {@code age} ticks in. 3.6.3, after the
+     * reference's frames 36 to 110 (next-ai-3.6.3.md G): a white-hot flash, a ball of the house's banded fire filling a dome, and round
+     * it CONCENTRIC RINGS turned to the eye (bright orange fire rings with dark scorched rings between them: from any side the dome reads
+     * as the reference's tunnel of rings, the ground hiding its lower half), black smoke puffs thrown off its rim, white dough flung; the
+     * rings fade into a pale grey dome of smoke that lingers while the fire in it dies (about three seconds in all).
      */
     public static void boom(FireMesh.Sink sink, double x, double y, double z, double size, double age, int seed) {
         if (age < 0 || age > BOOM_LIFE) {
             return;
         }
         double t = age / BOOM_LIFE;
-        int n = 9;
-        for (int k = 0; k < n; k++) {
-            double a = 2 * Math.PI * (k + FireMesh.rand(seed, k)) / n;
-            double up = 0.25 + 0.75 * FireMesh.rand(seed, k + 30);
-            double d = size * (0.25 + 1.1 * ease(t * 1.4)) * (0.6 + 0.6 * FireMesh.rand(seed, k + 50));
-            double r = size * (0.55 - 0.3 * t) * (0.7 + 0.5 * FireMesh.rand(seed, k + 70));
-            double heat = Math.max(0.0, 1.0 - t * 1.25);
-            FireMesh.puff(sink, x + Math.cos(a) * d, y + up * d * 0.9 + size * 0.4 * t, z + Math.sin(a) * d, r, Math.cos(a), up, Math.sin(a), 0.4,
-                0.5, heat, 0.6, true, Math.max(0.0, 1.0 - t * t), age, seed + k);
+        // toward the eye (every point here is eye-relative): the rings face the one looking
+        double el = Math.max(1.0E-6, Math.sqrt(x * x + y * y + z * z));
+        double nx = -x / el;
+        double ny = -y / el;
+        double nz = -z / el;
+        if (age < 4.0) {
+            double f = age / 4.0;
+            MochiArt.glow(sink, x, y + size * 0.3, z, size * (1.0 + 0.5 * ease(f)), 0xFFF6DC, 0.95 * (1.0 - f));
         }
-        if (age < 8) {
-            FireMesh.ring(sink, x, y + 0.1, z, 0, 1, 0, size * (0.6 + 2.4 * ease(age / 8.0)), size * 0.25, 0.0, 0xFFE2B0, 0.7 * (1.0 - age / 8.0));
+        // the fire filling the dome: hot and swelling, then dying down inside the smoke
+        double burn = 1.0 - smooth((age - 22.0) / 30.0);
+        if (burn > 0.02) {
+            int n = 9;
+            for (int k = 0; k < n; k++) {
+                double a = 2 * Math.PI * (k + FireMesh.rand(seed, k)) / n;
+                double up = 0.2 + 0.7 * FireMesh.rand(seed, k + 30);
+                double d = size * (0.1 + 0.32 * ease(age / 6.0)) * (0.6 + 0.6 * FireMesh.rand(seed, k + 50));
+                double r = size * (0.34 - 0.1 * t) * (0.7 + 0.5 * FireMesh.rand(seed, k + 70));
+                double heat = Math.max(0.0, 1.0 - age / 30.0);
+                FireMesh.puff(sink, x + Math.cos(a) * d, y + up * d * 0.8 + size * 0.1, z + Math.sin(a) * d, r, Math.cos(a), up, Math.sin(a), 0.4, 0.5,
+                    heat, 0.6, true, 0.95 * burn, age, seed + k);
+            }
         }
-        // 3.6.3 (the owner's reference: the fist bursts in a white-hot star of long spiky rays, then rings of fire spreading round it)
-        if (age < 6) {
-            double f = 1.0 - age / 6.0;
-            MochiArt.glow(sink, x, y + size * 0.3, z, size * (0.9 + 0.6 * ease(age / 3.0)), 0xFFF6DC, 0.85 * f);
-            for (int k = 0; k < BOOM_RAYS; k++) {
-                double a = 2 * Math.PI * FireMesh.rand(seed, k + 90);
-                double up = FireMesh.rand(seed, k + 110) * 1.6 - 0.5;
+        // the rings: bright fire and dark scorch by turns, nested, spreading a little as they fade
+        double rings = 1.0 - smooth((age - 16.0) / 24.0);
+        if (rings > 0.02) {
+            for (int k = 0; k < BOOM_RINGS; k++) {
+                double r = size * (0.5 + 0.24 * k) * (0.55 + 0.45 * ease(age / 5.0)) * (1.0 + 0.12 * t);
+                double w = size * (k % 2 == 0 ? 0.3 : 0.14);
+                if (k % 2 == 0) {
+                    // a fire ring: orange, its inner edge yellow-white hot
+                    FireMesh.ring(sink, x, y, z, nx, ny, nz, r, w, 0.0, 0xFF6A12, 0.92 * rings);
+                    FireMesh.ring(sink, x, y, z, nx, ny, nz, r - w * 0.28, w * 0.4, 0.0, 0xFFD25A, 0.95 * rings);
+                    FireMesh.ring(sink, x, y, z, nx, ny, nz, r - w * 0.42, w * 0.14, 0.0, 0xFFF6D6, 0.9 * rings);
+                } else {
+                    // the scorched ring between
+                    FireMesh.ring(sink, x, y, z, nx, ny, nz, r, w, 0.0, 0x2B1408, 0.85 * rings);
+                }
+            }
+            // the outermost: a white-hot edge
+            double ro = size * (0.5 + 0.24 * BOOM_RINGS) * (0.55 + 0.45 * ease(age / 5.0)) * (1.0 + 0.12 * t);
+            FireMesh.ring(sink, x, y, z, nx, ny, nz, ro, size * 0.06, 0.0, 0xFFF4D8, 0.7 * rings);
+        }
+        // black smoke thrown off its rim, rising
+        double smoke = 1.0 - smooth((age - 10.0) / 30.0);
+        if (age > 2.0 && smoke > 0.02) {
+            for (int k = 0; k < 4; k++) {
+                double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k + 200)) / 4.0;
+                double d = size * (1.1 + 0.35 * ease((age - 2.0) / 10.0));
+                double up = 0.2 + 0.5 * FireMesh.rand(seed, k + 210);
+                // the house's smoke (the Magma fruit's black-brown puffs: FireMesh.SMOKE, its dark end)
+                FireMesh.palette(FireMesh.SMOKE);
+                FireMesh.puff(sink, x + Math.cos(a) * d, y + up * d + 0.04 * age, z + Math.sin(a) * d, size * 0.12 * (1.0 + 0.03 * age), 0, 1, 0, 0.2,
+                    0.12, 0.08 + 0.16 * FireMesh.rand(seed, k + 230), 0.0, false, 0.85 * smoke, age, seed + 220 + k);
+                FireMesh.palette(FireMesh.BAND);
+            }
+        }
+        // the dome of smoke left: pale grey, see-through, lingering
+        double dome = smooth((age - 12.0) / 10.0) * (1.0 - smooth((age - BOOM_LIFE + 20.0) / 20.0));
+        if (dome > 0.02) {
+            double r = size * (1.25 + 0.15 * t);
+            MochiArt.glow(sink, x, y, z, r, 0xC9C6C2, 0.28 * dome);
+            FireMesh.ring(sink, x, y, z, nx, ny, nz, r * 0.92, r * 0.22, 0.0, 0xDCDAD6, 0.38 * dome);
+            FireMesh.ring(sink, x, y, z, nx, ny, nz, r * 0.7, r * 0.12, 0.0, 0xBDB9B4, 0.22 * dome);
+        }
+        // embers
+        if (age < 20.0) {
+            for (int k = 0; k < 8; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 300);
+                double up = FireMesh.rand(seed, k + 310) * 1.2 - 0.2;
                 double ul = Math.sqrt(1.0 + up * up);
-                double len = size * (1.6 + 1.8 * FireMesh.rand(seed, k + 130)) * ease(Math.min(1.0, age / 2.5 + 0.3));
-                FireMesh.ray(sink, x, y + size * 0.3, z, Math.cos(a) / ul, up / ul, Math.sin(a) / ul, len, size * 0.18, 0, 0.0,
-                    k % 3 == 0 ? 0xFFFFFF : 0xFFE9A8, 0.9 * f);
+                double d = size * (0.4 + 1.4 * ease(age / 12.0));
+                FireMesh.ray(sink, x + Math.cos(a) / ul * d, y + up / ul * d - 0.004 * age * age, z + Math.sin(a) / ul * d, Math.cos(a) / ul, up / ul,
+                    Math.sin(a) / ul, 0.25, 0.05, 0, 0.0, 0xFFB347, 0.9 * (1.0 - age / 20.0));
             }
         }
-        if (age < 12) {
-            double u = ease(age / 12.0);
-            for (int k = 0; k < 3; k++) {
-                double a = 2 * Math.PI * FireMesh.rand(seed, k + 150);
-                double tilt = 0.35 + 0.5 * FireMesh.rand(seed, k + 160);
-                double nx = Math.cos(a) * tilt;
-                double nz = Math.sin(a) * tilt;
-                double nl = Math.sqrt(nx * nx + 1.0 + nz * nz);
-                FireMesh.ring(sink, x, y + size * 0.35, z, nx / nl, 1.0 / nl, nz / nl, size * (0.5 + (1.5 + 0.4 * k) * u), size * (0.3 - 0.06 * k),
-                    size * 0.15, k == 1 ? 0xFFF0C0 : 0xFF8C2E, 0.75 * (1.0 - age / 12.0));
-            }
-        }
-        splat(sink, x, y + size * 0.3, z, 0, 1, 0, size * 1.2, age * 0.9, seed + 9);
+        // white droplets of dough flung out of it
+        splat(sink, x, y + size * 0.3, z, 0, 1, 0, Math.min(1.4, size * 0.45), age * 0.9, seed + 9);
     }
 
-    /** 3.6.3: the explosion's star of rays. */
-    static final int BOOM_RAYS = 14;
+    /** 3.6.3: how many nested rings the explosion's dome shows (bright and dark by turns). */
+    static final int BOOM_RINGS = 4;
 
     // ------------------------------------------------------------------------------------------------------ Yaki Mochi
 
@@ -425,26 +467,27 @@ public final class MochiDraw {
      */
     public static void swell(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double charge, double age,
                              boolean coat, int seed) {
-        // 3.6.3 (the owner's reference: a huge puffy mass of dough swelling round the pointed arm, splattering, its fist at the end): the
-        // forearm's mochi grows with the hold, lumps welling up on it one by one, drips hanging off it and drops falling away
-        int[] bands = coat ? MochiArt.HAKI : MochiArt.MOCHI;
-        double g = ease(charge);
-        double r = 0.18 + 0.62 * g;
+        swell(sink, x, y, z, wx, wy, wz, charge, age, coat, seed, Double.NaN);
+    }
+
+    /**
+     * 3.6.3 (the reference's Grilled Dough, frames 6 to 33: next-ai-3.6.3.md G): held, the pointed arm bursts into a huge white puff of
+     * dough round it (bigger than the user, splattering: {@link #SWELL_BURST} ticks), which settles into a long thick arm of lumpy
+     * dough (as thick as the body) out from the elbow (x, y, z) along (wx, wy, wz), a block of a fist at its end (black with Armament:
+     * the dough itself stays white, as the reference's), drips hanging off its underside and dropping onto the ground ({@code ground}
+     * high; NaN: none) where they splat; longer, thicker and trembling the fuller {@code charge} (0 to 1) is.
+     */
+    public static void swell(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double charge, double age,
+                             boolean coat, int seed, double ground) {
         double shake = charge > 0.6 ? 0.03 * Math.sin(age * 3.1) * charge : 0.0;
-        double along = 0.45 + r * 1.1;
-        double cx = x + wx * along + shake;
-        double cy = y + wy * along + shake * 0.5;
-        double cz = z + wz * along;
         double[] b = B;
         MochiArt.axes(wx, wy, wz, b);
-        MochiArt.blob(sink, cx, cy, cz, b[0], b[1], b[2], b[3], b[4], b[5], r * 1.35, r, r, 0.95, 0.12, age, seed, bands, 1.0);
-        // its side: across the way, level
+        // its side (across the way, level) and its up
         double sx = -wz;
         double sz = wx;
         double sl = Math.max(1.0E-6, Math.hypot(sx, sz));
         sx /= sl;
         sz /= sl;
-        // the up across it
         double ux = wy * sz;
         double uy = wz * sx - wx * sz;
         double uz = -wy * sx;
@@ -452,44 +495,89 @@ public final class MochiDraw {
         ux /= ul;
         uy /= ul;
         uz /= ul;
-        // lumps welling up round it, one after another as it fills
-        for (int k = 0; k < SWELL_LUMPS; k++) {
-            double grow = Math.max(0.0, Math.min(1.0, (charge - 0.12 - k * 0.14) / 0.25));
-            if (grow <= 0.0) {
-                continue;
+        // the arm it settles into: length and thickness by the hold
+        double length = 1.5 + 0.9 * ease(charge);
+        double thick = 0.38 + 0.2 * ease(charge);
+        // the burst: up past its size and settling (0 before, 1 at its biggest, 0 once settled)
+        double burst = age < SWELL_BURST ? Math.sin(Math.PI * Math.min(1.0, age / SWELL_BURST)) * (1.0 - 0.3 * age / SWELL_BURST) : 0.0;
+        double settle = smooth((age - 2.0) / (SWELL_BURST - 2.0));
+        double cxm = x + wx * length * 0.5;
+        double cym = y + wy * length * 0.5;
+        double czm = z + wz * length * 0.5;
+        int n = SWELL_LUMPS;
+        for (int k = 0; k < n; k++) {
+            double t = (k + 0.5) / n;
+            // settled: along the arm, lumpy (a little up, down and to the sides), a little smaller toward the fist
+            double ra = 2 * Math.PI * FireMesh.rand(seed, k + 5);
+            double off = thick * 0.25 * FireMesh.rand(seed, k + 9);
+            double px = x + wx * length * t + (sx * Math.cos(ra) + ux * Math.sin(ra)) * off + shake;
+            double py = y + wy * length * t + uy * Math.sin(ra) * off;
+            double pz = z + wz * length * t + (sz * Math.cos(ra) + uz * Math.sin(ra)) * off;
+            double pr = thick * (0.95 + 0.3 * FireMesh.rand(seed, k + 17)) * (1.0 - 0.15 * t);
+            // in the burst: thrown out round the arm's middle, swollen
+            double ba = 2 * Math.PI * (k + FireMesh.rand(seed, k + 21)) / n;
+            double bu = FireMesh.rand(seed, k + 23) * 1.4 - 0.3;
+            double bd = 1.25 * burst;
+            double qx = cxm + (sx * Math.cos(ba) + ux * bu * 0.6) * bd;
+            double qy = cym + Math.abs(bu) * bd + 0.4 * burst;
+            double qz = czm + (sz * Math.cos(ba) + uz * bu * 0.6) * bd;
+            double qr = 1.0 + 0.6 * FireMesh.rand(seed, k + 29);
+            double gx = qx + (px - qx) * settle;
+            double gy = qy + (py - qy) * settle;
+            double gz = qz + (pz - qz) * settle;
+            double gr = qr * burst * (1.0 - settle) + pr * settle + 0.05;
+            // grows out of the arm in the first ticks
+            gr *= smooth(age / 2.5);
+            if (gr > 0.03) {
+                MochiArt.blob(sink, gx, gy, gz, b[0], b[1], b[2], b[3], b[4], b[5], gr * 1.15, gr, gr, 0.9, 0.16, age, seed + k, MochiArt.MOCHI, 1.0);
             }
-            double a = 2 * Math.PI * (k * 0.382 + FireMesh.rand(seed, k) * 0.2);
-            double ca = Math.cos(a);
-            double sa = Math.sin(a);
-            double on = (FireMesh.rand(seed, k + 9) - 0.5) * 1.4 * r;
-            double lr = r * (0.42 + 0.18 * FireMesh.rand(seed, k + 17)) * ease(grow);
-            MochiArt.ball(sink, cx + wx * on + (sx * ca + ux * sa) * r * 0.8, cy + wy * on + uy * sa * r * 0.8, cz + wz * on + (sz * ca + uz * sa) * r * 0.8,
-                lr, sx * ca + ux * sa, uy * sa, sz * ca + uz * sa, 1.2, 0.08, age, seed + k, bands);
         }
-        // drips hanging off its underside, and drops falling from them to the ground
-        for (int k = 0; k < 2; k++) {
-            if (charge < 0.25 + 0.2 * k) {
-                break;
+        // splatters thrown off the burst
+        if (age < SWELL_BURST + 4) {
+            for (int k = 0; k < 8; k++) {
+                double t = Math.min(1.0, age / (SWELL_BURST + 4));
+                double a = 2 * Math.PI * (k + FireMesh.rand(seed, k + 40)) / 8.0;
+                double up = 0.3 + 0.9 * FireMesh.rand(seed, k + 41);
+                double d = 0.6 + 2.2 * ease(t);
+                double fall = 2.2 * t * t;
+                MochiArt.ball(sink, cxm + sx * Math.cos(a) * d + ux * up * d * 0.3, cym + up * d * 0.6 - fall, czm + sz * Math.cos(a) * d + uz * up * d * 0.3,
+                    0.1 * (1.0 - t) + 0.04, sx * Math.cos(a), up, sz * Math.cos(a), 1.4, 0.0, age, seed + 40 + k, MochiArt.MOCHI);
             }
-            double on = (k == 0 ? -0.3 : 0.45) * r;
-            double hx = cx + wx * on;
-            double hy = cy + wy * on - r * 0.85;
-            double hz = cz + wz * on;
-            double len = r * (0.45 + 0.2 * Math.sin(age * 0.13 + k));
-            MochiArt.tubeBegin();
-            for (int s = 0; s <= 3; s++) {
-                double f = s / 3.0;
-                MochiArt.tubePoint(hx, hy - len * f, hz, r * 0.22 * (1.0 - 0.6 * f));
-            }
-            MochiArt.tube(sink, 8, bands, 0.0, 0.0);
-            double fall = (age * 0.06 + k * 0.5) % 1.0;
-            MochiArt.ball(sink, hx, hy - len - 1.4 * fall * fall, hz, r * 0.11, 0, 1, 0, 1.3, 0.0, age, seed + 20 + k, bands);
         }
-        double tip = along + r * 1.35 + 0.1;
-        MochiArt.fist(sink, x + wx * tip + shake, y + wy * tip, z + wz * tip, wx, wy, wz, sx, 0, sz, 0.26 + 0.3 * charge, coat, age, seed + 3);
+        // drips hanging off its underside, drops falling from them onto the ground and splatting there
+        if (settle > 0.5) {
+            for (int k = 0; k < 3; k++) {
+                double on = (0.25 + 0.3 * k) * length;
+                double hx = x + wx * on;
+                double hy = y + wy * on - thick * 0.85;
+                double hz = z + wz * on;
+                double len = thick * (0.5 + 0.25 * Math.sin(age * 0.13 + k));
+                MochiArt.tubeBegin();
+                for (int q = 0; q <= 3; q++) {
+                    double f = q / 3.0;
+                    MochiArt.tubePoint(hx, hy - len * f, hz, thick * 0.22 * (1.0 - 0.6 * f));
+                }
+                MochiArt.tube(sink, 8, MochiArt.MOCHI, 0.0, 0.0);
+                double bottom = Double.isNaN(ground) ? hy - len - 1.4 : ground;
+                double fall = (age * 0.07 + k * 0.37) % 1.0;
+                double dy = hy - len - (hy - len - bottom) * fall * fall;
+                MochiArt.ball(sink, hx, dy, hz, thick * 0.12, 0, 1, 0, 1.3, 0.0, age, seed + 20 + k, MochiArt.MOCHI);
+                if (!Double.isNaN(ground)) {
+                    double sp = 0.28 + 0.1 * k;
+                    MochiArt.blob(sink, hx + sx * 0.2 * k, ground + 0.03, hz + sz * 0.2 * k, 1, 0, 0, 0, 1, 0, sp, 0.04, sp * 0.8, 0.7, 0.3, age,
+                        seed + 60 + k, MochiArt.MOCHI, 1.0);
+                }
+            }
+        }
+        double tip = length + thick * 0.55;
+        MochiArt.fist(sink, x + wx * tip + shake, y + wy * tip, z + wz * tip, wx, wy, wz, sx, 0, sz, (0.34 + 0.22 * charge) * smooth(age / 3.0) + 0.02,
+            coat, age, seed + 3);
     }
 
-    /** 3.6.3: how many lumps well up on Yaki Mochi's swelling forearm. */
+    /** 3.6.3: the swell's burst (ticks): up to its biggest and settled into the arm of dough. */
+    public static final double SWELL_BURST = 10.0;
+
+    /** 3.6.3: how many lumps of dough make the swollen arm. */
     static final int SWELL_LUMPS = 6;
 
     /**
@@ -516,6 +604,31 @@ public final class MochiDraw {
                 Math.max(0.15, 1.0 - k * 0.14), 0.55, true, 1.0 - k * 0.1, age, seed + k);
         }
     }
+
+    /**
+     * 3.6.3 (the reference's Grilled Dough, frames 31 to 36): the swollen arm of dough bursting into a big white puff the moment its fist
+     * is thrown from (x, y, z) along (wx, wy, wz): the puff swelling and blowing apart, dough flung, a spark of fire; {@code age} ticks in.
+     */
+    public static void yakiPuff(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, int seed) {
+        if (age < 0 || age > YAKI_PUFF) {
+            return;
+        }
+        double f = age / YAKI_PUFF;
+        double r = 1.1 * Math.sin(Math.PI * Math.min(1.0, f * 1.6)) + 0.05;
+        double cx = x - wx * 0.8;
+        double cy = y - wy * 0.8 + 0.2;
+        double cz = z - wz * 0.8;
+        if (r > 0.06) {
+            MochiArt.blob(sink, cx, cy, cz, 1, 0, 0, 0, 1, 0, r * 1.2, r, r * 1.1, 0.9, 0.3, age, seed, MochiArt.MOCHI, 1.0);
+        }
+        splat(sink, cx, cy, cz, wx, wy + 0.3, wz, 1.3, age * 1.3, seed + 3);
+        if (age < 4.0) {
+            MochiArt.glow(sink, x, y, z, 0.6 + 0.6 * age / 4.0, 0xFFB347, 0.8 * (1.0 - age / 4.0));
+        }
+    }
+
+    /** 3.6.3: how long the throw's puff lasts (ticks). */
+    public static final double YAKI_PUFF = 8.0;
 
     // ------------------------------------------------------------------------------------------------------ the donut
 

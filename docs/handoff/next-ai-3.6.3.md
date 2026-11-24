@@ -303,3 +303,11 @@ left as they were.
   both arms flung up and out with the launch; arms only, lint clean, never over the face) and its first-person hand (HandMoves.LOTUS).
 - HudTests: the beats in the reference's order, the body on the ground for the punch, high for the air blows, down at the slam, the
   donut at the user's left. Preview: MochiShots |mlotus:age[:c] plays the whole combo (the body moved as the server does).
+- Grilled Mochi after its GIF (G): the swell (MochiDraw.swell, its ground for splats now passed): pressed, a huge white puff bursts
+  round the pointed arm (SWELL_BURST 10 ticks, bigger than the user, splattering), settling into a long thick arm of lumpy WHITE dough
+  (1.5 to 2.4 long, 0.38 to 0.58 thick by the hold) with the fist at its end: with Armament only the fist is black (the reference's
+  dough mass stays white; before, the whole mass went black), drips falling and splatting on the ground; the throw bursts in a white
+  puff (yakiPuff) as the fist flies on its fire jet; the explosion (boom, BOOM_LIFE 70): a white-hot flash, a small fireball, nested
+  rings turned to the eye (orange fire rings with yellow-white inner edges, dark scorched rings between, a white-hot outer edge: the
+  reference's tunnel of rings, the ground hiding the lower half), Magma's black-brown smoke puffs (FireMesh.SMOKE) off its rim, small
+  white droplets, embers, then a pale grey dome of smoke lingering while the fire dies; the burn 6 s (UoMoves.explode fire 6).

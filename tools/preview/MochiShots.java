@@ -155,8 +155,9 @@ public final class MochiShots {
                 double charge = com.hexhaki.piece.server.MochiMoves.yakiCharge(age < 0 ? com.hexhaki.piece.server.MochiMoves.YAKI_FULL + age : held);
                 user(sink, age < 0 ? "mochi_yaki_charge" : "mochi_yaki_fire", age < 0 ? com.hexhaki.piece.server.MochiMoves.YAKI_FULL + age : age, ex, ey, ez);
                 if (age < 0) {
-                    com.hexhaki.piece.mochi.MochiDraw.swell(sink, -0.36 - ex, 1.3 - ey, 0.2 - ez, 0, 0, 1, charge, age + 60, coat, 2);
+                    com.hexhaki.piece.mochi.MochiDraw.swell(sink, -0.36 - ex, 1.3 - ey, 0.2 - ez, 0, 0, 1, charge, age + 60, coat, 2, -ey);
                 } else if (age < 6) {
+                    com.hexhaki.piece.mochi.MochiDraw.yakiPuff(sink, -0.36 - ex, 1.3 - ey, 1.0 - ez, 0, 0, 1, age, 13);
                     com.hexhaki.piece.mochi.MochiDraw.yaki(sink, -0.36 - ex, 1.3 - ey, 1.0 + age * 2.2 - ez, 0, 0, 1, age, coat, 2, charge);
                 } else {
                     HieShots.body(sink, -ex, -ey, 14.0 - ez);

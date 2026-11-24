@@ -729,11 +729,16 @@ public final class MochiFx {
             if (!far(elbow, cam)) {
                 double age = now - s.born;
                 MochiDraw.swell(SINK, elbow.f_82479_ - cx, elbow.f_82480_ - cy, elbow.f_82481_ - cz, look.f_82479_, look.f_82480_, look.f_82481_,
-                    MochiMoves.yakiCharge(age), age, s.coat, e.getKey());
+                    MochiMoves.yakiCharge(age), age, s.coat, e.getKey(), user.m_20318_(partial).f_82480_ - cy);
             }
         }
         for (Fist f : FISTS.values()) {
             double age = now - f.born;
+            if (age < MochiDraw.YAKI_PUFF && !far(f.from, cam)) {
+                Vec3 u = unit(f.step);
+                MochiDraw.yakiPuff(SINK, f.from.f_82479_ - cx, f.from.f_82480_ - cy, f.from.f_82481_ - cz, u.f_82479_, u.f_82480_, u.f_82481_, age,
+                    f.seed + 11);
+            }
             Vec3 p = f.from.m_82549_(f.step.m_82490_(age));
             if (!far(p, cam)) {
                 Vec3 u = unit(f.step);
