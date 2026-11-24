@@ -796,6 +796,29 @@ public final class DragonTests {
                 t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 11);
             check(count[0], finite[0], "Buzz Cut Mochi's cinematic", t);
         }
+        // 3.6.4: the Awakening's pieces at their heaviest: its burst, a swing's whole trail (both looks), the spin's ink, every mark
+        double[] in = new double[3 * 32];
+        double[] out = new double[3 * 32];
+        for (int k = 0; k < 32; k++) {
+            double a = k * 0.1;
+            in[k * 3] = Math.cos(a) * 0.8;
+            in[k * 3 + 1] = -0.4;
+            in[k * 3 + 2] = Math.sin(a) * 0.8 + 1.0;
+            out[k * 3] = Math.cos(a) * 3.0;
+            out[k * 3 + 1] = -0.3;
+            out[k * 3 + 2] = Math.sin(a) * 3.0 + 1.0;
+        }
+        for (int age = 0; age <= 20; age++) {
+            count[0] = 0;
+            com.hexhaki.piece.mochi.MochiV2.awaken(sink, 0, feet, 0, age, 3);
+            com.hexhaki.piece.mochi.MochiV2.tridentTrail(sink, in, out, 32, false, 1.0);
+            com.hexhaki.piece.mochi.MochiV2.tridentTrail(sink, in, out, 32, true, 1.0);
+            com.hexhaki.piece.mochi.MochiV2.tridentSpin(sink, 0, feet, 0, 0.0, age, 4);
+            for (int k = 0; k < 5; k++) {
+                com.hexhaki.piece.mochi.MochiV2.tridentMark(sink, 0, -0.4, 2.6, k, feet, age, 5 + k);
+            }
+            check(count[0], finite[0], "Trident Lacerations", age);
+        }
         // 3.5.6 (the owner: "the arms are like squares. They're like basically rectangles that with the fist at the very edge"): the
         // arm's section at the shoulder is a square (its corners stand out from its middle as a square's do, a round tube's would not),
         // one flat face up, the same width all the way, and the fist is its very end

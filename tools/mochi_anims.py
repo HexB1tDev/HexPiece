@@ -184,6 +184,56 @@ def donuts():
                 ARMS)
 
 
+# ------------------------------------------------------------------------------------------------------ awakened LMB: Trident Lacerations
+
+# 3.6.4, on the reference's beats (docs/handoff/next-ai-3.6.3.md P; mochi/MochiV2.TRIDENT_*: each swing strikes on tick 3): Mogura held
+# out of the right fist's front as the game holds a tool (MochiV2.mogura), so the arm's yaw sweeps it level round and its pitch lifts
+# it: a thrust, a level slash from right to left, a full spin, a rising diagonal slash, a low sweep up that launches. The left arm out
+# for balance; no head, no leg; the arm's roll kept near 0 (a raised arm's roll swings it into the head).
+BALANCE = mirror(arm(-14, 0, 28, -18))
+
+
+def trident():
+    swings = [
+        # 1: the thrust: chambered back and turned right, driven out and in
+        [(0, "linear", REST),
+         (2, "insine", p(rightArm=arm(25, 10, 2, 0), leftArm=BALANCE, body={"yaw": -25, "bend": 2})),
+         (3, "outexpo", p(rightArm=arm(-12, -5, 2, 0), leftArm=BALANCE, body={"yaw": 15, "bend": 10})),
+         (6, "outsine", p(rightArm=arm(-8, -5, 2, 0), leftArm=BALANCE, body={"yaw": 12, "bend": 8})),
+         (10, "inoutsine", REST)],
+        # 2: the level slash, right to left through the one ahead
+        [(0, "linear", REST),
+         (1, "insine", p(rightArm=arm(-12, 85, 2, 0), leftArm=BALANCE, body={"yaw": -30, "bend": 2})),
+         (3, "outsine", p(rightArm=arm(-15, 0, 2, 0), leftArm=BALANCE, body={"yaw": 5, "bend": 6})),
+         (5, "outexpo", p(rightArm=arm(-12, -75, 2, 0), leftArm=BALANCE, body={"yaw": 40, "bend": 6})),
+         (10, "inoutsine", REST)],
+        # 3: the spin: the whole body turned once round, Mogura out to the right sweeping level all round (the turn's last part a
+        # jump from 300 to its equal -60 under a constant key, so the clip ends facing the way it began without turning back)
+        [(0, "linear", REST),
+         (1, "insine", p(rightArm=arm(-10, 60, 2, 0), leftArm=BALANCE, body={"yaw": 0, "bend": 4})),
+         (3, "linear", p(rightArm=arm(-10, 60, 2, 0), leftArm=BALANCE, body={"yaw": 150, "bend": 4})),
+         (5, "linear", p(rightArm=arm(-10, 60, 2, 0), leftArm=BALANCE, body={"yaw": 300, "bend": 4})),
+         (6, "constant", p(rightArm=arm(-10, 60, 2, 0), leftArm=BALANCE, body={"yaw": -60, "bend": 4})),
+         (7, "outsine", p(rightArm=arm(-10, 40, 2, 0), leftArm=BALANCE, body={"yaw": 0, "bend": 4})),
+         (10, "inoutsine", REST)],
+        # 4: the rising diagonal, low on the right up high to the left
+        [(0, "linear", REST),
+         (1, "insine", p(rightArm=arm(35, 60, 2, 0), leftArm=BALANCE, body={"yaw": -25, "bend": 6})),
+         (3, "outsine", p(rightArm=arm(-40, 0, 2, 0), leftArm=BALANCE, body={"yaw": 10, "bend": 2})),
+         (5, "outexpo", p(rightArm=arm(-100, -20, 2, 0), leftArm=BALANCE, body={"yaw": 30, "bend": -6})),
+         (10, "inoutsine", REST)],
+        # 5: the low sweep up that throws them into the sky
+        [(0, "linear", REST),
+         (1, "insine", p(rightArm=arm(45, 15, 2, 0), leftArm=BALANCE, body={"yaw": -15, "bend": 8})),
+         (3, "outsine", p(rightArm=arm(-45, 5, 2, 0), leftArm=BALANCE, body={"yaw": 5, "bend": 0})),
+         (5, "outexpo", p(rightArm=arm(-110, 0, 2, 0), leftArm=BALANCE, body={"yaw": 8, "bend": -8})),
+         (10, "inoutsine", REST)],
+    ]
+    names = ["the thrust", "the level slash", "the spin", "the rising diagonal", "the low sweep up that launches"]
+    for k, beats in enumerate(swings):
+        write_parts("mochi_trident_%d" % (k + 1), 10, beats, "Mochi Mochi: awakened, Trident Lacerations: Mogura's " + names[k] + ".", ARMS)
+
+
 def main():
     punch()
     lotus()
@@ -193,6 +243,7 @@ def main():
     yaki()
     awaken()
     donuts()
+    trident()
     names = sorted(n for n in WRITTEN if n.startswith("mochi_"))
     java_poses(names, "MochiPoses", "tools/mochi_anims.py", "the Mochi fruit's animations' keyframes")
     print(f"wrote {len(names)} Mochi animations and their poses")

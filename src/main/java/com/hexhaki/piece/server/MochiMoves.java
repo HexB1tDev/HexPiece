@@ -4,6 +4,7 @@ import com.hexhaki.fx.Impact;
 import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.mochi.MochiDraw;
 import com.hexhaki.piece.mochi.MochiSounds;
+import com.hexhaki.piece.mochi.MochiV2;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -149,6 +150,25 @@ public final class MochiMoves {
     static final float BUZZ_SLAM_HURT = 20.0F;
     public static final int BUZZ_COOLDOWN = 6000;
 
+    /**
+     * 3.6.4: the Awakening (M: the reference's DoughV2 kit) and its left click, Trident Lacerations (kind TRIDENT, bx the swing 0 to 4
+     * as it begins: x, y, z where it aims, a the flat way; bx 10 + the swing where it struck: x, y, z the one struck, by the ground's
+     * height there). The swings follow one another while clicked within {@link #TRIDENT_RESET} ticks; the 5th breaks a raised shield
+     * and throws the one struck straight up.
+     */
+    public static final int TRIDENT = 281;
+    public static final int TRIDENT_STRUCK = 10;
+    static final int TRIDENT_EVERY = 9;
+    static final int TRIDENT_RESET = 30;
+    public static final double TRIDENT_REACH = 4.4;
+    static final double TRIDENT_ARC = 70.0;
+    static final float TRIDENT_HURT = 5.0F;
+    static final float TRIDENT_LAST_HURT = 7.0F;
+    static final double TRIDENT_LAUNCH = 1.45;
+    /** How often an awakened user's state is sent again (for whoever comes near later), the Awakening's cooldown after it comes on. */
+    public static final int AWAKE_RESEND = 40;
+    static final int AWAKEN_COOL = 40;
+
     static final class State {
         long punchNext;
         int punches;
@@ -158,6 +178,11 @@ public final class MochiMoves {
         int anemoneVolleys;
         Vec3 anemoneAt;
         long busyUntil;
+        /** 3.6.4: the Awakening on; the last trident swing (0 to 4) and when; when the next may come. */
+        boolean awakened;
+        int trident = -1;
+        long tridentLast;
+        long tridentNext;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -234,6 +259,95 @@ public final class MochiMoves {
         return body != null ? StyleCombat.middle(body) : ItoMoves.looked(player, range);
     }
 
+    // ------------------------------------------------------------------------------------------------------ 3.6.4: the Awakening
+
+    /**
+     * M: the Awakening on or off (the owner: "Dough base + V2 awakened"): while it is on the keys are the reference's DoughV2 kit
+     * (MochiKit.AWAKENED) and the left click swings Mogura. A burst of dough and magenta Haki round the user as it comes on.
+     */
+    static void awaken(ServerPlayer player, State s, long now) {
+        if (!s.awakened && !ItoMoves.ready(player, MochiKit.AWAKEN)) {
+            return;
+        }
+        s.awakened = !s.awakened;
+        s.trident = -1;
+        if (s.awakened) {
+            ItoMoves.cool(player, MochiKit.AWAKEN, AWAKEN_COOL);
+            animate(player, "mochi_awaken");
+            s.busyUntil = now + 8;
+        }
+        fx(player, AWAKEN, ++seeds, player.m_20182_(), Vec3.f_82478_, s.awakened ? 1 : 0, 0, 0, 0);
+        sound(player, player.m_20182_(), MochiSounds.SQUISH, 1.3F, s.awakened ? 0.75F : 1.1F);
+    }
+
+    /** A key (Z to N) while awakened: the DoughV2 move in its place. */
+    static void pressAwake(ServerPlayer player, State s, int slot, long now) {
+        // the awakened moves are built one by one (3.6.4); a key with none yet does nothing
+    }
+
+    /**
+     * LMB awakened: Trident Lacerations (mochi/MochiV2, the reference's frames 15 to 78): the next of five swings of Mogura (a thrust, a
+     * level slash, a spin all round, a rising diagonal, a low sweep up), each striking on MochiV2.TRIDENT_HIT whoever is in front
+     * within {@link #TRIDENT_REACH} (the spin: all round); the 5th breaks a raised shield and throws them straight up.
+     */
+    static void tridentSwing(ServerPlayer player, State s, long now) {
+        if (now < s.tridentNext || now < s.busyUntil || s.yakiSince >= 0 || s.anemoneSince >= 0 || player.m_20159_()) {
+            return;
+        }
+        int k = s.trident < 0 || now - s.tridentLast > TRIDENT_RESET ? 0 : (s.trident + 1) % MochiV2.TRIDENT_SWINGS;
+        s.trident = k;
+        s.tridentLast = now;
+        s.tridentNext = now + (k == MochiV2.TRIDENT_SWINGS - 1 ? TRIDENT_EVERY + 6 : TRIDENT_EVERY);
+        animate(player, "mochi_trident_" + (k + 1));
+        Vec3 f = ItoMoves.flat(player);
+        LivingEntity aimed = PikaMoves.aimed(player, TRIDENT_REACH, 0.6);
+        Vec3 at = aimed != null ? StyleCombat.middle(aimed) : ItoMoves.chest(player).m_82549_(f.m_82490_(2.6));
+        fx(player, TRIDENT, ++seeds, at, f, k, 0, TRIDENT_REACH, 0);
+        sound(player, ItoMoves.chest(player), k >= 3 ? com.hexhaki.piece.sword.SwordSounds.SWING_HEAVY : com.hexhaki.piece.sword.SwordSounds.SWING,
+            0.9F, 1.05F - k * 0.04F);
+        later(player, MochiV2.TRIDENT_HIT, () -> tridentHit(player, k));
+    }
+
+    /** A trident swing's blow: whoever is within reach in front (the spin: all round) is struck. */
+    static void tridentHit(ServerPlayer player, int k) {
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        Vec3 chest = ItoMoves.chest(player);
+        Vec3 f = ItoMoves.flat(player);
+        boolean last = k == MochiV2.TRIDENT_SWINGS - 1;
+        int struck = 0;
+        for (LivingEntity body : PikaMoves.foes(player, chest, TRIDENT_REACH + 1.0)) {
+            Vec3 d = StyleCombat.middle(body).m_82546_(chest);
+            double flat = Math.hypot(d.f_82479_, d.f_82481_);
+            if (flat > TRIDENT_REACH || Math.abs(d.f_82480_) > 2.5) {
+                continue;
+            }
+            if (k != 2 && flat > 0.6 && (d.f_82479_ * f.f_82479_ + d.f_82481_ * f.f_82481_) / flat < Math.cos(Math.toRadians(TRIDENT_ARC))) {
+                continue;
+            }
+            float damage = last ? TRIDENT_LAST_HURT : TRIDENT_HURT;
+            if (last && body instanceof net.minecraft.world.entity.player.Player guard && guard.m_21254_()) {
+                guard.m_36384_(true); // "the last hit bypassing": the raised shield broken through
+            }
+            if (MaguMoves.hurt(player, body, coated(player) ? damage * 1.25F : damage)) {
+                Vec3 away = flat > 1.0E-6 ? new Vec3(d.f_82479_ / flat, 0, d.f_82481_ / flat) : f;
+                StyleCombat.push(body, last ? new Vec3(away.f_82479_ * 0.1, TRIDENT_LAUNCH, away.f_82481_ * 0.1)
+                    : body.m_20184_().m_82490_(0.3).m_82549_(away.m_82490_(0.25)).m_82520_(0, 0.08, 0));
+            }
+            Vec3 at = StyleCombat.middle(body);
+            fx(player, TRIDENT, ++seeds, at, f, TRIDENT_STRUCK + k, body.m_20186_(), 0, 0);
+            ItoMoves.lightning(player, at);
+            if (++struck >= 6) {
+                break;
+            }
+        }
+        if (struck > 0) {
+            sounds(player, chest.m_82549_(f.m_82490_(2.0)), last ? MochiSounds.SLAM : MochiSounds.PUNCH, last ? 1.0F : 0.8F, last ? 1.3F : 1.1F, 1, 2);
+            if (last) {
+                Impact.quake(level, chest, 6.0, 0.3F, 5);
+            }
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ the keys
 
     static void press(ServerPlayer player, int slot) {
@@ -243,7 +357,9 @@ public final class MochiMoves {
             return;
         }
         if (slot == M_SLOT) {
-            player.m_5661_(net.minecraft.network.chat.Component.m_237113_("The Mochi Awakening's own moves come in the next version"), true);
+            awaken(player, s, now);
+        } else if (s.awakened) {
+            pressAwake(player, s, slot, now);
         } else if (slot == N_SLOT) {
             buzzCut(player, s, now);
         } else if (slot == MochiKit.GRILLED.slot()) {
@@ -275,6 +391,10 @@ public final class MochiMoves {
     static void punch(ServerPlayer player) {
         State s = state(player);
         long now = now(player);
+        if (s.awakened) {
+            tridentSwing(player, s, now);
+            return;
+        }
         if (busy(s, now) || now < s.punchNext || player.m_20159_()) {
             return;
         }
@@ -993,6 +1113,9 @@ public final class MochiMoves {
             return;
         }
         long now = now(player);
+        if (s.awakened && now % AWAKE_RESEND == 0) {
+            fx(player, AWAKEN, 0, player.m_20182_(), Vec3.f_82478_, 1, 1, 0, 0);
+        }
         if (s.yakiSince >= 0 && now - s.yakiSince >= YAKI_MOST) {
             yakiFire(player, s); // held its longest: it goes by itself
         }
@@ -1012,6 +1135,9 @@ public final class MochiMoves {
         }
         if (s.anemoneSince >= 0) {
             anemoneEnd(player, s);
+        }
+        if (s.awakened) {
+            fx(player, AWAKEN, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
         }
         STATES.remove(player.m_20148_());
     }

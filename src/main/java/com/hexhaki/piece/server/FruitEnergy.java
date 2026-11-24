@@ -51,6 +51,8 @@ public final class FruitEnergy {
             {"ito_knight", "40"}, {"ito_cage", "60"}, {"ito_awaken", "50"},
             {"mochi_yaki", "30"}, {"mochi_muddle", "25"}, {"mochi_lotus", "30"}, {"mochi_chestnut", "30"}, {"mochi_anemone", "35"},
             {"mochi_buzzcut", "50"}, {"mochi_awaken", "50"},
+            {"mochi_lance", "30"}, {"mochi_lasso", "20"}, {"mochi_oblivion", "35"}, {"mochi_power", "40"}, {"mochi_storm", "40"},
+            {"mochi_scorch", "50"},
             {"pika_laser", "20"}, {"pika_yata", "15"}, {"pika_yasakani", "30"}, {"pika_lunge", "20"}, {"pika_light_kick", "30"},
             {"pika_clones", "35"},
             {"uo_air", "15"}, {"uo_breath", "30"}, {"uo_wind", "25"}, {"uo_embers", "20"}, {"uo_flame", "15"}, {"uo_blast", "40"},

@@ -443,6 +443,21 @@ Next, in order:
     (ImpactFrame: the negative, then the black frame with rays) rendered over the slam shot looked wrong; the owner wants THEIR impact
     frame, the one from 3.5.8 (clash/ImpactSprite, tools/impact_texture.py), on Buzz Cut's blow and slam.)
 
+13. The owner (after 3.6.3's previews, with our slam render marked: a green line from the hand curving DOWN under the straight way to
+    the ball, where our white arm arched UP over it): "fair warning buzzcut mochi is spinning with the air motion wrong (the end of the
+    arm is heavier so the arm so  the heavy end should always be after the mochi elastic part". So: the elastic band leads the motion
+    and the heavy ball trails after it (the band bows toward where it is going, never back against it), and at rest it sags under the
+    ball's weight; in the slam the band bows down under the straight way.
+
+14. The owner (with a sketch: three donuts round the victim in the air, top, right and lower left; an arrow up from the ground (the
+    launch); the right donut's arm reaching across to the lower-left donut, the top donut's arm reaching down-left to it too, and the top
+    donut's arm straight down at the end, fists as triangles at the arms' ends): "Lotus mochi is NOT approved either, the idea is there
+    but its not like the gif, the image I sent is an example, the entity is basically stopped in mid air when in reality they're meant to
+    be pushed in ragdoll from side to side depending where he was punched from basically from donut to donut carrying basically being
+    glued with each punch to the next, fast." So: in the air the one hit is never held still: each donut's fist strikes them and carries
+    them, stuck to it, fast across to the next donut, whose fist strikes them on from the side it stands on, tumbling like a ragdoll;
+    at the end the top donut's fist drives them straight down. (Also "either": Buzz Cut Mochi is not approved yet: N 13.)
+
 ## O. The fourth Mochi chat: Buzz Cut judged and finished, the old Mochi art removed, 3.6.3 released
 
 Build #233 (the last push of the chat before) was green. Done, rendered and judged against the Buzzcut GIF, the owner's show clip
@@ -549,3 +564,18 @@ dough cream-ivory in Oblivion, white elsewhere.
   it; f132 to 150 the arm straight up like a pole, the target high on it with a ring of fire at its end; f156 to 162 two pale grey
   impact frames; f168 the slam: a black crater, red lightning, rubble; f174 pink-purple rings orbiting a fiery ball at the impact;
   f180 to 186 a huge block of the ground flung up past the camera; f192 to 216 the dust settling.
+
+## Q. In progress (the fourth Mochi chat, after 3.6.3): the owner's two notes first, then the awakened kit
+
+- N 13 done (unversioned): MochiDraw.buzzBend bows the band toward where the arm is going (the ball trailing after it), sagging under
+  the ball's weight (BUZZ_SAG), kept over the ground; HudTests checks it. Rendered: the band hangs under the straight way in the slam.
+- N 14 (Lotus Mochi Combo's air phase as the owner drew it): to rebuild next (the donut-to-donut ragdoll chain).
+- The Awakening (3.6.4 work, committed unversioned): M toggles it (MochiMoves.awaken; AWAKEN messages, resent every AWAKE_RESEND ticks
+  so late comers know; MochiFx.AWAKE); its kit MochiKit.AWAKENED (all seven named, FruitEnergy costs); the left click is Trident
+  Lacerations, built: five swings (clips mochi_trident_1..5 in tools/mochi_anims.py, lint clean; HandMoves), Mogura held on the
+  player's real right arm while awakened (client/mochi/MochiClient.renderBody and firstPerson, KatanaRenderer.steelBox boxes, the
+  shaft out of the fist's front: MochiV2.GRIP_*), each swing's trail from the very clip (MochiV2.mogura + StylePoser: magenta
+  crescents, black ink for the spin and the rising slash), the spin's ink spiral on the ground, magenta jagged bursts and white star
+  sparks where it strikes, the 5th breaks a raised shield and throws them up (white ring, speed streaks). Art in mochi/MochiV2.java;
+  preview MochiShots |mtrident:k:age. Z to N while awakened do nothing yet (MochiMoves.pressAwake): Grilled Lance, Elastic Lasso,
+  Oblivion, Power Mochi, Blazing Storm and Scorching Buzz Cut are still to build (section P has their GIFs read).

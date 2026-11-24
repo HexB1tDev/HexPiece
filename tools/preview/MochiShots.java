@@ -136,6 +136,45 @@ public final class MochiShots {
                 com.hexhaki.piece.mochi.MochiDraw.anemoneArea(sink, -ex, -ey, 8.0 - ez, com.hexhaki.piece.server.MochiMoves.ANEMONE_RADIUS, 1.0, strikes, n,
                     coat, ended >= 0 ? 60 + ended : age, 9, ended);
             }
+            case "mtrident" -> {
+                // 3.6.4 |mtrident:k:age: the awakened left click's swing k (0 to 4) age ticks in, the user at the origin facing +z, a body 2.6
+                // ahead: the posed user, Mogura in their right hand (as client/mochi/MochiClient holds it), the swing's trail, its marks
+                int k = (int) Double.parseDouble(move[1]);
+                double t = move.length > 2 ? Double.parseDouble(move[2]) : 3;
+                String clip = "mochi_trident_" + (k + 1);
+                float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample(clip, (float) Math.min(t, com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING));
+                user(sink, clip, Math.min(t, com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING), ex, ey, ez);
+                double by = k == 4 && t > com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT ? Math.min(9.0, 1.7 * (t - com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT)) : 0.0;
+                HieShots.body(sink, -ex, by - ey, 2.6 - ez);
+                double[] a = com.hexhaki.piece.mochi.MochiV2.mogura(pose, -com.hexhaki.piece.mochi.MochiV2.BACK, 0, new double[3]);
+                double[] h = com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.CROSS, 0, new double[3]);
+                double[] sd = com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.CROSS, 4, new double[3]);
+                double sl = Math.sqrt((sd[0] - h[0]) * (sd[0] - h[0]) + (sd[1] - h[1]) * (sd[1] - h[1]) + (sd[2] - h[2]) * (sd[2] - h[2]));
+                com.hexhaki.piece.mochi.MochiDraw.trident(sink, a[0] - ex, a[1] - ey, a[2] - ez, h[0] - ex, h[1] - ey, h[2] - ez, (sd[0] - h[0]) / sl,
+                    (sd[1] - h[1]) / sl, (sd[2] - h[2]) / sl);
+                double[] w = com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWEEP[k];
+                int n = 0;
+                double[] in = new double[3 * 32];
+                double[] out = new double[3 * 32];
+                for (double u = w[0]; u <= Math.min(t, w[1]) + 1.0E-6 && n < 32; u += 0.4) {
+                    float[][] q = com.hexhaki.piece.client.npc.StylePoser.sample(clip, (float) u);
+                    double[] i0 = com.hexhaki.piece.mochi.MochiV2.mogura(q, com.hexhaki.piece.mochi.MochiV2.CROSS * 0.3, 0, new double[3]);
+                    double[] o0 = com.hexhaki.piece.mochi.MochiV2.mogura(q, com.hexhaki.piece.mochi.MochiV2.TIP, 0, new double[3]);
+                    in[n * 3] = i0[0] - ex;
+                    in[n * 3 + 1] = i0[1] - ey;
+                    in[n * 3 + 2] = i0[2] - ez;
+                    out[n * 3] = o0[0] - ex;
+                    out[n * 3 + 1] = o0[1] - ey;
+                    out[n * 3 + 2] = o0[2] - ez;
+                    n++;
+                }
+                double fade = 1.0 - Math.max(0.0, Math.min(1.0, (t - w[1]) / (com.hexhaki.piece.mochi.MochiV2.TRIDENT_LIFE - w[1])));
+                com.hexhaki.piece.mochi.MochiV2.tridentTrail(sink, in, out, n, k == 2 || k == 3, fade);
+                if (k == 2) {
+                    com.hexhaki.piece.mochi.MochiV2.tridentSpin(sink, -ex, 0.02 - ey, -ez, 0.0, t, 5);
+                }
+                com.hexhaki.piece.mochi.MochiV2.tridentMark(sink, -ex, by + 1.1 - ey, 2.6 - ez, k, -ey, t - com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT, 9);
+            }
             case "mpunch" -> {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);

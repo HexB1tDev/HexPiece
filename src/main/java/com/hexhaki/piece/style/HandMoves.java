@@ -186,6 +186,11 @@ public final class HandMoves {
             case "mochi_yaki_charge" -> new Move(DEEP, 1.2);
             case "mochi_awaken" -> new Move(DOWN, 0);
             case "mochi_donuts" -> new Move(POINT, 0.4);
+            // 3.6.4: the awakened left click, Mogura's five swings (client/mochi/MochiClient holds Mogura on this hand)
+            case "mochi_trident_1" -> new Move(THRUST, 0);
+            case "mochi_trident_2", "mochi_trident_3" -> new Move(SWEEP, 0);
+            case "mochi_trident_4" -> new Move(SWEEP_BACK, 0);
+            case "mochi_trident_5" -> new Move(UP, 0);
             default -> null;
         };
     }

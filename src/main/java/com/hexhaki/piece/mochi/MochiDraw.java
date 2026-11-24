@@ -1604,29 +1604,48 @@ public final class MochiDraw {
     }
 
     /**
-     * How the mace's elastic band bows {@code t} ticks after the catch (it lags behind its swing, the more the faster and longer it is):
-     * into out (the way it bows x, y, z (unit), how far in blocks).
+     * How the mace's elastic band bows {@code t} ticks after the catch: into out (the way it bows x, y, z (unit), how far in blocks).
+     * 3.6.4 (the owner: "the end of the arm is heavier so ... the heavy end should always be after the mochi elastic part"): the band
+     * leads the motion and the heavy ball trails after it, so it bows toward where the arm is going (the faster and longer, the more),
+     * and it always sags a little under the ball's weight; never back against its swing (3.6.3 bowed it backward: an arch over the
+     * slam where the owner drew it hanging under).
      */
     public static double[] buzzBend(double t, double yaw0, double[] out) {
         double[] now = buzzArm(t, 0, 0, 0, yaw0, BEND_NOW);
         double[] before = buzzArm(Math.max(0.0, t - 1.5), 0, 0, 0, yaw0, BEND_BEFORE);
-        double x = before[3] - now[3];
-        double y = before[4] - now[4];
-        double z = before[5] - now[5];
-        double l = Math.sqrt(x * x + y * y + z * z);
+        double mx = now[3] - before[3];
+        double my = now[4] - before[4];
+        double mz = now[5] - before[5];
+        double ml = Math.sqrt(mx * mx + my * my + mz * mz);
+        double lead = Math.min(3.0, ml * now[6] * 0.9);
+        double sag = BUZZ_SAG * now[6];
+        double vx = (ml > 1.0E-6 ? mx / ml * lead : 0.0);
+        double vy = (ml > 1.0E-6 ? my / ml * lead : 0.0) - sag;
+        double vz = (ml > 1.0E-6 ? mz / ml * lead : 0.0);
+        // only across the arm (along it, a bow would only slide its points)
+        double d = vx * now[3] + vy * now[4] + vz * now[5];
+        vx -= d * now[3];
+        vy -= d * now[4];
+        vz -= d * now[5];
+        double l = Math.sqrt(vx * vx + vy * vy + vz * vz);
         if (l < 1.0E-6) {
             out[0] = 0;
             out[1] = -1;
             out[2] = 0;
-            out[3] = 0.04 * now[6];
+            out[3] = 0.0;
             return out;
         }
-        out[0] = x / l;
-        out[1] = y / l;
-        out[2] = z / l;
-        out[3] = Math.min(3.0, l * now[6] * 0.9) + 0.04 * now[6];
+        out[0] = vx / l;
+        out[1] = vy / l;
+        out[2] = vz / l;
+        // its middle kept over the ground (the shoulder 1.4 over the feet: buzzArm)
+        double middle = 1.4 + now[4] * now[6] * 0.5 - 0.35;
+        out[3] = out[1] < -1.0E-6 ? Math.min(l, Math.max(0.0, middle) / -out[1]) : l;
         return out;
     }
+
+    /** 3.6.4: how far the band sags under the ball's weight, a share of its length. */
+    public static final double BUZZ_SAG = 0.07;
 
     /**
      * 3.6.3: Buzz Cut Mochi's cutscene camera {@code t} ticks after the catch, for a user who caught at (fx, fy, fz) facing {@code yaw0}

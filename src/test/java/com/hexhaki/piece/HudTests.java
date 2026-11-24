@@ -1045,6 +1045,32 @@ public final class HudTests {
         double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
         Check.that(d[0] > 2.0 && d[2] > 0.0, "Lotus: the donut stands at the user's left, a little ahead (facing +z, the left is +x)");
         buzzCut();
+        // 3.6.4 (the owner: "Dough base + V2 awakened"): M turns the Awakening on; its kit, the reference's DoughV2, in the same keys
+        java.util.List<com.hexhaki.fruit.FruitMove> awake = com.hexhaki.piece.server.MochiKit.AWAKENED;
+        String[] awakeNames = {"Trident Lacerations", "Grilled Lance", "Elastic Lasso", "Oblivion", "Power Mochi", "Blazing Storm",
+            "Scorching Buzz Cut", "Awakening"};
+        Check.that(awake.size() == keys.length, "the awakened Mochi keys: eight");
+        for (int i = 0; i < keys.length; i++) {
+            Check.that(awake.get(i).key().startsWith(keys[i]) && awake.get(i).name().equals(awakeNames[i]), "the awakened Mochi keys: " + keys[i]
+                + " is " + awakeNames[i] + " (" + awake.get(i).name() + ")");
+            Check.that(awake.get(i).slot() == base.get(i).slot(), "the awakened move takes its base move's key: " + keys[i]);
+        }
+        for (com.hexhaki.fruit.FruitMove move : com.hexhaki.piece.server.MochiKit.ALL) {
+            Check.that(move.cooldown() == null || com.hexhaki.piece.server.FruitEnergy.cost(move) > 0, "every Mochi move costs energy: " + move.name());
+        }
+        // Trident Lacerations: five swings, each striking inside its clip's sweep; Mogura held out of the fist's front, its tip far past
+        // the hand
+        Check.that(com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWINGS == 5 && com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWEEP.length == 5,
+            "Trident Lacerations: five swings (the reference)");
+        for (double[] w : com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWEEP) {
+            Check.that(w[0] <= com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT && com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT <= w[1]
+                && w[1] <= com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING, "Trident Lacerations: each blow inside its swing's sweep");
+        }
+        float[][] rest = new float[6][8];
+        double[] fist = com.hexhaki.piece.mochi.MochiV2.mogura(rest, 0, 0, new double[3]);
+        double[] tip = com.hexhaki.piece.mochi.MochiV2.mogura(rest, com.hexhaki.piece.mochi.MochiV2.TIP, 0, new double[3]);
+        Check.that(tip[2] - fist[2] > 2.5 && Math.abs(tip[1] - fist[1]) < 0.5 && fist[1] > 0.5,
+            "Mogura at rest: held at the hand, pointing ahead, its tip about three blocks out (" + (tip[2] - fist[2]) + ")");
     }
 
     /**
@@ -1080,6 +1106,21 @@ public final class HudTests {
         double[] under = com.hexhaki.piece.mochi.MochiDraw.buzzStuck(com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 0, 0, 0, 0, 0.0, new double[3]);
         Check.that(bz > 12.0 && Math.hypot(under[0] - bx, under[2] - bz) < 0.5 && under[1] == 0.0,
             "Buzz Cut: slammed far ahead, the one caught on the ground under the ball (the owner: \"underneath the forearm\")");
+        // 3.6.4 (the owner: "the heavy end should always be after the mochi elastic part"): the band bows toward where the arm is going
+        // (the heavy ball trailing), never back against it; it hangs under the straight way in the slam and stays over the ground
+        double[] bend = new double[4];
+        double[] was = new double[8];
+        for (double t = com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT + 2; t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM; t += 1.0) {
+            com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, 0, 0, 0.0, arm);
+            com.hexhaki.piece.mochi.MochiDraw.buzzArm(t - 1.5, 0, 0, 0, 0.0, was);
+            com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, bend);
+            double moving = (arm[3] - was[3]) * bend[0] + (arm[4] - was[4]) * bend[1] + (arm[5] - was[5]) * bend[2];
+            Check.that(moving >= -1.0E-9, "Buzz Cut: the band bows the way the arm goes, the ball trailing, at " + t);
+            double middle = arm[1] + arm[4] * arm[6] * 0.5 + bend[1] * bend[3];
+            Check.that(middle > 0.2, "Buzz Cut: the band's middle over the ground, at " + t + " (" + middle + ")");
+        }
+        com.hexhaki.piece.mochi.MochiDraw.buzzBend(com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM + 2, 0.0, bend);
+        Check.that(bend[1] < -0.5 && bend[3] > 0.3, "Buzz Cut: after the slam the band hangs under the straight way to the ball");
         // the cutscene camera, through the whole cinematic, never inside the rubble field round the crater (radius 9.5)
         double[] cam = new double[6];
         for (double t = 0; t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_END; t += 0.5) {

@@ -93,6 +93,16 @@ public final class MochiFx {
         }
     }
 
+    /** 3.6.4: the Awakening coming on (where), a trident swing (by whom, which, its feet then), a trident's blow (where, which, the ground). */
+    record AwakeBurst(Vec3 at, long born, int seed) {
+    }
+
+    record Swing(int user, int k, Vec3 feet, long born, int seed) {
+    }
+
+    record Struck(Vec3 at, int k, double ground, long born, int seed) {
+    }
+
     /** 3.6.3: Buzz Cut Mochi's blow (the ball where it struck) and its slam's ground. */
     record BuzzMark(Vec3 at, long born, int seed, boolean ground) {
     }
@@ -200,6 +210,11 @@ public final class MochiFx {
     private static final List<Spike> SPIKES = new ArrayList<>();
     static final Map<Integer, Area> AREAS = new HashMap<>();
     private static final List<Strike> STRIKES = new ArrayList<>();
+    /** 3.6.4: who is awakened (by entity id: the clock when last told; the server says it again every MochiMoves.AWAKE_RESEND ticks). */
+    static final Map<Integer, Long> AWAKE = new HashMap<>();
+    private static final List<AwakeBurst> BURSTS = new ArrayList<>();
+    private static final List<Swing> SWINGS = new ArrayList<>();
+    private static final List<Struck> STRUCK = new ArrayList<>();
     /** How long the Anemone's rings and the Awakening's ground take to shrink away once ended. */
     /** 3.6.3: how long a donut takes to form and to go (ticks). */
     static final double FORM = 6.0;
@@ -222,7 +237,8 @@ public final class MochiFx {
 
     /** client/mochi/MochiClient: whether {@code user}'s Awakening is on (the panel shows the awakened moves). */
     static boolean awakened(int user) {
-        return false; // 3.6.3: the awakened set (the reference's DoughV2) comes in the next version
+        Long last = AWAKE.isEmpty() ? null : AWAKE.get(user);
+        return last != null && clock - last <= 2 * MochiMoves.AWAKE_RESEND + 10;
     }
 
     public static void accept(S2CUoFx m) {
@@ -283,6 +299,28 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.ANEMONE_PUNCH -> add(STRIKES, new Strike(m.user(), m.id(), at, clock));
+            case MochiMoves.AWAKEN -> {
+                if (phase == 1) {
+                    if (!awakened(m.user()) && m.by() < 0.5F) {
+                        add(BURSTS, new AwakeBurst(at, clock, m.id()));
+                    }
+                    AWAKE.put(m.user(), clock);
+                } else {
+                    AWAKE.remove(m.user());
+                }
+            }
+            case MochiMoves.TRIDENT -> {
+                if (phase >= MochiMoves.TRIDENT_STRUCK) {
+                    add(STRUCK, new Struck(at, phase - MochiMoves.TRIDENT_STRUCK, m.by(), clock, m.id()));
+                } else {
+                    ClientLevel world = Minecraft.m_91087_().f_91073_;
+                    Entity user = world == null ? null : world.m_6815_(m.user());
+                    if (user != null) {
+                        AWAKE.put(m.user(), clock);
+                        add(SWINGS, new Swing(m.user(), phase, user.m_20182_(), clock, m.id()));
+                    }
+                }
+            }
             default -> {
             }
         }
@@ -694,13 +732,17 @@ public final class MochiFx {
         AREAS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > MochiDraw.ANEMONE_LINGER + 1
             || clock > e.getValue().until + MochiDraw.ANEMONE_LINGER + 4);
         STRIKES.removeIf(s -> clock - s.born > MochiDraw.ANEMONE_PUNCH + 1);
+        BURSTS.removeIf(b -> clock - b.born > com.hexhaki.piece.mochi.MochiV2.AWAKEN_LIFE + 1);
+        SWINGS.removeIf(w -> clock - w.born > com.hexhaki.piece.mochi.MochiV2.TRIDENT_LIFE + 1);
+        STRUCK.removeIf(w -> clock - w.born > com.hexhaki.piece.mochi.MochiV2.TRIDENT_LIFE + 1);
     }
 
     static boolean empty() {
         return PUNCHES.isEmpty() && SPLATS.isEmpty() && BOOMS.isEmpty() && SWELLS.isEmpty() && FISTS.isEmpty() && WHEELS.isEmpty()
             && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty() && AIRS.isEmpty()
             && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
-            && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null;
+            && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null && BURSTS.isEmpty()
+            && SWINGS.isEmpty() && STRUCK.isEmpty();
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -810,6 +852,63 @@ public final class MochiFx {
     }
 
     private static final double[] STRIKE = new double[MOST * 5];
+
+    /** 3.6.4: a swing's trail's points (the render thread only). */
+    private static final double[] TRAIL_IN = new double[3 * 32];
+    private static final double[] TRAIL_OUT = new double[3 * 32];
+    private static final double[] TRAIL_P = new double[3];
+    private static final double[] TRAIL_W = new double[3];
+
+    /**
+     * 3.6.4: the Awakening's pieces: its burst as it comes on; each trident swing's trail (Mogura's shaft swept through, from the
+     * very clip the user plays: client/npc/StylePoser and MochiV2.mogura, as client/mochi/MochiClient holds Mogura on the arm), the
+     * spin's ink on the ground, the blows' marks.
+     */
+    static void drawAwake(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial, double now, double cx, double cy, double cz) {
+        for (AwakeBurst b : BURSTS) {
+            if (!far(b.at, cam)) {
+                com.hexhaki.piece.mochi.MochiV2.awaken(SINK, b.at.f_82479_ - cx, b.at.f_82480_ - cy, b.at.f_82481_ - cz, now - b.born, b.seed);
+            }
+        }
+        for (Swing w : SWINGS) {
+            Entity user = level.m_6815_(w.user);
+            double age = now - w.born;
+            if (w.k == 2) {
+                com.hexhaki.piece.mochi.MochiV2.tridentSpin(SINK, w.feet.f_82479_ - cx, w.feet.f_82480_ + 0.02 - cy, w.feet.f_82481_ - cz,
+                    user == null ? 0.0 : Math.toRadians(user.m_146908_() + 90.0), age, w.seed);
+            }
+            if (user == null || far(user.m_20182_(), cam) || ownView(minecraft, user)) {
+                continue;
+            }
+            Vec3 feet = user.m_20318_(partial);
+            com.hexhaki.piece.style.StyleShow.Place place = new com.hexhaki.piece.style.StyleShow.Place(feet.f_82479_ - cx, feet.f_82480_ - cy,
+                feet.f_82481_ - cz, yaw(user, partial));
+            double[] sweep = com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWEEP[w.k];
+            String clip = "mochi_trident_" + (w.k + 1);
+            int n = 0;
+            for (double u = sweep[0]; u <= Math.min(age, sweep[1]) + 1.0E-6 && n < 32; u += 0.4) {
+                float[][] pose = com.hexhaki.piece.client.npc.StylePoser.sample(clip, (float) u);
+                if (pose == null) {
+                    break;
+                }
+                com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.CROSS * 0.3, 0, TRAIL_P);
+                place.put(TRAIL_P, TRAIL_W);
+                System.arraycopy(TRAIL_W, 0, TRAIL_IN, n * 3, 3);
+                com.hexhaki.piece.mochi.MochiV2.mogura(pose, com.hexhaki.piece.mochi.MochiV2.TIP, 0, TRAIL_P);
+                place.put(TRAIL_P, TRAIL_W);
+                System.arraycopy(TRAIL_W, 0, TRAIL_OUT, n * 3, 3);
+                n++;
+            }
+            double fade = 1.0 - Math.max(0.0, Math.min(1.0, (age - sweep[1]) / (com.hexhaki.piece.mochi.MochiV2.TRIDENT_LIFE - sweep[1])));
+            com.hexhaki.piece.mochi.MochiV2.tridentTrail(SINK, TRAIL_IN, TRAIL_OUT, n, w.k == 2 || w.k == 3, fade);
+        }
+        for (Struck k : STRUCK) {
+            if (!far(k.at, cam)) {
+                com.hexhaki.piece.mochi.MochiV2.tridentMark(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, k.k, k.ground - cy,
+                    now - k.born, k.seed);
+            }
+        }
+    }
 
     /** The torn ground's points made camera-relative (the render thread only: no allocation a frame). */
     private static final double[] BUZZ_PATH = new double[3 * MochiDraw.BUZZ_PATH_MOST];
@@ -954,6 +1053,7 @@ public final class MochiFx {
         double cy = cam.f_82480_;
         double cz = cam.f_82481_;
         double now = clock + partial;
+        drawAwake(minecraft, level, cam, partial, now, cx, cy, cz);
         for (Muddle u : MUDDLES) {
             if (far(u.at, cam) && far(u.at.m_82549_(u.way.m_82490_(u.length)), cam)) {
                 continue;
@@ -1097,6 +1197,10 @@ public final class MochiFx {
         SPIKES.clear();
         AREAS.clear();
         STRIKES.clear();
+        AWAKE.clear();
+        BURSTS.clear();
+        SWINGS.clear();
+        STRUCK.clear();
         carry = null;
     }
 
