@@ -1002,35 +1002,31 @@ public final class HudTests {
     static void mochi() {
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.MOCHI) == com.hexhaki.piece.FruitRanks.Rank.LEGENDARY,
             "ranks: the Mochi fruit Legendary (the owner: \"Legendary fruit\")");
+        // 3.6.3 (the owner: "I WANT THE OTHER MOVES, all of them, I want yours gone"; "Dough base + V2 awakened", keep the left-click
+        // punches): the reference's six on Z X C V B N, the punches on LMB, the Awakening on M
         java.util.List<com.hexhaki.fruit.FruitMove> base = com.hexhaki.piece.server.MochiKit.MOVES;
-        java.util.List<com.hexhaki.fruit.FruitMove> awake = com.hexhaki.piece.server.MochiKit.AWAKENED;
-        Check.that(base.size() == 10 && awake.size() == 10, "the Mochi keys: ten moves, ten awakened");
-        for (int i = 0; i < base.size(); i++) {
-            String k = base.get(i).key();
-            Check.that(awake.get(i).key().startsWith(k.substring(0, k.indexOf(']') + 1)), "the Mochi keys: the awakened set takes "
-                + k + "'s place");
+        String[] keys = {"[LMB]", "[Z]", "[X]", "[C]", "[V]", "[B]", "[N]", "[M]"};
+        String[] names = {"Mochi Punch", "Grilled Mochi", "Mochi Muddle", "Lotus Mochi Combo", "Chestnut Mochi", "Mochi Anemone",
+            "Buzz Cut Mochi", "Awakening"};
+        Check.that(base.size() == keys.length, "the Mochi keys: eight (" + base.size() + ")");
+        for (int i = 0; i < keys.length; i++) {
+            Check.that(base.get(i).key().startsWith(keys[i]) && base.get(i).name().equals(names[i]), "the Mochi keys: " + keys[i] + " is "
+                + names[i] + " (" + base.get(i).name() + ")");
         }
-        String[] keys = {"[Z]", "[X]", "[C]", "[V]", "[B]"};
-        for (int i = 0; i < 5; i++) {
-            Check.that(base.get(2 + i).key().startsWith(keys[i]) && awake.get(2 + i).key().equals(keys[i]) && base.get(2 + i) != awake.get(2 + i),
-                "the Mochi keys: " + keys[i] + " is " + base.get(2 + i).name() + ", awakened " + awake.get(2 + i).name());
+        for (String gone : new String[] {"Tsuki", "Yanagi", "Kaku", "Zan Giri", "Sticky", "Future Sight", "Nagare", "Kagami", "Amadare",
+            "Muso", "Ginkaku"}) {
+            for (com.hexhaki.fruit.FruitMove move : com.hexhaki.piece.server.MochiKit.ALL) {
+                Check.that(!move.name().contains(gone), "the old Mochi move " + gone + " is gone");
+            }
         }
-        Check.that(com.hexhaki.piece.server.MochiKit.AWAKEN.key().equals("[M]") && com.hexhaki.piece.server.MochiKit.STICKY.key().equals("[N]")
-            && com.hexhaki.piece.server.MochiKit.PUNCH.key().equals("[LMB]") && com.hexhaki.piece.server.MochiKit.TSUKI.key().startsWith("[RMB]"),
-            "the Mochi keys as accepted");
-        Check.that(com.hexhaki.piece.server.MochiMoves.AWAKEN_TICKS == 600, "the Awakening: thirty seconds");
-        Check.that(com.hexhaki.piece.server.MochiMoves.DODGE_TICKS == 60 && com.hexhaki.piece.server.MochiMoves.DODGE_SLOT
-            == com.hexhaki.piece.client.FruitKeyN.ABILITY_DODGE, "Future Sight: three seconds, on its own key (the double tap of sneak)");
-        Check.that(com.hexhaki.piece.server.MochiMoves.tsukiCharge(0) >= 0.2 && com.hexhaki.piece.server.MochiMoves.tsukiCharge(1000) == 1.0
-            && com.hexhaki.piece.server.MochiMoves.tsukiCharge(com.hexhaki.piece.server.MochiMoves.TSUKI_FULL) == 1.0,
-            "Mochi Tsuki: a tap still thrusts, the hold fills it");
-        // the server strikes where and when every client draws (the rain's tendrils, the donuts' fists, the punches)
-        Check.that(com.hexhaki.piece.mochi.MochiDraw.DONUTS == 5 && com.hexhaki.piece.mochi.MochiDraw.PUNCH_OUT == 3.0,
-            "the Mochi fruit's strikes land on the drawn beats");
-        for (int i = 2; i < 7; i++) {
-            Check.that(base.get(i).slot() >= 0 && base.get(i).slot() == awake.get(i).slot(), base.get(i).name() + " and "
-                + awake.get(i).name() + ": on the same quick slot");
-        }
+        Check.that(com.hexhaki.piece.server.MochiKit.GRILLED.hold() && com.hexhaki.piece.server.MochiKit.ANEMONE.hold(),
+            "Grilled Mochi and the Anemone are held");
+        Check.that(com.hexhaki.piece.server.MochiMoves.yakiCharge(0) > 0.0 && com.hexhaki.piece.server.MochiMoves.yakiCharge(1000) == 1.0
+            && com.hexhaki.piece.server.MochiMoves.yakiRadius(1.0) > 2.5 * com.hexhaki.piece.server.MochiMoves.yakiRadius(0.0),
+            "Grilled Mochi: the longer the hold, the bigger the explosion (the owner)");
+        Check.that(com.hexhaki.piece.server.MochiMoves.BUZZ_COOLDOWN == 6000, "Buzz Cut Mochi: five minutes' cooldown (the owner's word)");
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.PUNCH_OUT == 3.0 && com.hexhaki.piece.mochi.MochiDraw.LOTUS_LIFE
+            >= com.hexhaki.piece.server.MochiMoves.LOTUS_LAUNCH + 4, "the Mochi fruit's strikes land on the drawn beats");
     }
 
     /**

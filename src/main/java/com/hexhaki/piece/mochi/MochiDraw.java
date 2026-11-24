@@ -598,6 +598,255 @@ public final class MochiDraw {
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------ 3.6.3: the reference's moves
+
+    /**
+     * Mochi Muddle (X): the trail of dough poured out from (x, y, z) (on the ground) along (wx, wz) (flat, unit), {@code reach} of its
+     * {@code length} spread so far (its front a swelling lip), {@code width} across, {@code fade} 0 to 1 (it sinks away flat at its end);
+     * lumpy flattened dough, spatters thrown off its front.
+     */
+    public static void muddle(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double length, double reach, double width,
+                              double fade, double age, int seed) {
+        if (fade < 0.02 || reach < 0.1) {
+            return;
+        }
+        double px = -wz;
+        double pz = wx;
+        int n = (int) Math.ceil(reach / 0.9);
+        for (int k = 0; k <= n; k++) {
+            double d = Math.min(reach, k * 0.9);
+            double front = Math.max(0.0, 1.0 - (reach - d) / 1.6);
+            double wob = (FireMesh.rand(seed, k) - 0.5) * width * 0.35;
+            double r = width * (0.42 + 0.12 * FireMesh.rand(seed, k + 40)) * (1.0 + 0.2 * front);
+            double h = (0.22 + 0.25 * front) * fade;
+            MochiArt.blob(sink, x + wx * d + px * wob, y + h * 0.35, z + wz * d + pz * wob, wx, 0, wz, 0, 1, 0, r * 0.75, h, r, 0.8, 0.18,
+                age, seed + k, MochiArt.MOCHI, 1.0);
+            // lumps welling up along it
+            if (k % 2 == 0 && fade > 0.3) {
+                double side = (FireMesh.rand(seed, k + 80) - 0.5) * width * 0.7;
+                MochiArt.ball(sink, x + wx * d + px * side, y + h * 0.8, z + wz * d + pz * side, 0.18 + 0.12 * FireMesh.rand(seed, k + 90), 0, 1, 0,
+                    0.8, 0.1, age, seed + k + 100, MochiArt.MOCHI);
+            }
+        }
+        // the front pouring on: drops thrown ahead of it while it spreads
+        if (reach < length - 0.2) {
+            for (int k = 0; k < 4; k++) {
+                double t = (age * 0.35 + k * 0.25) % 1.0;
+                double side = (FireMesh.rand(seed + (int) age, k) - 0.5) * width;
+                MochiArt.ball(sink, x + wx * (reach + 0.4 + t * 1.2) + px * side, y + 0.25 + Math.sin(Math.PI * t) * 0.8,
+                    z + wz * (reach + 0.4 + t * 1.2) + pz * side, 0.12, wx, 0.3, wz, 1.3, 0.0, age, seed + k, MochiArt.MOCHI);
+            }
+        }
+    }
+
+    /** Lotus Mochi Combo: when its blows land (ticks), how long the slam from above lasts. */
+    public static final double LOTUS_LIFE = 18.0;
+    public static final double LOTUS_SLAM_LIFE = 14.0;
+
+    /**
+     * Lotus Mochi Combo (C): a donut beside the shoulder (x, y, z) (to its right, {@code wx, wy, wz} the way), its fist pounding out five
+     * times ({@link com.hexhaki.piece.server.MochiMoves#LOTUS_BLOWS}) {@code reach} along the way, then the uppercut at the launch;
+     * {@code age} ticks in.
+     */
+    public static void lotus(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double reach, double age,
+                             boolean coat, int seed) {
+        if (age < 0 || age > LOTUS_LIFE) {
+            return;
+        }
+        double sx = -wz;
+        double sz = wx;
+        double sl = Math.max(1.0E-6, Math.hypot(sx, sz));
+        sx /= sl;
+        sz /= sl;
+        double form = Math.min(1.0, age / 3.0) * Math.max(0.0, Math.min(1.0, (LOTUS_LIFE - age) / 4.0));
+        double cx = x - sx * 1.0;
+        double cy = y + 0.35;
+        double cz = z - sz * 1.0;
+        int first = com.hexhaki.piece.server.MochiMoves.LOTUS_FIRST;
+        int every = com.hexhaki.piece.server.MochiMoves.LOTUS_EVERY;
+        int blows = com.hexhaki.piece.server.MochiMoves.LOTUS_BLOWS;
+        int launch = com.hexhaki.piece.server.MochiMoves.LOTUS_LAUNCH;
+        double out = 0.0;
+        double ux = wx;
+        double uy = wy;
+        double uz = wz;
+        if (age >= first - 1 && age < first + blows * every) {
+            // a jab each blow: out fast, half back
+            double phase = ((age - (first - 1)) % every) / every;
+            out = phase < 0.5 ? ease(phase * 2.0) : 1.0 - 0.6 * smooth((phase - 0.5) * 2.0);
+        } else if (age >= launch - 2 && age < launch + 4) {
+            // the uppercut: out and up
+            double u = (age - launch + 2) / 6.0;
+            out = u < 0.4 ? ease(u / 0.4) : 1.0 - smooth((u - 0.4) / 0.6);
+            uy = wy + 1.1 * Math.min(1.0, u / 0.4);
+            double ul = Math.sqrt(ux * ux + uy * uy + uz * uz);
+            ux /= ul;
+            uy /= ul;
+            uz /= ul;
+        }
+        double d = reach * out;
+        donut(sink, cx, cy, cz, ux, uy, uz, LOTUS_DONUT, form, 0.0, 2, out > 0.02 ? out : 0.0, cx + ux * d, cy + uy * d, cz + uz * d, coat, age,
+            seed, false);
+    }
+
+    /** Lotus Mochi Combo's donut (outer radius). */
+    public static final double LOTUS_DONUT = 0.95;
+
+    /**
+     * Lotus Mochi Combo's slam: a big donut appearing {@link com.hexhaki.piece.server.MochiMoves#LOTUS_HIGH} over the body thrown up at
+     * (x, y, z) (its feet when the slam began), its giant fist driving straight down onto it and into the ground; {@code age} ticks in.
+     */
+    public static void lotusSlam(FireMesh.Sink sink, double x, double y, double z, double ground, double age, boolean coat, int seed) {
+        if (age < 0 || age > LOTUS_SLAM_LIFE) {
+            return;
+        }
+        double form = Math.min(1.0, (age + 1.0) / 3.0) * Math.max(0.0, Math.min(1.0, (LOTUS_SLAM_LIFE - age) / 4.0));
+        double top = y + com.hexhaki.piece.server.MochiMoves.LOTUS_HIGH;
+        double down = age < 3 ? ease(age / 3.0) : age < 8 ? 1.0 : 1.0 - smooth((age - 8) / 6.0);
+        double reach = Math.max(0.3, (top - ground - 0.3) * down);
+        donut(sink, x, top, z, 0, -1, 0, 1.7, form, 0.0, 0, down > 0.02 ? 1.0 : 0.0, x, top - reach, z, coat, age, seed, false);
+    }
+
+    /**
+     * Chestnut Mochi (V): the spiked donut at (x, y, z), {@code form} 0 to 1 (forming, going), turning slowly ({@code spin} radians),
+     * {@code fired} ticks since its last spike (a kick back when it shoots): a donut with spikes all round its rim and out of its faces.
+     */
+    public static void chestnut(FireMesh.Sink sink, double x, double y, double z, double ax, double az, double form, double spin, double fired,
+                                double age, int seed) {
+        if (form < 0.02) {
+            return;
+        }
+        double al = Math.max(1.0E-6, Math.hypot(ax, az));
+        ax /= al;
+        az /= al;
+        double kick = fired < 3 ? 0.08 * (1.0 - fired / 3.0) : 0.0;
+        x -= ax * kick;
+        z -= az * kick;
+        double big = CHESTNUT_DONUT;
+        donut(sink, x, y, z, ax, 0, az, big, form, spin, 2, 0.0, 0, 0, 0, false, age, seed, false);
+        double s = springy(Math.min(1.0, form)) * Math.min(1.0, form);
+        double ring = big * (1.0 - DONUT_THICK) * s;
+        double thick = big * DONUT_THICK * s;
+        // the rim's spikes, turning with it, and a ring of them out of each face
+        double px = -az;
+        double pz = ax;
+        for (int k = 0; k < CHESTNUT_SPIKES; k++) {
+            double a = spin + 2 * Math.PI * k / CHESTNUT_SPIKES;
+            double ox = px * Math.cos(a);
+            double oy = Math.sin(a);
+            double oz = pz * Math.cos(a);
+            double bx = x + ox * (ring + thick * 0.7);
+            double by = y + oy * (ring + thick * 0.7);
+            double bz = z + oz * (ring + thick * 0.7);
+            double len = thick * (1.3 + 0.4 * FireMesh.rand(seed, k)) * s;
+            MochiArt.cone(sink, bx, by, bz, bx + ox * len, by + oy * len, bz + oz * len, thick * 0.32, MochiArt.MOCHI);
+            if (k % 2 == 0) {
+                for (int f = -1; f <= 1; f += 2) {
+                    double fx = x + ox * ring + ax * thick * 0.7 * f;
+                    double fy = y + oy * ring;
+                    double fz = z + oz * ring + az * thick * 0.7 * f;
+                    double l = thick * 0.95 * s;
+                    MochiArt.cone(sink, fx, fy, fz, fx + ax * l * f + ox * l * 0.3, fy + oy * l * 0.3, fz + az * l * f + oz * l * 0.3, thick * 0.26,
+                        MochiArt.MOCHI);
+                }
+            }
+        }
+    }
+
+    /**
+     * Where Chestnut Mochi's donut floats from its user's feet, facing {@code yawDegrees} (the game's yaw), {@code height} tall: over the
+     * right shoulder, a little behind; into out (x, y, z).
+     */
+    public static double[] chestnutOffset(double yawDegrees, double height, double[] out) {
+        double y = Math.toRadians(yawDegrees);
+        double fx = -Math.sin(y);
+        double fz = Math.cos(y);
+        // the right: (-fz, fx)
+        out[0] = -fz * 0.9 - fx * 0.5;
+        out[1] = height + 1.1;
+        out[2] = fx * 0.9 - fz * 0.5;
+        return out;
+    }
+
+    /** Chestnut Mochi's donut and its spikes round the rim. */
+    public static final double CHESTNUT_DONUT = 0.75;
+    static final int CHESTNUT_SPIKES = 10;
+
+    /** A Chestnut spike's flight (ticks), then its splat. */
+    public static final double SPIKE_LIFE = 6.0;
+
+    /** A spike of mochi shot from (fx, fy, fz) onto (tx, ty, tz): out over 2 ticks, then stuck in a moment and gone; {@code age} ticks in. */
+    public static void spike(FireMesh.Sink sink, double fx, double fy, double fz, double tx, double ty, double tz, double age) {
+        if (age < 0 || age > SPIKE_LIFE) {
+            return;
+        }
+        double dx = tx - fx;
+        double dy = ty - fy;
+        double dz = tz - fz;
+        double dl = Math.max(1.0E-6, Math.sqrt(dx * dx + dy * dy + dz * dz));
+        double ux = dx / dl;
+        double uy = dy / dl;
+        double uz = dz / dl;
+        double t = Math.min(1.0, age / 2.0);
+        double hx = fx + dx * t;
+        double hy = fy + dy * t;
+        double hz = fz + dz * t;
+        double len = 0.6 * (age > 4 ? Math.max(0.0, 1.0 - (age - 4) / 2.0) : 1.0);
+        if (len > 0.02) {
+            MochiArt.cone(sink, hx - ux * len, hy - uy * len, hz - uz * len, hx, hy, hz, 0.09, MochiArt.MOCHI);
+        }
+        if (age < 2.5) {
+            FireMesh.streak(sink, hx - ux * len, hy - uy * len, hz - uz * len, -ux, -uy, -uz, Math.min(dl * t, 2.2), 0.05, 0xFFFFFF, 0.5);
+        }
+    }
+
+    /** Mochi Anemone: how many donuts hang over its area, how high. */
+    public static final int ANEMONE_DONUTS = 8;
+    public static final double ANEMONE_HIGH = 4.2;
+
+    /**
+     * Mochi Anemone (B) held: its donuts hanging in a dome over the area round (x, y, z) (the ground in its middle), {@code radius} round,
+     * {@code form} 0 to 1; {@code strikes} (donut, x, y, z, the punch's age: 5 a strike) the Haki fists punching down out of them.
+     */
+    public static void anemoneArea(FireMesh.Sink sink, double x, double y, double z, double radius, double form, double[] strikes, int count,
+                                   boolean coat, double age, int seed) {
+        if (form < 0.02) {
+            return;
+        }
+        for (int k = 0; k < ANEMONE_DONUTS; k++) {
+            double a = 2 * Math.PI * (k + 0.3 * FireMesh.rand(seed, k)) / ANEMONE_DONUTS + age * 0.01;
+            double r = radius * (0.55 + 0.45 * FireMesh.rand(seed, k + 20));
+            double cx = x + Math.cos(a) * r;
+            double cy = y + ANEMONE_HIGH + 1.4 * FireMesh.rand(seed, k + 40) + 0.2 * Math.sin(age * 0.2 + k);
+            double cz = z + Math.sin(a) * r;
+            // each donut forms in its turn (they gather one after another), facing down at the middle
+            double f = Math.max(0.0, Math.min(1.0, form * 1.6 - k * 0.08));
+            double out = 0.0;
+            double tx = x;
+            double ty = y + 0.5;
+            double tz = z;
+            for (int s = 0; s < count; s++) {
+                double pa = strikes[s * 5 + 4];
+                if ((int) strikes[s * 5] != k || pa < 0 || pa > ANEMONE_PUNCH) {
+                    continue;
+                }
+                double o = pa < 2.0 ? ease(pa / 2.0) : 1.0 - smooth((pa - 3.0) / (ANEMONE_PUNCH - 3.0));
+                if (o > out) {
+                    out = o;
+                    tx = strikes[s * 5 + 1];
+                    ty = strikes[s * 5 + 2];
+                    tz = strikes[s * 5 + 3];
+                }
+            }
+            double dx = tx - cx;
+            double dy = ty - cy;
+            double dz = tz - cz;
+            double dl = Math.max(1.0E-6, Math.sqrt(dx * dx + dy * dy + dz * dz));
+            donut(sink, cx, cy, cz, dx / dl, dy / dl, dz / dl, ANEMONE_DONUT, f, 0.0, 2, out > 0.02 ? out : 0.0, cx + dx * out, cy + dy * out,
+                cz + dz * out, coat, age, seed + k, k % 2 == 1);
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ Zan Giri Mochi
 
     /**

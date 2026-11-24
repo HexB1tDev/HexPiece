@@ -26,85 +26,65 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * 3.5.5: the Mochi Mochi no Mi's moves (server/MochiKit; the keys the owner accepted: docs/handoff 8zzo). The server decides every hit
- * and sends one small message for each thing to draw (S2CUoFx kinds 256 to 319: the kind is two bytes since 3.5.5); every client builds
- * the mochi itself (client/mochi/MochiFx, mochi/MochiDraw). With Armament on, every fist and its arm is Haki-black and hits a quarter
- * harder; the Conqueror's lightning (POINT ONE) at every strike and out of every blast (ItoMoves.lightning, ConquerorAura.exploded,
- * UoMoves.explode).
+ * 3.6.3 (the owner: "I WANT THE OTHER MOVES, all of them, I want yours gone", after sending the Fruit Battlegrounds wiki's Dough and
+ * DoughV2 pages; their answers: "Dough base + V2 awakened", keep only the left-click punches): the Mochi Mochi no Mi's moves, rebuilt
+ * on the reference's moveset (docs/handoff/next-ai-3.6.0.md M and N) in our own art. The base kit: LMB Mochi Punch, Z Grilled Mochi
+ * (held), X Mochi Muddle, C Lotus Mochi Combo, V Chestnut Mochi, B Mochi Anemone (held), N Buzz Cut Mochi; M the Awakening (its own set
+ * comes in the next version). The server decides every hit and sends one small message for each thing to draw (S2CUoFx kinds 256 to
+ * 319); every client builds the mochi itself (client/mochi/MochiFx, mochi/MochiDraw). With Armament on, every fist and its arm is
+ * Haki-black and hits a quarter harder; the Conqueror's lightning (POINT ONE) at every strike and out of every blast.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class MochiMoves {
-    /** A punch: user; x, y, z the shoulder, a the way, bx the arm (0 right, 1 left), size its reach. */
+    /** A punch (LMB): user; x, y, z the shoulder, a the way, bx the arm (0 right, 1 left), size its reach. */
     public static final int PUNCH = 256;
-    /** Mochi Tsuki: user; bx TSUKI_CHARGE (ticks the longest hold) or TSUKI_THRUST (x, y, z the hand, a the way, size the reach, by the charge). */
-    public static final int TSUKI = 257;
-    public static final int TSUKI_CHARGE = 0;
-    public static final int TSUKI_THRUST = 1;
-    public static final int TSUKI_DROP = 2;
-    /** Yanagi Mochi: user; x, y, z the hip, a the flat way, id its seed. */
-    public static final int YANAGI = 258;
-    /** Kaku Mochi: user; x, y, z where the blocks slam, a the flat way. */
-    public static final int KAKU = 259;
-    /** Yaki Mochi: user; bx YAKI_SWELL (ticks), YAKI_FLY (x, y, z from, a the step a tick, ticks its flight) or YAKI_DROP. */
+    /** Grilled Mochi (Z): user; bx YAKI_SWELL (ticks the longest hold), YAKI_FLY (x, y, z from, a the step a tick, by the charge, ticks
+     * its flight) or YAKI_DROP. */
     public static final int YAKI = 260;
     public static final int YAKI_SWELL = 0;
     public static final int YAKI_FLY = 1;
     public static final int YAKI_DROP = 2;
-    /** Zan Giri Mochi's wheel: user; bx 1 rolling (x, y, z to, a from, ticks), 0 stopped (x, y, z where). */
+    /** Buzz Cut Mochi's wheel: user; bx 1 rolling (x, y, z to, a from, ticks), 0 stopped (x, y, z where). */
     public static final int WHEEL = 261;
-    /** Zan Giri Mochi's club: user; x, y, z the body it slams. */
+    /** Buzz Cut Mochi's club: user; x, y, z the body it slams. */
     public static final int CLUB = 262;
-    /** Mochi Anemone: user; bx 1 on (ticks), 0 off. */
+    /** Mochi Anemone (B) held: user; bx 1 on (x, y, z the area's middle on the ground, size its radius, ticks), 0 off. */
     public static final int ANEMONE = 263;
-    /** One of the Anemone's arms punching: user; id the ring, x, y, z the target. */
+    /** One of the Anemone's arms: user; id the donut, x, y, z where it strikes. */
     public static final int ANEMONE_PUNCH = 264;
-    /** A sticky glob flying: x, y, z from, a the step a tick, ticks its flight, id its seed. */
-    public static final int GLOB = 265;
     /** A body stuck in mochi: id the body, x, y, z its feet, size its height, ticks how long (0: let go). */
     public static final int STUCK = 266;
-    /** A patch of sticky mochi on the ground: x, y, z, size its radius, ticks how long. */
-    public static final int PATCH = 267;
     /** A splat of mochi: x, y, z, a the way, size, id its seed. */
     public static final int SPLAT = 268;
-    /** Yaki Mochi's blast: x, y, z, size, id its seed. */
+    /** Grilled Mochi's blast: x, y, z, size, id its seed. */
     public static final int BOOM = 269;
-    /** The Awakening: user; bx 1 on (size the ground's radius, ticks), 0 off. */
+    /** The Awakening: user; bx 1 on (ticks), 0 off (its own moves: the next version). */
     public static final int AWAKEN = 270;
-    /** Nagare Mochi's wave: user; x, y, z from, a the flat way, size how far, ticks, id its seed. */
-    public static final int NAGARE = 271;
-    /** Kagami Mochi's walls: x, y, z the target on the ground, a the flat way they face, size how far apart. */
-    public static final int KAGAMI = 272;
-    /** Amadare Mochi: x, y, z the ground in the middle, size the radius, ticks, id its seed. */
-    public static final int AMADARE = 273;
-    /** Muso Donuts: user; x, y, z the target, ticks, id its seed. */
-    public static final int DONUTS = 274;
-    /** Mochi Ginkaku: x, y, z the ground in the middle, size the radius, ticks. */
-    public static final int DOME = 275;
-    /** Future Sight: user; bx 1 the window open (ticks); a hole: bx 2 (x, y, z, a the blow's way). */
-    public static final int DODGE = 276;
-    public static final int DODGE_OPEN = 1;
-    public static final int DODGE_HOLE = 2;
+    /** Mochi Muddle (X): user; x, y, z the trail's start on the ground, a the flat way, size its length, ticks how long it lies, id its seed. */
+    public static final int MUDDLE = 277;
+    /** Lotus Mochi Combo (C): user; bx LOTUS_PUNCH (x, y, z the shoulder, a the way), LOTUS_SLAM (x, y, z the body's feet, id the body). */
+    public static final int LOTUS = 278;
+    public static final int LOTUS_PUNCH = 0;
+    public static final int LOTUS_SLAM = 1;
+    /** Chestnut Mochi (V): user; bx 1 out (ticks), 0 gone. */
+    public static final int CHESTNUT = 279;
+    /** A spike shot by Chestnut Mochi's donut: user; x, y, z where it strikes, id its seed. */
+    public static final int CHESTNUT_SPIKE = 280;
 
-    /** The keys: N, M, and the double tap of sneak (client/FruitKeyN). */
+    /** The keys: N, M (client/FruitKeyN). */
     static final int N_SLOT = 40;
     static final int M_SLOT = 41;
-    public static final int DODGE_SLOT = 43;
 
     /** The punches: every so many ticks, how far, how wide, how hard. */
     static final int PUNCH_EVERY = 8;
     public static final double PUNCH_REACH = 6.0;
     static final double PUNCH_ARC = 28.0;
     static final float PUNCH_DAMAGE = 5.0F;
-    /** Mochi Tsuki: the hold that fills it, the longest, its reach and blow empty and full. */
-    public static final int TSUKI_FULL = 40;
-    static final int TSUKI_MOST = 70;
-    public static final double TSUKI_REACH = 8.0;
-    public static final double TSUKI_REACH_FULL = 16.0;
-    /** Yaki Mochi: the swelling, the fist's speed and range, the blast. */
     /**
-     * 3.6.3 (the owner: "C Move, should be held, the longer its held the bigger the explosion, only 1 arm should be pointed, no other part
-     * of the body should be animated"): Yaki Mochi swells while C is held, full at {@link #YAKI_FULL} ticks, let go by itself at
-     * {@link #YAKI_MOST}; its explosion from {@link #YAKI_RADIUS_LEAST} (a tap) to {@link #YAKI_RADIUS_MOST} (full).
+     * Grilled Mochi (the owner, for this move as the old C: "should be held, the longer its held the bigger the explosion, only 1 arm should
+     * be pointed, no other part of the body should be animated"): full at {@link #YAKI_FULL} ticks, let go by itself at {@link #YAKI_MOST};
+     * its explosion from {@link #YAKI_RADIUS_LEAST} (a tap) to {@link #YAKI_RADIUS_MOST} (full); a body it meets carried on it for
+     * {@link #GRILLED_CARRY} ticks before it bursts.
      */
     public static final int YAKI_FULL = 60;
     public static final int YAKI_MOST = 100;
@@ -112,64 +92,59 @@ public final class MochiMoves {
     static final double YAKI_RANGE = 40.0;
     public static final double YAKI_RADIUS_LEAST = 2.2;
     public static final double YAKI_RADIUS_MOST = 7.0;
+    public static final int GRILLED_CARRY = 8;
 
-    /** 3.6.3: how full Yaki Mochi is after {@code held} ticks (a tap a sixth). */
+    /** How full Grilled Mochi is after {@code held} ticks (a tap a sixth). */
     public static double yakiCharge(double held) {
         return Math.max(1.0 / 6.0, Math.min(1.0, held / YAKI_FULL));
     }
 
-    /** 3.6.3: the explosion's radius at {@code charge} (0 to 1). */
+    /** Grilled Mochi's explosion's radius at {@code charge} (0 to 1). */
     public static double yakiRadius(double charge) {
         return YAKI_RADIUS_LEAST + (YAKI_RADIUS_MOST - YAKI_RADIUS_LEAST) * charge;
     }
-    /** Zan Giri Mochi: how far and how long the wheel rolls, how near it snags. */
+
+    /** Mochi Muddle: the trail's length and width, how fast it spreads (blocks a tick), how long it lies, the hurt at its start and end. */
+    public static final double MUDDLE_LENGTH = 13.0;
+    public static final double MUDDLE_WIDTH = 2.6;
+    public static final double MUDDLE_SPREAD = 2.2;
+    public static final int MUDDLE_TICKS = 90;
+    static final float MUDDLE_HURT_NEAR = 7.0F;
+    static final float MUDDLE_HURT_FAR = 4.0F;
+    static final int MUDDLE_STUCK = 40;
+    /** Lotus Mochi Combo: its reach, its five blows (every so many ticks from the first), the launch and the slam. */
+    public static final double LOTUS_REACH = 7.0;
+    public static final int LOTUS_FIRST = 3;
+    public static final int LOTUS_EVERY = 2;
+    public static final int LOTUS_BLOWS = 5;
+    public static final int LOTUS_LAUNCH = 14;
+    public static final int LOTUS_SLAM_AT = 26;
+    public static final double LOTUS_HIGH = 5.0;
+    /** Chestnut Mochi: how long its donut stays, a spike every so many ticks, at the nearest foe within this. */
+    public static final int CHESTNUT_TICKS = 100;
+    public static final int CHESTNUT_EVERY = 4;
+    public static final double CHESTNUT_RANGE = 16.0;
+    static final float CHESTNUT_HURT = 1.3F;
+    /** Mochi Anemone: how long it may be held, how far off its area can be, the area's radius, a volley every so many ticks. */
+    public static final int ANEMONE_MOST = 100;
+    public static final double ANEMONE_RANGE = 14.0;
+    public static final double ANEMONE_RADIUS = 3.4;
+    static final int ANEMONE_EVERY = 3;
+    /** Buzz Cut Mochi: how far and how long the wheel rolls, its size; five minutes' cooldown (the owner's own word for it). */
     public static final double WHEEL_RANGE = 16.0;
     public static final int WHEEL_TICKS = 18;
     public static final double WHEEL_RADIUS = 2.2;
-    /** The Anemone: how long it may be held, a punch every so many ticks, how near. */
-    public static final int ANEMONE_MOST = 100;
-    static final int ANEMONE_EVERY = 4;
-    static final double ANEMONE_REACH = 8.0;
-    /** Sticky Mochi: the glob's speed and range, how long it glues, how long a patch stays. */
-    public static final double GLOB_SPEED = 1.4;
-    static final double GLOB_RANGE = 30.0;
-    public static final int STUCK_TICKS = 60;
-    public static final int PATCH_TICKS = 100;
-    static final double PATCH_RADIUS = 1.6;
-    /** The Awakening: how long, its ground's radius. */
-    public static final int AWAKEN_TICKS = 600;
-    public static final double AWAKEN_RADIUS = 12.0;
-    /** Nagare Mochi: how fast and far the wave rolls, how wide and high. */
-    public static final double NAGARE_SPEED = 0.7;
-    public static final double NAGARE_RANGE = 22.0;
-    public static final double NAGARE_WIDTH = 8.0;
-    public static final double NAGARE_HEIGHT = 3.6;
-    /** Amadare Mochi: tendrils, one every so many ticks, over a radius. */
-    public static final int AMADARE_COUNT = 15;
-    public static final int AMADARE_EVERY = 2;
-    public static final double AMADARE_RADIUS = 6.0;
-    public static final double AMADARE_SKY = 14.0;
-    /** Muso Donuts: the first fist after so many ticks, one every so many. */
-    public static final int DONUT_FIRST = 6;
-    public static final int DONUT_EVERY = 4;
-    /** Mochi Ginkaku: its radius, how long it stands. */
-    public static final double DOME_RADIUS = 6.0;
-    public static final int DOME_TICKS = 100;
-    /** Future Sight: how long the window stays open. */
-    public static final int DODGE_TICKS = 60;
+    public static final int BUZZ_COOLDOWN = 6000;
 
     static final class State {
         long punchNext;
         int punches;
-        long tsukiSince = -1;
         long yakiSince = -1;
         long anemoneSince = -1;
         long anemoneNext;
-        int anemonePunches;
-        long awakenUntil = -1;
-        long dodgeUntil = -1;
+        int anemoneVolleys;
+        Vec3 anemoneAt;
         long busyUntil;
-        long holeHeard;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -219,11 +194,7 @@ public final class MochiMoves {
     }
 
     static boolean busy(State s, long now) {
-        return s.tsukiSince >= 0 || s.yakiSince >= 0 || s.anemoneSince >= 0 || now < s.busyUntil;
-    }
-
-    static boolean awakened(State s, long now) {
-        return s.awakenUntil >= 0 && now < s.awakenUntil;
+        return s.yakiSince >= 0 || s.anemoneSince >= 0 || now < s.busyUntil;
     }
 
     /** A mochi blow on {@code body}: damage (a quarter more with Armament), a push, a splat where it lands, the Conqueror's lightning. */
@@ -255,63 +226,34 @@ public final class MochiMoves {
     static void press(ServerPlayer player, int slot) {
         State s = state(player);
         long now = now(player);
-        if (slot == DODGE_SLOT) {
-            dodge(player, s, now);
-            return;
-        }
-        if (slot == M_SLOT && awakened(s, now)) {
-            awakenOff(player, s);
-            return;
-        }
         if (busy(s, now) || player.m_20159_()) {
             return;
         }
-        boolean awake = awakened(s, now);
         if (slot == M_SLOT) {
-            awaken(player, s, now);
+            player.m_5661_(net.minecraft.network.chat.Component.m_237113_("The Mochi Awakening's own moves come in the next version"), true);
         } else if (slot == N_SLOT) {
-            sticky(player, s, now);
-        } else if (slot == MochiKit.YANAGI.slot()) {
-            if (awake) {
-                nagare(player, s, now);
-            } else {
-                yanagi(player, s, now);
-            }
-        } else if (slot == MochiKit.KAKU.slot()) {
-            if (awake) {
-                kagami(player, s, now);
-            } else {
-                kaku(player, s, now);
-            }
-        } else if (slot == MochiKit.YAKI.slot()) {
-            if (awake) {
-                amadare(player, s, now);
-            } else {
-                yakiSwell(player, s, now);
-            }
-        } else if (slot == MochiKit.ZANGIRI.slot()) {
-            if (awake) {
-                donuts(player, s, now);
-            } else {
-                zanGiri(player, s, now);
-            }
+            buzzCut(player, s, now);
+        } else if (slot == MochiKit.GRILLED.slot()) {
+            yakiSwell(player, s, now);
+        } else if (slot == MochiKit.MUDDLE.slot()) {
+            muddle(player, s, now);
+        } else if (slot == MochiKit.LOTUS.slot()) {
+            lotus(player, s, now);
+        } else if (slot == MochiKit.CHESTNUT.slot()) {
+            chestnut(player, s, now);
         } else if (slot == MochiKit.ANEMONE.slot()) {
-            if (awake) {
-                ginkaku(player, s, now);
-            } else {
-                anemone(player, s, now);
-            }
+            anemone(player, s, now);
         }
     }
 
-    /** A held key let go: the Anemone ends. */
+    /** A held key let go: Grilled Mochi flies, the Anemone ends. */
     static void pressUp(ServerPlayer player, int slot) {
         State s = STATES.get(player.m_20148_());
         if (s != null && slot == MochiKit.ANEMONE.slot() && s.anemoneSince >= 0) {
             anemoneEnd(player, s);
         }
-        if (s != null && slot == MochiKit.YAKI.slot() && s.yakiSince >= 0) {
-            yakiFire(player, s); // 3.6.3: C let go: the swollen fist bursts away
+        if (s != null && slot == MochiKit.GRILLED.slot() && s.yakiSince >= 0) {
+            yakiFire(player, s);
         }
     }
 
@@ -339,118 +281,10 @@ public final class MochiMoves {
         });
     }
 
-    // ------------------------------------------------------------------------------------------------------ RMB: Mochi Tsuki
-
-    static void use(ServerPlayer player) {
-        State s = state(player);
-        long now = now(player);
-        if (busy(s, now) || player.m_20159_() || !ItoMoves.ready(player, MochiKit.TSUKI)) {
-            return;
-        }
-        s.tsukiSince = now;
-        animate(player, "mochi_tsuki_charge");
-        fx(player, TSUKI, 0, ItoMoves.chest(player), player.m_20154_(), TSUKI_CHARGE, 0, 0, TSUKI_MOST);
-        sound(player, ItoMoves.chest(player), MochiSounds.STRETCH, 0.8F, 0.8F);
-        sound(player, ItoMoves.chest(player), MochiSounds.DRILL, 0.5F, 0.8F);
-    }
-
-    static void useUp(ServerPlayer player) {
-        State s = STATES.get(player.m_20148_());
-        if (s != null && s.tsukiSince >= 0) {
-            tsukiThrust(player, s);
-        }
-    }
-
-    /** How full Mochi Tsuki is after {@code held} ticks (0.2 a tap, full at {@link #TSUKI_FULL}). */
-    public static double tsukiCharge(double held) {
-        return Math.max(0.2, Math.min(1.0, held / TSUKI_FULL));
-    }
-
-    static void tsukiThrust(ServerPlayer player, State s) {
-        long now = now(player);
-        double charge = tsukiCharge(now - s.tsukiSince);
-        s.tsukiSince = -1;
-        s.busyUntil = now + 8;
-        ItoMoves.cool(player, MochiKit.TSUKI, (int) (40 + 30 * charge));
-        double reach = TSUKI_REACH + (TSUKI_REACH_FULL - TSUKI_REACH) * charge;
-        float damage = (float) (7.0 + 9.0 * charge);
-        Vec3 look = player.m_20154_();
-        Vec3 from = ItoMoves.chest(player);
-        animate(player, "mochi_tsuki_thrust");
-        fx(player, TSUKI, 0, from, look, TSUKI_THRUST, charge, reach, (int) MochiDraw.TSUKI_LIFE);
-        sound(player, from, MochiSounds.DRILL, 1.1F, 1.0F);
-        later(player, 2, () -> {
-            Set<Integer> struck = new HashSet<>();
-            for (LivingEntity body : ItoMoves.foes(player, from.m_82549_(look.m_82490_(reach * 0.5)), reach * 0.5 + 1.5)) {
-                Vec3 d = StyleCombat.middle(body).m_82546_(from);
-                double along = d.m_82526_(look);
-                if (along < 0 || along > reach + 0.5 || d.m_82546_(look.m_82490_(along)).m_82553_() > 1.4 || !struck.add(body.m_19879_())) {
-                    continue;
-                }
-                hit(player, body, damage, look.m_82490_(1.1).m_82520_(0, 0.2, 0));
-            }
-        });
-    }
-
-    // ------------------------------------------------------------------------------------------------------ Z: Yanagi Mochi
-
-    static void yanagi(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.YANAGI)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.YANAGI, 90);
-        s.busyUntil = now + (long) MochiDraw.YANAGI_LIFE;
-        Vec3 f = ItoMoves.flat(player);
-        int seed = ++seeds;
-        animate(player, "mochi_yanagi");
-        fx(player, YANAGI, seed, player.m_20182_().m_82520_(0, 0.8, 0), f, 0, 0, 0, (int) MochiDraw.YANAGI_LIFE);
-        Vec3 side = new Vec3(-f.f_82481_, 0, f.f_82479_);
-        for (int k = 1; k <= 5; k++) {
-            later(player, k * 4, () -> {
-                Vec3 feet = player.m_20182_();
-                sounds(player, feet.m_82549_(f.m_82490_(3.5)), MochiSounds.STOMP, 0.9F, 0.9F + seeds % 3 * 0.1F, 1, 3);
-                for (LivingEntity body : ItoMoves.foes(player, feet.m_82549_(f.m_82490_(4.0)), 4.5)) {
-                    Vec3 d = body.m_20182_().m_82546_(feet);
-                    double along = d.m_82526_(f);
-                    if (along > 1.0 && along < 7.2 && Math.abs(d.m_82526_(side)) < 3.0) {
-                        hit(player, body, 3.0F, new Vec3(0, -0.2, 0).m_82549_(f.m_82490_(0.15)));
-                    }
-                }
-            });
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------------ X: Kaku Mochi
-
-    static void kaku(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.KAKU)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.KAKU, 110);
-        s.busyUntil = now + (long) MochiDraw.KAKU_SLAM + 4;
-        Vec3 f = ItoMoves.flat(player);
-        LivingEntity aimed = PikaMoves.aimed(player, 8.0, 0.2);
-        Vec3 at = grounded(player, aimed != null ? aimed.m_20182_() : player.m_20182_().m_82549_(f.m_82490_(4.5)));
-        animate(player, "mochi_kaku");
-        fx(player, KAKU, ++seeds, at, f, 0, 0, 0, (int) MochiDraw.KAKU_LIFE);
-        sound(player, ItoMoves.chest(player), MochiSounds.STRETCH, 0.9F, 0.8F);
-        later(player, (int) MochiDraw.KAKU_SLAM, () -> {
-            ServerLevel level = (ServerLevel) player.m_9236_();
-            for (LivingEntity body : ItoMoves.foes(player, at, 3.2)) {
-                hit(player, body, 12.0F, f.m_82490_(0.3).m_82520_(0, -0.3, 0));
-                HakiFalls.knockDown(level, body, 30, false);
-            }
-            ConquerorAura.exploded(player, level, at.m_82520_(0, 0.5, 0), 3.0);
-            Impact.quake(level, at, 16.0, 0.5F, 8);
-            fx(player, SPLAT, ++seeds, at.m_82520_(0, 0.4, 0), new Vec3(0, 1, 0), 0, 0, 2.0, 0);
-            sound(player, at, MochiSounds.SLAM, 1.4F, 0.9F);
-        });
-    }
-
-    // ------------------------------------------------------------------------------------------------------ C: Yaki Mochi
+    // ------------------------------------------------------------------------------------------------------ Z: Grilled Mochi
 
     static void yakiSwell(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.YAKI)) {
+        if (!ItoMoves.ready(player, MochiKit.GRILLED)) {
             return;
         }
         s.yakiSince = now;
@@ -465,7 +299,7 @@ public final class MochiMoves {
         double charge = yakiCharge(now - s.yakiSince);
         s.yakiSince = -1;
         s.busyUntil = now + 6;
-        ItoMoves.cool(player, MochiKit.YAKI, (int) (100 + 60 * charge));
+        ItoMoves.cool(player, MochiKit.GRILLED, (int) (100 + 60 * charge));
         Vec3 look = player.m_20154_();
         Vec3 from = ItoMoves.chest(player).m_82549_(look.m_82490_(1.0));
         Vec3 step = look.m_82490_(YAKI_SPEED);
@@ -486,6 +320,8 @@ public final class MochiMoves {
         final long until;
         final int seed;
         final double charge;
+        LivingEntity carried;
+        long carryUntil;
 
         Fist(ServerLevel level, ServerPlayer owner, Vec3 at, Vec3 step, long until, int seed, double charge) {
             this.level = level;
@@ -510,14 +346,29 @@ public final class MochiMoves {
             Vec3 next = this.at.m_82549_(this.step);
             BlockHitResult block = this.level.m_45547_(new ClipContext(this.at, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
             Vec3 end = block.m_6662_() == HitResult.Type.BLOCK ? block.m_82450_() : next;
-            for (LivingEntity body : ItoMoves.foes(this.owner, this.at.m_82549_(end).m_82490_(0.5), this.step.m_82553_() * 0.5 + 1.3)) {
-                Vec3 d = StyleCombat.middle(body).m_82546_(this.at);
-                Vec3 u = this.step.m_82541_();
-                double along = Math.max(0.0, Math.min(this.step.m_82553_(), d.m_82526_(u)));
-                if (d.m_82546_(u.m_82490_(along)).m_82553_() < 1.3) {
-                    boom(this.at.m_82549_(u.m_82490_(along)));
+            if (this.carried == null) {
+                for (LivingEntity body : ItoMoves.foes(this.owner, this.at.m_82549_(end).m_82490_(0.5), this.step.m_82553_() * 0.5 + 1.3)) {
+                    Vec3 d = StyleCombat.middle(body).m_82546_(this.at);
+                    Vec3 u = this.step.m_82541_();
+                    double along = Math.max(0.0, Math.min(this.step.m_82553_(), d.m_82526_(u)));
+                    if (d.m_82546_(u.m_82490_(along)).m_82553_() < 1.3) {
+                        // 3.6.3 (the owner's reference: "If it hits or runs into an enemy, it will hit the enemy and then push them along with
+                        // the projectile"): struck, then carried on the fist until it explodes
+                        this.carried = body;
+                        this.carryUntil = now + GRILLED_CARRY;
+                        hit(this.owner, body, (float) (3.0 + 3.0 * this.charge), this.step.m_82490_(0.4));
+                        break;
+                    }
+                }
+            }
+            if (this.carried != null) {
+                if (!this.carried.m_6084_() || now >= this.carryUntil) {
+                    boom(this.at);
                     return true;
                 }
+                this.carried.m_20256_(this.step.m_82490_(0.85).m_82520_(0, 0.04, 0));
+                this.carried.f_19864_ = true;
+                this.carried.f_19789_ = 0.0F;
             }
             if (block.m_6662_() == HitResult.Type.BLOCK || now >= this.until) {
                 boom(end);
@@ -540,13 +391,285 @@ public final class MochiMoves {
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------ V: Zan Giri Mochi
+    // ------------------------------------------------------------------------------------------------------ X: Mochi Muddle
 
-    static void zanGiri(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.ZANGIRI)) {
+    /**
+     * Mochi Muddle (the reference: "User forms a trail of dough on the ground, stunning any player that walks inside it. Damage decreases
+     * the farther the player is from the beginning of the trail"): a trail of dough poured out along the ground ahead, spreading
+     * {@link #MUDDLE_SPREAD} blocks a tick; whoever it reaches or who walks in is glued fast and hurt, less the further along it.
+     */
+    static void muddle(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.MUDDLE)) {
             return;
         }
-        ItoMoves.cool(player, MochiKit.ZANGIRI, 180);
+        ItoMoves.cool(player, MochiKit.MUDDLE, 200);
+        s.busyUntil = now + 8;
+        Vec3 f = ItoMoves.flat(player);
+        Vec3 from = grounded(player, player.m_20182_().m_82549_(f.m_82490_(1.2)));
+        int seed = ++seeds;
+        animate(player, "mochi_nagare");
+        fx(player, MUDDLE, seed, from, f, 0, 0, MUDDLE_LENGTH, MUDDLE_TICKS);
+        sound(player, from, MochiSounds.SQUISH, 1.1F, 0.8F);
+        LIVE.add(new Muddle((ServerLevel) player.m_9236_(), player, from, f, now));
+    }
+
+    /** The trail lying on the ground: who is on it is glued and hurt (each once). */
+    static final class Muddle implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final Vec3 from;
+        final Vec3 way;
+        final long born;
+        final Set<Integer> struck = new HashSet<>();
+
+        Muddle(ServerLevel level, ServerPlayer owner, Vec3 from, Vec3 way, long born) {
+            this.level = level;
+            this.owner = owner;
+            this.from = from;
+            this.way = way;
+            this.born = born;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            long age = now - this.born;
+            if (!this.owner.m_6084_() || age >= MUDDLE_TICKS) {
+                return true;
+            }
+            if (age % 2 != 0) {
+                return false;
+            }
+            double reach = Math.min(MUDDLE_LENGTH, MUDDLE_SPREAD * (age + 1));
+            Vec3 side = new Vec3(-this.way.f_82481_, 0, this.way.f_82479_);
+            Vec3 mid = this.from.m_82549_(this.way.m_82490_(reach * 0.5));
+            for (LivingEntity body : ItoMoves.foes(this.owner, mid, reach * 0.5 + MUDDLE_WIDTH)) {
+                Vec3 d = body.m_20182_().m_82546_(this.from);
+                double along = d.m_82526_(this.way);
+                if (along < -0.5 || along > reach || Math.abs(d.m_82526_(side)) > MUDDLE_WIDTH * 0.5 + body.m_20205_() * 0.5
+                    || Math.abs(body.m_20186_() - this.from.f_82480_) > 1.2) {
+                    continue;
+                }
+                stick(this.owner, body, MUDDLE_STUCK);
+                if (this.struck.add(body.m_19879_())) {
+                    double t = Math.max(0.0, Math.min(1.0, along / MUDDLE_LENGTH));
+                    hit(this.owner, body, (float) (MUDDLE_HURT_NEAR + (MUDDLE_HURT_FAR - MUDDLE_HURT_NEAR) * t), new Vec3(0, 0.05, 0));
+                }
+            }
+            return false;
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------ C: Lotus Mochi Combo
+
+    /**
+     * Lotus Mochi Combo (the reference: "User summons an armored dough fist and punches and whoever is hit will be launched up in the air
+     * and then thrown back down"): a Haki-black fist out of a donut at the shoulder drives five blows into the one ahead (held fast in the
+     * mochi), then an uppercut throws them high and a giant fist out of a donut over them slams them back down.
+     */
+    static void lotus(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.LOTUS)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.LOTUS, 220);
+        s.busyUntil = now + LOTUS_LAUNCH + 4;
+        Vec3 f = ItoMoves.flat(player);
+        Vec3 look = player.m_20154_();
+        int seed = ++seeds;
+        animate(player, "mochi_punch_1");
+        fx(player, LOTUS, seed, ItoMoves.chest(player), look, LOTUS_PUNCH, 0, LOTUS_REACH, LOTUS_LAUNCH + 4);
+        sound(player, ItoMoves.chest(player), MochiSounds.STRETCH, 1.0F, 0.9F);
+        LivingEntity body = PikaMoves.aimed(player, LOTUS_REACH, 0.6);
+        if (body == null) {
+            List<LivingEntity> ahead = ItoMoves.ahead(player, LOTUS_REACH, PUNCH_ARC);
+            body = ahead.isEmpty() ? null : ahead.get(0);
+        }
+        if (body == null) {
+            return;
+        }
+        LivingEntity caught = body;
+        stick(player, caught, LOTUS_LAUNCH);
+        for (int k = 0; k < LOTUS_BLOWS; k++) {
+            later(player, LOTUS_FIRST + k * LOTUS_EVERY, () -> {
+                if (caught.m_6084_()) {
+                    hit(player, caught, 2.6F, f.m_82490_(0.05));
+                }
+            });
+        }
+        later(player, LOTUS_LAUNCH, () -> {
+            if (!caught.m_6084_()) {
+                return;
+            }
+            STUCK_UNTIL.remove(caught.m_19879_());
+            hit(player, caught, 4.0F, new Vec3(0, 1.25, 0).m_82549_(f.m_82490_(0.15)));
+            sound(player, caught.m_20182_(), MochiSounds.STRETCH, 1.1F, 1.3F);
+        });
+        later(player, LOTUS_SLAM_AT, () -> {
+            if (!caught.m_6084_()) {
+                return;
+            }
+            fx(player, LOTUS, seed, caught.m_20182_(), Vec3.f_82478_, LOTUS_SLAM, 0, 0, (int) MochiDraw.LOTUS_SLAM_LIFE);
+            hit(player, caught, 10.0F, new Vec3(0, -2.4, 0));
+            later(player, 3, () -> {
+                Vec3 at = caught.m_20182_();
+                HakiFalls.knockDown((ServerLevel) player.m_9236_(), caught, 30, false);
+                ConquerorAura.exploded(player, (ServerLevel) player.m_9236_(), at.m_82520_(0, 0.5, 0), 2.6);
+                Impact.quake((ServerLevel) player.m_9236_(), at, 14.0, 0.5F, 8);
+                fx(player, SPLAT, ++seeds, at.m_82520_(0, 0.3, 0), new Vec3(0, 1, 0), 0, 0, 2.0, 0);
+                sound(player, at, MochiSounds.SLAM, 1.4F, 0.9F);
+            });
+        });
+    }
+
+    // ------------------------------------------------------------------------------------------------------ V: Chestnut Mochi
+
+    /**
+     * Chestnut Mochi (the reference: "User creates a donut in the air covered in spikes that shoots spikes attacking the nearest player
+     * that will always hit as long as they are in range"): a spiked donut floats up over the user's shoulder for
+     * {@link #CHESTNUT_TICKS} ticks, firing a spike every {@link #CHESTNUT_EVERY} at the nearest foe within {@link #CHESTNUT_RANGE}.
+     */
+    static void chestnut(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.CHESTNUT)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.CHESTNUT, 260);
+        s.busyUntil = now + 6;
+        animate(player, "mochi_amadare");
+        fx(player, CHESTNUT, ++seeds, player.m_20182_(), Vec3.f_82478_, 1, 0, 0, CHESTNUT_TICKS);
+        sound(player, ItoMoves.chest(player), MochiSounds.SQUISH, 1.0F, 1.1F);
+        LIVE.add(new Chestnut((ServerLevel) player.m_9236_(), player, now));
+    }
+
+    /** Where Chestnut Mochi's donut floats over {@code player} (over the right shoulder, a little behind). */
+    public static Vec3 chestnutAt(Vec3 feet, double yawDegrees, double height) {
+        double[] o = MochiDraw.chestnutOffset(yawDegrees, height, new double[3]);
+        return new Vec3(feet.f_82479_ + o[0], feet.f_82480_ + o[1], feet.f_82481_ + o[2]);
+    }
+
+    /** The spiked donut out over its user, shooting. */
+    static final class Chestnut implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final long born;
+
+        Chestnut(ServerLevel level, ServerPlayer owner, long born) {
+            this.level = level;
+            this.owner = owner;
+            this.born = born;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            long age = now - this.born;
+            if (!this.owner.m_6084_() || age >= CHESTNUT_TICKS) {
+                fx(this.owner, CHESTNUT, 0, this.owner.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
+                return true;
+            }
+            if (age < 8 || age % CHESTNUT_EVERY != 0) {
+                return false;
+            }
+            Vec3 from = chestnutAt(this.owner.m_20182_(), this.owner.m_146908_(), this.owner.m_20206_());
+            LivingEntity best = null;
+            double bestD = CHESTNUT_RANGE * CHESTNUT_RANGE;
+            for (LivingEntity body : ItoMoves.foes(this.owner, from, CHESTNUT_RANGE)) {
+                double d = body.m_20280_(this.owner);
+                if (d < bestD) {
+                    bestD = d;
+                    best = body;
+                }
+            }
+            if (best != null) {
+                Vec3 at = StyleCombat.middle(best);
+                fx(this.owner, CHESTNUT_SPIKE, ++seeds, at, Vec3.f_82478_, 0, 0, 0, 0);
+                Vec3 way = at.m_82546_(from);
+                way = way.m_82556_() < 1.0E-6 ? Vec3.f_82478_ : way.m_82541_();
+                if (MaguMoves.hurt(this.owner, best, coated(this.owner) ? CHESTNUT_HURT * 1.25F : CHESTNUT_HURT)) {
+                    StyleCombat.push(best, best.m_20184_().m_82490_(0.5).m_82549_(way.m_82490_(0.08)));
+                }
+                sounds(this.owner, at, MochiSounds.PUNCH, 0.5F, 1.4F, 1, 3);
+            }
+            return false;
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------ B: Mochi Anemone
+
+    /**
+     * Mochi Anemone (the reference: "User summons a barrage of armored fists and will continuously attack anything that gets caught inside,
+     * can be held to increase the duration"): while B is held, a cluster of donuts hangs over the place aimed at (up to
+     * {@link #ANEMONE_RANGE} off) and Haki fists punch down out of them into it; whoever is inside is held and hit over and over.
+     */
+    static void anemone(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.ANEMONE)) {
+            return;
+        }
+        s.anemoneSince = now;
+        s.anemoneNext = now + 5;
+        s.anemoneAt = grounded(player, ItoMoves.looked(player, ANEMONE_RANGE));
+        animate(player, "mochi_donuts");
+        fx(player, ANEMONE, ++seeds, s.anemoneAt, Vec3.f_82478_, 1, 0, ANEMONE_RADIUS, ANEMONE_MOST);
+        sound(player, s.anemoneAt, MochiSounds.SQUISH, 1.0F, 1.0F);
+    }
+
+    static void anemoneTick(ServerPlayer player, State s, long now) {
+        if (now - s.anemoneSince >= ANEMONE_MOST) {
+            anemoneEnd(player, s);
+            return;
+        }
+        if (now < s.anemoneNext) {
+            return;
+        }
+        s.anemoneNext = now + ANEMONE_EVERY;
+        Vec3 at = s.anemoneAt;
+        List<LivingEntity> inside = ItoMoves.foes(player, at.m_82520_(0, 1.0, 0), ANEMONE_RADIUS + 0.5);
+        for (int k = 0; k < 2; k++) {
+            int donut = s.anemoneVolleys++ % MochiDraw.ANEMONE_DONUTS;
+            Vec3 strike;
+            if (!inside.isEmpty()) {
+                strike = StyleCombat.middle(inside.get((s.anemoneVolleys + k) % inside.size()));
+            } else {
+                double a = FireMesh.rand(s.anemoneVolleys, 3) * Math.PI * 2.0;
+                double r = Math.sqrt(FireMesh.rand(s.anemoneVolleys, 7)) * ANEMONE_RADIUS;
+                strike = at.m_82520_(Math.cos(a) * r, 0.2, Math.sin(a) * r);
+            }
+            fx(player, ANEMONE_PUNCH, donut, strike, Vec3.f_82478_, 0, 0, 0, 0);
+        }
+        sounds(player, at, MochiSounds.STRETCH, 0.6F, 1.3F, 1, 4);
+        later(player, 2, () -> {
+            for (LivingEntity body : inside) {
+                if (body.m_6084_()) {
+                    stick(player, body, 10);
+                    hit(player, body, 2.2F, new Vec3(0, -0.1, 0));
+                }
+            }
+        });
+    }
+
+    static void anemoneEnd(ServerPlayer player, State s) {
+        long held = now(player) - s.anemoneSince;
+        s.anemoneSince = -1;
+        s.busyUntil = now(player) + 4;
+        ItoMoves.cool(player, MochiKit.ANEMONE, (int) (140 + held));
+        fx(player, ANEMONE, 0, s.anemoneAt != null ? s.anemoneAt : player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
+        animate(player, "pika_laser_end");
+    }
+
+    // ------------------------------------------------------------------------------------------------------ N: Buzz Cut Mochi
+
+    static void buzzCut(ServerPlayer player, State s, long now) {
+        if (!ItoMoves.ready(player, MochiKit.BUZZ_CUT)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.BUZZ_CUT, BUZZ_COOLDOWN);
         Vec3 f = ItoMoves.flat(player);
         Vec3 from = player.m_20182_();
         Vec3 want = from.m_82549_(f.m_82490_(WHEEL_RANGE));
@@ -623,73 +746,7 @@ public final class MochiMoves {
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------ B: Mochi Anemone
-
-    static void anemone(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.ANEMONE)) {
-            return;
-        }
-        s.anemoneSince = now;
-        s.anemoneNext = now + 6;
-        animate(player, "mochi_anemone");
-        fx(player, ANEMONE, 0, player.m_20182_(), Vec3.f_82478_, 1, 0, 0, ANEMONE_MOST);
-        sound(player, player.m_20182_(), MochiSounds.SQUISH, 1.0F, 1.0F);
-    }
-
-    static void anemoneTick(ServerPlayer player, State s, long now) {
-        if (now - s.anemoneSince >= ANEMONE_MOST) {
-            anemoneEnd(player, s);
-            return;
-        }
-        if (now < s.anemoneNext) {
-            return;
-        }
-        s.anemoneNext = now + ANEMONE_EVERY;
-        List<LivingEntity> near = ItoMoves.foes(player, player.m_20182_().m_82520_(0, 1.0, 0), ANEMONE_REACH);
-        near.sort((a, b) -> Double.compare(a.m_20280_(player), b.m_20280_(player)));
-        for (int i = 0; i < Math.min(2, near.size()); i++) {
-            LivingEntity body = near.get(i);
-            int ring = s.anemonePunches++ % MochiDraw.ANEMONE_RINGS;
-            fx(player, ANEMONE_PUNCH, ring, StyleCombat.middle(body), Vec3.f_82478_, 0, 0, 0, 0);
-            sounds(player, player.m_20182_(), MochiSounds.STRETCH, 0.6F, 1.3F, 1, 4);
-            later(player, 2, () -> {
-                if (body.m_6084_()) {
-                    Vec3 away = body.m_20182_().m_82546_(player.m_20182_());
-                    away = new Vec3(away.f_82479_, 0, away.f_82481_);
-                    away = away.m_82556_() < 1.0E-4 ? Vec3.f_82478_ : away.m_82541_();
-                    hit(player, body, 3.5F, away.m_82490_(0.4).m_82520_(0, 0.1, 0));
-                }
-            });
-        }
-    }
-
-    static void anemoneEnd(ServerPlayer player, State s) {
-        long held = now(player) - s.anemoneSince;
-        s.anemoneSince = -1;
-        s.busyUntil = now(player) + 4;
-        ItoMoves.cool(player, MochiKit.ANEMONE, (int) (120 + held));
-        fx(player, ANEMONE, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
-        animate(player, "pika_laser_end");
-    }
-
-    // ------------------------------------------------------------------------------------------------------ N: Sticky Mochi
-
-    static void sticky(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.STICKY)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.STICKY, 70);
-        s.busyUntil = now + 5;
-        Vec3 look = player.m_20154_();
-        Vec3 from = ItoMoves.chest(player).m_82549_(look.m_82490_(0.9));
-        Vec3 step = look.m_82490_(GLOB_SPEED);
-        int flight = (int) Math.ceil(GLOB_RANGE / GLOB_SPEED);
-        int seed = ++seeds;
-        animate(player, "mochi_throw");
-        fx(player, GLOB, seed, from, step, 0, 0, 0, flight);
-        sound(player, from, MochiSounds.SQUISH, 0.9F, 1.2F);
-        LIVE.add(new Glob((ServerLevel) player.m_9236_(), player, from, step, now + flight, seed));
-    }
+    // ------------------------------------------------------------------------------------------------------ holding fast
 
     /** Glues {@code body} where it stands for {@code ticks} (once at a time: a body already stuck is held to its end). */
     static void stick(ServerPlayer player, LivingEntity body, int ticks) {
@@ -742,370 +799,6 @@ public final class MochiMoves {
         }
     }
 
-    /** Catches the shots near {@code at} (within {@code r}): held fast, given back their fall when let go. */
-    static void catchShots(ServerLevel level, ServerPlayer owner, Vec3 at, double r, Set<Projectile> caught) {
-        for (Projectile shot : level.m_6443_(Projectile.class, UoMoves.box(at, at).m_82400_(r + 1.0), e -> e.m_6084_())) {
-            if (shot.m_19749_() == owner || caught.contains(shot) || shot.m_20182_().m_82554_(at) > r) {
-                continue;
-            }
-            shot.m_20256_(Vec3.f_82478_);
-            shot.m_20242_(true);
-            caught.add(shot);
-        }
-        for (Projectile shot : caught) {
-            if (shot.m_6084_()) {
-                shot.m_20256_(Vec3.f_82478_);
-            }
-        }
-    }
-
-    static void letShotsGo(Set<Projectile> caught) {
-        for (Projectile shot : caught) {
-            if (shot.m_6084_()) {
-                shot.m_20242_(false);
-            }
-        }
-        caught.clear();
-    }
-
-    /** A sticky glob in flight: glues the first body it meets, or lands as a sticky patch; shots flying into it stick. */
-    static final class Glob implements UoMoves.Live {
-        final ServerLevel level;
-        final ServerPlayer owner;
-        Vec3 at;
-        final Vec3 step;
-        final long until;
-        final int seed;
-        final Set<Projectile> caught = new HashSet<>();
-
-        Glob(ServerLevel level, ServerPlayer owner, Vec3 at, Vec3 step, long until, int seed) {
-            this.level = level;
-            this.owner = owner;
-            this.at = at;
-            this.step = step;
-            this.until = until;
-            this.seed = seed;
-        }
-
-        @Override
-        public ServerLevel level() {
-            return this.level;
-        }
-
-        @Override
-        public boolean tick(long now) {
-            if (!this.owner.m_6084_()) {
-                letShotsGo(this.caught);
-                return true;
-            }
-            catchShots(this.level, this.owner, this.at, 1.5, this.caught);
-            Vec3 next = this.at.m_82549_(this.step);
-            for (LivingEntity body : ItoMoves.foes(this.owner, next, 1.2)) {
-                hit(this.owner, body, 3.0F, this.step.m_82490_(0.1));
-                stick(this.owner, body, STUCK_TICKS);
-                fx(this.owner, GLOB, this.seed, next, Vec3.f_82478_, 0, 0, 0, 0);
-                sound(this.owner, next, MochiSounds.SPLAT, 1.0F, 1.0F);
-                letShotsGo(this.caught);
-                return true;
-            }
-            BlockHitResult block = this.level.m_45547_(new ClipContext(this.at, next, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-            if (block.m_6662_() == HitResult.Type.BLOCK || now >= this.until) {
-                Vec3 where = grounded(this.owner, block.m_6662_() == HitResult.Type.BLOCK ? block.m_82450_() : next);
-                fx(this.owner, GLOB, this.seed, where, Vec3.f_82478_, 0, 0, 0, 0);
-                fx(this.owner, PATCH, this.seed, where, Vec3.f_82478_, 0, 0, PATCH_RADIUS, PATCH_TICKS);
-                sound(this.owner, where, MochiSounds.SPLAT, 1.0F, 0.9F);
-                LIVE.add(new Patch(this.level, this.owner, where, now + PATCH_TICKS, this.caught));
-                return true;
-            }
-            this.at = next;
-            return false;
-        }
-    }
-
-    /** A sticky patch on the ground: whoever steps in it is glued a while; shots near it stick fast until it goes. */
-    static final class Patch implements UoMoves.Live {
-        final ServerLevel level;
-        final ServerPlayer owner;
-        final Vec3 at;
-        final long until;
-        final Set<Projectile> caught;
-
-        Patch(ServerLevel level, ServerPlayer owner, Vec3 at, long until, Set<Projectile> caught) {
-            this.level = level;
-            this.owner = owner;
-            this.at = at;
-            this.until = until;
-            this.caught = caught;
-        }
-
-        @Override
-        public ServerLevel level() {
-            return this.level;
-        }
-
-        @Override
-        public boolean tick(long now) {
-            if (!this.owner.m_6084_() || now >= this.until) {
-                letShotsGo(this.caught);
-                return true;
-            }
-            catchShots(this.level, this.owner, this.at.m_82520_(0, 0.5, 0), PATCH_RADIUS, this.caught);
-            if (now % 4 == 0) {
-                for (LivingEntity body : ItoMoves.foes(this.owner, this.at, PATCH_RADIUS + 0.5)) {
-                    if (Math.abs(body.m_20186_() - this.at.f_82480_) < 0.8) {
-                        stick(this.owner, body, 30);
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------------ M: the Awakening
-
-    static void awaken(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.AWAKEN)) {
-            return;
-        }
-        s.awakenUntil = now + AWAKEN_TICKS;
-        s.busyUntil = now + 10;
-        animate(player, "mochi_awaken");
-        fx(player, AWAKEN, 0, player.m_20182_(), Vec3.f_82478_, 1, 0, AWAKEN_RADIUS, AWAKEN_TICKS);
-        sound(player, player.m_20182_(), MochiSounds.ROLL, 1.4F, 0.8F);
-        sound(player, player.m_20182_(), MochiSounds.SQUISH, 1.2F, 0.7F);
-        Impact.quake((ServerLevel) player.m_9236_(), player.m_20182_(), 20.0, 0.4F, 12);
-    }
-
-    static void awakenOff(ServerPlayer player, State s) {
-        if (s.awakenUntil < 0) {
-            return;
-        }
-        s.awakenUntil = -1;
-        ItoMoves.cool(player, MochiKit.AWAKEN, 600);
-        fx(player, AWAKEN, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
-    }
-
-    // awakened Z: Nagare Mochi
-    static void nagare(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.NAGARE)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.NAGARE, 110);
-        s.busyUntil = now + 10;
-        Vec3 f = ItoMoves.flat(player);
-        Vec3 from = grounded(player, player.m_20182_());
-        int ticks = (int) Math.ceil(NAGARE_RANGE / NAGARE_SPEED);
-        int seed = ++seeds;
-        animate(player, "mochi_wave");
-        fx(player, NAGARE, seed, from, f, 0, 0, NAGARE_RANGE, ticks);
-        sound(player, from, MochiSounds.ROLL, 1.4F, 0.9F);
-        Set<Integer> caught = new HashSet<>();
-        Vec3 side = new Vec3(-f.f_82481_, 0, f.f_82479_);
-        for (int k = 1; k <= ticks; k++) {
-            double front = 2.0 + NAGARE_SPEED * k;
-            later(player, k, () -> {
-                for (LivingEntity body : ItoMoves.foes(player, from.m_82549_(f.m_82490_(front)), NAGARE_WIDTH * 0.5 + 1.0)) {
-                    Vec3 d = body.m_20182_().m_82546_(from);
-                    double along = d.m_82526_(f);
-                    if (along > front - 1.6 && along < front + 0.8 && Math.abs(d.m_82526_(side)) < NAGARE_WIDTH * 0.5 && caught.add(body.m_19879_())) {
-                        hit(player, body, 6.0F, f.m_82490_(0.3));
-                        stick(player, body, 50);
-                    }
-                }
-            });
-        }
-    }
-
-    // awakened X: Kagami Mochi
-    static void kagami(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.KAGAMI)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.KAGAMI, 140);
-        s.busyUntil = now + 10;
-        Vec3 f = ItoMoves.flat(player);
-        Vec3 at = grounded(player, target(player, 24.0));
-        animate(player, "mochi_walls");
-        fx(player, KAGAMI, ++seeds, at, f, 0, 0, 4.0, (int) MochiDraw.WALLS_LIFE);
-        sound(player, at, MochiSounds.ROLL, 1.2F, 1.1F);
-        later(player, (int) MochiDraw.WALLS_SHUT, () -> {
-            ServerLevel level = (ServerLevel) player.m_9236_();
-            for (LivingEntity body : ItoMoves.foes(player, at.m_82520_(0, 1.5, 0), 4.2)) {
-                hit(player, body, 16.0F, new Vec3(0, 0.2, 0));
-                stick(player, body, 20);
-            }
-            ConquerorAura.exploded(player, level, at.m_82520_(0, 1.5, 0), 3.5);
-            Impact.quake(level, at, 18.0, 0.55F, 10);
-            sound(player, at, MochiSounds.SLAM, 1.5F, 0.8F);
-        });
-    }
-
-    // awakened C: Amadare Mochi
-    static void amadare(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.AMADARE)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.AMADARE, 140);
-        s.busyUntil = now + 10;
-        Vec3 at = grounded(player, target(player, 30.0));
-        int seed = ++seeds;
-        int ticks = AMADARE_COUNT * AMADARE_EVERY + 20;
-        animate(player, "mochi_rain");
-        fx(player, AMADARE, seed, at, Vec3.f_82478_, 0, 0, AMADARE_RADIUS, ticks);
-        sound(player, at.m_82520_(0, AMADARE_SKY, 0), MochiSounds.SQUISH, 1.3F, 0.7F);
-        for (int k = 0; k < AMADARE_COUNT; k++) {
-            int kk = k;
-            later(player, k * AMADARE_EVERY + 4, () -> {
-                // where tendril k strikes: the very point every client draws it (MochiDraw.rain)
-                double ang = 2 * Math.PI * FireMesh.rand(seed, kk);
-                double d = AMADARE_RADIUS * Math.sqrt(FireMesh.rand(seed, kk + 50));
-                Vec3 p = at.m_82520_(Math.cos(ang) * d, 0, Math.sin(ang) * d);
-                sounds(player, p, MochiSounds.SPLAT, 0.8F, 0.9F + kk % 3 * 0.1F, 1, 3);
-                for (LivingEntity body : ItoMoves.foes(player, p.m_82520_(0, 1.0, 0), 1.8)) {
-                    hit(player, body, 4.0F, new Vec3(0, -0.3, 0));
-                    HakiFalls.knockDown((ServerLevel) player.m_9236_(), body, 12, false);
-                }
-            });
-        }
-    }
-
-    // awakened V: Muso Donuts and Chikara Mochi
-    static void donuts(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.DONUTS)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.DONUTS, 180);
-        s.busyUntil = now + 10;
-        LivingEntity aimed = PikaMoves.aimed(player, 40.0, 0.2);
-        Vec3 at = aimed != null ? StyleCombat.middle(aimed) : ItoMoves.looked(player, 40.0);
-        int seed = ++seeds;
-        int ticks = DONUT_FIRST + MochiDraw.DONUTS * DONUT_EVERY + (int) MochiDraw.DONUT_FIST + 8;
-        animate(player, "mochi_donuts");
-        fx(player, DONUTS, seed, at, Vec3.f_82478_, 0, 0, 0, ticks);
-        sound(player, player.m_20182_(), MochiSounds.POP, 1.2F, 0.8F);
-        for (int k = 0; k < MochiDraw.DONUTS; k++) {
-            later(player, DONUT_FIRST + k * DONUT_EVERY, () -> sound(player, player.m_20182_(), MochiSounds.STRETCH, 0.8F, 0.9F));
-            later(player, DONUT_FIRST + k * DONUT_EVERY + (int) MochiDraw.DONUT_FIST, () -> {
-                Vec3 where = aimed != null && aimed.m_6084_() ? StyleCombat.middle(aimed) : at;
-                boolean coat = coated(player);
-                UoMoves.explode(player, (ServerLevel) player.m_9236_(), where, ItoMoves.flat(player), 2.5, coat ? 11.25F : 9.0F, 0, 1.0);
-                fx(player, SPLAT, ++seeds, where, ItoMoves.flat(player), 0, 0, 1.6, 0);
-                sounds(player, where, MochiSounds.PUNCH, 1.2F, 0.8F, 1, 2);
-            });
-        }
-    }
-
-    // awakened B: Mochi Ginkaku
-    static void ginkaku(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.GINKAKU)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.GINKAKU, 220);
-        s.busyUntil = now + 10;
-        Vec3 at = grounded(player, target(player, 24.0));
-        animate(player, "mochi_dome");
-        fx(player, DOME, ++seeds, at, Vec3.f_82478_, 0, 0, DOME_RADIUS, DOME_TICKS);
-        sound(player, at, MochiSounds.ROLL, 1.4F, 0.7F);
-        LIVE.add(new Dome((ServerLevel) player.m_9236_(), player, at, now, now + DOME_TICKS));
-    }
-
-    /** The dome standing: whoever is in it is held in (pushed back at its wall) and squeezed; it crushes them as it falls in. */
-    static final class Dome implements UoMoves.Live {
-        final ServerLevel level;
-        final ServerPlayer owner;
-        final Vec3 at;
-        final long born;
-        final long until;
-
-        Dome(ServerLevel level, ServerPlayer owner, Vec3 at, long born, long until) {
-            this.level = level;
-            this.owner = owner;
-            this.at = at;
-            this.born = born;
-            this.until = until;
-        }
-
-        @Override
-        public ServerLevel level() {
-            return this.level;
-        }
-
-        @Override
-        public boolean tick(long now) {
-            if (!this.owner.m_6084_()) {
-                return true;
-            }
-            if (now >= this.until) {
-                for (LivingEntity body : ItoMoves.foes(this.owner, this.at, DOME_RADIUS + 0.5)) {
-                    hit(this.owner, body, 12.0F, new Vec3(0, -0.4, 0));
-                    HakiFalls.knockDown(this.level, body, 30, false);
-                }
-                ConquerorAura.exploded(this.owner, this.level, this.at.m_82520_(0, 1.0, 0), DOME_RADIUS);
-                Impact.quake(this.level, this.at, 22.0, 0.65F, 12);
-                fx(this.owner, SPLAT, ++seeds, this.at.m_82520_(0, 1.0, 0), new Vec3(0, 1, 0), 0, 0, 3.0, 0);
-                sound(this.owner, this.at, MochiSounds.SLAM, 1.6F, 0.7F);
-                return true;
-            }
-            if (now - this.born < 10 || now % 2 != 0) {
-                return false;
-            }
-            for (LivingEntity body : ItoMoves.foes(this.owner, this.at, DOME_RADIUS + 1.5)) {
-                Vec3 d = body.m_20182_().m_82546_(this.at);
-                Vec3 flat = new Vec3(d.f_82479_, 0, d.f_82481_);
-                double dist = flat.m_82553_();
-                if (dist > DOME_RADIUS + 0.8 || dist < 1.0E-4) {
-                    continue;
-                }
-                if (dist > DOME_RADIUS - 1.0) {
-                    // at its wall: pushed back in
-                    Vec3 in = flat.m_82490_(-1.0 / dist);
-                    Vec3 v = body.m_20184_();
-                    double out = Math.max(0.0, -(v.f_82479_ * in.f_82479_ + v.f_82481_ * in.f_82481_));
-                    body.m_20256_(v.m_82549_(in.m_82490_(out + 0.3)));
-                    body.f_19864_ = true;
-                }
-                if ((now - this.born) % 10 == 0) {
-                    hit(this.owner, body, 2.0F, Vec3.f_82478_);
-                }
-            }
-            return false;
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------------ Future Sight
-
-    static void dodge(ServerPlayer player, State s, long now) {
-        if (!ItoMoves.ready(player, MochiKit.DODGE)) {
-            return;
-        }
-        ItoMoves.cool(player, MochiKit.DODGE, 400);
-        s.dodgeUntil = now + DODGE_TICKS;
-        fx(player, DODGE, 0, player.m_20182_(), Vec3.f_82478_, DODGE_OPEN, 0, 0, DODGE_TICKS);
-        sound(player, player.m_20182_(), MochiSounds.SQUISH, 0.9F, 1.3F);
-    }
-
-    /** While Future Sight is open, a blow passes through a hole in the mochi body: none of it lands (true stops it). */
-    static boolean blocks(ServerPlayer player, DamageSource source) {
-        State s = STATES.get(player.m_20148_());
-        long now = now(player);
-        if (s == null || s.dodgeUntil < 0 || now >= s.dodgeUntil) {
-            return false;
-        }
-        Entity from = source.m_7639_() != null ? source.m_7639_() : source.m_7640_();
-        if (from == null || from == player) {
-            return false; // only blows from someone (a hit, a shot, a blast): never a fall, the void, drowning or a command
-        }
-        Vec3 chest = ItoMoves.chest(player);
-        Vec3 way = chest.m_82546_(from.m_146892_());
-        way = way.m_82556_() < 1.0E-6 ? new Vec3(0, 0, 1) : way.m_82541_();
-        if (now - s.holeHeard >= 3) {
-            s.holeHeard = now;
-            fx(player, DODGE, ++seeds, chest.m_82546_(way.m_82490_(0.2)), way, DODGE_HOLE, 0, 0, 0);
-            sound(player, chest, MochiSounds.SQUISH, 0.7F, 1.4F);
-        }
-        return true;
-    }
-
     // ------------------------------------------------------------------------------------------------------ the tick
 
     static void tick(ServerPlayer player) {
@@ -1114,17 +807,11 @@ public final class MochiMoves {
             return;
         }
         long now = now(player);
-        if (s.tsukiSince >= 0 && now - s.tsukiSince >= TSUKI_MOST) {
-            tsukiThrust(player, s); // held its longest: it goes by itself
-        }
         if (s.yakiSince >= 0 && now - s.yakiSince >= YAKI_MOST) {
             yakiFire(player, s); // held its longest: it goes by itself
         }
         if (s.anemoneSince >= 0) {
             anemoneTick(player, s, now);
-        }
-        if (s.awakenUntil >= 0 && now >= s.awakenUntil) {
-            awakenOff(player, s);
         }
     }
 
@@ -1133,10 +820,6 @@ public final class MochiMoves {
         if (s == null) {
             return;
         }
-        if (s.tsukiSince >= 0) {
-            s.tsukiSince = -1;
-            fx(player, TSUKI, 0, player.m_20182_(), Vec3.f_82478_, TSUKI_DROP, 0, 0, 0);
-        }
         if (s.yakiSince >= 0) {
             s.yakiSince = -1;
             fx(player, YAKI, 0, player.m_20182_(), Vec3.f_82478_, YAKI_DROP, 0, 0, 0);
@@ -1144,7 +827,6 @@ public final class MochiMoves {
         if (s.anemoneSince >= 0) {
             anemoneEnd(player, s);
         }
-        awakenOff(player, s);
         STATES.remove(player.m_20148_());
     }
 

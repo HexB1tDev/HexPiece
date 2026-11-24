@@ -411,4 +411,21 @@ swirl trails, shockwave rings, flying debris; explosions are a white-hot star bu
     (material, arms, Yanagi's leg, held Yaki, the donuts): the Mochi fruit's moves are to be the Dough / DoughV2 moves of section M,
     every one of them, and HexPiece's current Mochi moves removed. Our own 3D art, effects and names; the reference is a look and a
     moveset to match, never copied assets.)
+29. The owner's answers (AskUserQuestion): "Dough base + V2 awakened" (the 6 Dough moves on Z X C V B N; M turns on the Awakening,
+    which swaps them for the 6 DoughV2 moves, with trident swings on left click); of the current kit's extras keep only "Left-click
+    punches" (Mochi Tsuki on right click, Sticky Mochi and Future Sight are removed with every other current move).
+
+The new kit (names our own, close to the reference's so the owner knows them; each move's look in section M):
+- Base: LMB Mochi Punch (kept); Z Grilled Mochi (the reference's Grilled Dough; the owner's earlier "held, the bigger the longer, one arm
+  pointed" kept for it: it is the old Yaki Mochi's place); X Mochi Muddle (a trail of dough on the ground ahead, gluing and hurting who
+  walks in, less the further from its start); C Lotus Mochi Combo (an armoured dough fist punches; the one hit is launched up, then
+  thrown back down); V Chestnut Mochi (a spiked donut in the air shooting spikes at the nearest foe in range for a while); B Mochi Anemone
+  (held: a cluster of donuts over the target area firing Haki arms into it); N Buzz Cut Mochi (the owner's own cinematic, 8zzv 10, and
+  the reference's Buzzcut: the wheel catches anyone near too).
+- Awakened (M): LMB Mogura Lacerations (five trident swings, the last breaks a block); Z Grilled Lance (Mogura held out with mochi
+  spinning round it; held, the arm swells with Haki mochi in flames and is launched, exploding after a moment); X Elastic Lasso (a
+  stretchy lasso pulling the one caught to you); C Oblivion (a stomp: a surge of mochi at the target, walls round it holding it, then
+  bursting); V Power Mochi (two flaming donuts at the shoulders for 20 s: the left click becomes their fists, longer reach); B Blazing
+  Storm (six flaming Haki arms barrage the target, ending in one strike; aimed); N Scorching Buzz Cut (the flaming spiked wheel, three
+  swings of the giant spiked fist, a bigger slam).
 

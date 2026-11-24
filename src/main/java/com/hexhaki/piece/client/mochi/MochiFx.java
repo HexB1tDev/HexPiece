@@ -46,19 +46,6 @@ public final class MochiFx {
     record Punch(int user, int which, double reach, long born, boolean coat, int seed) {
     }
 
-    /** Mochi Tsuki held (by user). */
-    record Held(long born, long until, boolean coat) {
-    }
-
-    record Thrust(int user, Vec3 from, Vec3 way, double reach, double charge, long born, boolean coat) {
-    }
-
-    record Yanagi(int user, Vec3 at, Vec3 way, long born, int seed) {
-    }
-
-    record Kaku(int user, Vec3 at, Vec3 way, long born, boolean coat, int seed) {
-    }
-
     record Splat(Vec3 at, Vec3 way, double size, long born, int seed) {
     }
 
@@ -79,95 +66,80 @@ public final class MochiFx {
     record Club(int user, int body, Vec3 at, long born, boolean coat, int seed) {
     }
 
-    /** Mochi Anemone held (by user); ended once let go (its rings shrink away). */
-    static final class Anemone {
-        final long born;
-        final long until;
-        final boolean coat;
-        long ended = -1;
-
-        Anemone(long born, long until, boolean coat) {
-            this.born = born;
-            this.until = until;
-            this.coat = coat;
-        }
-    }
-
-    record Reach(int user, int ring, Vec3 at, long born) {
-    }
-
-    record Glob(Vec3 from, Vec3 step, long born, int flight) {
-    }
-
     record Stuck(Vec3 at, double height, long born, int ticks) {
     }
 
-    record Patch(Vec3 at, double radius, long born, int ticks, int seed) {
+    /** 3.6.3: the reference's moves. */
+    record Muddle(Vec3 at, Vec3 way, double length, long born, int ticks, int seed) {
     }
 
-    /** The Awakening (by user): its ground round the user's feet, the lumps worked out each tick (world: x, y, z, size, seed each). */
-    static final class Awake {
-        final long born;
-        final int ticks;
-        final double radius;
-        long ended = -1;
-        final double[] lumps = new double[MochiDraw.GROUND_MOST * 5];
-        int count;
+    record Lotus(int user, Vec3 way, long born, boolean coat, int seed) {
+    }
 
-        Awake(long born, int ticks, double radius) {
+    record LotusSlam(int body, Vec3 at, long born, boolean coat, int seed) {
+    }
+
+    /** Chestnut Mochi's donut (by user): out until, its last spike. */
+    static final class Chestnut {
+        final long born;
+        final long until;
+        final int seed;
+        long ended = -1;
+        long fired = -100;
+
+        Chestnut(long born, long until, int seed) {
             this.born = born;
-            this.ticks = ticks;
-            this.radius = radius;
+            this.until = until;
+            this.seed = seed;
         }
     }
 
-    record Wave(Vec3 at, Vec3 way, double range, long born, int ticks, int seed) {
+    record Spike(int user, Vec3 at, long born, int seed) {
     }
 
-    record Walls(Vec3 at, Vec3 way, double apart, long born, int seed) {
+    /** Mochi Anemone held (by user): its area, until when; ended once let go. */
+    static final class Area {
+        final Vec3 at;
+        final double radius;
+        final long born;
+        final long until;
+        final boolean coat;
+        final int seed;
+        long ended = -1;
+
+        Area(Vec3 at, double radius, long born, long until, boolean coat, int seed) {
+            this.at = at;
+            this.radius = radius;
+            this.born = born;
+            this.until = until;
+            this.coat = coat;
+            this.seed = seed;
+        }
     }
 
-    record Rain(Vec3 at, double radius, long born, int ticks, int seed) {
-    }
-
-    record Donuts(int user, Vec3 at, long born, int ticks, boolean coat, int seed) {
-    }
-
-    record Dome(Vec3 at, double radius, long born, int ticks, int seed) {
-    }
-
-    record Hole(int user, Vec3 at, Vec3 way, long born) {
+    record Strike(int user, int donut, Vec3 at, long born) {
     }
 
     static final int MOST = 64;
     static final double FAR = 160.0;
     private static final List<Punch> PUNCHES = new ArrayList<>();
-    static final Map<Integer, Held> HELD = new HashMap<>();
-    private static final List<Thrust> THRUSTS = new ArrayList<>();
-    private static final List<Yanagi> YANAGIS = new ArrayList<>();
-    private static final List<Kaku> KAKUS = new ArrayList<>();
     private static final List<Splat> SPLATS = new ArrayList<>();
     private static final List<Boom> BOOMS = new ArrayList<>();
     static final Map<Integer, Swell> SWELLS = new HashMap<>();
     static final Map<Integer, Fist> FISTS = new HashMap<>();
     static final Map<Integer, Wheel> WHEELS = new HashMap<>();
     private static final List<Club> CLUBS = new ArrayList<>();
-    static final Map<Integer, Anemone> ANEMONES = new HashMap<>();
-    private static final List<Reach> REACHES = new ArrayList<>();
-    static final Map<Integer, Glob> GLOBS = new HashMap<>();
     static final Map<Integer, Stuck> STUCKS = new HashMap<>();
-    private static final List<Patch> PATCHES = new ArrayList<>();
-    static final Map<Integer, Awake> AWAKES = new HashMap<>();
-    private static final List<Wave> WAVES = new ArrayList<>();
-    private static final List<Walls> WALLS = new ArrayList<>();
-    private static final List<Rain> RAINS = new ArrayList<>();
-    private static final List<Donuts> DONUTS = new ArrayList<>();
-    private static final List<Dome> DOMES = new ArrayList<>();
-    private static final List<Hole> HOLES = new ArrayList<>();
+    private static final List<Muddle> MUDDLES = new ArrayList<>();
+    private static final List<Lotus> LOTUSES = new ArrayList<>();
+    private static final List<LotusSlam> SLAMS = new ArrayList<>();
+    static final Map<Integer, Chestnut> CHESTNUTS = new HashMap<>();
+    private static final List<Spike> SPIKES = new ArrayList<>();
+    static final Map<Integer, Area> AREAS = new HashMap<>();
+    private static final List<Strike> STRIKES = new ArrayList<>();
     /** How long the Anemone's rings and the Awakening's ground take to shrink away once ended. */
-    static final int ANEMONE_FADE = 6;
-    static final int GROUND_FADE = 10;
-    static final int SINK_TICKS = 6;
+    /** 3.6.3: how long a donut takes to form and to go (ticks). */
+    static final double FORM = 6.0;
 
     private MochiFx() {
     }
@@ -187,8 +159,7 @@ public final class MochiFx {
 
     /** client/mochi/MochiClient: whether {@code user}'s Awakening is on (the panel shows the awakened moves). */
     static boolean awakened(int user) {
-        Awake w = AWAKES.get(user);
-        return w != null && w.ended < 0 && clock - w.born < w.ticks;
+        return false; // 3.6.3: the awakened set (the reference's DoughV2) comes in the next version
     }
 
     public static void accept(S2CUoFx m) {
@@ -198,18 +169,6 @@ public final class MochiFx {
         int phase = Math.round(m.bx());
         switch (m.kind()) {
             case MochiMoves.PUNCH -> add(PUNCHES, new Punch(m.user(), phase, m.size(), clock, coat, m.id() + m.user()));
-            case MochiMoves.TSUKI -> {
-                if (phase == MochiMoves.TSUKI_CHARGE) {
-                    put(HELD, m.user(), new Held(clock, clock + m.ticks() + 2, coat));
-                } else if (phase == MochiMoves.TSUKI_THRUST) {
-                    HELD.remove(m.user());
-                    add(THRUSTS, new Thrust(m.user(), at, unit(a), m.size(), m.by(), clock, coat));
-                } else {
-                    HELD.remove(m.user());
-                }
-            }
-            case MochiMoves.YANAGI -> add(YANAGIS, new Yanagi(m.user(), at, unit(a), clock, m.id()));
-            case MochiMoves.KAKU -> add(KAKUS, new Kaku(m.user(), at, unit(a), clock, coat, m.id()));
             case MochiMoves.YAKI -> {
                 if (phase == MochiMoves.YAKI_SWELL) {
                     put(SWELLS, m.user(), new Swell(clock, clock + m.ticks() + 2, coat));
@@ -235,24 +194,6 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.CLUB -> add(CLUBS, new Club(m.user(), m.id(), at, clock, coat, m.id() + 7));
-            case MochiMoves.ANEMONE -> {
-                if (phase == 1) {
-                    put(ANEMONES, m.user(), new Anemone(clock, clock + m.ticks(), coat));
-                } else {
-                    Anemone n = ANEMONES.get(m.user());
-                    if (n != null && n.ended < 0) {
-                        n.ended = clock;
-                    }
-                }
-            }
-            case MochiMoves.ANEMONE_PUNCH -> add(REACHES, new Reach(m.user(), m.id(), at, clock));
-            case MochiMoves.GLOB -> {
-                if (m.ticks() > 0) {
-                    put(GLOBS, m.id(), new Glob(at, a, clock, m.ticks()));
-                } else {
-                    GLOBS.remove(m.id());
-                }
-            }
             case MochiMoves.STUCK -> {
                 if (m.ticks() > 0) {
                     put(STUCKS, m.id(), new Stuck(at, m.size(), clock, m.ticks()));
@@ -260,29 +201,44 @@ public final class MochiFx {
                     STUCKS.remove(m.id());
                 }
             }
-            case MochiMoves.PATCH -> add(PATCHES, new Patch(at, m.size(), clock, m.ticks(), m.id()));
             case MochiMoves.SPLAT -> add(SPLATS, new Splat(at, unit(a), m.size(), clock, m.id()));
             case MochiMoves.BOOM -> add(BOOMS, new Boom(at, m.size(), clock, m.id()));
-            case MochiMoves.AWAKEN -> {
-                if (phase == 1) {
-                    put(AWAKES, m.user(), new Awake(clock, m.ticks(), m.size()));
+            case MochiMoves.MUDDLE -> add(MUDDLES, new Muddle(at, flat(a), m.size(), clock, m.ticks(), m.id()));
+            case MochiMoves.LOTUS -> {
+                if (phase == MochiMoves.LOTUS_PUNCH) {
+                    add(LOTUSES, new Lotus(m.user(), unit(a), clock, coat, m.id()));
                 } else {
-                    Awake w = AWAKES.get(m.user());
-                    if (w != null && w.ended < 0) {
-                        w.ended = clock;
+                    add(SLAMS, new LotusSlam(m.user(), at, clock, coat, m.id() + 5));
+                }
+            }
+            case MochiMoves.CHESTNUT -> {
+                if (phase == 1) {
+                    put(CHESTNUTS, m.user(), new Chestnut(clock, clock + m.ticks(), m.id()));
+                } else {
+                    Chestnut c = CHESTNUTS.get(m.user());
+                    if (c != null && c.ended < 0) {
+                        c.ended = clock;
                     }
                 }
             }
-            case MochiMoves.NAGARE -> add(WAVES, new Wave(at, flat(a), m.size(), clock, m.ticks(), m.id()));
-            case MochiMoves.KAGAMI -> add(WALLS, new Walls(at, flat(a), m.size(), clock, m.id()));
-            case MochiMoves.AMADARE -> add(RAINS, new Rain(at, m.size(), clock, m.ticks(), m.id()));
-            case MochiMoves.DONUTS -> add(DONUTS, new Donuts(m.user(), at, clock, m.ticks(), coat, m.id()));
-            case MochiMoves.DOME -> add(DOMES, new Dome(at, m.size(), clock, m.ticks(), m.id()));
-            case MochiMoves.DODGE -> {
-                if (phase == MochiMoves.DODGE_HOLE) {
-                    add(HOLES, new Hole(m.user(), at, unit(a), clock));
+            case MochiMoves.CHESTNUT_SPIKE -> {
+                add(SPIKES, new Spike(m.user(), at, clock, m.id()));
+                Chestnut c = CHESTNUTS.get(m.user());
+                if (c != null) {
+                    c.fired = clock;
                 }
             }
+            case MochiMoves.ANEMONE -> {
+                if (phase == 1) {
+                    put(AREAS, m.user(), new Area(at, m.size(), clock, clock + m.ticks(), coat, m.id()));
+                } else {
+                    Area n = AREAS.get(m.user());
+                    if (n != null && n.ended < 0) {
+                        n.ended = clock;
+                    }
+                }
+            }
+            case MochiMoves.ANEMONE_PUNCH -> add(STRIKES, new Strike(m.user(), m.id(), at, clock));
             default -> {
             }
         }
@@ -396,25 +352,13 @@ public final class MochiFx {
      * punch's arm while it is out, both of Kaku Mochi's.
      */
     static int mochiArms(int user) {
-        if (PUNCHES.isEmpty() && KAKUS.isEmpty() && YANAGIS.isEmpty()) {
+        if (PUNCHES.isEmpty()) {
             return 0;
         }
         int arms = 0;
         for (Punch p : PUNCHES) {
             if (p.user == user && clock - p.born <= MochiDraw.PUNCH_LIFE) {
                 arms |= p.which == 0 ? RIGHT : LEFT;
-            }
-        }
-        for (Kaku k : KAKUS) {
-            if (k.user == user && clock - k.born <= MochiDraw.KAKU_LIFE) {
-                arms |= RIGHT | LEFT;
-            }
-        }
-        // 3.6.3 (the owner: "Z Move should lift the leg of the player and turn it into the many legs")
-        for (Yanagi y : YANAGIS) {
-            long age = clock - y.born;
-            if (y.user == user && age >= LEG_FROM && age <= MochiDraw.YANAGI_LIFE - LEG_BACK) {
-                arms |= RIGHT_LEG;
             }
         }
         return arms;
@@ -478,76 +422,28 @@ public final class MochiFx {
             roll(minecraft.f_91074_);
         }
         PUNCHES.removeIf(p -> clock - p.born > MochiDraw.PUNCH_LIFE + 1);
-        HELD.entrySet().removeIf(e -> clock > e.getValue().until || level.m_6815_(e.getKey()) == null);
-        THRUSTS.removeIf(t -> clock - t.born > MochiDraw.TSUKI_LIFE + 1);
-        YANAGIS.removeIf(y -> clock - y.born > MochiDraw.YANAGI_LIFE + 1);
-        KAKUS.removeIf(k -> clock - k.born > MochiDraw.KAKU_LIFE + 1);
         SPLATS.removeIf(s -> clock - s.born > MochiDraw.SPLAT_LIFE + 1);
         BOOMS.removeIf(b -> clock - b.born > MochiDraw.BOOM_LIFE + 1);
         SWELLS.entrySet().removeIf(e -> clock > e.getValue().until || level.m_6815_(e.getKey()) == null);
         FISTS.values().removeIf(f -> clock - f.born > f.flight + 1);
         WHEELS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().ticks + 2 || level.m_6815_(e.getKey()) == null);
         CLUBS.removeIf(c -> clock - c.born > MochiDraw.CLUB_LIFE + 1);
-        ANEMONES.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > ANEMONE_FADE
-            || clock > e.getValue().until + ANEMONE_FADE || level.m_6815_(e.getKey()) == null);
-        REACHES.removeIf(r -> clock - r.born > MochiDraw.ANEMONE_PUNCH + 1);
-        GLOBS.values().removeIf(g -> clock - g.born > g.flight + 1);
         STUCKS.values().removeIf(s -> clock - s.born > s.ticks + 1);
-        PATCHES.removeIf(p -> clock - p.born > p.ticks + 1);
-        AWAKES.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > GROUND_FADE
-            || clock - e.getValue().born > e.getValue().ticks + GROUND_FADE || level.m_6815_(e.getKey()) == null);
-        WAVES.removeIf(w -> clock - w.born > w.ticks + SINK_TICKS + 1);
-        WALLS.removeIf(w -> clock - w.born > MochiDraw.WALLS_LIFE + 1);
-        RAINS.removeIf(r -> clock - r.born > r.ticks + 1);
-        DONUTS.removeIf(d -> clock - d.born > d.ticks + 1);
-        DOMES.removeIf(d -> clock - d.born > d.ticks + SINK_TICKS + 1);
-        HOLES.removeIf(h -> clock - h.born > MochiDraw.HOLE_LIFE + 1);
-        for (Map.Entry<Integer, Awake> e : AWAKES.entrySet()) {
-            Entity user = level.m_6815_(e.getKey());
-            if (user != null) {
-                lumps(level, user.m_20182_(), e.getValue());
-            }
-        }
-    }
-
-    private static final double[] CELLS = new double[MochiDraw.GROUND_MOST * 4];
-
-    /**
-     * The Awakening's ground round {@code feet}: the world's fixed lumps (MochiDraw.groundLumps) each on the top of its column's solid
-     * block within 3 up and 6 down of the feet (none: left out).
-     */
-    static void lumps(ClientLevel level, Vec3 feet, Awake w) {
-        int n = MochiDraw.groundLumps(feet.f_82479_, feet.f_82481_, w.radius, CELLS);
-        int foot = (int) Math.floor(feet.f_82480_ - 0.01);
-        int count = 0;
-        for (int k = 0; k < n; k++) {
-            double x = CELLS[k * 4];
-            double z = CELLS[k * 4 + 1];
-            int bx = (int) Math.floor(x);
-            int bz = (int) Math.floor(z);
-            for (int y = foot + 3; y >= foot - 6; y--) {
-                net.minecraft.core.BlockPos pos = new net.minecraft.core.BlockPos(bx, y, bz);
-                net.minecraft.world.level.block.state.BlockState state = level.m_8055_(pos);
-                if (!state.m_60795_() && !state.m_60812_(level, pos).m_83281_()) {
-                    double[] l = w.lumps;
-                    l[count * 5] = x;
-                    l[count * 5 + 1] = y + 1.0;
-                    l[count * 5 + 2] = z;
-                    l[count * 5 + 3] = CELLS[k * 4 + 2];
-                    l[count * 5 + 4] = CELLS[k * 4 + 3];
-                    count++;
-                    break;
-                }
-            }
-        }
-        w.count = count;
+        MUDDLES.removeIf(u -> clock - u.born > u.ticks + 1);
+        LOTUSES.removeIf(l -> clock - l.born > MochiDraw.LOTUS_LIFE + 1);
+        SLAMS.removeIf(l -> clock - l.born > MochiDraw.LOTUS_SLAM_LIFE + 1);
+        CHESTNUTS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > FORM
+            || clock > e.getValue().until + FORM || level.m_6815_(e.getKey()) == null);
+        SPIKES.removeIf(s -> clock - s.born > MochiDraw.SPIKE_LIFE + 1);
+        AREAS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > FORM
+            || clock > e.getValue().until + FORM || level.m_6815_(e.getKey()) == null);
+        STRIKES.removeIf(s -> clock - s.born > MochiDraw.ANEMONE_PUNCH + 1);
     }
 
     static boolean empty() {
-        return PUNCHES.isEmpty() && HELD.isEmpty() && THRUSTS.isEmpty() && YANAGIS.isEmpty() && KAKUS.isEmpty() && SPLATS.isEmpty()
-            && BOOMS.isEmpty() && SWELLS.isEmpty() && FISTS.isEmpty() && WHEELS.isEmpty() && CLUBS.isEmpty() && ANEMONES.isEmpty()
-            && REACHES.isEmpty() && GLOBS.isEmpty() && STUCKS.isEmpty() && PATCHES.isEmpty() && AWAKES.isEmpty() && WAVES.isEmpty()
-            && WALLS.isEmpty() && RAINS.isEmpty() && DONUTS.isEmpty() && DOMES.isEmpty() && HOLES.isEmpty() && carry == null;
+        return PUNCHES.isEmpty() && SPLATS.isEmpty() && BOOMS.isEmpty() && SWELLS.isEmpty() && FISTS.isEmpty() && WHEELS.isEmpty()
+            && CLUBS.isEmpty() && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && CHESTNUTS.isEmpty()
+            && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && carry == null;
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -649,46 +545,29 @@ public final class MochiFx {
         return user.m_20299_(partial).m_82549_(look.m_82490_(ahead)).m_82549_(right.m_82490_(0.55)).m_82520_(0.0, -0.6, 0.0);
     }
 
-    static final double OWN_COIL = 1.7;
-    static final double OWN_DRILL = 2.8;
     static final double OWN_SWELL = 1.4;
-    /** How far below its usual height the Anemone's rings float round oneself in first person (else one hangs before the eye). */
-    static final double OWN_RINGS_DOWN = 0.9;
 
     /** Where both shoulders' middle is (Kaku Mochi's arms rise from it). */
     static Vec3 chest(Entity user, float partial) {
         return user.m_20318_(partial).m_82520_(0.0, user.m_20206_() * 0.76, 0.0);
     }
 
-    private static final double[] REACH = new double[MOST * 5];
-    private static final double[] GROUND = new double[MochiDraw.GROUND_MOST * 5];
+    private static final double[] STRIKE = new double[MOST * 5];
 
     static void draw(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial) {
         double cx = cam.f_82479_;
         double cy = cam.f_82480_;
         double cz = cam.f_82481_;
         double now = clock + partial;
-        // the Awakening's ground first (everything else stands on it)
-        for (Map.Entry<Integer, Awake> e : AWAKES.entrySet()) {
-            Awake w = e.getValue();
-            double age = now - w.born;
-            double grow = Math.min(1.0, age / GROUND_FADE) * (w.ended >= 0 ? Math.max(0.0, 1.0 - (now - w.ended) / GROUND_FADE) : 1.0)
-                * Math.max(0.0, Math.min(1.0, (w.ticks + GROUND_FADE - age) / GROUND_FADE));
-            for (int k = 0; k < w.count; k++) {
-                GROUND[k * 5] = w.lumps[k * 5] - cx;
-                GROUND[k * 5 + 1] = w.lumps[k * 5 + 1] - cy;
-                GROUND[k * 5 + 2] = w.lumps[k * 5 + 2] - cz;
-                GROUND[k * 5 + 3] = w.lumps[k * 5 + 3];
-                GROUND[k * 5 + 4] = w.lumps[k * 5 + 4];
+        for (Muddle u : MUDDLES) {
+            if (far(u.at, cam) && far(u.at.m_82549_(u.way.m_82490_(u.length)), cam)) {
+                continue;
             }
-            MochiDraw.ground(SINK, GROUND, w.count, grow, now);
-        }
-        for (Patch p : PATCHES) {
-            if (!far(p.at, cam)) {
-                double age = now - p.born;
-                double fade = Math.min(1.0, age / 3.0) * Math.max(0.0, Math.min(1.0, (p.ticks - age) / 10.0));
-                MochiDraw.patch(SINK, p.at.f_82479_ - cx, p.at.f_82480_ - cy, p.at.f_82481_ - cz, p.radius, fade, age, p.seed);
-            }
+            double age = now - u.born;
+            double reach = Math.min(u.length, MochiMoves.MUDDLE_SPREAD * (age + 1.0));
+            double fade = Math.min(1.0, (u.ticks - age) / 12.0);
+            MochiDraw.muddle(SINK, u.at.f_82479_ - cx, u.at.f_82480_ - cy, u.at.f_82481_ - cz, u.way.f_82479_, u.way.f_82481_, u.length, reach,
+                MochiMoves.MUDDLE_WIDTH, fade, age, u.seed);
         }
         for (Map.Entry<Integer, Stuck> e : STUCKS.entrySet()) {
             Stuck s = e.getValue();
@@ -713,50 +592,6 @@ public final class MochiFx {
                     now - p.born, p.coat, p.seed, p.which == 1);
             }
         }
-        for (Map.Entry<Integer, Held> e : HELD.entrySet()) {
-            Entity user = level.m_6815_(e.getKey());
-            if (user == null) {
-                continue;
-            }
-            Held h = e.getValue();
-            Vec3 look = user.m_20252_(partial);
-            Vec3 hand = ownView(minecraft, user) ? ownHand(user, OWN_COIL, partial) : shoulder(minecraft, user, 0, partial).m_82549_(look.m_82490_(0.45));
-            if (!far(hand, cam)) {
-                double age = now - h.born;
-                MochiDraw.tsuki(SINK, hand.f_82479_ - cx, hand.f_82480_ - cy, hand.f_82481_ - cz, look.f_82479_, look.f_82480_, look.f_82481_, 0.0, -1.0,
-                    MochiMoves.tsukiCharge(age), age * 0.9, h.coat);
-            }
-        }
-        for (Thrust t : THRUSTS) {
-            Entity user = level.m_6815_(t.user);
-            boolean own = user != null && ownView(minecraft, user);
-            Vec3 hand = user == null ? t.from : own ? ownHand(user, OWN_DRILL, partial) : shoulder(minecraft, user, 0, partial).m_82549_(t.way.m_82490_(0.45));
-            if (!far(hand, cam)) {
-                double age = now - t.born;
-                MochiDraw.tsuki(SINK, hand.f_82479_ - cx, hand.f_82480_ - cy, hand.f_82481_ - cz, t.way.f_82479_, t.way.f_82480_, t.way.f_82481_, t.reach,
-                    age, t.charge, age * 0.9, t.coat);
-            }
-        }
-        for (Yanagi y : YANAGIS) {
-            Entity user = level.m_6815_(y.user);
-            Vec3 feet = user != null ? user.m_20318_(partial) : y.at.m_82520_(0.0, -0.8, 0.0);
-            if (far(feet, cam)) {
-                continue;
-            }
-            Vec3 right = new Vec3(-y.way.f_82481_, 0, y.way.f_82479_);
-            Vec3 hip = feet.m_82520_(0.0, 0.8, 0.0).m_82549_(right.m_82490_(0.12));
-            MochiDraw.yanagi(SINK, hip.f_82479_ - cx, hip.f_82480_ - cy, hip.f_82481_ - cz, y.way.f_82479_, y.way.f_82481_, feet.f_82480_ - cy, now - y.born,
-                y.seed);
-        }
-        for (Kaku k : KAKUS) {
-            Entity user = level.m_6815_(k.user);
-            if (user == null || far(k.at, cam)) {
-                continue;
-            }
-            Vec3 c = chest(user, partial);
-            MochiDraw.kaku(SINK, c.f_82479_ - cx, c.f_82480_ - cy, c.f_82481_ - cz, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz,
-                k.way.f_82479_, k.way.f_82481_, now - k.born, k.coat, k.seed);
-        }
         for (Map.Entry<Integer, Swell> e : SWELLS.entrySet()) {
             Entity user = level.m_6815_(e.getKey());
             if (user == null) {
@@ -779,6 +614,70 @@ public final class MochiFx {
                 MochiDraw.yaki(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, u.f_82479_, u.f_82480_, u.f_82481_, age, f.coat, f.seed,
                     f.charge);
             }
+        }
+        for (Lotus l : LOTUSES) {
+            Entity user = level.m_6815_(l.user);
+            if (user == null) {
+                continue;
+            }
+            Vec3 from = chest(user, partial).m_82520_(0.0, 0.1, 0.0);
+            if (!far(from, cam)) {
+                Vec3 way = user.m_20252_(partial);
+                MochiDraw.lotus(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, way.f_82479_, way.f_82480_, way.f_82481_,
+                    MochiMoves.LOTUS_REACH, now - l.born, l.coat, l.seed);
+            }
+        }
+        for (LotusSlam l : SLAMS) {
+            if (!far(l.at, cam)) {
+                MochiDraw.lotusSlam(SINK, l.at.f_82479_ - cx, l.at.f_82480_ - cy, l.at.f_82481_ - cz, l.at.f_82480_ - cy - 0.1, now - l.born, l.coat,
+                    l.seed);
+            }
+        }
+        for (Map.Entry<Integer, Chestnut> e : CHESTNUTS.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            if (user == null) {
+                continue;
+            }
+            Chestnut c = e.getValue();
+            Vec3 at = MochiMoves.chestnutAt(user.m_20318_(partial), user.m_146908_(), user.m_20206_());
+            if (far(at, cam)) {
+                continue;
+            }
+            double age = now - c.born;
+            double form = Math.min(1.0, age / FORM) * (c.ended >= 0 ? Math.max(0.0, 1.0 - (now - c.ended) / FORM)
+                : Math.max(0.0, Math.min(1.0, (c.until - now) / FORM)));
+            Vec3 look = user.m_20252_(partial);
+            MochiDraw.chestnut(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, look.f_82479_, look.f_82481_, form, age * 0.08, now - c.fired,
+                age, c.seed);
+        }
+        for (Spike s : SPIKES) {
+            Entity user = level.m_6815_(s.user);
+            Vec3 from = user != null ? MochiMoves.chestnutAt(user.m_20318_(partial), user.m_146908_(), user.m_20206_()) : s.at;
+            if (!far(s.at, cam)) {
+                MochiDraw.spike(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, s.at.f_82479_ - cx, s.at.f_82480_ - cy, s.at.f_82481_ - cz,
+                    now - s.born);
+            }
+        }
+        for (Map.Entry<Integer, Area> e : AREAS.entrySet()) {
+            Area n = e.getValue();
+            if (far(n.at, cam)) {
+                continue;
+            }
+            double age = now - n.born;
+            double form = Math.min(1.0, age / FORM) * (n.ended >= 0 ? Math.max(0.0, 1.0 - (now - n.ended) / FORM) : 1.0);
+            int count = 0;
+            for (Strike s : STRIKES) {
+                if (s.user != e.getKey() || count >= MOST) {
+                    continue;
+                }
+                STRIKE[count * 5] = s.donut;
+                STRIKE[count * 5 + 1] = s.at.f_82479_ - cx;
+                STRIKE[count * 5 + 2] = s.at.f_82480_ - cy;
+                STRIKE[count * 5 + 3] = s.at.f_82481_ - cz;
+                STRIKE[count * 5 + 4] = now - s.born;
+                count++;
+            }
+            MochiDraw.anemoneArea(SINK, n.at.f_82479_ - cx, n.at.f_82480_ - cy, n.at.f_82481_ - cz, n.radius, form, STRIKE, count, n.coat, age, n.seed);
         }
         for (Map.Entry<Integer, Wheel> e : WHEELS.entrySet()) {
             Entity user = level.m_6815_(e.getKey());
@@ -808,95 +707,6 @@ public final class MochiFx {
                     now - c.born, c.coat, c.seed);
             }
         }
-        for (Map.Entry<Integer, Anemone> e : ANEMONES.entrySet()) {
-            Entity user = level.m_6815_(e.getKey());
-            if (user == null) {
-                continue;
-            }
-            Anemone n = e.getValue();
-            Vec3 feet = user.m_20318_(partial);
-            if (far(feet, cam)) {
-                continue;
-            }
-            double age = now - n.born;
-            double grow = Math.min(1.0, age / ANEMONE_FADE) * (n.ended >= 0 ? Math.max(0.0, 1.0 - (now - n.ended) / ANEMONE_FADE) : 1.0);
-            int count = 0;
-            for (Reach r : REACHES) {
-                if (r.user != e.getKey() || count >= MOST) {
-                    continue;
-                }
-                REACH[count * 5] = r.ring;
-                REACH[count * 5 + 1] = r.at.f_82479_ - cx;
-                REACH[count * 5 + 2] = r.at.f_82480_ - cy;
-                REACH[count * 5 + 3] = r.at.f_82481_ - cz;
-                REACH[count * 5 + 4] = now - r.born;
-                count++;
-            }
-            double down = ownView(minecraft, user) ? OWN_RINGS_DOWN : 0.0;
-            MochiDraw.anemone(SINK, feet.f_82479_ - cx, feet.f_82480_ - down - cy, feet.f_82481_ - cz, age, grow, REACH, count, n.coat, e.getKey());
-        }
-        for (Glob g : GLOBS.values()) {
-            double age = now - g.born;
-            Vec3 p = g.from.m_82549_(g.step.m_82490_(age));
-            if (!far(p, cam)) {
-                Vec3 u = unit(g.step);
-                MochiDraw.glob(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, u.f_82479_, u.f_82480_, u.f_82481_, age, (int) g.born);
-            }
-        }
-        for (Wave w : WAVES) {
-            if (far(w.at, cam) && far(w.at.m_82549_(w.way.m_82490_(w.range)), cam)) {
-                continue;
-            }
-            double age = now - w.born;
-            double travelled = 2.0 + MochiMoves.NAGARE_SPEED * Math.min(age, w.ticks);
-            double height = MochiMoves.NAGARE_HEIGHT * Math.min(1.0, age / 4.0) * Math.max(0.0, Math.min(1.0, 1.0 - (age - w.ticks) / SINK_TICKS));
-            if (height > 0.05) {
-                MochiDraw.wave(SINK, w.at.f_82479_ - cx, w.at.f_82480_ - cy, w.at.f_82481_ - cz, w.way.f_82479_, w.way.f_82481_, travelled,
-                    MochiMoves.NAGARE_WIDTH, height, age, w.seed);
-            }
-        }
-        for (Walls w : WALLS) {
-            if (!far(w.at, cam)) {
-                MochiDraw.walls(SINK, w.at.f_82479_ - cx, w.at.f_82480_ - cy, w.at.f_82481_ - cz, w.way.f_82479_, w.way.f_82481_, w.apart, now - w.born,
-                    w.seed);
-            }
-        }
-        for (Rain r : RAINS) {
-            if (!far(r.at, cam)) {
-                MochiDraw.rain(SINK, r.at.f_82479_ - cx, r.at.f_82480_ - cy, r.at.f_82481_ - cz, r.radius, MochiMoves.AMADARE_SKY, MochiMoves.AMADARE_COUNT,
-                    MochiMoves.AMADARE_EVERY, now - r.born, r.seed);
-            }
-        }
-        for (Donuts d : DONUTS) {
-            Entity user = level.m_6815_(d.user);
-            if (user == null) {
-                continue;
-            }
-            Vec3 feet = user.m_20318_(partial);
-            if (far(feet, cam)) {
-                continue;
-            }
-            double age = now - d.born;
-            double grow = Math.min(1.0, age / 6.0) * Math.max(0.0, Math.min(1.0, (d.ticks - age) / 6.0));
-            MochiDraw.donuts(SINK, feet.f_82479_ - cx, feet.f_82480_ - cy, feet.f_82481_ - cz, d.at.f_82479_ - cx, d.at.f_82480_ - cy, d.at.f_82481_ - cz,
-                age, grow, MochiMoves.DONUT_FIRST, MochiMoves.DONUT_EVERY, d.coat, d.seed);
-        }
-        for (Dome d : DOMES) {
-            if (far(d.at, cam)) {
-                continue;
-            }
-            double age = now - d.born;
-            double rise = Math.min(1.0, age / 10.0) * Math.max(0.0, Math.min(1.0, 1.0 - (age - d.ticks) / SINK_TICKS));
-            double crush = Math.max(0.0, Math.min(1.0, (age - d.ticks + 8) / 8.0));
-            MochiDraw.dome(SINK, d.at.f_82479_ - cx, d.at.f_82480_ - cy, d.at.f_82481_ - cz, d.radius, rise, crush, age, d.seed);
-        }
-        for (Hole h : HOLES) {
-            Entity user = level.m_6815_(h.user);
-            if (user != null && ownView(minecraft, user) || far(h.at, cam)) {
-                continue; // one's own body's holes would open round the view
-            }
-            MochiDraw.hole(SINK, h.at.f_82479_ - cx, h.at.f_82480_ - cy, h.at.f_82481_ - cz, h.way.f_82479_, h.way.f_82480_, h.way.f_82481_, now - h.born);
-        }
         for (Splat s : SPLATS) {
             if (!far(s.at, cam)) {
                 MochiDraw.splat(SINK, s.at.f_82479_ - cx, s.at.f_82480_ - cy, s.at.f_82481_ - cz, s.way.f_82479_, s.way.f_82480_, s.way.f_82481_, s.size,
@@ -912,28 +722,20 @@ public final class MochiFx {
 
     static void clear() {
         PUNCHES.clear();
-        HELD.clear();
-        THRUSTS.clear();
-        YANAGIS.clear();
-        KAKUS.clear();
         SPLATS.clear();
         BOOMS.clear();
         SWELLS.clear();
         FISTS.clear();
         WHEELS.clear();
         CLUBS.clear();
-        ANEMONES.clear();
-        REACHES.clear();
-        GLOBS.clear();
         STUCKS.clear();
-        PATCHES.clear();
-        AWAKES.clear();
-        WAVES.clear();
-        WALLS.clear();
-        RAINS.clear();
-        DONUTS.clear();
-        DOMES.clear();
-        HOLES.clear();
+        MUDDLES.clear();
+        LOTUSES.clear();
+        SLAMS.clear();
+        CHESTNUTS.clear();
+        SPIKES.clear();
+        AREAS.clear();
+        STRIKES.clear();
         carry = null;
     }
 

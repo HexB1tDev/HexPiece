@@ -59,6 +59,65 @@ public final class MochiShots {
                     -6.5 - ez, coat, age, 2, false);
                 com.hexhaki.piece.mochi.MochiDraw.donut(sink, 2.8 - ex, 1.6 - ey, -ez, -0.2, 0, -0.98, 0.7, 0.0, 2, 0.0, 0, 0, 0, coat, age, 3, true);
             }
+            case "mmuddle" -> {
+                // 3.6.3 |mmuddle:age: Mochi Muddle's trail poured along +z from 1.2 ahead
+                user(sink, "mochi_nagare", age, ex, ey, ez);
+                double reach = Math.min(com.hexhaki.piece.server.MochiMoves.MUDDLE_LENGTH, com.hexhaki.piece.server.MochiMoves.MUDDLE_SPREAD * (age + 1));
+                double fade = Math.min(1.0, (com.hexhaki.piece.server.MochiMoves.MUDDLE_TICKS - age) / 12.0);
+                HieShots.body(sink, 0.4 - ex, -ey, 7.0 - ez);
+                com.hexhaki.piece.mochi.MochiDraw.muddle(sink, -ex, -ey, 1.2 - ez, 0, 1, com.hexhaki.piece.server.MochiMoves.MUDDLE_LENGTH, reach,
+                    com.hexhaki.piece.server.MochiMoves.MUDDLE_WIDTH, fade, age, 3);
+                if (age > 4) {
+                    com.hexhaki.piece.mochi.MochiDraw.stuck(sink, 0.4 - ex, -ey, 7.0 - ez, 1.8, Math.min(1.0, (age - 4) / 3.0), age, 4);
+                }
+            }
+            case "mlotus" -> {
+                // |mlotus:age[:c]: the donut's five blows and the uppercut (the body 4 ahead), the slam from above from age 26
+                user(sink, "mochi_punch_1", Math.min(age, 9), ex, ey, ez);
+                if (age < 26) {
+                    double up = age < 14 ? 0.0 : Math.min(com.hexhaki.piece.server.MochiMoves.LOTUS_HIGH, (age - 14) * 0.6);
+                    HieShots.body(sink, -ex, up - ey, 4.0 - ez);
+                    com.hexhaki.piece.mochi.MochiDraw.lotus(sink, -ex, 1.45 - ey, -ez, 0, 0, 1, 4.0, age, coat, 5);
+                } else {
+                    double a = age - 26;
+                    double y = a < 3 ? com.hexhaki.piece.server.MochiMoves.LOTUS_HIGH * (1.0 - a / 3.0) : 0.0;
+                    HieShots.body(sink, -ex, y - ey, 4.0 - ez);
+                    com.hexhaki.piece.mochi.MochiDraw.lotusSlam(sink, -ex, com.hexhaki.piece.server.MochiMoves.LOTUS_HIGH * 0.9 - ey, 4.0 - ez, -ey, a,
+                        coat, 6);
+                }
+            }
+            case "mchestnut" -> {
+                // |mchestnut:age: the spiked donut over the shoulder (yaw 0: facing +z), a spike at a body 8 ahead every 4 ticks
+                user(sink, "mochi_amadare", Math.min(age, 10), ex, ey, ez);
+                double[] at = com.hexhaki.piece.mochi.MochiDraw.chestnutOffset(0.0, 1.8, new double[3]);
+                double form = Math.min(1.0, age / 6.0);
+                HieShots.body(sink, 1.0 - ex, -ey, 8.0 - ez);
+                com.hexhaki.piece.mochi.MochiDraw.chestnut(sink, at[0] - ex, at[1] - ey, at[2] - ez, 0, 1, form, age * 0.08, age % 4, age, 7);
+                if (age > 8) {
+                    com.hexhaki.piece.mochi.MochiDraw.spike(sink, at[0] - ex, at[1] - ey, at[2] - ez, 1.0 - ex, 1.0 - ey, 8.0 - ez, age % 4);
+                }
+            }
+            case "marea" -> {
+                // |marea:age[:c]: the Anemone over a place 8 ahead (radius 3.4), fists striking into it
+                user(sink, "mochi_donuts", Math.min(age, 10), ex, ey, ez);
+                HieShots.body(sink, 0.6 - ex, -ey, 8.3 - ez);
+                double[] strikes = new double[8 * 5];
+                int n = 0;
+                for (int k = 0; k < 8; k++) {
+                    double pa = (age - 5 - k * 1.5 + 100) % 7.0;
+                    if (age < 5) {
+                        break;
+                    }
+                    strikes[n * 5] = k;
+                    strikes[n * 5 + 1] = 0.6 + Math.cos(k) * 1.2 - ex;
+                    strikes[n * 5 + 2] = 1.0 - ey;
+                    strikes[n * 5 + 3] = 8.3 + Math.sin(k) * 1.2 - ez;
+                    strikes[n * 5 + 4] = pa;
+                    n++;
+                }
+                com.hexhaki.piece.mochi.MochiDraw.anemoneArea(sink, -ex, -ey, 8.0 - ez, com.hexhaki.piece.server.MochiMoves.ANEMONE_RADIUS,
+                    Math.min(1.0, age / 6.0), strikes, n, coat, age, 9);
+            }
             case "mpunch" -> {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);

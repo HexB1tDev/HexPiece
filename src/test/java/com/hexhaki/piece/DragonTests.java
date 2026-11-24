@@ -696,7 +696,7 @@ public final class DragonTests {
             }
         };
         double[] cells = new double[com.hexhaki.piece.mochi.MochiDraw.GROUND_MOST * 4];
-        int n = com.hexhaki.piece.mochi.MochiDraw.groundLumps(0.3, 0.2, com.hexhaki.piece.server.MochiMoves.AWAKEN_RADIUS, cells);
+        int n = com.hexhaki.piece.mochi.MochiDraw.groundLumps(0.3, 0.2, 12.0, cells);
         Check.that(n > 20 && n <= com.hexhaki.piece.mochi.MochiDraw.GROUND_MOST, "the Mochi ground: its lumps capped (" + n + ")");
         double[] lumps = new double[n * 5];
         for (int k = 0; k < n; k++) {
