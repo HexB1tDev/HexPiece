@@ -103,4 +103,82 @@ public final class PhoenixFire {
             tongue(sink, points[k * 3], points[k * 3 + 1], points[k * 3 + 2], wx, wy, wz, age, life, size, gold, seed + k * 31 + born * 7);
         }
     }
+
+    /**
+     * 3.6.9: the phoenix forming or going round the player's chest (x, y, z: eye-relative), {@code ticks} into it (the reference: Marco
+     * bursting into blue fire, the flames swirling up round him and opening out into the wings). Forming: a column of fire spiralling up
+     * round the player, its tongues streaming up and out as it widens, a ring of flame running out over the ground from their feet, a hot
+     * cyan and gold heart at the chest that the phoenix opens out of; going: the flames spiral back in to the chest and a last flare
+     * goes out as the human comes back. Fire only (tongues and puffs, never a shell of glass).
+     */
+    public static void change(FireMesh.Sink sink, double x, double y, double z, boolean forming, double ticks, int seed) {
+        if (forming) {
+            if (ticks > 24.0) {
+                return;
+            }
+            double grow = 1.0 - Math.pow(1.0 - Math.min(1.0, ticks / 13.0), 3.0);
+            double fade = 1.0 - Math.max(0.0, Math.min(1.0, (ticks - 12.0) / 12.0));
+            column(sink, x, y, z, ticks, 0.35 + 2.3 * grow, (0.45 + 0.75 * grow) * fade + 0.1 * fade, 1.0, seed);
+            // the ring of flame running out over the ground, tongues licking up off it
+            double ring = 0.6 + 3.6 * grow;
+            FireMesh.ring(sink, x, y - 0.95, z, 0, 1, 0, ring, 0.55, 0.2, 0x2DB8EC, 0.7 * fade);
+            for (int k = 0; k < 8; k++) {
+                double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k + 40)) / 8.0;
+                double age = (ticks + 7.0 * FireMesh.rand(seed, k + 50)) % 9.0;
+                tongue(sink, x + Math.cos(a) * ring, y - 0.95, z + Math.sin(a) * ring, Math.cos(a) * 0.05, 0.0, Math.sin(a) * 0.05, age,
+                    9.0, (0.7 + 0.4 * FireMesh.rand(seed, k + 60)) * fade, false, seed + k * 13 + (int) ((ticks + 7.0 * FireMesh.rand(seed, k + 50)) / 9.0));
+            }
+            // the heart: a burst of cyan and gold tongues flaring out of the chest as it opens, burning down as the body takes over
+            flare(sink, x, y, z, Math.sin(Math.PI * Math.min(1.0, ticks / 16.0)), ticks, seed);
+            return;
+        }
+        // going: the column spiralling back in round the chest, the phoenix's last flare at the end
+        double pull = Math.min(1.0, ticks / 14.0);
+        column(sink, x, y, z, ticks, 0.25 + 2.2 * (1.0 - pull) * (1.0 - pull), 0.25 + 0.75 * (1.0 - pull), -1.0, seed);
+        if (ticks > 10.0 && ticks < 20.0) {
+            flare(sink, x, y, z, 0.8 * Math.sin(Math.PI * (ticks - 10.0) / 10.0), ticks, seed + 9);
+        }
+    }
+
+    /** A burst of 10 tongues flung out all round the chest (x, y, z), {@code amount} (0 to 1) of their full length, a third of them gold. */
+    private static void flare(FireMesh.Sink sink, double x, double y, double z, double amount, double ticks, int seed) {
+        if (amount < 0.05) {
+            return;
+        }
+        for (int k = 0; k < 10; k++) {
+            double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k + 110)) / 10.0;
+            double up = FireMesh.rand(seed, k + 120) * 2.0 - 0.7;
+            double c = Math.cos(a);
+            double s = Math.sin(a);
+            double life = 7.0 + 3.0 * FireMesh.rand(seed, k + 125);
+            double start = life * FireMesh.rand(seed, k + 130);
+            double r = 0.25 * amount;
+            tongue(sink, x + c * r, y + up * 0.3 * amount, z + s * r, c * 0.09, 0.0, s * 0.09, (ticks + start) % life, life,
+                (0.5 + 0.5 * FireMesh.rand(seed, k + 135)) * (0.4 + 0.9 * amount), k % 3 == 0, seed + k * 23 + (int) ((ticks + start) / life));
+        }
+    }
+
+    /**
+     * The spiral column of the change: 16 tongues on a turning spiral round the chest (x, y, z), from the feet to over the head,
+     * {@code radius} out, {@code size} long, each streaming up and round with the swirl, and out (way 1) or in (way -1).
+     */
+    private static void column(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, double size, double way, int seed) {
+        int n = 16;
+        for (int k = 0; k < n; k++) {
+            double h = (k % 4) / 3.0;
+            double a = 2 * Math.PI * (k / (double) n + 0.25 * h) + ticks * 0.28 + 0.4 * FireMesh.rand(seed, k + 70);
+            double r = radius * (0.55 + 0.25 * h + 0.3 * FireMesh.rand(seed, k + 80));
+            double life = 9.0 + 4.0 * FireMesh.rand(seed, k + 85);
+            double start = life * FireMesh.rand(seed, k + 90);
+            double age = (ticks + start) % life;
+            int born = (int) Math.floor((ticks + start) / life);
+            double c = Math.cos(a);
+            double s = Math.sin(a);
+            // round with the swirl and out (or in)
+            double wx = -s * 0.07 + c * 0.05 * way;
+            double wz = c * 0.07 + s * 0.05 * way;
+            tongue(sink, x + c * r, y - 0.9 + 2.6 * h, z + s * r, wx, 0.0, wz, age, life,
+                Math.min(1.5, size * (1.0 + 0.6 * FireMesh.rand(seed, k + 95))), FireMesh.rand(seed, k + 99) < 0.3, seed + k * 17 + born * 5);
+        }
+    }
 }

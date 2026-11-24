@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "hexhaki:item/tori_tori_no_mi"
+  }
+}

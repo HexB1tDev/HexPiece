@@ -504,11 +504,10 @@ public final class MochiFx {
                 }
             }
             if (b.caught >= 0 && clock - b.caught < MochiDraw.BUZZ_END && user instanceof LivingEntity body) {
-                // the body turns with the arm (the whirl is its own turn), drawn so; 3.6.7 (the owner: "Buzz Cut Mochi is no longer a
-                // cutscene, you can look around"): the look is the player's own, never turned
-                double[] arm = MochiDraw.buzzArm(clock - b.caught, 0, 0, 0, b.yaw0, new double[8], b.turns());
-                body.f_20884_ = body.f_20883_;
-                body.f_20883_ = (float) arm[7];
+                // 3.6.9 (the owner: "the body of the player is not meant to move at all, its only the right arm"): the body held still
+                // facing where it caught, only the arm (the mace) swinging round; 3.6.7: the look stays the player's own
+                body.f_20884_ = b.yaw0;
+                body.f_20883_ = b.yaw0;
                 if (user == self) {
                     // held where it caught
                     self.m_20334_(0.0, Math.min(0.0, self.m_20184_().f_82480_), 0.0);

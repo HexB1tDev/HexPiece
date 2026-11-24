@@ -511,6 +511,10 @@ Next, in order:
 30. The owner: "the awakened version of Buzz Cut should create a much bigger crater and spin 2 more times" (Scorching Buzz Cut: seven
     turns of the whirl, Buzz Cut's five; its crater far bigger than Buzz Cut's).
 
+31. The owner (with a screenshot of Buzz Cut's whirl from above: the player's whole body turned with the swirling arm): "the arm spinning
+    looks super weird, the  body of the player is not meant to move at all, its only the right arm" So: through the whole Buzz Cut (both
+    versions) the user's body stays still facing where it caught; only the right arm (the mace) swings round from the right shoulder.
+
 ## O. The fourth Mochi chat: Buzz Cut judged and finished, the old Mochi art removed, 3.6.3 released
 
 Build #233 (the last push of the chat before) was green. Done, rendered and judged against the Buzzcut GIF, the owner's show clip
@@ -918,3 +922,34 @@ wings wrapped round between beats as in the GIF, transform in a cyan sphere of l
   PhoenixPreview frames with PIL). Next: the owner's word on them; then the game side (DragonForm-like flight: Z transform/detransform
   with a cooldown, the client renderer with the cel ramp, the fire and the flight states from the player's motion, the camera), a
   transform animation (the reference's: a cyan sphere of light, the phoenix opening out of it), then the moves on the wiki's GIFs.
+- The owner, after the Phoenix previews were sent: "continue" (no notes on the animations: go on to the fruit in game: registered, Z
+  transforms and turns back, the phoenix flying in game).
+
+## Y. 3.6.9: the Phoenix fruit in game (the owner's "continue"), Buzz Cut's body still (N 31)
+
+- The fruit: patch/PiecePatch TORI ("Tori Tori no Mi, Model: Phoenix", ordinal 11 of the extra fruits, colour 3FE0E8), its lang name,
+  models/item/tori_tori_no_mi.json and the icon tools/tori_icon.py drew (a round fruit of blue fire in feather scales, a crown of gold
+  flame); FruitRanks TORI = MYTHICAL; HexPiece registers server/PhoenixKit (one move: FORM "[Z]").
+- server/PhoenixServer: Z toggles (a press while it changes is ignored); FORMING (PhoenixForm.FORM_TICKS 30) -> PHOENIX ->
+  UNFORMING (UNFORM_TICKS 18) -> HUMAN, then REST 60 ticks (3 s) before the next (the owner's "No meter, cooldown"). The flight is the
+  game's creative flight (mayfly, flying, FLY_SPEED 0.065), handed back as it was on leaving the form, death, logout, a change of
+  world, the server stopping and after a crash (the player-data mark HexPiecePhoenixFlight); water (FruitServer.inSea) turns it back;
+  no fall damage while out or for SOFT_LANDING after. Phase messages S2CUoFx 400 (bx the phase), resent every 40 ticks.
+- client/phoenix/PhoenixFx (UoFx routes 400 to 419): the human hidden (body and hands) once the phoenix is grown enough
+  (PhoenixForm.humanHidden), the owner's model skinned on the CPU with the cel ramp (PhoenixLook.tint), full bright, at
+  AFTER_ENTITIES; its motion from the player's (speed, glide that sets in slowly, dive, perch on the ground with gentle beats, bank in
+  turns), anchored by its chest in the air and its feet on the ground; the tongues of fire (PhoenixFire.burn) and the change
+  (PhoenixFire.change) at AFTER_PARTICLES; third person while out (back to first if it came from there), the camera pulled back 4 + 5.5
+  and up 1.6 (client/dragon/DragonCamera asks PhoenixFx.camera first).
+- The change (PhoenixFire.change, judged in renders; the first try was a glassy sphere of light that read as a shield, not fire):
+  forming, a column of 16 tongues spiralling up round the player from the feet to over the head and widening, a ring of flame running
+  out over the ground with 8 tongues licking up off it, a heart of 10 cyan and gold tongues flaring out of the chest; going, the column
+  spiralling back in and a last flare. About 1.5k quads; with the model and its own fire the worst frame is under 16k (DragonTests
+  phoenix checks every tick of both).
+- tools/preview/PhoenixPreview: "form"/"unform" states (standing on the ground, perched, as in game).
+- Buzz Cut (N 31): the user's body held still the whole move (MochiFx sets the body yaw to Buzz.yaw0 every frame); MochiDraw.buzzArm
+  swings only the arm from the right shoulder; the clip mochi_buzz keys only the right arm (tools/mochi_anims.py buzz()).
+- build/ held old jars (3.6.5 to 3.6.8): DragonTests reads the first hexpiece-*.jar it finds, so they made it read an old jar; delete
+  old jars from build/ before a build if a test says an asset is missing.
+- Sent to the owner: the change as a GIF. Next: the owner's word on the fruit in game; then the moves on the wiki's GIFs (scratchpad
+  pgifs/: Fujiazami, Talon Slam / Hawk Rush, Phoenix Inferno, Bluebird, both forms); ask for item 4 of Mochi note 22.

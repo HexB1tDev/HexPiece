@@ -139,6 +139,10 @@ public final class UoFx {
             com.hexhaki.piece.client.horo.HoroFx.accept(m); // 3.3.6: the Horo fruit's (220 to 239)
             return;
         }
+        if (m.kind() >= 400 && m.kind() < 420) {
+            com.hexhaki.piece.client.phoenix.PhoenixFx.accept(m); // 3.6.9: the Phoenix fruit's (400 to 419)
+            return;
+        }
         if (m.kind() >= 320 && m.kind() < 340) {
             com.hexhaki.piece.client.ironfist.IronFx.accept(m); // 3.5.8: Iron Fist
             return;

@@ -13,6 +13,48 @@ public final class PhoenixForm {
     private PhoenixForm() {
     }
 
+    /** 3.6.9: the form's phases (server/PhoenixServer), how long it takes to form and to go (ticks). */
+    public static final int HUMAN = 0;
+    public static final int FORMING = 1;
+    public static final int PHOENIX = 2;
+    public static final int UNFORMING = 3;
+    public static final int FORM_TICKS = 30;
+    public static final int UNFORM_TICKS = 18;
+
+    /** How far the phoenix has formed (0 to 1, a little past 1 as it bursts out), {@code ticks} into {@code phase}. */
+    public static float grow(int phase, float ticks) {
+        return switch (phase) {
+            case FORMING -> (float) springy((ticks - 4.0F) / (FORM_TICKS - 6.0F));
+            case UNFORMING -> 1.0F - smooth((ticks - 4.0F) / (UNFORM_TICKS - 4.0F));
+            case PHOENIX -> 1.0F;
+            default -> 0.0F;
+        };
+    }
+
+    /** How wrapped its wings are round its body (the reference's frames 112 and 136: a ring of wing round it), forming and going. */
+    public static float wrap(int phase, float ticks) {
+        return switch (phase) {
+            case FORMING -> 0.6F * (1.0F - smooth((ticks - 8.0F) / 12.0F));
+            case UNFORMING -> 0.6F * smooth(ticks / 8.0F);
+            default -> 0.0F;
+        };
+    }
+
+    /** Whether the human body is hidden (the phoenix is out, or most of the way). */
+    public static boolean humanHidden(int phase, float ticks) {
+        return phase == PHOENIX || phase == FORMING && ticks >= 8.0F || phase == UNFORMING && ticks < UNFORM_TICKS - 4.0F;
+    }
+
+    static float smooth(float t) {
+        t = Math.max(0.0F, Math.min(1.0F, t));
+        return t * t * (3.0F - 2.0F * t);
+    }
+
+    static double springy(double t) {
+        double u = Math.max(0.0, Math.min(1.0, t));
+        return 1.0 - Math.pow(1.0 - u, 3.0) + 0.15 * Math.sin(Math.PI * u) * u;
+    }
+
     /** The rig's bones the poses turn, found once, and the model's floor (its lowest point at rest, model units). */
     public static final class Shape {
         public final int root;
@@ -26,6 +68,9 @@ public final class PhoenixForm {
         public final int[] leg = new int[2];
         public final float floor;
         public final float top;
+        /** 3.6.9: its claws' lowest point (standing on them), its chest's height (held at the player's middle in flight). */
+        public final float feet;
+        public final float chest;
         /** Every bone's parent, and its rest rotation in the model's space (3 x 3 row-major): bends are given in the model's axes. */
         final int[] parent;
         final float[] restRot;
@@ -152,6 +197,19 @@ public final class PhoenixForm {
             }
             this.floor = lo;
             this.top = hi;
+            float feetLo = Float.MAX_VALUE;
+            for (DragonModel.Part part : m.parts) {
+                if (part.name.startsWith("Foot")) {
+                    for (int v = 0; v < part.vertices(); v++) {
+                        feetLo = Math.min(feetLo, part.pos[v * 3 + 1]);
+                    }
+                }
+            }
+            this.feet = feetLo == Float.MAX_VALUE ? lo : feetLo;
+            int bodyBone = m.bone("body");
+            DragonPose at = new DragonPose(m);
+            at.solve();
+            this.chest = bodyBone < 0 ? (lo + hi) * 0.5F : at.global[bodyBone * 12 + 7] + 0.6F;
         }
     }
 
@@ -244,6 +302,10 @@ public final class PhoenixForm {
         public float dive;
         /** 0 to 1: how far it has formed (the transformation; 1 formed). */
         public float form = 1.0F;
+        /** 0 to 1: standing on the ground, wings folded. */
+        public float perch;
+        /** 0 to 1: its wings wrapped round its body (forming and going). */
+        public float wrap;
     }
 
     /**
@@ -263,8 +325,11 @@ public final class PhoenixForm {
         if (glide > 0.0F) {
             pose.clip(m.clips.get("soar"), seconds, true, glide);
         }
-        float flap = (1.0F - glide) * (1.0F - dive);
-        float amp = (34.0F - 10.0F * speed) * flap;
+        float perch = clamp(mo.perch);
+        float wrapped = clamp(mo.wrap);
+        // standing (the reference's phoenix on the ground, frames 96 to 144): on its claws, its wings still beating, slower and gentler
+        float flap = (1.0F - glide) * (1.0F - dive) * (1.0F - wrapped);
+        float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch);
         // the power stroke: the downstroke quick, the recovery slower (the phase run faster through the downstroke's middle)
         beat = beat + 0.35F * (float) Math.sin(beat);
         float sb = (float) Math.sin(beat);
@@ -288,18 +353,23 @@ public final class PhoenixForm {
             turn(pose, sh, w[1], m0 * fold * 42.0F, 0, 1, 0);
             turn(pose, sh, w[3], -m0 * fold * 58.0F, 0, 1, 0);
             turn(pose, sh, w[4], -m0 * fold * 25.0F, 0, 1, 0);
+            // wrapped: the wings swept forward and round the body like a ring of fire (the reference's frames 112 and 136)
+            turn(pose, sh, w[0], m0 * wrapped * 30.0F, 0, 0, 1);
+            turn(pose, sh, w[0], -m0 * wrapped * 75.0F, 0, 1, 0);
+            turn(pose, sh, w[2], -m0 * wrapped * 60.0F, 0, 1, 0);
+            turn(pose, sh, w[3], -m0 * wrapped * 55.0F, 0, 1, 0);
             // the legs tucked up and back in flight, hanging under the hover
             // (about the model's x a negative turn swings a hanging part back: the head is toward -Z)
             turn(pose, sh, sh.leg[s], -45.0F * speed - 30.0F * dive + 6.0F * flap * (float) Math.sin(beat - 2.0F), 1, 0, 0);
         }
         // the body: lifted with each downstroke, rocked by it; leaning into the flight at speed and nose down in the dive
-        pose.t[sh.root * 3 + 1] += 0.32F * flap * (float) Math.sin(beat - 1.0F);
+        pose.t[sh.root * 3 + 1] += 0.32F * flap * (1.0F - perch) * (float) Math.sin(beat - 1.0F);
         turn(pose, sh, sh.root, -65.0F * speed - 30.0F * dive, 1, 0, 0);
         turn(pose, sh, sh.body, 4.5F * flap * (float) Math.sin(beat - 0.4F), 1, 0, 0);
         // the head held steady against the body's rock, lifted back up to look ahead when it leans
         turn(pose, sh, sh.neck, -4.0F * flap * (float) Math.sin(beat - 0.4F) + 38.0F * speed + 15.0F * dive, 1, 0, 0);
         turn(pose, sh, sh.head, 2.0F * (float) Math.sin(seconds * 0.9F) + 10.0F * speed, 1, 0, 0);
-        turn(pose, sh, sh.head, 6.0F * (float) Math.sin(seconds * 0.43F), 0, 1, 0);
+        turn(pose, sh, sh.head, (6.0F + 14.0F * perch) * (float) Math.sin(seconds * 0.43F), 0, 1, 0);
         // the tail: swinging late behind the beat, streaming out behind at speed; its three streamers swaying on their own
         turn(pose, sh, sh.tailRoot, 8.0F * flap * (float) Math.sin(beat - 1.7F) - 30.0F * speed - 30.0F * dive, 1, 0, 0);
         for (int k = 0; k < 3; k++) {
@@ -312,7 +382,7 @@ public final class PhoenixForm {
 
     /** How fast the wings beat (radians a second): slow and deep hovering, quicker and shallower at speed. */
     public static float beatRate(Motion mo) {
-        return (float) (2 * Math.PI / (1.05F - 0.4F * clamp(mo.speed)));
+        return (float) (2 * Math.PI / (1.05F - 0.4F * clamp(mo.speed) + 0.55F * clamp(mo.perch)));
     }
 
     static float clamp(float t) {
@@ -339,6 +409,11 @@ public final class PhoenixForm {
                 mo.speed = 1.0F;
                 mo.dive = 1.0F;
             }
+            case "perch" -> {
+                mo.perch = 1.0F;
+                lift = 0.0F;
+            }
+            case "wrap" -> mo.wrap = 1.0F;
             default -> lift = 0.0F;
         }
         if (state.equals("rest") || state.equals("soar") || state.startsWith("t")) {
@@ -355,7 +430,8 @@ public final class PhoenixForm {
             pose(m, shape, pose, mo, seconds * beatRate(mo), seconds);
         }
         float s = PhoenixLook.SCALE;
-        float[] p = {s, 0, 0, 0, 0, s, 0, -shape.floor * s + lift, 0, 0, s, 0};
+        float base = state.equals("perch") ? -shape.feet * s : -shape.floor * s + lift;
+        float[] p = {s, 0, 0, 0, 0, s, 0, base, 0, 0, s, 0};
         System.arraycopy(p, 0, place, 0, 12);
     }
 }

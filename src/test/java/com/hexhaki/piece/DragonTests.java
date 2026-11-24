@@ -955,6 +955,73 @@ public final class DragonTests {
         }
     }
 
+    /**
+     * 3.6.9: the owner's phoenix: every one of its 213 parts kept, its 21 bones and its take; light enough for the phone (the dragon is
+     * about 10k faces); every flight state posed and skinned finite; its fire (the tongues off every fire point, the forming burst) under
+     * the effect budget beside the model; it forms out of nothing, overshoots a little, settles, and goes back to nothing.
+     */
+    static void phoenix(com.hexhaki.piece.dragon.DragonModel m) {
+        Check.that(m.parts.length == 213 && m.bones() == 21 && m.clips.containsKey("soar"), "the phoenix: every part, its rig and its take");
+        int faces = 0;
+        for (com.hexhaki.piece.dragon.DragonModel.Part part : m.parts) {
+            faces += part.quads.length / 4;
+        }
+        Check.that(faces < 13000, "the phoenix is light enough for the phone (" + faces + " faces)");
+        com.hexhaki.piece.phoenix.PhoenixForm.Shape shape = new com.hexhaki.piece.phoenix.PhoenixForm.Shape(m);
+        Check.that(shape.anchors.length / 2 >= 48 && shape.feet > shape.floor - 1.0E-3 && shape.chest > shape.feet,
+            "the phoenix's fire points, its claws and its chest");
+        com.hexhaki.piece.dragon.DragonPose pose = new com.hexhaki.piece.dragon.DragonPose(m);
+        String[] states = {"hover", "fly", "fast", "glide", "dive", "perch", "wrap"};
+        for (String state : states) {
+            for (int k = 0; k < 8; k++) {
+                float[] place = new float[12];
+                com.hexhaki.piece.phoenix.PhoenixForm.preview(m, shape, pose, state, k * 0.13F, place);
+                boolean ok = true;
+                for (int i = 0; i < m.parts.length; i++) {
+                    com.hexhaki.piece.dragon.DragonModel.Part part = m.parts[i];
+                    float[] pos = new float[part.vertices() * 3];
+                    float[] nrm = new float[part.vertices() * 3];
+                    pose.skin(part, pos, nrm);
+                    com.hexhaki.piece.phoenix.PhoenixForm.flame(shape, i, part, pos, nrm, k * 0.13F);
+                    for (float v : pos) {
+                        ok &= Float.isFinite(v);
+                    }
+                }
+                Check.that(ok, "the phoenix posed " + state + " is finite");
+            }
+        }
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        int n = shape.anchors.length / 2;
+        double[] points = new double[n * 3];
+        for (int k = 0; k < n; k++) {
+            points[k * 3] = Math.cos(k) * 3.0;
+            points[k * 3 + 1] = 1.0 + Math.sin(k * 0.7);
+            points[k * 3 + 2] = 6.0 + Math.sin(k);
+        }
+        for (int t = 0; t < 40; t++) {
+            count[0] = 0;
+            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, shape.anchorSize, n, t, 0.0, 0.0, 0.3, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixFire.change(sink, 0, 0, 6.0, t < 20, t % 22, 5);
+            check(count[0] + faces, finite[0], "the phoenix with its fire", t);
+        }
+        float most = 0;
+        for (float t = 0; t <= com.hexhaki.piece.phoenix.PhoenixForm.FORM_TICKS; t += 0.5F) {
+            most = Math.max(most, com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.FORMING, t));
+        }
+        Check.that(com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.FORMING, 0) < 0.02F && most > 1.02F
+            && Math.abs(com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.FORMING,
+            com.hexhaki.piece.phoenix.PhoenixForm.FORM_TICKS) - 1.0F) < 0.02F
+            && com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.UNFORMING,
+            com.hexhaki.piece.phoenix.PhoenixForm.UNFORM_TICKS) < 0.02F, "the phoenix forms out of nothing, bursts out past its size, settles, and goes");
+    }
+
     /** 3.5.8: Iron Fist's heaviest frames (Galaxy Impact's dome with its quake, rings, dust and rocks; Galaxy Divide; the cannonball). */
     static void ironArt() {
         int[] count = {0};
@@ -1034,6 +1101,13 @@ public final class DragonTests {
             }
             Check.that(zip.getEntry("assets/hexhaki/textures/item/ito_ito_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/ito_ito_no_mi.json") != null, "the Ito fruit's icon and model");
+            // 3.6.9: the owner's phoenix (tools/phoenix_bake.py), its icon and model
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/tori_tori_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/tori_tori_no_mi.json") != null
+                && zip.getEntry("assets/hexhaki/textures/piece/phoenix/marco.png") != null, "the Phoenix fruit's icon, model and atlas");
+            try (InputStream in = zip.getInputStream(zip.getEntry("assets/hexhaki/phoenix/marco.sry"))) {
+                phoenix(com.hexhaki.piece.dragon.DragonModel.read(in));
+            }
             Check.that(zip.getEntry("assets/hexhaki/textures/item/mochi_mochi_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/mochi_mochi_no_mi.json") != null, "the Mochi fruit's icon and model");
             try (InputStream in = zip.getInputStream(entry)) {

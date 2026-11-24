@@ -842,6 +842,10 @@ public final class HudTests {
             "ranks: the Noro fruit Common (the owner: \"New common Fruits\")");
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.SUPA) == com.hexhaki.piece.FruitRanks.Rank.UNCOMMON,
             "ranks: the Supa fruit Uncommon (the owner: \"Supa Supa No Mi (UnCommon)\")");
+        // 3.6.9 (the owner: "Mythical Fruit: Tori Tori no Mi, Model: Phoenix ... Z (transforms/detransforms)"; "No meter, cooldown")
+        Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.TORI) == com.hexhaki.piece.FruitRanks.Rank.MYTHICAL
+            && com.hexhaki.piece.server.PhoenixKit.MOVES.get(0).key().equals("[Z]") && com.hexhaki.piece.server.PhoenixServer.REST > 0
+            && com.hexhaki.piece.server.PhoenixServer.REST <= 100, "the Phoenix: Mythical, Z turns it on and off, a short cooldown after");
         Check.that(com.hexhaki.piece.FruitRanks.of(com.hexhaki.fruit.Fruit.ITO) == com.hexhaki.piece.FruitRanks.Rank.RARE,
             "ranks: the Ito fruit Rare (the owner: \"New Rare Fruit: Ito Ito No Mi (Rare)\")");
         // 3.3.7: the owner's Birdcage ("40 blocks, 45 s") and the keys they accepted (M the Awakening, two passives)

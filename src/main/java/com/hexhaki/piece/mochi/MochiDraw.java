@@ -1760,7 +1760,7 @@ public final class MochiDraw {
     /**
      * Where the mace arm's shoulder is and which way it reaches {@code t} ticks after the catch, for a user standing at (fx, fy, fz) who
      * faced {@code yaw0} degrees (the game's yaw) when they caught: into out (shoulder x, y, z, the arm's way x, y, z (unit), its reach,
-     * the user's own yaw now in degrees).
+     * the user's body's yaw: 3.6.9, always {@code yaw0}: the body never turns, only the arm).
      */
     public static double[] buzzArm(double t, double fx, double fy, double fz, double yaw0, double[] out) {
         return buzzArm(t, fx, fy, fz, yaw0, out, BUZZ_TURNS);
@@ -1772,9 +1772,11 @@ public final class MochiDraw {
         double r = Math.toRadians(yaw);
         double fwx = -Math.sin(r);
         double fwz = Math.cos(r);
-        // the right of the user: (-cos, -sin) of the game's yaw
-        double rx = -Math.cos(r);
-        double rz = -Math.sin(r);
+        // 3.6.9 (the owner: "the body of the player is not meant to move at all, its only the right arm"): the shoulder stays where it
+        // was at the catch (the user's right: (-cos, -sin) of the yaw they faced), only the arm swings round from it
+        double r0 = Math.toRadians(yaw0);
+        double rx = -Math.cos(r0);
+        double rz = -Math.sin(r0);
         double lift = buzzLift(t);
         out[0] = fx + rx * 0.36;
         out[1] = fy + 1.4;
@@ -1783,7 +1785,7 @@ public final class MochiDraw {
         out[4] = Math.sin(lift);
         out[5] = fwz * Math.cos(lift);
         out[6] = buzzReach(t);
-        out[7] = yaw;
+        out[7] = yaw0;
         return out;
     }
 

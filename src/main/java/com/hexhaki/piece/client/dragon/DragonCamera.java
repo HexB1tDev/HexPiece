@@ -38,6 +38,11 @@ public final class DragonCamera {
                     return dragon;
                 }
             }
+            // 3.6.9: the phoenix seen whole (client/phoenix/PhoenixFx)
+            Vec3 phoenix = com.hexhaki.piece.client.phoenix.PhoenixFx.camera(entity, partial);
+            if (phoenix != null) {
+                return phoenix;
+            }
             // 3.5.8: Galaxy Impact's low shot round its user (client/ironfist/IronFx)
             // 3.6.7: Buzz Cut Mochi's camera rising with the lift (client/mochi/MochiFx; its cutscene is gone at the owner's word)
             Vec3 mochi = com.hexhaki.piece.client.mochi.MochiFx.camera(entity, partial);

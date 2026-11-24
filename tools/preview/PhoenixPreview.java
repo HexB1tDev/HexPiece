@@ -72,7 +72,22 @@ public final class PhoenixPreview {
         double t = Double.parseDouble(p[1]);
         DragonPose pose = new DragonPose(model);
         float[] place = new float[12];
-        PhoenixForm.preview(model, shape, pose, state, (float) t, place);
+        // 3.6.9 "form" / "unform": t seconds into the change, the phoenix grown out of (or folding back into) its burst, standing on the ground
+        boolean change = state.equals("form") || state.equals("unform");
+        int phase = state.equals("form") ? PhoenixForm.FORMING : PhoenixForm.UNFORMING;
+        float ticks = (float) t * 20.0F;
+        if (change) {
+            PhoenixForm.Motion mo = new PhoenixForm.Motion();
+            mo.wrap = PhoenixForm.wrap(phase, ticks);
+            mo.perch = 1.0F; // changed standing on the ground, as in game (client/phoenix/PhoenixFx: anchored by its feet)
+            float beat = phase == PhoenixForm.FORMING && ticks < 20.0F ? (float) (-Math.PI * 0.5 + ticks / 20.0F * Math.PI) : ticks / 20.0F * PhoenixForm.beatRate(mo);
+            PhoenixForm.pose(model, shape, pose, mo, beat, ticks / 20.0F);
+            float g = Math.max(0.0F, PhoenixForm.grow(phase, ticks)) * PhoenixLook.SCALE;
+            float[] p0 = {g, 0, 0, 0, 0, g, 0, -shape.feet * g, 0, 0, g, 0};
+            System.arraycopy(p0, 0, place, 0, 12);
+        } else {
+            PhoenixForm.preview(model, shape, pose, state, (float) t, place);
+        }
         double yaw = Math.toRadians(Double.parseDouble(p[2]));
         double pitch = Math.toRadians(Double.parseDouble(p[3]));
         double dist = Double.parseDouble(p[4]);
@@ -156,7 +171,11 @@ public final class PhoenixPreview {
                 q[16] = mx * mx + my * my + mz * mz;
                 quads.add(q);
             };
-            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, pts, shape.anchorSize, count, t * 20.0, 0.0, 0.0, wind, 1.0, 7);
+            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, pts, shape.anchorSize, count, t * 20.0, 0.0, 0.0, wind, change
+                ? Math.min(1.0, Math.max(0.0, PhoenixForm.grow(phase, ticks))) : 1.0, 7);
+            if (change) {
+                com.hexhaki.piece.phoenix.PhoenixFire.change(sink, -eye[0], 1.0 - eye[1], -eye[2], phase == PhoenixForm.FORMING, ticks, 7);
+            }
             quads.sort((x, y) -> Double.compare(y[16], x[16]));
             for (double[] q : quads) {
                 ra.blend(q);
