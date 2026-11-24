@@ -660,7 +660,11 @@ public final class MochiMoves {
         Vec3 from = caught.m_20182_();
         Vec3 ground = grounded(player, from);
         int start = MochiDraw.LOTUS_LAUNCH;
-        LIVE.add(new Juggled(level, player, caught, ground, now(player) - start));
+        // 3.6.4 (the owner: "from donut to donut ... glued with each punch to the next, fast"): the body knocked along the stations the
+        // way the user faced at the punch (MochiDraw.lotusBody); each blow lands as its donut's fist reaches it (the client draws the
+        // donuts from the launch: MochiDraw.lotusDonut)
+        Vec3 faced = ItoMoves.flat(player);
+        LIVE.add(new Juggled(level, player, caught, ground, now(player) - start, faced.f_82479_, faced.f_82481_));
         sound(player, from, MochiSounds.SLAM, 1.0F, 1.4F);
         int[] air = MochiDraw.LOTUS_AIR;
         for (int k = 0; k < air.length; k++) {
@@ -669,18 +673,16 @@ public final class MochiMoves {
                 if (!caught.m_6084_()) {
                     return;
                 }
-                // each blow from another side of them (left, right, from below)
-                Vec3 side = ItoMoves.flat(player);
-                Vec3 across = new Vec3(-side.f_82481_, 0, side.f_82479_);
-                Vec3 way = which == 0 ? across.m_82520_(0, 0.6, 0) : which == 1 ? across.m_82490_(-1).m_82520_(0, 0.6, 0) : new Vec3(0, -1, 0)
-                    .m_82549_(side.m_82490_(-0.4));
-                fx(player, LOTUS, caught.m_19879_(), StyleCombat.middle(caught), way.m_82541_(), LOTUS_AIR, which, 0, 0);
+                double[] d = MochiDraw.lotusDonut(which, faced.f_82479_, faced.f_82481_, new double[6]);
                 hit(player, caught, LOTUS_AIR_HURT, Vec3.f_82478_);
+                sound(player, StyleCombat.middle(caught), MochiSounds.PUNCH, 1.0F, 0.9F + 0.08F * which);
+                fx(player, LOTUS, caught.m_19879_(), StyleCombat.middle(caught), new Vec3(d[3], d[4], d[5]), LOTUS_AIR, which, 0, 0);
             });
         }
         later(player, MochiDraw.LOTUS_DROP - start, () -> {
             if (caught.m_6084_()) {
-                Vec3 top = caught.m_20182_().m_82520_(0, 7.0, 0);
+                double[] last = MochiDraw.lotusBody(MochiDraw.LOTUS_FALL, faced.f_82479_, faced.f_82481_, new double[3]);
+                Vec3 top = ground.m_82520_(last[0], last[1] + 7.0, last[2]);
                 fx(player, LOTUS, caught.m_19879_(), top, new Vec3(0, -1, 0), LOTUS_SLAM, 0, 0, (int) MochiDraw.LOTUS_SLAM_LIFE);
                 sound(player, top, MochiSounds.STRETCH, 1.2F, 0.7F);
             }
@@ -702,7 +704,7 @@ public final class MochiMoves {
     }
 
     /**
-     * 3.6.3: the one the Lotus combo hit, moved along MochiDraw.lotusHeight over the ground it stood on (thrown up, hanging there, driven
+     * 3.6.3: the one the Lotus combo hit, moved along MochiDraw.lotusBody (3.6.4: from donut to donut) over the ground it stood on (thrown up, hanging there, driven
      * down), its own motion and fall kept still meanwhile, let go on the ground.
      */
     static final class Juggled implements UoMoves.Live {
@@ -711,13 +713,18 @@ public final class MochiMoves {
         final LivingEntity body;
         final Vec3 ground;
         final long born;
+        final double wx;
+        final double wz;
+        final double[] at = new double[3];
 
-        Juggled(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 ground, long born) {
+        Juggled(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 ground, long born, double wx, double wz) {
             this.level = level;
             this.owner = owner;
             this.body = body;
             this.ground = ground;
             this.born = born;
+            this.wx = wx;
+            this.wz = wz;
         }
 
         @Override
@@ -731,11 +738,11 @@ public final class MochiMoves {
             if (!this.body.m_6084_() || this.body.m_9236_() != this.level || !this.owner.m_6084_() || age >= MochiDraw.LOTUS_GROUND) {
                 return true;
             }
-            double y = this.ground.f_82480_ + MochiDraw.lotusHeight(age);
+            MochiDraw.lotusBody(age, this.wx, this.wz, this.at);
             this.body.m_20256_(Vec3.f_82478_);
             this.body.f_19864_ = true;
             this.body.f_19789_ = 0.0F;
-            this.body.m_6021_(this.ground.f_82479_, y, this.ground.f_82481_);
+            this.body.m_6021_(this.ground.f_82479_ + this.at[0], this.ground.f_82480_ + this.at[1], this.ground.f_82481_ + this.at[2]);
             return false;
         }
     }

@@ -728,9 +728,12 @@ public final class DragonTests {
                 double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
                 com.hexhaki.piece.mochi.MochiDraw.lotusRise(sink, 0, by + feet, 7, feet, age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH, 41);
                 com.hexhaki.piece.mochi.MochiDraw.lotus(sink, 0.4, -0.3, 0.3, d[0], d[1] + feet, d[2], 0, 1, 0, feet + 1.0, 7, feet, age, c, 5);
+                double[] bodyAt = com.hexhaki.piece.mochi.MochiDraw.lotusBody(Math.max(0, age), 0, 1, new double[3]);
+                double[] dn = new double[6];
                 for (int k = 0; k < air.length; k++) {
-                    com.hexhaki.piece.mochi.MochiDraw.lotusAir(sink, 0, com.hexhaki.piece.mochi.MochiDraw.lotusHeight(air[k]) + feet + 1.0, 7,
-                        k % 2 == 0 ? 0.8 : -0.8, 0.6, 0.0, age - air[k], c, 11 + k);
+                    com.hexhaki.piece.mochi.MochiDraw.lotusDonut(k, 0, 1, dn);
+                    com.hexhaki.piece.mochi.MochiDraw.lotusChain(sink, dn[0], dn[1] + feet, dn[2] + 7, dn[3], dn[4], dn[5], bodyAt[0], bodyAt[1] + feet + 1.0,
+                        bodyAt[2] + 7, age - air[k], c, 11 + k);
                 }
                 com.hexhaki.piece.mochi.MochiDraw.lotusSlam(sink, 0, com.hexhaki.piece.mochi.MochiDraw.LOTUS_HIGH + 7.0 + feet, 7, 0, by + feet, 7, feet,
                     age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_DROP, c, 21);

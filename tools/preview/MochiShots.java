@@ -32,9 +32,32 @@ public final class MochiShots {
         com.hexhaki.piece.horo.AstralArt.hide = 0;
     }
 
-    /** 3.6.3: the Lotus combo's body height over the ground at {@code age} (as server/MochiMoves.Juggled moves it). */
-    static double lotusBody(double age) {
-        return com.hexhaki.piece.mochi.MochiDraw.lotusHeight(age);
+    /**
+     * 3.6.4: the Lotus combo's body's tumble at {@code age} as pitch and roll (degrees; client/mochi/MochiFx.lotusTumble turns it about
+     * each blow's own axis: here summed into the two, near enough for a preview).
+     */
+    static double[] lotusTurn(double age) {
+        double pitch = 0;
+        double roll = 0;
+        if (age <= com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH || age >= com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND) {
+            return new double[] {0, 0};
+        }
+        double up = Math.min(1.0, (age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH) / com.hexhaki.piece.mochi.MochiDraw.LOTUS_RISE);
+        up = 1.0 - (1.0 - up) * (1.0 - up);
+        pitch -= Math.toDegrees(1.3 * up);
+        int[] air = com.hexhaki.piece.mochi.MochiDraw.LOTUS_AIR;
+        double[] dn = new double[6];
+        for (int i = 0; i < air.length && age > air[i]; i++) {
+            com.hexhaki.piece.mochi.MochiDraw.lotusDonut(i, 0, 1, dn);
+            double ax = dn[5];
+            double az = -dn[3];
+            double al = Math.max(1.0E-6, Math.hypot(ax, az));
+            double u = Math.min(1.0, (age - air[i]) / (com.hexhaki.piece.mochi.MochiDraw.LOTUS_CARRY + 2.0));
+            double spin = Math.toDegrees(3.4 * (1.0 - (1.0 - u) * (1.0 - u)));
+            pitch += spin * ax / al;
+            roll += spin * az / al;
+        }
+        return new double[] {pitch, roll};
     }
 
     static boolean shot(FireMesh.Sink sink, double[] eye, String[] move) {
@@ -79,24 +102,29 @@ public final class MochiShots {
             }
             case "mlotus" -> {
                 // 3.6.3 |mlotus:age[:c]: the whole combo as the reference times it (MochiDraw.LOTUS_*): the user at the origin facing +z,
-                // the one hit 7 ahead, thrown up at LOTUS_LAUNCH, struck in the air, driven down by the giant fist into the ground
+                // the one hit 7 ahead, thrown up at LOTUS_LAUNCH; 3.6.4: knocked from donut to donut in the air, tumbling as client/mochi/
+                // MochiFx.lotusTumble turns it (here as pitch and roll), driven down by the giant fist into the ground
                 user(sink, "mochi_lotus", Math.min(age, 46), ex, ey, ez);
                 double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
-                double by = lotusBody(age);
-                HieShots.body(sink, -ex, by - ey, 7.0 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.lotusRise(sink, -ex, by - ey, 7.0 - ez, -ey, age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH, 41);
+                double[] b = com.hexhaki.piece.mochi.MochiDraw.lotusBody(age, 0, 1, new double[3]);
+                double[] turn = lotusTurn(age);
+                ItoShots.posed(sink, "mochi_punch_1", 0.0F, b[0], b[1], b[2] + 7.0, b[0], b[1] + 0.9, b[2] + 7.0, ex, ey, ez, turn[0], turn[1]);
+                com.hexhaki.piece.mochi.MochiDraw.lotusRise(sink, b[0] - ex, b[1] - ey, b[2] + 7.0 - ez, -ey,
+                    age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH, 41);
                 com.hexhaki.piece.mochi.MochiDraw.lotus(sink, 0.4 - ex, 1.3 - ey, 0.3 - ez, d[0] - ex, d[1] - ey, d[2] - ez, 0, 1, -ex, 1.0 - ey,
                     7.0 - ez, -ey, age, coat, 5);
                 int[] air = com.hexhaki.piece.mochi.MochiDraw.LOTUS_AIR;
+                double[] dn = new double[6];
                 for (int k = 0; k < air.length; k++) {
-                    double side = k % 2 == 0 ? 1.0 : -1.0;
-                    com.hexhaki.piece.mochi.MochiDraw.lotusAir(sink, -ex, lotusBody(air[k]) + 1.0 - ey, 7.0 - ez, side * 0.8, 0.6 * (k == 2 ? -1 : 1), 0.0,
-                        age - air[k], coat, 11 + k);
+                    com.hexhaki.piece.mochi.MochiDraw.lotusDonut(k, 0, 1, dn);
+                    com.hexhaki.piece.mochi.MochiDraw.lotusChain(sink, dn[0] - ex, dn[1] - ey, dn[2] + 7.0 - ez, dn[3], dn[4], dn[5], b[0] - ex,
+                        b[1] + 1.0 - ey, b[2] + 7.0 - ez, age - air[k], coat, 11 + 13 * k);
                 }
-                double top = com.hexhaki.piece.mochi.MochiDraw.LOTUS_HIGH + 7.0;
-                com.hexhaki.piece.mochi.MochiDraw.lotusSlam(sink, -ex, top - ey, 7.0 - ez, -ex, by - ey, 7.0 - ez, -ey,
-                    age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_DROP, coat, 21);
-                com.hexhaki.piece.mochi.MochiDraw.lotusGround(sink, -ex, -ey, 7.0 - ez, age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND, 31);
+                double[] last = com.hexhaki.piece.mochi.MochiDraw.lotusBody(com.hexhaki.piece.mochi.MochiDraw.LOTUS_FALL, 0, 1, new double[3]);
+                com.hexhaki.piece.mochi.MochiDraw.lotusSlam(sink, last[0] - ex, last[1] + 7.0 - ey, last[2] + 7.0 - ez, b[0] - ex, b[1] - ey,
+                    b[2] + 7.0 - ez, -ey, age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_DROP, coat, 21);
+                com.hexhaki.piece.mochi.MochiDraw.lotusGround(sink, last[0] - ex, -ey, last[2] + 7.0 - ez,
+                    age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND, 31);
             }
             case "mchestnut" -> {
                 // 3.6.3 |mchestnut:age[:c]: the whole move on its beats (MochiDraw.CHESTNUT_*), the user at the origin facing +z, a body 8

@@ -569,7 +569,15 @@ dough cream-ivory in Oblivion, white elsewhere.
 
 - N 13 done (unversioned): MochiDraw.buzzBend bows the band toward where the arm is going (the ball trailing after it), sagging under
   the ball's weight (BUZZ_SAG), kept over the ground; HudTests checks it. Rendered: the band hangs under the straight way in the slam.
-- N 14 (Lotus Mochi Combo's air phase as the owner drew it): to rebuild next (the donut-to-donut ragdoll chain).
+- N 14 done (unversioned): Lotus Mochi Combo's air phase rebuilt as the owner drew it: MochiDraw.LOTUS_STATIONS (the body's places
+  after the launch and after each of four blows, zig-zagging side to side), lotusBody (the server's Juggled moves the body so; each blow
+  carries it there in LOTUS_CARRY 3 ticks, then it hangs sinking a little), lotusDonut (each blow's donut behind the body on the side it
+  is struck from), lotusChain (the donut forms 6 ticks before its blow, its fist strikes and stays glued to the body through the carry,
+  its arm stretching, then snaps back; a white burst, rings, streaks of the flight); the client draws the chain from the launch
+  (LotusRise now carries the way faced and the coat) and tumbles the body like a rag doll (MochiFx.lotusTumble: over backward as it is
+  launched, then spun over the way each blow drives it; RenderLivingEvent Pre/Post, rotations pushed one by one: only
+  Quaternionf.rotateAxis is on the allow-list). Blows at 50, 56, 62, 68; the giant fist over the last station from 69, the fall from 73,
+  the ground at 82 (it was 106). HudTests checks the side-to-side carries; preview |mlotus:age (the body tumbling as pitch and roll).
 - The Awakening (3.6.4 work, committed unversioned): M toggles it (MochiMoves.awaken; AWAKEN messages, resent every AWAKE_RESEND ticks
   so late comers know; MochiFx.AWAKE); its kit MochiKit.AWAKENED (all seven named, FruitEnergy costs); the left click is Trident
   Lacerations, built: five swings (clips mochi_trident_1..5 in tools/mochi_anims.py, lint clean; HandMoves), Mogura held on the

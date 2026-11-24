@@ -1038,10 +1038,32 @@ public final class HudTests {
             && com.hexhaki.piece.mochi.MochiDraw.LOTUS_FALL < com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND,
             "Lotus: ribbon, donut, punch, launch, blows in the air, the giant fist, the fall and the ground, in the reference's order");
         Check.that(com.hexhaki.piece.mochi.MochiDraw.lotusHeight(com.hexhaki.piece.mochi.MochiDraw.LOTUS_PUNCH) == 0.0
-            && com.hexhaki.piece.mochi.MochiDraw.lotusHeight(air[1]) > com.hexhaki.piece.mochi.MochiDraw.LOTUS_HIGH - 0.5
             && com.hexhaki.piece.mochi.MochiDraw.lotusHeight(com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND - 0.2) < 1.0
             && com.hexhaki.piece.mochi.MochiDraw.lotusHeight(com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND) == 0.0,
-            "Lotus: the one hit is on the ground for the punch, high for the blows in the air, back on the ground at the slam");
+            "Lotus: the one hit is on the ground for the punch, back on the ground at the slam");
+        // 3.6.4 (the owner: "pushed in ragdoll from side to side ... from donut to donut carrying basically being glued with each punch
+        // to the next, fast"): every blow in the air carries the body fast across to somewhere else, the side it goes alternating, the
+        // donut struck from on the far side of it
+        double[] here = new double[3];
+        double[] there = new double[3];
+        double[] dn = new double[6];
+        double lastSide = 0;
+        for (int i = 0; i < air.length; i++) {
+            com.hexhaki.piece.mochi.MochiDraw.lotusBody(air[i], 0, 1, here);
+            com.hexhaki.piece.mochi.MochiDraw.lotusBody(air[i] + com.hexhaki.piece.mochi.MochiDraw.LOTUS_CARRY, 0, 1, there);
+            double moved = Math.sqrt((there[0] - here[0]) * (there[0] - here[0]) + (there[1] - here[1]) * (there[1] - here[1])
+                + (there[2] - here[2]) * (there[2] - here[2]));
+            Check.that(here[1] > 9.0 && moved > 2.5 && moved / com.hexhaki.piece.mochi.MochiDraw.LOTUS_CARRY > 0.8,
+                "Lotus: blow " + i + " in the air carries the body fast across (" + moved + " blocks)");
+            double side = there[0] - here[0];
+            Check.that(i == 0 || side * lastSide < 0, "Lotus: the blows knock the body side to side");
+            lastSide = side;
+            com.hexhaki.piece.mochi.MochiDraw.lotusDonut(i, 0, 1, dn);
+            double gx = here[0] - dn[0];
+            double gy = here[1] + 1.0 - dn[1];
+            double gz = here[2] - dn[2];
+            Check.that(gx * dn[3] + gy * dn[4] + gz * dn[5] > 1.5, "Lotus: blow " + i + "'s donut stands behind the body, its fist driving it on");
+        }
         double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
         Check.that(d[0] > 2.0 && d[2] > 0.0, "Lotus: the donut stands at the user's left, a little ahead (facing +z, the left is +x)");
         buzzCut();

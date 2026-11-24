@@ -132,13 +132,10 @@ public final class MochiFx {
     }
 
     /** 3.6.3: the one the Lotus fist hit, thrown up from {@code ground} (feet) at {@code born}. */
-    record LotusRise(int body, Vec3 ground, long born, int seed) {
+    record LotusRise(int body, Vec3 ground, long born, int seed, double wx, double wz, boolean coat) {
     }
 
     /** 3.6.3: a Lotus blow in the air on {@code body} from {@code side}. */
-    record LotusAir(int body, Vec3 side, long born, boolean coat, int seed) {
-    }
-
     /** 3.6.3: the giant fist's donut {@code top} over {@code body}, the ground under them. */
     record LotusSlam(int body, Vec3 top, double ground, long born, boolean coat, int seed) {
     }
@@ -204,7 +201,6 @@ public final class MochiFx {
     private static final List<Lotus> LOTUSES = new ArrayList<>();
     private static final List<LotusSlam> SLAMS = new ArrayList<>();
     private static final List<LotusRise> RISES = new ArrayList<>();
-    private static final List<LotusAir> AIRS = new ArrayList<>();
     private static final List<LotusGround> GROUNDS = new ArrayList<>();
     static final Map<Integer, Chestnut> CHESTNUTS = new HashMap<>();
     private static final List<Spike> SPIKES = new ArrayList<>();
@@ -511,9 +507,10 @@ public final class MochiFx {
                         l.ground = feet.f_82480_;
                     }
                 }
-                add(RISES, new LotusRise(m.id(), feet, clock + (MochiDraw.LOTUS_LAUNCH - MochiDraw.LOTUS_PUNCH), m.id() * 31 + 7));
+                Vec3 way = flat(a);
+                add(RISES, new LotusRise(m.id(), feet, clock + (MochiDraw.LOTUS_LAUNCH - MochiDraw.LOTUS_PUNCH), m.id() * 31 + 7, way.f_82479_,
+                    way.f_82481_, coat));
             }
-            case MochiMoves.LOTUS_AIR -> add(AIRS, new LotusAir(m.id(), unit(a), clock, coat, m.id() * 13 + Math.round(m.by())));
             case MochiMoves.LOTUS_SLAM -> {
                 double ground = at.f_82480_ - 7.0 - MochiDraw.LOTUS_HIGH;
                 for (LotusRise r : RISES) {
@@ -724,7 +721,6 @@ public final class MochiFx {
         LOTUSES.removeIf(l -> clock - l.born > MochiDraw.LOTUS_LIFE + 1);
         SLAMS.removeIf(l -> clock - l.born > MochiDraw.LOTUS_SLAM_LIFE + 1);
         RISES.removeIf(r -> clock - r.born > MochiDraw.LOTUS_GROUND - MochiDraw.LOTUS_LAUNCH + 2);
-        AIRS.removeIf(r -> clock - r.born > MochiDraw.LOTUS_AIR_LIFE + 1);
         GROUNDS.removeIf(g -> clock - g.born > MochiDraw.LOTUS_GROUND_LIFE + 1);
         CHESTNUTS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > MochiDraw.CHESTNUT_FALL + 2
             || clock > e.getValue().until + MochiDraw.CHESTNUT_FALL + 6 || level.m_6815_(e.getKey()) == null);
@@ -739,7 +735,7 @@ public final class MochiFx {
 
     static boolean empty() {
         return PUNCHES.isEmpty() && SPLATS.isEmpty() && BOOMS.isEmpty() && SWELLS.isEmpty() && FISTS.isEmpty() && WHEELS.isEmpty()
-            && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty() && AIRS.isEmpty()
+            && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty()
             && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
             && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null && BURSTS.isEmpty()
             && SWINGS.isEmpty() && STRUCK.isEmpty();
@@ -852,6 +848,72 @@ public final class MochiFx {
     }
 
     private static final double[] STRIKE = new double[MOST * 5];
+
+    /** 3.6.4: a Lotus donut's place and way (the render thread only). */
+    private static final double[] DONUT_AT = new double[6];
+    /** 3.6.4: the bodies the Lotus combo has in the air turned like rag dolls this frame (their pose pushed: popped after they are drawn). */
+    private static final java.util.Set<LivingEntity> TUMBLING = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+
+    /**
+     * 3.6.4 (the owner: "pushed in ragdoll from side to side depending where he was punched from"): the one the Lotus combo has in the
+     * air tumbles about its middle: thrown over backward as it is launched, then sent spinning over the way each blow drives it.
+     */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public static void lotusTumble(net.minecraftforge.client.event.RenderLivingEvent.Pre<?, ?> event) {
+        if (RISES.isEmpty()) {
+            return;
+        }
+        LivingEntity entity = event.getEntity();
+        LotusRise rise = null;
+        for (LotusRise r : RISES) {
+            if (r.body == entity.m_19879_()) {
+                rise = r;
+            }
+        }
+        if (rise == null || TUMBLING.contains(entity)) {
+            return;
+        }
+        double age = clock + event.getPartialTick() - rise.born + MochiDraw.LOTUS_LAUNCH;
+        if (age <= MochiDraw.LOTUS_LAUNCH || age >= MochiDraw.LOTUS_GROUND) {
+            return;
+        }
+        float pivot = entity.m_20206_() * 0.5F;
+        PoseStack stack = event.getPoseStack();
+        stack.m_85836_();
+        stack.m_252880_(0.0F, pivot, 0.0F);
+        // the turns in world axes, the latest outermost: each blow's spin over the way it drives the body (about up x the drive), the
+        // launch's throw over backward (about the across axis) first
+        int[] air = MochiDraw.LOTUS_AIR;
+        for (int i = air.length - 1; i >= 0; i--) {
+            if (age <= air[i]) {
+                continue;
+            }
+            MochiDraw.lotusDonut(i, rise.wx, rise.wz, DONUT_AT);
+            double ax = DONUT_AT[5];
+            double az = -DONUT_AT[3];
+            double al = Math.hypot(ax, az);
+            if (al > 1.0E-4) {
+                double spin = 3.4 * ease((age - air[i]) / (MochiDraw.LOTUS_CARRY + 2.0));
+                stack.m_252781_(new org.joml.Quaternionf().rotateAxis((float) spin, (float) (ax / al), 0.0F, (float) (az / al)));
+            }
+        }
+        double up = ease((age - MochiDraw.LOTUS_LAUNCH) / MochiDraw.LOTUS_RISE);
+        stack.m_252781_(new org.joml.Quaternionf().rotateAxis((float) (-1.3 * up), (float) -rise.wz, 0.0F, (float) rise.wx));
+        stack.m_252880_(0.0F, -pivot, 0.0F);
+        TUMBLING.add(entity);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void lotusTumbled(net.minecraftforge.client.event.RenderLivingEvent.Post<?, ?> event) {
+        if (!TUMBLING.isEmpty() && TUMBLING.remove(event.getEntity())) {
+            event.getPoseStack().m_85849_();
+        }
+    }
+
+    static double ease(double t) {
+        t = Math.max(0.0, Math.min(1.0, t));
+        return 1.0 - (1.0 - t) * (1.0 - t);
+    }
 
     /** 3.6.4: a swing's trail's points (the render thread only). */
     private static final double[] TRAIL_IN = new double[3 * 32];
@@ -1022,15 +1084,23 @@ public final class MochiFx {
                 MochiDraw.lotusRise(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, r.ground.f_82480_ - cy, now - r.born, r.seed);
             }
         }
-        for (LotusAir r : AIRS) {
+        // 3.6.4 (the owner: "from donut to donut carrying basically being glued with each punch to the next, fast"): each blow in the
+        // air's donut where it stands from the launch, its fist on the body as it carries it on
+        for (LotusRise r : RISES) {
             Entity body = level.m_6815_(r.body);
-            if (body == null) {
+            if (body == null || far(r.ground, cam) && far(body.m_20182_(), cam)) {
                 continue;
             }
-            Vec3 at = body.m_20318_(partial).m_82520_(0, body.m_20206_() * 0.55, 0);
-            if (!far(at, cam)) {
-                MochiDraw.lotusAir(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, r.side.f_82479_, r.side.f_82480_, r.side.f_82481_,
-                    now - r.born, r.coat, r.seed);
+            Vec3 mid = body.m_20318_(partial).m_82520_(0, body.m_20206_() * 0.55, 0);
+            int[] air = MochiDraw.LOTUS_AIR;
+            for (int i = 0; i < air.length; i++) {
+                double age = now - (r.born + air[i] - MochiDraw.LOTUS_LAUNCH);
+                if (age < -MochiDraw.LOTUS_AIR_EARLY || age > MochiDraw.LOTUS_AIR_LIFE) {
+                    continue;
+                }
+                MochiDraw.lotusDonut(i, r.wx, r.wz, DONUT_AT);
+                MochiDraw.lotusChain(SINK, r.ground.f_82479_ + DONUT_AT[0] - cx, r.ground.f_82480_ + DONUT_AT[1] - cy, r.ground.f_82481_ + DONUT_AT[2] - cz,
+                    DONUT_AT[3], DONUT_AT[4], DONUT_AT[5], mid.f_82479_ - cx, mid.f_82480_ - cy, mid.f_82481_ - cz, age, r.coat, r.seed + 13 * i);
             }
         }
         for (LotusSlam l : SLAMS) {
@@ -1191,7 +1261,6 @@ public final class MochiFx {
         MARKS.clear();
         SLAMS.clear();
         RISES.clear();
-        AIRS.clear();
         GROUNDS.clear();
         CHESTNUTS.clear();
         SPIKES.clear();

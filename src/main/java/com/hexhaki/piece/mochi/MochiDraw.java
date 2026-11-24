@@ -689,11 +689,28 @@ public final class MochiDraw {
     public static final int LOTUS_PUNCH = 34;
     public static final int LOTUS_LAUNCH = 39;
     public static final double LOTUS_LIFE = 48.0;
-    /** The blows in the air, the giant fist over the body, the fall, the ground. */
-    public static final int[] LOTUS_AIR = {57, 67, 78};
-    public static final int LOTUS_DROP = 87;
-    public static final int LOTUS_FALL = 96;
-    public static final int LOTUS_GROUND = 106;
+    /**
+     * The blows in the air, the giant fist over the body, the fall, the ground. 3.6.4 (the owner: "pushed in ragdoll from side to side
+     * depending where he was punched from basically from donut to donut carrying basically being glued with each punch to the next,
+     * fast"): a blow every 6 ticks, each carrying the body {@link #LOTUS_CARRY} ticks across to the next donut.
+     */
+    public static final int[] LOTUS_AIR = {50, 56, 62, 68};
+    public static final int LOTUS_DROP = 69;
+    public static final int LOTUS_FALL = 73;
+    public static final int LOTUS_GROUND = 82;
+    /** How long a blow in the air carries the body, glued to its fist, across to the next donut (ticks). */
+    public static final double LOTUS_CARRY = 3.0;
+    /**
+     * Where the body is after the launch and after each blow in the air (the owner's sketch: knocked from donut to donut, side to side):
+     * across to the user's right, up, ahead, from the ground it stood on (blocks).
+     */
+    public static final double[][] LOTUS_STATIONS = {
+        {0.0, 13.0, 0.0},
+        {-3.4, 11.2, 0.5},
+        {0.5, 14.4, 0.1},
+        {-3.1, 13.6, 0.7},
+        {0.4, 14.8, 0.0},
+    };
     /** How high the one hit is thrown (blocks over the ground it stood on), how long the rise takes. */
     public static final double LOTUS_HIGH = 13.0;
     public static final double LOTUS_RISE = 10.0;
@@ -701,31 +718,91 @@ public final class MochiDraw {
     public static final double LOTUS_DONUT = 1.95;
     public static final double LOTUS_LEFT = 2.8;
     public static final double LOTUS_AHEAD = 0.9;
-    /** An air blow's donut and its life, the giant fist's donut and its life (from the drop), the ground's life. */
-    public static final double LOTUS_AIR_DONUT = 0.95;
+    /** An air blow's donut, how long before its blow it forms and how long after it it goes; the giant fist's donut and its life (from the
+     * drop), the ground's life. */
+    public static final double LOTUS_AIR_DONUT = 1.15;
+    public static final double LOTUS_AIR_EARLY = 6.0;
     public static final double LOTUS_AIR_LIFE = 11.0;
     public static final double LOTUS_SLAM_DONUT = 2.3;
     public static final double LOTUS_SLAM_LIFE = 30.0;
     public static final double LOTUS_GROUND_LIFE = 40.0;
 
     /**
-     * How high over the ground it stood on the one the Lotus combo hit is at {@code age} ticks into the combo (the server moves the body
-     * so: server/MochiMoves.Juggled): on the ground to the launch, up {@link #LOTUS_HIGH} in {@link #LOTUS_RISE} ticks (fast, slowing),
-     * hanging there bobbing a little, then driven down from {@link #LOTUS_FALL} to the ground at {@link #LOTUS_GROUND} (faster and faster).
+     * Where the one the Lotus combo hit is {@code age} ticks into the combo, from the ground it stood on, the user having faced (wx, wz)
+     * (flat, unit) (the server moves the body so: server/MochiMoves.Juggled): on the ground to the launch, thrown up to the first station
+     * in {@link #LOTUS_RISE} ticks; each blow in the air carries it, glued to the fist, fast across to the next station
+     * ({@link #LOTUS_STATIONS}, in {@link #LOTUS_CARRY} ticks), where it hangs, sinking a little, until the next; driven down from
+     * {@link #LOTUS_FALL} into the ground at {@link #LOTUS_GROUND} (faster and faster); into out (x, y, z).
      */
-    public static double lotusHeight(double age) {
+    public static double[] lotusBody(double age, double wx, double wz, double[] out) {
+        double a;
+        double y;
+        double f;
         if (age <= LOTUS_LAUNCH || age >= LOTUS_GROUND) {
-            return 0.0;
+            a = 0.0;
+            y = 0.0;
+            f = 0.0;
+        } else if (age < LOTUS_AIR[0]) {
+            double[] s0 = LOTUS_STATIONS[0];
+            double u = ease((age - LOTUS_LAUNCH) / LOTUS_RISE);
+            a = s0[0] * u;
+            y = s0[1] * u;
+            f = s0[2] * u;
+        } else {
+            int i = LOTUS_AIR.length - 1;
+            while (i > 0 && age < LOTUS_AIR[i]) {
+                i--;
+            }
+            double[] from = LOTUS_STATIONS[i];
+            double[] to = LOTUS_STATIONS[i + 1];
+            double u = ease((age - LOTUS_AIR[i]) / LOTUS_CARRY);
+            double hang = Math.max(0.0, age - LOTUS_AIR[i] - LOTUS_CARRY);
+            a = from[0] + (to[0] - from[0]) * u;
+            y = from[1] + (to[1] - from[1]) * u - 0.04 * hang * hang;
+            f = from[2] + (to[2] - from[2]) * u;
+            if (age > LOTUS_FALL) {
+                double fall = (age - LOTUS_FALL) / (LOTUS_GROUND - LOTUS_FALL);
+                y = y * (1.0 - fall * fall);
+            }
         }
-        if (age < LOTUS_LAUNCH + LOTUS_RISE) {
-            return LOTUS_HIGH * ease((age - LOTUS_LAUNCH) / LOTUS_RISE);
-        }
-        if (age < LOTUS_FALL) {
-            return LOTUS_HIGH + 0.25 * Math.sin((age - LOTUS_LAUNCH - LOTUS_RISE) * 0.25);
-        }
-        double f = (age - LOTUS_FALL) / (LOTUS_GROUND - LOTUS_FALL);
-        double top = LOTUS_HIGH + 0.25 * Math.sin((LOTUS_FALL - LOTUS_LAUNCH - LOTUS_RISE) * 0.25);
-        return top * (1.0 - f * f);
+        // across (the right of the way faced: (-wz, wx)), up, ahead
+        out[0] = -wz * a + wx * f;
+        out[1] = y;
+        out[2] = wx * a + wz * f;
+        return out;
+    }
+
+    /** How high over the ground it stood on the one the Lotus combo hit is at {@code age} ticks in (as {@link #lotusBody}). */
+    public static double lotusHeight(double age) {
+        return lotusBody(age, 0, 1, new double[3])[1];
+    }
+
+    /**
+     * Where the donut of the Lotus combo's blow {@code i} in the air stands, from the ground the body stood on, the user having faced
+     * (wx, wz): beyond the body's station, on the side it is struck from (its fist drives the body on to the next station); into out (x,
+     * y, z, then the way its fist strikes, unit).
+     */
+    public static double[] lotusDonut(int i, double wx, double wz, double[] out) {
+        double[] from = LOTUS_STATIONS[i];
+        double[] to = LOTUS_STATIONS[i + 1];
+        double da = to[0] - from[0];
+        double dy = to[1] - from[1];
+        double df = to[2] - from[2];
+        double dl = Math.max(1.0E-6, Math.sqrt(da * da + dy * dy + df * df));
+        da /= dl;
+        dy /= dl;
+        df /= dl;
+        double back = 2.3;
+        double a = from[0] - da * back;
+        double y = from[1] + 0.9 - dy * back;
+        double f = from[2] - df * back;
+        out[0] = -wz * a + wx * f;
+        out[1] = y;
+        out[2] = wx * a + wz * f;
+        out[3] = -wz * da + wx * df;
+        out[4] = dy;
+        out[5] = wx * da + wz * df;
+        return out;
     }
 
     /**
@@ -953,26 +1030,34 @@ public final class MochiDraw {
     }
 
     /**
-     * A Lotus blow in the air (the reference's frames 78 to 102): a small donut puffing up beside the body thrown high at (x, y, z),
-     * {@code (sx, sy, sz)} (unit) the side it comes from, its fist jabbing into the body, a white burst with rings; {@code age} ticks in.
+     * 3.6.4: a Lotus blow in the air (the owner: "from donut to donut carrying basically being glued with each punch to the next, fast"):
+     * a donut puffing up at (x, y, z) beyond the body, its hole to the way its fist strikes (wx, wy, wz) (unit); its fist punches out
+     * onto the body's middle (bx, by, bz) at the blow ({@code age} 0) and stays glued to it as it carries it on, its arm stretching,
+     * then snaps back; a white burst and shock rings where it strikes; {@code age} ticks from the blow (from -{@link #LOTUS_AIR_EARLY}).
      */
-    public static void lotusAir(FireMesh.Sink sink, double x, double y, double z, double sx, double sy, double sz, double age, boolean coat,
-                                int seed) {
-        if (age < 0 || age > LOTUS_AIR_LIFE) {
+    public static void lotusChain(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double bx, double by, double bz,
+                                  double age, boolean coat, int seed) {
+        if (age < -LOTUS_AIR_EARLY || age > LOTUS_AIR_LIFE) {
             return;
         }
-        double d = 1.9;
-        double cx = x + sx * d;
-        double cy = y + sy * d;
-        double cz = z + sz * d;
-        double form = smooth((age + 1.0) / 2.5) * (1.0 - smooth((age - LOTUS_AIR_LIFE + 4.0) / 4.0));
-        double out = age < 2.0 ? 0.0 : age < 3.0 ? ease(age - 2.0) : age < 5.0 ? 1.0 : 1.0 - smooth((age - 5.0) / 3.0);
-        donut(sink, cx, cy, cz, -sx, -sy, -sz, LOTUS_AIR_DONUT, form, 0.0, 0, out > 0.02 ? out : 0.0, cx + (x - cx) * out * 0.85,
-            cy + (y - cy) * out * 0.85, cz + (z - cz) * out * 0.85, coat, age, seed, false);
-        if (age >= 2.5 && age < 9.0) {
-            double f = (age - 2.5) / 6.5;
-            MochiArt.glow(sink, x, y, z, 0.9 + 1.0 * ease(f), 0xFFFFFF, 0.85 * (1.0 - f));
-            shockRings(sink, x, y, z, sx, sz, 0.7 + 1.6 * ease(f), 0.6 * (1.0 - f), seed + 3);
+        double form = smooth((age + LOTUS_AIR_EARLY) / 3.0) * (1.0 - smooth((age - LOTUS_AIR_LIFE + 4.0) / 4.0));
+        // out of the hole onto the body in the tick before the blow, glued to it through the carry, back into the hole after
+        double out = age < -1.0 ? 0.0 : age < 0.0 ? ease(age + 1.0) : age < LOTUS_CARRY + 0.5 ? 1.0 : 1.0 - smooth((age - LOTUS_CARRY - 0.5) / 2.5);
+        donut(sink, x, y, z, wx, wy, wz, LOTUS_AIR_DONUT, form, 0.0, 0, out > 0.02 ? out : 0.0, x + (bx - x) * out, y + (by - y) * out, z + (bz - z) * out,
+            coat, age, seed, false);
+        if (age >= 0.0 && age < 7.0) {
+            double f = age / 7.0;
+            MochiArt.glow(sink, bx, by, bz, 0.9 + 1.0 * ease(f), 0xFFFFFF, 0.85 * (1.0 - f));
+            shockRings(sink, bx, by, bz, wx, wz, 0.7 + 1.6 * ease(f), 0.6 * (1.0 - f), seed + 3);
+        }
+        // white streaks of the body's flight behind it while it is carried
+        if (age >= 0.0 && age < LOTUS_CARRY + 1.0) {
+            double fade = 1.0 - age / (LOTUS_CARRY + 1.0);
+            for (int k = 0; k < 4; k++) {
+                double ox = (FireMesh.rand(seed, k + 30) - 0.5) * 0.8;
+                double oy = (FireMesh.rand(seed, k + 40) - 0.5) * 1.0;
+                FireMesh.streak(sink, bx + ox, by + oy, bz + ox * 0.5, -wx, -wy, -wz, 1.6 + 1.2 * FireMesh.rand(seed, k + 50), 0.04, 0xFFFFFF, 0.7 * fade);
+            }
         }
     }
 
