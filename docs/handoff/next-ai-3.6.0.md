@@ -184,6 +184,10 @@ Uncommitted at the moment this handoff was written (committed with it):
   Checked with tools/tonal_lines.py: every clip's narrow line within about +5 dB over noise (strike2 +2.9, zap1 +2.0); their low-band
   "lines" are thunder's own low end and match the accepted conqueror thunder3 (+12.5 line, +6.2 narrow). NOT yet in sounds.json and
   NOT played by anything (step F1).
+  Measured (ffmpeg ebur128, every file peak-normalised to -1 dBFS): strike1 -13.4 LUFS, strike2 -14.6, strike3 -18.6, thunder -18.3,
+  zap1 -14.0, zap2 -16.1, zap3 -16.3; the old conqueror/web/thunder1 is -18.6. So "lowered in volume" needs sounds.json volumes of about
+  0.35 for strike1..3 (strike1 then about -22.5 LUFS, some 4 dB under the old thunder1), and quiet zaps (HakiBolts.zap's own volumes
+  0.05 to 0.55 multiply the sounds.json one: try 0.5 there, and measure rather than guess).
 
 ## F. What to do next, in order
 
