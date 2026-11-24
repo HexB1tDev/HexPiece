@@ -62,10 +62,17 @@ public final class MochiMoves {
     public static final int AWAKEN = 270;
     /** Mochi Muddle (X): user; x, y, z the trail's start on the ground, a the flat way, size its length, ticks how long it lies, id its seed. */
     public static final int MUDDLE = 277;
-    /** Lotus Mochi Combo (C): user; bx LOTUS_PUNCH (x, y, z the shoulder, a the way), LOTUS_SLAM (x, y, z the body's feet, id the body). */
+    /**
+     * Lotus Mochi Combo (C): user; bx the phase: LOTUS_PUNCH (the user's donut: x, y, z the feet), LOTUS_HIT (id the body hit, x, y, z
+     * its middle), LOTUS_AIR (id the body, a the side the blow comes from, by which blow), LOTUS_SLAM (id the body, x, y, z the giant
+     * fist's donut over it), LOTUS_GROUND (x, y, z where it lands, id its seed).
+     */
     public static final int LOTUS = 278;
     public static final int LOTUS_PUNCH = 0;
     public static final int LOTUS_SLAM = 1;
+    public static final int LOTUS_HIT = 2;
+    public static final int LOTUS_AIR = 3;
+    public static final int LOTUS_GROUND = 4;
     /** Chestnut Mochi (V): user; bx 1 out (ticks), 0 gone. */
     public static final int CHESTNUT = 279;
     /** A spike shot by Chestnut Mochi's donut: user; x, y, z where it strikes, id its seed. */
@@ -112,14 +119,14 @@ public final class MochiMoves {
     static final float MUDDLE_HURT_NEAR = 7.0F;
     static final float MUDDLE_HURT_FAR = 4.0F;
     static final int MUDDLE_STUCK = 40;
-    /** Lotus Mochi Combo: its reach, its five blows (every so many ticks from the first), the launch and the slam. */
-    public static final double LOTUS_REACH = 7.0;
-    public static final int LOTUS_FIRST = 3;
-    public static final int LOTUS_EVERY = 2;
-    public static final int LOTUS_BLOWS = 5;
-    public static final int LOTUS_LAUNCH = 14;
-    public static final int LOTUS_SLAM_AT = 26;
-    public static final double LOTUS_HIGH = 5.0;
+    /**
+     * Lotus Mochi Combo: its reach (the reference: the fist reaches the one about six blocks ahead), its blows: the punch, each blow in
+     * the air, the slam (its beats are the art's: MochiDraw.LOTUS_*).
+     */
+    public static final double LOTUS_REACH = 8.0;
+    public static final float LOTUS_PUNCH_HURT = 6.0F;
+    public static final float LOTUS_AIR_HURT = 3.0F;
+    public static final float LOTUS_SLAM_HURT = 12.0F;
     /** Chestnut Mochi: how long its donut stays, a spike every so many ticks, at the nearest foe within this. */
     public static final int CHESTNUT_TICKS = 100;
     public static final int CHESTNUT_EVERY = 4;
@@ -468,61 +475,130 @@ public final class MochiMoves {
 
     /**
      * Lotus Mochi Combo (the reference: "User summons an armored dough fist and punches and whoever is hit will be launched up in the air
-     * and then thrown back down"): a Haki-black fist out of a donut at the shoulder drives five blows into the one ahead (held fast in the
-     * mochi), then an uppercut throws them high and a giant fist out of a donut over them slams them back down.
+     * and then thrown back down"), 3.6.3 tick by tick after its GIF (MochiDraw.LOTUS_*): a ribbon of dough swirls into a big donut at
+     * the user's left; at {@code LOTUS_PUNCH} its fist punches along the user's aim (whoever it reaches is hit); at {@code LOTUS_LAUNCH}
+     * they are thrown {@code LOTUS_HIGH} up and held there ({@link Juggled}), struck in the air at each of {@code LOTUS_AIR}; a giant fist
+     * out of a donut over them ({@code LOTUS_DROP}) drives them down from {@code LOTUS_FALL} into the ground at {@code LOTUS_GROUND}: the
+     * slam's blow, a crater that grows back, a quake, the knockdown, the Conqueror's lightning out of the impact.
      */
     static void lotus(ServerPlayer player, State s, long now) {
         if (!ItoMoves.ready(player, MochiKit.LOTUS)) {
             return;
         }
-        ItoMoves.cool(player, MochiKit.LOTUS, 220);
-        s.busyUntil = now + LOTUS_LAUNCH + 4;
-        Vec3 f = ItoMoves.flat(player);
-        Vec3 look = player.m_20154_();
+        ItoMoves.cool(player, MochiKit.LOTUS, 240);
+        s.busyUntil = now + MochiDraw.LOTUS_PUNCH + 4;
         int seed = ++seeds;
-        animate(player, "mochi_punch_1");
-        fx(player, LOTUS, seed, ItoMoves.chest(player), look, LOTUS_PUNCH, 0, LOTUS_REACH, LOTUS_LAUNCH + 4);
+        animate(player, "mochi_lotus");
+        fx(player, LOTUS, seed, player.m_20182_(), player.m_20154_(), LOTUS_PUNCH, 0, LOTUS_REACH, (int) MochiDraw.LOTUS_LIFE);
         sound(player, ItoMoves.chest(player), MochiSounds.STRETCH, 1.0F, 0.9F);
-        LivingEntity body = PikaMoves.aimed(player, LOTUS_REACH, 0.6);
-        if (body == null) {
-            List<LivingEntity> ahead = ItoMoves.ahead(player, LOTUS_REACH, PUNCH_ARC);
-            body = ahead.isEmpty() ? null : ahead.get(0);
-        }
-        if (body == null) {
+        later(player, (int) MochiDraw.LOTUS_BALL, () -> sound(player, ItoMoves.chest(player), MochiSounds.SLAM, 0.7F, 1.3F));
+        later(player, MochiDraw.LOTUS_PUNCH, () -> {
+            LivingEntity body = PikaMoves.aimed(player, LOTUS_REACH, 0.8);
+            if (body == null) {
+                List<LivingEntity> ahead = ItoMoves.ahead(player, LOTUS_REACH, PUNCH_ARC);
+                body = ahead.isEmpty() ? null : ahead.get(0);
+            }
+            sound(player, ItoMoves.chest(player), MochiSounds.STRETCH, 1.1F, 1.2F);
+            if (body == null) {
+                return;
+            }
+            LivingEntity caught = body;
+            Vec3 f = ItoMoves.flat(player);
+            fx(player, LOTUS, caught.m_19879_(), StyleCombat.middle(caught), f, LOTUS_HIT, 0, 0, 0);
+            hit(player, caught, LOTUS_PUNCH_HURT, f.m_82490_(0.05));
+            stick(player, caught, MochiDraw.LOTUS_LAUNCH - MochiDraw.LOTUS_PUNCH);
+            later(player, MochiDraw.LOTUS_LAUNCH - MochiDraw.LOTUS_PUNCH, () -> launch(player, caught, seed));
+        });
+    }
+
+    /** The Lotus combo's launch: the one hit thrown up and juggled to the ground (the art's beats, from the launch). */
+    static void launch(ServerPlayer player, LivingEntity caught, int seed) {
+        if (!caught.m_6084_()) {
             return;
         }
-        LivingEntity caught = body;
-        stick(player, caught, LOTUS_LAUNCH);
-        for (int k = 0; k < LOTUS_BLOWS; k++) {
-            later(player, LOTUS_FIRST + k * LOTUS_EVERY, () -> {
-                if (caught.m_6084_()) {
-                    hit(player, caught, 2.6F, f.m_82490_(0.05));
+        STUCK_UNTIL.remove(caught.m_19879_());
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        Vec3 from = caught.m_20182_();
+        Vec3 ground = grounded(player, from);
+        int start = MochiDraw.LOTUS_LAUNCH;
+        LIVE.add(new Juggled(level, player, caught, ground, now(player) - start));
+        sound(player, from, MochiSounds.SLAM, 1.0F, 1.4F);
+        int[] air = MochiDraw.LOTUS_AIR;
+        for (int k = 0; k < air.length; k++) {
+            int which = k;
+            later(player, air[k] - start, () -> {
+                if (!caught.m_6084_()) {
+                    return;
                 }
+                // each blow from another side of them (left, right, from below)
+                Vec3 side = ItoMoves.flat(player);
+                Vec3 across = new Vec3(-side.f_82481_, 0, side.f_82479_);
+                Vec3 way = which == 0 ? across.m_82520_(0, 0.6, 0) : which == 1 ? across.m_82490_(-1).m_82520_(0, 0.6, 0) : new Vec3(0, -1, 0)
+                    .m_82549_(side.m_82490_(-0.4));
+                fx(player, LOTUS, caught.m_19879_(), StyleCombat.middle(caught), way.m_82541_(), LOTUS_AIR, which, 0, 0);
+                hit(player, caught, LOTUS_AIR_HURT, Vec3.f_82478_);
             });
         }
-        later(player, LOTUS_LAUNCH, () -> {
+        later(player, MochiDraw.LOTUS_DROP - start, () -> {
+            if (caught.m_6084_()) {
+                Vec3 top = caught.m_20182_().m_82520_(0, 7.0, 0);
+                fx(player, LOTUS, caught.m_19879_(), top, new Vec3(0, -1, 0), LOTUS_SLAM, 0, 0, (int) MochiDraw.LOTUS_SLAM_LIFE);
+                sound(player, top, MochiSounds.STRETCH, 1.2F, 0.7F);
+            }
+        });
+        later(player, MochiDraw.LOTUS_GROUND - start, () -> {
             if (!caught.m_6084_()) {
                 return;
             }
-            STUCK_UNTIL.remove(caught.m_19879_());
-            hit(player, caught, 4.0F, new Vec3(0, 1.25, 0).m_82549_(f.m_82490_(0.15)));
-            sound(player, caught.m_20182_(), MochiSounds.STRETCH, 1.1F, 1.3F);
+            Vec3 at = new Vec3(caught.m_20185_(), ground.f_82480_, caught.m_20189_());
+            fx(player, LOTUS, ++seeds, at, new Vec3(0, 1, 0), LOTUS_GROUND, 0, 0, (int) MochiDraw.LOTUS_GROUND_LIFE);
+            hit(player, caught, LOTUS_SLAM_HURT, new Vec3(0, -0.6, 0));
+            HakiFalls.knockDown(level, caught, 30, false);
+            Craters.open(level, player, at.m_82520_(0, -0.6, 0), 2.2);
+            // POINT ONE: a move that ends in an explosion throws the Conqueror's lightning out of that explosion
+            ConquerorAura.exploded(player, level, at.m_82520_(0, 0.5, 0), 3.0);
+            Impact.quake(level, at, 14.0, 0.5F, 8);
+            sound(player, at, MochiSounds.SLAM, 1.6F, 0.8F);
         });
-        later(player, LOTUS_SLAM_AT, () -> {
-            if (!caught.m_6084_()) {
-                return;
+    }
+
+    /**
+     * 3.6.3: the one the Lotus combo hit, moved along MochiDraw.lotusHeight over the ground it stood on (thrown up, hanging there, driven
+     * down), its own motion and fall kept still meanwhile, let go on the ground.
+     */
+    static final class Juggled implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final LivingEntity body;
+        final Vec3 ground;
+        final long born;
+
+        Juggled(ServerLevel level, ServerPlayer owner, LivingEntity body, Vec3 ground, long born) {
+            this.level = level;
+            this.owner = owner;
+            this.body = body;
+            this.ground = ground;
+            this.born = born;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            double age = now - this.born;
+            if (!this.body.m_6084_() || this.body.m_9236_() != this.level || !this.owner.m_6084_() || age >= MochiDraw.LOTUS_GROUND) {
+                return true;
             }
-            fx(player, LOTUS, seed, caught.m_20182_(), Vec3.f_82478_, LOTUS_SLAM, 0, 0, (int) MochiDraw.LOTUS_SLAM_LIFE);
-            hit(player, caught, 10.0F, new Vec3(0, -2.4, 0));
-            later(player, 3, () -> {
-                Vec3 at = caught.m_20182_();
-                HakiFalls.knockDown((ServerLevel) player.m_9236_(), caught, 30, false);
-                ConquerorAura.exploded(player, (ServerLevel) player.m_9236_(), at.m_82520_(0, 0.5, 0), 2.6);
-                Impact.quake((ServerLevel) player.m_9236_(), at, 14.0, 0.5F, 8);
-                fx(player, SPLAT, ++seeds, at.m_82520_(0, 0.3, 0), new Vec3(0, 1, 0), 0, 0, 2.0, 0);
-                sound(player, at, MochiSounds.SLAM, 1.4F, 0.9F);
-            });
-        });
+            double y = this.ground.f_82480_ + MochiDraw.lotusHeight(age);
+            this.body.m_20256_(Vec3.f_82478_);
+            this.body.f_19864_ = true;
+            this.body.f_19789_ = 0.0F;
+            this.body.m_6021_(this.ground.f_82479_, y, this.ground.f_82481_);
+            return false;
+        }
     }
 
     // ------------------------------------------------------------------------------------------------------ V: Chestnut Mochi

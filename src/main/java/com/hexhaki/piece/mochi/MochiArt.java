@@ -85,7 +85,8 @@ public final class MochiArt {
         double hl = Math.max(1.0E-9, Math.sqrt(hx * hx + hy * hy + hz * hz));
         double half = Math.max(0.0, (nx * hx + ny * hy + nz * hz) / hl);
         if (bands == MOCHI) {
-            double wrap = Math.max(0.0, Math.min(1.0, (lam + 0.3) / 1.3));
+            // most of it white (the reference's dough glows white over all but its turned-away side)
+            double wrap = Math.max(0.0, Math.min(1.0, (lam + 0.55) / 1.0));
             wrap = wrap * wrap * (3.0 - 2.0 * wrap);
             int c = FireMesh.mix(MOCHI_SHADE, MOCHI_BODY, wrap);
             // its thickness: deeper where it turns away from the eye, most on the shaded side
@@ -112,11 +113,13 @@ public final class MochiArt {
     }
 
     /** 3.6.3: mochi lit, in its shade, turning away, the ground's bounce, the light through its edges. */
-    static final int MOCHI_BODY = 0xFCF8F1;
-    static final int MOCHI_SHADE = 0xC2B6C5;
-    static final int MOCHI_DEEP = 0x9C8DA6;
-    static final int MOCHI_BOUNCE = 0xE6D3C2;
-    static final int MOCHI_GLOW = 0xFFE7C6;
+    // 3.6.3 (the owner: the moves to look "exactly like the reference GIFs ... to very minute detail"): the reference's dough is near
+    // pure white (253 of 255 where lit), its shade only a soft cool grey (about 215, 213, 222), its deepest about 204, 195, 200
+    static final int MOCHI_BODY = 0xFFFFFF;
+    static final int MOCHI_SHADE = 0xDAD6E0;
+    static final int MOCHI_DEEP = 0xC6BEC9;
+    static final int MOCHI_BOUNCE = 0xEEE8E4;
+    static final int MOCHI_GLOW = 0xFFFFFF;
     /** 3.6.3: Haki-black in the dark and lit, its cold rim, its shine (blue: never white). */
     static final int HAKI_BODY = 0x0E0E14;
     static final int HAKI_LIT = 0x2C2D3A;

@@ -48,6 +48,28 @@ def punch():
     ], "Mochi Mochi: Mochi Punch: the left fist driven straight out, the arm stretching on as mochi.", ARMS)
 
 
+# ------------------------------------------------------------------------------------------------------ C: Lotus Mochi Combo
+
+def lotus():
+    # 3.6.3, on the reference's beats (mochi/MochiDraw.LOTUS_*): the left hand flings the ribbon up and over to the left (tick 4), held
+    # out at the donut while it forms, pulled back with the flash (31), thrust out with its punch (34), both arms swept up with the
+    # launch (39), then let down
+    fling = p(leftArm=mirror(arm(-125, 0, 80, -8)), body={"yaw": -12, "bend": -4})
+    held = p(leftArm=mirror(arm(-80, 0, 70, -6)), body={"yaw": -16, "bend": 0})
+    write_parts("mochi_lotus", 46, [
+        (0, "linear", REST),
+        (2, "insine", p(leftArm=mirror(arm(-15, 0, 20, -30)), body={"yaw": 8, "bend": 2})),
+        (4, "outexpo", fling),
+        (8, "outsine", held),
+        (28, "linear", p(held, leftArm={"pitch": -84})),
+        (31, "insine", p(leftArm=mirror(arm(-40, 0, 40, -60)), body={"yaw": -6, "bend": 2})),
+        (34, "outexpo", p(leftArm=mirror(arm(-95, 10, 10, -2)), body={"yaw": -20, "bend": 4})),
+        (39, "outexpo", p(leftArm=mirror(arm(-20, 0, 150, -10)), rightArm=arm(-20, 0, 150, -10), body={"yaw": 0, "bend": -6})),
+        (46, "inoutsine", REST),
+    ], "Mochi Mochi: Lotus Mochi Combo: the left hand flings the dough out to the side, holds the donut, thrusts its punch, sweeps the "
+       "launch up.", ARMS)
+
+
 # ------------------------------------------------------------------------------------------------------ RMB: Mochi Tsuki
 
 # Mogura held low in both hands, its head forward: the right hand back by the hip on its shaft, the left forward guiding it
@@ -289,6 +311,7 @@ def dome():
 
 def main():
     punch()
+    lotus()
     tsuki()
     yanagi()
     kaku()

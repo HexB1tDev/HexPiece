@@ -282,3 +282,24 @@ left as they were.
 5. The owner's answers (AskUserQuestion, after the 3D lightning and the HUD were committed): release: "Hold until Mochi is done" (no
    3.6.3 yet: the lightning and HUD fixes ship with the finished Mochi kit); branch: "claude/nice-bell-gam7qf" (push there, where the
    Build and Release workflows run; this session's own ccr-* branch has no workflow).
+
+## K. Done in the next chat (committed; unversioned): the Mochi material and Lotus Mochi Combo after their GIFs
+
+- The dough's colour (MochiArt MOCHI_*): sampled from the GIFs (near pure white where lit, a soft cool grey shade about 215, 213, 222,
+  the deepest about 204, 195, 200): now white, the shade DAD6E0, the deep C6BEC9, and most of a lump white (the wrap starts earlier).
+  Before it was a lilac 194, 182, 197 down to 156, 141, 166: far too dark next to the reference.
+- Lotus Mochi Combo rebuilt on the reference's beats (G; MochiDraw.LOTUS_*): a comet of dough flung from the LEFT hand high over and
+  down to the user's left (the reference's donut stands at the user's left: the last handoff's "fix the side" was wrong), curling into a
+  swirl (4), balled up (12) and flashing white in thin shock rings; the big donut (radius 1.95, 2.8 left, 0.9 ahead; in one's own first
+  person 2.3 further ahead) out of the flash (15), dripping and splatting on the ground, shock rings pulsing; a second flash (31) and its
+  fist punches onto the one aimed at (34; server: LOTUS_REACH 8, 6 damage); thrown 13 up in 10 ticks (39: a white burst, a ring, dough
+  and rocks on the ground, streaks under them), held there (server/MochiMoves.Juggled moves them along MochiDraw.lotusHeight); three
+  small donuts punch them from the left, the right and below (57, 67, 78: 3 each, a white burst and rings each); a giant fist out of a
+  donut 7 over them (87) rides them down from 96 into the ground at 106: a white flash, a flat splat of dough, rocks thrown, a ring
+  rising, 12 damage, the knockdown, a crater that grows back (Craters.open 2.2), a quake and the Conqueror's lightning out of the impact
+  (ConquerorAura.exploded: POINT ONE). The giant arm is drawn back at once after the slam (the reference shows none).
+- Messages (MochiMoves.LOTUS, bx the phase): LOTUS_PUNCH, LOTUS_HIT, LOTUS_AIR, LOTUS_SLAM, LOTUS_GROUND; client MochiFx.drawLotus.
+- The user's clip mochi_lotus (tools/mochi_anims.py lotus(): the left arm flings, holds the donut, draws back, thrusts with the punch,
+  both arms flung up and out with the launch; arms only, lint clean, never over the face) and its first-person hand (HandMoves.LOTUS).
+- HudTests: the beats in the reference's order, the body on the ground for the punch, high for the air blows, down at the slam, the
+  donut at the user's left. Preview: MochiShots |mlotus:age[:c] plays the whole combo (the body moved as the server does).

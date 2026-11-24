@@ -639,72 +639,389 @@ public final class MochiDraw {
         }
     }
 
-    /** Lotus Mochi Combo: when its blows land (ticks), how long the slam from above lasts. */
-    public static final double LOTUS_LIFE = 18.0;
-    public static final double LOTUS_SLAM_LIFE = 14.0;
+    // ------------------------------------------------------------------------------------------------------ Lotus Mochi Combo
+    // 3.6.3 (the owner: "do not give up until the moves look exactly like the reference GIFs ... to very minute detail"): the
+    // reference's Lotus Dough Combo read frame by frame and timed in ticks (next-ai-3.6.3.md G): a ribbon of dough swoops out of the
+    // user and curls into a swirl beside them (tick 0 to 4), the swirl balls up (to 12) and flashes white in rings (12), a big donut
+    // stands out of the flash (15) ringed in thin shock rings, dough dripping off it, a second flash (31) and its fist punches out into
+    // the one aimed at (34), who is thrown high (39), struck in the air three times (57, 67, 78), driven down by a giant fist out of a
+    // donut above (87, falling from 96) into the ground (106): a white flash, a flat splat of dough, rocks thrown, a ring rising.
+
+    /** The ribbon lands and curls; the swirl is a ball and flashes; the donut is out of the flash; the flash before the punch. */
+    public static final double LOTUS_CURL = 4.0;
+    public static final double LOTUS_BALL = 12.0;
+    public static final double LOTUS_OPEN = 15.0;
+    public static final double LOTUS_CHARGE = 31.0;
+    /** The fist out of the donut (the server's blow lands then), the one hit thrown up, the donut gone. */
+    public static final int LOTUS_PUNCH = 34;
+    public static final int LOTUS_LAUNCH = 39;
+    public static final double LOTUS_LIFE = 48.0;
+    /** The blows in the air, the giant fist over the body, the fall, the ground. */
+    public static final int[] LOTUS_AIR = {57, 67, 78};
+    public static final int LOTUS_DROP = 87;
+    public static final int LOTUS_FALL = 96;
+    public static final int LOTUS_GROUND = 106;
+    /** How high the one hit is thrown (blocks over the ground it stood on), how long the rise takes. */
+    public static final double LOTUS_HIGH = 13.0;
+    public static final double LOTUS_RISE = 10.0;
+    /** The donut's outer radius (the reference's is about twice the user's height across) and where it stands from the user. */
+    public static final double LOTUS_DONUT = 1.95;
+    public static final double LOTUS_LEFT = 2.8;
+    public static final double LOTUS_AHEAD = 0.9;
+    /** An air blow's donut and its life, the giant fist's donut and its life (from the drop), the ground's life. */
+    public static final double LOTUS_AIR_DONUT = 0.95;
+    public static final double LOTUS_AIR_LIFE = 11.0;
+    public static final double LOTUS_SLAM_DONUT = 2.3;
+    public static final double LOTUS_SLAM_LIFE = 30.0;
+    public static final double LOTUS_GROUND_LIFE = 40.0;
 
     /**
-     * Lotus Mochi Combo (C): a donut beside the shoulder (x, y, z) (to its right, {@code wx, wy, wz} the way), its fist pounding out five
-     * times ({@link com.hexhaki.piece.server.MochiMoves#LOTUS_BLOWS}) {@code reach} along the way, then the uppercut at the launch;
-     * {@code age} ticks in.
+     * How high over the ground it stood on the one the Lotus combo hit is at {@code age} ticks into the combo (the server moves the body
+     * so: server/MochiMoves.Juggled): on the ground to the launch, up {@link #LOTUS_HIGH} in {@link #LOTUS_RISE} ticks (fast, slowing),
+     * hanging there bobbing a little, then driven down from {@link #LOTUS_FALL} to the ground at {@link #LOTUS_GROUND} (faster and faster).
      */
-    public static void lotus(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double reach, double age,
-                             boolean coat, int seed) {
+    public static double lotusHeight(double age) {
+        if (age <= LOTUS_LAUNCH || age >= LOTUS_GROUND) {
+            return 0.0;
+        }
+        if (age < LOTUS_LAUNCH + LOTUS_RISE) {
+            return LOTUS_HIGH * ease((age - LOTUS_LAUNCH) / LOTUS_RISE);
+        }
+        if (age < LOTUS_FALL) {
+            return LOTUS_HIGH + 0.25 * Math.sin((age - LOTUS_LAUNCH - LOTUS_RISE) * 0.25);
+        }
+        double f = (age - LOTUS_FALL) / (LOTUS_GROUND - LOTUS_FALL);
+        double top = LOTUS_HIGH + 0.25 * Math.sin((LOTUS_FALL - LOTUS_LAUNCH - LOTUS_RISE) * 0.25);
+        return top * (1.0 - f * f);
+    }
+
+    /**
+     * Where the Lotus donut stands from its user's feet, the user facing (wx, wz) (flat, unit): to their left, a little ahead, its
+     * bottom on the ground; into out (x, y, z).
+     */
+    public static double[] lotusAt(double wx, double wz, double[] out) {
+        // the left of (wx, wz) seen from above: (wz, -wx)
+        out[0] = wz * LOTUS_LEFT + wx * LOTUS_AHEAD;
+        out[1] = LOTUS_DONUT + 0.05;
+        out[2] = -wx * LOTUS_LEFT + wz * LOTUS_AHEAD;
+        return out;
+    }
+
+    /**
+     * Lotus Mochi Combo (C), the user's part: from the user's hand (hx, hy, hz) the ribbon, the swirl, the flashes and the donut at
+     * (dx, dy, dz) facing (wx, wz) (flat, unit; the user's look), its fist punching onto (tx, ty, tz) at {@link #LOTUS_PUNCH};
+     * {@code ground} the height of the ground under the donut; {@code age} ticks in.
+     */
+    public static void lotus(FireMesh.Sink sink, double hx, double hy, double hz, double dx, double dy, double dz, double wx, double wz,
+                             double tx, double ty, double tz, double ground, double age, boolean coat, int seed) {
         if (age < 0 || age > LOTUS_LIFE) {
             return;
         }
+        // the plane the donut stands in: across (sx, 0, sz) and up
         double sx = -wz;
         double sz = wx;
-        double sl = Math.max(1.0E-6, Math.hypot(sx, sz));
-        sx /= sl;
-        sz /= sl;
-        double form = Math.min(1.0, age / 3.0) * Math.max(0.0, Math.min(1.0, (LOTUS_LIFE - age) / 4.0));
-        double cx = x - sx * 1.0;
-        double cy = y + 0.35;
-        double cz = z - sz * 1.0;
-        int first = com.hexhaki.piece.server.MochiMoves.LOTUS_FIRST;
-        int every = com.hexhaki.piece.server.MochiMoves.LOTUS_EVERY;
-        int blows = com.hexhaki.piece.server.MochiMoves.LOTUS_BLOWS;
-        int launch = com.hexhaki.piece.server.MochiMoves.LOTUS_LAUNCH;
-        double out = 0.0;
-        double ux = wx;
-        double uy = wy;
-        double uz = wz;
-        if (age >= first - 1 && age < first + blows * every) {
-            // a jab each blow: out fast, half back
-            double phase = ((age - (first - 1)) % every) / every;
-            out = phase < 0.5 ? ease(phase * 2.0) : 1.0 - 0.6 * smooth((phase - 0.5) * 2.0);
-        } else if (age >= launch - 2 && age < launch + 4) {
-            // the uppercut: out and up
-            double u = (age - launch + 2) / 6.0;
-            out = u < 0.4 ? ease(u / 0.4) : 1.0 - smooth((u - 0.4) / 0.6);
-            uy = wy + 1.1 * Math.min(1.0, u / 0.4);
-            double ul = Math.sqrt(ux * ux + uy * uy + uz * uz);
-            ux /= ul;
-            uy /= ul;
-            uz /= ul;
+        // ---- the ribbon: out of the hand in an arc over to the donut's place, its head racing ahead of its tail, then winding round
+        // that place into a swirl that tightens and fattens into a ball (the reference's frames 18 to 28)
+        if (age < LOTUS_BALL + 1) {
+            ribbon(sink, hx, hy, hz, dx, dy, dz, sx, sz, wx, wz, age, seed);
         }
-        double d = reach * out;
-        donut(sink, cx, cy, cz, ux, uy, uz, LOTUS_DONUT, form, 0.0, 2, out > 0.02 ? out : 0.0, cx + ux * d, cy + uy * d, cz + uz * d, coat, age,
-            seed, false);
+        // ---- the flash out of the ball: a white burst, thin rings of shock round it (frame 30)
+        if (age >= LOTUS_BALL - 1 && age < LOTUS_OPEN + 5) {
+            double f = (age - LOTUS_BALL + 1) / 9.0;
+            double fade = 1.0 - smooth(f);
+            MochiArt.glow(sink, dx, dy, dz, LOTUS_DONUT * (1.1 + 0.6 * ease(f * 2.0)), 0xFFFFFF, 0.95 * fade);
+            shockRings(sink, dx, dy, dz, wx, wz, LOTUS_DONUT * (1.0 + 1.6 * ease(f)), 0.75 * fade, seed);
+        }
+        // ---- the donut (frames 33 to 57): out of the flash with a spring, dripping, rings of shock pulsing out round it; it slumps
+        // away after the punch
+        double form = smooth((age - LOTUS_OPEN + 2.0) / 3.0) * (1.0 - smooth((age - LOTUS_LIFE + 6.0) / 6.0));
+        if (form > 0.02) {
+            double out = 0.0;
+            double fx = dx;
+            double fy = dy;
+            double fz = dz;
+            if (age >= LOTUS_PUNCH - 1.0 && age < LOTUS_LIFE - 4.0) {
+                // the punch: out in a tick and a half, held, drawn back (frames 53 to 58)
+                double pa = age - (LOTUS_PUNCH - 1.0);
+                out = pa < 1.5 ? ease(pa / 1.5) : pa < 5.0 ? 1.0 : 1.0 - smooth((pa - 5.0) / 4.0);
+                fx = dx + (tx - dx) * out;
+                fy = dy + (ty - dy) * out;
+                fz = dz + (tz - dz) * out;
+            }
+            double ax = wx;
+            double ay = 0.0;
+            double az = wz;
+            if (out > 0.02) {
+                // the donut turns to throw the punch where it goes
+                double ux = tx - dx;
+                double uy = ty - dy;
+                double uz = tz - dz;
+                double ul = Math.max(1.0E-6, Math.sqrt(ux * ux + uy * uy + uz * uz));
+                double turn = Math.min(1.0, out * 1.5);
+                ax = wx + (ux / ul - wx) * turn;
+                ay = uy / ul * turn;
+                az = wz + (uz / ul - wz) * turn;
+                double al = Math.max(1.0E-6, Math.sqrt(ax * ax + ay * ay + az * az));
+                ax /= al;
+                ay /= al;
+                az /= al;
+            }
+            donut(sink, dx, dy, dz, ax, ay, az, LOTUS_DONUT, form, 0.0, 3, out > 0.02 ? out : 0.0, fx, fy, fz, coat, age, seed, false);
+            // dough dripping off its underside and splatting on the ground under it (frames 36 to 48)
+            drops(sink, dx, dy, dz, sx, sz, ground, form, age, seed);
+            if (age > LOTUS_OPEN && age < LOTUS_CHARGE + 2) {
+                // rings of shock pulsing out of it, one every five ticks
+                for (int k = 0; k < 3; k++) {
+                    double ra = (age - LOTUS_OPEN + k * 5.0) % 15.0 / 15.0;
+                    shockRings(sink, dx, dy, dz, wx, wz, LOTUS_DONUT * (1.15 + 1.1 * ra), 0.5 * (1.0 - ra) * form, seed + k * 17);
+                }
+            }
+        }
+        // ---- the flash before the punch, the blow's own burst at the fist (frames 51 and 53)
+        if (age >= LOTUS_CHARGE && age < LOTUS_PUNCH + 4) {
+            double f = (age - LOTUS_CHARGE) / (LOTUS_PUNCH + 4 - LOTUS_CHARGE);
+            double fade = Math.sin(Math.PI * Math.min(1.0, f * 1.4));
+            MochiArt.glow(sink, dx, dy, dz, LOTUS_DONUT * (1.5 + 0.8 * f), 0xFFFFFF, 0.9 * fade);
+            shockRings(sink, dx, dy, dz, wx, wz, LOTUS_DONUT * (1.3 + 1.4 * f), 0.7 * fade, seed + 91);
+        }
+        if (age >= LOTUS_PUNCH && age < LOTUS_PUNCH + 6) {
+            double f = (age - LOTUS_PUNCH) / 6.0;
+            MochiArt.glow(sink, tx, ty, tz, 1.1 + 1.2 * ease(f), 0xFFFFFF, 0.9 * (1.0 - f));
+            shockRings(sink, tx, ty, tz, wx, wz, 0.8 + 2.2 * ease(f), 0.6 * (1.0 - f), seed + 7);
+        }
     }
 
-    /** Lotus Mochi Combo's donut (outer radius). */
-    public static final double LOTUS_DONUT = 0.95;
+    /**
+     * The Lotus ribbon (the reference's frames 18 to 28): a comet of dough out of the hand, thrown high and swooping down onto the donut's
+     * place (its head thick, its tail thinning out behind), then winding round that place into a swirl that tightens and fattens into a
+     * ball.
+     */
+    static void ribbon(FireMesh.Sink sink, double hx, double hy, double hz, double dx, double dy, double dz, double sx, double sz, double wx,
+                       double wz, double age, int seed) {
+        int n = 26;
+        double fly = ease(age / LOTUS_CURL);
+        double wind = clamp((age - LOTUS_CURL * 0.6) / (LOTUS_BALL - LOTUS_CURL * 0.6));
+        // the throw's curve: up out of the hand, high over, down onto the place
+        double p1x = hx + (dx - hx) * 0.15;
+        double p1y = hy + 3.6;
+        double p1z = hz + (dz - hz) * 0.15;
+        double p2x = dx + (dx - hx) * 0.25;
+        double p2y = dy + 3.2;
+        double p2z = dz + (dz - hz) * 0.25;
+        MochiArt.tubeBegin();
+        for (int k = 0; k <= n; k++) {
+            double t = k / (double) n;
+            double u = clamp(fly - (1.0 - t) * 0.5 * (1.0 - wind));
+            double a = 1.0 - u;
+            double ax = a * a * a * hx + 3 * a * a * u * p1x + 3 * a * u * u * p2x + u * u * u * dx;
+            double ay = a * a * a * hy + 3 * a * a * u * p1y + 3 * a * u * u * p2y + u * u * u * dy;
+            double az = a * a * a * hz + 3 * a * a * u * p1z + 3 * a * u * u * p2z + u * u * u * dz;
+            // round the donut's place in its plane: the swirl tightening as it winds (the head the innermost)
+            double turn = 2 * Math.PI * (1.4 * t + 1.3 * wind) + 0.3 * FireMesh.rand(seed, 3);
+            double r = LOTUS_DONUT * (1.25 - 0.6 * t) * (1.0 - 0.5 * wind);
+            double cx = dx + sx * Math.cos(turn) * r + wx * 0.15 * Math.sin(turn * 1.3);
+            double cy = dy + Math.sin(turn) * r;
+            double cz = dz + sz * Math.cos(turn) * r + wz * 0.15 * Math.sin(turn * 1.3);
+            double curl = smooth((fly - 0.7) / 0.3) * smooth(t * 1.4 + wind);
+            double thick = (0.035 + 0.27 * Math.pow(t, 1.3)) * (1.0 + 1.4 * wind);
+            MochiArt.tubePoint(ax + (cx - ax) * curl, ay + (cy - ay) * curl, az + (cz - az) * curl, thick);
+        }
+        MochiArt.tube(sink, 12, MochiArt.MOCHI, 0.0, 0.0);
+        // the ball swelling in the swirl's heart as it winds tight
+        double ball = smooth((age - LOTUS_CURL) / (LOTUS_BALL - LOTUS_CURL));
+        if (ball > 0.02) {
+            MochiArt.blob(sink, dx, dy, dz, wx, 0, wz, 0, 1, 0, LOTUS_DONUT * 0.85 * ball, LOTUS_DONUT * 0.8 * ball, LOTUS_DONUT * 0.85 * ball,
+                0.9, 0.2, age, seed, MochiArt.MOCHI, 1.0);
+        }
+        // spatters flung off the ribbon's head as it whips round
+        if (age > 2 && age < LOTUS_BALL) {
+            for (int k = 0; k < 4; k++) {
+                double t = (age * 0.3 + k * 0.25) % 1.0;
+                double a = 2 * Math.PI * FireMesh.rand(seed + (int) age, k);
+                double d = LOTUS_DONUT * (1.0 + 1.4 * t);
+                MochiArt.ball(sink, dx + sx * Math.cos(a) * d, dy + Math.sin(a) * d - 1.2 * t * t, dz + sz * Math.cos(a) * d, 0.09 * (1.0 - t) + 0.03,
+                    sx * Math.cos(a), Math.sin(a), sz * Math.cos(a), 1.5, 0.0, age, seed + k, MochiArt.MOCHI);
+            }
+        }
+    }
 
     /**
-     * Lotus Mochi Combo's slam: a big donut appearing {@link com.hexhaki.piece.server.MochiMoves#LOTUS_HIGH} over the body thrown up at
-     * (x, y, z) (its feet when the slam began), its giant fist driving straight down onto it and into the ground; {@code age} ticks in.
+     * The one the Lotus fist hit thrown up (the reference's frames 59 to 75): a white burst and splat where they left the ground
+     * ({@code ground}), white streaks under them as they rise from (x, y, z) (their feet now); {@code age} ticks from the launch.
      */
-    public static void lotusSlam(FireMesh.Sink sink, double x, double y, double z, double ground, double age, boolean coat, int seed) {
+    public static void lotusRise(FireMesh.Sink sink, double x, double y, double z, double ground, double age, int seed) {
+        if (age < 0 || age > LOTUS_RISE + 8) {
+            return;
+        }
+        if (age < 7) {
+            double f = age / 7.0;
+            MochiArt.glow(sink, x, ground + 0.6, z, 1.2 + 1.6 * f, 0xFFFFFF, 0.8 * (1.0 - f));
+            FireMesh.ring(sink, x, ground + 0.15, z, 0, 1, 0, 0.8 + 3.0 * ease(f), 0.15, 0.1, 0xFFFFFF, 0.7 * (1.0 - f));
+        }
+        if (age < LOTUS_RISE + 2) {
+            double fade = 1.0 - smooth((age - LOTUS_RISE + 2.0) / 4.0);
+            for (int k = 0; k < 6; k++) {
+                double a = 2 * Math.PI * (k + FireMesh.rand(seed, k + 80)) / 6.0;
+                double r = 0.45 + 0.35 * FireMesh.rand(seed, k + 90);
+                double len = Math.min(y - ground + 0.5, 3.0 + 2.5 * FireMesh.rand(seed, k + 100));
+                FireMesh.streak(sink, x + Math.cos(a) * r, y - 0.2, z + Math.sin(a) * r, 0, -1, 0, len, 0.05, 0xFFFFFF, 0.75 * fade);
+            }
+        }
+        // dough left on the ground where they stood, and a few rocks
+        double stay = 1.0 - smooth((age - LOTUS_RISE - 2.0) / 6.0);
+        MochiArt.blob(sink, x, ground + 0.05, z, 1, 0, 0, 0, 1, 0, 1.1 * ease(age / 3.0), 0.08 * stay, 0.9 * ease(age / 3.0), 0.8, 0.35, age, seed,
+            MochiArt.MOCHI, 1.0);
+        double[] t = new double[4];
+        for (int k = 0; k < 6; k++) {
+            com.hexhaki.piece.ironfist.IronArt.thrown(k, seed + 500, 3.0, 0.35, age, t);
+            if (t[1] < -0.2) {
+                continue;
+            }
+            com.hexhaki.piece.ironfist.IronArt.chunk(sink, x + t[0], ground + 0.2 + t[1], z + t[2], 0.25 + 0.25 * FireMesh.rand(seed, k + 260), t[3],
+                seed + k, stay);
+        }
+    }
+
+    /**
+     * Thin translucent rings of shock round (x, y, z) at {@code radius} (the reference's spherical arcs of light round its donut): three
+     * great circles at their own tilts, facing about the way (wx, wz).
+     */
+    static void shockRings(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double radius, double alpha, int seed) {
+        if (alpha < 0.02) {
+            return;
+        }
+        for (int k = 0; k < 3; k++) {
+            double a = 2 * Math.PI * FireMesh.rand(seed, k + 40);
+            double tilt = 0.35 + 0.5 * FireMesh.rand(seed, k + 50);
+            double nx = wx + Math.cos(a) * tilt;
+            double ny = Math.sin(a) * tilt;
+            double nz = wz + Math.sin(a) * tilt * 0.6;
+            double nl = Math.max(1.0E-6, Math.sqrt(nx * nx + ny * ny + nz * nz));
+            FireMesh.ring(sink, x, y, z, nx / nl, ny / nl, nz / nl, radius * (0.92 + 0.12 * k), 0.035 * radius, 0.0, 0xFFFFFF, alpha * (1.0 - 0.2 * k));
+        }
+    }
+
+    /** Dough dripping off a donut at (x, y, z) and splatting on the ground ({@code ground} high) under it. */
+    static void drops(FireMesh.Sink sink, double x, double y, double z, double sx, double sz, double ground, double form, double age, int seed) {
+        if (form < 0.6) {
+            return;
+        }
+        for (int k = 0; k < 3; k++) {
+            double side = (FireMesh.rand(seed, k + 70) - 0.5) * LOTUS_DONUT * 1.2;
+            double t = (age * 0.09 + k * 0.33) % 1.0;
+            double top = y - LOTUS_DONUT * 0.8;
+            double h = top - (top - ground) * t * t;
+            MochiArt.ball(sink, x + sx * side, h, z + sz * side, 0.11, 0, 1, 0, 1.0 + 1.2 * t, 0.0, age, seed + k, MochiArt.MOCHI);
+            // its splat below, flattened, spreading a little
+            double spread = 0.35 + 0.15 * k;
+            MochiArt.blob(sink, x + sx * side * 1.2, ground + 0.03, z + sz * side * 1.2, 1, 0, 0, 0, 1, 0, spread, 0.04, spread * 0.8, 0.7, 0.3, age,
+                seed + 20 + k, MochiArt.MOCHI, 1.0);
+        }
+    }
+
+    /**
+     * A Lotus blow in the air (the reference's frames 78 to 102): a small donut puffing up beside the body thrown high at (x, y, z),
+     * {@code (sx, sy, sz)} (unit) the side it comes from, its fist jabbing into the body, a white burst with rings; {@code age} ticks in.
+     */
+    public static void lotusAir(FireMesh.Sink sink, double x, double y, double z, double sx, double sy, double sz, double age, boolean coat,
+                                int seed) {
+        if (age < 0 || age > LOTUS_AIR_LIFE) {
+            return;
+        }
+        double d = 1.9;
+        double cx = x + sx * d;
+        double cy = y + sy * d;
+        double cz = z + sz * d;
+        double form = smooth((age + 1.0) / 2.5) * (1.0 - smooth((age - LOTUS_AIR_LIFE + 4.0) / 4.0));
+        double out = age < 2.0 ? 0.0 : age < 3.0 ? ease(age - 2.0) : age < 5.0 ? 1.0 : 1.0 - smooth((age - 5.0) / 3.0);
+        donut(sink, cx, cy, cz, -sx, -sy, -sz, LOTUS_AIR_DONUT, form, 0.0, 0, out > 0.02 ? out : 0.0, cx + (x - cx) * out * 0.85,
+            cy + (y - cy) * out * 0.85, cz + (z - cz) * out * 0.85, coat, age, seed, false);
+        if (age >= 2.5 && age < 9.0) {
+            double f = (age - 2.5) / 6.5;
+            MochiArt.glow(sink, x, y, z, 0.9 + 1.0 * ease(f), 0xFFFFFF, 0.85 * (1.0 - f));
+            shockRings(sink, x, y, z, sx, sz, 0.7 + 1.6 * ease(f), 0.6 * (1.0 - f), seed + 3);
+        }
+    }
+
+    /**
+     * The Lotus slam (the reference's frames 111 to 128): a big donut forming {@code top} over the body (fixed where it formed: (x, top,
+     * z)), its giant fist driving down onto the body at (bx, by, bz) as it falls, white streaks of the fall; {@code age} ticks from the
+     * drop ({@link #LOTUS_DROP}); {@code ground} the ground's height under it.
+     */
+    public static void lotusSlam(FireMesh.Sink sink, double x, double top, double z, double bx, double by, double bz, double ground, double age,
+                                 boolean coat, int seed) {
         if (age < 0 || age > LOTUS_SLAM_LIFE) {
             return;
         }
-        double form = Math.min(1.0, (age + 1.0) / 3.0) * Math.max(0.0, Math.min(1.0, (LOTUS_SLAM_LIFE - age) / 4.0));
-        double top = y + com.hexhaki.piece.server.MochiMoves.LOTUS_HIGH;
-        double down = age < 3 ? ease(age / 3.0) : age < 8 ? 1.0 : 1.0 - smooth((age - 8) / 6.0);
-        double reach = Math.max(0.3, (top - ground - 0.3) * down);
-        donut(sink, x, top, z, 0, -1, 0, 1.7, form, 0.0, 0, down > 0.02 ? 1.0 : 0.0, x, top - reach, z, coat, age, seed, false);
+        double form = smooth((age + 1.0) / 4.0) * (1.0 - smooth((age - LOTUS_SLAM_LIFE + 6.0) / 6.0));
+        double fall = LOTUS_FALL - LOTUS_DROP;
+        double hit = LOTUS_GROUND - LOTUS_DROP;
+        // the fist: down onto the body's head before the fall, riding it down, buried in the ground at the slam, drawn back after
+        double reach;
+        double headY = by + 1.9;
+        if (age < 4.0) {
+            reach = (top - headY) * ease(age / 4.0);
+        } else if (age < hit + 1.0) {
+            reach = top - Math.max(ground + 0.2, headY);
+        } else {
+            // the reference shows no arm once the ground is struck: drawn back up fast
+            reach = (top - ground - 0.2) * (1.0 - smooth((age - hit - 1.0) / 4.0));
+        }
+        double end = top - Math.max(0.3, reach);
+        donut(sink, x, top, z, 0, -1, 0, LOTUS_SLAM_DONUT, form, 0.0, 2, reach > 0.3 ? 1.0 : 0.0, x + (bx - x) * Math.min(1.0, age / 4.0), end,
+            z + (bz - z) * Math.min(1.0, age / 4.0), coat, age, seed, false);
+        // the fall's white streaks, up from the body (the reference's frames 126 to 128)
+        if (age >= fall && age < hit + 1.0) {
+            for (int k = 0; k < 6; k++) {
+                double a = 2 * Math.PI * (k + FireMesh.rand(seed, k + 80)) / 6.0;
+                double r = 0.5 + 0.4 * FireMesh.rand(seed, k + 90);
+                FireMesh.streak(sink, bx + Math.cos(a) * r, by + 2.0, bz + Math.sin(a) * r, 0, 1, 0, 2.5 + 2.0 * FireMesh.rand(seed, k + 100), 0.04,
+                    0xFFFFFF, 0.7);
+            }
+        }
+    }
+
+    /**
+     * The Lotus slam's ground (the reference's frames 130 to 161): where the body lands (x, y, z) (on the ground): a white flash, a flat
+     * splat of dough spreading, rocks of the ground thrown up and falling round it, a white ring rising and widening; {@code age} ticks in.
+     */
+    public static void lotusGround(FireMesh.Sink sink, double x, double y, double z, double age, int seed) {
+        if (age < 0 || age > LOTUS_GROUND_LIFE) {
+            return;
+        }
+        if (age < 5.0) {
+            double f = age / 5.0;
+            MochiArt.glow(sink, x, y + 0.8, z, 2.6 + 2.0 * f, 0xFFFFFF, 0.95 * (1.0 - f));
+        }
+        // the splat: flat, wide, lumpy, spreading fast and sinking away at its end
+        double spread = ease(age / 4.0);
+        double sink0 = 1.0 - smooth((age - LOTUS_GROUND_LIFE + 10.0) / 10.0);
+        if (sink0 > 0.02) {
+            MochiArt.blob(sink, x, y + 0.08, z, 1, 0, 0, 0, 1, 0, 2.3 * spread, 0.28 * sink0, 2.0 * spread, 0.85, 0.35, age, seed, MochiArt.MOCHI, 1.0);
+            for (int k = 0; k < 7; k++) {
+                double a = 2 * Math.PI * (k + FireMesh.rand(seed, k)) / 7.0;
+                double d = (2.0 + 1.2 * FireMesh.rand(seed, k + 10)) * spread;
+                double r = (0.35 + 0.3 * FireMesh.rand(seed, k + 20)) * sink0;
+                MochiArt.blob(sink, x + Math.cos(a) * d, y + 0.05, z + Math.sin(a) * d, Math.cos(a), 0, Math.sin(a), 0, 1, 0, r * 1.6, 0.1 * sink0, r, 0.8,
+                    0.3, age, seed + k, MochiArt.MOCHI, 1.0);
+            }
+        }
+        // rocks of the ground thrown up round it, tumbling and falling back
+        double alpha = Math.min(1.0, (LOTUS_GROUND_LIFE - age) / 8.0);
+        double[] t = new double[4];
+        for (int k = 0; k < 14; k++) {
+            com.hexhaki.piece.ironfist.IronArt.thrown(k, seed + 300, 5.5, 0.45, age, t);
+            if (t[1] < -0.2) {
+                continue;
+            }
+            com.hexhaki.piece.ironfist.IronArt.chunk(sink, x + t[0] * 1.0 + Math.cos(k) * 1.6, y + 0.3 + t[1], z + t[2] + Math.sin(k) * 1.6,
+                0.35 + 0.45 * FireMesh.rand(seed, k + 240), t[3], seed + k, alpha);
+        }
+        // the ring rising and widening over it (frames 138 to 146)
+        if (age >= 2.0 && age < 18.0) {
+            double f = (age - 2.0) / 16.0;
+            FireMesh.ring(sink, x, y + 0.4 + 2.2 * ease(f), z, 0, 1, 0, 2.4 + 3.4 * ease(f), 0.18, 0.12, 0xFFFFFF, 0.75 * (1.0 - f));
+        }
     }
 
     /**

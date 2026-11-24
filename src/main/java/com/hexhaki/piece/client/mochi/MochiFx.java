@@ -73,10 +73,37 @@ public final class MochiFx {
     record Muddle(Vec3 at, Vec3 way, double length, long born, int ticks, int seed) {
     }
 
-    record Lotus(int user, Vec3 way, long born, boolean coat, int seed) {
+    /** 3.6.3: Lotus Mochi Combo's donut (by its user), the one its fist hit once known (-1 until then), and where they stood. */
+    static final class Lotus {
+        final int user;
+        final long born;
+        final boolean coat;
+        final int seed;
+        int body = -1;
+        double ground = Double.NaN;
+
+        Lotus(int user, long born, boolean coat, int seed) {
+            this.user = user;
+            this.born = born;
+            this.coat = coat;
+            this.seed = seed;
+        }
     }
 
-    record LotusSlam(int body, Vec3 at, long born, boolean coat, int seed) {
+    /** 3.6.3: the one the Lotus fist hit, thrown up from {@code ground} (feet) at {@code born}. */
+    record LotusRise(int body, Vec3 ground, long born, int seed) {
+    }
+
+    /** 3.6.3: a Lotus blow in the air on {@code body} from {@code side}. */
+    record LotusAir(int body, Vec3 side, long born, boolean coat, int seed) {
+    }
+
+    /** 3.6.3: the giant fist's donut {@code top} over {@code body}, the ground under them. */
+    record LotusSlam(int body, Vec3 top, double ground, long born, boolean coat, int seed) {
+    }
+
+    /** 3.6.3: where the Lotus slam drove them into the ground. */
+    record LotusGround(Vec3 at, long born, int seed) {
     }
 
     /** Chestnut Mochi's donut (by user): out until, its last spike. */
@@ -133,6 +160,9 @@ public final class MochiFx {
     private static final List<Muddle> MUDDLES = new ArrayList<>();
     private static final List<Lotus> LOTUSES = new ArrayList<>();
     private static final List<LotusSlam> SLAMS = new ArrayList<>();
+    private static final List<LotusRise> RISES = new ArrayList<>();
+    private static final List<LotusAir> AIRS = new ArrayList<>();
+    private static final List<LotusGround> GROUNDS = new ArrayList<>();
     static final Map<Integer, Chestnut> CHESTNUTS = new HashMap<>();
     private static final List<Spike> SPIKES = new ArrayList<>();
     static final Map<Integer, Area> AREAS = new HashMap<>();
@@ -204,13 +234,7 @@ public final class MochiFx {
             case MochiMoves.SPLAT -> add(SPLATS, new Splat(at, unit(a), m.size(), clock, m.id()));
             case MochiMoves.BOOM -> add(BOOMS, new Boom(at, m.size(), clock, m.id()));
             case MochiMoves.MUDDLE -> add(MUDDLES, new Muddle(at, flat(a), m.size(), clock, m.ticks(), m.id()));
-            case MochiMoves.LOTUS -> {
-                if (phase == MochiMoves.LOTUS_PUNCH) {
-                    add(LOTUSES, new Lotus(m.user(), unit(a), clock, coat, m.id()));
-                } else {
-                    add(SLAMS, new LotusSlam(m.user(), at, clock, coat, m.id() + 5));
-                }
-            }
+            case MochiMoves.LOTUS -> lotus(m, at, a, phase, coat);
             case MochiMoves.CHESTNUT -> {
                 if (phase == 1) {
                     put(CHESTNUTS, m.user(), new Chestnut(clock, clock + m.ticks(), m.id()));
@@ -239,6 +263,41 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.ANEMONE_PUNCH -> add(STRIKES, new Strike(m.user(), m.id(), at, clock));
+            default -> {
+            }
+        }
+    }
+
+    /** 3.6.3: a Lotus Mochi Combo message (its phases: server/MochiMoves.LOTUS). */
+    static void lotus(S2CUoFx m, Vec3 at, Vec3 a, int phase, boolean coat) {
+        switch (phase) {
+            case MochiMoves.LOTUS_PUNCH -> add(LOTUSES, new Lotus(m.user(), clock, coat, m.id()));
+            case MochiMoves.LOTUS_HIT -> {
+                Vec3 feet = at;
+                ClientLevel level = Minecraft.m_91087_().f_91073_;
+                Entity body = level == null ? null : level.m_6815_(m.id());
+                if (body != null) {
+                    feet = body.m_20182_();
+                }
+                for (Lotus l : LOTUSES) {
+                    if (l.user == m.user() && clock - l.born <= MochiDraw.LOTUS_PUNCH + 2) {
+                        l.body = m.id();
+                        l.ground = feet.f_82480_;
+                    }
+                }
+                add(RISES, new LotusRise(m.id(), feet, clock + (MochiDraw.LOTUS_LAUNCH - MochiDraw.LOTUS_PUNCH), m.id() * 31 + 7));
+            }
+            case MochiMoves.LOTUS_AIR -> add(AIRS, new LotusAir(m.id(), unit(a), clock, coat, m.id() * 13 + Math.round(m.by())));
+            case MochiMoves.LOTUS_SLAM -> {
+                double ground = at.f_82480_ - 7.0 - MochiDraw.LOTUS_HIGH;
+                for (LotusRise r : RISES) {
+                    if (r.body == m.id()) {
+                        ground = r.ground.f_82480_;
+                    }
+                }
+                add(SLAMS, new LotusSlam(m.id(), at, ground, clock, coat, m.id() * 17 + 5));
+            }
+            case MochiMoves.LOTUS_GROUND -> add(GROUNDS, new LotusGround(at, clock, m.id()));
             default -> {
             }
         }
@@ -432,6 +491,9 @@ public final class MochiFx {
         MUDDLES.removeIf(u -> clock - u.born > u.ticks + 1);
         LOTUSES.removeIf(l -> clock - l.born > MochiDraw.LOTUS_LIFE + 1);
         SLAMS.removeIf(l -> clock - l.born > MochiDraw.LOTUS_SLAM_LIFE + 1);
+        RISES.removeIf(r -> clock - r.born > MochiDraw.LOTUS_GROUND - MochiDraw.LOTUS_LAUNCH + 2);
+        AIRS.removeIf(r -> clock - r.born > MochiDraw.LOTUS_AIR_LIFE + 1);
+        GROUNDS.removeIf(g -> clock - g.born > MochiDraw.LOTUS_GROUND_LIFE + 1);
         CHESTNUTS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > FORM
             || clock > e.getValue().until + FORM || level.m_6815_(e.getKey()) == null);
         SPIKES.removeIf(s -> clock - s.born > MochiDraw.SPIKE_LIFE + 1);
@@ -442,7 +504,8 @@ public final class MochiFx {
 
     static boolean empty() {
         return PUNCHES.isEmpty() && SPLATS.isEmpty() && BOOMS.isEmpty() && SWELLS.isEmpty() && FISTS.isEmpty() && WHEELS.isEmpty()
-            && CLUBS.isEmpty() && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && CHESTNUTS.isEmpty()
+            && CLUBS.isEmpty() && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty() && AIRS.isEmpty()
+            && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
             && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && carry == null;
     }
 
@@ -554,6 +617,69 @@ public final class MochiFx {
 
     private static final double[] STRIKE = new double[MOST * 5];
 
+    /** 3.6.3: Lotus Mochi Combo, every phase of it (MochiDraw.lotus, lotusRise, lotusAir, lotusSlam, lotusGround). */
+    static void drawLotus(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial, double now, double cx, double cy, double cz) {
+        for (Lotus l : LOTUSES) {
+            Entity user = level.m_6815_(l.user);
+            if (user == null) {
+                continue;
+            }
+            Vec3 feet = user.m_20318_(partial);
+            if (far(feet, cam)) {
+                continue;
+            }
+            Vec3 look = user.m_20252_(partial);
+            Vec3 way = flat(look);
+            double wx = way.f_82479_;
+            double wz = way.f_82481_;
+            double[] d = MochiDraw.lotusAt(wx, wz, new double[3]);
+            if (ownView(minecraft, user)) {
+                // one's own in first person: further ahead, so it stands in the view
+                d[0] += wx * 2.3 - wz * 0.6;
+                d[2] += wz * 2.3 + wx * 0.6;
+            }
+            // the left hand the ribbon leaves from (the left of the look: (wz, -wx))
+            Vec3 hand = feet.m_82520_(wz * 0.4 + wx * 0.3, 1.3, -wx * 0.4 + wz * 0.3);
+            Entity body = l.body >= 0 ? level.m_6815_(l.body) : null;
+            Vec3 aim = body != null ? body.m_20318_(partial).m_82520_(0, body.m_20206_() * 0.55, 0)
+                : user.m_20299_(partial).m_82549_(look.m_82490_(MochiMoves.LOTUS_REACH));
+            MochiDraw.lotus(SINK, hand.f_82479_ - cx, hand.f_82480_ - cy, hand.f_82481_ - cz, feet.f_82479_ + d[0] - cx, feet.f_82480_ + d[1] - cy,
+                feet.f_82481_ + d[2] - cz, wx, wz, aim.f_82479_ - cx, aim.f_82480_ - cy, aim.f_82481_ - cz, feet.f_82480_ - cy, now - l.born, l.coat,
+                l.seed);
+        }
+        for (LotusRise r : RISES) {
+            Entity body = level.m_6815_(r.body);
+            Vec3 at = body != null ? body.m_20318_(partial) : r.ground;
+            if (!far(at, cam)) {
+                MochiDraw.lotusRise(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, r.ground.f_82480_ - cy, now - r.born, r.seed);
+            }
+        }
+        for (LotusAir r : AIRS) {
+            Entity body = level.m_6815_(r.body);
+            if (body == null) {
+                continue;
+            }
+            Vec3 at = body.m_20318_(partial).m_82520_(0, body.m_20206_() * 0.55, 0);
+            if (!far(at, cam)) {
+                MochiDraw.lotusAir(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, r.side.f_82479_, r.side.f_82480_, r.side.f_82481_,
+                    now - r.born, r.coat, r.seed);
+            }
+        }
+        for (LotusSlam l : SLAMS) {
+            Entity body = level.m_6815_(l.body);
+            Vec3 at = body != null ? body.m_20318_(partial) : new Vec3(l.top.f_82479_, l.ground, l.top.f_82481_);
+            if (!far(l.top, cam)) {
+                MochiDraw.lotusSlam(SINK, l.top.f_82479_ - cx, l.top.f_82480_ - cy, l.top.f_82481_ - cz, at.f_82479_ - cx, at.f_82480_ - cy,
+                    at.f_82481_ - cz, l.ground - cy, now - l.born, l.coat, l.seed);
+            }
+        }
+        for (LotusGround g : GROUNDS) {
+            if (!far(g.at, cam)) {
+                MochiDraw.lotusGround(SINK, g.at.f_82479_ - cx, g.at.f_82480_ - cy, g.at.f_82481_ - cz, now - g.born, g.seed);
+            }
+        }
+    }
+
     static void draw(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial) {
         double cx = cam.f_82479_;
         double cy = cam.f_82480_;
@@ -615,24 +741,7 @@ public final class MochiFx {
                     f.charge);
             }
         }
-        for (Lotus l : LOTUSES) {
-            Entity user = level.m_6815_(l.user);
-            if (user == null) {
-                continue;
-            }
-            Vec3 from = chest(user, partial).m_82520_(0.0, 0.1, 0.0);
-            if (!far(from, cam)) {
-                Vec3 way = user.m_20252_(partial);
-                MochiDraw.lotus(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, way.f_82479_, way.f_82480_, way.f_82481_,
-                    MochiMoves.LOTUS_REACH, now - l.born, l.coat, l.seed);
-            }
-        }
-        for (LotusSlam l : SLAMS) {
-            if (!far(l.at, cam)) {
-                MochiDraw.lotusSlam(SINK, l.at.f_82479_ - cx, l.at.f_82480_ - cy, l.at.f_82481_ - cz, l.at.f_82480_ - cy - 0.1, now - l.born, l.coat,
-                    l.seed);
-            }
-        }
+        drawLotus(minecraft, level, cam, partial, now, cx, cy, cz);
         for (Map.Entry<Integer, Chestnut> e : CHESTNUTS.entrySet()) {
             Entity user = level.m_6815_(e.getKey());
             if (user == null) {
@@ -732,6 +841,9 @@ public final class MochiFx {
         MUDDLES.clear();
         LOTUSES.clear();
         SLAMS.clear();
+        RISES.clear();
+        AIRS.clear();
+        GROUNDS.clear();
         CHESTNUTS.clear();
         SPIKES.clear();
         AREAS.clear();

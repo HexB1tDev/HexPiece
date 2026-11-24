@@ -1025,8 +1025,25 @@ public final class HudTests {
             && com.hexhaki.piece.server.MochiMoves.yakiRadius(1.0) > 2.5 * com.hexhaki.piece.server.MochiMoves.yakiRadius(0.0),
             "Grilled Mochi: the longer the hold, the bigger the explosion (the owner)");
         Check.that(com.hexhaki.piece.server.MochiMoves.BUZZ_COOLDOWN == 6000, "Buzz Cut Mochi: five minutes' cooldown (the owner's word)");
-        Check.that(com.hexhaki.piece.mochi.MochiDraw.PUNCH_OUT == 3.0 && com.hexhaki.piece.mochi.MochiDraw.LOTUS_LIFE
-            >= com.hexhaki.piece.server.MochiMoves.LOTUS_LAUNCH + 4, "the Mochi fruit's strikes land on the drawn beats");
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.PUNCH_OUT == 3.0, "the Mochi fruit's strikes land on the drawn beats");
+        // 3.6.3 (the owner: the moves to look "exactly like the reference GIFs"): Lotus Mochi Combo's beats in the reference's order and
+        // its body thrown up, held high and driven down onto the ground it left
+        int[] air = com.hexhaki.piece.mochi.MochiDraw.LOTUS_AIR;
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.LOTUS_OPEN < com.hexhaki.piece.mochi.MochiDraw.LOTUS_CHARGE
+            && com.hexhaki.piece.mochi.MochiDraw.LOTUS_CHARGE < com.hexhaki.piece.mochi.MochiDraw.LOTUS_PUNCH
+            && com.hexhaki.piece.mochi.MochiDraw.LOTUS_PUNCH < com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH
+            && com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH + com.hexhaki.piece.mochi.MochiDraw.LOTUS_RISE < air[0]
+            && air[air.length - 1] < com.hexhaki.piece.mochi.MochiDraw.LOTUS_DROP
+            && com.hexhaki.piece.mochi.MochiDraw.LOTUS_DROP < com.hexhaki.piece.mochi.MochiDraw.LOTUS_FALL
+            && com.hexhaki.piece.mochi.MochiDraw.LOTUS_FALL < com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND,
+            "Lotus: ribbon, donut, punch, launch, blows in the air, the giant fist, the fall and the ground, in the reference's order");
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.lotusHeight(com.hexhaki.piece.mochi.MochiDraw.LOTUS_PUNCH) == 0.0
+            && com.hexhaki.piece.mochi.MochiDraw.lotusHeight(air[1]) > com.hexhaki.piece.mochi.MochiDraw.LOTUS_HIGH - 0.5
+            && com.hexhaki.piece.mochi.MochiDraw.lotusHeight(com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND - 0.2) < 1.0
+            && com.hexhaki.piece.mochi.MochiDraw.lotusHeight(com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND) == 0.0,
+            "Lotus: the one hit is on the ground for the punch, high for the blows in the air, back on the ground at the slam");
+        double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
+        Check.that(d[0] > 2.0 && d[2] > 0.0, "Lotus: the donut stands at the user's left, a little ahead (facing +z, the left is +x)");
     }
 
     /**
