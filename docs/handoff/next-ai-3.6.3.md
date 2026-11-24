@@ -4,9 +4,8 @@ This is the newest handoff. Read it whole, then `docs/handoff/next-ai-3.6.0.md` 
 read I to N closely: the lightning rework and the whole Mochi story), then POINT ONE and sections 0 to 7 of
 `docs/handoff/next-ai-3.2.2.md` (every standing rule). Where they disagree, this file is newest and wins.
 
-Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.2** (released, green:
-Build #222, Release #153). The work below is committed and pushed **unversioned**: the next version to release is **3.6.3**
-(`python3 tools/next_version.py --write`), once the base Mochi kit is finished, rendered and judged.
+Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. `build.py`'s VERSION is **3.6.3** (released by the
+fourth Mochi chat: section O; check its Build and Release runs). Next: **3.6.4**, the awakened DoughV2 set (section O, "Next").
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -437,3 +436,64 @@ Next, in order:
 4. Release 3.6.3 (the owner held it until the Mochi kit is done: F 5): next_version, release notes (the 3D lightning, sharp tips, the
    HUD, the six base Mochi moves after their references), handoff, push, both GitHub runs green, send previews (SendUserFile).
 5. 3.6.4: the awakened DoughV2 set on M (F 7 lists the seven moves as promised to the owner).
+
+## N. The next chat (fourth on Mochi): the owner's messages, verbatim (newest last)
+
+12. "use my imapct frame that looks like shit" (sent while Buzz Cut Mochi's impact frame was being judged: the classic frame
+    (ImpactFrame: the negative, then the black frame with rays) rendered over the slam shot looked wrong; the owner wants THEIR impact
+    frame, the one from 3.5.8 (clash/ImpactSprite, tools/impact_texture.py), on Buzz Cut's blow and slam.)
+
+## O. The fourth Mochi chat: Buzz Cut judged and finished, the old Mochi art removed, 3.6.3 released
+
+Build #233 (the last push of the chat before) was green. Done, rendered and judged against the Buzzcut GIF, the owner's show clip
+(Officialref.zip/s9cBv2.gif) and 8zzv 10 with the horizontal whirl (previews: MochiShots |mbuzz:age; the cutscene's own shots from
+MochiDraw.buzzCamera, rendered with FxPreview's new `--fov=70`, the game's field of view; the scratchpad's CamShots turned
+buzzCamera into e: shots):
+- The torn floor: the reference's pale khaki square slabs (MochiDraw.SLAB, sampled from frames 55 to 70), a close double row
+  (BUZZ_TILE_GAP 0.6, up to BUZZ_PATH_MOST 112 points: the whole longest roll), thrown up as the wheel passes and dropped back tipped
+  at their own angles, lying BUZZ_TILES 100 ticks then sinking into the ground (no fade). Before: small brown planks 1.1 apart.
+- The wheel: white droplets of dough flung off its rim and long white wind slashes (frames 55 to 70), with the glow, black wind lines
+  and smoke it had.
+- The whirl's vortex: a whole disc of 40 soft white swirl streaks (MochiDraw.spiral: flat, spiralling in, bright just behind the head)
+  whirling with the arm, densest in a ring round the middle, a bright core and glow round the feet, the thick trail of the ball's
+  path (frames 125 to 140). Before: five thin rings.
+- The slam: a fan of 32 crimson (and a few white) streaks sprayed up from round the giant ball (frames 165 to 182), red specks
+  spattered over the black for 1.5 s; the crater pure black (MochiArt.INK; it was HAKI_CRIMSON: maroon); the rubble field 40 bigger
+  grey blocks (RUBBLE greys) out to 9.5.
+- The arm contracting back: the ball shrinks away into the arm (no little black ball left on the white arm).
+- The cutscene camera (MochiDraw.buzzCamera, pure: client/mochi/MochiFx.camera and filmAngles call it; no allocation a frame): low at
+  the user's LEFT and ahead for the catch and swing (it was behind the right shoulder: the ball swung into the lens), high over the
+  whirl (17 up: the whole vortex in frame), low in front looking up the arm to the raised ball, then 13 off to the side for the slam
+  (it was 4 ahead: inside the rubble field) and pulled back over the crater.
+- The impact frames: **the owner's sprite frame** (N 12: "use my imapct frame"; ClashFx.frame now shows ImpactSprite, never the
+  classic ImpactFrame), on the blow and on the slam, for the user and the ones caught. Rendered over the slam shot: the owner's blue
+  burst with its dark veil.
+- The roll's rumble (gura/rumble, 8 s long) was played once by the server and outlasted the roll: now the client holds it through
+  client/LoopSound only while the wheel rolls (faded out on the catch or the stop).
+- HudTests.buzzCut: the beats in order, the whirl level, the ones caught off the ground on the ball, whole turns, raised over 15 up,
+  slammed over 12 ahead with the one caught on the ground under the ball, the camera never inside the rubble, the torn row kept whole.
+- Chestnut Mochi's spike hits now throw the Conqueror's lightning (POINT ONE: it was the one Mochi move without it).
+- The tube (MochiArt.tube) keeps its last good direction where points coincide: Chestnut's comet and Lotus' ribbon drew NaN vertices
+  on their very first frame (found by the new budget test).
+
+Removed (the owner: "I want yours gone"): MochiDraw's old art (tsuki, yanagi, kaku, club, spiked, wheel, the ring anemone, donuts,
+dome, walls, wave, rain, ground, groundLumps, glob, patch, the dodge's hole, their constants), the client's Club record and CLUB
+message (MochiMoves.CLUB), the old clips (mochi_tsuki_charge/thrust, mochi_yanagi, mochi_kaku, mochi_club, mochi_anemone, mochi_throw,
+mochi_wave, mochi_walls, mochi_rain, mochi_dome: tools/mochi_anims.py, their JSONs, MochiPoses, HandMoves), the double-tap-Shift
+dodge (client/FruitKeyN: Future Sight was gone from the server already). Kept for 3.6.4: MochiDraw.trident, the mochi_awaken clip,
+MochiMoves.AWAKEN. DragonTests.mochiArt now budgets every new move from press to last splat (the punch, Grilled, Muddle, Lotus,
+Chestnut, the Anemone with a dozen bars, Buzz Cut's wheel over its whole torn row and every tick of its cinematic): all under 16k
+(Buzz Cut's heaviest about 6k).
+
+Not done (honest): the classic impact frame cannot go fully grey on the owner's phone without a shader (it is not used here any
+more); the victims stay upright on the ball (other players' models are not turned); the whirl has no sound of its own (none asked).
+
+Released: **3.6.3** (`.github/release-notes-3.6.3.md`); previews sent to the owner (SendUserFile): the six base moves and Buzz Cut
+side by side with its reference frames.
+
+Next: **3.6.4, the awakened DoughV2 set on M** (F 7, as promised to the owner): M turns the Awakening on and swaps the kit to LMB
+Mogura Lacerations (five trident swings, the last breaks a block), Z Grilled Lance, X Elastic Lasso, C Oblivion, V Power Mochi, B
+Blazing Storm, N Scorching Buzz Cut. First read each DoughV2 GIF frame by frame (section D lists them; Trident Lacerations and Elastic
+Lasso were never looked at), write what each shows here, then build each move on its beats the way the base kit was built (art in
+MochiDraw, server in MochiMoves/MochiKit.AWAKENED, client in MochiFx, clips in tools/mochi_anims.py, hands in HandMoves, budget in
+DragonTests, beats in HudTests), render side by side with its GIF, fix, render again.

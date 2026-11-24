@@ -695,51 +695,106 @@ public final class DragonTests {
                 finite[0] &= Double.isFinite(v);
             }
         };
-        double[] cells = new double[com.hexhaki.piece.mochi.MochiDraw.GROUND_MOST * 4];
-        int n = com.hexhaki.piece.mochi.MochiDraw.groundLumps(0.3, 0.2, 12.0, cells);
-        Check.that(n > 20 && n <= com.hexhaki.piece.mochi.MochiDraw.GROUND_MOST, "the Mochi ground: its lumps capped (" + n + ")");
-        double[] lumps = new double[n * 5];
-        for (int k = 0; k < n; k++) {
-            lumps[k * 5] = cells[k * 4];
-            lumps[k * 5 + 1] = -1.6;
-            lumps[k * 5 + 2] = cells[k * 4 + 1];
-            lumps[k * 5 + 3] = cells[k * 4 + 2];
-            lumps[k * 5 + 4] = cells[k * 4 + 3];
-        }
-        double[] punches = new double[20];
-        for (int k = 0; k < 4; k++) {
-            punches[k * 5] = k;
-            punches[k * 5 + 1] = k * 2 - 3;
-            punches[k * 5 + 2] = -0.4;
-            punches[k * 5 + 3] = 5;
-            punches[k * 5 + 4] = k;
-        }
+        // 3.6.3: every move of the kit the reference's (the old moves and their art are gone), each from its press to its last
+        // splat, seen from the user's own eye (the closest view: the most detail), under the phone's budget
+        double feet = -1.6;
+        int[] air = com.hexhaki.piece.mochi.MochiDraw.LOTUS_AIR;
         for (int coat = 0; coat < 2; coat++) {
             boolean c = coat == 1;
-            for (int age = 0; age <= 40; age += 2) {
+            for (int age = -40; age <= 170; age += 2) {
+                // Grilled Mochi: held (the swell), thrown (the puff, the fist on fire), its blast at the full hold
                 count[0] = 0;
-                com.hexhaki.piece.mochi.MochiDraw.ground(sink, lumps, n, 1.0, age);
-                com.hexhaki.piece.mochi.MochiDraw.dome(sink, 0, -1.6, 10, 6, 1.0, 0.0, age, 3);
-                com.hexhaki.piece.mochi.MochiDraw.rain(sink, 6, -1.6, 12, 6, 14, 15, 2, age, 4);
-                com.hexhaki.piece.mochi.MochiDraw.donuts(sink, 0, -1.6, 0, 0, 0, 14, age, 1.0, 6, 4, c, 5);
-                com.hexhaki.piece.mochi.MochiDraw.wave(sink, 0, -1.6, 0, 0, 1, 2 + age * 0.7, 8, 3.6, age, 6);
-                com.hexhaki.piece.mochi.MochiDraw.walls(sink, -6, -1.6, 8, 0, 1, 4, age % 34, 7);
-                check(count[0], finite[0], "the Mochi Awakening" + (c ? " (coated)" : ""), age);
-                count[0] = 0;
-                com.hexhaki.piece.mochi.MochiDraw.anemone(sink, 0, -1.6, 0, age, 1.0, punches, 4, c, 8);
-                com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36, -0.2, 0, 0, 0, 1, 6, age % 9, c, 9);
-                com.hexhaki.piece.mochi.MochiDraw.tsuki(sink, -0.36, -0.25, 0.4, 0, 0, 1, 16, age % 14, 1.0, age, c);
-                com.hexhaki.piece.mochi.MochiDraw.club(sink, -0.36, -0.1, 0, 0, -1.6, 4, age % 18, c, 10);
-                com.hexhaki.piece.mochi.MochiDraw.boom(sink, 0, -0.6, 14, 2.3, age % 18, 11);
-                com.hexhaki.piece.mochi.MochiDraw.kaku(sink, 0, -0.2, 0, 0, -1.6, 4.5, 0, 1, age % 20, c, 12);
-                for (int k = 0; k < 4; k++) {
-                    com.hexhaki.piece.mochi.MochiDraw.splat(sink, k - 2, -0.6, 5, 0, 0, -1, 1.4, (age + k * 3) % 12, k);
+                if (age < 0) {
+                    com.hexhaki.piece.mochi.MochiDraw.swell(sink, -0.36, -0.3, 0.2, 0, 0, 1, Math.min(1.0, (age + 40) / 40.0), age + 60, c, 2, feet);
+                } else {
+                    com.hexhaki.piece.mochi.MochiDraw.yakiPuff(sink, -0.36, -0.3, 1.0, 0, 0, 1, age, 13);
+                    com.hexhaki.piece.mochi.MochiDraw.yaki(sink, -0.36, -0.3, 1.0 + age * 2.2, 0, 0, 1, age, c, 2, 1.0);
+                    com.hexhaki.piece.mochi.MochiDraw.boom(sink, 0, -0.6, 8, com.hexhaki.piece.server.MochiMoves.yakiRadius(1.0) * 0.65, age - 4, 5);
+                    com.hexhaki.piece.mochi.MochiDraw.splat(sink, 0, -0.6, 8, 0, 0, -1, 1.6, age - 4, 6);
                 }
-                com.hexhaki.piece.mochi.MochiDraw.glob(sink, 0, -0.2, 3 + age % 10, 0, 0, 1, age, 13);
-                com.hexhaki.piece.mochi.MochiDraw.stuck(sink, 2, -1.6, 6, 1.8, 1.0, age, 14);
-                com.hexhaki.piece.mochi.MochiDraw.wheel(sink, 4, 0.6, 2, 0, 1, 2.2, age * 0.5, age, 15);
-                check(count[0], finite[0], "the Mochi moves" + (c ? " (coated)" : ""), age);
+                check(count[0], finite[0], "Grilled Mochi" + (c ? " (coated)" : ""), age);
+                // the left click's punch
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36, -0.2, 0, 0, 0, 1, 6, ((age % 9) + 9) % 9, c, 9);
+                check(count[0], finite[0], "Mochi Punch" + (c ? " (coated)" : ""), age);
+                // Mochi Muddle: the dive, the splash, the pool, the puddle running out, one stuck in it
+                count[0] = 0;
+                com.hexhaki.piece.mochi.MochiDraw.muddle(sink, 0, feet, 0, 0, 1, age, 3);
+                com.hexhaki.piece.mochi.MochiDraw.stuck(sink, 0.4, feet, 6, 1.8, 1.0, age, 4);
+                check(count[0], finite[0], "Mochi Muddle", age);
+                // Lotus Mochi Combo: the donut, its punch, the launch, the blows in the air, the giant fist and the ground
+                count[0] = 0;
+                double by = com.hexhaki.piece.mochi.MochiDraw.lotusHeight(Math.max(0, age));
+                double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
+                com.hexhaki.piece.mochi.MochiDraw.lotusRise(sink, 0, by + feet, 7, feet, age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_LAUNCH, 41);
+                com.hexhaki.piece.mochi.MochiDraw.lotus(sink, 0.4, -0.3, 0.3, d[0], d[1] + feet, d[2], 0, 1, 0, feet + 1.0, 7, feet, age, c, 5);
+                for (int k = 0; k < air.length; k++) {
+                    com.hexhaki.piece.mochi.MochiDraw.lotusAir(sink, 0, com.hexhaki.piece.mochi.MochiDraw.lotusHeight(air[k]) + feet + 1.0, 7,
+                        k % 2 == 0 ? 0.8 : -0.8, 0.6, 0.0, age - air[k], c, 11 + k);
+                }
+                com.hexhaki.piece.mochi.MochiDraw.lotusSlam(sink, 0, com.hexhaki.piece.mochi.MochiDraw.LOTUS_HIGH + 7.0 + feet, 7, 0, by + feet, 7, feet,
+                    age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_DROP, c, 21);
+                com.hexhaki.piece.mochi.MochiDraw.lotusGround(sink, 0, feet, 7, age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND, 31);
+                check(count[0], finite[0], "Lotus Mochi Combo" + (c ? " (coated)" : ""), age);
+                // Chestnut Mochi: the comet up, the spiked disc firing, its fall and splat
+                count[0] = 0;
+                double[] at = com.hexhaki.piece.mochi.MochiDraw.chestnutOffset(0.0, 1.8, new double[3]);
+                double fire = com.hexhaki.piece.mochi.MochiDraw.CHESTNUT_FORM + com.hexhaki.piece.mochi.MochiDraw.CHESTNUT_FIRE;
+                double ended = age > fire ? age - fire : -1.0;
+                double fired = ((age - com.hexhaki.piece.mochi.MochiDraw.CHESTNUT_FORM) % 4.0 + 4.0) % 4.0;
+                com.hexhaki.piece.mochi.MochiDraw.chestnut(sink, at[0], at[1] + feet, at[2], -0.4, -0.2, 0.2, 0, 1, feet, Math.max(0, age), ended, fired,
+                    c, 7);
+                com.hexhaki.piece.mochi.MochiDraw.spike(sink, at[0], at[1] + feet, at[2], 1.0, -0.6, 8.0, fired);
+                check(count[0], finite[0], "Chestnut Mochi" + (c ? " (coated)" : ""), age);
+                // Mochi Anemone: its donuts over the place aimed at, a dozen bars striking at once, then the burst and the splats
+                count[0] = 0;
+                double[] strikes = new double[12 * 5];
+                for (int k = 0; k < 12; k++) {
+                    strikes[k * 5] = (k * 7) % com.hexhaki.piece.mochi.MochiDraw.ANEMONE_DONUTS;
+                    strikes[k * 5 + 1] = Math.cos(k * 1.3) * 1.6;
+                    strikes[k * 5 + 2] = feet + 0.3;
+                    strikes[k * 5 + 3] = 8.0 + Math.sin(k * 1.3) * 1.6;
+                    strikes[k * 5 + 4] = (age + k) % 7;
+                }
+                boolean held = age < 100;
+                com.hexhaki.piece.mochi.MochiDraw.anemoneArea(sink, 0, feet, 8, com.hexhaki.piece.server.MochiMoves.ANEMONE_RADIUS, 1.0, strikes,
+                    held ? 12 : 0, c, Math.max(0, age), 9, held ? -1.0 : age - 100);
+                check(count[0], finite[0], "Mochi Anemone" + (c ? " (coated)" : ""), age);
             }
+        }
+        // Buzz Cut Mochi at its heaviest: the wheel at speed over its whole torn way, then from the catch the mace, the whirl's vortex,
+        // the slam's crater with its rubble (and the blow's splat), every tick of the cinematic
+        int pathMost = com.hexhaki.piece.mochi.MochiDraw.BUZZ_PATH_MOST;
+        double[] path = new double[pathMost * 3];
+        double[] ages = new double[pathMost];
+        for (int k = 0; k < pathMost; k++) {
+            path[k * 3] = Math.sin(k * 0.05) * 3.0;
+            path[k * 3 + 1] = feet;
+            path[k * 3 + 2] = -k * com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILE_GAP;
+            ages[k] = k * 0.5;
+        }
+        for (int age = 0; age <= 30; age += 2) {
+            count[0] = 0;
+            com.hexhaki.piece.mochi.MochiDraw.buzzTiles(sink, path, ages, pathMost, 5);
+            com.hexhaki.piece.mochi.MochiDraw.buzzWheel(sink, 0, feet + com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHEEL, 2.5, 0, 1, age * 0.9, 1.0,
+                1.0, age, 3);
+            check(count[0], finite[0], "Buzz Cut Mochi's wheel", age);
+        }
+        double[] arm = new double[8];
+        double[] bend = new double[4];
+        for (int t = 0; t <= (int) com.hexhaki.piece.mochi.MochiDraw.BUZZ_END + 30; t++) {
+            count[0] = 0;
+            com.hexhaki.piece.mochi.MochiDraw.buzzTiles(sink, path, ages, pathMost, 5);
+            com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, feet, 0, 0.0, arm);
+            com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, bend);
+            com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, arm[0], arm[1], arm[2] + 4, arm[3], arm[4], arm[5], arm[6],
+                com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), bend[0], bend[1], bend[2], bend[3], t, 7);
+            com.hexhaki.piece.mochi.MochiDraw.buzzVortex(sink, 0, feet, 4, Math.atan2(arm[5], arm[3]), arm[6], 1.0);
+            com.hexhaki.piece.mochi.MochiDraw.splat(sink, arm[0] + arm[3] * arm[6], arm[1], arm[2] + arm[5] * arm[6] + 4, 0, 1, 0, 1.6,
+                t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT, 9);
+            com.hexhaki.piece.mochi.MochiDraw.buzzCrater(sink, 0, feet, 4 + com.hexhaki.piece.mochi.MochiDraw.BUZZ_REACH_SLAM,
+                t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 11);
+            check(count[0], finite[0], "Buzz Cut Mochi's cinematic", t);
         }
         // 3.5.6 (the owner: "the arms are like squares. They're like basically rectangles that with the fist at the very edge"): the
         // arm's section at the shoulder is a square (its corners stand out from its middle as a square's do, a round tube's would not),
@@ -790,8 +845,6 @@ public final class DragonTests {
                 }
             };
             com.hexhaki.piece.mochi.MochiDraw.punch(colours, -0.36, -0.2, 0, 0, 0, 1, 6, 4, c, 9);
-            com.hexhaki.piece.mochi.MochiDraw.club(colours, -0.36, -0.1, 0, 0, -1.6, 4, 10, c, 10);
-            com.hexhaki.piece.mochi.MochiDraw.kaku(colours, 0, -0.2, 0, 0, -1.6, 4.5, 0, 1, 10, c, 12);
             if (c) {
                 Check.that(light[0] == 0 && dark[0] > 0, "with Haki the whole fist and arm are black (" + light[0] + " white corners)");
             } else {

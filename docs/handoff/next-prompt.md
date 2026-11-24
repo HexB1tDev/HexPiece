@@ -1,10 +1,10 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest; push there: the owner's
 answer this chat).
 
-Read CLAUDE.md, then docs/handoff/next-ai-3.6.3.md WHOLE (newest: sections F to M are this chat's: the owner's requests verbatim and
-answers, the base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi moves rebuilt (K), Buzz Cut Mochi (L) and
-where it stopped (M)), then docs/handoff/next-ai-3.6.0.md sections I to N, then POINT ONE and sections 0 to 7 of
-docs/handoff/next-ai-3.2.2.md (every standing rule).
+Read CLAUDE.md, then docs/handoff/next-ai-3.6.3.md WHOLE (newest: sections F to O: the owner's requests verbatim and answers, the
+base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi moves rebuilt (K), Buzz Cut Mochi (L, M), the owner's
+"use my imapct frame" (N) and the chat that finished Buzz Cut and released 3.6.3 (O)), then docs/handoff/next-ai-3.6.0.md sections I to
+N, then POINT ONE and sections 0 to 7 of docs/handoff/next-ai-3.2.2.md (every standing rule).
 
 POINT ONE (the owner's, never drop it, pass it on): every fruit in the style of the Light, Gura and Magma fruits (3D meshes, clips without
 the head or unused limbs, a first-person hand move per move, CC0 web sounds); with the Conqueror's Haki and Ryou on every move of every
@@ -16,17 +16,14 @@ needle-sharp tips, never a flat strip or the original's flat beams (next-ai-3.6.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.6.2 is the last release. Committed, unversioned (the owner: "Hold until Mochi is done"): the 3D lightning, the
-HUD hidden while powers are off, the Mochi material white as in the GIFs, Lotus Mochi Combo, Grilled Mochi, Mochi Muddle, Chestnut
-Mochi and Mochi Anemone rebuilt beat by beat on their GIFs, Buzz Cut Mochi's art after the GIF, the owner's anime frame and the show
-clip (a thin white elastic arm stretching to an insane length, an enormous spiked Haki ball, the victims stuck on it, the horizontal
-whirl, the slam into a rubble field and black star crater) and its first server/client wiring (next-ai-3.6.3.md M: check the last
-push's GitHub Build first).
+Where things stand: 3.6.3 is released (check its Build and Release runs on the branch first; fix them if red): the 3D lightning
+with sharp tips, the HUD hidden while powers are off, and the Mochi fruit's base kit after the reference GIFs (Mochi Punch, Grilled
+Mochi, Mochi Muddle, Lotus Mochi Combo, Chestnut Mochi, Mochi Anemone, Buzz Cut Mochi with the owner's impact frame); every old Mochi
+move, its art and its clips removed.
 
-Do next, in order (next-ai-3.6.3.md M): (1) fix the build if red; (2) judge Buzz Cut in motion and in first person against its
-references and the owner's 8zzv 10 text (horizontal whirl), fix, render again; (3) DragonTests.mochiArt with the new pieces under 16k
-quads, remove the dead old Mochi art and clips; (4) release 3.6.3 (next_version, notes, handoff, push, both runs green, send previews);
-(5) 3.6.4: the awakened DoughV2 set on M (the seven moves promised in next-ai-3.6.3.md F 7), each matched to its GIF the same way.
+Do next (next-ai-3.6.3.md O, "Next"): 3.6.4, the awakened DoughV2 set on M (the seven moves promised in F 7): read each DoughV2 GIF
+frame by frame first (section D), write what it shows into the handoff, then build each move on its beats, render it side by side with
+its GIF, fix and render again until it matches; release 3.6.4 (next_version, notes, handoff, push, both runs green, send previews).
 
 The cloud environment must be the personal "HexPiece" (it now also allows official-fruit-battlegrounds.fandom.com and
 static.wikia.nocookie.net for the reference GIFs; download them into the scratchpad as next-ai-3.6.3.md D says, never commit them). A

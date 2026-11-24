@@ -72,8 +72,8 @@ public final class MochiFx {
         Vec3 feet;
         float yaw0;
         final java.util.Set<Integer> victims = new java.util.HashSet<>();
-        final double[] path = new double[3 * 96];
-        final double[] passed = new double[96];
+        final double[] path = new double[3 * MochiDraw.BUZZ_PATH_MOST];
+        final double[] passed = new double[MochiDraw.BUZZ_PATH_MOST];
         int count;
         double rolled;
         Vec3 last;
@@ -95,9 +95,6 @@ public final class MochiFx {
 
     /** 3.6.3: Buzz Cut Mochi's blow (the ball where it struck) and its slam's ground. */
     record BuzzMark(Vec3 at, long born, int seed, boolean ground) {
-    }
-
-    record Club(int user, int body, Vec3 at, long born, boolean coat, int seed) {
     }
 
     record Stuck(Vec3 at, double height, long born, int ticks) {
@@ -192,7 +189,6 @@ public final class MochiFx {
     static final Map<Integer, Fist> FISTS = new HashMap<>();
     static final Map<Integer, Buzz> WHEELS = new HashMap<>();
     private static final List<BuzzMark> MARKS = new ArrayList<>();
-    private static final List<Club> CLUBS = new ArrayList<>();
     static final Map<Integer, Stuck> STUCKS = new HashMap<>();
     private static final List<Muddle> MUDDLES = new ArrayList<>();
     private static final List<Lotus> LOTUSES = new ArrayList<>();
@@ -248,7 +244,6 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.WHEEL -> buzz(m, at, phase);
-            case MochiMoves.CLUB -> add(CLUBS, new Club(m.user(), m.id(), at, clock, coat, m.id() + 7));
             case MochiMoves.STUCK -> {
                 if (m.ticks() > 0) {
                     put(STUCKS, m.id(), new Stuck(at, m.size(), clock, m.ticks()));
@@ -318,7 +313,7 @@ public final class MochiFx {
                 b.last = p;
                 int n = b.count;
                 double gap = n == 0 ? 99.0 : Math.hypot(p.f_82479_ - b.path[(n - 1) * 3], p.f_82481_ - b.path[(n - 1) * 3 + 2]);
-                if (gap >= 1.1 && n < b.passed.length && clock - b.born > 2) {
+                if (gap >= MochiDraw.BUZZ_TILE_GAP && n < b.passed.length && clock - b.born > 2) {
                     b.path[n * 3] = p.f_82479_;
                     b.path[n * 3 + 1] = p.f_82480_;
                     b.path[n * 3 + 2] = p.f_82481_;
@@ -372,9 +367,10 @@ public final class MochiFx {
     }
 
     /**
-     * Where the cutscene's camera is (client/dragon/DragonCamera.position asks), or null: by the user's side at the catch and the swing,
-     * high over them looking down through the whirl (the reference's view of the vortex), low in front looking up at the raised arm and
-     * its slam (the show's frames 120 to 250), pulled back over the crater after.
+     * Where the cutscene's camera is (client/dragon/DragonCamera.position asks), or null; cuts between shots as the reference does:
+     * low at the user's left as the arm swings round into the one caught, high over them looking down through the whirl (the
+     * reference's view of the vortex, frames 100 to 140), low in front looking up the arm to the raised ball (the show's frames 120 to
+     * 140), far off to the side for the slam (clear of the rubble it heaves up), pulled back high over the crater after.
      */
     public static Vec3 camera(Entity entity, float partial) {
         Minecraft minecraft = Minecraft.m_91087_();
@@ -382,26 +378,14 @@ public final class MochiFx {
         if (b == null || entity != minecraft.f_91074_ || b.feet == null) {
             return null;
         }
-        double t = clock - b.caught + partial;
-        double r = Math.toRadians(b.yaw0);
-        double fx = -Math.sin(r);
-        double fz = Math.cos(r);
-        double rx = -Math.cos(r);
-        double rz = -Math.sin(r);
-        Vec3 f = b.feet;
-        if (t < MochiDraw.BUZZ_HIT + 3) {
-            return f.m_82520_(rx * 5.0 - fx * 3.0, 2.2, rz * 5.0 - fz * 3.0);
-        }
-        if (t < MochiDraw.BUZZ_WHIRL) {
-            return f.m_82520_(-fx * 3.0, 13.0, -fz * 3.0);
-        }
-        if (t < MochiDraw.BUZZ_SLAM + 4) {
-            return f.m_82520_(fx * 4.0 - rx * 3.0, 0.5, fz * 4.0 - rz * 3.0);
-        }
-        return f.m_82520_(-fx * 6.0 + rx * 4.0, 7.0, -fz * 6.0 + rz * 4.0);
+        double[] at = MochiDraw.buzzCamera(clock - b.caught + partial, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, CAM);
+        return new Vec3(at[0], at[1], at[2]);
     }
 
-    /** The cutscene's camera turned to what it films: the user, the raised ball, the slam's ground. */
+    /** The camera's scratch (the render thread only). */
+    private static final double[] CAM = new double[6];
+
+    /** The cutscene's camera turned to what it films: the user and the swing, the whirl, the raised arm, the slam, the crater. */
     @SubscribeEvent
     public static void filmAngles(net.minecraftforge.client.event.ViewportEvent.ComputeCameraAngles event) {
         Minecraft minecraft = Minecraft.m_91087_();
@@ -409,26 +393,14 @@ public final class MochiFx {
         if (b == null || minecraft.f_91074_ == null || b.feet == null) {
             return;
         }
-        float partial = (float) event.getPartialTick();
-        Vec3 cam = camera(minecraft.f_91074_, partial);
-        if (cam == null) {
-            return;
-        }
-        double t = clock - b.caught + partial;
-        double[] arm = MochiDraw.buzzArm(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, new double[8]);
-        Vec3 look;
-        if (t >= MochiDraw.BUZZ_WHIRL && t < MochiDraw.BUZZ_SLAM + 4) {
-            // the raised ball and its fall: between the user and the ball
-            look = new Vec3(arm[0] + arm[3] * arm[6] * 0.5, arm[1] + arm[4] * arm[6] * 0.5, arm[2] + arm[5] * arm[6] * 0.5);
-        } else if (t >= MochiDraw.BUZZ_SLAM + 4) {
-            look = new Vec3(arm[0] + arm[3] * arm[6], b.feet.f_82480_, arm[2] + arm[5] * arm[6]);
-        } else {
-            look = b.feet.m_82520_(0, 1.2, 0);
-        }
-        Vec3 to = look.m_82546_(cam);
-        double flat = Math.sqrt(to.f_82479_ * to.f_82479_ + to.f_82481_ * to.f_82481_);
-        event.setYaw((float) Math.toDegrees(Math.atan2(-to.f_82479_, to.f_82481_)));
-        event.setPitch((float) -Math.toDegrees(Math.atan2(to.f_82480_, flat)));
+        double t = clock - b.caught + event.getPartialTick();
+        double[] at = MochiDraw.buzzCamera(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, CAM);
+        double dx = at[3] - at[0];
+        double dy = at[4] - at[1];
+        double dz = at[5] - at[2];
+        double flat = Math.sqrt(dx * dx + dz * dz);
+        event.setYaw((float) Math.toDegrees(Math.atan2(-dx, dz)));
+        event.setPitch((float) -Math.toDegrees(Math.atan2(dy, flat)));
     }
 
     /** 3.6.3: a Buzz Cut Mochi message (its phases: server/MochiMoves.BUZZ_*). */
@@ -436,7 +408,13 @@ public final class MochiFx {
         Buzz b = WHEELS.get(m.user());
         switch (phase) {
             case MochiMoves.BUZZ_ROLLING -> {
-                put(WHEELS, m.user(), new Buzz(clock, m.ticks(), m.id()));
+                Buzz rolling = new Buzz(clock, m.ticks(), m.id());
+                put(WHEELS, m.user(), rolling);
+                // the wheel's rumble only while it rolls (faded out the moment it catches or stops: never outlasting the roll)
+                net.minecraft.client.multiplayer.ClientLevel level = Minecraft.m_91087_().f_91073_;
+                Entity roller = level == null ? null : level.m_6815_(m.user());
+                com.hexhaki.piece.client.LoopSound.play(com.hexhaki.piece.mochi.MochiSounds.ROLL, roller, 1.0F, 1.2F, true, false, 0.6,
+                    () -> rolling.caught < 0 && rolling.missed < 0 && clock - rolling.born < rolling.ticks + 2 && WHEELS.get(m.user()) == rolling);
                 if (self(m.user())) {
                     carry = new Carry(m.ticks());
                 }
@@ -703,7 +681,6 @@ public final class MochiFx {
         WHEELS.entrySet().removeIf(e -> buzzDone(e.getValue()) || level.m_6815_(e.getKey()) == null);
         MARKS.removeIf(k -> clock - k.born > (k.ground ? MochiDraw.BUZZ_CRATER_LIFE : 12.0) + 1);
         buzzTick(level);
-        CLUBS.removeIf(c -> clock - c.born > MochiDraw.CLUB_LIFE + 1);
         STUCKS.values().removeIf(s -> clock - s.born > s.ticks + 1);
         MUDDLES.removeIf(u -> clock - u.born > MochiDraw.MUDDLE_LIE + 1);
         LOTUSES.removeIf(l -> clock - l.born > MochiDraw.LOTUS_LIFE + 1);
@@ -721,7 +698,7 @@ public final class MochiFx {
 
     static boolean empty() {
         return PUNCHES.isEmpty() && SPLATS.isEmpty() && BOOMS.isEmpty() && SWELLS.isEmpty() && FISTS.isEmpty() && WHEELS.isEmpty()
-            && CLUBS.isEmpty() && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty() && AIRS.isEmpty()
+            && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty() && AIRS.isEmpty()
             && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
             && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null;
     }
@@ -834,14 +811,20 @@ public final class MochiFx {
 
     private static final double[] STRIKE = new double[MOST * 5];
 
+    /** The torn ground's points made camera-relative (the render thread only: no allocation a frame). */
+    private static final double[] BUZZ_PATH = new double[3 * MochiDraw.BUZZ_PATH_MOST];
+    private static final double[] BUZZ_AGES = new double[MochiDraw.BUZZ_PATH_MOST];
+    private static final double[] BUZZ_ARM = new double[8];
+    private static final double[] BUZZ_BEND = new double[4];
+
     /** 3.6.3: Buzz Cut Mochi: the wheel, the torn ground, the mace and the whirl, the blows and the crater (MochiDraw.buzz*). */
     static void drawBuzz(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial, double now, double cx, double cy, double cz) {
         for (Map.Entry<Integer, Buzz> e : WHEELS.entrySet()) {
             Buzz b = e.getValue();
             Entity user = level.m_6815_(e.getKey());
             if (b.count > 0) {
-                double[] path = new double[b.count * 3];
-                double[] ages = new double[b.count];
+                double[] path = BUZZ_PATH;
+                double[] ages = BUZZ_AGES;
                 for (int k = 0; k < b.count; k++) {
                     path[k * 3] = b.path[k * 3] - cx;
                     path[k * 3 + 1] = b.path[k * 3 + 1] - cy;
@@ -877,8 +860,8 @@ public final class MochiFx {
                 if (t > MochiDraw.BUZZ_END) {
                     continue;
                 }
-                double[] arm = MochiDraw.buzzArm(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, new double[8]);
-                double[] bend = MochiDraw.buzzBend(t, b.yaw0, new double[4]);
+                double[] arm = MochiDraw.buzzArm(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, BUZZ_ARM);
+                double[] bend = MochiDraw.buzzBend(t, b.yaw0, BUZZ_BEND);
                 MochiDraw.buzzMace(SINK, arm[0] - cx, arm[1] - cy, arm[2] - cz, arm[3], arm[4], arm[5], arm[6], MochiDraw.buzzSwell(t), bend[0],
                     bend[1], bend[2], bend[3], t, b.seed);
                 if (t >= MochiDraw.BUZZ_HIT && t < MochiDraw.BUZZ_WHIRL + 4) {
@@ -1082,19 +1065,6 @@ public final class MochiFx {
                 ended);
         }
         drawBuzz(minecraft, level, cam, partial, now, cx, cy, cz);
-        for (Club c : CLUBS) {
-            Entity user = level.m_6815_(c.user);
-            if (user == null) {
-                continue;
-            }
-            Entity body = level.m_6815_(c.body);
-            Vec3 at = body != null ? body.m_20318_(partial) : c.at;
-            Vec3 from = shoulder(minecraft, user, 0, partial);
-            if (!far(from, cam)) {
-                MochiDraw.club(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz,
-                    now - c.born, c.coat, c.seed);
-            }
-        }
         for (Splat s : SPLATS) {
             if (!far(s.at, cam)) {
                 MochiDraw.splat(SINK, s.at.f_82479_ - cx, s.at.f_82480_ - cy, s.at.f_82481_ - cz, s.way.f_82479_, s.way.f_82480_, s.way.f_82481_, s.size,
@@ -1115,7 +1085,6 @@ public final class MochiFx {
         SWELLS.clear();
         FISTS.clear();
         WHEELS.clear();
-        CLUBS.clear();
         STUCKS.clear();
         MUDDLES.clear();
         LOTUSES.clear();

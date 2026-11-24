@@ -1044,6 +1044,55 @@ public final class HudTests {
             "Lotus: the one hit is on the ground for the punch, high for the blows in the air, back on the ground at the slam");
         double[] d = com.hexhaki.piece.mochi.MochiDraw.lotusAt(0, 1, new double[3]);
         Check.that(d[0] > 2.0 && d[2] > 0.0, "Lotus: the donut stands at the user's left, a little ahead (facing +z, the left is +x)");
+        buzzCut();
+    }
+
+    /**
+     * 3.6.3: Buzz Cut Mochi's beats (the owner's 8zzv 10, the reference's Buzzcut, the owner's show clip): the beats in order; the whirl
+     * level and round the user (the owner's "GIF: horizontal whirl"), ending where it began; the arm shot up to an insane length overhead
+     * ("the arm increases to insane ammounts and then slams into the ground"), then slammed far ahead with the ones caught under the ball
+     * on the ground; the cutscene camera never inside the rubble the slam heaves up; the torn ground a close double row.
+     */
+    static void buzzCut() {
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.BUZZ_UNROLL < com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT
+            && com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT < com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL
+            && com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL < com.hexhaki.piece.mochi.MochiDraw.BUZZ_RAISED
+            && com.hexhaki.piece.mochi.MochiDraw.BUZZ_RAISED < com.hexhaki.piece.mochi.MochiDraw.BUZZ_DOWN
+            && com.hexhaki.piece.mochi.MochiDraw.BUZZ_DOWN < com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM
+            && com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM < com.hexhaki.piece.mochi.MochiDraw.BUZZ_BACK
+            && com.hexhaki.piece.mochi.MochiDraw.BUZZ_BACK < com.hexhaki.piece.mochi.MochiDraw.BUZZ_END,
+            "Buzz Cut: unroll, the blow, the whirl, raised, a beat, the slam, the arm back, in order");
+        double[] arm = new double[8];
+        for (double t = com.hexhaki.piece.mochi.MochiDraw.BUZZ_HIT; t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL; t += 1.0) {
+            com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, 0, 0, 0.0, arm);
+            Check.that(Math.abs(arm[4]) < 0.35, "Buzz Cut: the whirl is level (the owner's \"GIF: horizontal whirl\"), at " + t);
+            double[] at = com.hexhaki.piece.mochi.MochiDraw.buzzStuck(t, 0, 0, 0, 0, 0.0, new double[3]);
+            Check.that(at[1] > 0.5, "Buzz Cut: the one caught is carried off the ground on the ball as it whirls, at " + t);
+        }
+        Check.that(Math.abs(com.hexhaki.piece.mochi.MochiDraw.buzzTurn(com.hexhaki.piece.mochi.MochiDraw.BUZZ_WHIRL)
+            - 2 * Math.PI * com.hexhaki.piece.mochi.MochiDraw.BUZZ_TURNS) < 1.0E-9 && com.hexhaki.piece.mochi.MochiDraw.BUZZ_TURNS >= 3.0,
+            "Buzz Cut: whirled round whole turns, ending facing the way it began");
+        com.hexhaki.piece.mochi.MochiDraw.buzzArm(com.hexhaki.piece.mochi.MochiDraw.BUZZ_RAISED, 0, 0, 0, 0.0, arm);
+        Check.that(arm[4] > 0.95 && arm[6] > 15.0, "Buzz Cut: raised straight up to an insane length overhead (" + arm[6] + ")");
+        com.hexhaki.piece.mochi.MochiDraw.buzzArm(com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 0, 0, 0, 0.0, arm);
+        double bx = arm[0] + arm[3] * arm[6];
+        double bz = arm[2] + arm[5] * arm[6];
+        double[] under = com.hexhaki.piece.mochi.MochiDraw.buzzStuck(com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 0, 0, 0, 0, 0.0, new double[3]);
+        Check.that(bz > 12.0 && Math.hypot(under[0] - bx, under[2] - bz) < 0.5 && under[1] == 0.0,
+            "Buzz Cut: slammed far ahead, the one caught on the ground under the ball (the owner: \"underneath the forearm\")");
+        // the cutscene camera, through the whole cinematic, never inside the rubble field round the crater (radius 9.5)
+        double[] cam = new double[6];
+        for (double t = 0; t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_END; t += 0.5) {
+            com.hexhaki.piece.mochi.MochiDraw.buzzCamera(t, 0, 0, 0, 0.0, cam);
+            if (t >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_DOWN) {
+                Check.that(Math.hypot(cam[0] - bx, cam[2] - bz) > 9.6, "Buzz Cut: the slam's camera stays clear of the rubble, at " + t);
+            }
+            Check.that(cam[1] > 0.5, "Buzz Cut: the camera above the ground, at " + t);
+        }
+        Check.that(com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILE_GAP <= 0.7 && com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILES >= 80.0
+            && com.hexhaki.piece.mochi.MochiDraw.BUZZ_PATH_MOST * com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILE_GAP
+            >= com.hexhaki.piece.mochi.MochiDraw.BUZZ_ROLL * com.hexhaki.piece.mochi.MochiDraw.BUZZ_SPEED,
+            "Buzz Cut: the torn ground a close double row lying for seconds, the whole longest roll of it kept");
     }
 
     /**

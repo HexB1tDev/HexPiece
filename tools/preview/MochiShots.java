@@ -140,21 +140,6 @@ public final class MochiShots {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);
             }
-            case "mtsuki" -> {
-                // |mtsuki:age[:c]: age < 0 charging (40 ticks to full), else the thrust that many ticks in (14 long at full)
-                user(sink, age < 0 ? "mochi_tsuki_charge" : "mochi_tsuki_thrust", age < 0 ? 40 + age : age, ex, ey, ez);
-                double charge = age < 0 ? Math.min(1.0, (age + 40) / 40.0) : 1.0;
-                com.hexhaki.piece.mochi.MochiDraw.tsuki(sink, -0.36 - ex, 1.35 - ey, 0.4 - ez, 0, 0, 1, 14.0, age, charge, age * 0.9, coat);
-            }
-            case "myanagi" -> {
-                user(sink, "mochi_yanagi", age, ex, ey, ez, age >= 3 && age <= com.hexhaki.piece.mochi.MochiDraw.YANAGI_LIFE - 3 ? 4 : 0);
-                com.hexhaki.piece.mochi.MochiDraw.yanagi(sink, -0.15 - ex, 0.8 - ey, 0.2 - ez, 0, 1, -ey, age, 7);
-            }
-            case "mkaku" -> {
-                user(sink, "mochi_kaku", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.KAKU_LIFE ? 3 : 0);
-                HieShots.body(sink, -ex, -ey, 4.5 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.kaku(sink, -ex, 1.4 - ey, -ez, -ex, -ey, 4.5 - ez, 0, 1, age, coat, 4);
-            }
             case "myaki" -> {
                 // |myaki:t[:c[:held]]: t < 0 held that many ticks back from now (MochiMoves.YAKI_FULL to full: t = -60 a tap, 0 full), else
                 // the fist flying 2.2 a tick, the blast at 14 ahead; 3.6.3: the explosion by how long it was held (held, default full)
@@ -178,8 +163,9 @@ public final class MochiShots {
                 double rolled = 0.0;
                 double speed = 0.0;
                 double caught = -1.0;
-                double[] path = new double[3 * 64];
-                double[] ages = new double[64];
+                int most = com.hexhaki.piece.mochi.MochiDraw.BUZZ_PATH_MOST;
+                double[] path = new double[3 * most];
+                double[] ages = new double[most];
                 int count = 0;
                 double next = 0.0;
                 for (int t = 0; t <= Math.min(age, 200); t++) {
@@ -191,13 +177,13 @@ public final class MochiShots {
                         break;
                     }
                     rolled += com.hexhaki.piece.mochi.MochiDraw.BUZZ_SPEED * speed;
-                    while (next <= rolled && count < 64) {
+                    while (next <= rolled && count < most) {
                         path[count * 3] = 0;
                         path[count * 3 + 1] = 0;
                         path[count * 3 + 2] = next;
                         ages[count] = t;
                         count++;
-                        next += 1.1;
+                        next += com.hexhaki.piece.mochi.MochiDraw.BUZZ_TILE_GAP;
                     }
                 }
                 for (int k = 0; k < count; k++) {
@@ -218,13 +204,15 @@ public final class MochiShots {
                 }
                 double t = age - caught;
                 double[] arm = com.hexhaki.piece.mochi.MochiDraw.buzzArm(t, 0, 0, rolled, 0.0, new double[8]);
+                boolean armOut = t <= com.hexhaki.piece.mochi.MochiDraw.BUZZ_END;
                 if (t >= 2) {
-                    com.hexhaki.piece.horo.AstralArt.hide = 1;
+                    // the right arm is the mace until the move ends (MochiFx.mochiArms), then the player's own again
+                    com.hexhaki.piece.horo.AstralArt.hide = t < com.hexhaki.piece.mochi.MochiDraw.BUZZ_END ? 1 : 0;
                     ItoShots.posed(sink, "mochi_buzz", (float) t, 0.0, 0.0, rolled, 0.0, 0.9, rolled, ex, ey, ez, 0.0, 0.0);
                     com.hexhaki.piece.horo.AstralArt.hide = 0;
                 }
                 double[] bend = com.hexhaki.piece.mochi.MochiDraw.buzzBend(t, 0.0, new double[4]);
-                com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, arm[0] - ex, arm[1] - ey, arm[2] - ez, arm[3], arm[4], arm[5], arm[6],
+                if (armOut) com.hexhaki.piece.mochi.MochiDraw.buzzMace(sink, arm[0] - ex, arm[1] - ey, arm[2] - ez, arm[3], arm[4], arm[5], arm[6],
                     com.hexhaki.piece.mochi.MochiDraw.buzzSwell(t), bend[0], bend[1], bend[2], bend[3], t, 7);
                 // the one caught: before the blow where the wheel met them, after it stuck at the mace's end, in the crater after the slam
                 double bx = 0;
@@ -247,76 +235,6 @@ public final class MochiShots {
                     com.hexhaki.piece.mochi.MochiDraw.buzzCrater(sink, bx - ex, -ey, bz - ez, t - com.hexhaki.piece.mochi.MochiDraw.BUZZ_SLAM, 11);
                 }
             }
-            case "mwheel" -> {
-                com.hexhaki.piece.mochi.MochiDraw.wheel(sink, -ex, 2.2 - ey, -ez, 0, 1, 2.2, age * 0.5, age, 6);
-            }
-            case "mclub" -> {
-                user(sink, "mochi_club", age, ex, ey, ez);
-                HieShots.body(sink, -ex, -ey, 4.0 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.club(sink, -0.36 - ex, 1.5 - ey, -ez, -ex, -ey, 4.0 - ez, age, coat, 6);
-            }
-            case "manemone" -> {
-                user(sink, "mochi_anemone", age, ex, ey, ez);
-                double[] p = new double[20];
-                double[][] targets = {{0, 1.2, 6}, {5, 1.0, 1}, {-5, 1.0, -1}, {0, 1.0, -6}};
-                for (int k = 0; k < 4; k++) {
-                    HieShots.body(sink, targets[k][0] - ex, -ey, targets[k][2] - ez);
-                    p[k * 5] = k;
-                    p[k * 5 + 1] = targets[k][0];
-                    p[k * 5 + 2] = targets[k][1];
-                    p[k * 5 + 3] = targets[k][2];
-                    p[k * 5 + 4] = (age + k * 2) % 7;
-                }
-                com.hexhaki.piece.mochi.MochiDraw.anemone(sink, -ex, -ey, -ez, age, Math.min(1.0, age / 6.0), toEye(p, ex, ey, ez), 4, coat, 8);
-            }
-            case "msticky" -> {
-                user(sink, "mochi_throw", age, ex, ey, ez);
-                com.hexhaki.piece.mochi.MochiDraw.glob(sink, -0.3 - ex, 1.4 - ey, 2.0 + age * 1.0 - ez, 0, 0, 1, age, 9);
-                HieShots.body(sink, 2.5 - ex, -ey, 6 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.stuck(sink, 2.5 - ex, -ey, 6 - ez, 1.9, 1.0, age, 10);
-                com.hexhaki.piece.mochi.MochiDraw.patch(sink, -2.5 - ex, -ey, 6 - ez, 1.5, 1.0, age, 11);
-            }
-            case "mhole" -> {
-                user(sink, "mochi_punch_1", 0, ex, ey, ez);
-                com.hexhaki.piece.mochi.MochiDraw.hole(sink, -ex, 1.1 - ey, 0.16 - ez, 0, 0, 1, age);
-            }
-            case "mground" -> {
-                user(sink, "mochi_awaken", age, ex, ey, ez);
-                double[] cells = new double[com.hexhaki.piece.mochi.MochiDraw.GROUND_MOST * 4];
-                int n = com.hexhaki.piece.mochi.MochiDraw.groundLumps(0.3, 0.2, 12.0, cells);
-                double[] lumps = new double[n * 5];
-                for (int k = 0; k < n; k++) {
-                    lumps[k * 5] = cells[k * 4] - ex;
-                    lumps[k * 5 + 1] = -ey;
-                    lumps[k * 5 + 2] = cells[k * 4 + 1] - ez;
-                    lumps[k * 5 + 3] = cells[k * 4 + 2];
-                    lumps[k * 5 + 4] = cells[k * 4 + 3];
-                }
-                com.hexhaki.piece.mochi.MochiDraw.ground(sink, lumps, n, Math.min(1.0, age / 10.0), age);
-            }
-            case "mwave" -> {
-                user(sink, "mochi_wave", age, ex, ey, ez);
-                com.hexhaki.piece.mochi.MochiDraw.wave(sink, -ex, -ey, -ez, 0, 1, 2.0 + age * 0.7, 8.0, 3.6, age, 13);
-            }
-            case "mwalls" -> {
-                user(sink, "mochi_walls", age, ex, ey, ez);
-                HieShots.body(sink, -ex, -ey, 6 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.walls(sink, -ex, -ey, 6 - ez, 0, 1, 4.0, age, 14);
-            }
-            case "mrain" -> {
-                user(sink, "mochi_rain", age, ex, ey, ez);
-                com.hexhaki.piece.mochi.MochiDraw.rain(sink, -ex, -ey, 8 - ez, 6.0, 14.0, 15, 2.0, age, 15);
-            }
-            case "mdonuts" -> {
-                user(sink, "mochi_donuts", age, ex, ey, ez);
-                HieShots.body(sink, -ex, -ey, 14 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.donuts(sink, -ex, -ey, -ez, -ex, 1.0 - ey, 14 - ez, age, Math.min(1.0, age / 6.0), 6.0, 4.0, coat, 16);
-            }
-            case "mdome" -> {
-                user(sink, "mochi_dome", age, ex, ey, ez);
-                HieShots.body(sink, -ex, -ey, 6 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.dome(sink, -ex, -ey, 6 - ez, 5.0, Math.min(1.0, age / 10.0), Math.max(0, Math.min(1, (age - 90) / 8.0)), age, 17);
-            }
             case "mfirst" -> {
                 // |mfirst:age:what[:c]: one's own move in first person, as client/mochi/MochiFx starts it there (the arm from below and
                 // to the right of the view, 0.55 ahead); the camera at the eye (0, 1.62, 0) looking along +z
@@ -326,13 +244,8 @@ public final class MochiShots {
                 double sz = 0.45;
                 switch (what) {
                     case "punch" -> com.hexhaki.piece.mochi.MochiDraw.punch(sink, sx - ex, sy - ey, sz - ez, 0, 0, 1, 6.0, age, coat, 3);
-                    case "charge" -> com.hexhaki.piece.mochi.MochiDraw.tsuki(sink, -0.55 - ex, 1.02 - ey, 1.7 - ez, 0, 0, 1, 0.0, -1.0,
-                        Math.min(1.0, age / 40.0), age * 0.9, coat);
-                    case "thrust" -> com.hexhaki.piece.mochi.MochiDraw.tsuki(sink, -0.55 - ex, 1.02 - ey, 2.2 - ez, 0, 0, 1, 14.0, age, 1.0,
-                        age * 0.9, coat);
                     case "swell" -> com.hexhaki.piece.mochi.MochiDraw.swell(sink, -0.55 - ex, 1.02 - ey, 1.4 - ez, 0, 0, 1,
                         Math.min(1.0, age / 16.0), age, coat, 2);
-                    case "anemone" -> com.hexhaki.piece.mochi.MochiDraw.anemone(sink, -ex, -0.9 - ey, -ez, age, 1.0, new double[0], 0, coat, 8);
                     default -> {
                     }
                 }

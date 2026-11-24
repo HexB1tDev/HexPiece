@@ -18,7 +18,7 @@ import javax.imageio.ImageIO;
  * there, tested against and writing the depth (RenderType debugQuads). Judge the frames against docs/handoff/uo-fire-target-*.jpg.
  *
  * <p>javac -cp build/classes -d build/preview tools/preview/DragonPreview.java tools/preview/FxPreview.java;
- * java -cp build/preview:build/classes FxPreview <seiryu.sry> <seiryu.png> <out.png or dir/> [--night] [--size=WxH] shot ...
+ * java -cp build/preview:build/classes FxPreview <seiryu.sry> <seiryu.png> <out.png or dir/> [--night] [--size=WxH] [--fov=deg] shot ...
  * a shot: {@code <DragonPreview v: or g: shot>|<move>:<args>}, e.g. {@code v:2:1.0:0:10:0|breath:8:-1}.
  */
 public final class FxPreview {
@@ -34,6 +34,9 @@ public final class FxPreview {
         for (int i = 3; i < args.length; i++) {
             if (args[i].equals("--night")) {
                 night = true;
+            } else if (args[i].startsWith("--fov=")) {
+                // 3.6.3: the game's own field of view (70 by default) for camera shots that must frame as the game does
+                DragonPreview.fov = Double.parseDouble(args[i].substring(6));
             } else if (args[i].startsWith("--size=")) {
                 String[] wh = args[i].substring(7).split("x");
                 DragonPreview.W = Integer.parseInt(wh[0]);

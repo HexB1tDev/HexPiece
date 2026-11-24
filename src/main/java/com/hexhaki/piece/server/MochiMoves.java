@@ -46,8 +46,6 @@ public final class MochiMoves {
     public static final int YAKI_DROP = 2;
     /** Buzz Cut Mochi's wheel: user; bx 1 rolling (x, y, z to, a from, ticks), 0 stopped (x, y, z where). */
     public static final int WHEEL = 261;
-    /** Buzz Cut Mochi's club: user; x, y, z the body it slams. */
-    public static final int CLUB = 262;
     /** Mochi Anemone (B) held: user; bx 1 on (x, y, z the area's middle on the ground, size its radius, ticks), 0 off. */
     public static final int ANEMONE = 263;
     /** One of the Anemone's arms: user; id the donut, x, y, z where it strikes. */
@@ -695,6 +693,8 @@ public final class MochiMoves {
                     StyleCombat.push(best, best.m_20184_().m_82490_(0.5).m_82549_(way.m_82490_(0.08)));
                 }
                 sounds(this.owner, at, MochiSounds.PUNCH, 0.5F, 1.4F, 1, 3);
+                // POINT ONE: the Conqueror's lightning where each spike strikes (with Haki and Ryou on; ItoMoves paces it)
+                ItoMoves.lightning(this.owner, at);
             }
             return false;
         }
@@ -776,8 +776,8 @@ public final class MochiMoves {
         ItoMoves.cool(player, MochiKit.BUZZ_CUT, BUZZ_COOLDOWN);
         s.busyUntil = now + MochiDraw.BUZZ_ROLL + (long) MochiDraw.BUZZ_END + 4;
         player.f_19789_ = 0.0F;
+        // the rumble is the client's (client/mochi/MochiFx: held only while the wheel rolls)
         fx(player, WHEEL, ++seeds, player.m_20182_(), player.m_20154_(), BUZZ_ROLLING, 0, MochiDraw.BUZZ_WHEEL, MochiDraw.BUZZ_ROLL);
-        sound(player, player.m_20182_(), MochiSounds.ROLL, 1.0F, 1.2F);
         LIVE.add(new Wheel((ServerLevel) player.m_9236_(), player, now));
     }
 

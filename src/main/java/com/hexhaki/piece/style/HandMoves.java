@@ -183,17 +183,8 @@ public final class HandMoves {
             case "mochi_muddle" -> new Move(MUDDLE, 0);
             case "mochi_chestnut" -> new Move(UP_END_HELD, 0);
             case "mochi_buzz" -> new Move(BUZZ, 0);
-            case "mochi_tsuki_charge" -> new Move(DRAWN, 1.0);
-            case "mochi_tsuki_thrust" -> new Move(THRUST, 0);
-            case "mochi_yanagi" -> new Move(SIDE, 0.6);
-            case "mochi_kaku", "mochi_club" -> new Move(SLAM_UP, 0);
             case "mochi_yaki_charge" -> new Move(DEEP, 1.2);
-            case "mochi_anemone" -> new Move(SIDE, 1.4);
-            case "mochi_throw" -> new Move(THROW, 0);
             case "mochi_awaken" -> new Move(DOWN, 0);
-            case "mochi_wave" -> new Move(PUSH, 0.4);
-            case "mochi_walls" -> new Move(SWEEP, 0);
-            case "mochi_rain", "mochi_dome" -> new Move(UP_DOWN, 0);
             case "mochi_donuts" -> new Move(POINT, 0.4);
             default -> null;
         };

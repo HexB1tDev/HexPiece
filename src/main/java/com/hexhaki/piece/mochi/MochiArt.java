@@ -26,6 +26,8 @@ public final class MochiArt {
     /** 3.6.3: Buzz Cut Mochi's mace (the owner: "glossy, jet-black Armament Haki, with deep crimson highlights"): Haki lit in crimson. */
     public static final int[] HAKI_CRIMSON = {0xFF6070, 0x3A1A22, 0x24141A, 0x150B10, 0x8E1020};
     public static final int[] HAKI = {0x8FA8FF, 0x3A3B4E, 0x24242F, 0x15151C, 0x4D5FCB};
+    /** 3.6.3: Buzz Cut Mochi's crater (the reference's frames 185 to 200: a splatter of pure black): black, a dull grey sheen. */
+    public static final int[] INK = {0x2E2E34, 0x101013, 0x0A0A0C, 0x050506, 0x1C1C21};
     /** Mogura, the trident: dark iron, its edge lit. */
     public static final int[] IRON = {0xB8B8C4, 0x6E6E7C, 0x464652, 0x2C2C36, 0x82829A};
     /** The light falls from above, a little from the side. */
@@ -274,13 +276,29 @@ public final class MochiArt {
         if (n < 2) {
             return;
         }
-        // the frame: the first square to the way, then carried point to point (parallel transport)
-        double tx = TP[3] - TP[0];
-        double ty = TP[4] - TP[1];
-        double tz = TP[5] - TP[2];
-        double tl = Math.max(1.0E-9, Math.sqrt(tx * tx + ty * ty + tz * tz));
+        // the frame: the first square to the way, then carried point to point (parallel transport); 3.6.3: where points coincide (a
+        // tube with no length yet, on its first frame) the last good way is kept (up if there is none), never a 0/0
+        double wx = 0.0;
+        double wy = 1.0;
+        double wz = 0.0;
+        for (int j = 1; j < n; j++) {
+            double ox = TP[j * 3] - TP[0];
+            double oy = TP[j * 3 + 1] - TP[1];
+            double oz = TP[j * 3 + 2] - TP[2];
+            double ol = Math.sqrt(ox * ox + oy * oy + oz * oz);
+            if (ol > 1.0E-6) {
+                wx = ox / ol;
+                wy = oy / ol;
+                wz = oz / ol;
+                break;
+            }
+        }
+        double tx = wx;
+        double ty = wy;
+        double tz = wz;
+        double tl;
         double[] q = Q;
-        FireMesh.basis(tx / tl, ty / tl, tz / tl, q);
+        FireMesh.basis(tx, ty, tz, q);
         double sx = q[0];
         double sy = q[1];
         double sz = q[2];
@@ -290,10 +308,19 @@ public final class MochiArt {
             tx = TP[b * 3] - TP[a * 3];
             ty = TP[b * 3 + 1] - TP[a * 3 + 1];
             tz = TP[b * 3 + 2] - TP[a * 3 + 2];
-            tl = Math.max(1.0E-9, Math.sqrt(tx * tx + ty * ty + tz * tz));
-            tx /= tl;
-            ty /= tl;
-            tz /= tl;
+            tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+            if (tl > 1.0E-6) {
+                tx /= tl;
+                ty /= tl;
+                tz /= tl;
+                wx = tx;
+                wy = ty;
+                wz = tz;
+            } else {
+                tx = wx;
+                ty = wy;
+                tz = wz;
+            }
             // the side carried along: what of it lies along the way taken away
             double d = sx * tx + sy * ty + sz * tz;
             sx -= d * tx;

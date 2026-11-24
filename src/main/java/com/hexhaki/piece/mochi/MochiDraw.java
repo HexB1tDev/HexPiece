@@ -23,31 +23,11 @@ public final class MochiDraw {
     public static final double PUNCH_FIST = 0.29;
     /** 3.6.3: the punch's arm at rest, an arm's own length (the arm itself is the mochi: client/mochi/MochiFx.mochiArms hides the real one). */
     public static final double PUNCH_REST = 0.7;
-    /** Mochi Tsuki's thrust: out in {@link #TSUKI_OUT}, gone by {@link #TSUKI_LIFE}. */
-    public static final double TSUKI_OUT = 3.0;
-    public static final double TSUKI_LIFE = 14.0;
-    /** Yanagi Mochi: how long the stamping lasts, how many tendrils. */
-    public static final double YANAGI_LIFE = 22.0;
-    public static final int YANAGI_TENDRILS = 6;
-    /** Kaku Mochi: the fists rise, then slam at {@link #KAKU_SLAM}; gone by {@link #KAKU_LIFE}. */
-    public static final double KAKU_SLAM = 8.0;
-    public static final double KAKU_LIFE = 20.0;
     /** A splat of mochi (an impact), a boom of fire. */
     public static final double SPLAT_LIFE = 12.0;
     public static final double BOOM_LIFE = 70.0;
-    /** Zan Giri Mochi's club: raised, slammed at {@link #CLUB_SLAM}, gone by {@link #CLUB_LIFE}. */
-    public static final double CLUB_SLAM = 7.0;
-    public static final double CLUB_LIFE = 18.0;
     /** The Anemone's punch: out and back. */
     public static final double ANEMONE_PUNCH = 7.0;
-    /** A dodge's hole: open and closed again. */
-    public static final double HOLE_LIFE = 10.0;
-    /** Kagami Mochi: the walls rise, close at {@link #WALLS_SHUT}, gone by {@link #WALLS_LIFE}. */
-    public static final double WALLS_RISE = 6.0;
-    public static final double WALLS_SHUT = 14.0;
-    public static final double WALLS_LIFE = 34.0;
-    /** A Chikara Mochi fist's flight from its donut. */
-    public static final double DONUT_FIST = 6.0;
 
     static double clamp(double t) {
         return Math.max(0.0, Math.min(1.0, t));
@@ -133,8 +113,6 @@ public final class MochiDraw {
         arm(sink, x, y, z, x + wx * d, y + wy * d, z + wz * d, PUNCH_ARM, PUNCH_FIST, 0.0, coat, age, seed, left);
     }
 
-    // ------------------------------------------------------------------------------------------------------ Mochi Tsuki
-
     /**
      * Mogura, Katakuri's trident: its shaft from (bx, by, bz) to its head at (hx, hy, hz), the head's prongs spread along the side
      * (sx, sy, sz) (unit): a long dark iron shaft, a crossbar, three prongs, the middle one longest.
@@ -164,168 +142,6 @@ public final class MochiDraw {
             double oz = hz + sz * w * k;
             double l = k == 0 ? 0.95 : 0.7;
             MochiArt.cone(sink, ox, oy, oz, ox + ux * l, oy + uy * l, oz + uz * l, 0.08, MochiArt.IRON);
-        }
-    }
-
-    /**
-     * Mochi Tsuki (RMB): the arm from the hand (x, y, z) twisted into a drill of mochi round Mogura, thrust along (wx, wy, wz) (unit)
-     * {@code length} out at its furthest; {@code age} ticks into the thrust (out in {@link #TSUKI_OUT}, held spinning, pulled back by
-     * {@link #TSUKI_LIFE}); its prongs out of the drill's point. Held ({@code age} < 0: charging, {@code charge} 0 to 1): the drill coils
-     * at the hand, fatter the fuller.
-     */
-    public static void tsuki(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double length, double age,
-                             double charge, double spin, boolean coat) {
-        double[] b = B;
-        FireMesh.basis(wx, wy, wz, b);
-        double sx = b[0];
-        double sy = b[1];
-        double sz = b[2];
-        double out = 0.0;
-        if (age < 0) {
-            out = 0.0;
-        } else if (age > TSUKI_LIFE) {
-            return;
-        } else {
-            double back = clamp((age - TSUKI_OUT - 4) / (TSUKI_LIFE - TSUKI_OUT - 4));
-            out = (0.9 + (length - 0.9) * ease(age / TSUKI_OUT)) * (1.0 - smooth(back) * 0.9);
-        }
-        if (age < 0) {
-            // held: the arm twisting itself up round Mogura, coils of mochi winding tighter and fatter round the forearm, the drill's
-            // point just starting at the hand
-            for (int k = 0; k < 4; k++) {
-                double along = -0.35 + k * 0.3;
-                double big = (0.2 + 0.22 * charge) * (1.0 - k * 0.12);
-                double cx = x + wx * along + sx * 0.05 * Math.sin(spin + k);
-                double cy = y + wy * along + sy * 0.05 * Math.sin(spin + k);
-                double cz = z + wz * along + sz * 0.05 * Math.sin(spin + k);
-                double tilt = 0.25 * Math.sin(spin * 0.7 + k * 1.3);
-                MochiArt.torus(sink, cx, cy, cz, wx + sx * tilt, wy + sy * tilt, wz + sz * tilt, big, 0.09 + 0.07 * charge, 1.0,
-                    coat ? MochiArt.HAKI : MochiArt.MOCHI);
-            }
-            double cl = 0.3 + 0.9 * charge;
-            MochiArt.tubeBegin();
-            for (int k = 0; k <= 6; k++) {
-                double t = k / 6.0;
-                MochiArt.tubePoint(x + wx * cl * t, y + wy * cl * t, z + wz * cl * t, (0.26 + 0.12 * charge) * (1.0 - t * 0.9) + 0.02);
-            }
-            MochiArt.tube(sink, 14, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.5, spin);
-            trident(sink, x - wx * 1.6, y - wy * 1.6, z - wz * 1.6, x + wx * (cl + 0.15), y + wy * (cl + 0.15), z + wz * (cl + 0.15), sx, sy, sz);
-            return;
-        }
-        double r0 = 0.5;
-        // the drill: a long cone of mochi round the shaft, ridged like a screw, its thread spinning
-        MochiArt.tubeBegin();
-        int n = Math.max(8, Math.min(28, (int) (out * 2.0)));
-        for (int k = 0; k <= n; k++) {
-            double t = k / (double) n;
-            double ridge = 1.0 + 0.1 * Math.sin(t * out * 5.0 - spin * 2.0);
-            MochiArt.tubePoint(x + wx * out * t, y + wy * out * t, z + wz * out * t, (r0 * (1.0 - t * 0.94) + 0.02) * ridge);
-        }
-        MochiArt.tube(sink, 14, coat ? MochiArt.HAKI : MochiArt.MOCHI, Math.max(2.0, out * 0.9), spin);
-        // Mogura: its shaft out behind the hand, its head out of the drill's point
-        trident(sink, x - wx * 1.6, y - wy * 1.6, z - wz * 1.6, x + wx * (out + 0.1), y + wy * (out + 0.1), z + wz * (out + 0.1), sx, sy, sz);
-    }
-
-    // ------------------------------------------------------------------------------------------------------ Yanagi Mochi
-
-    /**
-     * Yanagi Mochi (Z): the leg from the hip (x, y, z) split into {@link #YANAGI_TENDRILS} tendrils stamping on the ground ahead along
-     * (wx, wz) (flat, unit), the ground {@code ground} under the hip; {@code age} ticks in, each tendril lifting and stamping at its own
-     * beat (a stamp every 4 ticks), spread 1.5 to 6 ahead and 2.5 to each side.
-     */
-    public static void yanagi(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double ground, double age, int seed) {
-        if (age < 0 || age > YANAGI_LIFE) {
-            return;
-        }
-        // 3.6.3: the tendrils grow out of the lifted leg as it turns into them (the clip lifts it by tick 3)
-        double grow = ease(Math.max(0.0, age - 2.0) / 3.0) * (1.0 - smooth((age - YANAGI_LIFE + 5) / 5.0));
-        if (grow < 0.02) {
-            return;
-        }
-        double px = -wz;
-        double pz = wx;
-        for (int k = 0; k < YANAGI_TENDRILS; k++) {
-            double a = FireMesh.rand(seed, k);
-            double ahead = 1.5 + 4.5 * FireMesh.rand(seed, k + 10);
-            double side = (a - 0.5) * 5.0;
-            double gx = x + wx * ahead + px * side;
-            double gz = z + wz * ahead + pz * side;
-            // the beat: up, then stamped down (a stamp every 4 ticks, each tendril half a beat apart)
-            double beat = ((age + k * 0.7) % 4.0) / 4.0;
-            double lift = beat < 0.6 ? Math.sin(Math.PI * beat / 0.6) * 1.6 * grow : 0.0;
-            double gy = ground + 0.15 + lift;
-            // 3.6.3 (the owner: "Mochi appearing and disappearing should have more realism not just vanish"): each tendril grows out of
-            // the hip along its own arc and pulls back into it the same way (its end receding), never squeezed whole
-            double reach = Math.min(1.0, grow * (1.0 + 0.15 * k / YANAGI_TENDRILS));
-            MochiArt.tubeBegin();
-            double ex = x;
-            double ey = y;
-            double ez = z;
-            for (int j = 0; j <= 6; j++) {
-                double t = reach * j / 6.0;
-                // arcing out from the hip, down onto the foot
-                double hump = Math.sin(Math.PI * t) * (0.9 + 0.5 * lift);
-                ex = x + (gx - x) * t;
-                ey = y + (gy - y) * t + hump;
-                ez = z + (gz - z) * t;
-                MochiArt.tubePoint(ex, ey, ez, (0.2 - 0.07 * t) * (0.6 + 0.4 * grow));
-            }
-            MochiArt.tube(sink, 8, MochiArt.MOCHI, 0.0, 0.0);
-            // the foot: a flattened blob at its end, squashed as it lands (a rounded tip while it is still growing out)
-            double foot = smooth((reach - 0.75) / 0.25);
-            double squash = lift < 0.05 ? 0.6 : 1.0;
-            double fr = 0.14 + 0.2 * foot;
-            MochiArt.blob(sink, ex, ey, ez, wx, 0, wz, 0, 1, 0, fr, fr * (0.65 * squash + 0.35 * (1.0 - foot)), fr * 0.82, 0.7, 0.0, age, seed + k,
-                MochiArt.MOCHI, 1.0);
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------------ Kaku Mochi
-
-    /**
-     * Kaku Mochi (X): two square fists of mochi (black with Armament) on arms raised from the shoulders (x, y, z) high over, then slammed
-     * down on (tx, ty, tz) at {@link #KAKU_SLAM}; {@code age} ticks in. The arms' way across the body: (wx, wz) flat (unit) the look.
-     */
-    public static void kaku(FireMesh.Sink sink, double x, double y, double z, double tx, double ty, double tz, double wx, double wz, double age,
-                            boolean coat, int seed) {
-        if (age < 0 || age > KAKU_LIFE) {
-            return;
-        }
-        double px = -wz;
-        double pz = wx;
-        double rise = ease(age / (KAKU_SLAM * 0.6));
-        double slam = smooth((age - KAKU_SLAM * 0.6) / (KAKU_SLAM * 0.4));
-        double back = smooth((age - KAKU_LIFE + 6) / 6.0);
-        for (int k = -1; k <= 1; k += 2) {
-            double sx = x + px * 0.35 * k;
-            double sz = z + pz * 0.35 * k;
-            // raised: over and behind the head; slammed: down onto the target, a block either side of it
-            double hx = x + px * 1.4 * k - wx * 0.5;
-            double hy = y + 4.2 * rise;
-            double hz = z + pz * 1.4 * k - wz * 0.5;
-            double lx = tx + px * 0.9 * k;
-            double ly = ty + 0.75;
-            double lz = tz + pz * 0.9 * k;
-            double fx = hx + (lx - hx) * slam;
-            double fy = hy + (ly - hy) * slam;
-            double fz = hz + (lz - hz) * slam;
-            fx += (sx - fx) * back;
-            fy += (y - fy) * back;
-            fz += (sz - fz) * back;
-            if (back > 0.97) {
-                continue; // 3.6.3: drawn all the way back into the shoulder: the arm is the arm again
-            }
-            MochiArt.tubeBegin();
-            for (int j = 0; j <= 8; j++) {
-                double t = j / 8.0;
-                double arc = Math.sin(Math.PI * t) * 1.2 * (1.0 - back);
-                MochiArt.tubePoint(sx + (fx - sx) * t, y + (fy - y) * t + arc, sz + (fz - sz) * t, 0.2 * (1.0 - 0.4 * back));
-            }
-            MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
-            // the square block: flat-edged, squashed a little as it lands; 3.6.3: pulled back in it shrinks into the arm's end
-            double s = 0.75 * (1.0 - back) + 0.2 * back;
-            double squash = age > KAKU_SLAM && age < KAKU_SLAM + 3 ? 0.8 : 1.0;
-            MochiArt.blob(sink, fx, fy, fz, wx, 0, wz, 0, 1, 0, s, s * squash, s, 0.28, 0.0, age, seed + k, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
         }
     }
 
@@ -636,8 +452,6 @@ public final class MochiDraw {
     public static final double DONUT_THICK = 0.28;
     /** 3.6.3: how lumpy a donut is (a share of its tube). */
     public static final double DONUT_LUMP = 0.34;
-    /** 3.6.3: the awakened Muso Donuts' outer radius. */
-    public static final double MUSO = 1.3;
 
     /** 3.6.3: soft dough's ease: up past its size a little and settling back (0 to 1). */
     public static double springy(double t) {
@@ -1273,7 +1087,8 @@ public final class MochiDraw {
         double px = -az;
         double pz = ax;
         // ---- the comet up out of the hand (frames 17 to 21), curling into a swirl at the top, balling up (24 to 28)
-        if (age < CHESTNUT_FORM - 2.0) {
+        // (not on its very first frame: its points all at the hand, a tube with no length)
+        if (age < CHESTNUT_FORM - 2.0 && age > 0.2) {
             double fly = ease(age / 5.0);
             double wind = clamp((age - 3.0) / 7.0);
             MochiArt.tubeBegin();
@@ -1647,8 +1462,11 @@ public final class MochiDraw {
     /** 3.6.3 (the owner: "the arm increases to insane ammounts and then slams into the ground"): raised overhead, then slammed this far. */
     public static final double BUZZ_REACH_UP = 16.0;
     public static final double BUZZ_REACH_SLAM = 13.0;
-    /** How long a chunk torn up behind the wheel lies (ticks). */
-    public static final double BUZZ_TILES = 70.0;
+    /** How long a slab torn up behind the wheel lies (ticks), and how far apart they are torn along its way (blocks). */
+    public static final double BUZZ_TILES = 100.0;
+    public static final double BUZZ_TILE_GAP = 0.6;
+    /** The most points of the wheel's way kept (its longest roll at its top speed, a slab pair each). */
+    public static final int BUZZ_PATH_MOST = 112;
 
     /** The mace arm's swing round the user, radians from the way they faced when they caught (counter-clockwise seen from above). */
     public static double buzzTurn(double t) {
@@ -1790,8 +1608,8 @@ public final class MochiDraw {
      * into out (the way it bows x, y, z (unit), how far in blocks).
      */
     public static double[] buzzBend(double t, double yaw0, double[] out) {
-        double[] now = buzzArm(t, 0, 0, 0, yaw0, new double[8]);
-        double[] before = buzzArm(Math.max(0.0, t - 1.5), 0, 0, 0, yaw0, new double[8]);
+        double[] now = buzzArm(t, 0, 0, 0, yaw0, BEND_NOW);
+        double[] before = buzzArm(Math.max(0.0, t - 1.5), 0, 0, 0, yaw0, BEND_BEFORE);
         double x = before[3] - now[3];
         double y = before[4] - now[4];
         double z = before[5] - now[5];
@@ -1809,6 +1627,75 @@ public final class MochiDraw {
         out[3] = Math.min(3.0, l * now[6] * 0.9) + 0.04 * now[6];
         return out;
     }
+
+    /**
+     * 3.6.3: Buzz Cut Mochi's cutscene camera {@code t} ticks after the catch, for a user who caught at (fx, fy, fz) facing {@code yaw0}
+     * (the game's yaw): into out (the camera x, y, z, the point it looks at x, y, z). Cuts between shots as the reference does: low at
+     * the user's left as the arm swings round into the one caught; high over them looking down through the whirl (the reference's
+     * frames 100 to 140); low in front looking up the arm to the raised ball (the show's frames 120 to 140); far off to the side for
+     * the slam, clear of the rubble it heaves up; pulled back high over the crater after.
+     */
+    public static double[] buzzCamera(double t, double fx, double fy, double fz, double yaw0, double[] out) {
+        double r = Math.toRadians(yaw0);
+        double wx = -Math.sin(r);
+        double wz = Math.cos(r);
+        // the user's left: (cos, sin) of the game's yaw
+        double lx = Math.cos(r);
+        double lz = Math.sin(r);
+        double cx;
+        double cy;
+        double cz;
+        double ax;
+        double ay;
+        double az;
+        if (t < BUZZ_HIT + 3) {
+            cx = fx + lx * 6.5 + wx * 2.5;
+            cy = fy + 2.4;
+            cz = fz + lz * 6.5 + wz * 2.5;
+            ax = fx + wx * 1.5;
+            ay = fy + 1.4;
+            az = fz + wz * 1.5;
+        } else if (t < BUZZ_WHIRL) {
+            cx = fx - wx * 4.0;
+            cy = fy + 17.0;
+            cz = fz - wz * 4.0;
+            ax = fx;
+            ay = fy + 1.0;
+            az = fz;
+        } else if (t < BUZZ_DOWN) {
+            cx = fx + wx * 9.0 + lx * 6.0;
+            cy = fy + 1.0;
+            cz = fz + wz * 9.0 + lz * 6.0;
+            ax = fx;
+            ay = fy + 7.5;
+            az = fz;
+        } else if (t < BUZZ_SLAM + 14) {
+            cx = fx + wx * 6.5 + lx * 13.0;
+            cy = fy + 3.0;
+            cz = fz + wz * 6.5 + lz * 13.0;
+            ax = fx + wx * 8.5;
+            ay = fy + 2.0;
+            az = fz + wz * 8.5;
+        } else {
+            cx = fx - wx * 5.0 + lx * 5.0;
+            cy = fy + 8.0;
+            cz = fz - wz * 5.0 + lz * 5.0;
+            ax = fx + wx * BUZZ_REACH_SLAM;
+            ay = fy;
+            az = fz + wz * BUZZ_REACH_SLAM;
+        }
+        out[0] = cx;
+        out[1] = cy;
+        out[2] = cz;
+        out[3] = ax;
+        out[4] = ay;
+        out[5] = az;
+        return out;
+    }
+
+    /** buzzBend's scratch (the render thread only). */
+    private static final double[] BEND_NOW = new double[8];
+    private static final double[] BEND_BEFORE = new double[8];
 
     /**
      * The wheel the user has become, its middle at (x, y, z) rolling along (wx, wz) (flat, unit), {@code rolled} blocks so far at
@@ -1847,6 +1734,30 @@ public final class MochiDraw {
             double side = (FireMesh.rand(seed + (int) age, k + 9) - 0.5) * r * 1.4;
             FireMesh.streak(sink, x - wx * r * 0.5 + ax * side, y + h, z - wz * r * 0.5 + az * side, -wx, 0, -wz, 1.2 + 1.8 * speed, 0.025, 0x141414,
                 0.6 * speed);
+        }
+        // white droplets of dough flung off its rim backward and up, again and again (frames 55 to 70: white ovals flying off it), and long
+        // white slashes of wind past it
+        for (int k = 0; k < 5; k++) {
+            double clockK = age + k * 2.3;
+            double ph = (clockK % 6.0) / 6.0;
+            int s = seed + 7 * (int) (clockK / 6.0) + 31 * k;
+            double up = 0.5 + 0.9 * FireMesh.rand(s, 1);
+            double side = (FireMesh.rand(s, 2) - 0.5) * 1.8;
+            double back = 0.8 + 1.8 * FireMesh.rand(s, 3);
+            double vx = -wx * back + ax * side;
+            double vy = up;
+            double vz = -wz * back + az * side;
+            double px = x - wx * r * 0.4 + vx * ph * 2.2;
+            double py = y + r * 0.6 + vy * ph * 2.2 - 2.4 * ph * ph;
+            double pz = z - wz * r * 0.4 + vz * ph * 2.2;
+            MochiArt.ball(sink, px, py, pz, (0.1 + 0.07 * FireMesh.rand(s, 4)) * (1.0 - 0.5 * ph) * speed * form, vx, vy - 4.8 * ph, vz, 1.9, 0.0, age,
+                s, MochiArt.MOCHI);
+        }
+        for (int k = 0; k < 3; k++) {
+            double h = (FireMesh.rand(seed + (int) age, k + 20) - 0.2) * r * 1.4;
+            double side = (FireMesh.rand(seed + (int) age, k + 29) - 0.5) * r * 2.4;
+            FireMesh.streak(sink, x + wx * r * 0.3 + ax * side, y + h, z + wz * r * 0.3 + az * side, -wx, 0.15, -wz, 2.2 + 1.6 * speed, 0.05, 0xFFFFFF,
+                0.75 * speed * form);
         }
         // white smoke puffed behind it
         for (int k = 0; k < 3; k++) {
@@ -1895,10 +1806,14 @@ public final class MochiDraw {
         }
     }
 
+    /** The torn slabs' colours (sampled from the reference's frames 55 to 70: a pale khaki, lit and shaded). */
+    static final int[] SLAB = {0xC9C79F, 0xB9B98C, 0xD3CFA6, 0xAFAE84};
+
     /**
-     * The ground torn up behind the wheel (frames 20 to 95): at each point of its way (x, y, z triples in {@code path}, {@code count}
-     * of them, about a block apart, the ground there), a chunk of the ground either side flipped up as it passes and settling back,
-     * {@code ages} ticks since the wheel passed each.
+     * The ground torn up behind the wheel (frames 20 to 140): at each point of its way (x, y, z triples in {@code path}, {@code count}
+     * of them, {@link #BUZZ_TILE_GAP} apart, the ground there), a square slab of the ground either side flipped up as it passes and
+     * dropped back tipped at its own angle: the reference's long winding DOUBLE ROW of pale khaki tiles lying close together, side by
+     * side, for seconds; {@code ages} ticks since the wheel passed each.
      */
     public static void buzzTiles(FireMesh.Sink sink, double[] path, double[] ages, int count, int seed) {
         for (int i = 0; i < count; i++) {
@@ -1911,28 +1826,41 @@ public final class MochiDraw {
             double dx = path[b * 3] - path[a * 3];
             double dz = path[b * 3 + 2] - path[a * 3 + 2];
             double dl = Math.max(1.0E-6, Math.hypot(dx, dz));
-            double sx = -dz / dl;
-            double sz = dx / dl;
-            double alpha = Math.min(1.0, (BUZZ_TILES - age) / 12.0);
+            double ux = dx / dl;
+            double uz = dz / dl;
+            double sx = -uz;
+            double sz = ux;
+            // sinking back into the ground at the end rather than fading out
+            double sink0 = smooth((age - BUZZ_TILES + 18.0) / 18.0);
             for (int side = -1; side <= 1; side += 2) {
-                double lift = age < 3.0 ? Math.sin(Math.PI * 0.5 * age / 3.0) * 0.55 : 0.55 * Math.max(0.0, 1.0 - (age - 3.0) / 20.0) + 0.08;
-                double off = 0.75 + 0.2 * FireMesh.rand(seed, i * 2 + side + 5);
-                // the reference's torn floor: flat planks flipped up on their outer edge, tipped back as they settle
-                double tip = (age < 3.0 ? 1.1 * age / 3.0 : 1.1 * Math.max(0.25, 1.0 - (age - 3.0) / 25.0)) + 0.2 * FireMesh.rand(seed, i + 40);
-                double ct = Math.cos(tip);
-                double st = Math.sin(tip);
-                // its length along the way, its face turned up and tipped outward
-                double ux = dx / dl;
-                double uz = dz / dl;
-                double nx = sx * side * st;
-                double ny = ct;
-                double nz = sz * side * st;
-                double turn = (FireMesh.rand(seed, i * 2 + side + 90) - 0.5) * 1.2;
+                int key = i * 2 + (side + 1) / 2;
+                double r1 = FireMesh.rand(seed, key + 5);
+                double r2 = FireMesh.rand(seed, key + 40);
+                double r3 = FireMesh.rand(seed, key + 90);
+                double size = 0.22 + 0.08 * r1;
+                // thrown up out of the ground as the wheel passes, falling back by 6 ticks
+                double hop = age < 6.0 ? Math.sin(Math.PI * age / 6.0) * (0.35 + 0.3 * r2) : 0.0;
+                double off = 0.62 + 0.22 * r2;
+                // tipped up on its outer edge (some almost upright), turned a little about the up; tumbling while in the air
+                double tip = age < 6.0 ? (0.4 + 0.9 * r3) * Math.min(1.0, age / 2.0) + 0.6 * Math.sin(age * 1.3) * (1.0 - age / 6.0)
+                    : 0.4 + 0.9 * r3;
+                double turn = (r1 - 0.5) * 1.4;
                 double tx = ux * Math.cos(turn) + sx * Math.sin(turn);
                 double tz = uz * Math.cos(turn) + sz * Math.sin(turn);
-                double fix = tx * nx + tz * nz;
-                plank(sink, path[i * 3] + sx * side * off, path[i * 3 + 1] + lift * 0.6 + 0.05, path[i * 3 + 2] + sz * side * off, tx - nx * fix,
-                    -ny * fix, tz - nz * fix, nx, ny, nz, 0.3, 0.27, 0.07, 0xB49A6E, alpha);
+                // across the slab, level: (-tz, tx) toward the outside
+                double ox = -tz * side;
+                double oz = tx * side;
+                double ct = Math.cos(tip);
+                double st = Math.sin(tip);
+                double nx = ox * st;
+                double ny = ct;
+                double nz = oz * st;
+                // resting on its lower edge: its middle as high as half its tipped width, plus the hop, less what has sunk
+                double rest = size * st + 0.06 * ct;
+                double y = path[i * 3 + 1] + rest + hop - sink0 * (rest + 0.2);
+                int rgb = SLAB[(int) (r3 * SLAB.length) % SLAB.length];
+                plank(sink, path[i * 3] + sx * side * off, y, path[i * 3 + 2] + sz * side * off, tx, 0, tz, nx, ny, nz, size, size, 0.06, rgb,
+                    1.0);
             }
         }
     }
@@ -2016,11 +1944,12 @@ public final class MochiDraw {
             MochiArt.cone(sink, cx - dx * ball * 1.2, cy - dy * ball * 1.2, cz - dz * ball * 1.2, px + dx * ball * 0.4, py + dy * ball * 0.4,
                 pz + dz * ball * 0.4, ball * 0.22 * swell, MochiArt.MOCHI);
         }
-        // the ball: glossy Haki black lit crimson, spikes all round it
-        MochiArt.ball(sink, cx, cy, cz, ball, dx, dy, dz, 1.0, 0.04, age, seed, MochiArt.HAKI_CRIMSON);
+        // the ball: glossy Haki black lit crimson, spikes all round it (shrinking away into the arm as it contracts back)
         if (swell < 0.1) {
             return;
         }
+        ball *= smooth((swell - 0.1) / 0.4);
+        MochiArt.ball(sink, cx, cy, cz, ball, dx, dy, dz, 1.0, 0.04, age, seed, MochiArt.HAKI_CRIMSON);
         for (int k = 0; k < SPIKES.length / 3; k++) {
             double ox = SPIKES[k * 3];
             double oy = SPIKES[k * 3 + 1];
@@ -2049,14 +1978,75 @@ public final class MochiDraw {
         if (alpha < 0.02) {
             return;
         }
-        for (int k = 0; k < 5; k++) {
-            double r = 0.8 + (reach + 1.2) * (k + 1) / 5.0;
-            arc(sink, x, y + 0.12 + 0.05 * k, z, 0, -1, 0, 1, 0, 0, r, turn - 3.6 - 0.4 * k, 3.6, 0.22 + 0.04 * k, 0xFFFFFF, 0.6 * alpha);
+        // the reference's frames 125 to 140: a whole disc of soft white swirl streaks on the ground, as wide as the arm reaches and more,
+        // spiralling in toward the user and whirling with the arm (each streak trails behind its bright head), densest in a ring round
+        // the middle, a bright white core round the user's feet
+        double outer = reach + 1.8;
+        for (int k = 0; k < BUZZ_SWIRLS; k++) {
+            double r1 = FireMesh.rand(BUZZ_SWIRLS, k);
+            double r2 = FireMesh.rand(BUZZ_SWIRLS, k + 40);
+            double r3 = FireMesh.rand(BUZZ_SWIRLS, k + 80);
+            double rad = 0.9 + (outer - 0.9) * Math.sqrt((k + r1) / BUZZ_SWIRLS);
+            // the inner ones run faster round (they are whirled by the same arm, closer in)
+            double head = turn * (1.0 + 0.6 * (1.0 - rad / outer)) - 2 * Math.PI * r2;
+            double sweep = 1.3 + 2.2 * r3;
+            double ring = Math.exp(-Math.pow((rad - outer * 0.55) / (outer * 0.4), 2.0));
+            spiral(sink, x, y + 0.06 + 0.004 * k, z, rad * 1.18, rad, head - sweep, sweep, 0.14 + 0.45 * r1 * (rad / outer), 0xFFFFFF,
+                (0.3 + 0.45 * ring) * alpha);
         }
-        // the thick trail of the mace's end, at its height
-        arc(sink, x, y + 1.3, z, 0, -1, 0, 1, 0, 0, reach + 0.6, turn - 2.4, 2.4, 1.3, 0xFFFFFF, 0.55 * alpha);
-        arc(sink, x, y + 1.3, z, 0, -1, 0, 1, 0, 0, reach + 0.6, turn - 1.2, 1.2, 0.5, 0xFFFFFF, 0.7 * alpha);
+        // the bright core: tight fast rings round the feet
+        for (int k = 0; k < 3; k++) {
+            spiral(sink, x, y + 0.2 + 0.03 * k, z, 1.1 + 0.25 * k, 0.6 + 0.25 * k, turn * 1.8 - 2.6 - 2.1 * k, 2.6, 0.32, 0xFFFFFF, 0.75 * alpha);
+        }
+        MochiArt.glow(sink, x, y + 0.3, z, 1.9, 0xFFFFFF, 0.6 * alpha);
+        // the thick curved trail of the mace's end, at its height (the owner: "thick curved motion trails")
+        spiral(sink, x, y + 1.6, z, reach + 0.4, reach + 0.4, turn - 2.4, 2.4, 1.6, 0xFFFFFF, 0.45 * alpha);
+        spiral(sink, x, y + 1.6, z, reach + 0.4, reach + 0.4, turn - 1.2, 1.2, 0.7, 0xFFFFFF, 0.65 * alpha);
     }
+
+    /** The whirl's swirl streaks on the ground. */
+    static final int BUZZ_SWIRLS = 40;
+
+    /**
+     * A flat streak of light on the level round (cx, cy, cz): from {@code from} radians (x toward z) on for {@code sweep}, its radius
+     * going from {@code r0} at its tail to {@code r1} at its head, {@code width} wide (thinning at both ends), clear at its tail,
+     * brightest just behind its head.
+     */
+    static void spiral(FireMesh.Sink sink, double cx, double cy, double cz, double r0, double r1, double from, double sweep, double width, int rgb,
+                       double alpha) {
+        if (alpha < 0.01 || sweep <= 0.0) {
+            return;
+        }
+        int n = Math.max(4, Math.min(20, (int) (sweep * 6.0)));
+        double[] q = SPIRAL_Q;
+        int[] c = SPIRAL_C;
+        for (int k = 0; k < n; k++) {
+            for (int e = 0; e < 2; e++) {
+                double f = (k + e) / (double) n;
+                double a = from + sweep * f;
+                double r = r0 + (r1 - r0) * f;
+                double w = width * 0.5 * Math.sin(Math.PI * Math.min(1.0, f * 0.85 + 0.08));
+                double ca = Math.cos(a);
+                double sa = Math.sin(a);
+                int i0 = e == 0 ? 0 : 3;
+                int i1 = e == 0 ? 1 : 2;
+                q[i0 * 3] = cx + ca * (r - w);
+                q[i0 * 3 + 1] = cy;
+                q[i0 * 3 + 2] = cz + sa * (r - w);
+                q[i1 * 3] = cx + ca * (r + w);
+                q[i1 * 3 + 1] = cy;
+                q[i1 * 3 + 2] = cz + sa * (r + w);
+                double strength = f < 0.8 ? f / 0.8 : 1.0 - (f - 0.8) / 0.2 * 0.6;
+                int col = FireMesh.argb(alpha * strength, rgb);
+                c[i0] = col;
+                c[i1] = col;
+            }
+            sink.quad(q, c);
+        }
+    }
+
+    static final double[] SPIRAL_Q = new double[12];
+    static final int[] SPIRAL_C = new int[4];
 
     /**
      * The slam's ground (frames 166 to 195; the owner: "an expanding circular shockwave, violent crimson Haki lightning, massive ground
@@ -2073,18 +2063,18 @@ public final class MochiDraw {
         double stay = 1.0 - smooth((age - BUZZ_CRATER_LIFE + 25.0) / 25.0);
         double spread = ease(age / 4.0);
         // the black star: splats radiating, and cracks running out of it
-        MochiArt.blob(sink, x, y + 0.03, z, 1, 0, 0, 0, 1, 0, 2.3 * spread + 0.05, 0.03, 2.1 * spread + 0.05, 0.8, 0.45, 0, seed, MochiArt.HAKI_CRIMSON,
+        MochiArt.blob(sink, x, y + 0.03, z, 1, 0, 0, 0, 1, 0, 2.3 * spread + 0.05, 0.03, 2.1 * spread + 0.05, 0.8, 0.45, 0, seed, MochiArt.INK,
             stay);
         // its long thin splattered rays (the reference's frame 190: a black star twice the user's height across and more)
         for (int k = 0; k < 16; k++) {
             double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k)) / 16.0;
             double len = (2.2 + 3.2 * FireMesh.rand(seed, k + 10)) * spread + 0.05;
             MochiArt.blob(sink, x + Math.cos(a) * len * 0.6, y + 0.025, z + Math.sin(a) * len * 0.6, Math.cos(a), 0, Math.sin(a), 0, 1, 0, len * 0.55,
-                0.02, 0.14 + 0.12 * FireMesh.rand(seed, k + 20), 0.9, 0.25, 0, seed + k, MochiArt.HAKI_CRIMSON, stay);
+                0.02, 0.14 + 0.12 * FireMesh.rand(seed, k + 20), 0.9, 0.25, 0, seed + k, MochiArt.INK, stay);
             if (k % 2 == 0) {
                 double d = len * (1.15 + 0.2 * FireMesh.rand(seed, k + 30));
                 MochiArt.blob(sink, x + Math.cos(a) * d, y + 0.025, z + Math.sin(a) * d, 1, 0, 0, 0, 1, 0, 0.18, 0.02, 0.16, 0.8, 0.4, 0, seed + 40 + k,
-                    MochiArt.HAKI_CRIMSON, stay);
+                    MochiArt.INK, stay);
             }
         }
         double crack = ease(age / 6.0) * stay;
@@ -2097,17 +2087,32 @@ public final class MochiDraw {
             FireMesh.streak(sink, px + Math.cos(a + bend) * len, y + 0.04, pz + Math.sin(a + bend) * len, -Math.cos(a + bend), 0, -Math.sin(a + bend), len,
                 0.07, 0x0B0A0E, 0.9 * stay);
         }
-        // red sparks and streaks of Haki out of the blow (frames 170 to 178)
-        if (age < 10.0) {
-            double f = age / 10.0;
-            for (int k = 0; k < 10; k++) {
+        // red streaks of Haki sprayed up out of the blow (frames 165 to 182: a fan of thin crimson spikes, a few white), and red specks
+        // spattered over the black that fade (frames 175 to 190)
+        if (age < 16.0) {
+            double f = age / 16.0;
+            for (int k = 0; k < 32; k++) {
                 double a = 2 * Math.PI * FireMesh.rand(seed, k + 70);
-                double up = 0.2 + 1.2 * FireMesh.rand(seed, k + 80);
+                double up = 0.6 + 2.6 * FireMesh.rand(seed, k + 80);
                 double ul = Math.sqrt(1.0 + up * up);
-                FireMesh.ray(sink, x, y + 0.5, z, Math.cos(a) / ul, up / ul, Math.sin(a) / ul, 0.6 + 2.6 * ease(f), 0.06, 0, 0.0, k % 3 == 0 ? 0xFFFFFF : 0xE0101E,
-                    0.9 * (1.0 - f));
+                double len = (2.0 + 4.5 * FireMesh.rand(seed, k + 90)) * ease(Math.min(1.0, f * 3.0));
+                // out of the rim of the giant ball lying in it
+                double rim = BUZZ_BALL * (1.0 + 0.15 * FireMesh.rand(seed, k + 99));
+                double h = 0.2 + 1.6 * FireMesh.rand(seed, k + 98);
+                FireMesh.ray(sink, x + Math.cos(a) * rim, y + h, z + Math.sin(a) * rim, Math.cos(a) / ul, up / ul, Math.sin(a) / ul, len, 0.14 + 0.12 * FireMesh.rand(seed, k + 95), 0, 0.0,
+                    k % 5 == 0 ? 0xFFFFFF : k % 2 == 0 ? 0xE0101E : 0xB00818, 1.0 - f * f);
             }
-            FireMesh.ring(sink, x, y + 0.2, z, 0, 1, 0, 1.0 + 7.0 * ease(f), 0.3, 0.15, 0xFFFFFF, 0.7 * (1.0 - f));
+            FireMesh.ring(sink, x, y + 0.2, z, 0, 1, 0, 1.0 + 8.0 * ease(f), 0.35, 0.15, 0xFFFFFF, 0.75 * (1.0 - f));
+        }
+        if (age < 30.0) {
+            double f = 1.0 - age / 30.0;
+            for (int k = 0; k < 12; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 150);
+                double d = (0.6 + 3.2 * FireMesh.rand(seed, k + 160)) * spread;
+                MochiArt.blob(sink, x + Math.cos(a) * d, y + 0.05, z + Math.sin(a) * d, Math.cos(a), 0, Math.sin(a), 0, 1, 0,
+                    0.12 + 0.2 * FireMesh.rand(seed, k + 170), 0.02, 0.07 + 0.08 * FireMesh.rand(seed, k + 180), 0.9, 0.3, 0, seed + 150 + k,
+                    MochiArt.HAKI_CRIMSON, f);
+            }
         }
         // pale dust rolling out
         if (age < 40.0) {
@@ -2130,10 +2135,10 @@ public final class MochiDraw {
             com.hexhaki.piece.ironfist.IronArt.chunk(sink, x + t[0], y + 0.3 + t[1], z + t[2], 0.4 + 0.6 * FireMesh.rand(seed, k + 120), t[3], seed + k, fade);
         }
         double heave = ease(age / 3.0);
-        for (int k = 0; k < 30; k++) {
+        for (int k = 0; k < 40; k++) {
             double a = 2 * Math.PI * FireMesh.rand(seed, k + 700);
-            double d = 1.6 + 6.5 * Math.sqrt(FireMesh.rand(seed, k + 710));
-            double size = (0.35 + 0.5 * FireMesh.rand(seed, k + 720)) * (1.0 - 0.35 * d / 8.1);
+            double d = 2.0 + 7.5 * Math.sqrt(FireMesh.rand(seed, k + 710));
+            double size = (0.45 + 0.65 * FireMesh.rand(seed, k + 720)) * (1.0 - 0.35 * d / 9.5);
             double tilt = 0.4 + 0.8 * FireMesh.rand(seed, k + 730);
             double nx = Math.cos(a) * Math.sin(tilt);
             double nz = Math.sin(a) * Math.sin(tilt);
@@ -2141,100 +2146,14 @@ public final class MochiDraw {
             double ux = -Math.sin(a);
             double uz = Math.cos(a);
             plank(sink, x + Math.cos(a) * d, y + size * 0.6 * heave - 0.1, z + Math.sin(a) * d, ux, 0, uz, nx, ny, nz, size, size * 0.8, size * 0.45,
-                0x9C9A9E, fade);
+                RUBBLE[k % RUBBLE.length], fade);
         }
     }
 
-    // ------------------------------------------------------------------------------------------------------ Zan Giri Mochi
+    /** The rubble field's greys (the show's slam: grey blocks, lighter and darker). */
+    static final int[] RUBBLE = {0x9C9A9E, 0x8A888F, 0xA9A7AA, 0x7D7B83};
 
-    /**
-     * Zan Giri Mochi (V): the user become a giant wheel of mochi rolling along (wx, wz) (flat, unit), its middle (x, y, z) (on the
-     * ground: its bottom at y - {@code radius}), turned {@code spin} radians; its rim lumpy, speed lines behind it.
-     */
-    public static void wheel(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double radius, double spin, double age,
-                             int seed) {
-        double ax = -wz;
-        double az = wx;
-        // 3.6.3 (the owner: "the rolling donut the player turns into it should look like the donuts in the awakening v move, look at it 1
-        // of those"): one of the fruit's donuts standing on its rim, rolling (its lumps and its fist turned with it), no drips (flung off)
-        donut(sink, x, y, z, ax, 0, az, radius, -spin, 0, 0.0, 0, 0, 0, false, age, seed, false);
-        // speed: streaks of white behind it
-        for (int k = 0; k < 5; k++) {
-            double h = (k - 2) * radius * 0.35;
-            FireMesh.streak(sink, x - wx * radius * 1.1, y + h, z - wz * radius * 1.1, -wx, 0, -wz, radius * (1.6 + 0.4 * (k % 2)), 0.05, 0xFFFFFF,
-                0.55);
-        }
-        // 3.6.3 (the owner's reference: the rolling donut tears the ground up behind it): chunks of the ground it passed flipped up in two
-        // rows either side of its track, falling back behind it, and dust kicked up at its foot
-        double rolled = spin * radius;
-        double ground = y - radius;
-        for (int j = 0; j < WHEEL_CHUNKS; j++) {
-            double behind = (rolled % WHEEL_GAP + WHEEL_GAP) % WHEEL_GAP + j * WHEEL_GAP;
-            double t = behind / WHEEL_ROLL;
-            double h = 0.32 * t - 0.04 * t * t;
-            if (h <= 0.0 || behind > rolled) {
-                continue;
-            }
-            int spot = (int) Math.floor((rolled - behind) / WHEEL_GAP + 0.5);
-            for (int side = -1; side <= 1; side += 2) {
-                double off = side * radius * (0.45 + 0.25 * FireMesh.rand(seed + spot, side + 3)) + side * t * 0.05;
-                com.hexhaki.piece.ironfist.IronArt.chunk(sink, x - wx * behind + ax * off, ground + h, z - wz * behind + az * off,
-                    0.16 + 0.08 * FireMesh.rand(seed + spot, side + 7), t * 0.5 + spot, seed + spot * 2 + side, 1.0);
-            }
-        }
-        for (int k = 0; k < 3; k++) {
-            double d = radius * (0.5 + 0.7 * k);
-            FireMesh.shell(sink, x - wx * d, ground + 0.3 + 0.2 * k, z - wz * d, radius * (0.4 + 0.18 * k), 0xE9E5DE, 0.42 - 0.1 * k, 0.0);
-        }
-    }
-
-    /** 3.6.3: the ground torn up behind the wheel: how many spots back, a spot every so many blocks, the wheel's roll a tick (blocks). */
-    static final int WHEEL_CHUNKS = 8;
-    static final double WHEEL_GAP = 1.1;
-    static final double WHEEL_ROLL = 0.9;
-
-    /**
-     * Zan Giri Mochi's club: from the shoulder (x, y, z) an arm swung up overhead and down onto (tx, ty, tz) at {@link #CLUB_SLAM}, ending
-     * in a giant spiked ball (black with Armament); {@code age} ticks in.
-     */
-    public static void club(FireMesh.Sink sink, double x, double y, double z, double tx, double ty, double tz, double age, boolean coat, int seed) {
-        if (age < 0 || age > CLUB_LIFE) {
-            return;
-        }
-        double up = ease(age / (CLUB_SLAM * 0.55));
-        double down = smooth((age - CLUB_SLAM * 0.55) / (CLUB_SLAM * 0.45));
-        double back = smooth((age - CLUB_LIFE + 6) / 6.0);
-        double hx = x + (tx - x) * 0.15;
-        double hy = y + 6.0 * up;
-        double hz = z + (tz - z) * 0.15;
-        double bx = hx + (tx - hx) * down;
-        double by = hy + (ty + 1.3 - hy) * down;
-        double bz = hz + (tz - hz) * down;
-        bx += (x - bx) * back;
-        by += (y - by) * back;
-        bz += (z - bz) * back;
-        double r = 1.25 * (1.0 - back * 0.7);
-        MochiArt.tubeBegin();
-        for (int j = 0; j <= 8; j++) {
-            double t = j / 8.0;
-            MochiArt.tubePoint(x + (bx - x) * t, y + (by - y) * t + Math.sin(Math.PI * t) * 1.5 * (1.0 - back), z + (bz - z) * t, 0.26);
-        }
-        MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
-        spiked(sink, bx, by, bz, r, coat, age, seed);
-    }
-
-    /** A spiked ball at (x, y, z), {@code r} round: a ball and fourteen spikes all round it (black with Armament). */
-    public static void spiked(FireMesh.Sink sink, double x, double y, double z, double r, boolean coat, double age, int seed) {
-        int[] bands = coat ? MochiArt.HAKI : MochiArt.MOCHI;
-        MochiArt.ball(sink, x, y, z, r, 0, 1, 0, 1.0, 0.0, age, seed, bands);
-        for (int k = 0; k < SPIKES.length / 3; k++) {
-            double ox = SPIKES[k * 3];
-            double oy = SPIKES[k * 3 + 1];
-            double oz = SPIKES[k * 3 + 2];
-            MochiArt.cone(sink, x + ox * r * 0.85, y + oy * r * 0.85, z + oz * r * 0.85, x + ox * r * 1.55, y + oy * r * 1.55, z + oz * r * 1.55,
-                r * 0.24, bands);
-        }
-    }
+    // ------------------------------------------------------------------------------------------------------ spikes
 
     /** Fourteen ways round a ball (a cube's six faces and eight corners). */
     static final double[] SPIKES;
@@ -2245,95 +2164,7 @@ public final class MochiDraw {
             -c, c, -c, -c, -c, -c, -c};
     }
 
-    // ------------------------------------------------------------------------------------------------------ Mochi Anemone (the old ring round the user)
-
-    /** The Anemone's rings: how many, how far round the user, how high over the feet. */
-    public static final int ANEMONE_RINGS = 4;
-    /** 3.6.3: the Anemone's donuts, their outer radius (the awakened donuts' look, smaller). */
-    public static final double ANEMONE_DONUT = 1.0;
-    public static final double ANEMONE_OUT = 2.0;
-    public static final double ANEMONE_UP = 1.7;
-
-    /**
-     * Where the Anemone's ring {@code k} is round the user standing at (x, y, z), {@code age} ticks in (they float round slowly, bobbing):
-     * into out (x, y, z, then the way it faces out).
-     */
-    public static void ring(double x, double y, double z, int k, double age, double[] out) {
-        double a = 2 * Math.PI * k / ANEMONE_RINGS + age * 0.04;
-        double ox = Math.cos(a);
-        double oz = Math.sin(a);
-        out[0] = x + ox * ANEMONE_OUT;
-        out[1] = y + ANEMONE_UP + 0.25 * Math.sin(age * 0.15 + k * 1.7) + (k % 2) * 0.5;
-        out[2] = z + oz * ANEMONE_OUT;
-        out[3] = ox;
-        out[4] = 0.15;
-        out[5] = oz;
-    }
-
-    static final double[] R = new double[6];
-
-    /**
-     * Mochi Anemone (B) held: its rings round the user (x, y, z) floating, grown in over 6 ticks ({@code grow} 0 to 1, shrinking away
-     * again); {@code punches} (ring, target x, y, z, the punch's age: 5 a punch) the arms out of the rings punching (black fists with
-     * Armament).
-     */
-    public static void anemone(FireMesh.Sink sink, double x, double y, double z, double age, double grow, double[] punches, int count,
-                               boolean coat, int seed) {
-        if (grow < 0.02) {
-            return;
-        }
-        // 3.6.3 (the owner: "Mochi anemoni, the fists should fill the entire hole and adapt to the size of the donuts, just like the V move
-        // in the awakening"): each ring one of the fruit's donuts, its fist resting in its hole, punching out of it as wide as the hole
-        for (int k = 0; k < ANEMONE_RINGS; k++) {
-            ring(x, y, z, k, age, R);
-            double out = 0.0;
-            double fx = 0;
-            double fy = 0;
-            double fz = 0;
-            for (int p = 0; p < count; p++) {
-                double pa = punches[p * 5 + 4];
-                if ((int) punches[p * 5] != k || pa < 0 || pa > ANEMONE_PUNCH) {
-                    continue;
-                }
-                double o = pa < 2.5 ? ease(pa / 2.5) : 1.0 - smooth((pa - 3.5) / (ANEMONE_PUNCH - 3.5));
-                if (o > out) {
-                    out = o;
-                    fx = R[0] + (punches[p * 5 + 1] - R[0]) * o;
-                    fy = R[1] + (punches[p * 5 + 2] - R[1]) * o;
-                    fz = R[2] + (punches[p * 5 + 3] - R[2]) * o;
-                }
-            }
-            // a punch turns the donut to face where it goes
-            double ax = R[3];
-            double ay = R[4];
-            double az = R[5];
-            if (out > 0.02) {
-                double dx = fx - R[0];
-                double dy = fy - R[1];
-                double dz = fz - R[2];
-                double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
-                if (dl > 1.0E-3) {
-                    ax = dx / dl;
-                    ay = dy / dl;
-                    az = dz / dl;
-                }
-            }
-            donut(sink, R[0], R[1], R[2], ax, ay, az, ANEMONE_DONUT, grow, 0.0, 2, out > 0.02 ? out : 0.0, fx, fy, fz, coat, age, seed + k,
-                k % 2 == 1);
-        }
-    }
-
-    // ------------------------------------------------------------------------------------------------------ Sticky Mochi
-
-    /** A glob of sticky mochi flying at (x, y, z) along (wx, wy, wz), wobbling as it goes. */
-    public static void glob(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, int seed) {
-        double wob = 1.0 + 0.18 * Math.sin(age * 1.9);
-        MochiArt.ball(sink, x, y, z, 0.42, wx, wy, wz, 1.35 * wob, 0.18, age, seed, MochiArt.MOCHI);
-        // its tail: smaller drops stretched behind
-        for (int k = 1; k <= 2; k++) {
-            MochiArt.ball(sink, x - wx * 0.55 * k, y - wy * 0.55 * k, z - wz * 0.55 * k, 0.2 / k, wx, wy, wz, 1.5, 0.0, age, seed + k, MochiArt.MOCHI);
-        }
-    }
+    // ------------------------------------------------------------------------------------------------------ a body stuck in mochi
 
     /**
      * A body stuck in mochi: a mass of it round the feet (x, y, z) up to the knees and over the hips ({@code height} the body's), its
@@ -2348,319 +2179,6 @@ public final class MochiDraw {
             MochiArt.MOCHI, 1.0);
         MochiArt.blob(sink, x, y + h * 0.85, z, 1, 0, 0, 0, 1, 0, 0.5 * fade + 0.05, h * 0.35, 0.5 * fade + 0.05, 0.9, 0.15, age, seed + 1,
             MochiArt.MOCHI, 1.0);
-    }
-
-    /** A patch of sticky mochi on the ground at (x, y, z), {@code radius} across, its edge lumpy; {@code fade} 0 to 1. */
-    public static void patch(FireMesh.Sink sink, double x, double y, double z, double radius, double fade, double age, int seed) {
-        if (fade < 0.02) {
-            return;
-        }
-        MochiArt.blob(sink, x, y + 0.08, z, 1, 0, 0, 0, 1, 0, radius * fade, 0.18 * fade, radius * fade, 0.85, 0.2, age, seed, MochiArt.MOCHI, 1.0);
-    }
-
-    // ------------------------------------------------------------------------------------------------------ the dodge
-
-    /**
-     * Pseudo-Intangibility: a hole opening in the mochi body where a blow passes, at (x, y, z) facing (wx, wy, wz): a ring of mochi
-     * swelling open and closing back by {@link #HOLE_LIFE}.
-     */
-    public static void hole(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age) {
-        if (age < 0 || age > HOLE_LIFE) {
-            return;
-        }
-        double open = age < 3 ? ease(age / 3.0) : 1.0 - smooth((age - 4) / (HOLE_LIFE - 4));
-        if (open < 0.02) {
-            return;
-        }
-        double big = 0.12 + 0.3 * open;
-        MochiArt.torus(sink, x, y, z, wx, wy, wz, big, 0.09 + 0.05 * open, 1.0, MochiArt.MOCHI);
-        // its inside: a shadowed lip a little in and behind (the hole goes in)
-        MochiArt.torus(sink, x - wx * 0.08, y - wy * 0.08, z - wz * 0.08, wx, wy, wz, big * 0.82, 0.06 + 0.03 * open, 1.0, HOLE_IN);
-    }
-
-    /** A hole's shadowed inside. */
-    static final int[] HOLE_IN = {0xCFC3D0, 0xB7A5B4, 0x9C8AA0, 0x857491, 0x6C5C7A};
-
-    // ------------------------------------------------------------------------------------------------------ the Awakening
-
-    /** The mochi ground: its lumps sit on a grid of the world this far apart (so they stay put as the user walks), at most this many. */
-    public static final double GROUND_STEP = 2.6;
-    public static final int GROUND_MOST = 64;
-
-    /**
-     * The Awakening's mochi ground: the lumps round (cx, cz) (world) within {@code radius}, each on its cell of a grid of the world
-     * {@link #GROUND_STEP} apart (nudged a little inside its cell by its own numbers), into {@code out} (x, z, size, seed each: world x
-     * and z, its size shrinking toward the field's edge); how many. The client gives each its ground's height; every lump is a fixed place,
-     * so walking through the field the ground stays and the field spreads under the feet.
-     */
-    public static int groundLumps(double cx, double cz, double radius, double[] out) {
-        int n = 0;
-        int r = (int) Math.ceil(radius / GROUND_STEP) + 1;
-        int ix = (int) Math.floor(cx / GROUND_STEP);
-        int iz = (int) Math.floor(cz / GROUND_STEP);
-        for (int i = ix - r; i <= ix + r && n < GROUND_MOST; i++) {
-            for (int j = iz - r; j <= iz + r && n < GROUND_MOST; j++) {
-                int seed = i * 73856093 ^ j * 19349663;
-                double x = (i + 0.2 + 0.6 * FireMesh.rand(seed, 1)) * GROUND_STEP;
-                double z = (j + 0.2 + 0.6 * FireMesh.rand(seed, 2)) * GROUND_STEP;
-                double d = Math.hypot(x - cx, z - cz);
-                if (d > radius) {
-                    continue;
-                }
-                double edge = Math.min(1.0, (radius - d) / 2.5);
-                out[n * 4] = x;
-                out[n * 4 + 1] = z;
-                out[n * 4 + 2] = (0.75 + 0.35 * FireMesh.rand(seed, 3)) * edge;
-                out[n * 4 + 3] = seed;
-                n++;
-            }
-        }
-        return n;
-    }
-
-    /**
-     * The Awakening's mochi ground: {@code count} lumps from {@link #groundLumps} at (x, y, z) from the eye (5 each: x, y the ground's
-     * height there, z, size, seed), {@code grow} 0 to 1 how much is there: wide flat swells of mochi, overlapping into one bubbly floor of
-     * it, heaving slowly. Drawn coarse (many of them).
-     */
-    public static void ground(FireMesh.Sink sink, double[] lumps, int count, double grow, double age) {
-        if (grow < 0.02) {
-            return;
-        }
-        MochiArt.low = true;
-        for (int k = 0; k < count; k++) {
-            double size = lumps[k * 5 + 3] * grow;
-            if (size < 0.05) {
-                continue;
-            }
-            int seed = (int) lumps[k * 5 + 4];
-            double heave = 0.85 + 0.15 * Math.sin(age * 0.07 + (seed & 255) * 0.1);
-            double a = FireMesh.rand(seed, 4) * Math.PI;
-            MochiArt.blob(sink, lumps[k * 5], lumps[k * 5 + 1], lumps[k * 5 + 2], Math.cos(a), 0, Math.sin(a), 0, 1, 0, size * 1.95, size * 0.6 * heave,
-                size * 1.65, 0.95, 0.1, age, seed, MochiArt.MOCHI, 1.0);
-        }
-        MochiArt.low = false;
-    }
-
-    /** Nagare Mochi's wave: its profile (back to front: how far behind the crest, how high a share of the wave), the curl at its lip. */
-    static final double[] WAVE_BACK = {-4.6, -3.3, -2.2, -1.3, -0.6, 0.0, 0.6, 1.1, 1.4, 1.35, 1.0, 0.6};
-    static final double[] WAVE_UP = {0.0, 0.2, 0.45, 0.7, 0.9, 1.0, 1.05, 0.98, 0.8, 0.6, 0.46, 0.42};
-
-    /**
-     * Nagare Mochi (awakened Z): a wave of mochi rolling over the ground (y) from (x, z) along (wx, wz) (flat, unit), its crest
-     * {@code travelled} out, {@code width} across, {@code height} high: a sheet rising from the ground behind to its crest and curling
-     * over at its front, its lip a round roll, lumps of mochi tumbling on it; lower at its two ends.
-     */
-    public static void wave(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double travelled, double width, double height,
-                            double age, int seed) {
-        double px = -wz;
-        double pz = wx;
-        double cx = x + wx * travelled;
-        double cz = z + wz * travelled;
-        int cols = 12;
-        int rows = WAVE_BACK.length - 1;
-        for (int i = 0; i <= cols; i++) {
-            double t = i / (double) cols * 2.0 - 1.0;
-            double edge = Math.sqrt(Math.max(0.0, 1.0 - t * t * t * t));
-            double h = height * (0.15 + 0.85 * edge) * (1.0 + 0.06 * Math.sin(age * 0.35 + i * 0.9));
-            for (int j = 0; j <= rows; j++) {
-                double b = WAVE_BACK[j] * (0.6 + 0.4 * edge) * height / 3.0;
-                double px2 = cx + wx * b + px * width * 0.5 * t;
-                double py2 = y + h * WAVE_UP[j];
-                double pz2 = cz + wz * b + pz * width * 0.5 * t;
-                int v = j * (cols + 1) + i;
-                MochiArt.GRID[v * 3] = px2;
-                MochiArt.GRID[v * 3 + 1] = py2;
-                MochiArt.GRID[v * 3 + 2] = pz2;
-            }
-        }
-        // each point shaded by the sheet's slope there (its normal from its neighbours)
-        for (int j = 0; j <= rows; j++) {
-            for (int i = 0; i <= cols; i++) {
-                int v = j * (cols + 1) + i;
-                int a = j * (cols + 1) + Math.max(0, i - 1);
-                int b = j * (cols + 1) + Math.min(cols, i + 1);
-                int c = Math.max(0, j - 1) * (cols + 1) + i;
-                int d = Math.min(rows, j + 1) * (cols + 1) + i;
-                double ux = MochiArt.GRID[b * 3] - MochiArt.GRID[a * 3];
-                double uy = MochiArt.GRID[b * 3 + 1] - MochiArt.GRID[a * 3 + 1];
-                double uz = MochiArt.GRID[b * 3 + 2] - MochiArt.GRID[a * 3 + 2];
-                double vx = MochiArt.GRID[d * 3] - MochiArt.GRID[c * 3];
-                double vy = MochiArt.GRID[d * 3 + 1] - MochiArt.GRID[c * 3 + 1];
-                double vz = MochiArt.GRID[d * 3 + 2] - MochiArt.GRID[c * 3 + 2];
-                double nx = uy * vz - uz * vy;
-                double ny = uz * vx - ux * vz;
-                double nz = ux * vy - uy * vx;
-                double nl = Math.max(1.0E-9, Math.sqrt(nx * nx + ny * ny + nz * nz));
-                MochiArt.GRID_C[v] = MochiArt.shade(MochiArt.GRID[v * 3], MochiArt.GRID[v * 3 + 1], MochiArt.GRID[v * 3 + 2], nx / nl, ny / nl, nz / nl,
-                    MochiArt.MOCHI, 1.0);
-            }
-        }
-        MochiArt.grid(sink, rows, cols);
-        // the lip: a round roll along the curl's edge
-        MochiArt.tubeBegin();
-        for (int i = 0; i <= cols; i++) {
-            double t = i / (double) cols * 2.0 - 1.0;
-            double edge = Math.sqrt(Math.max(0.0, 1.0 - t * t * t * t));
-            double h = height * (0.15 + 0.85 * edge) * (1.0 + 0.06 * Math.sin(age * 0.35 + i * 0.9));
-            double b = WAVE_BACK[rows] * (0.6 + 0.4 * edge) * height / 3.0;
-            MochiArt.tubePoint(cx + wx * b + px * width * 0.5 * t, y + h * WAVE_UP[rows], cz + wz * b + pz * width * 0.5 * t, 0.18 + 0.2 * edge);
-        }
-        MochiArt.tube(sink, 8, MochiArt.MOCHI, 0.0, 0.0);
-        for (int k = 0; k < 5; k++) {
-            double t = (k + 0.5) / 5.0 * 2.0 - 1.0;
-            double edge = Math.sqrt(Math.max(0.0, 1.0 - t * t * t * t));
-            double h = height * (0.15 + 0.85 * edge);
-            double roll = (age * 0.25 + k * 1.3) % 1.0;
-            double b = (1.3 - roll * 0.6) * (0.6 + 0.4 * edge) * height / 3.0;
-            MochiArt.ball(sink, cx + wx * b + px * width * 0.5 * t, y + h * (1.0 - roll * 0.4), cz + wz * b + pz * width * 0.5 * t, 0.3 * edge + 0.1, wx,
-                -0.5, wz, 1.3, 0.12, age, seed + k, MochiArt.MOCHI);
-        }
-    }
-
-    /**
-     * Kagami Mochi (awakened X): two walls of mochi rising out of the ground either side of (x, y, z) across (wx, wz) (flat, unit: the
-     * walls face along it), {@code apart} each side at first, closing to crush at {@link #WALLS_SHUT}; {@code age} ticks in.
-     */
-    public static void walls(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double apart, double age, int seed) {
-        if (age < 0 || age > WALLS_LIFE) {
-            return;
-        }
-        double rise = ease(age / WALLS_RISE);
-        double close = smooth((age - WALLS_RISE) / (WALLS_SHUT - WALLS_RISE));
-        double sink2 = smooth((age - WALLS_LIFE + 8) / 8.0);
-        double px = -wz;
-        double pz = wx;
-        double h = 5.0 * rise * (1.0 - sink2);
-        if (h < 0.05) {
-            return;
-        }
-        for (int k = -1; k <= 1; k += 2) {
-            double off = (apart + (0.7 - apart) * close) * k;
-            double cx = x + px * off;
-            double cz = z + pz * off;
-            MochiArt.blob(sink, cx, y + h * 0.5, cz, wx, 0, wz, 0, 1, 0, 3.2, h * 0.5 + 0.05, 0.75, 0.32, 0.07, age, seed + k, MochiArt.MOCHI, 1.0);
-            // its top lumpy, mochi bulging over the edge
-            for (int j = 0; j < 4; j++) {
-                double t = (j + 0.5) / 4.0 * 2.0 - 1.0;
-                MochiArt.ball(sink, cx + wx * 2.6 * t, y + h + 0.05, cz + wz * 2.6 * t, 0.55 + 0.15 * FireMesh.rand(seed, j + k * 4), wx, 0, wz, 1.5,
-                    0.12, age, seed + j + k * 4, MochiArt.MOCHI);
-            }
-        }
-    }
-
-    /**
-     * Amadare Mochi (awakened C): tendrils of mochi raining down from the sky ({@code sky} blocks over (x, y, z)) onto points round it
-     * within {@code radius}; tendril {@code k} falls at {@code k * every} ticks, strikes 4 ticks later, lingers and pulls back up.
-     * {@code age} ticks in.
-     */
-    public static void rain(FireMesh.Sink sink, double x, double y, double z, double radius, double sky, int count, double every, double age,
-                            int seed) {
-        // the mass of mochi overhead the tendrils pour out of, gathering in its first 6 ticks, gone when the last has struck
-        double gather = ease(age / 6.0) * (1.0 - smooth((age - count * every - 10) / 6.0));
-        if (gather > 0.02) {
-            for (int k = 0; k < 6; k++) {
-                double a = 2 * Math.PI * k / 6 + 0.3;
-                double d = radius * 0.55 * (k == 0 ? 0.0 : 1.0);
-                MochiArt.blob(sink, x + Math.cos(a) * d, y + sky + 0.6 * FireMesh.rand(seed, k + 200), z + Math.sin(a) * d, Math.cos(a), 0, Math.sin(a), 0,
-                    1, 0, radius * 0.55 * gather, 1.1 * gather, radius * 0.5 * gather, 0.9, 0.15, age, seed + k, MochiArt.MOCHI, 1.0);
-            }
-        }
-        for (int k = 0; k < count; k++) {
-            double a = age - k * every;
-            if (a < 0 || a > 14) {
-                continue;
-            }
-            double ang = 2 * Math.PI * FireMesh.rand(seed, k);
-            double d = radius * Math.sqrt(FireMesh.rand(seed, k + 50));
-            double gx = x + Math.cos(ang) * d;
-            double gz = z + Math.sin(ang) * d;
-            double down = ease(a / 4.0) * (1.0 - smooth((a - 9.0) / 5.0));
-            double top = y + sky;
-            double tipY = top + (y + 0.3 - top) * down;
-            MochiArt.tubeBegin();
-            for (int j = 0; j <= 6; j++) {
-                double t = j / 6.0;
-                double wob = 0.25 * Math.sin(t * 5.0 + k) * (1.0 - t);
-                MochiArt.tubePoint(gx + wob, top + (tipY - top) * t, gz + wob * 0.5, 0.34 + 0.18 * t);
-            }
-            MochiArt.tube(sink, 8, MochiArt.MOCHI, 0.0, 0.0);
-            MochiArt.ball(sink, gx, tipY, gz, 0.62, 0, -1, 0, 1.4, 0.1, a, seed + k, MochiArt.MOCHI);
-            if (a > 4.0) {
-                splat(sink, gx, y + 0.2, gz, 0, 1, 0, 1.0, (a - 4.0) * 1.2, seed + k * 7);
-            }
-        }
-    }
-
-    /** Muso Donuts: how many donut rings, how far round behind the user, how high. */
-    public static final int DONUTS = 5;
-
-    /** Where donut {@code k} floats round the user (x, y, z) facing (wx, wz) (flat, unit): into out (x, y, z). */
-    public static void donut(double x, double y, double z, double wx, double wz, int k, double age, double[] out) {
-        double spread = (k - (DONUTS - 1) / 2.0) / ((DONUTS - 1) / 2.0);
-        double px = -wz;
-        double pz = wx;
-        out[0] = x + px * spread * 3.2 - wx * (1.2 - Math.abs(spread) * 0.8);
-        out[1] = y + 2.6 + (1.0 - spread * spread) * 1.4 + 0.15 * Math.sin(age * 0.12 + k);
-        out[2] = z + pz * spread * 3.2 - wz * (1.2 - Math.abs(spread) * 0.8);
-    }
-
-    static final double[] D = new double[3];
-
-    /**
-     * Muso Donuts and Chikara Mochi (awakened V): {@link #DONUTS} rings of mochi floating in an arc behind and over the user (x, y, z),
-     * facing the target (tx, ty, tz); from each in turn ({@code every} ticks apart, from {@code first}) a giant fist (black with Armament)
-     * on a mochi arm punches out to the target in {@link #DONUT_FIST} ticks and pulls back; {@code grow} 0 to 1 the rings grown in.
-     */
-    public static void donuts(FireMesh.Sink sink, double x, double y, double z, double tx, double ty, double tz, double age, double grow,
-                              double first, double every, boolean coat, int seed) {
-        if (grow < 0.02) {
-            return;
-        }
-        double fx = tx - x;
-        double fz = tz - z;
-        double fl = Math.max(1.0E-6, Math.hypot(fx, fz));
-        fx /= fl;
-        fz /= fl;
-        for (int k = 0; k < DONUTS; k++) {
-            donut(x, y, z, fx, fz, k, age, D);
-            double ax = tx - D[0];
-            double ay = ty - D[1];
-            double az = tz - D[2];
-            double al = Math.max(1.0E-6, Math.sqrt(ax * ax + ay * ay + az * az));
-            // 3.6.3: each one of the fruit's donuts (lumpy, dripping), its fist resting in its hole until it punches out of it
-            double pa = age - first - k * every;
-            double out = pa < 0 || pa > DONUT_FIST + 6 ? 0.0 : pa < DONUT_FIST ? ease(pa / DONUT_FIST) : 1.0 - smooth((pa - DONUT_FIST - 1) / 5.0);
-            double reach = Math.max(0.5, al - 0.8) * out;
-            donut(sink, D[0], D[1], D[2], ax / al, ay / al, az / al, MUSO, grow, 0.0, 3, out > 0.02 ? out : 0.0, D[0] + ax / al * reach,
-                D[1] + ay / al * reach, D[2] + az / al * reach, coat, age, seed + k, k % 2 == 1);
-        }
-    }
-
-    /**
-     * Mochi Ginkaku (awakened B): a dome of mochi over (x, y, z) (the ground), {@code radius} round, rising out of the ground over its
-     * first 10 ticks ({@code rise} 0 to 1), its surface lumpy and heaving; crushed in at its end ({@code crush} 0 to 1: it caves in).
-     */
-    public static void dome(FireMesh.Sink sink, double x, double y, double z, double radius, double rise, double crush, double age, int seed) {
-        if (rise < 0.02) {
-            return;
-        }
-        double h = radius * 0.9 * rise * (1.0 - 0.7 * crush);
-        double r = radius * (1.0 - 0.35 * crush);
-        // a whole blob, its lower half under the ground (the world hides it)
-        MochiArt.blob(sink, x, y, z, 1, 0, 0, 0, 1, 0, r, h, r, 0.9, 0.05 + 0.08 * crush, age, seed, MochiArt.MOCHI, 1.0);
-        // the pavilion: ridges of mochi from its foot over its top, a knob crowning it
-        for (int k = 0; k < 8; k++) {
-            double a = 2 * Math.PI * k / 8;
-            MochiArt.tubeBegin();
-            for (int j = 0; j <= 8; j++) {
-                double up = Math.PI / 2 * j / 8;
-                double rr = r * 1.03 * Math.cos(up);
-                MochiArt.tubePoint(x + Math.cos(a) * rr, y + h * 1.03 * Math.sin(up), z + Math.sin(a) * rr, 0.22 * (1.0 - 0.5 * j / 8.0) * rise);
-            }
-            MochiArt.tube(sink, 8, MochiArt.MOCHI, 0.0, 0.0);
-        }
-        MochiArt.ball(sink, x, y + h + 0.35 * rise, z, 0.55 * rise, 0, 1, 0, 1.3, 0.0, age, seed, MochiArt.MOCHI);
     }
 
     static final double[] B = new double[6];
