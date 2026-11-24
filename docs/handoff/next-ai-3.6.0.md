@@ -354,4 +354,7 @@ through GuraMoves.cool; Gear 5's through GearData and NikaWhip's noCooldowns). N
 skips: FruitEnergy.afford/spend (no energy), StyleServer's mastery lock and move cooldowns (set and checked), IronFist.cooled and Galaxy
 Impact's energy check, SwordServer's Haki slash / charged cut / quick draw cooldowns (set and checked), DragonServer's RESTING after
 turning back. StyleTests.opMode checks each. The client's book and HUD still show style locks by mastery (the server lets them through).
+3.6.2 is green (Build #222, Release #153). Next (section F 5): asked the owner in chat for the rest of their cut-off Mochi line ("In the
+new Buzz Cut Mochi and Zan Giri mochi the rolling donut the player turns into it should look  like") and its picture; wait for it
+before the Mochi list, and for their word on 3.6.0's thinner lightning.
 

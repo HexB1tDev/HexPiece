@@ -21,8 +21,7 @@ CC0 lightning sounds (6 dB quieter, one lightning sound at a time through haki/L
 release heard as one strike). The owner has been sent the colour pages and the seven-colour lightning sheet (previews).
 
 Do next, in order (next-ai-3.6.0.md section F has the detail; sections I and J the owner's newest messages and 3.6.1): 3.6.2 (/hp op
-on/off obeyed by every new fruit and style: next-ai-3.6.0.md K) is the newest version: check its GitHub runs if the last session could
-not. Wait for the owner's word on 3.6.0's thinner lightning; then (4) the owner's Mochi
+on/off obeyed by every new fruit and style: next-ai-3.6.0.md K) is the newest version, green (Build #222, Release #153). Wait for the owner's word on 3.6.0's thinner lightning; then (4) the owner's Mochi
 list (ask for the end of their cut-off line about the rolling donut, with its picture, first); (5) Buzz Cut Mochi: references first,
 then plan, then build as one uninterrupted cinematic. The next version is 3.6.3.
 
