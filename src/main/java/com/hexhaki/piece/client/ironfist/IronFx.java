@@ -63,6 +63,10 @@ public final class IronFx {
     record Hole(Vec3 at, double depth, long born, int seed) {
     }
 
+    /** Blue Hole's body thrown down: from the top to the ground over so many ticks (IronMove.holeThrow). */
+    record Throw(Vec3 top, Vec3 ground, long born, int ticks, int seed) {
+    }
+
     record Divide(Vec3 base, Vec3 way, double length, long born, int run, int seed) {
     }
 
@@ -91,6 +95,8 @@ public final class IronFx {
         final double arc;
         final boolean impact;
         long holdUntil;
+        /** Eased in (slow, then faster and faster: a fall) rather than out (a leap slowing to its top). */
+        boolean fall;
 
         Carry(Vec3 from, Vec3 to, long born, int ticks, double arc, boolean impact) {
             this.from = from;
@@ -113,6 +119,7 @@ public final class IronFx {
     private static final List<Crush> CRUSHES = new ArrayList<>();
     private static final List<Ring> RINGS = new ArrayList<>();
     private static final List<Hole> HOLES = new ArrayList<>();
+    private static final List<Throw> THROWS = new ArrayList<>();
     private static final List<Divide> DIVIDES = new ArrayList<>();
     private static final List<Blast> BLASTS = new ArrayList<>();
     private static final List<Finish> FINISHES = new ArrayList<>();
@@ -219,25 +226,45 @@ public final class IronFx {
         }
     }
 
+    /**
+     * 3.5.9 Blue Hole (server/IronFist.blueHole's phases): 0 the uppercut wound (the fist's glow), 1 it lands (a burst up from the fist),
+     * 2 the leap after the body (a ring where it left; one's own body carried up to the top and held there through the grab), 3 the grab
+     * at the top (the grip's glow), 4 a miss or cut short, 5 the throw down (the body's streak to the ground), 6 one's own way down after
+     * it (a fall, faster and faster), 7 the hole.
+     */
     static void hole(S2CUoFx m, Vec3 at, Vec3 a, int phase) {
+        boolean self = self(m.user());
         switch (phase) {
+            case 0, 3 -> DOING.put(m.user(), new Doing(IronFist.HOLE, clock, m.ticks(), m.id(), at));
             case 1 -> {
-                add(RINGS, new Ring(a, 6.0, clock, 12, m.id()));
-                if (self(m.user())) {
-                    carry = new Carry(a, at, clock, m.ticks(), 0.25, false);
-                    carry.holdUntil = clock + m.ticks() + IronMove.HOLE_LIFT + 2;
+                DOING.remove(m.user());
+                add(CRUSHES, new Crush(at, new Vec3(0, 1, 0), m.size() * 0.6, clock, m.id()));
+            }
+            case 2 -> {
+                add(RINGS, new Ring(a, 4.0, clock, 12, m.id()));
+                if (self) {
+                    carry = new Carry(Minecraft.m_91087_().f_91074_.m_20182_(), at, clock, m.ticks(), 0.6, false);
+                    carry.holdUntil = clock + m.ticks() + IronMove.HOLE_HANG + 1;
                 }
             }
-            case 2 -> DOING.put(m.user(), new Doing(IronFist.HOLE, clock, m.ticks(), m.id(), at));
-            case 3 -> {
-                DOING.remove(m.user());
-                add(HOLES, new Hole(at, m.size(), clock, m.id()));
-            }
             case 4 -> {
-                if (self(m.user())) {
+                DOING.remove(m.user());
+                add(POPS, new Pop(at, new Vec3(0, 1, 0), false, clock));
+                if (self) {
                     carry = null;
                 }
             }
+            case 5 -> {
+                DOING.remove(m.user());
+                add(THROWS, new Throw(at, a, clock, Math.max(1, m.ticks()), m.id()));
+            }
+            case 6 -> {
+                if (self) {
+                    carry = new Carry(Minecraft.m_91087_().f_91074_.m_20182_(), at, clock, Math.max(1, m.ticks()), 0.0, false);
+                    carry.fall = true;
+                }
+            }
+            case 7 -> add(HOLES, new Hole(at, m.size(), clock, m.id()));
             default -> {
             }
         }
@@ -273,6 +300,7 @@ public final class IronFx {
         CRUSHES.removeIf(c -> clock - c.born > 20);
         RINGS.removeIf(r -> clock - r.born > r.life);
         HOLES.removeIf(h -> clock - h.born > GuraArt.QUAKE_LIFE);
+        THROWS.removeIf(t -> clock - t.born > t.ticks + 10);
         DIVIDES.removeIf(d -> clock - d.born > d.run + 60);
         BLASTS.removeIf(b -> clock - b.born > 8);
         FINISHES.removeIf(f -> clock - f.born > GuraArt.QUAKE_LIFE);
@@ -299,7 +327,7 @@ public final class IronFx {
             want = c.from.m_82520_(0, IronMove.impactRise(t + 1), 0);
         } else if (t < c.ticks) {
             double u = Math.min(1.0, (t + 1) / c.ticks);
-            double e = 1.0 - (1.0 - u) * (1.0 - u);
+            double e = c.fall ? u * u : 1.0 - (1.0 - u) * (1.0 - u);
             want = c.from.m_82549_(c.to.m_82546_(c.from).m_82490_(e)).m_82520_(0, c.arc * 4.0 * e * (1.0 - e), 0);
         } else if (clock < c.holdUntil) {
             want = pos;
@@ -458,7 +486,7 @@ public final class IronFx {
     static final Writer SINK = new Writer();
 
     static boolean empty() {
-        return POPS.isEmpty() && LOVES.isEmpty() && BALLS.isEmpty() && BOOMS.isEmpty() && CRUSHES.isEmpty() && RINGS.isEmpty() && HOLES.isEmpty()
+        return POPS.isEmpty() && LOVES.isEmpty() && BALLS.isEmpty() && BOOMS.isEmpty() && CRUSHES.isEmpty() && RINGS.isEmpty() && HOLES.isEmpty() && THROWS.isEmpty()
             && DIVIDES.isEmpty() && BLASTS.isEmpty() && FINISHES.isEmpty() && STRIKES.isEmpty() && DEBRIS.isEmpty() && DOING.isEmpty();
     }
 
@@ -622,6 +650,11 @@ public final class IronFx {
             IronArt.groundRing(SINK, x, y, z, 1.0 + 15.0 * (1.0 - (1.0 - u) * (1.0 - u)), 0.8 * (1.0 - u));
             IronArt.dustWall(SINK, x, y, z, 1.2 + 3.0 * u, 2.6, 0.7 * (1.0 - age / GuraArt.QUAKE_LIFE), now, h.seed);
         }
+        for (Throw t : THROWS) {
+            if (!far(t.top, cam, FAR)) {
+                thrown(t, now - t.born, cx, cy, cz);
+            }
+        }
         for (Divide d : DIVIDES) {
             divide(d, now, cam, cx, cy, cz);
         }
@@ -677,6 +710,26 @@ public final class IronFx {
         }
     }
 
+    /** Blue Hole's throw: the body's white streak and rings on its way down, the burst of the throw at the top. */
+    static void thrown(Throw t, double age, double cx, double cy, double cz) {
+        double tx = t.top.f_82479_ - cx;
+        double ty = t.top.f_82480_ - cy;
+        double tz = t.top.f_82481_ - cz;
+        Vec3 down = t.ground.m_82546_(t.top);
+        double drop = down.m_82553_();
+        Vec3 u = unit(down);
+        // the hand's throw at the top: lines bursting and a ring of pressure round the way down
+        IronArt.impactLines(SINK, tx, ty + 0.9, tz, -u.f_82479_, -u.f_82480_, -u.f_82481_, 2.6, age, 7.0, t.seed);
+        IronArt.pressure(SINK, tx, ty + 0.9, tz, u.f_82479_, u.f_82480_, u.f_82481_, 2.2, age, 7.0);
+        if (age > t.ticks) {
+            return;
+        }
+        double e = IronMove.holeThrow(age);
+        double speed = drop / t.ticks * (0.6 + 1.4 * e);
+        IronArt.trail(SINK, tx + down.f_82479_ * e, ty + down.f_82480_ * e + 0.9, tz + down.f_82481_ * e, u.f_82479_, u.f_82480_, u.f_82481_,
+            Math.min(3.0, speed * 0.45), 0.6, age, t.seed);
+    }
+
     /** A user in the middle of a held or long move: the cannonball in hand, the coil, the grab, the barrage, Galaxy Impact. */
     static void doing(Minecraft minecraft, Entity user, Doing d, double now, float partial, double cx, double cy, double cz) {
         double age = now - d.born;
@@ -686,8 +739,7 @@ public final class IronFx {
         double fz = fist.f_82481_ - cz;
         switch (d.kind) {
             case IronFist.METEOR -> {
-                double charge = IronMove.meteorCharge(age);
-                double r = IronMove.meteorRadius(charge);
+                double r = IronMove.METEOR_RADIUS;
                 IronArt.cannonball(SINK, fx, fy + r * 0.6, fz, r, age * 0.05, age, d.seed);
             }
             case IronFist.CRUSHER -> {
@@ -838,11 +890,8 @@ public final class IronFx {
         }
         // the wall of dust following the dome out, then lingering over the battlefield
         double dustAlpha = Math.min(0.75, b / 6.0) * Math.max(0.0, 1.0 - (b - 60.0) / 90.0);
+        // 3.5.9 (the owner: "galaxy impact is too laggy"): one wall of dust (it was three at once)
         IronArt.dustWall(SINK, x, y, z, IronMove.IMPACT_DOME * grow * 0.96, 6.0 + 8.0 * grow, dustAlpha, now, s.seed);
-        if (b > 20.0) {
-            IronArt.dustWall(SINK, x, y, z, IronMove.IMPACT_DOME * 0.55, 10.0, dustAlpha * 0.8, now, s.seed + 5);
-            IronArt.dustWall(SINK, x, y, z, IronMove.IMPACT_CRATER * 0.8, 8.0, dustAlpha * 0.7, now, s.seed + 9);
-        }
     }
 
     static void clear() {
@@ -853,6 +902,7 @@ public final class IronFx {
         CRUSHES.clear();
         RINGS.clear();
         HOLES.clear();
+        THROWS.clear();
         DIVIDES.clear();
         BLASTS.clear();
         FINISHES.clear();

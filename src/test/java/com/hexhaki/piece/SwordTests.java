@@ -37,7 +37,45 @@ public final class SwordTests {
         dragonSounds();
         holster();
         drawView();
+        wifi();
         Check.done("SwordTests");
+    }
+
+    /**
+     * 3.5.9 (the owner: "The user (while holding the key) slowly unsheaths the sword JUST A LITTLE BIT, the lightning emergers from the
+     * opening in the sheath"): the blade eases out a little and slowly, never further than a few pixels, held while the key is, home
+     * after; the clip's hands are the draw's at the tick its blade is as far out; it keys neither the head nor the legs.
+     */
+    static void wifi() throws Exception {
+        Check.that(com.hexhaki.piece.sword.WifiDraw.push(0) == 0.0F && com.hexhaki.piece.sword.WifiDraw.push(com.hexhaki.piece.sword.WifiDraw.GRIP) == 0.0F,
+            "WiFi Haki: the hand on the hilt before anything moves");
+        float last = 0.0F;
+        for (double t = 0; t <= com.hexhaki.piece.sword.WifiDraw.OUT; t += 0.5) {
+            float out = com.hexhaki.piece.sword.WifiDraw.push(t);
+            Check.that(out >= last - 1.0E-5F && out - last < 0.25F, "WiFi Haki: the blade eases out slowly at " + t);
+            double d = com.hexhaki.piece.sword.WifiDraw.drawTick(t);
+            if (t >= com.hexhaki.piece.sword.WifiDraw.GRIP) {
+                Check.that(Math.abs(com.hexhaki.piece.sword.WifiDraw.drawOut(d) - out) < 0.02,
+                    "WiFi Haki's hands are the draw's where its blade is as far out, at " + t);
+            }
+            last = out;
+        }
+        Check.that(Math.abs(com.hexhaki.piece.sword.WifiDraw.push(com.hexhaki.piece.sword.WifiDraw.OUT) - com.hexhaki.piece.sword.WifiDraw.MOST) < 1.0E-4
+            && com.hexhaki.piece.sword.WifiDraw.MOST < 4.0F && com.hexhaki.piece.sword.WifiDraw.MOST > com.hexhaki.piece.sword.Koiguchi.OUT,
+            "WiFi Haki: just a little bit out (more than the thumb's push, under a quarter block)");
+        for (double t = com.hexhaki.piece.sword.WifiDraw.OUT; t < com.hexhaki.piece.sword.WifiDraw.OUT + 40; t += 0.5) {
+            float out = com.hexhaki.piece.sword.WifiDraw.push(t);
+            Check.that(out <= com.hexhaki.piece.sword.WifiDraw.MOST + 1.0E-4 && out >= com.hexhaki.piece.sword.WifiDraw.MOST - 0.1F,
+                "WiFi Haki held: the blade stays there, trembling, at " + t);
+        }
+        Check.that(com.hexhaki.piece.sword.WifiDraw.home(2.9F, 0) == 2.9F && com.hexhaki.piece.sword.WifiDraw.home(2.9F,
+            com.hexhaki.piece.sword.WifiDraw.HOME) == 0.0F, "let go: home again");
+        String json = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/resources/assets/hexhaki/player_animation/wifi_haki.json"));
+        Check.that(json.contains("\"isLoop\": true") && json.contains("\"returnTick\": " + com.hexhaki.piece.sword.WifiDraw.OUT)
+            && json.contains("\"endTick\": " + (com.hexhaki.piece.sword.WifiDraw.OUT + com.hexhaki.piece.sword.WifiDraw.LOOP)),
+            "WiFi Haki's clip holds while the key is (tools/wifi_anims.py)");
+        Check.that(!json.contains("\"head\"") && !json.contains("\"rightLeg\"") && !json.contains("\"leftLeg\""),
+            "WiFi Haki's clip keys neither the head nor the legs");
     }
 
     static void katanas() {

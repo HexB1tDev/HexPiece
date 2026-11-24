@@ -77,6 +77,17 @@ public final class HakiDraw {
         crackle(pose, buffers, player, ticks, 0.0, bared, bared, strength, color(player, haki), partial);
     }
 
+    /**
+     * 3.5.9 (the owner: "the lightning emergers from the opening in the sheath"): WiFi Haki held, the blade {@code out} model px out of
+     * its saya: the gap between the guard and the saya's mouth crackles hard with the Conqueror's lightning (with or without Armament:
+     * WiFi Haki is Haki), stronger as the blade comes out.
+     */
+    static void wifi(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, double ticks, float out, float partial) {
+        double bared = out * KatanaRenderer.px(SwordClient.katana(player.m_19879_()));
+        double strength = 1.1 + 0.6 * Math.min(1.0, out / com.hexhaki.piece.sword.WifiDraw.MOST);
+        crackle(pose, buffers, player, (float) Math.max(0.0, ticks), 0.0, bared, bared, strength, color(player, 2), partial);
+    }
+
     /** In the blade's frame in the hand. */
     static void held(PoseStack pose, MultiBufferSource buffers, AbstractClientPlayer player, int anim, float ticks, float partial) {
         int haki = haki(player);

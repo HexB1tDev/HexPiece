@@ -150,7 +150,7 @@ public final class MenuTests {
         // gone until it is remade): no page offers it
         for (LogbookView.Section section : data.styleHaki()) {
             for (LogbookView.Entry e : section.entries()) {
-                Check.that(e.ability() != 103, "no page offers the Galaxy Fist (" + section.title() + ")");
+                Check.that(e.ability() != 103 && e.ability() != 101, "no page offers the Galaxy Fist or the Haki Grip (" + section.title() + ")");
             }
         }
         int[] mastery = new int[com.hexhaki.piece.style.FightingStyle.values().length];

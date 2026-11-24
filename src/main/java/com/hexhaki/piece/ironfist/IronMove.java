@@ -13,13 +13,13 @@ public enum IronMove {
             + " into an attack, carries on a combo."),
     METEOR("Meteor Fist", "Z hold", Need.NONE, 100,
         "Hold: a black iron cannonball in the right hand, pulled back behind the head like a pitcher's wind-up; let go to hurl it, faster"
-            + " than any shot, exploding on what it meets. The longer the hold, the bigger, faster and harder."),
+            + " than any shot, exploding on what it meets. The longer the hold, the faster and harder."),
     CRUSHER("Mountain Crusher", "X", Need.ARMAMENT, 160,
         "Low and wide, the coated fist clenched at the waist, then one tremendous step into an uppercut: launched up and away through"
             + " the blocks in their path. Breaks any guard."),
     BLUE_HOLE("Blue Hole", "C", Need.RYOU, 300,
-        "Gone in a burst of speed to the one in your sights, grabbed by the face, lifted, and thrown straight down into the ground: a hole"
-            + " fifteen blocks deep, stunned at its bottom."),
+        "An uppercut. If it lands, they fly up, you leap after them, grab them in the air and throw them down into the ground, hard: a"
+            + " hole fifteen blocks deep, stunned at its bottom. A miss ends it there."),
     DIVIDE("Galaxy Divide", "V", Need.RYOU, 400,
         "A leap up at them, the fist pulled back and loaded with Haki, then a punch into the air: a towering shockwave that splits the"
             + " world in front of you, forty blocks long."),
@@ -97,9 +97,8 @@ public enum IronMove {
     public static final int METEOR_THROW = 3;
     public static final int METEOR_FLIGHT = 40;
 
-    public static double meteorRadius(double charge) {
-        return 0.45 + 0.4 * charge;
-    }
+    /** The cannonball's radius: one size however long the hold (the owner after 3.5.8: "should not fucking increase size"). */
+    public static final double METEOR_RADIUS = 0.55;
 
     public static double meteorSpeed(double charge) {
         return 2.4 + 1.8 * charge;
@@ -120,13 +119,39 @@ public enum IronMove {
     public static final int CRUSHER_TICKS = 24;
     public static final double CRUSHER_REACH = 3.8;
     public static final int CRUSHER_TEAR = 14;
-    /** Blue Hole: the crouch, the dash, the grab held (lifted), the slam, the hole's depth, the stun at its bottom, the reach. */
-    public static final int HOLE_CROUCH = 4;
-    public static final int HOLE_DASH = 6;
-    public static final int HOLE_LIFT = 14;
+    /**
+     * Blue Hole (the owner after 3.5.8: "Uppercut / Did it hit someone? No? Ends here. If Yes: the entity goes flying then the user
+     * catches up (jumps to the entity) grabs them and throws them down to the floor, hard"): the uppercut lands at HOLE_HIT; from there
+     * the body flies up HOLE_HEIGHT blocks over HOLE_RISE ticks, the user leaps after it at HOLE_JUMP for HOLE_LEAP ticks and grabs it at
+     * the top (HOLE_RISE), holds it HOLE_HANG ticks, throws it down (HOLE_FALL ticks to the ground: the hole, HOLE_DEPTH deep, stunned at
+     * its bottom HOLE_STUN ticks) and comes down after it to the hole's edge (HOLE_DROP ticks).
+     */
+    public static final int HOLE_HIT = 6;
+    public static final double HOLE_REACH = 3.6;
+    public static final int HOLE_RISE = 8;
+    public static final double HOLE_HEIGHT = 9.0;
+    public static final int HOLE_JUMP = 2;
+    public static final int HOLE_LEAP = HOLE_RISE - HOLE_JUMP;
+    public static final int HOLE_HANG = 4;
+    public static final int HOLE_FALL = 4;
+    public static final int HOLE_DROP = 10;
+    public static final int HOLE_TICKS = HOLE_HIT + HOLE_RISE + HOLE_HANG + 1 + HOLE_DROP + 6;
+    /** The uppercut missing: a short cooldown (ticks). */
+    public static final int HOLE_MISS_COOLDOWN = 40;
     public static final int HOLE_DEPTH = 15;
     public static final int HOLE_STUN = 80;
-    public static final double HOLE_RANGE = 20.0;
+
+    /** How high over its start the uppercut's body is {@code t} ticks after the hit (it flies up and slows to the top). */
+    public static double holeRise(double t) {
+        double u = Math.max(0.0, Math.min(1.0, t / HOLE_RISE));
+        return HOLE_HEIGHT * (1.0 - (1.0 - u) * (1.0 - u));
+    }
+
+    /** How far down from the top to the ground the thrown body is {@code t} ticks after the throw (0 to 1, faster and faster). */
+    public static double holeThrow(double t) {
+        double u = Math.max(0.0, Math.min(1.0, t / HOLE_FALL));
+        return u * u;
+    }
     /** Galaxy Divide: the crouch, the leap, the punch, the shock's speed, length, height and width. */
     public static final int DIVIDE_CROUCH = 6;
     public static final int DIVIDE_LEAP = 10;
@@ -168,7 +193,21 @@ public enum IronMove {
     public static final double IMPACT_FALL = 5.0;
     public static final double IMPACT_DOME = 50.0;
     public static final int IMPACT_DOME_TICKS = 30;
-    public static final double IMPACT_CRATER = 15.0;
+    /**
+     * 3.5.9 (the owner: "galaxy impact is too laggy"): the crater 13 across its middle and 5 to 8 deep (was 15 and 8 to 12, about four
+     * times the blocks), the ground beyond broken in 600 places (was 2600); the lightning every 10 ticks in the crouch (was 5) and every
+     * 8 in the sky (was 3), a few bolts at a time; the blast's foes looked for every 4 ticks, its lightning and rocks every 12.
+     */
+    public static final double IMPACT_CRATER = 13.0;
+    public static final double IMPACT_DEPTH = 6.5;
+    public static final int IMPACT_SCATTER = 600;
+    public static final int IMPACT_CROUCH_EVERY = 10;
+    public static final int IMPACT_CHARGE_EVERY = 8;
+
+    /** How many bolts the fist throws as it charges (0 to 1): two, up to five at the full charge. */
+    public static int impactBolts(double power) {
+        return 2 + (int) Math.round(3 * Math.max(0.0, Math.min(1.0, power)));
+    }
     public static final int IMPACT_DESCEND = 150;
     public static final int IMPACT_TICKS = 180;
     /** The share of the Haki reserves it takes. */

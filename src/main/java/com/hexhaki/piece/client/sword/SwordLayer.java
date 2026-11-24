@@ -102,18 +102,25 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         boolean sliding = slideOut != null && (drawn || slideOut[0] > 0.0F);
         if (!firstPerson || sliding) {
             pose.m_85836_();
-            saya(pose, player, model, layer, partial);
+            // 3.5.9: WiFi Haki held: the blade eased out of the saya (client/sword/WifiPull), the saya laid by WiFi Haki's own clip
+            float wifi = !drawn && !sliding ? WifiPull.push(player, partial) : 0.0F;
+            ModifierLayer<IAnimation> sayaLayer = wifi > 0.0F && WifiPull.held(player) ? WifiPull.layer(player) : layer;
+            saya(pose, player, model, sayaLayer, partial);
             if (!drawn && !sliding) {
                 if (!firstPerson) {
                     KatanaRenderer.draw(pose, buffers, katana, false, true, light, 0.0F);
                     // 2.1.5: standing ready, the thumb breaks the saya's seal now and then (sword/Koiguchi)
                     double ready = anim == SwordAnims.NONE ? StanceLayer.swordReady(player, partial) : -1.0;
                     float push = ready < 0 ? 0.0F : Koiguchi.push(ready);
+                    boolean byWifi = wifi > push;
+                    push = Math.max(push, wifi);
                     if (push > 0.0F) {
                         slide(pose, katana, push);
                     }
                     KatanaRenderer.draw(pose, buffers, katana, true, false, light, 0.0F, coat);
-                    if (push > 0.0F) {
+                    if (byWifi) {
+                        HakiDraw.wifi(pose, buffers, player, WifiPull.ticks(player, partial), push, partial);
+                    } else if (push > 0.0F) {
                         HakiDraw.sliding(pose, buffers, player, SwordAnims.NONE, (float) ready, push, partial);
                     }
                 }

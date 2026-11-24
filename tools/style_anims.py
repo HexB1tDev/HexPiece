@@ -388,19 +388,30 @@ def iron_fist():
               (13, "outexpo", upper),
               (17, "outsine", p(upper, rightArm={"pitch": -112}, body={"bend": -10})), (24, "inoutsine", IF)]
     write(s + "crusher", 24, beats, "Iron Fist: Mountain Crusher, a devastating uppercut stepped into from low and wide.")
-    # C: Blue Hole: low, gone forward, the face grabbed, lifted, thrown down into the ground; left at the edge looking down at them
-    crouch = p(IF, legs(64, 10), body={"y": -0.44, "bend": 24})
-    rush = p(rightArm=arm(-92, -6, 6, -10), leftArm=mirror(arm(30, 0, 20, -30)), rightLeg=leg(30, 4, 40), leftLeg=leg(-40, -4, 50),
-             body={"pitch": 26, "y": -0.2})
-    grab = p(legs(16, 8), rightArm=arm(-112, -8, 10, -24), leftArm=mirror(arm(-10, 0, 24, -40)), body={"yaw": 10, "bend": -4})
-    lift = p(grab, rightArm=arm(-128, -2, 48, -34), body={"yaw": 6, "bend": -10})
-    slam = p(legs(44, 14), rightArm=arm(-34, -12, 10, -6), leftArm=mirror(arm(26, 0, 30, -30)), body={"yaw": 22, "bend": 36, "y": -0.28})
-    look = p(IF, legs(20, 10), body={"bend": 22, "y": -0.08}, head={"pitch": 30})
-    write(s + "blue_hole", 36, [(0, "linear", IF), (3, "outsine", crouch), (5, "outexpo", rush), (10, "inoutsine", rush), (11, "outback", grab),
-                                (20, "inoutsine", lift), (23, "insine", p(lift, rightArm={"roll": 58}, body={"bend": -12})),
-                                (24, "outexpo", slam), (28, "outsine", p(slam, body={"bend": 38})), (32, "inoutsine", look),
-                                (36, "linear", look)],
-          "Iron Fist: Blue Hole, a burst of speed, a face grabbed and lifted, then thrown straight down into the ground.")
+    # C: Blue Hole (3.5.9, the owner: "Uppercut / Did it hit someone? No? Ends here. If Yes: the entity goes flying then the user catches
+    # up (jumps to the entity) grabs them and throws them down to the floor, hard"): a quick low coil, the uppercut on tick 6 (IronMove
+    # HOLE_HIT), the leap after them from tick 8 (legs tucked, the right arm reaching up), the face grabbed at the top on 14, wound back
+    # over the head by the side (never through the face) by 17, thrown straight down on 18 with the whole body bent into it, the fall,
+    # landing low on 29 at the hole's edge, then leaning over it looking down. A miss clears the clip right after the uppercut.
+    crouch = p(legs(54, 14), rightArm=arm(22, 0, 16, -102), leftArm=mirror(arm(-70, -20, 10, -60)), body={"y": -0.32, "yaw": -26, "bend": 12})
+    jump = p(rightArm=arm(-160, 16, 0, -18), leftArm=mirror(arm(-28, 0, 44, -34)), rightLeg=leg(-74, 6, 104), leftLeg=leg(-34, -6, 78),
+             body={"yaw": 8, "bend": -6})
+    grab = p(jump, rightArm=arm(-146, 14, 0, -36), leftArm=mirror(arm(-46, -10, 40, -20)), rightLeg=leg(-60, 6, 90), leftLeg=leg(-10, -6, 50))
+    wound = p(grab, rightArm=arm(-22, 0, 150, -72), leftArm=mirror(arm(-70, -22, 18, -8)), body={"yaw": -16, "bend": -16})
+    throw = p(rightArm=arm(-34, -12, 10, -6), leftArm=mirror(arm(32, 0, 32, -30)), rightLeg=leg(-46, 6, 64), leftLeg=leg(24, -6, 34),
+              body={"yaw": 22, "bend": 40})
+    drop = p(rightArm=arm(-40, -4, 36, -24), leftArm=mirror(arm(-34, -4, 40, -28)), rightLeg=leg(-12, 6, 30), leftLeg=leg(6, -6, 24),
+             body={"bend": 10})
+    landed = p(legs(66, 14), rightArm=arm(8, 0, 30, -34), leftArm=mirror(arm(-44, -10, 30, -46)), body={"y": -0.42, "yaw": 6, "bend": 28})
+    look = p(IF, legs(22, 10), body={"bend": 24, "y": -0.08}, head={"pitch": 30})
+    write(s + "blue_hole", 35, [(0, "linear", IF), (3, "outsine", crouch),
+                                (5, "insine", p(crouch, rightArm=arm(-12, 0, 40, -100), body={"z": -0.16, "y": -0.3}, leftLeg=leg(-40, -6, 58))),
+                                (6, "outexpo", upper), (9, "outsine", p(upper, rightArm={"pitch": -124, "roll": 8}, body={"bend": -12, "y": 0.0})),
+                                (11, "outsine", jump), (13, "inoutsine", p(jump, rightArm={"pitch": -158})), (14, "outback", grab),
+                                (17, "inoutsine", wound), (18, "outexpo", throw), (21, "outsine", p(throw, body={"bend": 44})),
+                                (26, "inoutsine", drop), (29, "outexpo", landed), (31, "outsine", p(landed, body={"bend": 30, "y": -0.44})),
+                                (34, "inoutsine", look), (35, "linear", look)],
+          "Iron Fist: Blue Hole, an uppercut; if it lands, a leap after them, a grab in the air and a throw straight down into the ground.")
     # V: Galaxy Divide: knees bent, launched up at them, the fist pulled back behind the shoulder in the air; the punch into the air
     low = p(IF, legs(80, 12), body={"y": -0.5, "bend": 22})
     air = p(rightArm=arm(40, 0, 64, -112), leftArm=mirror(arm(-88, -22, 10, -12)), rightLeg=leg(-62, 6, 86), leftLeg=leg(-24, -6, 96),

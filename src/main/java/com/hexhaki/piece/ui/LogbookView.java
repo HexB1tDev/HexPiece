@@ -713,9 +713,6 @@ public final class LogbookView {
                 "Landing blows trains it; heavier moves train it faster."), entries);
     }
 
-    /** 2.3.7: the original's Haki Projection, as HexPiece names it. */
-    public static final String GALAXY = "Galaxy Fist";
-
     // --- previews ---
 
     /** Data for the previews: a Six Powers pirate (or marine) with Haki, and the Pika fruit or the Nika fruit. */
@@ -737,9 +734,7 @@ public final class LogbookView {
             Entry.of("Presence", "V", "permanent key", "Sense every presence around you.", true, ""),
             Entry.of("Precognition", "-", "passive", "See the next blow before it comes.", false, "Needs Observation 500"))));
         styleHaki.add(new Section("Conqueror's Haki", "Awakened 120/1000", 0xFF8A2030, 0.12F, List.of("Rank Awakened."), List.of(
-            Entry.of("King's Awakening", nika ? "G" : "B", "tap or hold", "Release the will of a king.", true, "").bindable(100),
-            Entry.of("Haki Grip", nika ? "K" : "Z", "tap or hold", "Hold the key on a target in your sights.", true, "").bindable(101),
-            Entry.of("WiFi Haki", nika ? "L" : "C", "hold", "A wave of will through the ground.", false, "Needs Conqueror's 400").bindable(102))));
+            Entry.of("King's Awakening", nika ? "G" : "B", "tap or hold", "Release the will of a king.", true, "").bindable(100))));
         List<Section> fruitPage = new ArrayList<>();
         int points = -1;
         if (nika) {
@@ -759,10 +754,10 @@ public final class LogbookView {
                 Entry.of("Amaterasu", "-", "hold", "A sphere of light that burns everything it touches.", false, "Fruit mastery 650").bindable(3))));
         }
         String[] keys = {"G", "K", "L", "M", "B", "Z", "C", "N", "H"};
-        // 2.3.7: the Galaxy Fist (the original's Haki Projection) is not this Six Powers sample's
-        String[] names = nika ? new String[] {"King's Awakening", "Haki Grip", "WiFi Haki", "", "", "", "", "", ""}
-            : new String[] {"Light Beam", "Light Speed Kick", "", "", "King's Awakening", "Haki Grip", "WiFi Haki", "", ""};
-        int[] abilities = nika ? new int[] {100, 101, 102, -1, -1, -1, -1, -1, -1} : new int[] {0, 1, -1, -1, 100, 101, 102, -1, -1};
+        // 3.5.9: the Haki Grip and the Galaxy Fist are gone; WiFi Haki is a Swordsman's (not this Six Powers sample's)
+        String[] names = nika ? new String[] {"King's Awakening", "", "", "", "", "", "", "", ""}
+            : new String[] {"Light Beam", "Light Speed Kick", "", "", "King's Awakening", "", "", "", ""};
+        int[] abilities = nika ? new int[] {100, -1, -1, -1, -1, -1, -1, -1, -1} : new int[] {0, 1, -1, -1, 100, -1, -1, -1, -1};
         return new Data("HexB1t", profile, new int[] {640, 310, 120}, new String[] {"Adept", "Novice", "Awakened"},
             nika ? "Hito Hito no Mi, Model Nika" : "Pika Pika no Mi", 420, styleHaki, fruitPage, keys, names, abilities, points);
     }

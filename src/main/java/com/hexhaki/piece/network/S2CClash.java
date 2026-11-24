@@ -20,6 +20,22 @@ public record S2CClash(int id, double x, double y, double z, float dx, float dz,
     /** 3.5.8: the old impact frame (clash/ImpactFrame), the Gura ultimate's alone; every other is the owner's (clash/ImpactSprite). */
     public static final int CLASSIC = 8;
 
+    /**
+     * 3.5.9 (the owner after 3.5.8: "Impact frames are only on: Did 2 attacks clash? (if yes then the impact frame plays for both)"): two
+     * blows met (server/Clashes): the screen's impact frame plays for the two who clashed ({@link #a}, {@link #b}) and no one else. A
+     * message without it (a hit's burst) never plays one.
+     */
+    public static final int CLASH = 16;
+
+    public boolean clash() {
+        return (this.flags & CLASH) != 0;
+    }
+
+    /** Is the impact frame on the screen of the player {@code self} (an entity id)? A clash's, for the two who clashed. */
+    public boolean framed(int self) {
+        return this.classic() || this.clash() && self != -1 && (self == this.a || self == this.b);
+    }
+
     public boolean classic() {
         return (this.flags & CLASSIC) != 0;
     }

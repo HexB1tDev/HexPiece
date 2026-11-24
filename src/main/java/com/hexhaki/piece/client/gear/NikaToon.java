@@ -42,6 +42,7 @@ public final class NikaToon {
 
     /** At the head of HakiAnimations.playRemote: a clip started on player {@code id} (a Nika clip's beats begin; any other ends them). */
     public static void clip(int id, String name) {
+        com.hexhaki.piece.client.sword.WifiPull.clip(id, name); // 3.5.9: WiFi Haki's blade eased out of its saya while its clip plays
         ToonForce.Score score = name == null ? null : ToonForce.score(name);
         Toon toon = TOONS.get(id);
         if (score == null) {

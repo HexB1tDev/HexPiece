@@ -7,7 +7,6 @@ import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.ironfist.IronMove;
 import com.hexhaki.piece.ironfist.IronSounds;
 import com.hexhaki.piece.network.PieceNetwork;
-import com.hexhaki.piece.network.S2CClash;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -41,7 +40,7 @@ import net.minecraftforge.fml.common.Mod;
  * server decides every blow and every block torn out, and sends one small message for each thing to draw (S2CUoFx kinds 320 to 339:
  * client/ironfist/IronFx draws them on the beats of ironfist/IronMove). Terrain torn out grows back by itself (server/Scars: nothing
  * dropped, nothing protected or unbreakable touched, the world's mobGriefing rule obeyed). The Ryou moves throw the Conqueror's
- * release's own bolts (ConquerorAura.bolts); the big blows land with the clash's impact frame (S2CClash).
+ * release's own bolts (ConquerorAura.bolts). No impact frame on a hit (3.5.9: only a clash has one).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki")
 public final class IronFist {
@@ -55,8 +54,10 @@ public final class IronFist {
     public static final int BALL_END = 324;
     /** Mountain Crusher: bx 0 the coil (ticks), 1 the uppercut (x, y, z the fist, a the launch, size its strength). */
     public static final int CRUSHER = 325;
-    /** Blue Hole: bx 0 the crouch, 1 the dash (x, y, z to, a from, ticks), 2 the grab (id the body, ticks the lift), 3 the slam (x, y, z the
-     *  hole's mouth, size its depth), 4 a miss. */
+    /** Blue Hole: bx 0 the uppercut wound (x, y, z the fist, ticks), 1 it lands (x, y, z the fist, size its strength), 2 the leap after
+     *  the body (x, y, z to, a from, ticks), 3 the grab at the top (id the body, x, y, z, ticks held), 4 a miss or cut short, 5 the throw
+     *  down (x, y, z the top, a the ground, ticks), 6 the user's way down (x, y, z to, a from, ticks), 7 the hole (x, y, z its mouth, size
+     *  its depth). */
     public static final int HOLE = 326;
     /** Galaxy Divide: bx 0 the crouch, 1 the leap (x, y, z to, a from, ticks), 2 the shock (x, y, z its start on the ground, a the flat way,
      *  size its length, ticks its run). */
@@ -88,7 +89,6 @@ public final class IronFist {
     private static final Map<UUID, State> STATES = new HashMap<>();
     private static final List<UoMoves.Live> LIVE = new ArrayList<>();
     private static int seeds;
-    private static int frames = 1 << 20;
 
     private IronFist() {
     }
@@ -166,13 +166,6 @@ public final class IronFist {
     /** Living foes within {@code reach} in front of the player and {@code arc} degrees each side of the look. */
     static List<LivingEntity> ahead(ServerPlayer player, double reach, double arc) {
         return ItoMoves.ahead(player, reach, arc);
-    }
-
-    static void frame(ServerPlayer player, Vec3 at, Vec3 way, float power, LivingEntity target) {
-        Vec3 f = new Vec3(way.f_82479_, 0, way.f_82481_);
-        double l = Math.max(1.0E-6, f.m_82553_());
-        PieceNetwork.around(player, new S2CClash(++frames, at.f_82479_, at.f_82480_, at.f_82481_, (float) (f.f_82479_ / l), (float) (f.f_82481_ / l),
-            power, 0, 0, player.m_19879_(), target == null ? -1 : target.m_19879_(), 0));
     }
 
     static void debris(ServerPlayer player, Vec3 at, double reach, double lift, int count) {
@@ -315,7 +308,7 @@ public final class IronFist {
             double speed = IronMove.meteorSpeed(charge);
             Vec3 step = look.m_82490_(speed);
             int seed = ++seeds;
-            fx(player, BALL, seed, from, step, 0, charge, IronMove.meteorRadius(charge), IronMove.METEOR_FLIGHT);
+            fx(player, BALL, seed, from, step, 0, charge, IronMove.METEOR_RADIUS, IronMove.METEOR_FLIGHT);
             fx(player, METEOR, 0, from, look, 0, 0, 0, 0);
             sound(player, from, IronSounds.THROW, 1.1F, 0.9F);
             LIVE.add(new Ball((ServerLevel) player.m_9236_(), player, from, step, charge, now(player) + IronMove.METEOR_FLIGHT, seed));
@@ -353,7 +346,7 @@ public final class IronFist {
                 return true;
             }
             Vec3 next = this.at.m_82549_(this.step);
-            double r = IronMove.meteorRadius(this.charge);
+            double r = IronMove.METEOR_RADIUS;
             Vec3 u = this.step.m_82541_();
             double len = this.step.m_82553_();
             for (LivingEntity body : ItoMoves.foes(this.owner, this.at.m_82549_(next).m_82490_(0.5), len * 0.5 + r + 1.0)) {
@@ -426,7 +419,6 @@ public final class IronFist {
                 body.m_36384_(true);
             }
             if (hit(player, target, ryou ? 26.0F : 20.0F, launch, 0)) {
-                frame(player, StyleCombat.middle(target), f, 3.0F, target);
                 Impact.quake((ServerLevel) player.m_9236_(), at, 16.0, 0.6F, 8);
                 LIVE.add(new Tunnel((ServerLevel) player.m_9236_(), player, target, now(player) + IronMove.CRUSHER_TEAR));
             }
@@ -477,33 +469,103 @@ public final class IronFist {
 
     // ------------------------------------------------------------------------------------------------------ C: Blue Hole
 
+    /**
+     * 3.5.9 (the owner after 3.5.8: "Uppercut / Did it hit someone? No? Ends here. If Yes: the entity goes flying then the user catches
+     * up (jumps to the entity) grabs them and throws them down to the floor, hard"): an uppercut; on a miss the move ends there (a short
+     * cooldown). On a hit the body is carried up ({@link Flight}), the user leaps after it (their own client carries them, bx 2), grabs it
+     * at the top, throws it down into the ground (the hole) and comes down after it to the hole's edge (bx 6).
+     */
     static void blueHole(ServerPlayer player, State s, long now) {
         if (!cooled(player, s, IronMove.BLUE_HOLE, now) || !needs(player, IronMove.BLUE_HOLE)) {
             return;
         }
-        LivingEntity target = PikaMoves.aimed(player, IronMove.HOLE_RANGE, 0.8);
-        cool(s, IronMove.BLUE_HOLE, now, target != null ? IronMove.BLUE_HOLE.cooldown() : 60);
-        s.busyUntil = now + IronMove.HOLE_CROUCH + IronMove.HOLE_DASH + IronMove.HOLE_LIFT + 12;
+        cool(s, IronMove.BLUE_HOLE, now, IronMove.HOLE_MISS_COOLDOWN);
+        s.busyUntil = now + IronMove.HOLE_HIT + 4;
         animate(player, "style_brawler_blue_hole");
-        fx(player, HOLE, 0, player.m_20182_(), flat(player), 0, 0, 0, IronMove.HOLE_CROUCH);
-        Vec3 from = player.m_20182_();
+        fx(player, HOLE, 0, fist(player, 0.4), player.m_20154_(), 0, 0, 0, IronMove.HOLE_HIT);
+        sound(player, chest(player), IronSounds.SWING, 1.0F, 0.8F);
+        later(player, IronMove.HOLE_HIT, () -> uppercut(player, s));
+    }
+
+    static void uppercut(ServerPlayer player, State s) {
         Vec3 f = flat(player);
-        later(player, IronMove.HOLE_CROUCH, () -> {
-            Vec3 to;
-            if (target != null && target.m_6084_()) {
-                Vec3 t = target.m_20182_();
-                Vec3 back = new Vec3(from.f_82479_ - t.f_82479_, 0, from.f_82481_ - t.f_82481_);
-                back = back.m_82556_() < 1.0E-4 ? f.m_82490_(-1) : back.m_82541_();
-                to = t.m_82549_(back.m_82490_(1.1 + target.m_20205_() * 0.5));
-            } else {
-                to = blocked(player, from, f, 10.0);
+        Vec3 at = fist(player, 1.1).m_82520_(0, 0.3, 0);
+        LivingEntity aimed = PikaMoves.aimed(player, IronMove.HOLE_REACH, 0.6);
+        if (aimed == null) {
+            List<LivingEntity> near = ahead(player, IronMove.HOLE_REACH, 45);
+            aimed = near.isEmpty() ? null : near.get(0);
+        }
+        boolean ryou = ConquerorAura.ryou(player);
+        if (aimed == null || !hit(player, aimed, ryou ? 12.0F : 9.0F, Vec3.f_82478_, 0)) {
+            // no one there: the swing cuts the air and the move ends here (the clip let go of after the uppercut's follow-through)
+            fx(player, HOLE, ++seeds, at, new Vec3(0, 1, 0), 4, 0, 0, 0);
+            later(player, 1, () -> FruitUtil.animate(player, "__clear__", 4));
+            return;
+        }
+        LivingEntity target = aimed;
+        ServerLevel level = (ServerLevel) player.m_9236_();
+        long now = now(player);
+        cool(s, IronMove.BLUE_HOLE, now, IronMove.BLUE_HOLE.cooldown());
+        s.busyUntil = now + IronMove.HOLE_TICKS - IronMove.HOLE_HIT;
+        safeFall(player, s, now + IronMove.HOLE_TICKS + 40);
+        Vec3 start = target.m_20182_();
+        Vec3 apex = start.m_82520_(0, headroom(level, target, IronMove.HOLE_HEIGHT), 0);
+        Vec3 mouth = ground(level, start, 1.5, 24.0);
+        Vec3 d = new Vec3(start.f_82479_ - player.m_20185_(), 0, start.f_82481_ - player.m_20189_());
+        Vec3 way = d.m_82556_() < 1.0E-4 ? f : d.m_82541_();
+        Flight flight = new Flight(level, player, target, now, start, apex, mouth);
+        LIVE.add(flight);
+        fx(player, HOLE, ++seeds, at, new Vec3(0, 1, 0), 1, 0, ryou ? 1.0 : 0.8, 0);
+        sound(player, at, IronSounds.SMASH, 1.3F, 0.95F);
+        ConquerorAura.bolts(player, at, ryou ? 4.5 : 3.0, ryou ? 7 : 4, -1.2, 1.0);
+        // after it: up to where the right hand meets its face at the top
+        later(player, IronMove.HOLE_JUMP, () -> {
+            if (flight.over) {
+                return;
             }
-            fx(player, HOLE, ++seeds, to, from, 1, 0, 0, IronMove.HOLE_DASH);
-            safeFall(player, s, now(player) + 60);
-            sound(player, from, IronSounds.DASH, 1.2F, 0.9F);
-            debris(player, from, 3.0, 0.35, 6);
-            later(player, IronMove.HOLE_DASH, () -> grab(player, s, target));
+            Vec3 from = player.m_20182_();
+            Vec3 to = apex.m_82549_(way.m_82490_(-(0.95 + target.m_20205_() * 0.45))).m_82520_(0, target.m_20206_() * 0.85 - 1.6, 0);
+            fx(player, HOLE, ++seeds, to, from, 2, 0, 0, IronMove.HOLE_LEAP);
+            fly(player, s, true);
+            sound(player, from, IronSounds.DASH, 1.1F, 1.0F);
+            debris(player, from, 2.5, 0.3, 5);
         });
+        later(player, IronMove.HOLE_RISE, () -> {
+            if (flight.over) {
+                return;
+            }
+            fx(player, HOLE, target.m_19879_(), apex, way, 3, 0, 0, IronMove.HOLE_HANG);
+            sound(player, apex, IronSounds.PUNCH, 1.0F, 0.7F);
+            ConquerorAura.bolts(player, apex.m_82520_(0, target.m_20206_() * 0.6, 0), 3.0, 4, -1.5, 1.0);
+        });
+        int top = IronMove.HOLE_RISE + IronMove.HOLE_HANG;
+        later(player, top, () -> {
+            if (flight.over) {
+                return;
+            }
+            fx(player, HOLE, ++seeds, apex, mouth, 5, 0, 0, IronMove.HOLE_FALL);
+            sound(player, apex, IronSounds.THROW, 1.4F, 0.7F);
+        });
+        // and down after it, to the hole's edge on the side it came from
+        later(player, top + 1, () -> {
+            if (flight.over && !flight.slammed) {
+                return;
+            }
+            Vec3 edge = mouth.m_82549_(way.m_82490_(-(2.8 + target.m_20205_() * 0.5)));
+            Vec3 land = ground(level, edge, 3.0, 30.0);
+            fx(player, HOLE, ++seeds, land, player.m_20182_(), 6, 0, 0, IronMove.HOLE_DROP);
+        });
+    }
+
+    /** How far {@code body} can go straight up, at most {@code most} blocks (short of a ceiling). */
+    static double headroom(ServerLevel level, LivingEntity body, double most) {
+        Vec3 head = body.m_20182_().m_82520_(0, body.m_20206_(), 0);
+        BlockHitResult block = level.m_45547_(new ClipContext(head, head.m_82520_(0, most + 0.5, 0), ClipContext.Block.COLLIDER,
+            ClipContext.Fluid.NONE, null));
+        if (block.m_6662_() != HitResult.Type.BLOCK) {
+            return most;
+        }
+        return Math.max(0.0, Math.min(most, block.m_82450_().f_82480_ - head.f_82480_ - 0.4));
     }
 
     /** Where a dash along {@code f} from {@code from} stops: {@code most} on, or short of the first wall. */
@@ -514,34 +576,29 @@ public final class IronFist {
         return block.m_6662_() == HitResult.Type.BLOCK ? block.m_82450_().m_82520_(0, -1.0, 0).m_82546_(f.m_82490_(0.8)) : want;
     }
 
-    static void grab(ServerPlayer player, State s, LivingEntity target) {
-        if (target == null || !target.m_6084_() || target.m_20280_(player) > 4.0 * 4.0) {
-            fx(player, HOLE, 0, player.m_20182_(), flat(player), 4, 0, 0, 0);
-            return;
-        }
-        fx(player, HOLE, target.m_19879_(), player.m_20182_(), flat(player), 2, 0, 0, IronMove.HOLE_LIFT);
-        sound(player, target.m_20182_(), IronSounds.PUNCH, 1.0F, 0.7F);
-        LIVE.add(new Held((ServerLevel) player.m_9236_(), player, target, now(player), now(player) + IronMove.HOLE_LIFT));
-        for (int k = 0; k < IronMove.HOLE_LIFT; k += 4) {
-            later(player, k, () -> ConquerorAura.bolts(player, chest(player).m_82549_(flat(player).m_82490_(0.8)), 3.0, 4, -2.0, 1.0));
-        }
-        later(player, IronMove.HOLE_LIFT, () -> slam(player, target));
-    }
-
-    /** The body held up by the face in the right hand, lifted off its feet. */
-    static final class Held implements UoMoves.Live {
+    /**
+     * The uppercut's body: flown up (IronMove.holeRise), held at the top while the user grabs it, thrown down onto {@code mouth} (faster
+     * and faster), then the hole ({@link #slam}). Carried every tick (no fall, no drift); let go if either dies.
+     */
+    static final class Flight implements UoMoves.Live {
         final ServerLevel level;
         final ServerPlayer owner;
         final LivingEntity body;
         final long born;
-        final long until;
+        final Vec3 start;
+        final Vec3 apex;
+        final Vec3 mouth;
+        boolean over;
+        boolean slammed;
 
-        Held(ServerLevel level, ServerPlayer owner, LivingEntity body, long born, long until) {
+        Flight(ServerLevel level, ServerPlayer owner, LivingEntity body, long born, Vec3 start, Vec3 apex, Vec3 mouth) {
             this.level = level;
             this.owner = owner;
             this.body = body;
             this.born = born;
-            this.until = until;
+            this.start = start;
+            this.apex = apex;
+            this.mouth = mouth;
         }
 
         @Override
@@ -551,26 +608,43 @@ public final class IronFist {
 
         @Override
         public boolean tick(long now) {
-            if (!this.body.m_6084_() || !this.owner.m_6084_() || now >= this.until) {
+            if (this.over) {
                 return true;
             }
-            double lift = Math.min(1.0, (now - this.born) / 6.0);
-            Vec3 f = flat(this.owner);
-            Vec3 hand = this.owner.m_20182_().m_82549_(f.m_82490_(0.95 + this.body.m_20205_() * 0.4));
+            if (!this.body.m_6084_() || !this.owner.m_6084_() || !STATES.containsKey(this.owner.m_20148_())) {
+                this.over = true;
+                if (this.owner.m_6084_()) {
+                    fx(this.owner, HOLE, 0, this.owner.m_20182_(), Vec3.f_82478_, 4, 0, 0, 0);
+                    FruitUtil.animate(this.owner, "__clear__", 4);
+                }
+                return true;
+            }
+            double t = now - this.born;
+            int top = IronMove.HOLE_RISE + IronMove.HOLE_HANG;
+            Vec3 p;
+            if (t <= IronMove.HOLE_RISE) {
+                double up = this.apex.f_82480_ - this.start.f_82480_;
+                p = this.start.m_82520_(0, up * IronMove.holeRise(t) / IronMove.HOLE_HEIGHT, 0);
+            } else if (t <= top) {
+                p = this.apex;
+            } else if (t < top + IronMove.HOLE_FALL) {
+                p = this.apex.m_82549_(this.mouth.m_82546_(this.apex).m_82490_(IronMove.holeThrow(t - top)));
+            } else {
+                this.over = true;
+                this.slammed = true;
+                slam(this.owner, this.body, this.mouth);
+                return true;
+            }
             this.body.m_20256_(Vec3.f_82478_);
             this.body.f_19864_ = true;
-            this.body.m_6021_(hand.f_82479_, hand.f_82480_ + 0.6 * lift + this.owner.m_20206_() * 0.95 - this.body.m_20206_(), hand.f_82481_);
+            this.body.m_6021_(p.f_82479_, p.f_82480_, p.f_82481_);
             this.body.f_19789_ = 0.0F;
             return false;
         }
     }
 
-    static void slam(ServerPlayer player, LivingEntity target) {
-        if (!target.m_6084_()) {
-            return;
-        }
+    static void slam(ServerPlayer player, LivingEntity target, Vec3 mouth) {
         ServerLevel level = (ServerLevel) player.m_9236_();
-        Vec3 mouth = ground(level, target.m_20182_(), 3.0, 4.0);
         int bx = (int) Math.floor(mouth.f_82479_);
         int by = (int) Math.floor(mouth.f_82480_ - 0.01);
         int bz = (int) Math.floor(mouth.f_82481_);
@@ -589,13 +663,16 @@ public final class IronFist {
             }
         }
         dig(level, player, cells, 0.0, Craters.REPAIR + 200);
-        fx(player, HOLE, ++seeds, mouth, flat(player), 3, 0, IronMove.HOLE_DEPTH, 0);
-        frame(player, mouth.m_82520_(0, 1.0, 0), flat(player), 3.5F, target);
+        fx(player, HOLE, ++seeds, mouth, flat(player), 7, 0, IronMove.HOLE_DEPTH, 0);
         Craters.open(level, player, mouth, 2.6);
         debris(player, mouth, 7.0, 0.8, 16);
         Impact.quake(level, mouth, 22.0, 0.75F, 12);
         ConquerorAura.bolts(player, mouth.m_82520_(0, 0.5, 0), 5.0, 9, -0.5, 1.3);
         sound(player, mouth, IronSounds.SLAM, 1.6F, 0.75F);
+        if (!target.m_6084_()) {
+            return;
+        }
+        hit(player, target, ConquerorAura.ryou(player) ? 24.0F : 20.0F, new Vec3(0, -1.2, 0), IronMove.HOLE_STUN);
         later(player, 2, () -> {
             if (!target.m_6084_()) {
                 return;
@@ -608,7 +685,6 @@ public final class IronFist {
             target.m_6021_(bx + 0.5, y, bz + 0.5);
             target.m_20256_(new Vec3(0, -1.0, 0));
             target.f_19864_ = true;
-            hit(player, target, ConquerorAura.ryou(player) ? 24.0F : 20.0F, new Vec3(0, -1.2, 0), IronMove.HOLE_STUN);
             HakiFalls.knockDown(level, target, IronMove.HOLE_STUN, false);
         });
     }
@@ -655,7 +731,6 @@ public final class IronFist {
         Vec3 base = ground(level, player.m_20182_().m_82549_(f.m_82490_(2.0)), 2.0, 14.0);
         int run = (int) Math.ceil(IronMove.DIVIDE_LENGTH / IronMove.DIVIDE_SPEED);
         fx(player, DIVIDE, ++seeds, base, f, 2, 0, IronMove.DIVIDE_LENGTH, run);
-        frame(player, fist(player, 1.2), f, 3.5F, null);
         sound(player, base, IronSounds.SMASH, 1.6F, 0.7F);
         sound(player, base, IronSounds.RUMBLE, 1.4F, 0.8F);
         // the world split along its line, a slice at a time as the front passes
@@ -753,7 +828,6 @@ public final class IronFist {
             Vec3 f = flat(player);
             Vec3 at = chest(player).m_82549_(f.m_82490_(2.0));
             fx(player, INF, ++seeds, at, f, 3, 0, 0, 0);
-            frame(player, at, f, 4.0F, null);
             for (LivingEntity body : ahead(player, 10.0, 45)) {
                 hit(player, body, 20.0F, f.m_82490_(2.8).m_82520_(0, 0.6, 0), 30);
                 HakiFalls.knockDown(level, body, 40, false);
@@ -798,10 +872,11 @@ public final class IronFist {
         fly(player, s, true);
         sound(player, feet, IronSounds.RUMBLE, 1.2F, 0.6F);
         ServerLevel level = (ServerLevel) player.m_9236_();
-        for (int t = 4; t < IronMove.IMPACT_JUMP; t += 5) {
+        // 3.5.9 (the owner: "galaxy impact is too laggy"): every burst of lightning, rock and torn block cut down hard
+        for (int t = 4; t < IronMove.IMPACT_JUMP; t += IronMove.IMPACT_CROUCH_EVERY) {
             int tt = t;
             later(player, t, () -> {
-                ConquerorAura.bolts(player, chest(player), 2.2 + tt * 0.05, 3, -1.4, 1.0);
+                ConquerorAura.bolts(player, chest(player), 2.2 + tt * 0.05, 2, -1.4, 1.0);
                 Impact.quake(level, feet, 10.0, 0.15F + tt * 0.01F, 6);
             });
         }
@@ -812,17 +887,17 @@ public final class IronFist {
             sound(player, feet, IronSounds.SMASH, 1.6F, 0.6F);
             sound(player, feet, IronSounds.DASH, 1.4F, 0.6F);
         });
-        for (int t = IronMove.IMPACT_TOP; t < IronMove.IMPACT_SILENCE; t += 3) {
+        for (int t = IronMove.IMPACT_TOP; t < IronMove.IMPACT_SILENCE; t += IronMove.IMPACT_CHARGE_EVERY) {
             int tt = t;
             later(player, t, () -> {
                 double power = IronMove.impactCharge(tt);
                 Vec3 fist = fist(player, 0.2).m_82520_(0, 0.5, 0);
-                ConquerorAura.bolts(player, fist, 15.0 + 10.0 * power, 4 + (int) (8 * power), -IronMove.IMPACT_HEIGHT - 1.0, 1.4 + 1.2 * power);
+                ConquerorAura.bolts(player, fist, 15.0 + 10.0 * power, IronMove.impactBolts(power), -IronMove.IMPACT_HEIGHT - 1.0, 1.4 + 1.2 * power);
                 Vec3 below = ground(level, player.m_20182_(), 0.0, IronMove.IMPACT_HEIGHT + 20.0);
                 for (LivingEntity body : ItoMoves.foes(player, below, 40.0)) {
-                    body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, 10, 1 + (int) (2 * power), false, false, false));
+                    body.m_7292_(new MobEffectInstance(MobEffects.f_19597_, IronMove.IMPACT_CHARGE_EVERY + 4, 1 + (int) (2 * power), false, false, false));
                 }
-                if (tt % 9 == 2) {
+                if ((tt - IronMove.IMPACT_TOP) % (2 * IronMove.IMPACT_CHARGE_EVERY) == 0) {
                     Impact.quake(level, below, 45.0, 0.2F + 0.4F * (float) power, 8);
                 }
             });
@@ -844,12 +919,11 @@ public final class IronFist {
             60.0);
         double drop = fist.m_82554_(struck);
         fx(player, IMPACT, ++seeds, struck, down, 2, drop, IronMove.IMPACT_DOME, 0);
-        frame(player, fist, down, 5.0F, null);
         StyleCombat.push(player, down.m_82490_(-0.25));
         double landing = IronMove.impactLanding(drop) - IronMove.IMPACT_PUNCH;
         later(player, (int) Math.round(landing), () -> {
             sound(player, struck, IronSounds.SMASH, 2.0F, 0.5F);
-            ConquerorAura.bolts(player, struck.m_82520_(0, 2.0, 0), 12.0, 10, -1.0, 2.0);
+            ConquerorAura.bolts(player, struck.m_82520_(0, 2.0, 0), 12.0, 6, -1.0, 2.0);
         });
         later(player, (int) Math.round(landing) + 4, () -> impactBlast(player, level, struck));
     }
@@ -872,15 +946,15 @@ public final class IronFist {
                 if (d > edge) {
                     continue;
                 }
-                double depth = (8.0 + 4.0 * Craters.noise(cx + x, 3, cz + z)) * Math.sqrt(Math.max(0.0, 1.0 - (d / edge) * (d / edge)));
+                double depth = IronMove.IMPACT_DEPTH * (0.75 + 0.5 * Craters.noise(cx + x, 3, cz + z)) * Math.sqrt(Math.max(0.0, 1.0 - (d / edge) * (d / edge)));
                 int order = (int) (d / speed);
-                for (int y = -(int) Math.round(depth); y <= 10; y++) {
+                for (int y = -(int) Math.round(depth); y <= 6; y++) {
                     cells.add(new int[] {cx + x, cy + y, cz + z, order});
                 }
             }
         }
         // the middle ring: whatever stands on the ground torn apart, the ground broken here and there; the edge: scattered
-        for (int k = 0; k < 2600; k++) {
+        for (int k = 0; k < IronMove.IMPACT_SCATTER; k++) {
             double a = 2 * Math.PI * FireMesh.rand(cx + k, 1);
             double d = IronMove.IMPACT_CRATER + (IronMove.IMPACT_DOME - IronMove.IMPACT_CRATER) * Math.sqrt(FireMesh.rand(cz + k, 2));
             int x = cx + (int) Math.round(Math.cos(a) * d);
@@ -890,18 +964,18 @@ public final class IronFist {
                 continue;
             }
             int order = (int) (d / speed);
-            int top = d < 35.0 ? 9 : 4;
-            int deep = d < 35.0 ? 2 : 1;
+            int top = d < 35.0 ? 6 : 3;
+            int deep = 1;
             for (int y = -deep; y <= top; y++) {
                 cells.add(new int[] {x, cy + y, z, order});
             }
         }
         dig(level, player, cells, 1.0, Craters.REPAIR + 600);
         Set<Integer> struck = new HashSet<>();
-        for (int t = 0; t <= IronMove.IMPACT_DOME_TICKS; t += 2) {
+        for (int t = 0; t <= IronMove.IMPACT_DOME_TICKS; t += 4) {
             int tt = t;
             later(player, t, () -> {
-                double radius = IronMove.IMPACT_DOME * Math.min(1.0, (tt + 2) / (double) IronMove.IMPACT_DOME_TICKS);
+                double radius = IronMove.IMPACT_DOME * Math.min(1.0, (tt + 4) / (double) IronMove.IMPACT_DOME_TICKS);
                 for (LivingEntity body : ItoMoves.foes(player, at, radius + 2.0)) {
                     if (body == player || !struck.add(body.m_19879_())) {
                         continue;
@@ -913,11 +987,11 @@ public final class IronFist {
                     hit(player, body, (float) (10.0 + 50.0 * fall * fall), out, 60);
                     HakiFalls.knockDown(level, body, 40 + (int) (60 * fall), false);
                 }
-                if (tt % 6 == 0) {
+                if (tt % 12 == 0) {
                     double a = tt * 0.9;
                     Vec3 bolt = at.m_82520_(Math.cos(a) * radius * 0.6, 3.0 + radius * 0.3, Math.sin(a) * radius * 0.6);
-                    ConquerorAura.bolts(player, bolt, 18.0 + radius * 0.2, 10, -(3.0 + radius * 0.3), 2.0);
-                    debris(player, at, radius * 1.1, 1.0 + radius * 0.012, 14);
+                    ConquerorAura.bolts(player, bolt, 18.0 + radius * 0.2, 6, -(3.0 + radius * 0.3), 2.0);
+                    debris(player, at, radius * 1.1, 1.0 + radius * 0.012, 10);
                 }
             });
         }

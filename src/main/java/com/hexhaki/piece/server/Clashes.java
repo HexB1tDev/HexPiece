@@ -136,7 +136,7 @@ public final class Clashes {
         heard(body, at, power, true);
         PieceNetwork.around(body, new S2CClash(++next, at.f_82479_, at.f_82480_, at.f_82481_, (float) (dir.f_82479_ / flat),
             (float) (dir.f_82481_ / flat), power, ryou, theirs.ryou(), owner.m_19879_(), body.m_19879_(),
-            S2CClash.BLADE_A | (theirs.blade() ? S2CClash.BLADE_B : 0) | (ClashRules.overwhelmed(ratio) ? S2CClash.OVERWHELMED : 0)));
+            S2CClash.CLASH | S2CClash.BLADE_A | (theirs.blade() ? S2CClash.BLADE_B : 0) | (ClashRules.overwhelmed(ratio) ? S2CClash.OVERWHELMED : 0)));
         return true;
     }
 
@@ -155,7 +155,7 @@ public final class Clashes {
         }
         double flat = Math.max(1.0E-4, Math.hypot(dir.f_82479_, dir.f_82481_));
         S2CClash message = new S2CClash(++next, at.f_82479_, at.f_82480_, at.f_82481_, (float) (dir.f_82479_ / flat), (float) (dir.f_82481_ / flat),
-            power, ryouA, ryouB, a.m_19879_(), b.m_19879_(), S2CClash.BLADE_A | S2CClash.BLADE_B);
+            power, ryouA, ryouB, a.m_19879_(), b.m_19879_(), S2CClash.CLASH | S2CClash.BLADE_A | S2CClash.BLADE_B);
         PieceNetwork.around(a, message);
         PieceNetwork.around(b, message);
     }
@@ -222,7 +222,7 @@ public final class Clashes {
             PieceSounds.playAt(a, at.f_82479_, at.f_82480_, at.f_82481_, com.hexhaki.piece.sword.SwordSounds.CLASH,
                 0.9F + 0.2F * power, blowA.blade() && blowB.blade() ? 1.0F : 0.8F);
         }
-        int flags = (blowA.blade() ? S2CClash.BLADE_A : 0) | (blowB.blade() ? S2CClash.BLADE_B : 0)
+        int flags = S2CClash.CLASH | (blowA.blade() ? S2CClash.BLADE_A : 0) | (blowB.blade() ? S2CClash.BLADE_B : 0)
             | (ClashRules.overwhelmed(ratioA) || ClashRules.overwhelmed(ratioB) ? S2CClash.OVERWHELMED : 0);
         S2CClash message = new S2CClash(++next, at.f_82479_, at.f_82480_, at.f_82481_, (float) dx, (float) dz, power, blowA.ryou(),
             blowB.ryou(), a.m_19879_(), b.m_19879_(), flags);

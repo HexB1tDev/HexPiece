@@ -818,16 +818,16 @@ public final class DragonTests {
             for (double reach : new double[] {dome * 1.05, 90.0, 140.0}) {
                 com.hexhaki.piece.ironfist.IronArt.groundRing(sink, 0, 0, 0, reach * grow, 0.8);
             }
-            // the game's three walls of dust (IronFx.strike) and the force still falling, all at once, the user in their middle
+            // the game's wall of dust (IronFx.strike; 3.5.9: one, it was three) and the force still falling, all at once
             com.hexhaki.piece.ironfist.IronArt.dustWall(sink, 0, 0, 0, dome * grow * 0.96, 6.0 + 8.0 * grow, 0.75, age, 19);
-            com.hexhaki.piece.ironfist.IronArt.dustWall(sink, 0, 0, 0, dome * 0.55, 10.0, 0.6, age, 24);
-            com.hexhaki.piece.ironfist.IronArt.dustWall(sink, 0, 0, 0, com.hexhaki.piece.ironfist.IronMove.IMPACT_CRATER * 0.8, 8.0, 0.5, age, 28);
             com.hexhaki.piece.gura.GuraArt.shock(sink, 0, 35, 0, 0, -1, 0, 37.0, 0.4, 1.0, com.hexhaki.piece.ironfist.IronMove.IMPACT_FALL, age, 3);
-            for (int k = 0; k < 120; k++) {
+            // 3.5.9: the rocks in the air at once: the jump's 18 gone by then, three throws of at most 10 (debris caps a throw at 24)
+            for (int k = 0; k < 30; k++) {
                 com.hexhaki.piece.ironfist.IronArt.thrown(k, 5, 30.0, 12.0, age, t);
                 com.hexhaki.piece.ironfist.IronArt.chunk(sink, t[0], t[1], t[2], 0.6, t[3], 5 + k, 1.0);
             }
             check(count[0], finite[0], "Galaxy Impact", age);
+            Check.that(count[0] < 9000, "Galaxy Impact stays well under the budget (3.5.9, the owner: too laggy) at " + age + " (" + count[0] + ")");
             count[0] = 0;
             com.hexhaki.piece.ironfist.IronArt.shockSheet(sink, 0, 0, Math.min(40.0, age * 2.0), 0, 1, 20.0, 5.0, 1.0, age, 13);
             com.hexhaki.piece.ironfist.IronArt.cannonball(sink, 0, 2, age * 4.0, 0.85, age, age, 3);

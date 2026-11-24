@@ -133,6 +133,12 @@ final class LogbookData {
         return "passive".equals(move.key()) ? "-" : live(move.key()).replace("[", "").replace("]", "");
     }
 
+    /** 3.5.9: WiFi Haki is a Swordsman's alone (the owner). */
+    static boolean swordsman() {
+        com.hexhaki.piece.PieceProfile self = PieceClient.self();
+        return self.chosen() && self.style() != null && self.style().sword();
+    }
+
     /** The Conqueror's (and Armament's) four quick powers, as the original Ability Book numbers them (100 + n). */
     static int quick(HakiTechnique t) {
         if (t == HakiTechnique.CONQ_AWAKENING) {
@@ -164,8 +170,8 @@ final class LogbookData {
     }
 
     static String abilityName(int ability, Fruit kit) {
-        if (ability == quick(HakiTechnique.ARM_GALAXY_WAVE)) {
-            return LogbookView.GALAXY;
+        if (com.hexhaki.piece.haki.QuickSlots.gone(ability)) {
+            return ""; // 3.5.9: the Haki Grip and the Galaxy Fist are gone
         }
         if (Binds.isHaki(ability)) {
             for (HakiTechnique t : HakiTechnique.values()) {
@@ -200,14 +206,17 @@ final class LogbookData {
         List<Entry> entries = new ArrayList<>();
         HakiTechnique next = null;
         for (HakiTechnique t : HakiTechnique.forType(type)) {
-            if (t == HakiTechnique.ARM_GALAXY_WAVE) {
-                continue; // 2.3.7: Iron Fist's (3.5.7: gone with its old moves until it is remade)
+            if (t == HakiTechnique.ARM_GALAXY_WAVE || t == HakiTechnique.CONQ_DOMINION) {
+                continue; // 3.5.9: the Galaxy Fist and the Haki Grip, removed entirely (the owner)
+            }
+            if (t == HakiTechnique.CONQ_SOVEREIGN && !swordsman()) {
+                continue; // 3.5.9: WiFi Haki, a Swordsman's alone
             }
             boolean open = HakiMasteryScreen.unlocked(t, mastery);
             int quick = quick(t);
             String own = permanent(t);
             String key = quick >= 0 ? keyOf(quick) : own != null ? own : "-";
-            String info = quick >= 0 ? (t == HakiTechnique.CONQ_SOVEREIGN || t == HakiTechnique.ARM_GALAXY_WAVE ? "hold" : "tap or hold")
+            String info = quick >= 0 ? (t == HakiTechnique.CONQ_SOVEREIGN ? "hold" : "tap or hold")
                 + " its quick slot" : own != null ? "its own key" : "passive: always on";
             Entry entry = Entry.of(t.display, key, info, live(t.description), open, "Needs " + HakiMasteryScreen.requirement(t));
             if (t == HakiTechnique.CONQ_JOYBOY) {
@@ -229,9 +238,10 @@ final class LogbookData {
             about.add("Next: " + next.display + " (" + HakiMasteryScreen.requirement(next) + ").");
         }
         about.add(switch (type) {
-            case ARMAMENT -> "Trained by coated hits, guarding, Blade Cuts, the Haki Leap and the Haki Grip.";
-            case OBSERVATION -> "Trained by exploring, surviving, reading danger, dodging and holding WiFi Haki locks.";
-            default -> "Trained by releasing the King's pressure and landing the Haki Grip and WiFi Haki.";
+            case ARMAMENT -> "Trained by coated hits, guarding, Blade Cuts and the Haki Leap.";
+            case OBSERVATION -> swordsman() ? "Trained by exploring, surviving, reading danger, dodging and holding WiFi Haki locks."
+                : "Trained by exploring, surviving, reading danger and dodging.";
+            default -> swordsman() ? "Trained by releasing the King's pressure and landing WiFi Haki." : "Trained by releasing the King's pressure.";
         });
         if (type == HakiType.ARMAMENT) {
             about.add("Haki energy " + Math.round(HakiClientState.energy) + "/" + Math.round(HakiClientState.maxEnergy) + ".");

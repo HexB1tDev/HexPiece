@@ -168,6 +168,7 @@ public final class ProfileServer {
         PieceProfile profile = of(player);
         PieceNetwork.sendTo(player, full(player, profile));
         PieceNetwork.around(player, seen(player, profile));
+        HakiQuick.styleChanged(player); // 3.5.9: WiFi Haki on a Swordsman's quick slots alone
     }
 
     @SubscribeEvent

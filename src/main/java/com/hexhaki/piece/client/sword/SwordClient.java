@@ -242,5 +242,6 @@ public final class SwordClient {
         SEEN.clear();
         PLAYING.clear();
         MOVED.clear();
+        WifiPull.clear();
     }
 }

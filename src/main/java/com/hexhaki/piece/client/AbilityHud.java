@@ -154,7 +154,7 @@ public final class AbilityHud {
             int[] layout = BindsClient.layout();
             for (int slot = 0; layout != null && slot < layout.length; slot++) {
                 int ability = layout[slot];
-                if (Binds.isHaki(ability)) {
+                if (Binds.isHaki(ability) && !com.hexhaki.piece.haki.QuickSlots.gone(ability)) {
                     slots.add(new AbilityPanel.Move(BindsClient.keyName(slot), hakiName(ability), "", 0, 0));
                 }
             }
@@ -168,9 +168,7 @@ public final class AbilityHud {
     static String hakiName(int ability) {
         return switch (ability - Binds.HAKI_BASE) {
             case 0 -> "King's Awakening (tap / hold)";
-            case 1 -> "Haki Grip";
-            case 2 -> "WiFi Haki";
-            case 3 -> com.hexhaki.piece.ui.LogbookView.GALAXY; // 2.3.7: the original's Haki Projection (3.5.7: no one's until Iron Fist is remade)
+            case 2 -> "WiFi Haki"; // 3.5.9: a Swordsman's alone (the Haki Grip and the Galaxy Fist, 1 and 3, are gone)
             default -> "Haki";
         };
     }

@@ -168,7 +168,9 @@ public final class PiecePatch implements Opcodes {
     static final String RYOU_SERVER = "com/hexhaki/piece/server/RyouServer";
     static final String CONTROLLER = "com/hexhaki/gameplay/HakiServerController";
     static final String CONQUEROR = "com/hexhaki/piece/server/ConquerorRelease";
-    static final String GALAXY = "com/hexhaki/piece/server/GalaxyFist";
+    /** 3.5.9: the Conqueror's quick abilities (the Haki Grip and the Galaxy Fist gone, WiFi Haki a Swordsman's): server/HakiQuick. */
+    static final String QUICK = "com/hexhaki/piece/server/HakiQuick";
+    static final String PLAYER_VOID = "(Lnet/minecraft/server/level/ServerPlayer;)V";
     static final String COATING = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/model/geom/ModelPart;FZLnet/minecraft/client/player/AbstractClientPlayer;Z)V";
     static final String AURA = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZFZZ)V";
     static final String AMBIENT = "(Lnet/minecraft/world/entity/Entity;FZJZ)V";
@@ -215,10 +217,19 @@ public final class PiecePatch implements Opcodes {
         {HAND, "renderFirstPerson", HAND, "renderArmAura", AURA, RYOU_HANDS, "armAura", 1},
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentAmbient", AMBIENT, RYOU_FX, "ambient", 1},
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentGroundStorm", GROUND_STORM, RYOU_FX, "groundStorm", 1},
-        // 2.3.7 (the owner: "Galaxy fist becomes a move of Iron fist that unlocks when the user activates RYOU haki. ONLY for iron fist."):
-        // the Galaxy Fist's start (its "convergence") goes through HexPiece, which lets only an Iron Fist fighter with Ryou up throw it
-        // (3.5.7: no one, while Iron Fist is remade: server/GalaxyFist)
-        {CONTROLLER, "onAction", CONTROLLER, "beginConvergence", "(Lnet/minecraft/server/level/ServerPlayer;)V", GALAXY, "begin", 1},
+        // 3.5.9 (the owner: "Galaxy Fist  Removed entirely.", "Haki Grip  Removed entirely as well", "Wifi haki becomes a Sword's man
+        // ability only"): the Galaxy Fist's start and end (its "convergence") and the Haki Grip's (its "dominion") do nothing; WiFi Haki's
+        // ("sovereign strike") go through HexPiece, which lets only a Swordsman hold it; its lightning leaves the saya's mouth at the hip
+        {CONTROLLER, "onAction", CONTROLLER, "beginConvergence", PLAYER_VOID, QUICK, "gone", 1},
+        {CONTROLLER, "onAction", CONTROLLER, "releaseConvergence", PLAYER_VOID, QUICK, "gone", 1},
+        {CONTROLLER, "onAction", CONTROLLER, "beginDominion", PLAYER_VOID, QUICK, "gone", 1},
+        {CONTROLLER, "onAction", CONTROLLER, "releaseDominion", PLAYER_VOID, QUICK, "gone", 1},
+        {CONTROLLER, "onAction", CONTROLLER, "sovereignStrike", PLAYER_VOID, QUICK, "wifi", 1},
+        {CONTROLLER, "onAction", CONTROLLER, "releaseSovereignStrike", PLAYER_VOID, QUICK, "wifiRelease", 1},
+        {CONTROLLER, "sovereignStrike", CONTROLLER, "wifiHakiHandPoint", "(Lnet/minecraft/server/level/ServerPlayer;)Lnet/minecraft/world/phys/Vec3;",
+            QUICK, "mouth", 1},
+        {CONTROLLER, "sendWifiHakiArc", CONTROLLER, "wifiHakiHandPoint", "(Lnet/minecraft/server/level/ServerPlayer;)Lnet/minecraft/world/phys/Vec3;",
+            QUICK, "mouth", 1},
         // 2.4.5 (the owner: "Conqueror Haki full release lags a ton when releasing the full charge"): the release's range lightning goes
         // through HexPiece, which leaves out the supreme release's second pass (the same bolts again from a second seed, 7 ticks
         // later: half the release's 3D lightning, 80,000 quads a frame at its height)
@@ -328,15 +339,14 @@ public final class PiecePatch implements Opcodes {
     };
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura", "renderFirstPerson"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},
-        {CONTROLLER, "beginConvergence", "applyConqueror", "forceMaxConquerorStun", "isConquerorCombatTarget"}};
+        {CONTROLLER, "sovereignStrike", "releaseSovereignStrike", "wifiHakiHandPoint", "applyConqueror", "forceMaxConquerorStun",
+            "isConquerorCombatTarget"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any
      * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either). 2.3.7: the Galaxy Fist's Armament 520.
      */
     static final Object[][] INTS = {
         {CONTROLLER, "releaseConqueror", 1000, 0, 1},
-        // 2.3.7: the Galaxy Fist asked for Armament mastery 520 (its "Haki Projection" lock): Ryou up is what opens it now
-        {CONTROLLER, "beginConvergence", 520, 0, 2},
     };
     /**
      * 2.1.3: static methods whose whole body becomes a call into HexPiece (same descriptor): class, method, descriptor, new owner, name.
@@ -413,6 +423,11 @@ public final class PiecePatch implements Opcodes {
             "[K] Midgame cinematic finisher. Hold K on a target in your sights: the wind hauls them in onto a chambered fist, an uppercut launches them straight up, you appear above them mid-flight and hammer them back into the floor with both arms. Most of the damage is in the landing, not the launch, and the crater throws everything else clear. Physical/Haki/Ryou tiers raise the launch height, the damage and the size of the blast.", 1},
         {"com/hexhaki/data/HakiTechnique", "Passive milestone for Haki Projection. A full charge reaches roughly 30% further and wider, and past 85% under Advanced Haki its landing scatters grounded Haki strikes around the impact.",
             "Passive milestone for Haki Projection. A full charge reaches roughly 30% further and wider, and past 85% under Ryou its landing scatters grounded Haki strikes around the impact.", 1},
+        // 3.5.9 (the owner: "Wifi haki becomes a Sword's man ability only (switch the key to a free quickslot not L)", and its blade eased
+        // out of the saya with the lightning out of the gap)
+        {CONTROLLER, "WiFi Haki [Hold L] requires ARM 450 + OBS 450 + HAO 500.", "WiFi Haki [Hold K] requires ARM 450 + OBS 450 + HAO 500.", 1},
+        {"com/hexhaki/data/HakiTechnique", "[L HOLD] Lock one visible target with 1/2/3 separated arched Haki beams. Range, duration and damage grow with ARM + OBS + HAO mastery.",
+            "[K HOLD] A Swordsman's alone. The blade eased a finger's width out of its saya, and out of the gap Haki lightning locks one visible target with 1/2/3 separated arched beams. Range, duration and damage grow with ARM + OBS + HAO mastery.", 1},
         {"com/hexhaki/binds/client/AbilityBook", "Permanent:  \u0001 Armament   \u0001 Observation   \u0001 Advanced Haki   \u0001 powers on/off   \u0001 this book\u0001",
             "Permanent:  \u0001 style / fruit (Ctrl: Armament, Ryou)   \u0001 Observation   \u0001 (empty)   \u0001 powers on/off   \u0001 this book\u0001", 1},
     };
@@ -500,6 +515,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(FRUIT + ".class", transform(entries.get(FRUIT + ".class"), PiecePatch::uoFruit));
         entries.put(HAKI_KEYS + ".class", transform(entries.get(HAKI_KEYS + ".class"), PiecePatch::keyDefaults));
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
+        entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::tidySlots));
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), node -> {
             firstPersonArms(node);
             toonClips(node);
@@ -1743,6 +1759,19 @@ public final class PiecePatch implements Opcodes {
         if (!found.equals(Map.of("M", 2, "N", 1, "H", 1))) {
             throw new AssertionError("Binds' slot letters are not the ones inspected: " + found);
         }
+    }
+
+    /**
+     * 3.5.9 (the owner: the Haki Grip and the Galaxy Fist "Removed entirely", WiFi Haki a Swordsman's on a free quick slot, not L): the
+     * head of {@code Binds.sync(player)} (every time the quick slots are sent) has {@code server/HakiQuick.tidy(player)} set them right
+     * first (haki/QuickSlots). No branch, no frame.
+     */
+    static void tidySlots(ClassNode node) {
+        MethodNode sync = method(node, "sync", "(Lnet/minecraft/server/level/ServerPlayer;)V");
+        InsnList head = new InsnList();
+        head.add(new VarInsnNode(ALOAD, 0));
+        head.add(new MethodInsnNode(INVOKESTATIC, QUICK, "tidy", PLAYER_VOID, false));
+        sync.instructions.insert(head);
     }
 
     /** RyouServer.afterArmament(player) before every return of HakiServerController.toggleArmament. */

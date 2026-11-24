@@ -145,15 +145,38 @@ public final class StyleTests {
         Check.that(Faction.PIRATE.enemy() == Faction.MARINE && Faction.MARINE.enemy() == Faction.PIRATE, "the two sides");
     }
 
-    /** 2.3.7: the Galaxy Fist was Iron Fist's alone, with Ryou up; 3.5.7: gone with Iron Fist's other moves until it is remade. */
+    /**
+     * 3.5.9 (the owner: "Galaxy Fist  Removed entirely.", "Haki Grip  Removed entirely as well", "Wifi haki becomes a Sword's man
+     * ability only (switch the key to a free quickslot not L)"): the original's starts and ends of both go nowhere; WiFi Haki's through
+     * HexPiece; every layout loses both and keeps WiFi Haki for a Swordsman alone, never on L.
+     */
     static void galaxy() throws Exception {
-        for (FightingStyle style : FightingStyle.values()) {
-            Check.that(!PieceRules.galaxyFist(style, true) && !PieceRules.galaxyFist(style, false), style + ": no Galaxy Fist while Iron Fist is remade");
-        }
-        Check.that(!PieceRules.galaxyFist(null, true), "no style chosen: no Galaxy Fist");
         String patch = java.nio.file.Files.readString(java.nio.file.Path.of("patch/PiecePatch.java"));
-        Check.that(patch.contains("\"beginConvergence\", \"(Lnet/minecraft/server/level/ServerPlayer;)V\", GALAXY, \"begin\", 1}")
-            && patch.contains("{CONTROLLER, \"beginConvergence\", 520, 0, 2}"), "the original's start goes through HexPiece, its mastery gone");
+        for (String gone : new String[] {"beginConvergence", "releaseConvergence", "beginDominion", "releaseDominion"}) {
+            Check.that(patch.contains("{CONTROLLER, \"onAction\", CONTROLLER, \"" + gone + "\", PLAYER_VOID, QUICK, \"gone\", 1}"),
+                gone + " goes nowhere");
+        }
+        Check.that(patch.contains("\"sovereignStrike\", PLAYER_VOID, QUICK, \"wifi\", 1}") && !patch.contains("520, 0, 2"),
+            "WiFi Haki through HexPiece; the Galaxy Fist's mastery row gone with it");
+        Check.that(!java.nio.file.Files.exists(java.nio.file.Path.of("src/main/java/com/hexhaki/piece/server/GalaxyFist.java")),
+            "no Galaxy Fist class left");
+        int[] old = {100, 101, 102, 103, -1, -1, -1, -1, -1};
+        int[] sword = com.hexhaki.piece.haki.QuickSlots.clean(old, true);
+        Check.that(java.util.Arrays.equals(sword, new int[] {100, 102, -1, -1, -1, -1, -1, -1, -1}),
+            "a Swordsman: the Grip and the Galaxy Fist gone, WiFi Haki off L onto K " + java.util.Arrays.toString(sword));
+        int[] other = com.hexhaki.piece.haki.QuickSlots.clean(old, false);
+        Check.that(java.util.Arrays.equals(other, new int[] {100, -1, -1, -1, -1, -1, -1, -1, -1}), "anyone else: no WiFi Haki");
+        int[] busyK = com.hexhaki.piece.haki.QuickSlots.clean(new int[] {100, 1, 102, -1, 4, 5, 6, 7, 8}, true);
+        Check.that(busyK[3] == 102 && busyK[2] == -1 && busyK[1] == 1, "K taken by the fruit: WiFi Haki on H, never L");
+        int[] full = com.hexhaki.piece.haki.QuickSlots.clean(new int[] {100, 1, 102, 3, 4, 5, 6, 7, 8}, true);
+        Check.that(full[2] != 102, "no free slot but L: WiFi Haki left off rather than on L");
+        int[] kept = com.hexhaki.piece.haki.QuickSlots.clean(new int[] {100, -1, -1, -1, -1, 102, -1, -1, -1}, true);
+        Check.that(kept[5] == 102 && kept[1] == -1, "WiFi Haki where the player put it (not L) stays there");
+        for (int[] layout : new int[][] {sword, other, busyK, full, kept}) {
+            for (int a : layout) {
+                Check.that(!com.hexhaki.piece.haki.QuickSlots.gone(a), "no layout keeps a gone power");
+            }
+        }
     }
 
     /**

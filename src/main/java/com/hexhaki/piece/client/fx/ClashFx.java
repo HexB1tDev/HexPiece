@@ -89,8 +89,13 @@ public final class ClashFx {
         } catch (RuntimeException failure) {
             // effects never stop the game
         }
+        // 3.5.9: the screen's impact frame only for a clash, and only on the two who clashed (the Gura ultimate's own frame kept)
+        int self = minecraft.f_91074_ == null ? -1 : minecraft.f_91074_.m_19879_();
+        if (!message.framed(self)) {
+            return;
+        }
         Camera camera = minecraft.f_91063_ == null ? null : minecraft.f_91063_.m_109153_();
-        if (camera == null || camera.m_90583_().m_82554_(at) <= ClashRules.frameReach(message.power())) {
+        if (!message.classic() || camera == null || camera.m_90583_().m_82554_(at) <= ClashRules.frameReach(message.power())) {
             shown = new Shown(at.f_82479_, at.f_82480_, at.f_82481_, message.power(), message.ryouA(), message.ryouB(), seed, level.m_46467_(),
                 message.classic());
         }

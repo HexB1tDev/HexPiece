@@ -7,6 +7,7 @@ import com.hexhaki.piece.sword.HolsterView;
 import com.hexhaki.piece.sword.Katana;
 import com.hexhaki.piece.sword.KatanaItem;
 import com.hexhaki.piece.sword.Koiguchi;
+import com.hexhaki.piece.sword.WifiDraw;
 import com.hexhaki.piece.sword.SwordAnims;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -92,7 +93,7 @@ public final class HolsterHand {
             if (SwordClient.swing(anim)) {
                 return;
             }
-            if (empty && anim == SwordAnims.NONE && !StanceLayer.swordsman(player)) {
+            if (empty && anim == SwordAnims.NONE && !StanceLayer.swordsman(player) && !WifiPull.held(player)) {
                 return; // the hand empty, out of the Swordsman's combat mode, the sword doing nothing: the game's own hand
             }
             float partial = event.getPartialTick();
@@ -128,10 +129,15 @@ public final class HolsterHand {
             } else if (back) {
                 pose = new DrawView.Pose(null, null, null, null, 0.0F); // Yoru on the back: the hands are free
                 rest = true;
+            } else if (!back && WifiPull.held(player)) {
+                // 3.5.9: WiFi Haki held: the hands on the hilt and at the saya's mouth as the draw has them, the blade a little way out
+                double wifi = WifiPull.ticks(player, partial);
+                pose = DrawView.draw(katana, slim, (float) WifiDraw.drawTick(wifi), SwordAnims.duration(SwordAnims.DRAW, katana),
+                    BladePaths.drawTick(SwordAnims.name(SwordAnims.DRAW, katana)), equip, age);
             } else {
                 pose = DrawView.holster(katana, slim, equip, age);
                 double ready = anim == SwordAnims.NONE ? StanceLayer.swordReady(player, partial) : -1.0;
-                push = ready < 0 ? 0.0F : Koiguchi.push(ready);
+                push = Math.max(ready < 0 ? 0.0F : Koiguchi.push(ready), WifiPull.push(player, partial));
                 rest = true;
             }
             // the sword sheathed and the hand empty: the right hand is free, and the game keeps drawing it (its punches, its digging)

@@ -212,6 +212,18 @@ public final class SwordServer {
         return changed;
     }
 
+    /**
+     * 3.5.9: the katana {@code player} carries at the hip with its blade in the saya (WiFi Haki's lightning leaves the saya's mouth), or
+     * null (none, carried on the back, or drawn).
+     */
+    public static Katana sheathedAtHip(ServerPlayer player) {
+        State state = STATES.get(player.m_20148_());
+        if (state == null || state.katana == null || state.drawn || state.katana.carry() != Katana.Carry.HIP) {
+            return null;
+        }
+        return state.katana;
+    }
+
     /** A Swordsman in combat mode. */
     static boolean swordsman(ServerPlayer player) {
         PieceProfile profile = ProfileServer.of(player);

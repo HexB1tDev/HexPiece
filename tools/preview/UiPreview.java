@@ -214,7 +214,7 @@ public class UiPreview {
         locked.remove("toggle");
         java.util.List<com.hexhaki.piece.ui.AbilityPanel.Move> haki = java.util.List.of(
             new com.hexhaki.piece.ui.AbilityPanel.Move("G", "King's Awakening (tap / hold)", "", 0, 0),
-            new com.hexhaki.piece.ui.AbilityPanel.Move("K", "Haki Grip", "", 0, 0), new com.hexhaki.piece.ui.AbilityPanel.Move("L", "WiFi Haki", "", 0, 0));
+            new com.hexhaki.piece.ui.AbilityPanel.Move("K", "WiFi Haki", "", 0, 0)); // 3.5.9: a Swordsman's, on K; the Haki Grip gone
         java.util.List<com.hexhaki.piece.ui.AbilityPanel.Move> pika = java.util.List.of(
             new com.hexhaki.piece.ui.AbilityPanel.Move("G", "Light Beam", "", 34, 60), new com.hexhaki.piece.ui.AbilityPanel.Move("K", "Light Speed Kick", "", 0, 0),
             new com.hexhaki.piece.ui.AbilityPanel.Move("L", "Yata Mirror", "", 0, 0), new com.hexhaki.piece.ui.AbilityPanel.Move("M", "Amaterasu", "650", 0, 0));

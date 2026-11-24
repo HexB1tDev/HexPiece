@@ -3567,6 +3567,35 @@ Not started:
   Cut hard: fewer bolt calls (a few, not every 6 ticks), fewer rocks (cap about 40), one dust wall, a smaller or slower crater,
   the quake once; measure the client frame (DragonTests.ironArt) and keep the server's per-tick work small.
 
+## 8zzv. The owner's further requests during 3.5.9's session (verbatim, in the order sent) and where they stand
+
+With the prompt ("finish all four in one version 3.5.9"), then while 3.5.9 was being built:
+
+1. "Wifi haki becomes a Sword's man ability only (switch the key to a free quickslot not L)."
+2. "Galaxy Fist  Removed entirely."
+3. "Haki Grip  Removed entirely as well"
+4. "animation of the Wifi haki becomes: / The user (while holding the key) slowly unsheaths the sword JUST A LITTLE BIT, the lightning
+   emergers from the opening in the sheath." (with a picture: a hand on the hilt pushing the guard out of the sheath's mouth, red light
+   and jagged red-black lightning bursting from the gap between guard and sheath: the koiguchi)
+5. "We're also changing haki entirely AGAIN, in the starter menu where you pick style, gender wtf, we'll add an option to choose haki
+   colour the new colors are the following: / Black and Red. The most iconic combination used for clashes and advanced coating by
+   characters like Monkey D. Luffy, Whitebeard, and Donquixote Doflamingo. / Gold and Yellow. Frequently used for Gol D. Roger in the
+   anime and Vivre Cards, as well as Luffy during his Gear 5 awakening. / Purple. Prominently featured for Kaido, Charlotte Katakuri,
+   and Yamato. / Green. Often used as the outer aura for Roronoa Zoro when unleashing his Conqueror's Haki alongside Enma. / Blue. Seen
+   in earlier anime clashes, such as Luffy's clash with Don Chinjao / Green, Cyan and Black - [the forbidden fruit's owner: the name
+   may not appear anywhere: build.py check_imu] / Red and Light Red, Shanks". In the game every set is named by its colours only.
+6. "Also all lightning sounds are to change to new more bass boosted ones (get from the web) and be lowered in volume (ONLY the
+   lightning sounds), Full COnqueror on releasing should not play all the lightning sounds at once, just one (currently they're all
+   playing at once when the key is released causing a ridiculously loud sound)."
+7. "Haki Coated attacks from fruits and styles are to have the exact same LIGHTNING as the one in Conquerors's charge (Holding G)."
+   (The charge's lightning and the release's are the same bolts: VFX.conquerorCharge and conquerorRelease both go through
+   addConquerorRangeLightning, ConquerorStorm.charge / range.)
+8. "Also every lightning should be more croocked, its going too straight Look at haki references man. Just make sure ALL haki is shared,
+   only 1 type and style of haki  model should be in use, THE CONQUEROR HAKI RELEASE (BUTTON G)" (with a picture: a figure in a red cape
+   under a sky of red lightning, every bolt sharply zig-zagging, kinked every short step, forked, white-hot at its core)
+
+Where they stand: see section 8zzw (3.5.9 as built) for what is done; anything not listed there is still to do.
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);

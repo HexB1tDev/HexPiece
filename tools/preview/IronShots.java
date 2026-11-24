@@ -6,7 +6,7 @@ import com.hexhaki.piece.ironfist.IronMove;
 /**
  * 3.5.8: Iron Fist's previews (ironfist/IronArt and gura/GuraArt, the very quads client/ironfist/IronFx draws), in FxPreview:
  * {@code |iball:age} the cannonball flying, {@code |iboom:age[:c]} its blast, {@code |icrush:age} Mountain Crusher's shock,
- * {@code |ihole:age} Blue Hole's slam, {@code |idivide:age} Galaxy Divide's shock, {@code |iinf:age} the barrage, {@code |iglow:power}
+ * {@code |ihup:age} Blue Hole's uppercut, {@code |ithrow:age} its throw down, {@code |ihole:age} its hole, {@code |idivide:age} Galaxy Divide's shock, {@code |iinf:age} the barrage, {@code |iglow:power}
  * Galaxy Impact's fist, {@code |idome:age} its blast (age from the force landing).
  */
 public final class IronShots {
@@ -23,7 +23,7 @@ public final class IronShots {
             case "iball" -> {
                 user(sink, "style_brawler_meteor_throw", 6, ex, ey, ez);
                 double speed = IronMove.meteorSpeed(1.0);
-                double r = IronMove.meteorRadius(1.0);
+                double r = IronMove.METEOR_RADIUS;
                 IronArt.cannonball(sink, -ex, 1.8 - ey, 2.0 + age * speed - ez, r, age * 0.9, age, 3);
                 IronArt.trail(sink, -ex, 1.8 - ey, 2.0 + age * speed - ez, 0, 0, 1, speed, r, age, 3);
             }
@@ -47,13 +47,36 @@ public final class IronShots {
                 IronArt.impactLines(sink, -ex, 1.5 - ey, 1.1 - ez, ux, uy, uz, 4.5, age, 9.0, 9);
                 IronArt.pressure(sink, -ex, 1.5 - ey, 1.1 - ez, ux, uy, uz, 2.4, age, 8.0);
             }
+            case "ihup" -> {
+                // 3.5.9 Blue Hole's uppercut landing (IronFx.hole phase 1: a Crush up from the fist at 0.6 of its size), the body flying up
+                user(sink, "style_brawler_blue_hole", IronMove.HOLE_HIT + age, ex, ey, ez);
+                HieShots.body(sink, -ex, IronMove.holeRise(age) - ey, 1.4 - ez);
+                double size = 0.6;
+                GuraArt.shock(sink, -0.3 - ex, 1.9 - ey, 0.9 - ez, 0, 1, 0, 11.0 * size, 0.42, 1.0, 3.2, age, 9);
+                IronArt.impactLines(sink, -0.3 - ex, 1.9 - ey, 0.9 - ez, 0, 1, 0, 4.5, age, 9.0, 9);
+                IronArt.pressure(sink, -0.3 - ex, 1.9 - ey, 0.9 - ez, 0, 1, 0, 2.4, age, 8.0);
+            }
+            case "ithrow" -> {
+                // the throw from the top (IronFx.thrown): the user hanging where they grabbed, the body streaking down to the ground
+                double top = IronMove.HOLE_HEIGHT;
+                user(sink, "style_brawler_blue_hole", IronMove.HOLE_HIT + IronMove.HOLE_RISE + IronMove.HOLE_HANG + age, ex, ey - top + 0.07, ez);
+                double e = IronMove.holeThrow(age);
+                double ticks = IronMove.HOLE_FALL;
+                HieShots.body(sink, -ex, top * (1.0 - e) - ey, 1.25 - ez);
+                IronArt.impactLines(sink, -ex, top + 0.9 - ey, 1.25 - ez, 0, 1, 0, 2.6, age, 7.0, 21);
+                IronArt.pressure(sink, -ex, top + 0.9 - ey, 1.25 - ez, 0, -1, 0, 2.2, age, 7.0);
+                if (age <= ticks) {
+                    double speed = top / ticks * (0.6 + 1.4 * e);
+                    IronArt.trail(sink, -ex, top * (1.0 - e) + 0.9 - ey, 1.25 - ez, 0, -1, 0, Math.min(3.0, speed * 0.45), 0.6, age, 21);
+                }
+            }
             case "ihole" -> {
                 user(sink, "style_brawler_blue_hole", 30, ex, ey, ez);
-                GuraArt.quake(sink, -ex, -ey, 1.6 - ez, 10.0, 1.0, age, 11);
+                GuraArt.quake(sink, -ex, -ey, 3.1 - ez, 10.0, 1.0, age, 11);
                 double u = Math.min(1.0, age / 16.0);
-                IronArt.groundRing(sink, -ex, -ey, 1.6 - ez, 1.0 + 15.0 * (1.0 - (1.0 - u) * (1.0 - u)), 0.8 * (1.0 - u));
-                IronArt.dustWall(sink, -ex, -ey, 1.6 - ez, 1.2 + 3.0 * u, 2.6, 0.7 * (1.0 - age / GuraArt.QUAKE_LIFE), age, 11);
-                debris(sink, -ex, -ey, 1.6 - ez, 7.0, 0.8, 16, age, 12);
+                IronArt.groundRing(sink, -ex, -ey, 3.1 - ez, 1.0 + 15.0 * (1.0 - (1.0 - u) * (1.0 - u)), 0.8 * (1.0 - u));
+                IronArt.dustWall(sink, -ex, -ey, 3.1 - ez, 1.2 + 3.0 * u, 2.6, 0.7 * (1.0 - age / GuraArt.QUAKE_LIFE), age, 11);
+                debris(sink, -ex, -ey, 3.1 - ez, 7.0, 0.8, 16, age, 12);
             }
             case "idivide" -> {
                 double front = Math.min(IronMove.DIVIDE_LENGTH, age * IronMove.DIVIDE_SPEED);

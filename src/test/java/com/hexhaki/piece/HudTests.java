@@ -908,7 +908,30 @@ public final class HudTests {
             && com.hexhaki.piece.ironfist.IronMove.DIVIDE_WIDTH == 5.0, "Galaxy Divide: 40 forward, 20 up, 5 across (the owner's numbers)");
         Check.that(com.hexhaki.piece.ironfist.IronMove.meteorCharge(0) > 0.0 && com.hexhaki.piece.ironfist.IronMove.meteorCharge(1000) == 1.0,
             "Meteor Fist: a tap still throws, the hold fills it");
-        Check.that(com.hexhaki.piece.ironfist.IronMove.HOLE_RANGE == 20.0, "Blue Hole dashes about 20 blocks");
+        // 3.5.9: Meteor Fist's cannonball one size (the owner: "should not fucking increase size")
+        Check.that(com.hexhaki.piece.ironfist.IronMove.METEOR_RADIUS > 0.3 && com.hexhaki.piece.ironfist.IronMove.METEOR_RADIUS < 1.0,
+            "Meteor Fist: one cannonball size");
+        // 3.5.9 Blue Hole: an uppercut at arm's reach; a hit flies up and slows to the top, the user leaps after it and grabs it there,
+        // throws it down faster and faster, and comes down after it, all within the clip
+        Check.that(com.hexhaki.piece.ironfist.IronMove.HOLE_REACH > 2.5
+            && com.hexhaki.piece.ironfist.IronMove.HOLE_REACH < 5.0, "Blue Hole: an uppercut at arm's reach");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.holeRise(0) == 0.0
+            && com.hexhaki.piece.ironfist.IronMove.holeRise(com.hexhaki.piece.ironfist.IronMove.HOLE_RISE) == com.hexhaki.piece.ironfist.IronMove.HOLE_HEIGHT,
+            "Blue Hole: the body flies up to its height");
+        for (int t = 1; t <= com.hexhaki.piece.ironfist.IronMove.HOLE_RISE; t++) {
+            double rise = com.hexhaki.piece.ironfist.IronMove.holeRise(t) - com.hexhaki.piece.ironfist.IronMove.holeRise(t - 1);
+            double before = t < 2 ? Double.MAX_VALUE : com.hexhaki.piece.ironfist.IronMove.holeRise(t - 1) - com.hexhaki.piece.ironfist.IronMove.holeRise(t - 2);
+            Check.that(rise > 0.0 && rise <= before, "Blue Hole: the body rises and slows to the top at " + t);
+        }
+        Check.that(com.hexhaki.piece.ironfist.IronMove.holeThrow(0) == 0.0
+            && com.hexhaki.piece.ironfist.IronMove.holeThrow(com.hexhaki.piece.ironfist.IronMove.HOLE_FALL) == 1.0
+            && com.hexhaki.piece.ironfist.IronMove.holeThrow(1) < 0.5, "Blue Hole: thrown down faster and faster");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.HOLE_JUMP + com.hexhaki.piece.ironfist.IronMove.HOLE_LEAP == com.hexhaki.piece.ironfist.IronMove.HOLE_RISE,
+            "Blue Hole: the user reaches the top as the body does");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.HOLE_HIT + com.hexhaki.piece.ironfist.IronMove.HOLE_RISE + com.hexhaki.piece.ironfist.IronMove.HOLE_HANG
+            + 1 + com.hexhaki.piece.ironfist.IronMove.HOLE_DROP <= com.hexhaki.piece.ironfist.IronMove.HOLE_TICKS, "Blue Hole: the user is down before the clip ends");
+        Check.that(com.hexhaki.piece.ironfist.IronMove.HOLE_MISS_COOLDOWN < com.hexhaki.piece.ironfist.IronMove.BLUE_HOLE.cooldown(),
+            "Blue Hole: a miss ends it with a short cooldown");
         int n = com.hexhaki.piece.ironfist.IronMove.barrageCount();
         Check.that(n >= 18, "Infinitum Explosion: a barrage (" + n + " punches)");
         for (int k = 1; k < n; k++) {
@@ -961,6 +984,15 @@ public final class HudTests {
             Check.that(side >= 700 && side <= 1080 * 1.45 + 1, "the impact frame's size on a 1080p screen (" + side + ")");
         }
         Check.that(com.hexhaki.piece.network.S2CClash.CLASSIC == 8, "the Gura ultimate keeps the old impact frame (S2CClash.CLASSIC)");
+        // 3.5.9 (the owner: "Impact frames are only on: Did 2 attacks clash? (if yes then the impact frame plays for both)")
+        com.hexhaki.piece.network.S2CClash met = new com.hexhaki.piece.network.S2CClash(1, 0, 0, 0, 1, 0, 2, 0, 0, 10, 20,
+            com.hexhaki.piece.network.S2CClash.CLASH);
+        Check.that(met.framed(10) && met.framed(20), "a clash's impact frame plays for both who clashed");
+        Check.that(!met.framed(30) && !met.framed(-1), "and for no one else");
+        com.hexhaki.piece.network.S2CClash hit = new com.hexhaki.piece.network.S2CClash(2, 0, 0, 0, 1, 0, 2, 0, 0, 10, 20, 0);
+        Check.that(!hit.framed(10) && !hit.framed(20), "a hit's burst plays no impact frame");
+        Check.that((com.hexhaki.piece.network.S2CClash.CLASH & 0xFF) == com.hexhaki.piece.network.S2CClash.CLASH,
+            "the clash flag fits the message's flag byte");
     }
 
     static void mochi() {

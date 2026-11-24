@@ -35,6 +35,10 @@ public final class BoltPreview {
             gifs(new File(args[1]));
             return;
         }
+        if (args.length == 2 && args[0].equals("wifi")) {
+            wifiSheet(new File(args[1]));
+            return;
+        }
         if (args.length == 2 && args[0].equals("clash")) {
             clash(new File(args[1]));
             return;
@@ -145,6 +149,55 @@ public final class BoltPreview {
                     g.drawString(shots[r].label + "  " + Math.round(share * 100) + "% out  t" + t, col * W + 4, r * (H + 18) + 13);
                     col++;
                 }
+            }
+        }
+        g.dispose();
+        ImageIO.write(sheet, "png", out);
+    }
+
+    /**
+     * 3.5.9: WiFi Haki held (client/sword/HakiDraw.wifi): the blade eased out of its saya as sword/WifiDraw has it at four moments,
+     * the gap between the guard and the saya's mouth crackling with the Conqueror's lightning, close up (night and day).
+     */
+    static void wifiSheet(File out) throws Exception {
+        double[] ticks = {12, 20, 30, 44};
+        double x = 0.9;
+        Shot[] shots = {new Shot("night", new double[] {x + 0.42, 1.2, -0.62}, new double[] {x, 0.98, 0}, true),
+            new Shot("day", new double[] {x + 0.42, 1.2, -0.62}, new double[] {x, 0.98, 0}, false)};
+        BufferedImage sheet = new BufferedImage(W * ticks.length, (H + 18) * shots.length, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        g.setColor(new Color(236, 234, 228));
+        g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+        g.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        for (int r = 0; r < shots.length; r++) {
+            for (int c = 0; c < ticks.length; c++) {
+                double t = ticks[c];
+                Raster raster = new Raster(shots[r]);
+                raster.scene();
+                float px = com.hexhaki.piece.sword.WifiDraw.push(t);
+                double exposed = px / 16.0;
+                double guard = 0.9;
+                // the saya below (its mouth at the guard's height less what is bared), the bared steel, the guard and the handle above
+                raster.box(x - 0.05, guard - 1.35, -0.022, x + 0.05, guard, 0.022, new float[] {0.2F, 0.06F, 0.06F});
+                raster.box(x - 0.03, guard, -0.006, x + 0.035, guard + exposed, 0.006, new float[] {0.6F, 0.62F, 0.66F});
+                raster.box(x - 0.09, guard + exposed, -0.05, x + 0.09, guard + exposed + 0.03, 0.05, new float[] {0.55F, 0.42F, 0.15F});
+                raster.box(x - 0.035, guard + exposed + 0.03, -0.03, x + 0.035, guard + exposed + 0.45, 0.03, new float[] {0.12F, 0.05F, 0.06F});
+                double strength = 1.1 + 0.6 * Math.min(1.0, px / com.hexhaki.piece.sword.WifiDraw.MOST);
+                long window = (long) Math.floor(t / com.hexhaki.piece.haki.DrawCrackle.WINDOW);
+                List<Bolt> bolts = new ArrayList<>();
+                for (long w = window - 2; w <= window; w++) {
+                    // HakiDraw.wifi's call in the blade's frame: from the saya's mouth (0) to the guard, the gap at the mouth; here the
+                    // blade's frame is laid with its origin at the mouth and the guard up
+                    for (Bolt bolt : com.hexhaki.piece.haki.DrawCrackle.set(7L, w, 0.0, exposed, exposed, strength, 0xFFFF1433)) {
+                        bolts.add(new Bolt(bolt.points, bolt.widths, bolt.color, bolt.kind, bolt.delay + w * com.hexhaki.piece.haki.DrawCrackle.WINDOW,
+                            bolt.duration, bolt.crawl, bolt.seed, bolt.dance));
+                    }
+                }
+                raster.boltsAt(bolts, t, new double[] {x, guard, 0});
+                g.drawImage(raster.image(), c * W, r * (H + 18) + 18, null);
+                g.setColor(new Color(30, 30, 30));
+                g.drawString(shots[r].label + "  t" + (int) t + "  " + String.format(java.util.Locale.ROOT, "%.1f", px) + " px out", c * W + 4,
+                    r * (H + 18) + 13);
             }
         }
         g.dispose();
