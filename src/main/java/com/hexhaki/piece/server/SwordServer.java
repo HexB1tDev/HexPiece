@@ -443,9 +443,10 @@ public final class SwordServer {
         }
         boolean haki = HakiData.flag(player, "armamentOn");
         // 2.5.4: the Haki slash cools for 30 seconds; meanwhile the charge is a steel cut (on its own cooldown), the slash's wait shown
-        boolean cooling = haki && now < state.slashReady;
+        boolean op = OpMode.on(player); // 3.6.2: no cooldowns in op mode
+        boolean cooling = haki && now < state.slashReady && !op;
         long ready = haki && !cooling ? state.slashReady : state.cutReady;
-        if (now < ready) {
+        if (now < ready && !op) {
             player.m_5661_(Component.m_237113_((haki && !cooling ? "Haki slash" : "Charged cut") + ": "
                 + String.format(java.util.Locale.ROOT, "%.1f", (ready - now) / 20.0) + "s"), true);
             return;
@@ -472,7 +473,7 @@ public final class SwordServer {
         if (haki) {
             double cost = SwordRules.lerp(PieceConfig.get(PieceConfig.SLASH_COST_MIN, SwordRules.SLASH_COST_MIN),
                 PieceConfig.get(PieceConfig.SLASH_COST_MAX, SwordRules.SLASH_COST_MAX), charge);
-            if (now < state.slashReady) {
+            if (now < state.slashReady && !OpMode.on(player)) {
                 haki = false; // 2.5.4: still cooling (told as the charge began): a steel cut
             } else if (!HakiData.consume(player, (float) cost)) {
                 haki = false;
@@ -488,6 +489,9 @@ public final class SwordServer {
         state.releaseColor = haki ? RyouServer.color(player) : 0;
         state.aim = player.m_20154_();
         state.releaseStruck.clear();
+        if (OpMode.on(player)) {
+            return; // 3.6.2: no cooldowns in op mode
+        }
         if (haki) {
             state.slashReady = now + Math.round(PieceConfig.get(PieceConfig.SLASH_COOLDOWN, SwordRules.SLASH_COOLDOWN));
         } else {
@@ -502,7 +506,7 @@ public final class SwordServer {
         if (state.katana != null && state.katana.legend() && (sheathed(state, now) || state.drawStart >= 0)) {
             return; // 2.3.2: a legendary blade is never drawn mid-fight: the quick draw waits for its own draw to finish
         }
-        if (now < state.quickReady) {
+        if (now < state.quickReady && !OpMode.on(player)) {
             player.m_5661_(Component.m_237113_("Quick draw: " + String.format(java.util.Locale.ROOT, "%.1f", (state.quickReady - now) / 20.0)
                 + "s"), true);
             return;
@@ -516,7 +520,7 @@ public final class SwordServer {
         state.drawCut = false;
         state.drawCharge = false;
         state.quickStart = now;
-        state.quickReady = now + QUICK_COOLDOWN;
+        state.quickReady = OpMode.on(player) ? now : now + QUICK_COOLDOWN; // 3.6.2: no cooldown in op mode
         state.quickLast = player.m_20182_();
         state.quickStruck.clear();
         state.drawn = true;

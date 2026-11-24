@@ -22,6 +22,7 @@ public final class StyleTests {
         rules();
         galaxy();
         powers();
+        opMode();
         removed();
         tumble();
         air();
@@ -150,6 +151,32 @@ public final class StyleTests {
      * 3.5.9 (the owner: "HOLDING R will now fully disable all powers and abilities (but fruit passives)"): R held switches every power;
      * the original's switch comes here too and no longer removes the kit (its passives); every message that starts a power asks first.
      */
+    /**
+     * 3.6.2 (the owner: "All new fruits and every style have to obey /hp op on/off"): every cooldown, energy cost and mastery lock
+     * HexPiece keeps itself asks the original's op switch (OpMode, HakiData.op); the fruits' cooldowns are the original's own (FruitData).
+     */
+    static void opMode() throws Exception {
+        String base = "src/main/java/com/hexhaki/piece/server/";
+        String op = java.nio.file.Files.readString(java.nio.file.Path.of(base + "OpMode.java"));
+        Check.that(op.contains("HakiData.op(player)"), "op mode is the original's own switch");
+        String[][] places = {
+            {"FruitEnergy", "2"}, {"StyleServer", "3"}, {"IronFist", "2"}, {"SwordServer", "5"}, {"DragonServer", "1"},
+        };
+        for (String[] place : places) {
+            String code = java.nio.file.Files.readString(java.nio.file.Path.of(base + place[0] + ".java"));
+            int count = code.split("OpMode\\.on\\(player\\)", -1).length - 1;
+            Check.that(count >= Integer.parseInt(place[1]), place[0] + " obeys op mode (" + count + " checks)");
+        }
+        for (String fruit : new String[] {"Gura", "Hie", "Horo", "Ito", "Magu", "Noro", "Pika", "Supa", "Uo"}) {
+            String code = java.nio.file.Files.readString(java.nio.file.Path.of(base + fruit + "Moves.java"));
+            Check.that(code.contains("FruitData.ready(player, move.cooldown())") && code.contains("FruitData.cooldown(player, move.cooldown(), ticks)")
+                && code.contains("FruitEnergy.afford(player, move)"), fruit + ": cooldowns through the original's (op-aware) and energy through FruitEnergy");
+        }
+        String mochi = java.nio.file.Files.readString(java.nio.file.Path.of(base + "MochiMoves.java"));
+        Check.that(!mochi.contains("FruitData.cooldown(") && mochi.contains("ItoMoves.cool(player, MochiKit."),
+            "Mochi: its cooldowns through ItoMoves' (the original's)");
+    }
+
     static void powers() throws Exception {
         String patch = java.nio.file.Files.readString(java.nio.file.Path.of("patch/PiecePatch.java"));
         Check.that(patch.contains("\"togglePowers\", PLAYER_VOID, POWERS, \"toggle\", 1}")

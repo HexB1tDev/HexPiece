@@ -85,7 +85,7 @@ public final class DragonServer {
         long now = player.m_9236_().m_46467_();
         if (phase == DragonForm.HUMAN) {
             Long rest = RESTING.get(player.m_20148_());
-            if (rest != null && now < rest || player.m_5833_()) {
+            if (rest != null && now < rest && !OpMode.on(player) || player.m_5833_()) { // 3.6.2: op mode: no rest after turning back
                 return;
             }
             State fresh = new State();

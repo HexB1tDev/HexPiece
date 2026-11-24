@@ -174,7 +174,7 @@ public final class IronFist {
 
     static boolean cooled(ServerPlayer player, State s, IronMove move, long now) {
         Long ready = s.ready.get(move);
-        if (ready != null && now < ready) {
+        if (ready != null && now < ready && !OpMode.on(player)) { // 3.6.2: no cooldowns in op mode
             player.m_5661_(Component.m_237113_(move.display() + ": " + String.format(java.util.Locale.ROOT, "%.1f", (ready - now) / 20.0) + "s"),
                 true);
             return false;
@@ -855,7 +855,7 @@ public final class IronFist {
         }
         float cost = (float) (HakiData.maxEnergy(player) * IronMove.IMPACT_ENERGY);
         if (!HakiData.unlimitedEnergy(player)) {
-            if (HakiData.energy(player) < cost) {
+            if (HakiData.energy(player) < cost && !OpMode.on(player)) { // 3.6.2: op mode spends no energy (HakiData.consume's own)
                 player.m_5661_(Component.m_237113_("Galaxy Impact: not enough Haki"), true);
                 return;
             }

@@ -177,13 +177,13 @@ public final class StyleServer {
         if (move == null) {
             return;
         }
-        if (profile.mastery(style) < move.mastery()) {
+        if (profile.mastery(style) < move.mastery() && !OpMode.on(player)) { // 3.6.2: op mode opens every move
             player.m_5661_(Component.m_237113_(move.display() + " opens at " + style.display() + " mastery " + move.mastery() + " (now "
                 + profile.mastery(style) + ")"), true);
             return;
         }
         Long ready = state.ready.get(move);
-        if (ready != null && now < ready) {
+        if (ready != null && now < ready && !OpMode.on(player)) {
             player.m_5661_(Component.m_237113_(move.display() + ": " + String.format(java.util.Locale.ROOT, "%.1f", (ready - now) / 20.0)
                 + "s"), true);
             return;
@@ -206,7 +206,7 @@ public final class StyleServer {
             state.lastString = move;
             state.lastStringStart = now;
         }
-        if (move.cooldown() > 0) {
+        if (move.cooldown() > 0 && !OpMode.on(player)) { // 3.6.2: no cooldowns in op mode
             state.ready.put(move, now + move.cooldown());
         }
         FruitUtil.animate(player, move.animation(), 2);

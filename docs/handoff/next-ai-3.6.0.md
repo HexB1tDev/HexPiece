@@ -342,3 +342,16 @@ What changed (one model: the release's, every blast's with it, POINT ONE 3 kept)
 - .github/release-notes-3.6.1.md. Next: section F steps 3 to 6 (/hp op on/off for every new fruit and style; the Mochi list after
   asking for the cut-off line and its picture; Buzz Cut Mochi). Wait for the owner's word on 3.6.0's lightning first if it comes.
 
+## K. 3.6.2: /hp op on/off for every new fruit and style (8zzv 9, the owner: "All new fruits and every style have to obey /hp op on/off")
+
+3.6.1 is green (Build #221, Release #152; the handoff push before it Build #220).
+What the original's op does (javap): `/hp op on|off` (HakiCommands.setOp) sets HakiData's "opMode" flag; `HakiData.op(player)` (server
+side) is read by FruitData.ready (cooldown passes), FruitData.cooldown (none set), FruitData.unlocked (every move open), FruitServer.pay
+and .attacked (no energy), HakiData.unlimitedEnergy (so HakiData.consume is free), HakiData.longValue and GearData.longValue (cooldown
+keys read as 0), HakiServerController.noCooldowns, LightKit.
+HexPiece: the fruits' cooldowns already went through FruitData (every *Moves.ready/cool; Mochi through ItoMoves'; the Gura ultimate
+through GuraMoves.cool; Gear 5's through GearData and NikaWhip's noCooldowns). New `server/OpMode.on(player)` (HakiData.op) now also
+skips: FruitEnergy.afford/spend (no energy), StyleServer's mastery lock and move cooldowns (set and checked), IronFist.cooled and Galaxy
+Impact's energy check, SwordServer's Haki slash / charged cut / quick draw cooldowns (set and checked), DragonServer's RESTING after
+turning back. StyleTests.opMode checks each. The client's book and HUD still show style locks by mastery (the server lets them through).
+

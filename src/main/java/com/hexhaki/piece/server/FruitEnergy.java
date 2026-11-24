@@ -100,7 +100,7 @@ public final class FruitEnergy {
      * and its bar flashes (at most every 10 ticks).
      */
     public static boolean afford(ServerPlayer player, FruitMove move) {
-        if (player.m_7500_() || player.m_5833_()) {
+        if (player.m_7500_() || player.m_5833_() || OpMode.on(player)) { // 3.6.2: op mode spends no energy (as the original's pay)
             return true;
         }
         Pool pool = pool(player);
@@ -118,7 +118,7 @@ public final class FruitEnergy {
 
     /** {@code move} began with a {@code cooldown}-tick cooldown: its energy is spent (a tap's share for a quick right-click). */
     public static void spend(ServerPlayer player, FruitMove move, int cooldown) {
-        if (player.m_7500_() || player.m_5833_()) {
+        if (player.m_7500_() || player.m_5833_() || OpMode.on(player)) {
             return;
         }
         int full = cost(move);
