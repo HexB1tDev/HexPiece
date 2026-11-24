@@ -1243,75 +1243,173 @@ public final class MochiDraw {
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------ Chestnut Mochi
+    // 3.6.3, after the reference's Chestnut read frame by frame (next-ai-3.6.3.md G): a comet of dough flung straight up out of the
+    // hand curls into a swirl high over the user, balls up and flashes (to CHESTNUT_FORM), and a dark spiked disc (Haki black with
+    // Armament, white without) hangs there tilted toward the aim, ringed in thin white light, firing a spike down a white tracer at the
+    // nearest foe every CHESTNUT_EVERY ticks (a white-blue spark star where it strikes) for CHESTNUT_FIRE ticks; then it turns white,
+    // falls flat onto the user and splats into a puddle round their feet (CHESTNUT_FALL).
+
+    /** The forming, the firing, the fall and splat (ticks). */
+    public static final double CHESTNUT_FORM = 15.0;
+    public static final double CHESTNUT_FIRE = 120.0;
+    public static final double CHESTNUT_FALL = 30.0;
+    /** How high over the user's head the disc hangs. */
+    public static final double CHESTNUT_HIGH = 4.2;
+
     /**
-     * Chestnut Mochi (V): the spiked donut at (x, y, z), {@code form} 0 to 1 (forming, going), turning slowly ({@code spin} radians),
-     * {@code fired} ticks since its last spike (a kick back when it shoots): a donut with spikes all round its rim and out of its faces.
+     * Chestnut Mochi (V): the disc at (x, y, z) over its user, the hand (hx, hy, hz) the comet leaves from, the aim (ax, az) (flat) it
+     * tilts toward, {@code ground} the height of the ground under the user; {@code age} ticks from the cast, {@code ended} ticks since it
+     * stopped firing (negative: still firing), {@code fired} ticks since its last spike.
      */
-    public static void chestnut(FireMesh.Sink sink, double x, double y, double z, double ax, double az, double form, double spin, double fired,
-                                double age, int seed) {
-        if (form < 0.02) {
+    public static void chestnut(FireMesh.Sink sink, double x, double y, double z, double hx, double hy, double hz, double ax, double az,
+                                double ground, double age, double ended, double fired, boolean coat, int seed) {
+        if (age < 0) {
             return;
         }
         double al = Math.max(1.0E-6, Math.hypot(ax, az));
         ax /= al;
         az /= al;
-        double kick = fired < 3 ? 0.08 * (1.0 - fired / 3.0) : 0.0;
-        x -= ax * kick;
-        z -= az * kick;
-        double big = CHESTNUT_DONUT;
-        donut(sink, x, y, z, ax, 0, az, big, form, spin, 2, 0.0, 0, 0, 0, false, age, seed, false);
-        double s = springy(Math.min(1.0, form)) * Math.min(1.0, form);
-        double ring = big * (1.0 - DONUT_THICK) * s;
-        double thick = big * DONUT_THICK * s;
-        // the rim's spikes, turning with it, and a ring of them out of each face
         double px = -az;
         double pz = ax;
-        for (int k = 0; k < CHESTNUT_SPIKES; k++) {
-            double a = spin + 2 * Math.PI * k / CHESTNUT_SPIKES;
-            double ox = px * Math.cos(a);
-            double oy = Math.sin(a);
-            double oz = pz * Math.cos(a);
-            double bx = x + ox * (ring + thick * 0.7);
-            double by = y + oy * (ring + thick * 0.7);
-            double bz = z + oz * (ring + thick * 0.7);
-            double len = thick * (1.3 + 0.4 * FireMesh.rand(seed, k)) * s;
-            MochiArt.cone(sink, bx, by, bz, bx + ox * len, by + oy * len, bz + oz * len, thick * 0.32, MochiArt.MOCHI);
-            if (k % 2 == 0) {
-                for (int f = -1; f <= 1; f += 2) {
-                    double fx = x + ox * ring + ax * thick * 0.7 * f;
-                    double fy = y + oy * ring;
-                    double fz = z + oz * ring + az * thick * 0.7 * f;
-                    double l = thick * 0.95 * s;
-                    MochiArt.cone(sink, fx, fy, fz, fx + ax * l * f + ox * l * 0.3, fy + oy * l * 0.3, fz + az * l * f + oz * l * 0.3, thick * 0.26,
-                        MochiArt.MOCHI);
+        // ---- the comet up out of the hand (frames 17 to 21), curling into a swirl at the top, balling up (24 to 28)
+        if (age < CHESTNUT_FORM - 2.0) {
+            double fly = ease(age / 5.0);
+            double wind = clamp((age - 3.0) / 7.0);
+            MochiArt.tubeBegin();
+            int n = 20;
+            for (int k = 0; k <= n; k++) {
+                double t = k / (double) n;
+                double u = clamp(fly - (1.0 - t) * 0.5 * (1.0 - wind));
+                double cx = hx + (x - hx) * u + px * Math.sin(Math.PI * u) * 0.8;
+                double cy = hy + (y - hy) * u;
+                double cz = hz + (z - hz) * u + pz * Math.sin(Math.PI * u) * 0.8;
+                double turn = 2 * Math.PI * (1.3 * t + 1.4 * wind);
+                double r = 1.0 * (1.2 - 0.6 * t) * (1.0 - 0.6 * wind);
+                double sx = x + Math.cos(turn) * r * px + Math.sin(turn) * r * ax * 0.4;
+                double sy = y + Math.sin(turn) * r * 0.8;
+                double sz = z + Math.cos(turn) * r * pz + Math.sin(turn) * r * az * 0.4;
+                double curl = smooth((fly - 0.75) / 0.25) * smooth(t * 1.5 + wind);
+                MochiArt.tubePoint(cx + (sx - cx) * curl, cy + (sy - cy) * curl, cz + (sz - cz) * curl, (0.03 + 0.22 * Math.pow(t, 1.3)) * (1.0 + wind));
+            }
+            MochiArt.tube(sink, 10, MochiArt.MOCHI, 0.0, 0.0);
+            double ball = smooth((age - 5.0) / 6.0);
+            if (ball > 0.02) {
+                MochiArt.blob(sink, x, y, z, ax, 0, az, 0, 1, 0, 0.85 * ball, 0.8 * ball, 0.85 * ball, 0.9, 0.2, age, seed, MochiArt.MOCHI, 1.0);
+            }
+        }
+        // ---- the flash out of the ball (frame 32)
+        if (age >= CHESTNUT_FORM - 4.0 && age < CHESTNUT_FORM + 5.0) {
+            double f = (age - CHESTNUT_FORM + 4.0) / 9.0;
+            MochiArt.glow(sink, x, y, z, 1.2 + 1.0 * ease(f), 0xFFFFFF, 0.95 * (1.0 - smooth(f)));
+            shockRings(sink, x, y, z, ax, az, 1.0 + 1.6 * ease(f), 0.7 * (1.0 - smooth(f)), seed + 5);
+        }
+        // ---- the disc (frames 36 to 186) and its end (190 to 212)
+        double form = smooth((age - CHESTNUT_FORM + 3.0) / 3.0);
+        if (form < 0.02) {
+            return;
+        }
+        boolean over = ended >= 0;
+        double white = over ? smooth(ended / 4.0) : 0.0;
+        double flat = over ? smooth((ended - 2.0) / 4.0) : 0.0;
+        double fall = over ? clamp((ended - 4.0) / 8.0) : 0.0;
+        double cy = y - (y - ground - 0.3) * fall * fall;
+        if (fall >= 1.0) {
+            // ---- splatted round the user's feet: a puddle, droplets, a faint ring; sinking away
+            double sp = ended - 12.0;
+            double stay = 1.0 - smooth((sp - CHESTNUT_FALL + 22.0) / 10.0);
+            if (stay > 0.02) {
+                MochiArt.blob(sink, x, ground + 0.05, z, 1, 0, 0, 0, 1, 0, 1.6 * ease(sp / 3.0), 0.12 * stay, 1.4 * ease(sp / 3.0), 0.85, 0.35, age,
+                    seed + 7, MochiArt.MOCHI, 1.0);
+                for (int k = 0; k < 10; k++) {
+                    double a = 2 * Math.PI * (k + FireMesh.rand(seed, k + 400)) / 10.0;
+                    double d = (1.6 + 0.9 * FireMesh.rand(seed, k + 410)) * ease(sp / 3.0);
+                    MochiArt.blob(sink, x + Math.cos(a) * d, ground + 0.04, z + Math.sin(a) * d, Math.cos(a), 0, Math.sin(a), 0, 1, 0,
+                        0.45 * stay, 0.035, 0.1, 0.9, 0.1, age, seed + 420 + k, MochiArt.MOCHI, 1.0);
                 }
             }
+            splat(sink, x, ground + 0.3, z, 0, 1, 0, 1.1, sp, seed + 9);
+            if (sp < 10.0) {
+                FireMesh.ring(sink, x, ground + 0.1, z, 0, 1, 0, 1.2 + 1.8 * ease(sp / 10.0), 0.08, 0.05, 0xFFFFFF, 0.5 * (1.0 - sp / 10.0));
+            }
+            return;
+        }
+        // its axis: tilted half way between the aim and straight down (the reference's disc, seen tilted), laid flat as it falls
+        double tx = ax * 0.7 * (1.0 - flat);
+        double ty = -0.7 - 0.3 * flat;
+        double tz = az * 0.7 * (1.0 - flat);
+        double tl = Math.sqrt(tx * tx + ty * ty + tz * tz);
+        tx /= tl;
+        ty /= tl;
+        tz /= tl;
+        double kick = !over && fired < 3 ? 0.12 * (1.0 - fired / 3.0) : 0.0;
+        double dx = x - tx * kick;
+        double dy = cy - ty * kick;
+        double dz = z - tz * kick;
+        int[] bands = coat && white < 0.5 ? MochiArt.HAKI : MochiArt.MOCHI;
+        double s = springy(form) * form;
+        double big = CHESTNUT_DONUT * s;
+        double ring = big * (1.0 - DONUT_THICK);
+        double thick = big * DONUT_THICK;
+        double spin = age * 0.05;
+        MochiArt.donut(sink, dx, dy, dz, tx, ty, tz, ring, thick, DONUT_LUMP * 0.6, spin, 0, age, seed, bands);
+        // the spikes: all round its rim and out of both its faces, turning with it
+        double[] b = B;
+        FireMesh.basis(tx, ty, tz, b);
+        for (int k = 0; k < CHESTNUT_SPIKES; k++) {
+            double a = spin + 2 * Math.PI * k / CHESTNUT_SPIKES;
+            double ox = b[0] * Math.cos(a) + b[3] * Math.sin(a);
+            double oy = b[1] * Math.cos(a) + b[4] * Math.sin(a);
+            double oz = b[2] * Math.cos(a) + b[5] * Math.sin(a);
+            double rb = ring + thick * 0.7;
+            double len = thick * (1.2 + 0.5 * FireMesh.rand(seed, k)) * s;
+            MochiArt.cone(sink, dx + ox * rb, dy + oy * rb, dz + oz * rb, dx + ox * (rb + len), dy + oy * (rb + len), dz + oz * (rb + len), thick * 0.3,
+                bands);
+            if (k % 2 == 0) {
+                for (int f = -1; f <= 1; f += 2) {
+                    double fx = dx + ox * ring + tx * thick * 0.6 * f;
+                    double fy = dy + oy * ring + ty * thick * 0.6 * f;
+                    double fz = dz + oz * ring + tz * thick * 0.6 * f;
+                    double l = thick * 0.95 * s;
+                    MochiArt.cone(sink, fx, fy, fz, fx + (tx * f + ox * 0.35) * l, fy + (ty * f + oy * 0.35) * l, fz + (tz * f + oz * 0.35) * l,
+                        thick * 0.24, bands);
+                }
+            }
+        }
+        // the thin white ring of light round it (frames 36 to 50), turning, fainter later
+        double glowRing = (0.55 - 0.3 * clamp((age - CHESTNUT_FORM) / 30.0)) * form * (1.0 - white);
+        FireMesh.ring(sink, dx, dy, dz, tx, ty, tz, big * (1.45 + 0.08 * Math.sin(age * 0.3)), 0.05, 0.0, 0xFFFFFF, glowRing);
+        FireMesh.ring(sink, dx, dy, dz, tx * 0.8 + px * 0.6, ty, tz * 0.8 + pz * 0.6, big * 1.7, 0.035, 0.0, 0xFFFFFF, glowRing * 0.6);
+        if (!over && fired < 2.5) {
+            MochiArt.glow(sink, dx + tx * big * 0.2, dy + ty * big * 0.2, dz + tz * big * 0.2, 0.6, 0xFFFFFF, 0.5 * (1.0 - fired / 2.5));
         }
     }
 
     /**
-     * Where Chestnut Mochi's donut floats from its user's feet, facing {@code yawDegrees} (the game's yaw), {@code height} tall: over the
-     * right shoulder, a little behind; into out (x, y, z).
+     * Where Chestnut Mochi's disc hangs from its user's feet, facing {@code yawDegrees} (the game's yaw), {@code height} tall: high over
+     * their head, a little behind; into out (x, y, z).
      */
     public static double[] chestnutOffset(double yawDegrees, double height, double[] out) {
         double y = Math.toRadians(yawDegrees);
         double fx = -Math.sin(y);
         double fz = Math.cos(y);
-        // the right: (-fz, fx)
-        out[0] = -fz * 0.9 - fx * 0.5;
-        out[1] = height + 1.1;
-        out[2] = fx * 0.9 - fz * 0.5;
+        out[0] = -fx * 0.4;
+        out[1] = height + CHESTNUT_HIGH;
+        out[2] = -fz * 0.4;
         return out;
     }
 
-    /** Chestnut Mochi's donut and its spikes round the rim. */
-    public static final double CHESTNUT_DONUT = 0.75;
-    static final int CHESTNUT_SPIKES = 10;
+    /** Chestnut Mochi's disc and its spikes round the rim. */
+    public static final double CHESTNUT_DONUT = 1.15;
+    static final int CHESTNUT_SPIKES = 14;
 
-    /** A Chestnut spike's flight (ticks), then its splat. */
-    public static final double SPIKE_LIFE = 6.0;
+    /** A Chestnut spike's flight (ticks), then its spark. */
+    public static final double SPIKE_LIFE = 7.0;
 
-    /** A spike of mochi shot from (fx, fy, fz) onto (tx, ty, tz): out over 2 ticks, then stuck in a moment and gone; {@code age} ticks in. */
+    /**
+     * A spike shot from (fx, fy, fz) onto (tx, ty, tz) (the reference's frames 46 to 62): a thin white tracer drawn the whole way at
+     * once, a small black spike racing down it in two ticks, a white-blue star of sparks where it strikes; {@code age} ticks in.
+     */
     public static void spike(FireMesh.Sink sink, double fx, double fy, double fz, double tx, double ty, double tz, double age) {
         if (age < 0 || age > SPIKE_LIFE) {
             return;
@@ -1323,16 +1421,30 @@ public final class MochiDraw {
         double ux = dx / dl;
         double uy = dy / dl;
         double uz = dz / dl;
-        double t = Math.min(1.0, age / 2.0);
-        double hx = fx + dx * t;
-        double hy = fy + dy * t;
-        double hz = fz + dz * t;
-        double len = 0.6 * (age > 4 ? Math.max(0.0, 1.0 - (age - 4) / 2.0) : 1.0);
-        if (len > 0.02) {
-            MochiArt.cone(sink, hx - ux * len, hy - uy * len, hz - uz * len, hx, hy, hz, 0.09, MochiArt.MOCHI);
+        // the tracer: the whole way, thin, fading
+        if (age < 4.0) {
+            FireMesh.ray(sink, fx, fy, fz, ux, uy, uz, dl, 0.03, 0, 0.0, 0xFFFFFF, 0.7 * (1.0 - age / 4.0));
         }
+        // the spike racing down it
+        double t = Math.min(1.0, age / 2.0);
         if (age < 2.5) {
-            FireMesh.streak(sink, hx - ux * len, hy - uy * len, hz - uz * len, -ux, -uy, -uz, Math.min(dl * t, 2.2), 0.05, 0xFFFFFF, 0.5);
+            double hx = fx + dx * t;
+            double hy = fy + dy * t;
+            double hz = fz + dz * t;
+            double len = 0.5;
+            MochiArt.cone(sink, hx - ux * len, hy - uy * len, hz - uz * len, hx, hy, hz, 0.08, MochiArt.HAKI);
+        }
+        // the strike: a white-blue star of sparks
+        if (age >= 1.8) {
+            double f = (age - 1.8) / (SPIKE_LIFE - 1.8);
+            MochiArt.glow(sink, tx, ty, tz, 0.45 + 0.4 * f, 0xDDEBFF, 0.85 * (1.0 - f));
+            for (int k = 0; k < 8; k++) {
+                double a = 2 * Math.PI * k / 8.0 + 0.4;
+                double up = (k % 3 - 1) * 0.6;
+                double ul = Math.sqrt(1.0 + up * up);
+                FireMesh.ray(sink, tx, ty, tz, Math.cos(a) / ul, up / ul, Math.sin(a) / ul, 0.5 + 0.6 * ease(f * 2.0), 0.03, 0, 0.0,
+                    k % 2 == 0 ? 0xFFFFFF : 0x9CC8FF, 0.9 * (1.0 - f));
+            }
         }
     }
 

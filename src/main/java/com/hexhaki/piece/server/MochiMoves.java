@@ -124,10 +124,10 @@ public final class MochiMoves {
     public static final float LOTUS_AIR_HURT = 3.0F;
     public static final float LOTUS_SLAM_HURT = 12.0F;
     /** Chestnut Mochi: how long its donut stays, a spike every so many ticks, at the nearest foe within this. */
-    public static final int CHESTNUT_TICKS = 100;
+    public static final int CHESTNUT_TICKS = (int) (MochiDraw.CHESTNUT_FORM + MochiDraw.CHESTNUT_FIRE);
     public static final int CHESTNUT_EVERY = 4;
     public static final double CHESTNUT_RANGE = 16.0;
-    static final float CHESTNUT_HURT = 1.3F;
+    static final float CHESTNUT_HURT = 1.1F;
     /** Mochi Anemone: how long it may be held, how far off its area can be, the area's radius, a volley every so many ticks. */
     public static final int ANEMONE_MOST = 100;
     public static final double ANEMONE_RANGE = 14.0;
@@ -614,8 +614,9 @@ public final class MochiMoves {
 
     /**
      * Chestnut Mochi (the reference: "User creates a donut in the air covered in spikes that shoots spikes attacking the nearest player
-     * that will always hit as long as they are in range"): a spiked donut floats up over the user's shoulder for
-     * {@link #CHESTNUT_TICKS} ticks, firing a spike every {@link #CHESTNUT_EVERY} at the nearest foe within {@link #CHESTNUT_RANGE}.
+     * that will always hit as long as they are in range"): 3.6.3 on its GIF's beats (MochiDraw.CHESTNUT_*): a comet of dough flung up
+     * forms a spiked disc high over the user, which fires a spike every {@link #CHESTNUT_EVERY} ticks at the nearest foe within
+     * {@link #CHESTNUT_RANGE} until {@link #CHESTNUT_TICKS}, then falls onto the user and splats.
      */
     static void chestnut(ServerPlayer player, State s, long now) {
         if (!ItoMoves.ready(player, MochiKit.CHESTNUT)) {
@@ -623,7 +624,7 @@ public final class MochiMoves {
         }
         ItoMoves.cool(player, MochiKit.CHESTNUT, 260);
         s.busyUntil = now + 6;
-        animate(player, "mochi_amadare");
+        animate(player, "mochi_chestnut");
         fx(player, CHESTNUT, ++seeds, player.m_20182_(), Vec3.f_82478_, 1, 0, 0, CHESTNUT_TICKS);
         sound(player, ItoMoves.chest(player), MochiSounds.SQUISH, 1.0F, 1.1F);
         LIVE.add(new Chestnut((ServerLevel) player.m_9236_(), player, now));
@@ -659,7 +660,8 @@ public final class MochiMoves {
                 fx(this.owner, CHESTNUT, 0, this.owner.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
                 return true;
             }
-            if (age < 8 || age % CHESTNUT_EVERY != 0) {
+            // 3.6.3: no spike before the disc has formed out of its flash (the reference's frame 36)
+            if (age < MochiDraw.CHESTNUT_FORM || age % CHESTNUT_EVERY != 0) {
                 return false;
             }
             Vec3 from = chestnutAt(this.owner.m_20182_(), this.owner.m_146908_(), this.owner.m_20206_());

@@ -318,3 +318,20 @@ left as they were.
   4.6 far), spiky splashed edges (36 flat spikes), splats round it, faint swirl rings; it lies MUDDLE_LIE 100 ticks then sinks. Server:
   the splash at the user's own feet (no longer 1.2 ahead), the pool and the trail glue and hurt as drawn (muddleReach, muddleWidth).
   First-person hand: HandMoves.MUDDLE.
+6. The owner asked: "question, when does the V2 moves come in?" Answered: right after the base kit: 3.6.3 releases the six base moves
+   matched to their GIFs (with the lightning and HUD fixes), then 3.6.4 brings the awakened DoughV2 set on M, each matched to its GIF.
+7. The owner asked: "when is the v2 meant to be usable in game as in what moves are you planned to make from v2". Answered: in 3.6.4,
+   right after 3.6.3 (the base six): M turns on the Awakening, which swaps the kit to all seven DoughV2 moves, each matched to its GIF:
+   LMB Trident Lacerations (five swings, the last breaks a block), Z Grilled Lance (the lance with mochi spinning round it; held, the arm
+   inflates with flaming Haki mochi, launched, exploding after a moment), X Elastic Lasso (yanks the target to the user), C Oblivion (a
+   stomp, a surge of mochi traps them in walls, then bursts), V Power Mochi (two flaming donuts with Haki fists at the shoulders about
+   20 s: left click becomes their longer punches), B Blazing Storm (six flaming Haki arms barrage the aimed target, a final strike), N
+   Scorching Buzz Cut (a flaming spiked wheel rolling over them while held; let go: three wide swings of a giant spiked flaming fist and
+   a bigger slam).
+- Chestnut Mochi after its GIF (MochiDraw.CHESTNUT_*): a comet of dough flung straight up out of the right hand (clip mochi_chestnut,
+  hand HandMoves.UP_END_HELD), curling into a swirl high over the user, a white ball, a flash in rings (to CHESTNUT_FORM 15), then the
+  spiked disc (radius 1.15, 14 rim spikes and face spikes; Haki black with Armament, white without) hanging CHESTNUT_HIGH 4.2 over the
+  head, tilted half way between the aim and straight down, ringed in thin white light, kicking as it fires; each shot a thin white
+  tracer the whole way (FireMesh.ray), a black spike racing down it in 2 ticks, a white-blue spark star on the hit; it fires from 15 for
+  CHESTNUT_FIRE 120 (server CHESTNUT_TICKS 135, 1.1 a spike), then turns white, lies flat, falls onto the user and splats into a
+  puddle with droplets and a ring round their feet (CHESTNUT_FALL 30).

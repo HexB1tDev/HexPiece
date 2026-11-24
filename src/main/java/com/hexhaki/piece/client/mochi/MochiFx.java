@@ -111,13 +111,15 @@ public final class MochiFx {
         final long born;
         final long until;
         final int seed;
+        final boolean coat;
         long ended = -1;
         long fired = -100;
 
-        Chestnut(long born, long until, int seed) {
+        Chestnut(long born, long until, int seed, boolean coat) {
             this.born = born;
             this.until = until;
             this.seed = seed;
+            this.coat = coat;
         }
     }
 
@@ -237,7 +239,7 @@ public final class MochiFx {
             case MochiMoves.LOTUS -> lotus(m, at, a, phase, coat);
             case MochiMoves.CHESTNUT -> {
                 if (phase == 1) {
-                    put(CHESTNUTS, m.user(), new Chestnut(clock, clock + m.ticks(), m.id()));
+                    put(CHESTNUTS, m.user(), new Chestnut(clock, clock + m.ticks(), m.id(), coat));
                 } else {
                     Chestnut c = CHESTNUTS.get(m.user());
                     if (c != null && c.ended < 0) {
@@ -494,8 +496,8 @@ public final class MochiFx {
         RISES.removeIf(r -> clock - r.born > MochiDraw.LOTUS_GROUND - MochiDraw.LOTUS_LAUNCH + 2);
         AIRS.removeIf(r -> clock - r.born > MochiDraw.LOTUS_AIR_LIFE + 1);
         GROUNDS.removeIf(g -> clock - g.born > MochiDraw.LOTUS_GROUND_LIFE + 1);
-        CHESTNUTS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > FORM
-            || clock > e.getValue().until + FORM || level.m_6815_(e.getKey()) == null);
+        CHESTNUTS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > MochiDraw.CHESTNUT_FALL + 2
+            || clock > e.getValue().until + MochiDraw.CHESTNUT_FALL + 6 || level.m_6815_(e.getKey()) == null);
         SPIKES.removeIf(s -> clock - s.born > MochiDraw.SPIKE_LIFE + 1);
         AREAS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > FORM
             || clock > e.getValue().until + FORM || level.m_6815_(e.getKey()) == null);
@@ -754,12 +756,14 @@ public final class MochiFx {
             if (far(at, cam)) {
                 continue;
             }
-            double age = now - c.born;
-            double form = Math.min(1.0, age / FORM) * (c.ended >= 0 ? Math.max(0.0, 1.0 - (now - c.ended) / FORM)
-                : Math.max(0.0, Math.min(1.0, (c.until - now) / FORM)));
-            Vec3 look = user.m_20252_(partial);
-            MochiDraw.chestnut(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, look.f_82479_, look.f_82481_, form, age * 0.08, now - c.fired,
-                age, c.seed);
+            // 3.6.3: on the reference's beats (MochiDraw.CHESTNUT_*): the comet out of the right hand, the disc tilted toward the aim, its
+            // end (the server's, or its time run out) the fall onto the user and the splat round their feet
+            Vec3 feet = user.m_20318_(partial);
+            Vec3 way = flat(user.m_20252_(partial));
+            Vec3 hand = feet.m_82520_(-way.f_82481_ * 0.4 + way.f_82479_ * 0.2, 1.4, way.f_82479_ * 0.4 + way.f_82481_ * 0.2);
+            double ended = c.ended >= 0 ? now - c.ended : now > c.until ? now - c.until : -1.0;
+            MochiDraw.chestnut(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, hand.f_82479_ - cx, hand.f_82480_ - cy, hand.f_82481_ - cz,
+                way.f_82479_, way.f_82481_, feet.f_82480_ - cy, now - c.born, ended, now - c.fired, c.coat, c.seed);
         }
         for (Spike s : SPIKES) {
             Entity user = level.m_6815_(s.user);

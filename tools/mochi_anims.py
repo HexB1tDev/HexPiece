@@ -88,6 +88,22 @@ def muddle():
                 ARMS)
 
 
+# ------------------------------------------------------------------------------------------------------ V: Chestnut Mochi
+
+def chestnut():
+    # 3.6.3, on the reference's beats (mochi/MochiDraw.CHESTNUT_*): the right arm drawn down and back, flung straight up throwing the
+    # comet of dough (4), held up while the disc forms over the head (to 12), let down
+    up = p(rightArm=arm(-130, 0, 50, -6), body={"yaw": 6, "bend": -6})
+    write_parts("mochi_chestnut", 22, [
+        (0, "linear", REST),
+        (2, "insine", p(rightArm=arm(30, 0, 10, -40), body={"yaw": 10, "bend": 4})),
+        (4, "outexpo", up),
+        (12, "linear", up),
+        (22, "inoutsine", REST),
+    ], "Mochi Mochi: Chestnut Mochi: the right arm flings a comet of dough straight up, held while the spiked disc forms overhead.",
+        ("body", "torso", "rightArm"))
+
+
 # ------------------------------------------------------------------------------------------------------ RMB: Mochi Tsuki
 
 # Mogura held low in both hands, its head forward: the right hand back by the hip on its shaft, the left forward guiding it
@@ -331,6 +347,7 @@ def main():
     punch()
     lotus()
     muddle()
+    chestnut()
     tsuki()
     yanagi()
     kaku()

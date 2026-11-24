@@ -99,14 +99,18 @@ public final class MochiShots {
                 com.hexhaki.piece.mochi.MochiDraw.lotusGround(sink, -ex, -ey, 7.0 - ez, age - com.hexhaki.piece.mochi.MochiDraw.LOTUS_GROUND, 31);
             }
             case "mchestnut" -> {
-                // |mchestnut:age: the spiked donut over the shoulder (yaw 0: facing +z), a spike at a body 8 ahead every 4 ticks
-                user(sink, "mochi_amadare", Math.min(age, 10), ex, ey, ez);
+                // 3.6.3 |mchestnut:age[:c]: the whole move on its beats (MochiDraw.CHESTNUT_*), the user at the origin facing +z, a body 8
+                // ahead (1 to the side) struck every 4 ticks while it fires; past the firing its fall and splat
+                user(sink, "mochi_chestnut", Math.min(age, 22), ex, ey, ez);
                 double[] at = com.hexhaki.piece.mochi.MochiDraw.chestnutOffset(0.0, 1.8, new double[3]);
-                double form = Math.min(1.0, age / 6.0);
                 HieShots.body(sink, 1.0 - ex, -ey, 8.0 - ez);
-                com.hexhaki.piece.mochi.MochiDraw.chestnut(sink, at[0] - ex, at[1] - ey, at[2] - ez, 0, 1, form, age * 0.08, age % 4, age, 7);
-                if (age > 8) {
-                    com.hexhaki.piece.mochi.MochiDraw.spike(sink, at[0] - ex, at[1] - ey, at[2] - ez, 1.0 - ex, 1.0 - ey, 8.0 - ez, age % 4);
+                double fire = com.hexhaki.piece.mochi.MochiDraw.CHESTNUT_FORM + com.hexhaki.piece.mochi.MochiDraw.CHESTNUT_FIRE;
+                double ended = age > fire ? age - fire : -1.0;
+                double fired = (age - com.hexhaki.piece.mochi.MochiDraw.CHESTNUT_FORM) % 4.0;
+                com.hexhaki.piece.mochi.MochiDraw.chestnut(sink, at[0] - ex, at[1] - ey, at[2] - ez, -0.4 - ex, 1.4 - ey, 0.2 - ez, 0, 1, -ey, age,
+                    ended, fired, coat, 7);
+                if (age > com.hexhaki.piece.mochi.MochiDraw.CHESTNUT_FORM && ended < 0) {
+                    com.hexhaki.piece.mochi.MochiDraw.spike(sink, at[0] - ex, at[1] - ey, at[2] - ez, 1.0 - ex, 1.0 - ey, 8.0 - ez, fired);
                 }
             }
             case "marea" -> {
