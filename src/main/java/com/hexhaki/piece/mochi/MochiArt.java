@@ -531,6 +531,94 @@ public final class MochiArt {
         grid(sink, rows, cols);
     }
 
+    /**
+     * 3.6.3 (the owner's references: the awakened Dough's donuts, puffy lumpy rings of dough with drips hanging off them): a donut round
+     * (ax, ay, az) (unit) at (cx, cy, cz), {@code big} its radius and {@code thick} its tube's, its surface swelling in soft lumps
+     * ({@code lump}, a share of its tube) that turn with it ({@code turn} radians round its axis: a rolling wheel's lumps roll with it) and
+     * heave with {@code time}; {@code drips} drops of dough hanging off its underside (0 for none), stretching and swinging.
+     */
+    public static void donut(FireMesh.Sink sink, double cx, double cy, double cz, double ax, double ay, double az, double big, double thick,
+                             double lump, double turn, int drips, double time, int seed, int[] bands) {
+        if (big < 0.02 || thick < 0.01) {
+            return;
+        }
+        double[] q = Q;
+        FireMesh.basis(ax, ay, az, q);
+        double q0 = q[0];
+        double q1 = q[1];
+        double q2 = q[2];
+        double q3 = q[3];
+        double q4 = q[4];
+        double q5 = q[5];
+        double dist = Math.sqrt(cx * cx + cy * cy + cz * cz);
+        double size = (big + thick) / Math.max(0.5, dist) * FireMesh.quality;
+        int rows = size > 0.25 ? 20 : size > 0.08 ? 16 : 10; // (rows + 1) x (cols + 1) within GRID: 21 x 13
+        int cols = size > 0.25 ? 12 : 8;
+        double tt = time * 0.04;
+        for (int j = 0; j <= rows; j++) {
+            double u = 2 * Math.PI * j / rows + turn;
+            double cu = Math.cos(u);
+            double su = Math.sin(u);
+            double ox = q0 * cu + q3 * su;
+            double oy = q1 * cu + q4 * su;
+            double oz = q2 * cu + q5 * su;
+            // the lumps: low noise round the ring (fixed to the dough as it turns) and round its tube
+            double lu = 2 * Math.PI * j / rows;
+            for (int i = 0; i <= cols; i++) {
+                double v = 2 * Math.PI * i / cols;
+                double cv = Math.cos(v);
+                double sv = Math.sin(v);
+                double swell = 1.0 + lump * (0.65 * FireMesh.noise(Math.cos(lu) * 1.6 + seed * 0.13, Math.sin(lu) * 1.6, cv * 0.9 + tt, seed)
+                    + 0.35 * FireMesh.noise(Math.cos(lu) * 3.4, Math.sin(lu) * 3.4 + seed * 0.29, sv * 1.7 + tt, seed + 3));
+                double r = thick * swell;
+                double nx = ox * cv + ax * sv;
+                double ny = oy * cv + ay * sv;
+                double nz = oz * cv + az * sv;
+                double x = cx + ox * big + nx * r;
+                double y = cy + oy * big + ny * r;
+                double z = cz + oz * big + nz * r;
+                int k = j * (cols + 1) + i;
+                GRID[k * 3] = x;
+                GRID[k * 3 + 1] = y;
+                GRID[k * 3 + 2] = z;
+                GRID_C[k] = shade(x, y, z, nx, ny, nz, bands, 1.0);
+            }
+        }
+        grid(sink, rows, cols);
+        // the drips: off its lowest side (the way down laid across the ring's plane), stretching down and swinging a little
+        double dx = -ay * ax;
+        double dy = -1.0 + ay * ay;
+        double dz = -ay * az;
+        double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (drips <= 0 || dl < 0.2) {
+            return;
+        }
+        dx /= dl;
+        dy /= dl;
+        dz /= dl;
+        double sx = ay * dz - az * dy;
+        double sy = az * dx - ax * dz;
+        double sz = ax * dy - ay * dx;
+        for (int k = 0; k < drips; k++) {
+            double at = (k - (drips - 1) * 0.5) * 0.55 + (FireMesh.rand(seed, k) - 0.5) * 0.3;
+            double ca = Math.cos(at);
+            double sa = Math.sin(at);
+            double px = cx + (dx * ca + sx * sa) * (big + thick * 0.55);
+            double py = cy + (dy * ca + sy * sa) * (big + thick * 0.55);
+            double pz = cz + (dz * ca + sz * sa) * (big + thick * 0.55);
+            double len = thick * (0.7 + 0.6 * FireMesh.rand(seed, k + 11)) * (1.0 + 0.12 * Math.sin(time * 0.11 + k * 2.1));
+            double sway = 0.06 * thick * Math.sin(time * 0.09 + k * 1.3);
+            tubeBegin();
+            for (int s = 0; s <= 4; s++) {
+                double f = s / 4.0;
+                double w = thick * 0.5 * (1.0 - 0.55 * f * f);
+                tubePoint(px + sx * sway * f, py - len * f, pz + sz * sway * f, w);
+            }
+            tube(sink, 8, bands, 0.0, 0.0);
+            ball(sink, px + sx * sway, py - len - thick * 0.12, pz + sz * sway, thick * 0.3, 0, 1, 0, 1.3, 0.0, time, seed + k, bands);
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ the cone
 
     /** A cone from its base (bx, by, bz), {@code r} round, to its point (px, py, pz): a spike, a prong; banded. */

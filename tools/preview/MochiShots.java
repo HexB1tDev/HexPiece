@@ -52,6 +52,13 @@ public final class MochiShots {
                 MochiArt.torus(sink, -2 - ex, 3.6 - ey, -ez, 0, 0, 1, 0.8, 0.32, 1.0, MochiArt.MOCHI);
                 MochiArt.blob(sink, 1.0 - ex, 3.6 - ey, -ez, 1, 0, 0, 0, 1, 0, 0.8, 0.6, 0.5, 0.35, 0.0, age, 5, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
             }
+            case "mdonut" -> {
+                // 3.6.3: the fruit's donut: lumpy, dripping, its fist filling its hole (one punching), at three sizes
+                com.hexhaki.piece.mochi.MochiDraw.donut(sink, -2.6 - ex, 2.2 - ey, -ez, 0, 0, -1, 1.0, 0.0, 3, 0.0, 0, 0, 0, coat, age, 1, false);
+                com.hexhaki.piece.mochi.MochiDraw.donut(sink, 0.2 - ex, 2.4 - ey, -ez, 0.3, 0.1, -0.95, 1.4, 0.0, 3, 1.0, 2.5 - ex, 2.0 - ey,
+                    -6.5 - ez, coat, age, 2, false);
+                com.hexhaki.piece.mochi.MochiDraw.donut(sink, 2.8 - ex, 1.6 - ey, -ez, -0.2, 0, -0.98, 0.7, 0.0, 2, 0.0, 0, 0, 0, coat, age, 3, true);
+            }
             case "mpunch" -> {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);
@@ -63,7 +70,7 @@ public final class MochiShots {
                 com.hexhaki.piece.mochi.MochiDraw.tsuki(sink, -0.36 - ex, 1.35 - ey, 0.4 - ez, 0, 0, 1, 14.0, age, charge, age * 0.9, coat);
             }
             case "myanagi" -> {
-                user(sink, "mochi_yanagi", age, ex, ey, ez);
+                user(sink, "mochi_yanagi", age, ex, ey, ez, age >= 3 && age <= com.hexhaki.piece.mochi.MochiDraw.YANAGI_LIFE - 3 ? 4 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.yanagi(sink, -0.15 - ex, 0.8 - ey, 0.2 - ez, 0, 1, -ey, age, 7);
             }
             case "mkaku" -> {
@@ -72,15 +79,19 @@ public final class MochiShots {
                 com.hexhaki.piece.mochi.MochiDraw.kaku(sink, -ex, 1.4 - ey, -ez, -ex, -ey, 4.5 - ez, 0, 1, age, coat, 4);
             }
             case "myaki" -> {
-                // |myaki:t[:c]: t < 0 the forearm swelling (16 ticks to full), then the fist flying 2.2 a tick, the blast at 14 ahead
-                user(sink, age < 0 ? "mochi_yaki_charge" : "mochi_yaki_fire", age < 0 ? 16 + age : age, ex, ey, ez);
+                // |myaki:t[:c[:held]]: t < 0 held that many ticks back from now (MochiMoves.YAKI_FULL to full: t = -60 a tap, 0 full), else
+                // the fist flying 2.2 a tick, the blast at 14 ahead; 3.6.3: the explosion by how long it was held (held, default full)
+                double held = move.length > 3 ? Double.parseDouble(move[3]) : com.hexhaki.piece.server.MochiMoves.YAKI_FULL;
+                double charge = com.hexhaki.piece.server.MochiMoves.yakiCharge(age < 0 ? com.hexhaki.piece.server.MochiMoves.YAKI_FULL + age : held);
+                user(sink, age < 0 ? "mochi_yaki_charge" : "mochi_yaki_fire", age < 0 ? com.hexhaki.piece.server.MochiMoves.YAKI_FULL + age : age, ex, ey, ez);
                 if (age < 0) {
-                    com.hexhaki.piece.mochi.MochiDraw.swell(sink, -0.36 - ex, 1.3 - ey, 0.2 - ez, 0, 0, 1, Math.min(1.0, (age + 16) / 16.0), age, coat, 2);
+                    com.hexhaki.piece.mochi.MochiDraw.swell(sink, -0.36 - ex, 1.3 - ey, 0.2 - ez, 0, 0, 1, charge, age + 60, coat, 2);
                 } else if (age < 6) {
-                    com.hexhaki.piece.mochi.MochiDraw.yaki(sink, -0.36 - ex, 1.3 - ey, 1.0 + age * 2.2 - ez, 0, 0, 1, age, coat, 2);
+                    com.hexhaki.piece.mochi.MochiDraw.yaki(sink, -0.36 - ex, 1.3 - ey, 1.0 + age * 2.2 - ez, 0, 0, 1, age, coat, 2, charge);
                 } else {
                     HieShots.body(sink, -ex, -ey, 14.0 - ez);
-                    com.hexhaki.piece.mochi.MochiDraw.boom(sink, -ex, 1.0 - ey, 14.0 - ez, 2.2, age - 6, 5);
+                    com.hexhaki.piece.mochi.MochiDraw.boom(sink, -ex, 1.0 - ey, 14.0 - ez, com.hexhaki.piece.server.MochiMoves.yakiRadius(charge) * 0.65,
+                        age - 6, 5);
                 }
             }
             case "mwheel" -> {

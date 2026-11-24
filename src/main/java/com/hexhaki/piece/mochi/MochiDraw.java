@@ -237,7 +237,8 @@ public final class MochiDraw {
         if (age < 0 || age > YANAGI_LIFE) {
             return;
         }
-        double grow = ease(age / 4.0) * (1.0 - smooth((age - YANAGI_LIFE + 5) / 5.0));
+        // 3.6.3: the tendrils grow out of the lifted leg as it turns into them (the clip lifts it by tick 3)
+        double grow = ease(Math.max(0.0, age - 2.0) / 3.0) * (1.0 - smooth((age - YANAGI_LIFE + 5) / 5.0));
         if (grow < 0.02) {
             return;
         }
@@ -247,23 +248,35 @@ public final class MochiDraw {
             double a = FireMesh.rand(seed, k);
             double ahead = 1.5 + 4.5 * FireMesh.rand(seed, k + 10);
             double side = (a - 0.5) * 5.0;
-            double gx = x + (wx * ahead + px * side) * grow;
-            double gz = z + (wz * ahead + pz * side) * grow;
+            double gx = x + wx * ahead + px * side;
+            double gz = z + wz * ahead + pz * side;
             // the beat: up, then stamped down (a stamp every 4 ticks, each tendril half a beat apart)
             double beat = ((age + k * 0.7) % 4.0) / 4.0;
-            double lift = beat < 0.6 ? Math.sin(Math.PI * beat / 0.6) * 1.6 : 0.0;
+            double lift = beat < 0.6 ? Math.sin(Math.PI * beat / 0.6) * 1.6 * grow : 0.0;
             double gy = ground + 0.15 + lift;
+            // 3.6.3 (the owner: "Mochi appearing and disappearing should have more realism not just vanish"): each tendril grows out of
+            // the hip along its own arc and pulls back into it the same way (its end receding), never squeezed whole
+            double reach = Math.min(1.0, grow * (1.0 + 0.15 * k / YANAGI_TENDRILS));
             MochiArt.tubeBegin();
+            double ex = x;
+            double ey = y;
+            double ez = z;
             for (int j = 0; j <= 6; j++) {
-                double t = j / 6.0;
+                double t = reach * j / 6.0;
                 // arcing out from the hip, down onto the foot
                 double hump = Math.sin(Math.PI * t) * (0.9 + 0.5 * lift);
-                MochiArt.tubePoint(x + (gx - x) * t, y + (gy - y) * t + hump, z + (gz - z) * t, 0.2 - 0.07 * t);
+                ex = x + (gx - x) * t;
+                ey = y + (gy - y) * t + hump;
+                ez = z + (gz - z) * t;
+                MochiArt.tubePoint(ex, ey, ez, (0.2 - 0.07 * t) * (0.6 + 0.4 * grow));
             }
             MochiArt.tube(sink, 8, MochiArt.MOCHI, 0.0, 0.0);
-            // the foot: a flattened blob, squashed as it lands
+            // the foot: a flattened blob at its end, squashed as it lands (a rounded tip while it is still growing out)
+            double foot = smooth((reach - 0.75) / 0.25);
             double squash = lift < 0.05 ? 0.6 : 1.0;
-            MochiArt.blob(sink, gx, gy, gz, wx, 0, wz, 0, 1, 0, 0.34, 0.22 * squash, 0.28, 0.7, 0.0, age, seed + k, MochiArt.MOCHI, 1.0);
+            double fr = 0.14 + 0.2 * foot;
+            MochiArt.blob(sink, ex, ey, ez, wx, 0, wz, 0, 1, 0, fr, fr * (0.65 * squash + 0.35 * (1.0 - foot)), fr * 0.82, 0.7, 0.0, age, seed + k,
+                MochiArt.MOCHI, 1.0);
         }
     }
 
@@ -299,15 +312,18 @@ public final class MochiDraw {
             fx += (sx - fx) * back;
             fy += (y - fy) * back;
             fz += (sz - fz) * back;
+            if (back > 0.97) {
+                continue; // 3.6.3: drawn all the way back into the shoulder: the arm is the arm again
+            }
             MochiArt.tubeBegin();
             for (int j = 0; j <= 8; j++) {
                 double t = j / 8.0;
                 double arc = Math.sin(Math.PI * t) * 1.2 * (1.0 - back);
-                MochiArt.tubePoint(sx + (fx - sx) * t, y + (fy - y) * t + arc, sz + (fz - sz) * t, 0.2);
+                MochiArt.tubePoint(sx + (fx - sx) * t, y + (fy - y) * t + arc, sz + (fz - sz) * t, 0.2 * (1.0 - 0.4 * back));
             }
             MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
-            // the square block: flat-edged, squashed a little as it lands
-            double s = 0.75 * (1.0 - back * 0.6);
+            // the square block: flat-edged, squashed a little as it lands; 3.6.3: pulled back in it shrinks into the arm's end
+            double s = 0.75 * (1.0 - back) + 0.2 * back;
             double squash = age > KAKU_SLAM && age < KAKU_SLAM + 3 ? 0.8 : 1.0;
             MochiArt.blob(sink, fx, fy, fz, wx, 0, wz, 0, 1, 0, s, s * squash, s, 0.28, 0.0, age, seed + k, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
         }
@@ -370,8 +386,36 @@ public final class MochiDraw {
         if (age < 8) {
             FireMesh.ring(sink, x, y + 0.1, z, 0, 1, 0, size * (0.6 + 2.4 * ease(age / 8.0)), size * 0.25, 0.0, 0xFFE2B0, 0.7 * (1.0 - age / 8.0));
         }
+        // 3.6.3 (the owner's reference: the fist bursts in a white-hot star of long spiky rays, then rings of fire spreading round it)
+        if (age < 6) {
+            double f = 1.0 - age / 6.0;
+            MochiArt.glow(sink, x, y + size * 0.3, z, size * (0.9 + 0.6 * ease(age / 3.0)), 0xFFF6DC, 0.85 * f);
+            for (int k = 0; k < BOOM_RAYS; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 90);
+                double up = FireMesh.rand(seed, k + 110) * 1.6 - 0.5;
+                double ul = Math.sqrt(1.0 + up * up);
+                double len = size * (1.6 + 1.8 * FireMesh.rand(seed, k + 130)) * ease(Math.min(1.0, age / 2.5 + 0.3));
+                FireMesh.ray(sink, x, y + size * 0.3, z, Math.cos(a) / ul, up / ul, Math.sin(a) / ul, len, size * 0.18, 0, 0.0,
+                    k % 3 == 0 ? 0xFFFFFF : 0xFFE9A8, 0.9 * f);
+            }
+        }
+        if (age < 12) {
+            double u = ease(age / 12.0);
+            for (int k = 0; k < 3; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 150);
+                double tilt = 0.35 + 0.5 * FireMesh.rand(seed, k + 160);
+                double nx = Math.cos(a) * tilt;
+                double nz = Math.sin(a) * tilt;
+                double nl = Math.sqrt(nx * nx + 1.0 + nz * nz);
+                FireMesh.ring(sink, x, y + size * 0.35, z, nx / nl, 1.0 / nl, nz / nl, size * (0.5 + (1.5 + 0.4 * k) * u), size * (0.3 - 0.06 * k),
+                    size * 0.15, k == 1 ? 0xFFF0C0 : 0xFF8C2E, 0.75 * (1.0 - age / 12.0));
+            }
+        }
         splat(sink, x, y + size * 0.3, z, 0, 1, 0, size * 1.2, age * 0.9, seed + 9);
     }
+
+    /** 3.6.3: the explosion's star of rays. */
+    static final int BOOM_RAYS = 14;
 
     // ------------------------------------------------------------------------------------------------------ Yaki Mochi
 
@@ -381,37 +425,176 @@ public final class MochiDraw {
      */
     public static void swell(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double charge, double age,
                              boolean coat, int seed) {
-        // the forearm swollen long and fat along the arm (never a ball swallowing the body), bulging more toward the wrist
-        double r = 0.16 + 0.38 * ease(charge);
-        double shake = charge > 0.6 ? 0.035 * Math.sin(age * 3.1) * charge : 0.0;
-        double cx = x + wx * (0.2 + r * 1.1) + shake;
-        double cy = y + wy * (0.2 + r * 1.1) + shake * 0.5;
-        double cz = z + wz * (0.2 + r * 1.1);
-        MochiArt.ball(sink, cx, cy, cz, r, wx, wy, wz, 1.6, 0.05, age, seed, coat ? MochiArt.HAKI : MochiArt.MOCHI);
-        double fx = cx + wx * (r * 1.6 + 0.12);
-        double fy = cy + wy * (r * 1.6 + 0.12);
-        double fz = cz + wz * (r * 1.6 + 0.12);
-        double kx = -wz;
-        double kz = wx;
-        double kl = Math.max(1.0E-6, Math.hypot(kx, kz));
-        MochiArt.fist(sink, fx, fy, fz, wx, wy, wz, kx / kl, 0, kz / kl, 0.26 + 0.16 * charge, coat, age, seed + 3);
+        // 3.6.3 (the owner's reference: a huge puffy mass of dough swelling round the pointed arm, splattering, its fist at the end): the
+        // forearm's mochi grows with the hold, lumps welling up on it one by one, drips hanging off it and drops falling away
+        int[] bands = coat ? MochiArt.HAKI : MochiArt.MOCHI;
+        double g = ease(charge);
+        double r = 0.18 + 0.62 * g;
+        double shake = charge > 0.6 ? 0.03 * Math.sin(age * 3.1) * charge : 0.0;
+        double along = 0.45 + r * 1.1;
+        double cx = x + wx * along + shake;
+        double cy = y + wy * along + shake * 0.5;
+        double cz = z + wz * along;
+        double[] b = B;
+        MochiArt.axes(wx, wy, wz, b);
+        MochiArt.blob(sink, cx, cy, cz, b[0], b[1], b[2], b[3], b[4], b[5], r * 1.35, r, r, 0.95, 0.12, age, seed, bands, 1.0);
+        // its side: across the way, level
+        double sx = -wz;
+        double sz = wx;
+        double sl = Math.max(1.0E-6, Math.hypot(sx, sz));
+        sx /= sl;
+        sz /= sl;
+        // the up across it
+        double ux = wy * sz;
+        double uy = wz * sx - wx * sz;
+        double uz = -wy * sx;
+        double ul = Math.max(1.0E-6, Math.sqrt(ux * ux + uy * uy + uz * uz));
+        ux /= ul;
+        uy /= ul;
+        uz /= ul;
+        // lumps welling up round it, one after another as it fills
+        for (int k = 0; k < SWELL_LUMPS; k++) {
+            double grow = Math.max(0.0, Math.min(1.0, (charge - 0.12 - k * 0.14) / 0.25));
+            if (grow <= 0.0) {
+                continue;
+            }
+            double a = 2 * Math.PI * (k * 0.382 + FireMesh.rand(seed, k) * 0.2);
+            double ca = Math.cos(a);
+            double sa = Math.sin(a);
+            double on = (FireMesh.rand(seed, k + 9) - 0.5) * 1.4 * r;
+            double lr = r * (0.42 + 0.18 * FireMesh.rand(seed, k + 17)) * ease(grow);
+            MochiArt.ball(sink, cx + wx * on + (sx * ca + ux * sa) * r * 0.8, cy + wy * on + uy * sa * r * 0.8, cz + wz * on + (sz * ca + uz * sa) * r * 0.8,
+                lr, sx * ca + ux * sa, uy * sa, sz * ca + uz * sa, 1.2, 0.08, age, seed + k, bands);
+        }
+        // drips hanging off its underside, and drops falling from them to the ground
+        for (int k = 0; k < 2; k++) {
+            if (charge < 0.25 + 0.2 * k) {
+                break;
+            }
+            double on = (k == 0 ? -0.3 : 0.45) * r;
+            double hx = cx + wx * on;
+            double hy = cy + wy * on - r * 0.85;
+            double hz = cz + wz * on;
+            double len = r * (0.45 + 0.2 * Math.sin(age * 0.13 + k));
+            MochiArt.tubeBegin();
+            for (int s = 0; s <= 3; s++) {
+                double f = s / 3.0;
+                MochiArt.tubePoint(hx, hy - len * f, hz, r * 0.22 * (1.0 - 0.6 * f));
+            }
+            MochiArt.tube(sink, 8, bands, 0.0, 0.0);
+            double fall = (age * 0.06 + k * 0.5) % 1.0;
+            MochiArt.ball(sink, hx, hy - len - 1.4 * fall * fall, hz, r * 0.11, 0, 1, 0, 1.3, 0.0, age, seed + 20 + k, bands);
+        }
+        double tip = along + r * 1.35 + 0.1;
+        MochiArt.fist(sink, x + wx * tip + shake, y + wy * tip, z + wz * tip, wx, wy, wz, sx, 0, sz, 0.26 + 0.3 * charge, coat, age, seed + 3);
     }
+
+    /** 3.6.3: how many lumps well up on Yaki Mochi's swelling forearm. */
+    static final int SWELL_LUMPS = 6;
 
     /**
      * Yaki Mochi fired: the burning fist at (x, y, z) flying along (wx, wy, wz) (unit), {@code age} ticks into its flight: a big fist
      * (black with Armament) on a jet of the house's banded fire trailing behind it.
      */
     public static void yaki(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, boolean coat, int seed) {
+        yaki(sink, x, y, z, wx, wy, wz, age, coat, seed, 1.0);
+    }
+
+    /** 3.6.3: as above, {@code charge} (0 to 1) how long it was held: the fist and its jet of fire the bigger. */
+    public static void yaki(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, boolean coat, int seed,
+                            double charge) {
         double kx = -wz;
         double kz = wx;
         double kl = Math.max(1.0E-6, Math.hypot(kx, kz));
-        MochiArt.fist(sink, x, y, z, wx, wy, wz, kx / kl, 0, kz / kl, 0.7, coat, age, seed);
+        double s = 0.55 + 0.45 * charge;
+        MochiArt.fist(sink, x, y, z, wx, wy, wz, kx / kl, 0, kz / kl, 0.7 * s, coat, age, seed);
         for (int k = 0; k < 7; k++) {
-            double d = 0.7 + k * 0.6;
-            double r = 0.55 - k * 0.055;
+            double d = (0.7 + k * 0.6) * s;
+            double r = (0.55 - k * 0.055) * s;
             double wob = 0.12 * Math.sin(age * 1.7 + k * 1.3);
             FireMesh.puff(sink, x - wx * d + kx / kl * wob, y - wy * d + wob * 0.6, z - wz * d + kz / kl * wob, r, -wx, -wy, -wz, 0.8, 0.6,
                 Math.max(0.15, 1.0 - k * 0.14), 0.55, true, 1.0 - k * 0.1, age, seed + k);
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------ the donut
+
+    /** 3.6.3: a donut's tube (its radius) to the donut's outer radius (the awakened Muso Donuts': every donut of the fruit is one of those). */
+    public static final double DONUT_THICK = 0.28;
+    /** 3.6.3: how lumpy a donut is (a share of its tube). */
+    public static final double DONUT_LUMP = 0.34;
+    /** 3.6.3: the awakened Muso Donuts' outer radius. */
+    public static final double MUSO = 1.3;
+
+    /** 3.6.3: soft dough's ease: up past its size a little and settling back (0 to 1). */
+    public static double springy(double t) {
+        double u = Math.max(0.0, Math.min(1.0, t));
+        return 1.0 - Math.pow(1.0 - u, 3.0) + 0.12 * Math.sin(Math.PI * u) * u;
+    }
+
+    /** 3.6.3: a donut's hole, its radius ({@code big} the donut's outer radius): what a fist out of it fills. */
+    public static double hole(double big) {
+        return big * (1.0 - 2.0 * DONUT_THICK);
+    }
+
+    /**
+     * 3.6.3 (the owner: "Mochi anemoni, the fists should fill the entire hole and adapt to the size of the donuts, just like the V move in
+     * the awakening"; the references: puffy lumpy rings of dough with drips, a fist in each hole): one donut of the fruit at (x, y, z)
+     * facing (ax, ay, az) (unit), {@code big} its radius; its fist resting in its hole (filling it, knuckles out) unless {@code punch} is
+     * over 0: then the arm (as wide as the hole) is out of the hole to (fx, fy, fz). Black with Armament ({@code coat}), as every fist and
+     * arm of the fruit; the ring always white. {@code turn}: the ring turned round its axis (a rolling wheel's).
+     */
+    public static void donut(FireMesh.Sink sink, double x, double y, double z, double ax, double ay, double az, double big, double turn, int drips,
+                             double punch, double fx, double fy, double fz, boolean coat, double age, int seed, boolean left) {
+        donut(sink, x, y, z, ax, ay, az, big, 1.0, turn, drips, punch, fx, fy, fz, coat, age, seed, left);
+    }
+
+    /**
+     * 3.6.3 (the owner: "Mochi appearing and disappearing should have more realism not just vanish"): as above, {@code form} (0 to 1)
+     * how far it has formed: a lump of dough puffing up (overshooting a little, as soft dough does) whose hole opens as it swells into
+     * the ring; going, the same backward: the hole closes, the ring slumps into a lump that shrinks away.
+     */
+    public static void donut(FireMesh.Sink sink, double x, double y, double z, double ax, double ay, double az, double big, double form, double turn,
+                             int drips, double punch, double fx, double fy, double fz, boolean coat, double age, int seed, boolean left) {
+        if (big < 0.02 || form < 0.02) {
+            return;
+        }
+        double f = Math.min(1.0, form);
+        double s = springy(f);
+        double thick = big * DONUT_THICK * s * (1.0 + 0.8 * (1.0 - f));
+        double ring = (big - big * DONUT_THICK) * s * Math.pow(f, 0.7);
+        // a forming lump slumps a little (it is soft until it has its shape)
+        y -= (1.0 - f) * big * 0.25;
+        MochiArt.donut(sink, x, y, z, ax, ay, az, ring, thick, DONUT_LUMP, turn, f > 0.8 ? drips : 0, age, seed, MochiArt.MOCHI);
+        big *= s * f;
+        double hole = hole(big);
+        if (punch > 0.0) {
+            // the arm out of the hole, as wide as it (its square bar's corners touching the dough round it)
+            arm(sink, x, y, z, fx, fy, fz, hole * 0.66, hole * 0.88, 0.0, coat, age, seed, left);
+        } else {
+            // the fist resting in the hole, its knuckles just out of it, filling it
+            double kx = -az;
+            double kz = ax;
+            double kl = Math.sqrt(kx * kx + kz * kz);
+            if (kl < 1.0E-4) {
+                kx = 1;
+                kz = 0;
+                kl = 1;
+            }
+            kx /= kl;
+            kz /= kl;
+            // its knuckles' row turned with the ring (k across the way, u = a x k)
+            double ux = ay * kz;
+            double uy = az * kx - ax * kz;
+            double uz = -ay * kx;
+            double ul = Math.max(1.0E-9, Math.sqrt(ux * ux + uy * uy + uz * uz));
+            double ct = Math.cos(turn);
+            double st = Math.sin(turn);
+            double rx = kx * ct + ux / ul * st;
+            double ry = uy / ul * st;
+            double rz = kz * ct + uz / ul * st;
+            MochiArt.fist(sink, x + ax * thick * 0.15, y + ay * thick * 0.15, z + az * thick * 0.15, ax, ay, az, rx, ry, rz, hole * 0.98, coat,
+                age, seed, left);
         }
     }
 
@@ -425,24 +608,43 @@ public final class MochiDraw {
                              int seed) {
         double ax = -wz;
         double az = wx;
-        // the wheel: a fat ring with its middle closed by a thinner disc
-        MochiArt.torus(sink, x, y, z, ax, 0, az, radius * 0.72, radius * 0.3, 1.0, MochiArt.MOCHI);
-        MochiArt.blob(sink, x, y, z, ax, 0, az, wx, 0, wz, radius * 0.22, radius * 0.75, radius * 0.75, 1.0, 0.0, age, seed, MochiArt.MOCHI, 1.0);
-        // its turning: lumps of mochi round the rim, carried round as it rolls
-        for (int k = 0; k < 6; k++) {
-            double a = spin + 2 * Math.PI * k / 6;
-            double cx = x + wx * Math.cos(a) * radius;
-            double cy = y + Math.sin(a) * radius;
-            double cz = z + wz * Math.cos(a) * radius;
-            MochiArt.ball(sink, cx, cy, cz, radius * 0.2, wx * -Math.sin(a), Math.cos(a), wz * -Math.sin(a), 1.4, 0.0, age, seed + k, MochiArt.MOCHI);
-        }
+        // 3.6.3 (the owner: "the rolling donut the player turns into it should look like the donuts in the awakening v move, look at it 1
+        // of those"): one of the fruit's donuts standing on its rim, rolling (its lumps and its fist turned with it), no drips (flung off)
+        donut(sink, x, y, z, ax, 0, az, radius, -spin, 0, 0.0, 0, 0, 0, false, age, seed, false);
         // speed: streaks of white behind it
         for (int k = 0; k < 5; k++) {
             double h = (k - 2) * radius * 0.35;
             FireMesh.streak(sink, x - wx * radius * 1.1, y + h, z - wz * radius * 1.1, -wx, 0, -wz, radius * (1.6 + 0.4 * (k % 2)), 0.05, 0xFFFFFF,
                 0.55);
         }
+        // 3.6.3 (the owner's reference: the rolling donut tears the ground up behind it): chunks of the ground it passed flipped up in two
+        // rows either side of its track, falling back behind it, and dust kicked up at its foot
+        double rolled = spin * radius;
+        double ground = y - radius;
+        for (int j = 0; j < WHEEL_CHUNKS; j++) {
+            double behind = (rolled % WHEEL_GAP + WHEEL_GAP) % WHEEL_GAP + j * WHEEL_GAP;
+            double t = behind / WHEEL_ROLL;
+            double h = 0.32 * t - 0.04 * t * t;
+            if (h <= 0.0 || behind > rolled) {
+                continue;
+            }
+            int spot = (int) Math.floor((rolled - behind) / WHEEL_GAP + 0.5);
+            for (int side = -1; side <= 1; side += 2) {
+                double off = side * radius * (0.45 + 0.25 * FireMesh.rand(seed + spot, side + 3)) + side * t * 0.05;
+                com.hexhaki.piece.ironfist.IronArt.chunk(sink, x - wx * behind + ax * off, ground + h, z - wz * behind + az * off,
+                    0.16 + 0.08 * FireMesh.rand(seed + spot, side + 7), t * 0.5 + spot, seed + spot * 2 + side, 1.0);
+            }
+        }
+        for (int k = 0; k < 3; k++) {
+            double d = radius * (0.5 + 0.7 * k);
+            FireMesh.shell(sink, x - wx * d, ground + 0.3 + 0.2 * k, z - wz * d, radius * (0.4 + 0.18 * k), 0xE9E5DE, 0.42 - 0.1 * k, 0.0);
+        }
     }
+
+    /** 3.6.3: the ground torn up behind the wheel: how many spots back, a spot every so many blocks, the wheel's roll a tick (blocks). */
+    static final int WHEEL_CHUNKS = 8;
+    static final double WHEEL_GAP = 1.1;
+    static final double WHEEL_ROLL = 0.9;
 
     /**
      * Zan Giri Mochi's club: from the shoulder (x, y, z) an arm swung up overhead and down onto (tx, ty, tz) at {@link #CLUB_SLAM}, ending
@@ -500,6 +702,8 @@ public final class MochiDraw {
 
     /** The Anemone's rings: how many, how far round the user, how high over the feet. */
     public static final int ANEMONE_RINGS = 4;
+    /** 3.6.3: the Anemone's donuts, their outer radius (the awakened donuts' look, smaller). */
+    public static final double ANEMONE_DONUT = 1.0;
     public static final double ANEMONE_OUT = 2.0;
     public static final double ANEMONE_UP = 1.7;
 
@@ -531,25 +735,44 @@ public final class MochiDraw {
         if (grow < 0.02) {
             return;
         }
+        // 3.6.3 (the owner: "Mochi anemoni, the fists should fill the entire hole and adapt to the size of the donuts, just like the V move
+        // in the awakening"): each ring one of the fruit's donuts, its fist resting in its hole, punching out of it as wide as the hole
         for (int k = 0; k < ANEMONE_RINGS; k++) {
             ring(x, y, z, k, age, R);
-            MochiArt.torus(sink, R[0], R[1], R[2], R[3], R[4], R[5], 0.8 * grow, 0.28 * grow, 1.0, MochiArt.MOCHI);
-        }
-        for (int p = 0; p < count; p++) {
-            int k = (int) punches[p * 5];
-            double pa = punches[p * 5 + 4];
-            if (pa < 0 || pa > ANEMONE_PUNCH) {
-                continue;
+            double out = 0.0;
+            double fx = 0;
+            double fy = 0;
+            double fz = 0;
+            for (int p = 0; p < count; p++) {
+                double pa = punches[p * 5 + 4];
+                if ((int) punches[p * 5] != k || pa < 0 || pa > ANEMONE_PUNCH) {
+                    continue;
+                }
+                double o = pa < 2.5 ? ease(pa / 2.5) : 1.0 - smooth((pa - 3.5) / (ANEMONE_PUNCH - 3.5));
+                if (o > out) {
+                    out = o;
+                    fx = R[0] + (punches[p * 5 + 1] - R[0]) * o;
+                    fy = R[1] + (punches[p * 5 + 2] - R[1]) * o;
+                    fz = R[2] + (punches[p * 5 + 3] - R[2]) * o;
+                }
             }
-            ring(x, y, z, k, age, R);
-            double tx = punches[p * 5 + 1];
-            double ty = punches[p * 5 + 2];
-            double tz = punches[p * 5 + 3];
-            double out = pa < 2.5 ? ease(pa / 2.5) : 1.0 - smooth((pa - 3.5) / (ANEMONE_PUNCH - 3.5));
-            double fx = R[0] + (tx - R[0]) * out;
-            double fy = R[1] + (ty - R[1]) * out;
-            double fz = R[2] + (tz - R[2]) * out;
-            arm(sink, R[0], R[1], R[2], fx, fy, fz, 0.2, 0.29, 0.0, coat, pa, seed + p, k % 2 == 1);
+            // a punch turns the donut to face where it goes
+            double ax = R[3];
+            double ay = R[4];
+            double az = R[5];
+            if (out > 0.02) {
+                double dx = fx - R[0];
+                double dy = fy - R[1];
+                double dz = fz - R[2];
+                double dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (dl > 1.0E-3) {
+                    ax = dx / dl;
+                    ay = dy / dl;
+                    az = dz / dl;
+                }
+            }
+            donut(sink, R[0], R[1], R[2], ax, ay, az, ANEMONE_DONUT, grow, 0.0, 2, out > 0.02 ? out : 0.0, fx, fy, fz, coat, age, seed + k,
+                k % 2 == 1);
         }
     }
 
@@ -858,16 +1081,12 @@ public final class MochiDraw {
             double ay = ty - D[1];
             double az = tz - D[2];
             double al = Math.max(1.0E-6, Math.sqrt(ax * ax + ay * ay + az * az));
-            MochiArt.torus(sink, D[0], D[1], D[2], ax / al, ay / al, az / al, 0.85 * grow, 0.36 * grow, 1.0, MochiArt.MOCHI);
+            // 3.6.3: each one of the fruit's donuts (lumpy, dripping), its fist resting in its hole until it punches out of it
             double pa = age - first - k * every;
-            if (pa >= 0 && pa <= DONUT_FIST + 6) {
-                double out = pa < DONUT_FIST ? ease(pa / DONUT_FIST) : 1.0 - smooth((pa - DONUT_FIST - 1) / 5.0);
-                double reach = Math.max(0.5, al - 0.8);
-                double hx = D[0] + ax / al * reach * out;
-                double hy = D[1] + ay / al * reach * out;
-                double hz = D[2] + az / al * reach * out;
-                arm(sink, D[0], D[1], D[2], hx, hy, hz, 0.55, 0.78, 0.0, coat, pa, seed + k);
-            }
+            double out = pa < 0 || pa > DONUT_FIST + 6 ? 0.0 : pa < DONUT_FIST ? ease(pa / DONUT_FIST) : 1.0 - smooth((pa - DONUT_FIST - 1) / 5.0);
+            double reach = Math.max(0.5, al - 0.8) * out;
+            donut(sink, D[0], D[1], D[2], ax / al, ay / al, az / al, MUSO, grow, 0.0, 3, out > 0.02 ? out : 0.0, D[0] + ax / al * reach,
+                D[1] + ay / al * reach, D[2] + az / al * reach, coat, age, seed + k, k % 2 == 1);
         }
     }
 

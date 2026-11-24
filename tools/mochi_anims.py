@@ -7,7 +7,8 @@ clapped together for the walls, raised for the rain and the dome, pointed at the
 
 Writes src/main/resources/assets/hexhaki/player_animation/mochi_<move>.json and client/npc/MochiPoses (StylePoser samples them). Every
 strike lands on the tick server/MochiMoves lands it (a punch on 3, Kaku Mochi's slam on 8, the club's on 7, the walls shut on 14). No
-clip keys a leg, the head, nor the body's place or pitch (tools/gura_anims.write_parts: the arms and the upper body only); no stance.
+clip keys a leg (but Yanagi Mochi's own right leg, 3.6.3), the head, nor the body's place or pitch (tools/gura_anims.write_parts: the arms
+and the upper body only); no stance.
 
 Usage: python3 tools/mochi_anims.py
 """
@@ -17,7 +18,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from gura_anims import ARMS, REST, tremble, write_parts  # noqa: E402
-from style_anims import WRITTEN, arm, java_poses, mirror, p  # noqa: E402
+from style_anims import WRITTEN, arm, java_poses, leg, mirror, p  # noqa: E402
 
 # the right arm straight out at the crosshair, the left drawn back by the hip (and the other way round)
 RIGHT_OUT = p(rightArm=arm(-90, -6, 4, -2), leftArm=arm(22, 0, -16, -34), body={"yaw": 18, "bend": 4})
@@ -71,16 +72,45 @@ def tsuki():
 
 # ------------------------------------------------------------------------------------------------------ Z: Yanagi Mochi
 
+def write_leg_parts(name, duration, beats, description, parts):
+    """3.6.3: as gura_anims.write_parts, but the right leg may be keyed (Yanagi Mochi's: the move is that leg's); never the head."""
+    from gura_anims import BODY, spine  # noqa: E402
+    from style_anims import OUT as ANIM_DIR, PARTS  # noqa: E402
+    import json
+    assert "head" not in parts and "leftLeg" not in parts, name + ": the head and the other leg are the player's own"
+    moves = []
+    for tick, easing, q in beats:
+        q = spine(q)
+        for part in parts:
+            values = q.get(part, {})
+            for channel in PARTS[part]:
+                if part == "body" and channel not in BODY:
+                    continue
+                moves.append({"tick": tick, "easing": easing, part: {channel: round(float(values.get(channel, 0.0)), 3)}})
+    moves.sort(key=lambda m: m["tick"])
+    data = {"version": 3, "name": name, "author": "HexPiece 3.6.3", "description": description,
+            "emote": {"beginTick": 0, "endTick": duration, "stopTick": duration + 3, "isLoop": False, "returnTick": 0,
+                      "degrees": True, "easeBeforeKeyframe": True, "moves": moves}}
+    WRITTEN[name] = data
+    with open(os.path.join(ANIM_DIR, name + ".json"), "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=1)
+        handle.write("\n")
+
+
 def yanagi():
-    # the leg becomes the tendrils (drawn from the hip): the upper body leans back over it, the arms out low for balance, shifting with
-    # each stamp (every 4 ticks)
-    lean = p(rightArm=arm(10, 0, 34, -10), leftArm=mirror(arm(10, 0, 34, -10)), body={"bend": -8})
+    # 3.6.3 (the owner: "Z Move should lift the leg of the player and turn it into the many legs"): the right leg lifted high in front
+    # (tick 3), then it is the tendrils (client/mochi/MochiFx hides the leg while it is: from tick 3 to 19, drawn from the hip), the
+    # upper body leaning back over it, the arms out low for balance, shifting with each stamp (every 4 ticks); the leg comes back raised
+    # and is set down by tick 22
+    lifted = leg(-78, 4, 34)
+    lean = p(rightArm=arm(10, 0, 34, -10), leftArm=mirror(arm(10, 0, 34, -10)), rightLeg=lifted, body={"bend": -8})
     beats = [(0, "linear", REST), (3, "outsine", lean)]
     beats += tremble(lean, 4, 20, 4, lambda b, s: p(b, rightArm={"roll": 34 + 4 * s}, leftArm={"roll": -34 + 4 * s},
                                                      body={"roll": 2.5 * s, "bend": -8 - s}))
     beats += [(22, "inoutsine", REST)]
-    write_parts("mochi_yanagi", 22, beats,
-                "Mochi Mochi: Yanagi Mochi: leaning back as the leg splits into tendrils of mochi that stamp the ground ahead.", ARMS)
+    write_leg_parts("mochi_yanagi", 22, beats,
+                    "Mochi Mochi: Yanagi Mochi: the right leg lifted and turned into tendrils of mochi that stamp the ground ahead.",
+                    ("body", "torso", "rightArm", "leftArm", "rightLeg"))
 
 
 # ------------------------------------------------------------------------------------------------------ X: Kaku Mochi
@@ -102,23 +132,25 @@ def kaku():
 
 # ------------------------------------------------------------------------------------------------------ C: Yaki Mochi
 
-COCKED = p(rightArm=arm(28, -8, 24, -104), leftArm=arm(-72, 10, -8, -18), body={"yaw": -30, "bend": 4})
+# 3.6.3 (the owner: "C Move, should be held, the longer its held the bigger the explosion, only 1 arm should be pointed, no other part of
+# the body should be animated"): the right arm alone, pointed straight out at the crosshair while the mochi swells round it
+POINTED = p(rightArm=arm(-90, 0, 4, -2))
 
 
 def yaki():
-    # held: the forearm cocked back, swelling with pressure, trembling harder as it fills (16 ticks), then punched out: the fist bursts
-    # away on its jet of fire
-    beats = [(0, "linear", REST), (4, "outsine", COCKED)]
-    beats += tremble(COCKED, 6, 18, 2, lambda b, s: p(b, rightArm={"pitch": 28 + 1.6 * s, "yaw": -8 - 1.2 * s}, body={"yaw": -30 + s}))
-    write_parts("mochi_yaki_charge", 18, beats,
-                "Mochi Mochi: Yaki Mochi: the forearm cocked back, swelling with pressure.", ARMS)
-    out = p(rightArm=arm(-92, -4, 6, -2), leftArm=arm(24, 0, -18, -30), body={"yaw": 22, "bend": 8})
-    write_parts("mochi_yaki_fire", 12, [
-        (0, "constant", COCKED),
-        (1, "outexpo", out),
-        (4, "outsine", p(out, rightArm={"pitch": -80, "bend": -14}, body={"bend": 4})),
-        (12, "inoutsine", REST),
-    ], "Mochi Mochi: Yaki Mochi let go: the swollen fist punched out, bursting away on a jet of fire.", ARMS)
+    # held (to MochiMoves.YAKI_MOST, 100 ticks): the arm raised to point in 4 ticks, then a fine tremble as the pressure builds; the arm
+    # alone is keyed (no body, no other limb)
+    beats = [(0, "linear", REST), (4, "outsine", POINTED)]
+    beats += tremble(POINTED, 8, 100, 3, lambda b, s: p(b, rightArm={"pitch": -90 + 1.1 * s, "yaw": 0.7 * s}))
+    write_parts("mochi_yaki_charge", 100, beats,
+                "Mochi Mochi: Yaki Mochi held: the right arm pointed straight out while the mochi swells round it.", ("rightArm",))
+    # let go: the arm kicks up with the fist's burst, then down
+    write_parts("mochi_yaki_fire", 10, [
+        (0, "constant", POINTED),
+        (2, "outexpo", p(POINTED, rightArm={"pitch": -104})),
+        (5, "outsine", p(POINTED, rightArm={"pitch": -94})),
+        (10, "inoutsine", REST),
+    ], "Mochi Mochi: Yaki Mochi let go: the pointed arm kicks as the swollen fist bursts away on its jet of fire.", ("rightArm",))
 
 
 # ------------------------------------------------------------------------------------------------------ V: Zan Giri Mochi's club

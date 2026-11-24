@@ -1,8 +1,8 @@
 {
  "version": 3,
  "name": "mochi_yanagi",
- "author": "HexPiece 3.1.2",
- "description": "Mochi Mochi: Yanagi Mochi: leaning back as the leg splits into tendrils of mochi that stamp the ground ahead.",
+ "author": "HexPiece 3.6.3",
+ "description": "Mochi Mochi: Yanagi Mochi: the right leg lifted and turned into tendrils of mochi that stamp the ground ahead.",
  "emote": {
   "beginTick": 0,
   "endTick": 22,
@@ -118,6 +118,34 @@
     }
    },
    {
+    "tick": 0,
+    "easing": "linear",
+    "rightLeg": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "linear",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "linear",
+    "rightLeg": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 0,
+    "easing": "linear",
+    "rightLeg": {
+     "bend": 0.0
+    }
+   },
+   {
     "tick": 3,
     "easing": "outsine",
     "body": {
@@ -223,6 +251,34 @@
     }
    },
    {
+    "tick": 3,
+    "easing": "outsine",
+    "rightLeg": {
+     "pitch": -78.0
+    }
+   },
+   {
+    "tick": 3,
+    "easing": "outsine",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 3,
+    "easing": "outsine",
+    "rightLeg": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 3,
+    "easing": "outsine",
+    "rightLeg": {
+     "bend": 34.0
+    }
+   },
+   {
     "tick": 4,
     "easing": "inoutsine",
     "body": {
@@ -325,6 +381,34 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -10.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "pitch": -78.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 4,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "bend": 34.0
     }
    },
    {
@@ -433,6 +517,34 @@
     }
    },
    {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "pitch": -78.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 8,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "bend": 34.0
+    }
+   },
+   {
     "tick": 12,
     "easing": "inoutsine",
     "body": {
@@ -535,6 +647,34 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -10.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "pitch": -78.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 12,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "bend": 34.0
     }
    },
    {
@@ -643,6 +783,34 @@
     }
    },
    {
+    "tick": 16,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "pitch": -78.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 16,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "bend": 34.0
+    }
+   },
+   {
     "tick": 20,
     "easing": "inoutsine",
     "body": {
@@ -745,6 +913,34 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -10.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "pitch": -78.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "roll": 4.0
+    }
+   },
+   {
+    "tick": 20,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "bend": 34.0
     }
    },
    {
@@ -850,6 +1046,34 @@
     "easing": "inoutsine",
     "leftArm": {
      "bend": -4.0
+    }
+   },
+   {
+    "tick": 22,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "pitch": 0.0
+    }
+   },
+   {
+    "tick": 22,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "yaw": 0.0
+    }
+   },
+   {
+    "tick": 22,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "roll": 0.0
+    }
+   },
+   {
+    "tick": 22,
+    "easing": "inoutsine",
+    "rightLeg": {
+     "bend": 0.0
     }
    }
   ]

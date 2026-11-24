@@ -69,7 +69,7 @@ public final class MochiFx {
     record Swell(long born, long until, boolean coat) {
     }
 
-    record Fist(Vec3 from, Vec3 step, long born, int flight, boolean coat, int seed) {
+    record Fist(Vec3 from, Vec3 step, long born, int flight, boolean coat, int seed, double charge) {
     }
 
     /** Zan Giri Mochi's wheel (by user): rolling from where to where. */
@@ -215,7 +215,7 @@ public final class MochiFx {
                     put(SWELLS, m.user(), new Swell(clock, clock + m.ticks() + 2, coat));
                 } else if (phase == MochiMoves.YAKI_FLY) {
                     SWELLS.remove(m.user());
-                    put(FISTS, m.id(), new Fist(at, a, clock, m.ticks(), coat, m.id()));
+                    put(FISTS, m.id(), new Fist(at, a, clock, m.ticks(), coat, m.id(), m.by()));
                 } else {
                     SWELLS.remove(m.user());
                     FISTS.remove(m.id());
@@ -382,9 +382,13 @@ public final class MochiFx {
         }
     }
 
-    /** 3.6.3: a body's right and left arm (mochiArms). */
+    /** 3.6.3: a body's right and left arm, its right leg (mochiArms). */
     static final int RIGHT = 1;
     static final int LEFT = 2;
+    static final int RIGHT_LEG = 4;
+    /** 3.6.3: Yanagi Mochi's leg is mochi from the clip's lift (tick 3) until it comes back (3 ticks before its end). */
+    static final double LEG_FROM = 3.0;
+    static final double LEG_BACK = 3.0;
 
     /**
      * 3.6.3 (the owner: "The mochi M1s should turn the user's arms into the mochi not create another arm above it", "X Should also turn
@@ -392,7 +396,7 @@ public final class MochiFx {
      * punch's arm while it is out, both of Kaku Mochi's.
      */
     static int mochiArms(int user) {
-        if (PUNCHES.isEmpty() && KAKUS.isEmpty()) {
+        if (PUNCHES.isEmpty() && KAKUS.isEmpty() && YANAGIS.isEmpty()) {
             return 0;
         }
         int arms = 0;
@@ -404,6 +408,13 @@ public final class MochiFx {
         for (Kaku k : KAKUS) {
             if (k.user == user && clock - k.born <= MochiDraw.KAKU_LIFE) {
                 arms |= RIGHT | LEFT;
+            }
+        }
+        // 3.6.3 (the owner: "Z Move should lift the leg of the player and turn it into the many legs")
+        for (Yanagi y : YANAGIS) {
+            long age = clock - y.born;
+            if (y.user == user && age >= LEG_FROM && age <= MochiDraw.YANAGI_LIFE - LEG_BACK) {
+                arms |= RIGHT_LEG;
             }
         }
         return arms;
@@ -420,7 +431,8 @@ public final class MochiFx {
             return;
         }
         hidden = new net.minecraft.client.model.geom.ModelPart[] {(arms & RIGHT) != 0 ? model.f_102811_ : null,
-            (arms & RIGHT) != 0 ? model.f_103375_ : null, (arms & LEFT) != 0 ? model.f_102812_ : null, (arms & LEFT) != 0 ? model.f_103374_ : null};
+            (arms & RIGHT) != 0 ? model.f_103375_ : null, (arms & LEFT) != 0 ? model.f_102812_ : null, (arms & LEFT) != 0 ? model.f_103374_ : null,
+            (arms & RIGHT_LEG) != 0 ? model.f_102813_ : null, (arms & RIGHT_LEG) != 0 ? model.f_103377_ : null};
         for (int k = 0; k < hidden.length; k++) {
             if (hidden[k] != null && hidden[k].f_104207_) {
                 hidden[k].f_104207_ = false;
@@ -756,7 +768,7 @@ public final class MochiFx {
             if (!far(elbow, cam)) {
                 double age = now - s.born;
                 MochiDraw.swell(SINK, elbow.f_82479_ - cx, elbow.f_82480_ - cy, elbow.f_82481_ - cz, look.f_82479_, look.f_82480_, look.f_82481_,
-                    Math.min(1.0, age / MochiMoves.YAKI_SWELL_TICKS), age, s.coat, e.getKey());
+                    MochiMoves.yakiCharge(age), age, s.coat, e.getKey());
             }
         }
         for (Fist f : FISTS.values()) {
@@ -764,7 +776,8 @@ public final class MochiFx {
             Vec3 p = f.from.m_82549_(f.step.m_82490_(age));
             if (!far(p, cam)) {
                 Vec3 u = unit(f.step);
-                MochiDraw.yaki(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, u.f_82479_, u.f_82480_, u.f_82481_, age, f.coat, f.seed);
+                MochiDraw.yaki(SINK, p.f_82479_ - cx, p.f_82480_ - cy, p.f_82481_ - cz, u.f_82479_, u.f_82480_, u.f_82481_, age, f.coat, f.seed,
+                    f.charge);
             }
         }
         for (Map.Entry<Integer, Wheel> e : WHEELS.entrySet()) {

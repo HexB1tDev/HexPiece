@@ -101,10 +101,27 @@ public final class MochiMoves {
     public static final double TSUKI_REACH = 8.0;
     public static final double TSUKI_REACH_FULL = 16.0;
     /** Yaki Mochi: the swelling, the fist's speed and range, the blast. */
-    public static final int YAKI_SWELL_TICKS = 16;
+    /**
+     * 3.6.3 (the owner: "C Move, should be held, the longer its held the bigger the explosion, only 1 arm should be pointed, no other part
+     * of the body should be animated"): Yaki Mochi swells while C is held, full at {@link #YAKI_FULL} ticks, let go by itself at
+     * {@link #YAKI_MOST}; its explosion from {@link #YAKI_RADIUS_LEAST} (a tap) to {@link #YAKI_RADIUS_MOST} (full).
+     */
+    public static final int YAKI_FULL = 60;
+    public static final int YAKI_MOST = 100;
     public static final double YAKI_SPEED = 2.2;
     static final double YAKI_RANGE = 40.0;
-    public static final double YAKI_RADIUS = 3.5;
+    public static final double YAKI_RADIUS_LEAST = 2.2;
+    public static final double YAKI_RADIUS_MOST = 7.0;
+
+    /** 3.6.3: how full Yaki Mochi is after {@code held} ticks (a tap a sixth). */
+    public static double yakiCharge(double held) {
+        return Math.max(1.0 / 6.0, Math.min(1.0, held / YAKI_FULL));
+    }
+
+    /** 3.6.3: the explosion's radius at {@code charge} (0 to 1). */
+    public static double yakiRadius(double charge) {
+        return YAKI_RADIUS_LEAST + (YAKI_RADIUS_MOST - YAKI_RADIUS_LEAST) * charge;
+    }
     /** Zan Giri Mochi: how far and how long the wheel rolls, how near it snags. */
     public static final double WHEEL_RANGE = 16.0;
     public static final int WHEEL_TICKS = 18;
@@ -293,6 +310,9 @@ public final class MochiMoves {
         if (s != null && slot == MochiKit.ANEMONE.slot() && s.anemoneSince >= 0) {
             anemoneEnd(player, s);
         }
+        if (s != null && slot == MochiKit.YAKI.slot() && s.yakiSince >= 0) {
+            yakiFire(player, s); // 3.6.3: C let go: the swollen fist bursts away
+        }
     }
 
     // ------------------------------------------------------------------------------------------------------ LMB: Mochi Punch
@@ -435,25 +455,26 @@ public final class MochiMoves {
         }
         s.yakiSince = now;
         animate(player, "mochi_yaki_charge");
-        fx(player, YAKI, 0, ItoMoves.chest(player), player.m_20154_(), YAKI_SWELL, 0, 0, YAKI_SWELL_TICKS + 2);
+        fx(player, YAKI, 0, ItoMoves.chest(player), player.m_20154_(), YAKI_SWELL, 0, 0, YAKI_MOST + 2);
         sound(player, ItoMoves.chest(player), MochiSounds.INFLATE, 1.0F, 1.0F);
     }
 
     /** The swollen forearm bursts: its fist flies out on a jet of fire, exploding at the first body or block, or at its range. */
     static void yakiFire(ServerPlayer player, State s) {
         long now = now(player);
+        double charge = yakiCharge(now - s.yakiSince);
         s.yakiSince = -1;
         s.busyUntil = now + 6;
-        ItoMoves.cool(player, MochiKit.YAKI, 140);
+        ItoMoves.cool(player, MochiKit.YAKI, (int) (100 + 60 * charge));
         Vec3 look = player.m_20154_();
         Vec3 from = ItoMoves.chest(player).m_82549_(look.m_82490_(1.0));
         Vec3 step = look.m_82490_(YAKI_SPEED);
         int flight = (int) Math.ceil(YAKI_RANGE / YAKI_SPEED);
         int seed = ++seeds;
         animate(player, "mochi_yaki_fire");
-        fx(player, YAKI, seed, from, step, YAKI_FLY, 0, 0, flight);
+        fx(player, YAKI, seed, from, step, YAKI_FLY, charge, 0, flight);
         sound(player, from, MochiSounds.FIRE, 1.1F, 0.9F);
-        LIVE.add(new Fist((ServerLevel) player.m_9236_(), player, from, step, now + flight, seed));
+        LIVE.add(new Fist((ServerLevel) player.m_9236_(), player, from, step, now + flight, seed, charge));
     }
 
     /** Yaki Mochi's burning fist in flight. */
@@ -464,14 +485,16 @@ public final class MochiMoves {
         final Vec3 step;
         final long until;
         final int seed;
+        final double charge;
 
-        Fist(ServerLevel level, ServerPlayer owner, Vec3 at, Vec3 step, long until, int seed) {
+        Fist(ServerLevel level, ServerPlayer owner, Vec3 at, Vec3 step, long until, int seed, double charge) {
             this.level = level;
             this.owner = owner;
             this.at = at;
             this.step = step;
             this.until = until;
             this.seed = seed;
+            this.charge = charge;
         }
 
         @Override
@@ -506,11 +529,14 @@ public final class MochiMoves {
 
         void boom(Vec3 where) {
             boolean coat = coated(this.owner);
-            UoMoves.explode(this.owner, this.level, where, this.step.m_82541_(), YAKI_RADIUS, coat ? 17.5F : 14.0F, 4, 1.3);
+            // 3.6.3: the longer it was held, the bigger and harder its explosion
+            double radius = yakiRadius(this.charge);
+            float damage = (float) (9.0 + 11.0 * this.charge) * (coat ? 1.25F : 1.0F);
+            UoMoves.explode(this.owner, this.level, where, this.step.m_82541_(), radius, damage, 4, 1.0 + 0.6 * this.charge);
             fx(this.owner, YAKI, this.seed, where, Vec3.f_82478_, YAKI_DROP, 0, 0, 0);
-            fx(this.owner, BOOM, this.seed, where, Vec3.f_82478_, 0, 0, YAKI_RADIUS * 0.65, 0);
-            Impact.quake(this.level, where, 18.0, 0.55F, 9);
-            sound(this.owner, where, MochiSounds.BOOM, 1.5F, 1.0F);
+            fx(this.owner, BOOM, this.seed, where, Vec3.f_82478_, 0, 0, radius * 0.65, 0);
+            Impact.quake(this.level, where, 12.0 + 12.0 * this.charge, (float) (0.35 + 0.4 * this.charge), 9);
+            sound(this.owner, where, MochiSounds.BOOM, (float) (1.0 + 0.8 * this.charge), (float) (1.1 - 0.25 * this.charge));
         }
     }
 
@@ -1091,8 +1117,8 @@ public final class MochiMoves {
         if (s.tsukiSince >= 0 && now - s.tsukiSince >= TSUKI_MOST) {
             tsukiThrust(player, s); // held its longest: it goes by itself
         }
-        if (s.yakiSince >= 0 && now - s.yakiSince >= YAKI_SWELL_TICKS) {
-            yakiFire(player, s);
+        if (s.yakiSince >= 0 && now - s.yakiSince >= YAKI_MOST) {
+            yakiFire(player, s); // held its longest: it goes by itself
         }
         if (s.anemoneSince >= 0) {
             anemoneTick(player, s, now);

@@ -24,9 +24,9 @@ public final class MochiKit extends FruitKit {
     public static final FruitMove KAKU = new FruitMove("Kaku Mochi", "[X]", 0, "mochi_kaku",
         "Your arms rise and harden into square blocks of mochi, then slam down in front of you: everyone under them is crushed and"
             + " knocked down.");
-    public static final FruitMove YAKI = new FruitMove("Yaki Mochi", "[C]", 0, "mochi_yaki",
-        "Your forearm swells with pressure, then bursts: its fist flies out on a jet of fire, fast and far, and explodes where it lands,"
-            + " setting it alight.");
+    public static final FruitMove YAKI = new FruitMove("Yaki Mochi", "[C] hold", 0, "mochi_yaki",
+        "Hold: your pointed forearm swells into a great mass of mochi, the bigger the longer you hold; let go and its fist flies out on a"
+            + " jet of fire, fast and far, and explodes where it lands, setting it alight: the longer the hold, the bigger the explosion.");
     public static final FruitMove ZANGIRI = new FruitMove("Zan Giri Mochi", "[V]", 0, "mochi_zangiri",
         "Your whole body becomes a giant wheel of mochi and rolls forward; the first one you meet is snagged by a sticky arm and slammed"
             + " down by a giant spiked club.");

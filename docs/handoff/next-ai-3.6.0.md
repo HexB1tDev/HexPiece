@@ -405,3 +405,10 @@ swirl trails, shockwave rings, flying debris; explosions are a white-hot star bu
 - DoughV2, Oblivion: a surge of mochi erupts at the target (cream splashes, a swirl ring on the ground), rises into white walls round
   it like a basin and holds it; then bursts outward: cream shards and splashes everywhere, pink-magenta energy and red lightning.
 
+## N. The owner: replace the Mochi moveset with the reference's (verbatim)
+
+28. "Idk if you understand, I WANT THE OTHER MOVES, all of them, I want yours gone" (sent while the Mochi list was being reworked
+    (material, arms, Yanagi's leg, held Yaki, the donuts): the Mochi fruit's moves are to be the Dough / DoughV2 moves of section M,
+    every one of them, and HexPiece's current Mochi moves removed. Our own 3D art, effects and names; the reference is a look and a
+    moveset to match, never copied assets.)
+
