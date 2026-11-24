@@ -781,3 +781,20 @@ much closer, so its blasts fill the view there; none of it is tested in game.
 3.6.6 pushed with its release notes (check its Build and Release runs first). Next: the owner's notes on the awakened moves (write them
 verbatim into section N, fix them first); otherwise compare each awakened move again against its GIF at more beats (section P) and
 close the honest gaps above.
+
+3.6.6 green on GitHub: Build #246, Release #157.
+
+## U. The owner's next request (verbatim, sent while 3.6.6's runs were finishing): the Phoenix fruit
+
+20. The owner (with Phoenix.zip, their own model): "Next up:
+
+    Mythical Fruit:
+    Tori Tori no Mi, Model: Phoenix
+    Zoan Type.
+
+    I made the model and sent it in the zip, first of all animate it so it looks good, good flying animations, etc.
+
+    Z (transforms/detransforms)
+
+    Other moves:
+    https://official-fruit-battlegrounds.fandom.com/wiki/Phoenix#Move_Info"
