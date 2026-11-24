@@ -3495,6 +3495,78 @@ lifting over 8 ticks. S2CClash.CLASSIC (flag 8) keeps the old ImpactFrame: only 
 Preview: docs/gifs/impact-frame-3.5.8.png (composited over a render, not the game).
 3.5.8 is green (Build #213, Release #149).
 
+## 8zzu. The owner's requests after 3.5.8 (verbatim) and where they stand (NOT built yet: 3.5.9 is next)
+
+Asked during this session, in this order, then "handoff + prompt" (so this was written and pushed before any of it was finished):
+
+1. "HOLDING R will now fully disable all powers and abilities (but fruit passives)."
+2. "iron fist Z, the cannon ball should not fucking increase size, wtf man"
+3. "Blue hole should be: / Uppercut / Did it hit someone? No? Ends here. / If Yes: / the entity goes flying then the user catches up
+   (jumps to the entity) grabs them and throws them down to the floor, hard."
+4. "galaxy impact is too laggy. / Impact frames are only on: / Did 2 attacks clash? (if yes then the impact frame plays for both)"
+
+All four go in ONE version, 3.5.9 (VERSION in build.py is still 3.5.8; tools/next_version.py --write).
+
+**The unfinished code is in docs/handoff/wip-3.5.9.patch** (git apply docs/handoff/wip-3.5.9.patch; it applies cleanly on this commit;
+the branch's code itself is 3.5.8's, green). It holds:
+- (2) done: IronMove.METEOR_RADIUS 0.55, one size however long the hold (meteorRadius removed; IronFist's BALL message and hit radius,
+  IronFx's ball in the hand and IronShots use it). Speed and the blast's size still grow with the hold (meteorSpeed, meteorBlast): the
+  owner only named the ball's size; say so when reporting.
+- (3) half done, server only: IronMove's Blue Hole beats (HOLE_HIT 6, HOLE_REACH 3.6, HOLE_RISE 8, HOLE_HEIGHT 9, HOLE_JUMP 2,
+  HOLE_LEAP 6, HOLE_HANG 4, HOLE_FALL 4, HOLE_DROP 10, HOLE_TICKS, HOLE_MISS_COOLDOWN 40, holeRise, holeThrow; the old HOLE_CROUCH,
+  HOLE_DASH, HOLE_LIFT, HOLE_RANGE are gone) and its description; server/IronFist.blueHole / uppercut / headroom / Flight / slam(player,
+  target, mouth): the uppercut at HOLE_HIT (a miss: fx bx 4 and the move ends, cooldown 40 ticks); a hit: the body carried up by Flight
+  (holeRise, short of a ceiling: headroom), held at the top, thrown down onto the ground under where it rose (holeThrow), then the hole
+  (slam: the old 15-deep shaft, stun at its bottom); the user leaps after it at HOLE_JUMP (fx bx 2: to the point where the right hand
+  meets its face, from), grabs at HOLE_RISE (bx 3, id the body), throws at HOLE_RISE + HOLE_HANG (bx 5: the top, a the ground, ticks),
+  comes down after it to the hole's edge on their side (bx 6: to, from, HOLE_DROP ticks); bx 1 the uppercut landing (the fist, size its
+  strength), bx 7 the hole (was 3). The old Held and grab are gone.
+  Still to do for (3): client/ironfist/IronFx.hole() for the new phases (0 DOING HOLE at the fist for HOLE_HIT; 1 a Crush burst up at the
+  fist; 2 a Ring at from and, for the user, Carry(from, to, HOLE_LEAP, small arc) held until the drop (holdUntil = clock + ticks +
+  HOLE_HANG + 1); 3 DOING HOLE (the grip's glow) for HOLE_HANG; 4 carry = null for the user, a small Pop at the fist on a miss; 5 a new
+  streak: IronArt.trail on the body's path apex to ground over HOLE_FALL (holeThrow), impact lines and a pressure ring at the top;
+  6 the user's Carry down, from the client's own position, eased IN (add a gravity flag to Carry: e = u * u) for HOLE_DROP; 7 the
+  Hole effect (was phase 3)); IronFx line 228 still names HOLE_LIFT (the patch does not compile until hole() is rewritten);
+  HudTests.ironFist checks HOLE_RANGE (make it HOLE_REACH and the new beats); the clip style_brawler_blue_hole in tools/style_anims.py
+  (35 ticks = HOLE_TICKS: IF, a quick low coil, the uppercut on tick 6 (reuse the crusher's `upper`), the leap from tick 8 (legs tucked,
+  the right arm reaching up), the grab on 14, wound back over the head (by the side, never through the face: anim.lint) by 17, the throw
+  straight down on 18 (outexpo, the body bent hard into it), falling, landing low on 28 or so, then `look` at the edge leaning forward
+  looking down); render it (tools/anim_preview.py) and the effects (tools/preview/IronShots: ihole must become the new beats) and judge.
+
+Not started:
+- (1) Hold R. What was found: R is the original's HakiKeys.ARMAMENT, read in client/CombatMode.keys (a tap: combat mode / style <->
+  fruit; Ctrl + R: Armament). Make the tap act on release and a hold of about 10 ticks toggle the powers (hold again to turn them back
+  on: the owner did not say how they come back; a tap while off does nothing but say "Powers off: hold R"). The original already has
+  a powers-off bit: com.hexhaki.binds.Binds.off(player) / Binds.off(ServerPlayer, boolean) (synced: client BindsClient.off()), and
+  FruitServer.togglePowers (the original's, still reached by HakiKeys.LOADOUT, now O, for players without the Gomu fruit: FruitKeys.send
+  (5, 0, 0) -> FruitServer.action code 5) which flips it, HakiServerController.cancelAll (every Haki flag off: armamentOn, observationOn,
+  acocOn = Ryou, the Conqueror's charge, the leap...; animation cleared; synced), kit.cancel, and kit.removed / granted: removed would
+  strip the fruit's passives, which the owner wants KEPT. FruitData.active (owns && !Binds.off) gates FruitServer.action (every fruit
+  ability, HexPiece's kits too), FruitServer.view, FruitServer.attacked (the passives: kit.immune and the Logia dodge: redirect that
+  call to FruitData.owns so passives stay), HieFreeze.punch and LightKit; client FruitClient.active() reads BindsClient.off() (FruitKeys,
+  QuickKeys, PieceHooks.fruitKeysActive, the fx gates). Haki: PiecePatch redirects BindsClient.off in HakiKeys$ForgeBus.tick and
+  movementInput to PieceHooks.hakiKeysOff (false since 2.2.4: return BindsClient.off() now) and Binds.off in
+  HakiServerController.onAction to RyouServer.hakiOff (add Binds.off; note onAction lets the Gomu fruit through: `off && !GearData.hasFruit`
+  -> return: redirect that hasFruit too). Proposed: a server/Powers class (set(player, off): Binds.off, cancelAll, kit.cancel (NOT
+  removed), combat mode off and StyleServer / IronFist.forget, every form ended (the Uo dragon: DragonServer; the Gomu fruit's Devil Fruit
+  mode and gears; Gear 5; the Mochi Awakening; the Horo projection: check each kit's cancel), "Powers off" / "Powers on" in the action bar
+  and the original's sound); FruitServer.action's togglePowers redirected to Powers.toggle (no passive stripped); a C2S message for the
+  hold (PROTOCOL 19); the server handlers of C2SCombat, C2SStyleAction, C2SSword, C2SDragon, C2SItoSky, C2SNikaJump, C2SNikaWhip refuse
+  while off; CombatMode forced off; the HUD's badge "POWERS OFF (hold R)" and a small fill while R is held. Tests.
+- (4a) Impact frames only on clashes, for both: Clashes' three S2CClash (landing's blade, slashesMeet, collide) are the clashes; mark
+  them (a new flag, e.g. CLASH 16) and have client/fx/ClashFx.accept start the screen frame (Shown) only for such a message and only
+  when the local player is its a or b (the two who clashed); the world burst can stay for everyone near. The other S2CClash senders
+  are hits, not clashes: IronFist.frame (remove its calls), HieMoves 841, MaguMoves 366 and 442, PikaMoves 1115, GuraMoves 426 and 960:
+  no screen frame. GuraUltimate (CLASSIC, the old frame): the owner had kept it out of 3.5.8's change ("but the Quake N ultimate move");
+  keep it and say so, or ask.
+- (4b) Galaxy Impact's lag. 3.5.8 already cut its dust walls (were about 30k quads, now about 3k each). What is left to cut: the client's
+  Strike draws GuraArt.quake (about 1.6k quads), the dome (1k), the point (750), three dust walls, the debris waves (14 rocks every
+  6 ticks living 50 ticks: about 110 rocks at once) and the force's shock; the server's impactBlast throws ConquerorAura.bolts every
+  6 ticks (10 bolts each, the release's full bolts), the charge throws bolts from the fist (IronFist around line 820), the crater is dug
+  by Dig (radius IMPACT_CRATER 15: thousands of blocks through Scars, DESTROY 240 a tick), and the damage waves search foes every tick.
+  Cut hard: fewer bolt calls (a few, not every 6 ticks), fewer rocks (cap about 40), one dust wall, a smaller or slower crater,
+  the quake once; measure the client frame (DragonTests.ironArt) and keep the server's per-tick work small.
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);

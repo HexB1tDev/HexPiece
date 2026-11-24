@@ -3,8 +3,8 @@ Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetc
 Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standing rule in one place (talking to the owner, the house
 rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
 never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzt of next-ai-3.2.2.md
-(2.9.6 to 3.5.8); open the older next-ai-*.md only for a feature's detail.
+with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzu of next-ai-3.2.2.md
+(2.9.6 to 3.5.9's requests); open the older next-ai-*.md only for a feature's detail.
 
 POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
 fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
@@ -39,8 +39,13 @@ Love, Z Meteor Fist held, X Mountain Crusher, C Blue Hole, V Galaxy Divide, B In
 regrows), and the owner's own impact frame (art/impact-frame.gif) in place of every impact frame but the Gura ultimate's; green
 (Build #213, Release #149).
 
-Next: wait for the owner's notes on 3.5.8 (Iron Fist, the impact frame), 3.5.6 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their
-lists for the other fruits. The fist is a right fist
+Next: 3.5.9, the owner's four requests after 3.5.8 (section 8zzu, verbatim, with what was found and the plan): (1) holding R turns
+every power and ability off (fruit passives kept), (2) Meteor Fist's cannonball one size (done in the patch), (3) Blue Hole remade:
+an uppercut, a miss ends it, a hit sends them flying, the user leaps after them, grabs them and throws them down hard (server side
+done in the patch, the client, the clip and the renders not), (4) Galaxy Impact too laggy, and impact frames ONLY when two attacks
+clash, for both of them. Start with `git apply docs/handoff/wip-3.5.9.patch` (it does not compile until IronFx.hole() is rewritten),
+then delete the patch file in the same commit. All four in one version. Then wait for the owner's notes on 3.5.9, 3.5.6 (Mochi),
+3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
 on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
 polygons are not acceptable; hot strings use ItoArt's HOT tint; never lay a see-through ribbon over or through an opaque body (it punches
 holes in it: 8zzk).
