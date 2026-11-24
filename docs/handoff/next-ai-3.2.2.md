@@ -3682,6 +3682,15 @@ With the prompt ("finish all four in one version 3.5.9"), then while 3.5.9 was b
     the owner's newer, specific word for this move. "Please get References first": look up Katakuri's Buzz Cut Mochi (Zangiri Mochi's
     Haki version, episodes against Luffy on Whole Cake) before building.)
 
+11. The owner's Mochi list (verbatim, during 3.6.0's work): "The mochi M1s should turn the user's arms into the mochi not create
+    another arm above it. / The Mochi material has to look more realistic, have more depth, shade and color to it, more 3d material
+    too, its too flat. / Mochi anemoni, the fists should fill the entire hole and adapt to the size of the donuts, just like the V move
+    in the awakening. / Mochi appearing and disappearing should have more realism not just vanish. / Z Move should lift the leg of the
+    player and turn it into the many legs. / X Should also turn the arms into mochi not create a layer above it. / C Move, should be
+    held, the longer its held the bigger the explosion, only 1 arm should be pointed, no other part of the body should be animated. /
+    In the new Buzz Cut Mochi and Zan Giri mochi the rolling donut the player turns into it should look  like" (the message ends there:
+    asked the owner to resend the rest).
+
 Where they stand: see section 8zzw (3.5.9 as built) for what is done; anything not listed there is still to do.
 
 ## 8zzw. 3.5.9 as built (8zzu's four requests and 8zzv items 1 to 4)
@@ -3722,7 +3731,7 @@ Where they stand: see section 8zzw (3.5.9 as built) for what is done; anything n
   WifiDraw.drawTick. SwordTests.wifi, StyleTests.galaxy. Renders: the clip with the katana (sword_rig), BoltPreview wifi (the gap's
   lightning).
 
-3.5.9 is pushed; see the top of next-prompt.md for its CI state.
+3.5.9 is green (Build #216, Release #150).
 
 ## 9. What to do next (after 3.3.7)
 

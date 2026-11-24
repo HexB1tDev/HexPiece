@@ -42,7 +42,7 @@ regrows), and the owner's own impact frame (art/impact-frame.gif) in place of ev
 3.5.9 (sections 8zzu the requests, 8zzv the owner's further requests verbatim, 8zzw as built): hold R turns every power off but
 the fruit's passives, Meteor Fist's cannonball one size, Blue Hole remade (uppercut, leap, grab, throw down), Galaxy Impact lighter,
 impact frames only on clashes (for both), WiFi Haki a Swordsman's on K with its slow partial draw and lightning from the sheath's gap,
-the Galaxy Fist and the Haki Grip removed entirely. Pushed; check its Build and Release runs are green.
+the Galaxy Fist and the Haki Grip removed entirely. Green (Build #216, Release #150).
 
 Next (8zzv, the owner's requests not yet built, in this order): 3.6.0 the Haki colour choice on the start menu (seven sets, named by
 their colours only: never the forbidden fruit's owner's name, build.py check_imu), every lightning more crooked and ONE Haki lightning
