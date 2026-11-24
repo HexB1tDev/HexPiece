@@ -165,6 +165,17 @@ public final class MochiMoves {
     static final float TRIDENT_HURT = 5.0F;
     static final float TRIDENT_LAST_HURT = 7.0F;
     static final double TRIDENT_LAUNCH = 1.45;
+    /**
+     * 3.6.6: Power Mochi (awakened V; kind POWER: bx 1 on (ticks), 0 off; kind POWER_PUNCH: bx the donut (0 right, 1 left), x, y, z where
+     * its fist strikes, size the reach): two flaming donuts at the shoulders for MochiV2.POWER_TICKS; while they are out the left click
+     * is their fists, one then the other, every {@link #POWER_EVERY} ticks, setting whoever they strike on fire.
+     */
+    public static final int POWER = 285;
+    public static final int POWER_PUNCH = 286;
+    static final int POWER_EVERY = 7;
+    static final float POWER_HURT = 6.0F;
+    static final int POWER_BURN = 2;
+    static final int POWER_COOL = 600;
     /** How often an awakened user's state is sent again (for whoever comes near later), the Awakening's cooldown after it comes on. */
     public static final int AWAKE_RESEND = 40;
     static final int AWAKEN_COOL = 40;
@@ -183,6 +194,10 @@ public final class MochiMoves {
         int trident = -1;
         long tridentLast;
         long tridentNext;
+        /** 3.6.6: Power Mochi out until (-1 none), the next punch, which donut punches next. */
+        long powerUntil = -1;
+        long powerNext;
+        int powerSide;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -271,6 +286,9 @@ public final class MochiMoves {
         }
         s.awakened = !s.awakened;
         s.trident = -1;
+        if (!s.awakened) {
+            powerEnd(player, s);
+        }
         if (s.awakened) {
             ItoMoves.cool(player, MochiKit.AWAKEN, AWAKEN_COOL);
             animate(player, "mochi_awaken");
@@ -282,6 +300,10 @@ public final class MochiMoves {
 
     /** A key (Z to N) while awakened: the DoughV2 move in its place. */
     static void pressAwake(ServerPlayer player, State s, int slot, long now) {
+        if (slot == MochiKit.POWER.slot()) {
+            power(player, s, now);
+            return;
+        }
         // 3.6.4 (the owner: "Release fixes now"): the left click's swings are in; the six others are being built
         for (com.hexhaki.fruit.FruitMove move : MochiKit.AWAKENED) {
             if (move.slot() == slot && move != MochiKit.AWAKEN) {
@@ -312,6 +334,62 @@ public final class MochiMoves {
         sound(player, ItoMoves.chest(player), k >= 3 ? com.hexhaki.piece.sword.SwordSounds.SWING_HEAVY : com.hexhaki.piece.sword.SwordSounds.SWING,
             0.9F, 1.05F - k * 0.04F);
         later(player, MochiV2.TRIDENT_HIT, () -> tridentHit(player, k));
+    }
+
+    /**
+     * V awakened: Power Mochi (mochi/MochiV2.powerDonut and powerPunch, the reference's frames 15 to 155): a splash of cream and a
+     * fireball at each shoulder, two burning donuts out of them for MochiV2.POWER_TICKS ticks.
+     */
+    static void power(ServerPlayer player, State s, long now) {
+        if (now < s.powerUntil || !ItoMoves.ready(player, MochiKit.POWER)) {
+            return;
+        }
+        ItoMoves.cool(player, MochiKit.POWER, POWER_COOL);
+        s.powerUntil = now + MochiV2.POWER_TICKS;
+        s.powerNext = now + (long) MochiV2.POWER_FORM;
+        s.busyUntil = now + 8;
+        animate(player, "mochi_power");
+        fx(player, POWER, ++seeds, player.m_20182_(), player.m_20154_(), 1, 0, 0, MochiV2.POWER_TICKS);
+        sound(player, ItoMoves.chest(player), MochiSounds.SQUISH, 1.2F, 0.8F);
+        later(player, 4, () -> sound(player, ItoMoves.chest(player), MochiSounds.BOOM, 0.8F, 1.3F));
+    }
+
+    static void powerEnd(ServerPlayer player, State s) {
+        if (s.powerUntil < 0) {
+            return;
+        }
+        s.powerUntil = -1;
+        fx(player, POWER, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
+    }
+
+    /** A Power Mochi punch (the awakened left click while the donuts are out): the next donut's burning fist at whom is aimed at. */
+    static void powerPunch(ServerPlayer player, State s, long now) {
+        if (now < s.powerNext || player.m_20159_()) {
+            return;
+        }
+        s.powerNext = now + POWER_EVERY;
+        int side = s.powerSide++ % 2;
+        LivingEntity aimed = PikaMoves.aimed(player, MochiV2.POWER_REACH, 0.8);
+        Vec3 at = aimed != null ? StyleCombat.middle(aimed) : player.m_146892_().m_82549_(player.m_20154_().m_82490_(MochiV2.POWER_REACH));
+        animate(player, side == 0 ? "mochi_power_1" : "mochi_power_2");
+        fx(player, POWER_PUNCH, ++seeds, at, player.m_20154_(), side, 0, MochiV2.POWER_REACH, 0);
+        sound(player, ItoMoves.chest(player), MochiSounds.FIRE, 0.7F, 1.3F);
+        if (aimed == null) {
+            return;
+        }
+        later(player, (int) MochiV2.POWER_OUT, () -> {
+            if (!aimed.m_6084_()) {
+                return;
+            }
+            Vec3 f = ItoMoves.flat(player);
+            if (MaguMoves.hurt(player, aimed, POWER_HURT)) {
+                StyleCombat.push(aimed, aimed.m_20184_().m_82490_(0.3).m_82549_(f.m_82490_(0.35)).m_82520_(0, 0.1, 0));
+                aimed.m_20254_(POWER_BURN);
+            }
+            Vec3 mid = StyleCombat.middle(aimed);
+            sounds(player, mid, MochiSounds.PUNCH, 0.9F, 0.9F, 1, 2);
+            ItoMoves.lightning(player, mid);
+        });
     }
 
     /** A trident swing's blow: whoever is within reach in front (the spin: all round) is struck. */
@@ -398,7 +476,11 @@ public final class MochiMoves {
         State s = state(player);
         long now = now(player);
         if (s.awakened) {
-            tridentSwing(player, s, now);
+            if (now < s.powerUntil) {
+                powerPunch(player, s, now);
+            } else {
+                tridentSwing(player, s, now);
+            }
             return;
         }
         if (busy(s, now) || now < s.punchNext || player.m_20159_()) {
@@ -1128,6 +1210,12 @@ public final class MochiMoves {
         long now = now(player);
         if (s.awakened && now % AWAKE_RESEND == 0) {
             fx(player, AWAKEN, 0, player.m_20182_(), Vec3.f_82478_, 1, 1, 0, 0);
+            if (now < s.powerUntil) {
+                fx(player, POWER, 0, player.m_20182_(), player.m_20154_(), 1, 1, 0, (int) (s.powerUntil - now));
+            }
+        }
+        if (s.powerUntil >= 0 && now >= s.powerUntil) {
+            powerEnd(player, s);
         }
         if (s.yakiSince >= 0 && now - s.yakiSince >= YAKI_MOST) {
             yakiFire(player, s); // held its longest: it goes by itself
@@ -1149,6 +1237,7 @@ public final class MochiMoves {
         if (s.anemoneSince >= 0) {
             anemoneEnd(player, s);
         }
+        powerEnd(player, s);
         if (s.awakened) {
             fx(player, AWAKEN, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
         }

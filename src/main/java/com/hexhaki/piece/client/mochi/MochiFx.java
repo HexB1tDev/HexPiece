@@ -103,6 +103,21 @@ public final class MochiFx {
     record Struck(Vec3 at, int k, double ground, long born, int seed) {
     }
 
+    /** 3.6.6: Power Mochi's donuts out (since when, gone since when: -1 while they last), a punch (whose, which donut, where it lands). */
+    static final class PowerOn {
+        final long born;
+        final int seed;
+        long gone = -1;
+
+        PowerOn(long born, int seed) {
+            this.born = born;
+            this.seed = seed;
+        }
+    }
+
+    record PowerHit(int user, int side, Vec3 at, long born, int seed) {
+    }
+
     /** 3.6.3: Buzz Cut Mochi's blow (the ball where it struck) and its slam's ground. */
     record BuzzMark(Vec3 at, long born, int seed, boolean ground) {
     }
@@ -211,6 +226,9 @@ public final class MochiFx {
     private static final List<AwakeBurst> BURSTS = new ArrayList<>();
     private static final List<Swing> SWINGS = new ArrayList<>();
     private static final List<Struck> STRUCK = new ArrayList<>();
+    /** 3.6.6: Power Mochi's donuts (by user) and their punches. */
+    static final Map<Integer, PowerOn> POWERS = new HashMap<>();
+    private static final List<PowerHit> POWER_HITS = new ArrayList<>();
     /** How long the Anemone's rings and the Awakening's ground take to shrink away once ended. */
     /** 3.6.3: how long a donut takes to form and to go (ticks). */
     static final double FORM = 6.0;
@@ -305,6 +323,18 @@ public final class MochiFx {
                     AWAKE.remove(m.user());
                 }
             }
+            case MochiMoves.POWER -> {
+                PowerOn was = POWERS.get(m.user());
+                if (phase == 1) {
+                    if (was == null || was.gone >= 0) {
+                        // told again for someone already out (by 1): their donuts shown formed, not formed again
+                        put(POWERS, m.user(), new PowerOn(m.by() > 0.5F ? clock - (long) com.hexhaki.piece.mochi.MochiV2.POWER_FORM - 2 : clock, m.id()));
+                    }
+                } else if (was != null && was.gone < 0) {
+                    was.gone = clock;
+                }
+            }
+            case MochiMoves.POWER_PUNCH -> add(POWER_HITS, new PowerHit(m.user(), phase, at, clock, m.id()));
             case MochiMoves.TRIDENT -> {
                 if (phase >= MochiMoves.TRIDENT_STRUCK) {
                     add(STRUCK, new Struck(at, phase - MochiMoves.TRIDENT_STRUCK, m.by(), clock, m.id()));
@@ -731,6 +761,9 @@ public final class MochiFx {
         BURSTS.removeIf(b -> clock - b.born > com.hexhaki.piece.mochi.MochiV2.AWAKEN_LIFE + 1);
         SWINGS.removeIf(w -> clock - w.born > com.hexhaki.piece.mochi.MochiV2.TRIDENT_LIFE + 1);
         STRUCK.removeIf(w -> clock - w.born > com.hexhaki.piece.mochi.MochiV2.TRIDENT_LIFE + 1);
+        POWERS.entrySet().removeIf(e -> e.getValue().gone >= 0 && clock - e.getValue().gone > com.hexhaki.piece.mochi.MochiV2.POWER_GONE + 1
+            || clock - e.getValue().born > com.hexhaki.piece.mochi.MochiV2.POWER_TICKS + 2 * MochiMoves.AWAKE_RESEND || level.m_6815_(e.getKey()) == null);
+        POWER_HITS.removeIf(h -> clock - h.born > com.hexhaki.piece.mochi.MochiV2.POWER_LIFE + 1);
     }
 
     static boolean empty() {
@@ -738,7 +771,7 @@ public final class MochiFx {
             && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty()
             && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
             && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null && BURSTS.isEmpty()
-            && SWINGS.isEmpty() && STRUCK.isEmpty();
+            && SWINGS.isEmpty() && STRUCK.isEmpty() && POWERS.isEmpty() && POWER_HITS.isEmpty();
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -964,12 +997,55 @@ public final class MochiFx {
             double fade = 1.0 - Math.max(0.0, Math.min(1.0, (age - sweep[1]) / (com.hexhaki.piece.mochi.MochiV2.TRIDENT_LIFE - sweep[1])));
             com.hexhaki.piece.mochi.MochiV2.tridentTrail(SINK, TRAIL_IN, TRAIL_OUT, n, w.k == 2 || w.k == 3, fade);
         }
+        for (Map.Entry<Integer, PowerOn> e : POWERS.entrySet()) {
+            Entity user = level.m_6815_(e.getKey());
+            if (user == null || far(user.m_20182_(), cam)) {
+                continue;
+            }
+            PowerOn p = e.getValue();
+            double age = now - p.born;
+            double gone = p.gone < 0 ? -1.0 : now - p.gone;
+            Vec3 look = user.m_20252_(partial);
+            for (int side = 0; side < 2; side++) {
+                Vec3 at = powerPlace(minecraft, user, side, age, partial);
+                com.hexhaki.piece.mochi.MochiV2.powerDonut(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, look.f_82479_, look.f_82480_,
+                    look.f_82481_, age, gone, p.seed + side * 7);
+            }
+        }
+        for (PowerHit h : POWER_HITS) {
+            Entity user = level.m_6815_(h.user);
+            PowerOn p = POWERS.get(h.user);
+            if (user == null || p == null || far(h.at, cam)) {
+                continue;
+            }
+            Vec3 from = powerPlace(minecraft, user, h.side, now - p.born, partial);
+            com.hexhaki.piece.mochi.MochiV2.powerPunch(SINK, from.f_82479_ - cx, from.f_82480_ - cy, from.f_82481_ - cz, h.at.f_82479_ - cx,
+                h.at.f_82480_ - cy, h.at.f_82481_ - cz, now - h.born, h.seed);
+        }
         for (Struck k : STRUCK) {
             if (!far(k.at, cam)) {
                 com.hexhaki.piece.mochi.MochiV2.tridentMark(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, k.k, k.ground - cy,
                     now - k.born, k.seed);
             }
         }
+    }
+
+    private static final double[] POWER_AT = new double[3];
+
+    /**
+     * 3.6.6: where Power Mochi's donut {@code side} (0 the right) hangs: at the shoulder (MochiV2.powerAt) or, in one's own first person,
+     * out at the edges of the view a little ahead and low (at the shoulder it would sit behind the eye).
+     */
+    static Vec3 powerPlace(Minecraft minecraft, Entity user, int side, double age, float partial) {
+        if (ownView(minecraft, user)) {
+            Vec3 look = user.m_20252_(partial);
+            Vec3 f = flat(look);
+            Vec3 right = new Vec3(-f.f_82481_, 0, f.f_82479_);
+            return user.m_20299_(partial).m_82549_(look.m_82490_(1.0)).m_82549_(right.m_82490_(side == 0 ? 1.35 : -1.35)).m_82520_(0.0,
+                -0.45 + 0.05 * Math.sin(age * 0.16 + side * 2.1), 0.0);
+        }
+        com.hexhaki.piece.mochi.MochiV2.powerAt(side, yaw(user, partial), age, POWER_AT);
+        return user.m_20318_(partial).m_82520_(POWER_AT[0], POWER_AT[1], POWER_AT[2]);
     }
 
     /** The torn ground's points made camera-relative (the render thread only: no allocation a frame). */
@@ -1270,6 +1346,8 @@ public final class MochiFx {
         BURSTS.clear();
         SWINGS.clear();
         STRUCK.clear();
+        POWERS.clear();
+        POWER_HITS.clear();
         carry = null;
     }
 

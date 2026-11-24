@@ -264,4 +264,171 @@ public final class MochiV2 {
         MochiDraw.spiral(sink, x, y + 0.12, z, 0.85, 0.95, yaw, 4.6 * form, 0.22, MAGENTA, 0.9 * fade);
         MochiDraw.spiral(sink, x, y + 0.13, z, 0.9, 1.0, yaw + 0.6, 3.6 * form, 0.1, PINK_LIGHT, 0.8 * fade);
     }
+
+    // ------------------------------------------------------------------------------------------------------ V: Power Mochi
+
+    /**
+     * Power Mochi (the reference's Power Dough, frames 15 to 155: "two dough donuts with coated haki flaming fists for ~20 seconds that
+     * will act as your new and improved M1s with increased range"): {@link #POWER_TICKS} ticks; formed by {@link #POWER_FORM} (a splash of
+     * cream at each side, two fireballs, the donuts out of them); each punch's fist out in {@link #POWER_OUT}, back by
+     * {@link #POWER_LIFE}; its reach.
+     */
+    public static final int POWER_TICKS = 400;
+    public static final double POWER_FORM = 12.0;
+    public static final double POWER_GONE = 8.0;
+    public static final double POWER_OUT = 2.0;
+    public static final double POWER_LIFE = 10.0;
+    public static final double POWER_REACH = 7.5;
+    /** A donut's outer radius, and where it hangs from the feet: out to the side, up, back. */
+    public static final double POWER_DONUT = 0.78;
+    public static final double POWER_SIDE = 1.2;
+    public static final double POWER_UP = 1.5;
+    public static final double POWER_BACK = 0.2;
+    static final int FIRE = 0xFF7A1E;
+    static final int FIRE_GLOW = 0xFF5A28;
+    static final int SPARK_RED = 0xE0101E;
+
+    /**
+     * Where Power Mochi's donut {@code side} (0 the right, 1 the left) hangs from the feet of a body facing {@code yaw} (the game's yaw,
+     * radians), bobbing {@code age} ticks in; into out (x, y, z).
+     */
+    public static double[] powerAt(int side, double yaw, double age, double[] out) {
+        double fx = -Math.sin(yaw);
+        double fz = Math.cos(yaw);
+        // the right: (-cos, -sin) of the game's yaw
+        double rx = -Math.cos(yaw);
+        double rz = -Math.sin(yaw);
+        double s = side == 0 ? 1.0 : -1.0;
+        double bob = 0.08 * Math.sin(age * 0.16 + side * 2.1);
+        out[0] = rx * POWER_SIDE * s - fx * POWER_BACK;
+        out[1] = POWER_UP + bob;
+        out[2] = rz * POWER_SIDE * s - fz * POWER_BACK;
+        return out;
+    }
+
+    /**
+     * One of Power Mochi's donuts at (x, y, z) facing (wx, wy, wz) (unit: the way its fist punches), {@code age} ticks from the press,
+     * {@code gone} ticks since it ended (negative while it lasts): a splash of cream (frame 15), a fireball (20), the lumpy white donut
+     * out of it, a black Haki fist in its hole, a soft red-orange fire glow behind it, flames licking over it (25 to 155); going, the
+     * same backward into a puff of fire.
+     */
+    public static void powerDonut(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double age, double gone,
+                                  int seed) {
+        if (age < 0) {
+            return;
+        }
+        if (age < 6.0) {
+            MochiDraw.splat(sink, x, y - 0.3, z, 0, 1, 0, 1.3, age, seed);
+        }
+        // the fireball the donut comes out of (frame 20): fire swelling and bursting, arcs of fire round it
+        if (age >= 3.0 && age < 11.0) {
+            double f = (age - 3.0) / 8.0;
+            double r = 0.5 + 0.9 * ease(f * 1.6);
+            double fade = 1.0 - smooth((f - 0.45) / 0.55);
+            FireMesh.puff(sink, x, y, z, r, 0, 1, 0, 0.1, 0.6, 0.85, 0.5, true, fade, age, seed);
+            for (int k = 0; k < 3; k++) {
+                FireMesh.arc(sink, x, y, z, Math.cos(k * 2.1 + seed) / 1.118, 0.5 / 1.118, Math.sin(k * 2.1 + seed) / 1.118, r * (1.1 + 0.25 * k), 0.12,
+                    k * 2.0 + age * 0.4, 2.2, 0.2, FIRE, 0.8 * fade);
+            }
+        }
+        double form = smooth((age - 7.0) / 5.0) * (gone < 0 ? 1.0 : 1.0 - smooth(gone / POWER_GONE));
+        if (form < 0.02) {
+            if (gone >= 0 && gone < POWER_GONE) {
+                FireMesh.puff(sink, x, y, z, 0.5 * (1.0 - gone / POWER_GONE), 0, 1, 0, 0.2, 0.6, 0.7, 0.5, true, 1.0 - gone / POWER_GONE, age, seed + 5);
+            }
+            return;
+        }
+        // the glow of fire behind it, flames licking over its top
+        // (far enough behind that it rims the donut and never washes over its white)
+        MochiArt.glow(sink, x - wx * 1.1, y - wy * 1.1, z - wz * 1.1, POWER_DONUT * 1.45, FIRE_GLOW, 0.32 * form);
+        MochiDraw.donut(sink, x, y, z, wx, wy, wz, POWER_DONUT, form, 0.0, 2, 0.0, 0, 0, 0, true, age, seed, false);
+        for (int k = 0; k < 3; k++) {
+            double a = 2 * Math.PI * k / 3.0 + age * 0.05;
+            double h = (age * 0.11 + k * 0.33) % 1.0;
+            double[] b = B6;
+            FireMesh.basis(wx, wy, wz, b);
+            double ox = b[0] * Math.cos(a) + b[3] * Math.sin(a);
+            double oy = b[1] * Math.cos(a) + b[4] * Math.sin(a);
+            double oz = b[2] * Math.cos(a) + b[5] * Math.sin(a);
+            double r = POWER_DONUT * 0.9;
+            FireMesh.puff(sink, x + ox * r, y + oy * r + 0.25 * h, z + oz * r, 0.14 * (1.0 - h) * form, 0, 1, 0, 0.6, 0.6, 0.75, 0.5, false,
+                0.85 * (1.0 - h), age, seed + k);
+        }
+    }
+
+    private static final double[] B6 = new double[6];
+
+    /**
+     * A Power Mochi punch (frames 55 to 106): from the donut at (x, y, z) its fist shoots out onto (tx, ty, tz) as a long black square
+     * Haki bar wrapped in fire (licks of flame streaming back along it, orange streaks round it), a jagged yellow-orange flash at the
+     * donut as it goes, a burst of fire and red sparks where it lands; {@code age} ticks in.
+     */
+    public static void powerPunch(FireMesh.Sink sink, double x, double y, double z, double tx, double ty, double tz, double age, int seed) {
+        if (age < 0 || age > POWER_LIFE) {
+            return;
+        }
+        double dx = tx - x;
+        double dy = ty - y;
+        double dz = tz - z;
+        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 0.3) {
+            return;
+        }
+        double ux = dx / len;
+        double uy = dy / len;
+        double uz = dz / len;
+        double out = age < POWER_OUT ? MochiDraw.elastic(age / POWER_OUT) : age < POWER_OUT + 2.0 ? 1.0
+            : 1.0 - smooth((age - POWER_OUT - 2.0) / (POWER_LIFE - POWER_OUT - 2.0));
+        double d = len * out;
+        double r = MochiDraw.hole(POWER_DONUT) * 0.62;
+        if (d > 0.2) {
+            MochiDraw.arm(sink, x, y, z, x + ux * d, y + uy * d, z + uz * d, r, r * 1.35, 0.0, true, age, seed, false);
+            // fire wrapped round the bar, streaming back from the fist
+            double[] b = B6;
+            FireMesh.basis(ux, uy, uz, b);
+            int n = Math.min(9, 3 + (int) (d * 1.2));
+            for (int k = 0; k < n; k++) {
+                double t = (k + 0.5) / n;
+                double a = t * 9.0 + age * 0.9 + k;
+                double ox = b[0] * Math.cos(a) + b[3] * Math.sin(a);
+                double oy = b[1] * Math.cos(a) + b[4] * Math.sin(a);
+                double oz = b[2] * Math.cos(a) + b[5] * Math.sin(a);
+                double rr = r * 1.25;
+                FireMesh.puff(sink, x + ux * d * t + ox * rr, y + uy * d * t + oy * rr, z + uz * d * t + oz * rr, 0.16 + 0.1 * t, -ux, -uy, -uz, 0.9,
+                    0.6, 0.85, 0.5, false, 0.9 * (age < POWER_OUT + 3.0 ? 1.0 : out), age, seed + k);
+            }
+            for (int k = 0; k < 4; k++) {
+                double a = 2 * Math.PI * k / 4.0 + seed;
+                double ox = (b[0] * Math.cos(a) + b[3] * Math.sin(a)) * r * 1.8;
+                double oy = (b[1] * Math.cos(a) + b[4] * Math.sin(a)) * r * 1.8;
+                double oz = (b[2] * Math.cos(a) + b[5] * Math.sin(a)) * r * 1.8;
+                FireMesh.streak(sink, x + ux * d + ox, y + uy * d + oy, z + uz * d + oz, -ux, -uy, -uz, Math.min(d, 2.5), 0.05, k % 2 == 0 ? FIRE : 0xFFD23C,
+                    0.85 * out);
+            }
+        }
+        // the jagged flash at the donut as the fist goes (frame 66)
+        if (age < 4.0) {
+            double f = age / 4.0;
+            MochiArt.glow(sink, x, y, z, 0.9 + 0.9 * f, 0xFFC040, 0.8 * (1.0 - f));
+            for (int k = 0; k < 9; k++) {
+                double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k)) / 9.0;
+                double up = (FireMesh.rand(seed, k + 10) - 0.5) * 1.2;
+                double ul = Math.sqrt(1.0 + up * up);
+                FireMesh.ray(sink, x, y, z, Math.cos(a) / ul + ux * 0.6, up / ul + uy * 0.6, Math.sin(a) / ul + uz * 0.6, (0.6 + 0.9 * FireMesh.rand(seed, k + 20))
+                    * ease(f * 2.0), 0.14, 0, 0.0, k % 2 == 0 ? 0xFFD23C : FIRE, 0.9 * (1.0 - f));
+            }
+        }
+        // the blow: a burst of fire and red sparks where it lands
+        double hit = age - POWER_OUT;
+        if (hit >= 0.0 && hit < 6.0) {
+            double f = hit / 6.0;
+            FireMesh.puff(sink, tx, ty, tz, 0.4 + 0.6 * ease(f), 0, 1, 0, 0.2, 0.7, 0.85, 0.5, true, 1.0 - f, age, seed + 30);
+            for (int k = 0; k < 8; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 40);
+                double up = (FireMesh.rand(seed, k + 50) - 0.3) * 1.6;
+                double ul = Math.sqrt(1.0 + up * up);
+                FireMesh.ray(sink, tx, ty, tz, Math.cos(a) / ul, up / ul, Math.sin(a) / ul, 0.5 + 1.3 * ease(f), 0.06, 0, 0.0, SPARK_RED, 0.9 * (1.0 - f));
+            }
+        }
+    }
 }

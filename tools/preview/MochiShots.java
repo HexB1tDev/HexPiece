@@ -203,6 +203,24 @@ public final class MochiShots {
                 }
                 com.hexhaki.piece.mochi.MochiV2.tridentMark(sink, -ex, by + 1.1 - ey, 2.6 - ez, k, -ey, t - com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT, 9);
             }
+            case "mpower" -> {
+                // 3.6.6 |mpower:age[:punch[:side]]: Power Mochi age ticks from the press, the user at the origin facing +z; a punch that many
+                // ticks in from donut side (0 the right) at a body 5.5 ahead
+                double punch = move.length > 2 ? Double.parseDouble(move[2]) : -1.0;
+                int side = move.length > 3 ? (int) Double.parseDouble(move[3]) : 0;
+                user(sink, punch >= 0 ? (side == 0 ? "mochi_power_1" : "mochi_power_2") : "mochi_power", punch >= 0 ? punch : Math.min(age, 14), ex, ey,
+                    ez);
+                HieShots.body(sink, 0.3 - ex, -ey, 5.5 - ez);
+                double[] at = new double[3];
+                for (int k = 0; k < 2; k++) {
+                    com.hexhaki.piece.mochi.MochiV2.powerAt(k, 0.0, age, at);
+                    com.hexhaki.piece.mochi.MochiV2.powerDonut(sink, at[0] - ex, at[1] - ey, at[2] - ez, 0, 0, 1, age, -1.0, 7 + k * 7);
+                }
+                if (punch >= 0) {
+                    com.hexhaki.piece.mochi.MochiV2.powerAt(side, 0.0, age, at);
+                    com.hexhaki.piece.mochi.MochiV2.powerPunch(sink, at[0] - ex, at[1] - ey, at[2] - ez, 0.3 - ex, 1.1 - ey, 5.5 - ez, punch, 21);
+                }
+            }
             case "mpunch" -> {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);

@@ -234,6 +234,30 @@ def trident():
         write_parts("mochi_trident_%d" % (k + 1), 10, beats, "Mochi Mochi: awakened, Trident Lacerations: Mogura's " + names[k] + ".", ARMS)
 
 
+# ------------------------------------------------------------------------------------------------------ awakened V: Power Mochi
+
+def power():
+    # 3.6.6 (the reference's Power Dough, frames 15 to 25): both arms flung out and down to the sides as the cream splashes and the
+    # fireballs burst there (tick 3), held, let down; each punch a short point of the arm on that side at the one aimed at, the donut
+    # beside it firing its fist (the right on tick 2)
+    out = p(rightArm=arm(-30, 0, 60, -6), leftArm=mirror(arm(-30, 0, 60, -6)), body={"yaw": 0, "bend": -8})
+    write_parts("mochi_power", 14, [
+        (0, "linear", REST),
+        (1, "insine", p(rightArm=arm(-10, 0, 20, -40), leftArm=mirror(arm(-10, 0, 20, -40)), body={"yaw": 0, "bend": 6})),
+        (3, "outexpo", out),
+        (9, "linear", p(out, body={"bend": -6})),
+        (14, "inoutsine", REST),
+    ], "Mochi Mochi: awakened, Power Mochi: the arms flung out as the burning donuts burst out at the shoulders.", ARMS)
+    point_r = p(rightArm=arm(-80, 10, 4, -4), body={"yaw": 10, "bend": 3})
+    write_parts("mochi_power_1", 7, [
+        (0, "linear", REST), (2, "outexpo", point_r), (4, "linear", point_r), (7, "inoutsine", REST),
+    ], "Mochi Mochi: awakened, Power Mochi: the right arm points as the right donut's fist fires.", ("body", "torso", "rightArm"))
+    point_l = p(leftArm=mirror(arm(-80, 10, 4, -4)), body={"yaw": -10, "bend": 3})
+    write_parts("mochi_power_2", 7, [
+        (0, "linear", REST), (2, "outexpo", point_l), (4, "linear", point_l), (7, "inoutsine", REST),
+    ], "Mochi Mochi: awakened, Power Mochi: the left arm points as the left donut's fist fires.", ("body", "torso", "leftArm"))
+
+
 def main():
     punch()
     lotus()
@@ -244,6 +268,7 @@ def main():
     awaken()
     donuts()
     trident()
+    power()
     names = sorted(n for n in WRITTEN if n.startswith("mochi_"))
     java_poses(names, "MochiPoses", "tools/mochi_anims.py", "the Mochi fruit's animations' keyframes")
     print(f"wrote {len(names)} Mochi animations and their poses")

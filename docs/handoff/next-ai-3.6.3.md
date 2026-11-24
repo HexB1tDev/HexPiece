@@ -11,6 +11,10 @@ fourth Mochi chat: sections O and Q; check its Build and Release runs). Next: **
 
 ## A. POINT ONE (the owner's standing orders: keep this first and pass it on)
 
+0. The Mochi fruit is FLUID AND ALIVE (the owner, N 16 and N 19: "more stretchy, more animated, more squishy, it's mochi for god's sake,
+   the arms should have more elasticity"; "mention the fluidity and aliveness of the mochi we want to the new AI"): every arm, fist,
+   donut and mass of dough stretches, wobbles, squashes, springs, breathes and drips; never stiff, never popping in or out (N 19).
+
 1. Every fruit in the style of the Light, Gura and Magma fruits: 3D meshes as FireMesh / GuraArt / MaguArt build them, clips with no head
    and no unused limb keyed, a first-person hand move per move, CC0 web sounds, every effect rendered and judged by you.
 2. With the Conqueror's Haki and Ryou on, every move of every fruit throws the Conqueror's lightning, out of its end explosion when it has
@@ -468,6 +472,17 @@ Next, in order:
 17. The owner: "I also found traces of the old Haki in the wifi haki, it should use our latest one." (WiFi Haki still draws something
     of the old Haki look: it must use the one 3D Haki lightning, POINT ONE.)
 
+18. The owner: "enough prompt + hand off now" (this chat stopped here: section R).
+
+19. The owner: "mention the fluidity and aliveness of the mochi we want to the new AI". A STANDING ORDER for every Mochi move, base and
+    awakened, now and later (with N 16: "it should be more stretchy, more animated, more squishy, it's mochi for god's sake, the arms
+    should have more elasticity"): the mochi is never stiff or still. Every arm stretches like dough (thinner the further it is drawn
+    out, a wobble rippling along it, sagging under its weight, shooting past its reach and springing back, snapping back with a
+    rebound); every fist squashes as it lands; every donut and mass of dough breathes, wobbles, puffs up past its size and settles,
+    drips; everything forms and goes fluidly (a lump swelling into its shape, slumping away), never popping in or out; dough splashes
+    and splats when it hits. Build every new piece this way (MochiDraw.arm, elastic, springy, donut's breathing, MochiArt.CHURN are the
+    tools) and judge every render for it as hard as for the reference's look.
+
 ## O. The fourth Mochi chat: Buzz Cut judged and finished, the old Mochi art removed, 3.6.3 released
 
 Build #233 (the last push of the chat before) was green. Done, rendered and judged against the Buzzcut GIF, the owner's show clip
@@ -624,3 +639,38 @@ and N 17 (WiFi Haki on the one 3D Haki lightning).
   their keys say "is coming in a later version".
 - Next: **3.6.6**, the six awakened moves (V Power Mochi, Z Grilled Lance, X Elastic Lasso, C Oblivion, B Blazing Storm, N Scorching
   Buzz Cut), as the end of section Q says; the owner's notes first whenever they come.
+
+## R. Where the fourth Mochi chat stopped (the owner: "enough prompt + hand off now")
+
+Released this chat: 3.6.3 (Build #234, Release #154, green), 3.6.4 (Build #238, Release #155, green), **3.6.5** (pushed as commit
+2b479fd; its Build #240 and Release #156 were still running when the chat stopped: CHECK THEM FIRST and fix them if red).
+
+In progress, committed unversioned after 3.6.5 (the next version is **3.6.6**): **Power Mochi** (awakened V), built but not yet
+judged to the end:
+- Art (mochi/MochiV2, "V: Power Mochi"): powerAt (each donut 1.2 out at the shoulder, 1.5 up, 0.2 back, bobbing), powerDonut (a cream
+  splash at 0 to 6, a fireball with fire arcs at 3 to 11, the lumpy white donut out of it from 7 with a black Haki fist in its hole,
+  flames licking over its top, a red-orange glow 1.1 behind it; going back into a puff of fire), powerPunch (the fist out in POWER_OUT
+  2 ticks on MochiDraw.elastic, a long black Haki bar (MochiDraw.arm, coated) wrapped in fire puffs streaming back and orange streaks,
+  a jagged yellow-orange flash at the donut, a burst of fire and red sparks where it lands; POWER_LIFE 10).
+- Server (MochiMoves: POWER 285, POWER_PUNCH 286): V awakened starts it (ready/cool MochiKit.POWER 600, POWER_TICKS 400 = 20 s); while
+  it lasts the awakened left click is its punches (one donut then the other, every POWER_EVERY 7 ticks, 6 damage, on fire 2 s, pushed,
+  the Conqueror's lightning: POINT ONE) instead of the trident; it ends after its time, when the Awakening goes off, or on forget; the
+  state is sent again every AWAKE_RESEND ticks (by 1: shown formed).
+- Client (MochiFx: POWERS, POWER_HITS, powerPlace: at the shoulders, or in one's own first person 1.35 out to each side, 1 ahead, low).
+- Clips mochi_power (arms flung out as the donuts burst out), mochi_power_1 and _2 (the arm on the punching donut's side points), lint
+  clean; HandMoves (UP_DOWN, POINT). Preview MochiShots |mpower:age[:punch[:side]].
+- Rendered: the splash and the two fireballs read like the GIF's frames 15 to 20. The last fix (the glow moved 1.1 behind the donut so it
+  no longer tints the donuts pink: the GIF's donuts are white with the glow round them) was rendered once more (scratchpad r/power2.png)
+  but not yet looked at: render |mpower:30 and |mpower:60:2:1 again and judge them beside Power_Dough.gif frames 30 and 66 to 70
+  (section P). Still to add: DragonTests.mochiArt budget for powerDonut x2 + powerPunch; HudTests (Power's keys, its 20 s, the punch's
+  reach); then judge it in first person.
+
+Then the five other awakened moves, in this order: Z Grilled Lance, X Elastic Lasso, C Oblivion, B Blazing Storm, N Scorching Buzz Cut
+(section P reads each GIF; until built their keys say "is coming in a later version": MochiMoves.pressAwake). Release them as 3.6.6
+when done (or sooner if the owner asks: they chose "Release fixes now" before, N 15). The owner's notes come first whenever they
+arrive: write them verbatim into section N.
+
+How this chat worked (tools in the scratchpad, gone with the session; rebuild them as needed): CamShots (MochiDraw.buzzCamera to FxPreview
+e: shots), WifiShot (SparkPreview.render of a strike beside the release), pick.py/sheet.py (GIF frame sheets: `python3 -I`), FxPreview
+`--fov=70` (the game's field of view) for any camera shot the game frames. Compile previews against fresh classes: MochiArt, MochiDraw,
+MochiV2 and client/npc/MochiPoses + StylePoser (regenerated clips) into a scratch folder ahead of build/classes.
