@@ -243,6 +243,10 @@ public final class PiecePatch implements Opcodes {
             QUICK, "mouth", 1},
         {CONTROLLER, "sendWifiHakiArc", CONTROLLER, "wifiHakiHandPoint", "(Lnet/minecraft/server/level/ServerPlayer;)Lnet/minecraft/world/phys/Vec3;",
             QUICK, "mouth", 1},
+        // 3.6.5 (the owner: "I also found traces of the old Haki in the wifi haki, it should use our latest one"): WiFi Haki's strike
+        // drawn by HexPiece on the one 3D Haki lightning, never the original's flat beams (its wifiHakiArc)
+        {VFX, "acceptWifiHaki", VFX, "acceptWifiHaki0", "(Lcom/hexhaki/network/msg/S2CWifiHaki;)V", "com/hexhaki/piece/client/haki/WifiBolts",
+            "accept", 1},
         // 2.4.5 (the owner: "Conqueror Haki full release lags a ton when releasing the full charge"): the release's range lightning goes
         // through HexPiece, which leaves out the supreme release's second pass (the same bolts again from a second seed, 7 ticks
         // later: half the release's 3D lightning, 80,000 quads a frame at its height)

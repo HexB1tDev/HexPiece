@@ -59,6 +59,39 @@ public final class ConquerorSparks {
         return out;
     }
 
+    /**
+     * 3.6.5 (the owner: "I also found traces of the old Haki in the wifi haki, it should use our latest one"): WiFi Haki's strike on the
+     * one Haki lightning, from {@code from} (where it leaves the blade) to {@code to} (blocks from the feet): one crooked stroke racing
+     * out to it, thicker the more {@code power} (0 to 1), with two or three forks breaking off along the way; its tips sharp.
+     */
+    public static List<Bolt> wifi(double[] from, double[] to, double power, int travel, long seed) {
+        SplittableRandom random = new SplittableRandom(seed ^ 0x5749_4649L);
+        List<Bolt> out = new ArrayList<>();
+        double dx = to[0] - from[0];
+        double dy = to[1] - from[1];
+        double dz = to[2] - from[2];
+        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (length < 0.2) {
+            return out;
+        }
+        float width = (float) (0.06 + 0.05 * Math.max(0.0, Math.min(1.0, power)));
+        float crawl = (float) Math.max(1.0, travel);
+        int life = Math.max(6, travel + 6);
+        out.addAll(ConquerorStorm.strike(from, to, width, 0.3F, RED, 0.0F, life, crawl, random.nextLong()));
+        int forks = 2 + random.nextInt(2);
+        for (int i = 0; i < forks; i++) {
+            double t = 0.2 + 0.6 * random.nextDouble();
+            double[] mid = {from[0] + dx * t, from[1] + dy * t, from[2] + dz * t};
+            double[] fork = ConquerorStorm.normalise(new double[] {dx / length + random.nextDouble(-0.9, 0.9), dy / length + random.nextDouble(-0.9, 0.9),
+                dz / length + random.nextDouble(-0.9, 0.9)});
+            double l = length * (0.15 + 0.2 * random.nextDouble());
+            double[] end = {mid[0] + fork[0] * l, mid[1] + fork[1] * l, mid[2] + fork[2] * l};
+            out.addAll(ConquerorStorm.strike(mid, end, width * 0.55F, 0.2F, RED, (float) (crawl * t), life - 2, (float) (crawl * l / length),
+                random.nextLong()));
+        }
+        return out;
+    }
+
     // 3.2.5: the old thin burst of arcs (3.1.2's, unused since 3.1.8) deleted for good (the owner: the old lightning "should be gone from
     // the game entirely"): every move's lightning is the release's own (ConquerorStorm.blast).
 

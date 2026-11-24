@@ -607,3 +607,10 @@ and a bigger slam). The owner may still send notes on the base kit: they come fi
 
 Open after 3.6.4 (the owner's newest notes come before 3.6.5's awakened moves): N 16 (the Mochi alive: stretchy, squishy, elastic arms)
 and N 17 (WiFi Haki on the one 3D Haki lightning).
+
+3.6.4 green: Build #238, Release #155.
+- N 17 done (unversioned, for 3.6.5): WiFi Haki's arc was the original's flat Photon beams (HakiVfx.acceptWifiHaki0 -> wifiHakiArc): the
+  patch now sends HakiVfx.acceptWifiHaki to client/haki/WifiBolts.accept, which draws haki/ConquerorSparks.wifi (one crooked stroke from
+  where it leaves the blade to the target, crawling out over the message's travel ticks, two or three forks, sharp tips) through
+  HakiBolts.sparks: the one 3D Haki lightning in the user's Haki colour. Rendered beside the release (the scratchpad's WifiShot on
+  SparkPreview.render): the same black lit tubes with the rim.
