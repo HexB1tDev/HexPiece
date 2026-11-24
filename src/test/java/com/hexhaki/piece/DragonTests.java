@@ -958,7 +958,7 @@ public final class DragonTests {
     /**
      * 3.6.9: the owner's phoenix: every one of its 213 parts kept, its 21 bones and its take; light enough for the phone (the dragon is
      * about 10k faces); every flight state posed and skinned finite; its fire (the tongues off every fire point, the forming burst) under
-     * the effect budget beside the model; it forms out of nothing, overshoots a little, settles, and goes back to nothing.
+     * the effect budget beside the model; 3.7.0: it opens out of the human turned to fire, grows slowly to its size, and closes back into it.
      */
     static void phoenix(com.hexhaki.piece.dragon.DragonModel m) {
         Check.that(m.parts.length == 213 && m.bones() == 21 && m.clips.containsKey("soar"), "the phoenix: every part, its rig and its take");
@@ -968,10 +968,12 @@ public final class DragonTests {
         }
         Check.that(faces < 13000, "the phoenix is light enough for the phone (" + faces + " faces)");
         com.hexhaki.piece.phoenix.PhoenixForm.Shape shape = new com.hexhaki.piece.phoenix.PhoenixForm.Shape(m);
-        Check.that(shape.anchors.length / 2 >= 48 && shape.feet > shape.floor - 1.0E-3 && shape.chest > shape.feet,
-            "the phoenix's fire points, its claws and its chest");
+        // 3.7.0 (the owner: "less particles, more skin moving itself like it's made of fire"): 24 fire points, was 64
+        Check.that(shape.anchors.length / 2 >= 20 && shape.anchors.length / 2 <= com.hexhaki.piece.phoenix.PhoenixForm.TONGUES
+            && shape.feet > shape.floor - 1.0E-3 && shape.chest > shape.feet && shape.shoulder > shape.chest - 2.0F,
+            "the phoenix's fire points (fewer), its claws, its chest and its wings' roots");
         com.hexhaki.piece.dragon.DragonPose pose = new com.hexhaki.piece.dragon.DragonPose(m);
-        String[] states = {"hover", "fly", "fast", "glide", "dive", "perch", "wrap"};
+        String[] states = {"hover", "fly", "fast", "glide", "dive", "perch", "human"};
         for (String state : states) {
             for (int k = 0; k < 8; k++) {
                 float[] place = new float[12];
@@ -1005,21 +1007,55 @@ public final class DragonTests {
             points[k * 3 + 1] = 1.0 + Math.sin(k * 0.7);
             points[k * 3 + 2] = 6.0 + Math.sin(k);
         }
-        for (int t = 0; t < 40; t++) {
-            count[0] = 0;
-            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, shape.anchorSize, n, t, 0.0, 0.0, 0.3, 1.0, 5);
-            com.hexhaki.piece.phoenix.PhoenixFire.change(sink, 0, 0, 6.0, t < 20, t % 22, 5);
-            check(count[0] + faces, finite[0], "the phoenix with its fire", t);
+        // 3.7.0: the whole change, both ways, every tick: the tongues, the glow, the figure of fire and the burst beside the model
+        double[] glow = new double[9 * 3];
+        for (int k = 0; k < 9; k++) {
+            glow[k * 3] = Math.sin(k) * 3.0;
+            glow[k * 3 + 1] = 1.5;
+            glow[k * 3 + 2] = 6.0 + Math.cos(k);
         }
-        float most = 0;
+        int[] phases = {com.hexhaki.piece.phoenix.PhoenixForm.FORMING, com.hexhaki.piece.phoenix.PhoenixForm.UNFORMING,
+            com.hexhaki.piece.phoenix.PhoenixForm.PHOENIX};
+        for (int phase : phases) {
+            for (int t = 0; t <= 40; t++) {
+                count[0] = 0;
+                com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, shape.anchorSize, n, t, 0.0, 0.0, 0.3, 1.0, 5);
+                com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 3.2 * com.hexhaki.piece.phoenix.PhoenixLook.SCALE, t);
+                com.hexhaki.piece.phoenix.PhoenixFire.change(sink, 0.0, -1.2, 4.0, 180.0F, phase, t, 5);
+                check(count[0] + faces, finite[0], "the phoenix with its fire (phase " + phase + ")", t);
+            }
+        }
+        // 3.7.0 (the owner: "the players body slowly becomes the phoenix, arms become the wings"): nothing of it until the human is fire,
+        // then it grows from the arms' width, never shrinking, to its size; the human hidden only once the fire has taken all of them,
+        // shown again inside the figure of fire going; the arms out level as wings while the phoenix takes their place
+        int forming = com.hexhaki.piece.phoenix.PhoenixForm.FORMING;
+        int going = com.hexhaki.piece.phoenix.PhoenixForm.UNFORMING;
+        float last = 0.0F;
+        boolean grows = true;
+        boolean covered = true;
+        float[] burnt = new float[3];
         for (float t = 0; t <= com.hexhaki.piece.phoenix.PhoenixForm.FORM_TICKS; t += 0.5F) {
-            most = Math.max(most, com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.FORMING, t));
+            float g = com.hexhaki.piece.phoenix.PhoenixForm.grow(forming, t);
+            grows &= g >= last - 1.0E-4F && g <= 1.0001F;
+            last = g;
+            com.hexhaki.piece.phoenix.PhoenixForm.burning(forming, t, burnt);
+            if (com.hexhaki.piece.phoenix.PhoenixForm.humanHidden(forming, t) && t < com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_GONE + 1.0F) {
+                covered &= burnt[0] > com.hexhaki.piece.phoenix.PhoenixForm.ARMS_TAKEN && burnt[1] > com.hexhaki.piece.phoenix.PhoenixForm.LEGS_TAKEN
+                    && burnt[2] > 0.5F;
+            }
         }
-        Check.that(com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.FORMING, 0) < 0.02F && most > 1.02F
-            && Math.abs(com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.FORMING,
-            com.hexhaki.piece.phoenix.PhoenixForm.FORM_TICKS) - 1.0F) < 0.02F
-            && com.hexhaki.piece.phoenix.PhoenixForm.grow(com.hexhaki.piece.phoenix.PhoenixForm.UNFORMING,
-            com.hexhaki.piece.phoenix.PhoenixForm.UNFORM_TICKS) < 0.02F, "the phoenix forms out of nothing, bursts out past its size, settles, and goes");
+        Check.that(com.hexhaki.piece.phoenix.PhoenixForm.grow(forming, com.hexhaki.piece.phoenix.PhoenixForm.BIRD_IN - 1.0F) == 0.0F && grows
+            && Math.abs(com.hexhaki.piece.phoenix.PhoenixForm.grow(forming, com.hexhaki.piece.phoenix.PhoenixForm.BIRD_IN)
+            - com.hexhaki.piece.phoenix.PhoenixForm.SMALL) < 0.01F
+            && Math.abs(com.hexhaki.piece.phoenix.PhoenixForm.grow(forming, com.hexhaki.piece.phoenix.PhoenixForm.FORM_TICKS) - 1.0F) < 0.01F
+            && com.hexhaki.piece.phoenix.PhoenixForm.grow(going, com.hexhaki.piece.phoenix.PhoenixForm.UNFORM_TICKS) < 0.02F && covered,
+            "the phoenix opens out of the human turned to fire, grows slowly to its size, and closes back into it");
+        Check.that(com.hexhaki.piece.phoenix.PhoenixForm.shaped(forming, com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_GONE) < 0.01F
+            && com.hexhaki.piece.phoenix.PhoenixForm.armRaise(forming, com.hexhaki.piece.phoenix.PhoenixForm.BIRD_IN) > 85.0F
+            && com.hexhaki.piece.phoenix.PhoenixForm.armRaise(going, com.hexhaki.piece.phoenix.PhoenixForm.UNFORM_TICKS) < 6.0F
+            && !com.hexhaki.piece.phoenix.PhoenixForm.humanHidden(going, com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_BACK)
+            && com.hexhaki.piece.phoenix.PhoenixForm.grow(going, com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_BACK) > 0.0F,
+            "the phoenix shaped as the human where it takes the human's place, the arms out as wings, let down as it goes");
     }
 
     /** 3.5.8: Iron Fist's heaviest frames (Galaxy Impact's dome with its quake, rings, dust and rocks; Galaxy Divide; the cannonball). */

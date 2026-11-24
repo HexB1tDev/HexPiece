@@ -53,6 +53,26 @@ public final class PhoenixLook {
         return c <= 0.0031308F ? c * 12.92F : (float) (1.055 * Math.pow(c, 1 / 2.4) - 0.055);
     }
 
-    /** Blocks per model unit: the owner's "Like the GIF" (the wingspan about 7 blocks: the file's is 17.6 units). */
-    public static final float SCALE = 0.4F;
+    /**
+     * Blocks per model unit: the owner's "Like the GIF" (the wingspan about 7 blocks: the file's is 17.6 units); 3.7.0 the owner: "make
+     * the overall phoenix bigger": about 9.7 blocks.
+     */
+    public static final float SCALE = 0.55F;
+
+    /**
+     * 3.7.0 (the owner: "the wings should not get shadows"; "it should also glow"): the tint of a fire part (the wings, the mantle, the
+     * tail, the crest: all of it fire), the ramp's lit end everywhere: no side of it in shade.
+     */
+    public static void glowing(int kind, float[] out) {
+        float[][] ramp = kind == WARM ? WARM_RAMP : COOL_RAMP;
+        float[] top = ramp[ramp.length - 1];
+        for (int k = 0; k < 3; k++) {
+            out[k] = Math.min(1.0F, srgb(top[k + 1]));
+        }
+    }
+
+    /** How far toward white the game's overlay can take a vertex (OverlayTexture: its white rows at u 15). */
+    public static final float WHITEST = 0.75F;
+    /** How far toward white the fire's heat (PhoenixForm.heat) takes the skin at its hottest. */
+    public static final float HEAT = 0.65F;
 }

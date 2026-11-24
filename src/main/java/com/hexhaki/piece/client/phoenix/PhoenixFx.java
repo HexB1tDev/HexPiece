@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.Map;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -47,8 +48,9 @@ import org.joml.Vector3f;
  * straight into the game's own entity buffers, drawn both sides): coloured as the owner's file colours it (phoenix/PhoenixLook's cel
  * ramp per vertex, full bright: it is fire), its fire flowing (PhoenixForm.flame) and tongues of flame streaming off it
  * (phoenix/PhoenixFire, the house's alpha-blended quads after the particles). Its pose follows how the player moves (PhoenixForm.pose:
- * hovering, flying, gliding, diving, standing on its claws); it bursts out of a sphere of blue fire as it forms and folds back into a
- * burst of flame as it goes. The human is hidden while it is out; one's own camera pulls back to see it whole.
+ * hovering, flying, gliding, diving, standing on its claws); 3.7.0 it opens out of the human turned to fire limb by limb (its arms
+ * rising as wings) and closes back into it as it goes (PhoenixForm's timeline, PhoenixFire.change). The human is hidden while it is
+ * out; one's own camera pulls back to see it whole.
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class PhoenixFx {
@@ -85,6 +87,15 @@ public final class PhoenixFx {
         float[][] nrm;
         /** The fire points this frame (world, camera-relative), for the tongues. */
         double[] points;
+        /** Its glow's points this frame (camera-relative), and how big it was drawn (blocks a model unit). */
+        double[] glow;
+        float drawnScale;
+        /**
+         * 3.7.0: whether it was drawn this frame (its points are this frame's). Was: its points dropped (null) in first person and
+         * never made again, so the next frame in third person threw, every phoenix was wiped and the human showed until the server
+         * told it again (the owner: "whenever the player goes into third person it reverts to human and then back to phoenix").
+         */
+        boolean shown;
     }
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
@@ -215,7 +226,6 @@ public final class PhoenixFx {
         was.glide = mo.glide;
         was.dive = mo.dive;
         was.perch = mo.perch;
-        was.wrap = mo.wrap;
         double flat = Math.sqrt(entry.vx * entry.vx + entry.vz * entry.vz);
         float speed = (float) Math.min(1.0, flat / 0.9);
         float dive = (float) Math.max(0.0, Math.min(1.0, (-entry.vy - 0.35) / 0.45));
@@ -226,9 +236,14 @@ public final class PhoenixFx {
         // a glide sets in slowly (a few beats at speed first) and breaks off quickly
         mo.glide += (glide - mo.glide) * (glide > mo.glide ? 0.025F : 0.12F);
         mo.perch += (perch - mo.perch) * 0.2F;
-        mo.wrap = PhoenixForm.wrap(entry.phase, clock - entry.start);
         entry.beatO = entry.beat;
         entry.beat += PhoenixForm.beatRate(mo) / 20.0F;
+        if (entry.phase == PhoenixForm.FORMING) {
+            // still as it opens out of the figure of fire, then its first stroke down as it takes its own shape
+            float t = clock - entry.start;
+            entry.beat = (float) (-Math.PI * 0.5 + Math.max(0.0F, t - PhoenixForm.HUMAN_GONE) / 16.0F * Math.PI);
+            entry.beatO = (float) (-Math.PI * 0.5 + Math.max(0.0F, t - 1.0F - PhoenixForm.HUMAN_GONE) / 16.0F * Math.PI);
+        }
         if (entry.beat > 2000.0F * Math.PI) {
             entry.beat -= (float) (2000.0 * Math.PI);
             entry.beatO -= (float) (2000.0 * Math.PI);
@@ -264,10 +279,43 @@ public final class PhoenixFx {
             return;
         }
         Entry entry = ENTRIES.get(event.getEntity().m_19879_());
-        if (entry != null && PhoenixForm.humanHidden(entry.phase, ticks(entry, event.getPartialTick()))) {
+        if (entry == null) {
+            return;
+        }
+        float t = ticks(entry, event.getPartialTick());
+        if (PhoenixForm.humanHidden(entry.phase, t)) {
             event.setCanceled(true);
+            return;
+        }
+        // 3.7.0 (the owner: "the players body slowly becomes the phoenix"): each limb the fire has taken is fire only (PhoenixFire's
+        // figure of fire drawn there): the arms once it has run up them, the body, the head, then the legs. The renderer shows every
+        // part again before each frame (PlayerRenderer.setModelProperties runs before this event), so nothing is put back.
+        if ((entry.phase == PhoenixForm.FORMING || entry.phase == PhoenixForm.UNFORMING)
+            && event.getRenderer().m_7200_() instanceof PlayerModel<?> model) {
+            PhoenixForm.burning(entry.phase, t, BURNT);
+            if (BURNT[2] < 0.5F) {
+                return;
+            }
+            boolean arms = BURNT[0] > PhoenixForm.ARMS_TAKEN;
+            boolean body = BURNT[1] > PhoenixForm.BODY_TAKEN;
+            boolean head = BURNT[1] > PhoenixForm.HEAD_TAKEN;
+            boolean legs = BURNT[1] > PhoenixForm.LEGS_TAKEN;
+            model.f_102811_.f_104207_ &= !arms;
+            model.f_102812_.f_104207_ &= !arms;
+            model.f_103375_.f_104207_ &= !arms;
+            model.f_103374_.f_104207_ &= !arms;
+            model.f_102810_.f_104207_ &= !body;
+            model.f_103378_.f_104207_ &= !body;
+            model.f_102808_.f_104207_ &= !head;
+            model.f_102809_.f_104207_ &= !head;
+            model.f_102813_.f_104207_ &= !legs;
+            model.f_102814_.f_104207_ &= !legs;
+            model.f_103377_.f_104207_ &= !legs;
+            model.f_103376_.f_104207_ &= !legs;
         }
     }
+
+    private static final float[] BURNT = new float[3];
 
     @SubscribeEvent
     public static void hideHands(RenderHandEvent event) {
@@ -308,8 +356,8 @@ public final class PhoenixFx {
                 if (!(level.m_6815_(e.getKey()) instanceof Player player)) {
                     continue;
                 }
+                entry.shown = false;
                 if (player == minecraft.f_91074_ && firstPerson) {
-                    entry.points = null;
                     continue; // the eye is inside the phoenix: only the world is seen
                 }
                 draw(m, entry, player, stack, out, camera, partial, e.getKey());
@@ -325,7 +373,6 @@ public final class PhoenixFx {
         float t = ticks(entry, partial);
         float grow = PhoenixForm.grow(entry.phase, t);
         if (grow < 0.02F) {
-            entry.points = null;
             return;
         }
         if (entry.pose == null) {
@@ -337,6 +384,7 @@ public final class PhoenixFx {
                 entry.nrm[i] = new float[m.parts[i].vertices() * 3];
             }
             entry.points = new double[shape.anchors.length / 2 * 3];
+            entry.glow = new double[GLOW_BONES * 3];
         }
         PhoenixForm.Motion mo = NOW;
         PhoenixForm.Motion a = entry.was;
@@ -345,13 +393,10 @@ public final class PhoenixFx {
         mo.glide = a.glide + (b.glide - a.glide) * partial;
         mo.dive = a.dive + (b.dive - a.dive) * partial;
         mo.perch = a.perch + (b.perch - a.perch) * partial;
-        mo.wrap = PhoenixForm.wrap(entry.phase, t);
+        float shaped = PhoenixForm.shaped(entry.phase, t);
+        mo.form = shaped;
         float seconds = (clock + partial) / 20.0F + (id % 17) * 0.31F;
         float beat = entry.beatO + (entry.beat - entry.beatO) * partial;
-        // forming, it bursts out at the top of a stroke and beats down hard
-        if (entry.phase == PhoenixForm.FORMING && t < 20.0F) {
-            beat = (float) (-Math.PI * 0.5 + t / 20.0F * Math.PI);
-        }
         PhoenixForm.pose(m, shape, entry.pose, mo, beat, seconds);
         double x = player.f_19790_ + (player.m_20185_() - player.f_19790_) * partial;
         double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial;
@@ -362,9 +407,14 @@ public final class PhoenixFx {
         // climbing and dropping tilt it with the look, at speed
         float tilt = -lookPitch * 0.45F * mo.speed * (1.0F - mo.perch);
         float s = PhoenixLook.SCALE * grow;
-        // in flight its chest held at the player's middle; standing, its claws on the ground
+        // in flight its chest held at the player's middle; standing, its claws on the ground; 3.7.0: shaped as the human (the
+        // change), its wings' roots where the shoulders are, so the wings open out of the arms
         float anchor = shape.chest + (shape.feet - shape.chest) * mo.perch;
         float rise = 0.9F * (1.0F - mo.perch);
+        anchor = shape.shoulder + (anchor - shape.shoulder) * shaped;
+        rise = SHOULDER + (rise - SHOULDER) * shaped;
+        tilt *= shaped;
+        bank *= shaped;
         placement(x - camera.f_82479_, y + rise - camera.f_82480_, z - camera.f_82481_, yaw, tilt, bank, s, anchor, PLACE);
         // the view times the place: one 3 x 4 for the points
         Matrix4f view = stack.m_85850_().m_252922_();
@@ -375,17 +425,30 @@ public final class PhoenixFx {
         float[] v = {ax.x, ay.x, az.x, o.x, ax.y, ay.y, az.y, o.y, ax.z, ay.z, az.z, o.z};
         float[] mat = mul(v, PLACE);
         Matrix3f turn = stack.m_85850_().m_252943_();
-        Vector3f nx = turn.transform(new Vector3f(1.0F, 0.0F, 0.0F));
         Vector3f ny = turn.transform(new Vector3f(0.0F, 1.0F, 0.0F));
-        Vector3f nz = turn.transform(new Vector3f(0.0F, 0.0F, 1.0F));
-        float[] nm = {nx.x, ny.x, nz.x, nx.y, ny.y, nz.y, nx.z, ny.z, nz.z};
-        int overlay = OverlayTexture.f_118083_;
+        // 3.7.0 (the owner: "the wings should not get shadows"; "it should also glow"): every normal sent as straight up in the world,
+        // so the game's two lights light every side of it fully (no side in shade); the fire's own heat drawn over it
+        float upX = ny.x;
+        float upY = ny.y;
+        float upZ = ny.z;
         for (int i = 0; i < m.parts.length; i++) {
             DragonModel.Part part = m.parts[i];
             entry.pose.skin(part, entry.pos[i], entry.nrm[i]);
             PhoenixForm.flame(shape, i, part, entry.pos[i], entry.nrm[i], seconds);
-            emit(out, part, entry.pos[i], entry.nrm[i], mat, nm, overlay);
+            emit(out, shape, i, part, entry.pos[i], entry.nrm[i], mat, upX, upY, upZ, seconds);
         }
+        // the glow's points: the chest, the neck, along each wing, the tail's root
+        float[] g = entry.pose.global;
+        for (int k = 0; k < GLOW_BONES; k++) {
+            int bone = glowBone(k);
+            float px = bone < 0 ? 0.0F : g[bone * 12 + 3];
+            float py = bone < 0 ? 0.0F : g[bone * 12 + 7];
+            float pz = bone < 0 ? 0.0F : g[bone * 12 + 11];
+            for (int r = 0; r < 3; r++) {
+                entry.glow[k * 3 + r] = PLACE[r * 4] * px + PLACE[r * 4 + 1] * py + PLACE[r * 4 + 2] * pz + PLACE[r * 4 + 3];
+            }
+        }
+        entry.drawnScale = s;
         // the fire points, placed (camera-relative) for the tongues drawn after the particles
         int[] an = shape.anchors;
         for (int k = 0; k < an.length / 2; k++) {
@@ -398,6 +461,23 @@ public final class PhoenixFx {
                 entry.points[k * 3 + r] = PLACE[r * 4] * px + PLACE[r * 4 + 1] * py + PLACE[r * 4 + 2] * pz + PLACE[r * 4 + 3];
             }
         }
+        entry.shown = true;
+    }
+
+    /** Its glow's size round each point (model units: the blocks it covers grow with it). */
+    static final float GLOW_SIZE = 3.2F;
+    /** Where its wings' roots are held while it is shaped as the human: the shoulders' height (blocks over the feet). */
+    static final float SHOULDER = 1.4F;
+    /** The glow's points (bones): the chest, the neck, the tail's root, each wing's elbow, outer joint and hand. */
+    static final int GLOW_BONES = 9;
+
+    static int glowBone(int k) {
+        return switch (k) {
+            case 0 -> shape.body;
+            case 1 -> shape.neck;
+            case 2 -> shape.tailRoot;
+            default -> shape.wing[(k - 3) / 3][1 + (k - 3) % 3];
+        };
     }
 
     /**
@@ -452,25 +532,36 @@ public final class PhoenixFx {
         return o;
     }
 
-    /** A part's corners, each coloured by the file's cel ramp of its model-space normal, full bright (it is fire). */
-    static void emit(VertexConsumer out, DragonModel.Part part, float[] pos, float[] nrm, float[] m, float[] n, int overlay) {
+    /**
+     * A part's corners: the fire parts all at the ramp's lit end (PhoenixLook.glowing: no shadow on them), the rest by the file's cel
+     * ramp of its model-space normal; full bright (it is fire), every normal the world's up (the game's lights shade no side of it);
+     * 3.7.0 the fire's heat flowing over its skin (PhoenixForm.heat) drawn through the game's own overlay, its white rows (as a
+     * creeper's flash): the brighter bands running out along it to the tips.
+     */
+    static void emit(VertexConsumer out, PhoenixForm.Shape sh, int index, DragonModel.Part part, float[] pos, float[] nrm, float[] m, float upX,
+                     float upY, float upZ, float seconds) {
         int[] q = part.quads;
         float[] uv = part.uv;
         float[] light = PhoenixLook.LIGHT;
+        boolean fire = sh.fire[index];
+        float[] reach = sh.reach[index];
+        if (fire) {
+            PhoenixLook.glowing(part.kind, TINT);
+        }
         for (int i = 0; i < q.length; i++) {
             int k = q[i];
             float x = pos[k * 3];
             float y = pos[k * 3 + 1];
             float z = pos[k * 3 + 2];
-            float nx = nrm[k * 3];
-            float ny = nrm[k * 3 + 1];
-            float nz = nrm[k * 3 + 2];
-            PhoenixLook.tint(part.kind, nx, ny, nz, light, TINT);
-            float wx = n[0] * nx + n[1] * ny + n[2] * nz;
-            float wy = n[3] * nx + n[4] * ny + n[5] * nz;
-            float wz = n[6] * nx + n[7] * ny + n[8] * nz;
+            int overlay = OverlayTexture.f_118083_;
+            if (fire) {
+                float heat = PhoenixForm.heat(index, reach[k], x, z, seconds);
+                overlay = Math.round(15.0F * Math.min(1.0F, heat * PhoenixLook.HEAT / PhoenixLook.WHITEST)) | 10 << 16;
+            } else {
+                PhoenixLook.tint(part.kind, nrm[k * 3], nrm[k * 3 + 1], nrm[k * 3 + 2], light, TINT);
+            }
             out.m_5954_(m[0] * x + m[1] * y + m[2] * z + m[3], m[4] * x + m[5] * y + m[6] * z + m[7], m[8] * x + m[9] * y + m[10] * z + m[11],
-                TINT[0], TINT[1], TINT[2], 1.0F, uv[k * 2], uv[k * 2 + 1], overlay, 0xF000F0, wx, wy, wz);
+                TINT[0], TINT[1], TINT[2], 1.0F, uv[k * 2], uv[k * 2 + 1], overlay, 0xF000F0, upX, upY, upZ);
         }
     }
 
@@ -508,6 +599,7 @@ public final class PhoenixFx {
         SINK.matrix = pose.m_85850_().m_252922_();
         float partial = event.getPartialTick();
         Vec3 cam = event.getCamera().m_90583_();
+        boolean firstPerson = minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON;
         try {
             SINK.buffer = buffers.m_6299_(type);
             for (Map.Entry<Integer, Entry> e : ENTRIES.entrySet()) {
@@ -517,15 +609,21 @@ public final class PhoenixFx {
                 }
                 float t = ticks(entry, partial);
                 float grow = Math.max(0.0F, PhoenixForm.grow(entry.phase, t));
-                if (entry.points != null && grow > 0.05F) {
+                if (entry.shown && grow > 0.05F) {
                     // the wind of its own flight streams them back
                     PhoenixFire.burn(SINK, entry.points, shape.anchorSize, entry.points.length / 3, clock + partial, -entry.vx * 0.5, -entry.vy * 0.3,
                         -entry.vz * 0.5, Math.min(1.0, grow), e.getKey());
+                    PhoenixFire.glow(SINK, entry.glow, GLOW_BONES, GLOW_SIZE * entry.drawnScale, clock + partial);
                 }
+                if (player == minecraft.f_91074_ && firstPerson) {
+                    continue; // the eye would be inside the figure of fire
+                }
+                // the human turned to fire, the phoenix opening out of it (forming) and closing back into it (going)
                 double x = player.f_19790_ + (player.m_20185_() - player.f_19790_) * partial - cam.f_82479_;
-                double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial - cam.f_82480_ + 1.0;
+                double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial - cam.f_82480_;
                 double z = player.f_19792_ + (player.m_20189_() - player.f_19792_) * partial - cam.f_82481_;
-                PhoenixFire.change(SINK, x, y, z, entry.phase == PhoenixForm.FORMING, t, e.getKey());
+                float bodyYaw = player.f_20884_ + wrap(player.f_20883_ - player.f_20884_) * partial;
+                PhoenixFire.change(SINK, x, y, z, bodyYaw, entry.phase, t, e.getKey());
             }
         } catch (RuntimeException failure) {
             HexPiece.LOGGER.error("HexPiece: a phoenix's fire could not be drawn", failure);
@@ -555,8 +653,9 @@ public final class PhoenixFx {
         }
         Vec3 eye = entity.m_20299_(partial);
         Vec3 look = entity.m_20252_(partial);
-        double back = 4.0 + 5.5 * out;
-        double up = 1.6 * out;
+        // 3.7.0: the phoenix bigger (PhoenixLook.SCALE 0.55), the camera further back
+        double back = 4.0 + 7.5 * out;
+        double up = 2.2 * out;
         Vec3 raised = com.hexhaki.piece.client.dragon.DragonCamera.clip(entity, eye, eye.m_82520_(0.0, up, 0.0));
         return com.hexhaki.piece.client.dragon.DragonCamera.clip(entity, raised, raised.m_82520_(-look.f_82479_ * back, -look.f_82480_ * back,
             -look.f_82481_ * back));

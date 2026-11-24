@@ -6,7 +6,7 @@ base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi 
 "use my imapct frame" and their notes on Buzz Cut, Lotus, the Mochi feeling dead and WiFi Haki (N), the chat that released 3.6.3 (O),
 the DoughV2 GIFs read frame by frame (P), 3.6.4 and 3.6.5 (Q), where the fourth Mochi chat stopped (R), the fifth chat's six awakened
 moves built on their GIFs and 3.6.6 (S), where it stopped (T), the Phoenix request (U), 3.6.7 (V), 3.6.8 (W), the Phoenix animated
-(X) and the Phoenix fruit in game, 3.6.9 (Y)), then docs/handoff/next-ai-3.6.0.md sections I to
+(X), the Phoenix fruit in game, 3.6.9 (Y), the owner's notes on it (Z) and 3.7.0 (AA)), then docs/handoff/next-ai-3.6.0.md sections I to
 N, then POINT ONE and sections 0 to 7 of docs/handoff/next-ai-3.2.2.md (every standing rule).
 
 POINT ONE (the owner's, never drop it, pass it on): every fruit in the style of the Light, Gura and Magma fruits (3D meshes, clips without
@@ -27,12 +27,13 @@ MochiArt.CHURN). Build every new move this way and judge every render for it.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.6.9 is the last release: the Tori Tori no Mi, Model: Phoenix in game (Mythical; Z turns the player into the
-owner's phoenix, flying as in creative a little faster, and back, 3 s cooldown, no meter; the change a spiral of blue fire; next-ai-3.6.3.md
-Y) and Buzz Cut with the body still, only the right arm swinging (N 31). Before it: 3.6.8 (Build #250, Release #159): Buzz Cut's whirl a
-spiral widening every turn, Scorching Buzz Cut seven turns with a far bigger crater and always catching, every dough sound real CC0
-slime; 3.6.7: Mogura held mid-shaft and only while swinging, no impact frames in the Mochi fruit, no Buzz Cut cutscene; 3.6.6: the
-whole Mochi Awakening.
+Where things stand: 3.7.0 is the last release: the owner's five notes on the Phoenix (next-ai-3.6.3.md Z, AA): no shade on it and a
+soft glow round it, 24 tongues of fire (was 64) and its skin flowing like fire (heat bands through the overlay, tips licking), no more
+flicker to human in third person (a crash in its drawing), a new transformation (the arms rise as wings while the fire runs up them, the
+body turns to a figure of fire limb by limb, the phoenix opens out of it shaped as the human and grows slowly; the reverse going) and
+the phoenix 1.4 times bigger (wingspan about 10). Before it: 3.6.9 (Build #253, Release #160): the Phoenix fruit in game (Mythical; Z
+turns the player into the owner's phoenix, flying, and back, 3 s cooldown, no meter) and Buzz Cut with only the right arm moving;
+3.6.8, 3.6.7, 3.6.6: the Mochi fruit's fixes and its whole Awakening.
 
 Do next: (1) check the last push's Build and Release runs; (2) the owner's word on the Phoenix in game comes first (write it verbatim
 into the handoff, fix, render again); (3) then the Phoenix's moves on the wiki's GIFs (scratchpad pgifs/, or download them again from

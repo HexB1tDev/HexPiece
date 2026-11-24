@@ -1,6 +1,7 @@
 package com.hexhaki.piece.phoenix;
 
 import com.hexhaki.piece.dragon.FireMesh;
+import com.hexhaki.piece.mochi.MochiArt;
 
 /**
  * 3.6.7 (the owner: "the body is made of flames, my model did not burn, which is what I want. moving flames"; the reference: Marco's
@@ -65,7 +66,7 @@ public final class PhoenixFire {
         double bx = x + wx * age * 0.5;
         double by = y + lift;
         double bz = z + wz * age * 0.5;
-        com.hexhaki.piece.mochi.MochiArt.tubeBegin();
+        MochiArt.tubeBegin();
         int n = 7;
         for (int k = 0; k <= n; k++) {
             double t = k / (double) n;
@@ -77,9 +78,9 @@ public final class PhoenixFire {
             double pz = bz + uz * len * t + sz * wave;
             // thick at the root (or where it let go), drawn to a point at its tip
             double r = thick * Math.pow(1.0 - t, 1.3) * (0.75 + 0.25 * Math.sin(Math.PI * Math.min(1.0, t * 2.5)));
-            com.hexhaki.piece.mochi.MochiArt.tubePoint(px, py, pz, Math.max(0.004, r));
+            MochiArt.tubePoint(px, py, pz, Math.max(0.004, r));
         }
-        com.hexhaki.piece.mochi.MochiArt.tube(sink, 6, gold ? GOLD_TUBE : CYAN_TUBE, 0.0, 0.0);
+        MochiArt.tube(sink, 6, gold ? GOLD_TUBE : CYAN_TUBE, 0.0, 0.0);
     }
 
     /**
@@ -105,39 +106,133 @@ public final class PhoenixFire {
     }
 
     /**
-     * 3.6.9: the phoenix forming or going round the player's chest (x, y, z: eye-relative), {@code ticks} into it (the reference: Marco
-     * bursting into blue fire, the flames swirling up round him and opening out into the wings). Forming: a column of fire spiralling up
-     * round the player, its tongues streaming up and out as it widens, a ring of flame running out over the ground from their feet, a hot
-     * cyan and gold heart at the chest that the phoenix opens out of; going: the flames spiral back in to the chest and a last flare
-     * goes out as the human comes back. Fire only (tongues and puffs, never a shell of glass).
+     * 3.7.0 (the owner: "Transformation animation looks bad improve it so the players body slowly becomes the phoenix, arms become the
+     * wings and etc."): the change round the player standing at (x, y, z) (their feet, eye-relative), their body turned to
+     * {@code bodyYaw} (the game's degrees), {@code ticks} into {@code phase}: the human turned to a figure of blue fire
+     * ({@link PhoenixForm#burning}: the fire running up the arms from the hands, raised out as wings ({@link PhoenixForm#armRaise}),
+     * then over the body from the shoulders down, the legs, the head), tongues licking up off every burning part, and a burst of
+     * tongues out of the chest as the phoenix opens out of the figure (and as it closes back into it going). Banded fire tubes, as the
+     * house's tongues: alpha blended quads.
      */
-    public static void change(FireMesh.Sink sink, double x, double y, double z, boolean forming, double ticks, int seed) {
-        if (forming) {
-            if (ticks > 24.0) {
-                return;
+    public static void change(FireMesh.Sink sink, double x, double y, double z, float bodyYaw, int phase, double ticks, int seed) {
+        PhoenixForm.burning(phase, (float) ticks, BURN);
+        double arms = BURN[0];
+        double body = BURN[1];
+        double left = BURN[2];
+        if (left > 0.01 && (arms > 0.01 || body > 0.01)) {
+            human(sink, x, y, z, bodyYaw, PhoenixForm.armRaise(phase, (float) ticks), arms, body, left, ticks, seed);
+        }
+        // the phoenix opening out of the figure (forming), closing back into it (going): a burst of tongues out of the chest
+        double at = phase == PhoenixForm.FORMING ? PhoenixForm.BIRD_IN - 1.0 : phase == PhoenixForm.UNFORMING ? PhoenixForm.BIRD_GONE - 4.0 : -99.0;
+        double f = (ticks - at) / 9.0;
+        if (f > 0.0 && f < 1.0) {
+            flare(sink, x, y + 1.15, z, Math.sin(Math.PI * f), ticks, seed + 9);
+        }
+    }
+
+    private static final float[] BURN = new float[3];
+
+    /** The figure of fire's limbs' size (blocks): the arm, the leg and the torso's halves (round, a little over the skin's). */
+    static final double ARM_R = 0.2;
+    static final double LEG_R = 0.18;
+    static final double TORSO_R = 0.2;
+    static final double HEAD_R = 0.34;
+
+    /**
+     * The human as a figure of fire: {@code arms} of the arms burning from the hands up, {@code body} of the rest from the shoulders
+     * down (the torso, then the legs, the head), {@code left} of it left (its limbs thinning away to nothing as it burns away), the arms
+     * raised {@code raise} degrees out to the sides (the player model's: the shoulders 22 pixels up, 5 out; the arms 10 long below).
+     */
+    static void human(FireMesh.Sink sink, double x, double y, double z, float bodyYaw, double raise, double arms, double body, double left,
+                      double ticks, int seed) {
+        double yaw = Math.toRadians(bodyYaw);
+        // the player's right (their right hand's side) and forward
+        double rx = -Math.cos(yaw);
+        double rz = -Math.sin(yaw);
+        double r = Math.toRadians(raise);
+        int k = 0;
+        for (int side = 0; side < 2; side++) {
+            double sgn = side == 0 ? 1.0 : -1.0;
+            double sx = x + rx * sgn * 0.33;
+            double sy = y + 1.375;
+            double sz = z + rz * sgn * 0.33;
+            // the arm's way: down turned out to its side by the raise
+            double dx = rx * sgn * Math.sin(r);
+            double dy = -Math.cos(r);
+            double dz = rz * sgn * Math.sin(r);
+            if (arms > 0.01) {
+                // burning from the hand (0.65 out) back to over the shoulder's top (0.12 behind the pivot)
+                double hand = 0.65;
+                double reach = hand - (hand + 0.12) * arms;
+                limb(sink, sx + dx * hand, sy + dy * hand, sz + dz * hand, sx + dx * reach, sy + dy * reach, sz + dz * reach, ARM_R * left,
+                    ticks, seed + side);
+                for (int t = 0; t < 4; t++) {
+                    double u = hand - (hand - reach) * (t + 0.5) / 4.0;
+                    lick(sink, sx + dx * u, sy + dy * u + ARM_R * 0.6, sz + dz * u, 0.7 * left, ticks, seed + 40 + k++);
+                }
             }
-            double grow = 1.0 - Math.pow(1.0 - Math.min(1.0, ticks / 13.0), 3.0);
-            double fade = 1.0 - Math.max(0.0, Math.min(1.0, (ticks - 12.0) / 12.0));
-            column(sink, x, y, z, ticks, 0.35 + 2.3 * grow, (0.45 + 0.75 * grow) * fade + 0.1 * fade, 1.0, seed);
-            // the ring of flame running out over the ground, tongues licking up off it
-            double ring = 0.6 + 3.6 * grow;
-            FireMesh.ring(sink, x, y - 0.95, z, 0, 1, 0, ring, 0.55, 0.2, 0x2DB8EC, 0.7 * fade);
-            for (int k = 0; k < 8; k++) {
-                double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k + 40)) / 8.0;
-                double age = (ticks + 7.0 * FireMesh.rand(seed, k + 50)) % 9.0;
-                tongue(sink, x + Math.cos(a) * ring, y - 0.95, z + Math.sin(a) * ring, Math.cos(a) * 0.05, 0.0, Math.sin(a) * 0.05, age,
-                    9.0, (0.7 + 0.4 * FireMesh.rand(seed, k + 60)) * fade, false, seed + k * 13 + (int) ((ticks + 7.0 * FireMesh.rand(seed, k + 50)) / 9.0));
+            if (body > 0.45) {
+                // the legs, from the hips down
+                double legs = (body - 0.45) / 0.55;
+                double lx = x + rx * sgn * 0.12;
+                double lz = z + rz * sgn * 0.12;
+                limb(sink, lx, y + 0.75, lz, lx, y + 0.75 - 0.75 * legs, lz, LEG_R * left, ticks, seed + 4 + side);
+                lick(sink, lx, y + 0.75 - 0.6 * legs, lz, 0.45 * left, ticks, seed + 60 + side);
             }
-            // the heart: a burst of cyan and gold tongues flaring out of the chest as it opens, burning down as the body takes over
-            flare(sink, x, y, z, Math.sin(Math.PI * Math.min(1.0, ticks / 16.0)), ticks, seed);
+            if (body > 0.01) {
+                // the torso's half, from the shoulders down
+                double tx = x + rx * sgn * 0.12;
+                double tz = z + rz * sgn * 0.12;
+                limb(sink, tx, y + 1.5, tz, tx, y + 1.5 - 0.75 * Math.min(1.0, body / 0.6), tz, TORSO_R * left, ticks, seed + 8 + side);
+                lick(sink, tx, y + 1.45 - 0.5 * Math.min(1.0, body / 0.6), tz, 0.6 * left, ticks, seed + 70 + side);
+                lick(sink, tx + rx * sgn * 0.12, y + 1.5, tz + rz * sgn * 0.12, 0.65 * left, ticks, seed + 74 + side);
+            }
+        }
+        if (body > 0.3) {
+            // the head, last
+            double head = Math.min(1.0, (body - 0.3) / 0.4);
+            double hr = HEAD_R * head * left;
+            MochiArt.tubeBegin();
+            MochiArt.tubePoint(x, y + 1.75 - hr, z, hr * 0.5);
+            MochiArt.tubePoint(x, y + 1.75 - hr * 0.5, z, hr * 0.9);
+            MochiArt.tubePoint(x, y + 1.75, z, hr * (1.0 + 0.08 * Math.sin(ticks * 1.1 + seed)));
+            MochiArt.tubePoint(x, y + 1.75 + hr * 0.5, z, hr * 0.85);
+            MochiArt.tubePoint(x, y + 1.75 + hr * 1.1, z, hr * 0.2);
+            MochiArt.tube(sink, 8, CYAN_TUBE, 1.2, ticks * 0.25);
+            lick(sink, x, y + 1.75 + hr * 0.6, z, 0.7 * head * left, ticks, seed + 80);
+        }
+    }
+
+    /** One burning limb from (ax, ay, az) to (bx, by, bz): a banded tube of fire, its surface swelling and licking up as it burns. */
+    static void limb(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double r, double ticks, int seed) {
+        double dx = bx - ax;
+        double dy = by - ay;
+        double dz = bz - az;
+        if (r < 0.01 || dx * dx + dy * dy + dz * dz < 1.0E-4) {
             return;
         }
-        // going: the column spiralling back in round the chest, the phoenix's last flare at the end
-        double pull = Math.min(1.0, ticks / 14.0);
-        column(sink, x, y, z, ticks, 0.25 + 2.2 * (1.0 - pull) * (1.0 - pull), 0.25 + 0.75 * (1.0 - pull), -1.0, seed);
-        if (ticks > 10.0 && ticks < 20.0) {
-            flare(sink, x, y, z, 0.8 * Math.sin(Math.PI * (ticks - 10.0) / 10.0), ticks, seed + 9);
+        MochiArt.tubeBegin();
+        int n = 7;
+        for (int i = 0; i <= n; i++) {
+            double t = i / (double) n;
+            // the ends rounded, a swell running along it (the fire licking up it)
+            double end = Math.sqrt(Math.max(0.0, Math.sin(Math.PI * Math.min(1.0, 0.08 + t * 0.92))));
+            double swell = 1.0 + 0.16 * Math.sin(t * 7.0 - ticks * 0.9 + seed) + 0.08 * Math.sin(t * 13.0 + ticks * 1.7 + seed * 2);
+            MochiArt.tubePoint(ax + dx * t, ay + dy * t, az + dz * t, r * Math.max(0.35, end) * swell);
         }
+        // the flames swirling along it (stripes of deep blue winding round it, turning)
+        MochiArt.tube(sink, 8, CYAN_TUBE, 1.6, ticks * 0.3 + seed);
+    }
+
+    /** A tongue licking up off a burning part at (x, y, z), {@code size} long, its life running on with the clock. */
+    static void lick(FireMesh.Sink sink, double x, double y, double z, double size, double ticks, int seed) {
+        if (size < 0.05) {
+            return;
+        }
+        double life = 7.0 + 3.0 * FireMesh.rand(seed, 1);
+        double start = life * FireMesh.rand(seed, 2);
+        tongue(sink, x, y, z, 0.0, 0.0, 0.0, (ticks + start) % life, life, size, FireMesh.rand(seed, 3) < 0.25,
+            seed * 7 + (int) ((ticks + start) / life));
     }
 
     /** A burst of 10 tongues flung out all round the chest (x, y, z), {@code amount} (0 to 1) of their full length, a third of them gold. */
@@ -159,26 +254,13 @@ public final class PhoenixFire {
     }
 
     /**
-     * The spiral column of the change: 16 tongues on a turning spiral round the chest (x, y, z), from the feet to over the head,
-     * {@code radius} out, {@code size} long, each streaming up and round with the swirl, and out (way 1) or in (way -1).
+     * 3.7.0 (the owner: "it should also glow"): the phoenix's glow, soft cyan light round its body and along its wings ({@code points}:
+     * eye-relative, {@code count} of them, each {@code size} across), clear at its edge: it never hides the body, only haloes it.
      */
-    private static void column(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, double size, double way, int seed) {
-        int n = 16;
-        for (int k = 0; k < n; k++) {
-            double h = (k % 4) / 3.0;
-            double a = 2 * Math.PI * (k / (double) n + 0.25 * h) + ticks * 0.28 + 0.4 * FireMesh.rand(seed, k + 70);
-            double r = radius * (0.55 + 0.25 * h + 0.3 * FireMesh.rand(seed, k + 80));
-            double life = 9.0 + 4.0 * FireMesh.rand(seed, k + 85);
-            double start = life * FireMesh.rand(seed, k + 90);
-            double age = (ticks + start) % life;
-            int born = (int) Math.floor((ticks + start) / life);
-            double c = Math.cos(a);
-            double s = Math.sin(a);
-            // round with the swirl and out (or in)
-            double wx = -s * 0.07 + c * 0.05 * way;
-            double wz = c * 0.07 + s * 0.05 * way;
-            tongue(sink, x + c * r, y - 0.9 + 2.6 * h, z + s * r, wx, 0.0, wz, age, life,
-                Math.min(1.5, size * (1.0 + 0.6 * FireMesh.rand(seed, k + 95))), FireMesh.rand(seed, k + 99) < 0.3, seed + k * 17 + born * 5);
+    public static void glow(FireMesh.Sink sink, double[] points, int count, double size, double ticks) {
+        for (int k = 0; k < count; k++) {
+            double pulse = 1.0 + 0.12 * Math.sin(ticks * 0.35 + k * 1.7);
+            FireMesh.shell(sink, points[k * 3], points[k * 3 + 1], points[k * 3 + 2], size * pulse, 0x46DDF5, 0.16, 0.0);
         }
     }
 }

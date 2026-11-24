@@ -21,7 +21,7 @@ import javax.imageio.ImageIO;
  *
  * <p>java -cp prev:build/classes PhoenixPreview <marco.sry> <marco.png> <out.png | dir/> [--size=WxH] shot ...
  * a shot: {@code state:seconds:yaw:pitch:dist[:tx:ty:tz]}; state one of rest, soar (the owner's take), or PhoenixForm's states (hover,
- * fly, glide, dive, wrap, form, unform): see {@link PhoenixForm#pose}.
+ * fly, glide, dive, human, form, unform): see {@link PhoenixForm#pose}.
  */
 public final class PhoenixPreview {
     static int W = 480;
@@ -72,18 +72,25 @@ public final class PhoenixPreview {
         double t = Double.parseDouble(p[1]);
         DragonPose pose = new DragonPose(model);
         float[] place = new float[12];
-        // 3.6.9 "form" / "unform": t seconds into the change, the phoenix grown out of (or folding back into) its burst, standing on the ground
+        // 3.6.9 "form" / "unform": t seconds into the change, standing on the ground as in game (client/phoenix/PhoenixFx); 3.7.0 the
+        // human turned to fire, the phoenix opening out of it shaped as the human (its wings' roots at the shoulders), then its own
         boolean change = state.equals("form") || state.equals("unform");
         int phase = state.equals("form") ? PhoenixForm.FORMING : PhoenixForm.UNFORMING;
         float ticks = (float) t * 20.0F;
+        float grow = 1.0F;
         if (change) {
             PhoenixForm.Motion mo = new PhoenixForm.Motion();
-            mo.wrap = PhoenixForm.wrap(phase, ticks);
-            mo.perch = 1.0F; // changed standing on the ground, as in game (client/phoenix/PhoenixFx: anchored by its feet)
-            float beat = phase == PhoenixForm.FORMING && ticks < 20.0F ? (float) (-Math.PI * 0.5 + ticks / 20.0F * Math.PI) : ticks / 20.0F * PhoenixForm.beatRate(mo);
+            mo.perch = 1.0F;
+            float shaped = PhoenixForm.shaped(phase, ticks);
+            mo.form = shaped;
+            float beat = phase == PhoenixForm.FORMING ? (float) (-Math.PI * 0.5 + Math.max(0.0F, ticks - PhoenixForm.HUMAN_GONE) / 16.0F * Math.PI)
+                : ticks / 20.0F * PhoenixForm.beatRate(mo);
             PhoenixForm.pose(model, shape, pose, mo, beat, ticks / 20.0F);
-            float g = Math.max(0.0F, PhoenixForm.grow(phase, ticks)) * PhoenixLook.SCALE;
-            float[] p0 = {g, 0, 0, 0, 0, g, 0, -shape.feet * g, 0, 0, g, 0};
+            grow = Math.max(0.0F, PhoenixForm.grow(phase, ticks));
+            float g = grow * PhoenixLook.SCALE;
+            float anchor = shape.shoulder + (shape.feet - shape.shoulder) * shaped;
+            float rise = 1.4F * (1.0F - shaped);
+            float[] p0 = {g, 0, 0, 0, 0, g, 0, rise - anchor * g, 0, 0, g, 0};
             System.arraycopy(p0, 0, place, 0, 12);
         } else {
             PhoenixForm.preview(model, shape, pose, state, (float) t, place);
@@ -102,6 +109,13 @@ public final class PhoenixPreview {
             if (!state.equals("rest") && !state.startsWith("t")) {
                 PhoenixForm.flame(shape, model, part, pos, nrm, (float) t);
             }
+            int index = skinned.size() / 3;
+            float[] heat = new float[part.vertices()];
+            if (shape.fire[index] && !state.equals("rest") && !state.startsWith("t")) {
+                for (int v = 0; v < part.vertices(); v++) {
+                    heat[v] = Math.min(PhoenixLook.WHITEST, PhoenixLook.HEAT * PhoenixForm.heat(index, shape.reach[index][v], pos[v * 3], pos[v * 3 + 2], (float) t));
+                }
+            }
             float[] wp = new float[pos.length];
             float[] wn = new float[nrm.length];
             for (int v = 0; v < part.vertices(); v++) {
@@ -118,6 +132,7 @@ public final class PhoenixPreview {
             }
             skinned.add(wp);
             skinned.add(wn);
+            skinned.add(heat);
         }
         double[] target = {(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2};
         if (p.length >= 8) {
@@ -127,18 +142,33 @@ public final class PhoenixPreview {
             target[2] + dist * Math.cos(pitch) * Math.cos(yaw)};
         Raster ra = new Raster(W * SS, H * SS, eye, target);
         ra.ground(0.0);
-        ra.figure(2.6, 0.0, 0.0);
+        if (change && !PhoenixForm.humanHidden(phase, ticks)) {
+            float[] burnt = new float[3];
+            PhoenixForm.burning(phase, ticks, burnt);
+            boolean fig = burnt[2] >= 0.5F;
+            ra.human(PhoenixForm.armRaise(phase, ticks), fig && burnt[0] > PhoenixForm.ARMS_TAKEN, fig && burnt[1] > PhoenixForm.BODY_TAKEN,
+                fig && burnt[1] > PhoenixForm.HEAD_TAKEN, fig && burnt[1] > PhoenixForm.LEGS_TAKEN);
+        } else if (!change) {
+            ra.figure(2.6, 0.0, 0.0);
+        }
         float[] tint = new float[3];
-        for (int i = 0; i < model.parts.length; i++) {
+        for (int i = 0; i < model.parts.length && grow > 0.02F; i++) {
             DragonModel.Part part = model.parts[i];
-            float[] wp = skinned.get(i * 2);
-            float[] wn = skinned.get(i * 2 + 1);
-            float[] col = new float[part.vertices() * 3];
+            float[] wp = skinned.get(i * 3);
+            float[] wn = skinned.get(i * 3 + 1);
+            float[] heat = skinned.get(i * 3 + 2);
+            float[] col = new float[part.vertices() * 4];
+            // 3.7.0 as the game: the fire parts at the ramp's lit end (no shadow), their heat flowing toward white; the rest by the ramp
             for (int v = 0; v < part.vertices(); v++) {
-                PhoenixLook.tint(part.kind, wn[v * 3], wn[v * 3 + 1], wn[v * 3 + 2], light, tint);
-                col[v * 3] = tint[0];
-                col[v * 3 + 1] = tint[1];
-                col[v * 3 + 2] = tint[2];
+                if (shape.fire[i]) {
+                    PhoenixLook.glowing(part.kind, tint);
+                } else {
+                    PhoenixLook.tint(part.kind, wn[v * 3], wn[v * 3 + 1], wn[v * 3 + 2], light, tint);
+                }
+                col[v * 4] = tint[0];
+                col[v * 4 + 1] = tint[1];
+                col[v * 4 + 2] = tint[2];
+                col[v * 4 + 3] = heat[v];
             }
             ra.mesh(part, wp, col);
         }
@@ -148,7 +178,7 @@ public final class PhoenixPreview {
             int count = an.length / 2;
             double[] pts = new double[count * 3];
             for (int k = 0; k < count; k++) {
-                float[] wp = skinned.get(an[k * 2] * 2);
+                float[] wp = skinned.get(an[k * 2] * 3);
                 int v = an[k * 2 + 1];
                 pts[k * 3] = wp[v * 3] - eye[0];
                 pts[k * 3 + 1] = wp[v * 3 + 1] - eye[1];
@@ -171,10 +201,24 @@ public final class PhoenixPreview {
                 q[16] = mx * mx + my * my + mz * mz;
                 quads.add(q);
             };
-            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, pts, shape.anchorSize, count, t * 20.0, 0.0, 0.0, wind, change
-                ? Math.min(1.0, Math.max(0.0, PhoenixForm.grow(phase, ticks))) : 1.0, 7);
+            if (grow > 0.05F) {
+                com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, pts, shape.anchorSize, count, t * 20.0, 0.0, 0.0, wind, Math.min(1.0, grow), 7);
+                // the glow (as client/phoenix/PhoenixFx: the chest, the neck, the tail's root, along each wing)
+                int[] bones = {shape.body, shape.neck, shape.tailRoot, shape.wing[0][1], shape.wing[0][2], shape.wing[0][3], shape.wing[1][1],
+                    shape.wing[1][2], shape.wing[1][3]};
+                double[] glow = new double[bones.length * 3];
+                for (int k = 0; k < bones.length; k++) {
+                    float gx = pose.global[bones[k] * 12 + 3];
+                    float gy = pose.global[bones[k] * 12 + 7];
+                    float gz = pose.global[bones[k] * 12 + 11];
+                    for (int r = 0; r < 3; r++) {
+                        glow[k * 3 + r] = place[r * 4] * gx + place[r * 4 + 1] * gy + place[r * 4 + 2] * gz + place[r * 4 + 3] - eye[r];
+                    }
+                }
+                com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, bones.length, 3.2 * place[0], t * 20.0);
+            }
             if (change) {
-                com.hexhaki.piece.phoenix.PhoenixFire.change(sink, -eye[0], 1.0 - eye[1], -eye[2], phase == PhoenixForm.FORMING, ticks, 7);
+                com.hexhaki.piece.phoenix.PhoenixFire.change(sink, -eye[0], -eye[1], -eye[2], 180.0F, phase, ticks, 7);
             }
             quads.sort((x, y) -> Double.compare(y[16], x[16]));
             for (double[] q : quads) {
@@ -263,6 +307,42 @@ public final class PhoenixPreview {
             box(x - 0.25, y + 1.4, z - 0.25, x + 0.25, y + 1.9, z + 0.25, 0xD9A77E);
         }
 
+        /**
+         * 3.7.0: a player at the origin facing -Z (their right toward +X), the arms raised {@code raise} degrees out to the sides (the
+         * player model's: the shoulders 22 pixels up, the arms 4 square, from 2 over the pivot to 10 under it).
+         */
+        void human(double raise, boolean noArms, boolean noBody, boolean noHead, boolean noLegs) {
+            if (!noLegs) {
+                box(-0.25, 0.0, -0.125, 0.25, 0.75, 0.125, 0x3A4A7A);
+            }
+            if (!noBody) {
+                box(-0.25, 0.75, -0.125, 0.25, 1.5, 0.125, 0x3D8BC4);
+            }
+            if (!noHead) {
+                box(-0.25, 1.5, -0.25, 0.25, 2.0, 0.25, 0xD9A77E);
+            }
+            double r = Math.toRadians(raise);
+            for (int side = 0; side < 2 && !noArms; side++) {
+                double sgn = side == 0 ? 1 : -1;
+                double[] d = {sgn * Math.sin(r), -Math.cos(r), 0};
+                double[] q = {sgn * Math.cos(r), Math.sin(r), 0};
+                double[] w = {0, 0, 1};
+                double[] o = {sgn * 0.375, 1.375, 0};
+                double[][] c = new double[8][];
+                for (int k = 0; k < 8; k++) {
+                    double a = (k & 1) == 0 ? -0.125 : 0.625;
+                    double b = (k & 2) == 0 ? -0.125 : 0.125;
+                    double e = (k & 4) == 0 ? -0.125 : 0.125;
+                    c[k] = new double[] {o[0] + d[0] * a + q[0] * b + w[0] * e, o[1] + d[1] * a + q[1] * b + w[1] * e, o[2] + d[2] * a + q[2] * b + w[2] * e};
+                }
+                int[][] f = {{0, 1, 3, 2}, {4, 5, 7, 6}, {0, 1, 5, 4}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 3, 7, 5}};
+                for (int[] face : f) {
+                    tri(c[face[0]], c[face[1]], c[face[2]], null, null, 0xD9A77E);
+                    tri(c[face[0]], c[face[2]], c[face[3]], null, null, 0xD9A77E);
+                }
+            }
+        }
+
         void box(double x0, double y0, double z0, double x1, double y1, double z1, int color) {
             double[][] c = {{x0, y0, z0}, {x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0}, {x0, y0, z1}, {x1, y0, z1}, {x1, y1, z1}, {x0, y1, z1}};
             int[][] f = {{0, 1, 2, 3}, {5, 4, 7, 6}, {4, 0, 3, 7}, {1, 5, 6, 2}, {3, 2, 6, 7}, {4, 5, 1, 0}};
@@ -291,7 +371,7 @@ public final class PhoenixPreview {
             for (int k = 0; k < 3; k++) {
                 int v = idx[k];
                 p[k] = new double[] {pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]};
-                uvc[k] = new double[] {part.uv[v * 2], part.uv[v * 2 + 1], col[v * 3], col[v * 3 + 1], col[v * 3 + 2]};
+                uvc[k] = new double[] {part.uv[v * 2], part.uv[v * 2 + 1], col[v * 4], col[v * 4 + 1], col[v * 4 + 2], col[v * 4 + 3]};
             }
             tri(p[0], p[1], p[2], uvc, part, 0);
         }
@@ -333,16 +413,18 @@ public final class PhoenixPreview {
                     if (part == null) {
                         col = flat;
                     } else {
-                        double[] m = new double[5];
-                        for (int k = 0; k < 5; k++) {
+                        double[] m = new double[6];
+                        for (int k = 0; k < 6; k++) {
                             m[k] = (w0 * uvc[0][k] / pa[2] + w1 * uvc[1][k] / pb[2] + w2 * uvc[2][k] / pc[2]) * z;
                         }
                         int tx = Math.floorMod((int) Math.floor(m[0] * tw), tw);
                         int ty = Math.floorMod((int) Math.floor(m[1] * th), th);
                         int texel = texture.getRGB(tx, ty);
-                        int r = (int) Math.min(255, ((texel >> 16) & 255) * m[2]);
-                        int g = (int) Math.min(255, ((texel >> 8) & 255) * m[3]);
-                        int bl = (int) Math.min(255, (texel & 255) * m[4]);
+                        // the game's overlay: toward white by the heat (OverlayTexture's white rows)
+                        double wh = m[5];
+                        int r = (int) Math.min(255, ((texel >> 16) & 255) * m[2] * (1 - wh) + 255 * wh);
+                        int g = (int) Math.min(255, ((texel >> 8) & 255) * m[3] * (1 - wh) + 255 * wh);
+                        int bl = (int) Math.min(255, (texel & 255) * m[4] * (1 - wh) + 255 * wh);
                         col = r << 16 | g << 8 | bl;
                     }
                     this.depth[i] = (float) z;

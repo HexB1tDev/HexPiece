@@ -953,3 +953,47 @@ wings wrapped round between beats as in the GIF, transform in a cyan sphere of l
   old jars from build/ before a build if a test says an asset is missing.
 - Sent to the owner: the change as a GIF. Next: the owner's word on the fruit in game; then the moves on the wiki's GIFs (scratchpad
   pgifs/: Fujiazami, Talon Slam / Hawk Rush, Phoenix Inferno, Bluebird, both forms); ask for item 4 of Mochi note 22.
+
+## Z. The owner's word on 3.6.9's Phoenix (verbatim; with an in-game screenshot from below: the phoenix hovering, wings spread, the
+## underside of its right wing circled: its lower feathers dark, shaded)
+
+"1. the wings should not get shadows
+2. less particles, more skin moving itself like it's made of fire,
+3. whenever the player goes into third person it reverts to human and then back to phoenix its weird asf
+4. Transformation animation looks bad improve it so the players body slowly becomes the phoenix, arms become the wings and etc. and
+make the overall phoenix bigger."
+5. The owner, right after: "it should also glow"
+
+## AA. 3.7.0: the owner's Phoenix notes (Z 1 to 5)
+
+- Z 1 and 5 (no shadows on the wings; glow): the game's two lights shaded every face by its normal (down-facing ones at 0.4: the dark
+  wing undersides of the screenshot). client/phoenix/PhoenixFx.emit sends every normal as the world's up (as client/haki/RyouAura does),
+  so the lights light every side fully; the fire parts (Shape.fire) are tinted at their ramp's lit end (PhoenixLook.glowing), the rest
+  (bill, eyes, feet, legs, insignia, the head/breast mesh) keep the file's cel ramp. The glow: PhoenixFire.glow, soft cyan shells
+  (FireMesh.shell, clear at the rim) round 9 bones (chest, neck, tail root, each wing's elbow, outer joint and hand), 3.2 model units
+  across, pulsing; drawn with the tongues after the particles.
+- Z 2 (fewer particles, the skin moving like fire): PhoenixForm.TONGUES 64 -> 24 (quotas wings 6+6, mantle 4, crest 3, fan 2, tail 3);
+  flame() FLAME 0.42 -> 0.6, the edges and tips (reach > 0.55) licking up and flickering each on its own; PhoenixForm.heat: bright bands
+  flowing out along every fire part to its tips, drawn through the game's overlay texture's white rows (overlay u 0 to 15, v 10: the
+  creeper flash's way; whitening 0.75 * u / 15, PhoenixLook.HEAT 0.65 at the hottest). The preview mixes toward white the same way.
+- Z 3 (third person flicker): the cause was PhoenixFx.render setting entry.points = null in first person (and when grow < 0.02); draw()
+  only made the arrays when the pose was new, so the next frame in third person threw a NullPointerException, the catch cleared every
+  entry (the human shown) and the server's resend (40 ticks) brought it back. Now Entry.shown says whether this frame drew it; the
+  arrays are made once.
+- Z 4 (the transformation; bigger): PhoenixForm's timeline (FORM_TICKS 40, UNFORM_TICKS 26): armRaise (the clips phoenix_form and
+  phoenix_unform, tools/phoenix_anims.py, the same beats: arms out level by 10, 102 degrees by 15, held; going held, let down 16 to
+  26), burning (the fire up the arms from the hands 1 to 11, over the body from the shoulders down 6 to 15, the figure of fire burning
+  away 16 to 26; going the other way round), each human limb hidden once the fire has taken it (PhoenixFx.hideHuman sets the
+  PlayerModel's parts invisible in RenderPlayerEvent.Pre: the renderer shows them again every frame; thresholds PhoenixForm.*_TAKEN),
+  the figure of fire (PhoenixFire.human: banded cyan tubes with turning stripes for the arms, the torso's two halves, the legs, a
+  flame-shaped head; tongues licking up off them; a burst of tongues out of the chest as the bird opens out / closes back), the bird
+  from BIRD_IN 14 at SMALL 0.22 of its size (its wings as wide as the arms), shaped as the human (Motion.form = PhoenixForm.shaped: no
+  beat, no lean, the wings let down level by ARMS_LEVEL 36 degrees), its wings' roots at the shoulders (Shape.shoulder at 1.4 blocks),
+  the human hidden at HUMAN_GONE 16, growing smoothly (no overshoot) to full size by BIRD_FULL 36 while it takes its own shape (16 to
+  32) and its first stroke down. Going: shrinks into the human's shape by 12 (HUMAN_BACK, the human shown inside the figure of fire),
+  gone at 13. The old wrap (wings ringed round the body) and the spiral column are gone. PhoenixLook.SCALE 0.4 -> 0.55 (wingspan about
+  9.7); the camera back 4 + 7.5, up 2.2.
+- Tests: DragonTests.phoenix (fewer fire points; every tick of forming, going and flying with the tongues, glow, figure and burst under
+  16k beside the model; grows from nothing only once the human is fire, never shrinking, to 1; the human hidden only once every limb
+  is fire; shaped as the human where it takes its place; the arms out then let down).
+- Sent to the owner: the transformation (both ways) and the phoenix from below (glow, no shade) as GIFs.

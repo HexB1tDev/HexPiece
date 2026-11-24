@@ -18,31 +18,101 @@ public final class PhoenixForm {
     public static final int FORMING = 1;
     public static final int PHOENIX = 2;
     public static final int UNFORMING = 3;
-    public static final int FORM_TICKS = 30;
-    public static final int UNFORM_TICKS = 18;
+    /** 3.7.0 (the owner: "improve it so the players body slowly becomes the phoenix, arms become the wings"): two seconds to form. */
+    public static final int FORM_TICKS = 40;
+    public static final int UNFORM_TICKS = 26;
 
-    /** How far the phoenix has formed (0 to 1, a little past 1 as it bursts out), {@code ticks} into {@code phase}. */
+    /**
+     * 3.7.0, the change on the owner's word ("the players body slowly becomes the phoenix, arms become the wings and etc."), forming:
+     * the arms rise out to the sides like wings ({@link #armRaise}, the clip phoenix_form) while blue fire catches on the hands and runs
+     * up the arms to the shoulders, then over the body, the legs and the head (PhoenixFire.human: the human turned to a figure of
+     * fire); the phoenix opens out of that figure at {@link #BIRD_IN}, {@link #SMALL} of its size, shaped as the human was (upright, its
+     * wings out level where the arms were: {@link #shaped}), the human hidden at {@link #HUMAN_GONE}; it grows to its full size by
+     * {@link #BIRD_FULL} as it takes its own shape and the fire figure burns away into it. Going: the same backwards (the phoenix
+     * shrinks into the human's shape and the figure of fire by {@link #BIRD_GONE}, the human back at {@link #HUMAN_BACK} inside it, the
+     * fire burning off the body and down the arms to the hands, the arms let down).
+     */
+    public static final float BIRD_IN = 14.0F;
+    public static final float HUMAN_GONE = 16.0F;
+    public static final float BIRD_FULL = 36.0F;
+    public static final float BIRD_GONE = 13.0F;
+    public static final float HUMAN_BACK = 12.0F;
+    /** Its size as it takes the human's place: its wings then as wide as the arms held out. */
+    public static final float SMALL = 0.22F;
+
+    /** How big the phoenix is (0 to 1: grown slowly, never popping), {@code ticks} into {@code phase}; 0: not drawn. */
     public static float grow(int phase, float ticks) {
         return switch (phase) {
-            case FORMING -> (float) springy((ticks - 4.0F) / (FORM_TICKS - 6.0F));
-            case UNFORMING -> 1.0F - smooth((ticks - 4.0F) / (UNFORM_TICKS - 4.0F));
+            case FORMING -> ticks < BIRD_IN ? 0.0F : SMALL + (1.0F - SMALL) * smooth((ticks - BIRD_IN) / (BIRD_FULL - BIRD_IN));
+            case UNFORMING -> ticks >= BIRD_GONE ? 0.0F : 1.0F - (1.0F - SMALL) * smooth(ticks / HUMAN_BACK);
             case PHOENIX -> 1.0F;
             default -> 0.0F;
         };
     }
 
-    /** How wrapped its wings are round its body (the reference's frames 112 and 136: a ring of wing round it), forming and going. */
-    public static float wrap(int phase, float ticks) {
+    /** How far it has its own shape (0: the human's, upright with its wings out level as arms; 1: its own), {@code ticks} into it. */
+    public static float shaped(int phase, float ticks) {
         return switch (phase) {
-            case FORMING -> 0.6F * (1.0F - smooth((ticks - 8.0F) / 12.0F));
-            case UNFORMING -> 0.6F * smooth(ticks / 8.0F);
+            case FORMING -> smooth((ticks - HUMAN_GONE) / 16.0F);
+            case UNFORMING -> 1.0F - smooth(ticks / (HUMAN_BACK - 1.0F));
+            case PHOENIX -> 1.0F;
             default -> 0.0F;
         };
     }
 
-    /** Whether the human body is hidden (the phoenix is out, or most of the way). */
+    /** Whether the human body is hidden (the phoenix is out, or has taken the human's place). */
     public static boolean humanHidden(int phase, float ticks) {
-        return phase == PHOENIX || phase == FORMING && ticks >= 8.0F || phase == UNFORMING && ticks < UNFORM_TICKS - 4.0F;
+        return phase == PHOENIX || phase == FORMING && ticks >= HUMAN_GONE || phase == UNFORMING && ticks < HUMAN_BACK;
+    }
+
+    /**
+     * How far the arms are raised out to the sides (degrees of roll: 4 hanging, 90 level), as the clips phoenix_form and phoenix_unform
+     * (tools/phoenix_anims.py, the same beats) raise them: forming, out level by tick 10, up a little past it (as wings) by 15, held;
+     * going, held out until 16, let down by 26.
+     */
+    public static float armRaise(int phase, float ticks) {
+        if (phase == FORMING) {
+            return ticks < 10.0F ? 4.0F + 84.0F * outSine(ticks / 10.0F) : 88.0F + 14.0F * smooth((ticks - 10.0F) / 5.0F);
+        }
+        if (phase == UNFORMING) {
+            return ticks < 16.0F ? 102.0F - 14.0F * smooth(ticks / 16.0F) : 88.0F - 84.0F * smooth((ticks - 16.0F) / 10.0F);
+        }
+        return phase == PHOENIX ? 102.0F : 4.0F;
+    }
+
+    /**
+     * The fire on the human ({@code out}: how far it has run up the arms from the hands, 0 to 1; how far over the body from the
+     * shoulders down, 0 to 1; how much of the figure of fire is left, 0 to 1 as it burns away into the phoenix or off the human).
+     */
+    public static void burning(int phase, float ticks, float[] out) {
+        if (phase == FORMING) {
+            out[0] = smooth((ticks - 1.0F) / 10.0F);
+            out[1] = smooth((ticks - 6.0F) / 9.0F);
+            out[2] = 1.0F - smooth((ticks - HUMAN_GONE) / 10.0F);
+        } else if (phase == UNFORMING) {
+            // the figure of fire coming back round the shrinking phoenix, then burning off the body, then down the arms to the hands
+            out[0] = 1.0F - smooth((ticks - 17.0F) / 8.0F);
+            out[1] = 1.0F - smooth((ticks - HUMAN_BACK - 1.0F) / 7.0F);
+            out[2] = smooth((ticks - 7.0F) / 5.0F);
+        } else {
+            out[0] = 0.0F;
+            out[1] = 0.0F;
+            out[2] = 0.0F;
+        }
+    }
+
+    /**
+     * How far the fire has to have run over a limb ({@link #burning}: the arms', then the body's) before the human's limb is hidden and
+     * is fire only (client/phoenix/PhoenixFx.hideHuman; the figure of fire is there while {@code left} is over a half).
+     */
+    public static final float ARMS_TAKEN = 0.85F;
+    public static final float BODY_TAKEN = 0.6F;
+    public static final float HEAD_TAKEN = 0.72F;
+    public static final float LEGS_TAKEN = 0.97F;
+
+    static float outSine(float t) {
+        t = Math.max(0.0F, Math.min(1.0F, t));
+        return (float) Math.sin(t * Math.PI * 0.5);
     }
 
     static float smooth(float t) {
@@ -50,10 +120,6 @@ public final class PhoenixForm {
         return t * t * (3.0F - 2.0F * t);
     }
 
-    static double springy(double t) {
-        double u = Math.max(0.0, Math.min(1.0, t));
-        return 1.0 - Math.pow(1.0 - u, 3.0) + 0.15 * Math.sin(Math.PI * u) * u;
-    }
 
     /** The rig's bones the poses turn, found once, and the model's floor (its lowest point at rest, model units). */
     public static final class Shape {
@@ -71,6 +137,8 @@ public final class PhoenixForm {
         /** 3.6.9: its claws' lowest point (standing on them), its chest's height (held at the player's middle in flight). */
         public final float feet;
         public final float chest;
+        /** 3.7.0: its wings' roots' height (held at the human's shoulders while it is shaped as the human: the change). */
+        public final float shoulder;
         /** Every bone's parent, and its rest rotation in the model's space (3 x 3 row-major): bends are given in the model's axes. */
         final int[] parent;
         final float[] restRot;
@@ -103,7 +171,7 @@ public final class PhoenixForm {
             // the fire points by body part (the reference: the flames stream off the wings' edges most, then the mantle, the crest
             // and the tail): each group's candidates, then each group's share of the tongues spread evenly over them
             String[] groups = {"Wing L", "Wing R", "Mantle", "Mane", "Blue tail fan", "Tail"};
-            int[] quota = {16, 16, 10, 8, 6, 8};
+            int[] quota = {6, 6, 4, 3, 2, 3};
             java.util.List<java.util.List<int[]>> pools = new java.util.ArrayList<>();
             for (int g = 0; g < groups.length; g++) {
                 pools.add(new java.util.ArrayList<>());
@@ -210,6 +278,7 @@ public final class PhoenixForm {
             DragonPose at = new DragonPose(m);
             at.solve();
             this.chest = bodyBone < 0 ? (lo + hi) * 0.5F : at.global[bodyBone * 12 + 7] + 0.6F;
+            this.shoulder = this.wing[0][0] < 0 ? this.chest : at.global[this.wing[0][0] * 12 + 7];
         }
     }
 
@@ -243,10 +312,27 @@ public final class PhoenixForm {
             float w2 = (float) Math.sin(run * 1.7F + x * 1.3F + z * 0.9F - t * 5.3F);
             float lick = 0.5F + 0.5F * (float) Math.sin(run * 0.8F + y * 1.1F - t * 6.7F);
             float side = (float) Math.sin(run * 1.3F + 1.0F + y * 0.7F);
+            // 3.7.0: the edges and tips licking up like the tips of flames, each flickering on its own
+            float tip = Math.max(0.0F, (r - 0.55F) / 0.45F);
+            float flick = (float) Math.sin(t * 15.0F + phase * 3.0F + v * 0.37F) * (float) Math.sin(t * 6.1F + v * 0.11F);
             pos[v * 3] += nrm[v * 3] * amp * 0.55F * w1 + amp * 0.35F * side;
-            pos[v * 3 + 1] += nrm[v * 3 + 1] * amp * 0.55F * w1 + amp * (0.45F * lick + 0.15F * w2);
+            pos[v * 3 + 1] += nrm[v * 3 + 1] * amp * 0.55F * w1 + amp * (0.45F * lick + 0.15F * w2) + amp * tip * tip * (0.7F * lick * lick + 0.25F * flick);
             pos[v * 3 + 2] += nrm[v * 3 + 2] * amp * 0.55F * w1 + amp * 0.25F * w2;
         }
+    }
+
+    /**
+     * 3.7.0 (the owner: "more skin moving itself like it's made of fire"; "it should also glow"): the heat running over a fire part's
+     * skin at a vertex (0 to 1: how far toward white it burns): bright bands flowing out along it from its root to its tips, broken up
+     * across it, flaring at the tips. {@code r} its reach (Shape.reach), (x, z) its place (model units).
+     */
+    public static float heat(int index, float r, float x, float z, float seconds) {
+        float phase = index * 1.618F;
+        float band = (float) Math.sin(r * 8.5F - seconds * 7.5F + phase + 0.9F * Math.sin(x * 0.8F + z * 0.6F + seconds * 1.3F));
+        float b = Math.max(0.0F, band);
+        b = b * b * b;
+        float flare = (float) Math.max(0.0F, Math.sin(seconds * 11.0F + phase * 2.3F + x * 0.5F)) * Math.max(0.0F, r - 0.7F) * 2.0F;
+        return Math.min(1.0F, b * (0.35F + 0.65F * r) + flare * 0.5F);
     }
 
     /** As {@link #flame}, every part's index found by identity (previews). */
@@ -259,8 +345,11 @@ public final class PhoenixForm {
         }
     }
 
-    /** How many tongues of fire stream off the body at once (the effect's budget: about 40 quads each). */
-    public static final int TONGUES = 64;
+    /**
+     * How many tongues of fire stream off the body at once (the effect's budget: about 40 quads each). 3.7.0 (the owner: "less
+     * particles, more skin moving itself like it's made of fire"): 24, was 64; the skin flows more ({@link #flame}, {@link #heat}).
+     */
+    public static final int TONGUES = 24;
 
     /** How long a tongue of fire lasts (ticks, the shortest), how high it rises in that time (blocks). */
     public static final float TONGUE_LIFE = 8.0F;
@@ -289,8 +378,11 @@ public final class PhoenixForm {
         pose.bend(bone, degrees, lx / l, ly / l, lz / l);
     }
 
+    /** How far the rest's raised wings are let down to hold them out level as arms (degrees). */
+    static final float ARMS_LEVEL = 36.0F;
+
     /** How far the fire flows at its tips (model units: 0.4 blocks each). */
-    static final float FLAME = 0.42F;
+    static final float FLAME = 0.6F;
 
     /** The flight's state each frame (the client works it out from how the player moves; the previews set it). */
     public static final class Motion {
@@ -300,12 +392,10 @@ public final class PhoenixForm {
         public float glide;
         /** 0 to 1: wings swept back, diving. */
         public float dive;
-        /** 0 to 1: how far it has formed (the transformation; 1 formed). */
+        /** 0 to 1: how far it has its own shape (the change: 0 shaped as the human, upright, its wings out level as arms). */
         public float form = 1.0F;
         /** 0 to 1: standing on the ground, wings folded. */
         public float perch;
-        /** 0 to 1: its wings wrapped round its body (forming and going). */
-        public float wrap;
     }
 
     /**
@@ -319,16 +409,17 @@ public final class PhoenixForm {
      */
     public static void pose(DragonModel m, Shape sh, DragonPose pose, Motion mo, float beat, float seconds) {
         pose.rest();
-        float glide = clamp(mo.glide);
-        float dive = clamp(mo.dive);
-        float speed = clamp(mo.speed);
+        // 3.7.0: shaped as the human it comes out of (the change): no beat, no lean, upright, its wings out level where the arms were
+        float human = 1.0F - clamp(mo.form);
+        float glide = clamp(mo.glide) * (1.0F - human);
+        float dive = clamp(mo.dive) * (1.0F - human);
+        float speed = clamp(mo.speed) * (1.0F - human);
         if (glide > 0.0F) {
             pose.clip(m.clips.get("soar"), seconds, true, glide);
         }
         float perch = clamp(mo.perch);
-        float wrapped = clamp(mo.wrap);
         // standing (the reference's phoenix on the ground, frames 96 to 144): on its claws, its wings still beating, slower and gentler
-        float flap = (1.0F - glide) * (1.0F - dive) * (1.0F - wrapped);
+        float flap = (1.0F - glide) * (1.0F - dive) * (1.0F - human);
         float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch);
         // the power stroke: the downstroke quick, the recovery slower (the phase run faster through the downstroke's middle)
         beat = beat + 0.35F * (float) Math.sin(beat);
@@ -353,11 +444,8 @@ public final class PhoenixForm {
             turn(pose, sh, w[1], m0 * fold * 42.0F, 0, 1, 0);
             turn(pose, sh, w[3], -m0 * fold * 58.0F, 0, 1, 0);
             turn(pose, sh, w[4], -m0 * fold * 25.0F, 0, 1, 0);
-            // wrapped: the wings swept forward and round the body like a ring of fire (the reference's frames 112 and 136)
-            turn(pose, sh, w[0], m0 * wrapped * 30.0F, 0, 0, 1);
-            turn(pose, sh, w[0], -m0 * wrapped * 75.0F, 0, 1, 0);
-            turn(pose, sh, w[2], -m0 * wrapped * 60.0F, 0, 1, 0);
-            turn(pose, sh, w[3], -m0 * wrapped * 55.0F, 0, 1, 0);
+            // shaped as the human: the rest's raised wings let down level and straight out to the sides (the arms held out)
+            turn(pose, sh, w[0], m0 * human * ARMS_LEVEL, 0, 0, 1);
             // the legs tucked up and back in flight, hanging under the hover
             // (about the model's x a negative turn swings a hanging part back: the head is toward -Z)
             turn(pose, sh, sh.leg[s], -45.0F * speed - 30.0F * dive + 6.0F * flap * (float) Math.sin(beat - 2.0F), 1, 0, 0);
@@ -413,7 +501,7 @@ public final class PhoenixForm {
                 mo.perch = 1.0F;
                 lift = 0.0F;
             }
-            case "wrap" -> mo.wrap = 1.0F;
+            case "human" -> mo.form = 0.0F;
             default -> lift = 0.0F;
         }
         if (state.equals("rest") || state.equals("soar") || state.startsWith("t")) {

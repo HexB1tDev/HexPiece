@@ -111,6 +111,12 @@ public final class PhoenixServer {
         state.phase = phase;
         state.start = now;
         tell(player, phase, 0);
+        // 3.7.0: the arms rise out as wings as the fire runs up them, and are let down as it goes (tools/phoenix_anims.py)
+        if (phase == PhoenixForm.FORMING) {
+            ItoMoves.animate(player, "phoenix_form");
+        } else if (phase == PhoenixForm.UNFORMING) {
+            ItoMoves.animate(player, "phoenix_unform");
+        }
     }
 
     static void tell(ServerPlayer player, int phase, int ticks) {
