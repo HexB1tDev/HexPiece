@@ -61,6 +61,18 @@ public final class ClashFx {
     record Shown(double x, double y, double z, float power, int colorA, int colorB, long seed, long start, boolean classic) {
     }
 
+    /**
+     * 3.6.3 (the owner's Buzz Cut Mochi: "a violent black-and-white impact frame ... accompanied by red Haki lightning"): the
+     * black-and-white impact frame (the classic one) at {@code at} on this screen, {@code power} 0 to 3, in {@code color} (RGB).
+     */
+    public static void frame(Vec3 at, float power, int color, long seed) {
+        net.minecraft.client.multiplayer.ClientLevel level = Minecraft.m_91087_().f_91073_;
+        if (level == null || at == null) {
+            return;
+        }
+        shown = new Shown(at.f_82479_, at.f_82480_, at.f_82481_, power, color, color, seed, level.m_46467_(), true);
+    }
+
     /** 3.5.8: the owner's impact frame (clash/ImpactSprite, tools/impact_texture.py). */
     static final ResourceLocation SPRITE = HexHaki.id("textures/piece/impact/impact_frame.png");
 

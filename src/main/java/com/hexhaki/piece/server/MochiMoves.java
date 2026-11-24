@@ -134,9 +134,21 @@ public final class MochiMoves {
     public static final double ANEMONE_RADIUS = 3.4;
     static final int ANEMONE_EVERY = 3;
     /** Buzz Cut Mochi: how far and how long the wheel rolls, its size; five minutes' cooldown (the owner's own word for it). */
-    public static final double WHEEL_RANGE = 16.0;
-    public static final int WHEEL_TICKS = 18;
-    public static final double WHEEL_RADIUS = 2.2;
+    /**
+     * 3.6.3: Buzz Cut Mochi's phases (kind WHEEL, bx): the roll begins (ticks the most it rolls), it ends with no one met (unrolls),
+     * caught (x, y, z the user's feet, by the yaw they faced, id the first one caught), the slam's ground (x, y, z), the swing's blow
+     * (x, y, z the ball), one more stuck to the ball (id).
+     */
+    public static final int BUZZ_ROLLING = 1;
+    public static final int BUZZ_MISSED = 0;
+    public static final int BUZZ_CAUGHT = 2;
+    public static final int BUZZ_GROUND = 3;
+    public static final int BUZZ_BLOW = 4;
+    public static final int BUZZ_STUCK = 6;
+    /** The most Buzz Cut Mochi carries on its ball, the swing's blow and the slam's (the slam the far harder: the owner's word). */
+    static final int BUZZ_MOST = 6;
+    static final float BUZZ_BLOW_HURT = 8.0F;
+    static final float BUZZ_SLAM_HURT = 20.0F;
     public static final int BUZZ_COOLDOWN = 6000;
 
     static final class State {
@@ -752,41 +764,33 @@ public final class MochiMoves {
 
     // ------------------------------------------------------------------------------------------------------ N: Buzz Cut Mochi
 
+    /**
+     * Buzz Cut Mochi (N; the reference's Buzzcut and the owner's own cinematic, next-ai-3.6.3.md L): the user becomes a wheel rolling
+     * where they look (their own client moves them: MochiFx.roll) for up to MochiDraw.BUZZ_ROLL ticks; the first foe it meets (and anyone
+     * near) is caught: {@link Whirl}.
+     */
     static void buzzCut(ServerPlayer player, State s, long now) {
         if (!ItoMoves.ready(player, MochiKit.BUZZ_CUT)) {
             return;
         }
         ItoMoves.cool(player, MochiKit.BUZZ_CUT, BUZZ_COOLDOWN);
-        Vec3 f = ItoMoves.flat(player);
-        Vec3 from = player.m_20182_();
-        Vec3 want = from.m_82549_(f.m_82490_(WHEEL_RANGE));
-        BlockHitResult block = player.m_9236_().m_45547_(new ClipContext(from.m_82520_(0, 1.0, 0), want.m_82520_(0, 1.0, 0), ClipContext.Block.COLLIDER,
-            ClipContext.Fluid.NONE, player));
-        Vec3 to = block.m_6662_() == HitResult.Type.BLOCK ? block.m_82450_().m_82520_(0, -1.0, 0).m_82546_(f.m_82490_(0.8)) : want;
-        int ticks = Math.max(4, (int) Math.round(WHEEL_TICKS * to.m_82554_(from) / WHEEL_RANGE));
-        s.busyUntil = now + ticks + (long) MochiDraw.CLUB_LIFE;
+        s.busyUntil = now + MochiDraw.BUZZ_ROLL + (long) MochiDraw.BUZZ_END + 4;
         player.f_19789_ = 0.0F;
-        fx(player, WHEEL, ++seeds, to, from, 1, 0, WHEEL_RADIUS, ticks);
-        sound(player, from, MochiSounds.ROLL, 1.0F, 1.2F);
-        LIVE.add(new Wheel((ServerLevel) player.m_9236_(), player, from, to, now, ticks));
+        fx(player, WHEEL, ++seeds, player.m_20182_(), player.m_20154_(), BUZZ_ROLLING, 0, MochiDraw.BUZZ_WHEEL, MochiDraw.BUZZ_ROLL);
+        sound(player, player.m_20182_(), MochiSounds.ROLL, 1.0F, 1.2F);
+        LIVE.add(new Wheel((ServerLevel) player.m_9236_(), player, now));
     }
 
-    /** The wheel rolling: the first foe near it snagged and slammed by the club. */
+    /** The wheel rolling (the user's own client moves it): the first foe it meets caught, with anyone near them. */
     static final class Wheel implements UoMoves.Live {
         final ServerLevel level;
         final ServerPlayer owner;
-        final Vec3 from;
-        final Vec3 to;
         final long born;
-        final int ticks;
 
-        Wheel(ServerLevel level, ServerPlayer owner, Vec3 from, Vec3 to, long born, int ticks) {
+        Wheel(ServerLevel level, ServerPlayer owner, long born) {
             this.level = level;
             this.owner = owner;
-            this.from = from;
-            this.to = to;
             this.born = born;
-            this.ticks = ticks;
         }
 
         @Override
@@ -800,36 +804,131 @@ public final class MochiMoves {
                 return true;
             }
             this.owner.f_19789_ = 0.0F;
-            Vec3 at = this.owner.m_20182_().m_82520_(0, WHEEL_RADIUS * 0.6, 0);
-            for (LivingEntity body : ItoMoves.foes(this.owner, at, WHEEL_RADIUS + 0.8)) {
-                snag(body);
-                return true;
+            long age = now - this.born;
+            Vec3 at = this.owner.m_20182_().m_82520_(0, MochiDraw.BUZZ_WHEEL, 0);
+            if (age >= 3) {
+                List<LivingEntity> met = ItoMoves.foes(this.owner, at, MochiDraw.BUZZ_WHEEL + 0.6);
+                if (!met.isEmpty()) {
+                    List<LivingEntity> caught = new ArrayList<>(ItoMoves.foes(this.owner, met.get(0).m_20182_(), 2.8));
+                    if (!caught.contains(met.get(0))) {
+                        caught.add(0, met.get(0));
+                    }
+                    while (caught.size() > BUZZ_MOST) {
+                        caught.remove(caught.size() - 1);
+                    }
+                    catchThem(caught);
+                    return true;
+                }
             }
-            if (now - this.born >= this.ticks) {
-                fx(this.owner, WHEEL, 0, this.owner.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
+            if (age >= MochiDraw.BUZZ_ROLL) {
+                fx(this.owner, WHEEL, 0, this.owner.m_20182_(), Vec3.f_82478_, BUZZ_MISSED, 0, 0, 0);
                 return true;
             }
             return false;
         }
 
-        void snag(LivingEntity body) {
+        void catchThem(List<LivingEntity> caught) {
             ServerPlayer player = this.owner;
-            fx(player, WHEEL, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, 0);
-            stick(player, body, (int) MochiDraw.CLUB_SLAM + 2);
-            animate(player, "mochi_club");
-            fx(player, CLUB, body.m_19879_(), body.m_20182_(), Vec3.f_82478_, 0, 0, 0, (int) MochiDraw.CLUB_LIFE);
-            sound(player, body.m_20182_(), MochiSounds.SQUISH, 1.0F, 0.9F);
-            later(player, (int) MochiDraw.CLUB_SLAM, () -> {
-                Vec3 at = body.m_20182_();
-                if (body.m_6084_()) {
-                    hit(player, body, 16.0F, new Vec3(0, -0.6, 0));
-                    HakiFalls.knockDown(this.level, body, 40, false);
+            Vec3 feet = player.m_20182_();
+            float yaw0 = player.m_146908_();
+            fx(player, WHEEL, caught.get(0).m_19879_(), feet, Vec3.f_82478_, BUZZ_CAUGHT, yaw0, 0, (int) MochiDraw.BUZZ_END);
+            for (int k = 1; k < caught.size(); k++) {
+                fx(player, WHEEL, caught.get(k).m_19879_(), feet, Vec3.f_82478_, BUZZ_STUCK, 0, 0, 0);
+            }
+            animate(player, "mochi_buzz");
+            sound(player, feet, MochiSounds.SQUISH, 1.2F, 0.8F);
+            LIVE.add(new Whirl(this.level, player, caught, feet, yaw0, now(player)));
+        }
+    }
+
+    /**
+     * Buzz Cut Mochi from the catch (MochiDraw.BUZZ_*): the heavy swing's blow at BUZZ_HIT sticks them to the giant ball (the impact
+     * frame, the lightning), they are carried on it (MochiDraw.buzzStuck: whirled round the user, raised overhead) and anyone the ball
+     * passes near is caught too, then slammed under it into the ground at BUZZ_SLAM: the far harder blow, a crater, the knockdown, the
+     * quake and the Conqueror's lightning out of the impact; let go there.
+     */
+    static final class Whirl implements UoMoves.Live {
+        final ServerLevel level;
+        final ServerPlayer owner;
+        final List<LivingEntity> caught;
+        final Vec3 feet;
+        final float yaw0;
+        final long born;
+        boolean struck;
+        boolean slammed;
+
+        Whirl(ServerLevel level, ServerPlayer owner, List<LivingEntity> caught, Vec3 feet, float yaw0, long born) {
+            this.level = level;
+            this.owner = owner;
+            this.caught = new ArrayList<>(caught);
+            this.feet = feet;
+            this.yaw0 = yaw0;
+            this.born = born;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            double t = now - this.born;
+            if (!this.owner.m_6084_() || t >= MochiDraw.BUZZ_END) {
+                return true;
+            }
+            this.owner.f_19789_ = 0.0F;
+            this.caught.removeIf(b -> !b.m_6084_() || b.m_9236_() != this.level);
+            double[] arm = MochiDraw.buzzArm(t, this.feet.f_82479_, this.feet.f_82480_, this.feet.f_82481_, this.yaw0, new double[8]);
+            Vec3 ball = new Vec3(arm[0] + arm[3] * arm[6], arm[1] + arm[4] * arm[6], arm[2] + arm[5] * arm[6]);
+            if (!this.struck && t >= MochiDraw.BUZZ_HIT) {
+                this.struck = true;
+                fx(this.owner, WHEEL, ++seeds, ball, Vec3.f_82478_, BUZZ_BLOW, 0, 0, 0);
+                for (LivingEntity body : this.caught) {
+                    hit(this.owner, body, BUZZ_BLOW_HURT, Vec3.f_82478_);
                 }
-                ConquerorAura.exploded(player, this.level, at.m_82520_(0, 0.6, 0), 3.0);
-                Impact.quake(this.level, at, 18.0, 0.6F, 10);
-                fx(player, SPLAT, ++seeds, at.m_82520_(0, 0.5, 0), new Vec3(0, 1, 0), 0, 0, 2.2, 0);
-                sound(player, at, MochiSounds.SLAM, 1.5F, 0.85F);
-            });
+                sound(this.owner, ball, MochiSounds.SLAM, 1.4F, 1.0F);
+            }
+            if (t >= MochiDraw.BUZZ_HIT && t < MochiDraw.BUZZ_WHIRL && ((long) t) % 2 == 0 && this.caught.size() < BUZZ_MOST) {
+                // anything the whirling ball passes near is stuck to it too (the owner: "Anything caught while the mace is spinning gets
+                // attached to it as well")
+                for (LivingEntity body : ItoMoves.foes(this.owner, ball, MochiDraw.buzzBall(t) + 1.0)) {
+                    if (!this.caught.contains(body) && this.caught.size() < BUZZ_MOST) {
+                        this.caught.add(body);
+                        fx(this.owner, WHEEL, body.m_19879_(), this.feet, Vec3.f_82478_, BUZZ_STUCK, 0, 0, 0);
+                    }
+                }
+            }
+            if (t >= MochiDraw.BUZZ_HIT && !this.slammed) {
+                double[] at = new double[3];
+                for (int k = 0; k < this.caught.size(); k++) {
+                    LivingEntity body = this.caught.get(k);
+                    MochiDraw.buzzStuck(t, k, this.feet.f_82479_, this.feet.f_82480_, this.feet.f_82481_, this.yaw0, at);
+                    body.m_20256_(Vec3.f_82478_);
+                    body.f_19864_ = true;
+                    body.f_19789_ = 0.0F;
+                    body.m_6021_(at[0], at[1], at[2]);
+                }
+            }
+            if (!this.slammed && t >= MochiDraw.BUZZ_SLAM) {
+                this.slammed = true;
+                Vec3 ground = grounded(this.owner, new Vec3(ball.f_82479_, this.feet.f_82480_ + 2.0, ball.f_82481_));
+                fx(this.owner, WHEEL, ++seeds, ground, Vec3.f_82478_, BUZZ_GROUND, 0, 0, (int) MochiDraw.BUZZ_CRATER_LIFE);
+                double[] at = new double[3];
+                for (int k = 0; k < this.caught.size(); k++) {
+                    LivingEntity body = this.caught.get(k);
+                    MochiDraw.buzzStuck(t, k, this.feet.f_82479_, ground.f_82480_, this.feet.f_82481_, this.yaw0, at);
+                    body.m_6021_(at[0], ground.f_82480_, at[2]);
+                    hit(this.owner, body, BUZZ_SLAM_HURT, new Vec3(0, -0.6, 0));
+                    HakiFalls.knockDown(this.level, body, 60, false);
+                }
+                Craters.open(this.level, this.owner, ground.m_82520_(0, -0.8, 0), 4.0);
+                // POINT ONE: the slam's explosion throws the Conqueror's lightning out of it
+                ConquerorAura.exploded(this.owner, this.level, ground.m_82520_(0, 0.6, 0), 4.5);
+                Impact.quake(this.level, ground, 24.0, 0.8F, 14);
+                sound(this.owner, ground, MochiSounds.SLAM, 2.0F, 0.7F);
+            }
+            return false;
         }
     }
 

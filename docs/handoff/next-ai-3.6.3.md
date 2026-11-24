@@ -403,3 +403,37 @@ Left to do (the plan):
   tumbling at their own angles; the crater a big black star (16 rays and drops, HAKI_CRIMSON), pale dust (FireMesh.shell), 24 rocks
   thrown and (the show's) a field of 30 grey rubble blocks heaved up round it. Preview |mbuzz:age. STILL TO DO: the server and client
   wiring of L 1 and 2 (the move in game still plays the old wheel and club).
+
+## M. Where this chat stopped (the owner: "handoff and prompt please")
+
+Committed and pushed earlier this chat (all green locally, Build #225 green on GitHub for the first push): the 3D lightning and sharp
+tips (I), the HUD hidden while powers are off (J), the Mochi material and Lotus, Grilled, Muddle, Chestnut and Anemone after their GIFs
+(K), Buzz Cut's art after the owner's frame and the show (L, "Done after L 10 and 11").
+
+In the last commit of this chat (see git log; check its GitHub Build run): Buzz Cut Mochi's server and client wiring (L 1 and 2):
+- Server (MochiMoves): buzzCut starts the roll (BUZZ_ROLLING); Wheel catches the first foe the wheel meets and anyone within 2.8 (up
+  to BUZZ_MOST 6), else BUZZ_MISSED after BUZZ_ROLL; Whirl from the catch: the blow at BUZZ_HIT (BUZZ_BLOW, 8 each), the ones caught
+  moved onto the ball each tick (MochiDraw.buzzStuck), anyone the whirling ball passes near stuck too (BUZZ_STUCK), the slam at
+  BUZZ_SLAM (BUZZ_GROUND, 20 each, knockDown 60, Craters.open 4, ConquerorAura.exploded, Impact.quake). The old club (MochiDraw.club,
+  CLUB messages) is no longer sent.
+- Client (MochiFx): Buzz records in WHEELS (the way rolled for the torn ground, the catch, yaw0, the victims), MARKS (the blow and the
+  crater); one's own wheel rolls where one looks (Carry/roll, speeding up to BUZZ_SPEED); the user hidden while rolling and two ticks
+  of the unroll; the right arm hidden from the catch to BUZZ_END (mochiArms: the mace is the arm); one's own yaw set to buzzArm()[7]
+  each tick and held still (buzzTick); the impact frames on the blow and the slam for the user and the ones caught
+  (client/fx/ClashFx.frame, new); the cutscene camera (MochiFx.camera, filmAngles, cinema: third person forced and restored), called
+  from client/dragon/DragonCamera.position; drawBuzz draws it all.
+- NOT done yet: none of this has been rendered or judged in motion beyond the preview (|mbuzz); the in-game camera shots are guesses
+  to judge (by the user at the catch, high over the whirl, low in front for the raise and slam, back over the crater). Sounds: the old
+  ROLL/SQUISH/SLAM; check they fit. HudTests: add the Buzz Cut beats (buzzStuck under the ball at the slam, buzzReach 16 up, etc.).
+
+Next, in order:
+1. If the last push's GitHub Build is red, fix it first.
+2. Judge Buzz Cut again against both its references (the Fruit Battlegrounds Buzzcut GIF and the owner's show clip
+   Officialref.zip/s9cBv2.gif, uploaded in this chat: ask the owner to send it again if it is gone) and the owner's 8zzv 10 text with
+   the horizontal whirl (F 8); render it in first person too.
+3. Task 5 of the plan: clips and hands are in for every new move; DragonTests.mochiArt with the new pieces (lotus*, muddle, chestnut,
+   spike, anemoneArea, buzz*) under 16k quads; remove the dead old Mochi art (tsuki, kaku, yanagi, ground, wave, walls, rain, dome,
+   hole, glob, patch, the old ring anemone, donuts, wheel, club, spiked if unused) and old clips (tools/mochi_anims.py, MochiPoses).
+4. Release 3.6.3 (the owner held it until the Mochi kit is done: F 5): next_version, release notes (the 3D lightning, sharp tips, the
+   HUD, the six base Mochi moves after their references), handoff, push, both GitHub runs green, send previews (SendUserFile).
+5. 3.6.4: the awakened DoughV2 set on M (F 7 lists the seven moves as promised to the owner).

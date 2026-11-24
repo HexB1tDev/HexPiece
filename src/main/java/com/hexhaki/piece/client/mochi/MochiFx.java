@@ -59,8 +59,42 @@ public final class MochiFx {
     record Fist(Vec3 from, Vec3 step, long born, int flight, boolean coat, int seed, double charge) {
     }
 
-    /** Zan Giri Mochi's wheel (by user): rolling from where to where. */
-    record Wheel(Vec3 from, Vec3 to, double radius, long born, int ticks) {
+    /**
+     * 3.6.3: Buzz Cut Mochi (by user): the roll (its way so far, a point about every block, and when it passed each), then the cinematic
+     * from the catch (where the user stood, the yaw they faced, the ones stuck to the ball).
+     */
+    static final class Buzz {
+        final long born;
+        final int ticks;
+        final int seed;
+        long caught = -1;
+        long missed = -1;
+        Vec3 feet;
+        float yaw0;
+        final java.util.Set<Integer> victims = new java.util.HashSet<>();
+        final double[] path = new double[3 * 96];
+        final double[] passed = new double[96];
+        int count;
+        double rolled;
+        Vec3 last;
+
+        Buzz(long born, int ticks, int seed) {
+            this.born = born;
+            this.ticks = ticks;
+            this.seed = seed;
+        }
+
+        boolean rolling(long clock) {
+            return this.caught < 0 && this.missed < 0 || this.caught >= 0 && clock - this.caught < 2 || this.missed >= 0 && clock - this.missed < 2;
+        }
+
+        double since(long clock) {
+            return this.caught < 0 ? -1.0 : clock - this.caught;
+        }
+    }
+
+    /** 3.6.3: Buzz Cut Mochi's blow (the ball where it struck) and its slam's ground. */
+    record BuzzMark(Vec3 at, long born, int seed, boolean ground) {
     }
 
     record Club(int user, int body, Vec3 at, long born, boolean coat, int seed) {
@@ -156,7 +190,8 @@ public final class MochiFx {
     private static final List<Boom> BOOMS = new ArrayList<>();
     static final Map<Integer, Swell> SWELLS = new HashMap<>();
     static final Map<Integer, Fist> FISTS = new HashMap<>();
-    static final Map<Integer, Wheel> WHEELS = new HashMap<>();
+    static final Map<Integer, Buzz> WHEELS = new HashMap<>();
+    private static final List<BuzzMark> MARKS = new ArrayList<>();
     private static final List<Club> CLUBS = new ArrayList<>();
     static final Map<Integer, Stuck> STUCKS = new HashMap<>();
     private static final List<Muddle> MUDDLES = new ArrayList<>();
@@ -212,19 +247,7 @@ public final class MochiFx {
                     FISTS.remove(m.id());
                 }
             }
-            case MochiMoves.WHEEL -> {
-                if (phase == 1) {
-                    put(WHEELS, m.user(), new Wheel(a, at, m.size(), clock, m.ticks()));
-                    if (self(m.user())) {
-                        carry = new Carry(at, m.ticks());
-                    }
-                } else {
-                    WHEELS.remove(m.user());
-                    if (self(m.user())) {
-                        stopCarry();
-                    }
-                }
-            }
+            case MochiMoves.WHEEL -> buzz(m, at, phase);
             case MochiMoves.CLUB -> add(CLUBS, new Club(m.user(), m.id(), at, clock, coat, m.id() + 7));
             case MochiMoves.STUCK -> {
                 if (m.ticks() > 0) {
@@ -265,6 +288,191 @@ public final class MochiFx {
                 }
             }
             case MochiMoves.ANEMONE_PUNCH -> add(STRIKES, new Strike(m.user(), m.id(), at, clock));
+            default -> {
+            }
+        }
+    }
+
+    static boolean buzzDone(Buzz b) {
+        return b.caught >= 0 ? clock - b.caught > MochiDraw.BUZZ_END + 2 : b.missed >= 0 ? clock - b.missed > MochiDraw.BUZZ_TILES
+            : clock - b.born > b.ticks + MochiDraw.BUZZ_TILES;
+    }
+
+    /**
+     * 3.6.3: each tick of Buzz Cut Mochi: the wheel's way recorded (the torn ground behind it), one's own body turned with the whirling
+     * arm and kept still through the cinematic, the cutscene's third person on and off.
+     */
+    static void buzzTick(ClientLevel level) {
+        net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
+        for (Map.Entry<Integer, Buzz> e : WHEELS.entrySet()) {
+            Buzz b = e.getValue();
+            Entity user = level.m_6815_(e.getKey());
+            if (user == null) {
+                continue;
+            }
+            if (b.caught < 0 && b.missed < 0) {
+                Vec3 p = user.m_20182_();
+                if (b.last != null) {
+                    b.rolled += Math.hypot(p.f_82479_ - b.last.f_82479_, p.f_82481_ - b.last.f_82481_);
+                }
+                b.last = p;
+                int n = b.count;
+                double gap = n == 0 ? 99.0 : Math.hypot(p.f_82479_ - b.path[(n - 1) * 3], p.f_82481_ - b.path[(n - 1) * 3 + 2]);
+                if (gap >= 1.1 && n < b.passed.length && clock - b.born > 2) {
+                    b.path[n * 3] = p.f_82479_;
+                    b.path[n * 3 + 1] = p.f_82480_;
+                    b.path[n * 3 + 2] = p.f_82481_;
+                    b.passed[n] = clock;
+                    b.count = n + 1;
+                }
+            }
+            if (user == self && b.caught >= 0 && clock - b.caught < MochiDraw.BUZZ_END) {
+                // one's own body turns with the arm (the whirl is the body's own turn), held still where it caught
+                double[] arm = MochiDraw.buzzArm(clock - b.caught, 0, 0, 0, b.yaw0, new double[8]);
+                self.m_146922_((float) arm[7]);
+                self.m_20334_(0.0, Math.min(0.0, self.m_20184_().f_82480_), 0.0);
+            }
+        }
+        cinema(Minecraft.m_91087_());
+    }
+
+    // ------------------------------------------------------------------------------------------------------ 3.6.3: the cutscene camera
+
+    private static net.minecraft.client.CameraType savedCamera;
+
+    /** The Buzz Cut cinematic one's own player is in (as its user or one caught), or null. */
+    static Buzz filmed() {
+        net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
+        if (self == null || WHEELS.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<Integer, Buzz> e : WHEELS.entrySet()) {
+            Buzz b = e.getValue();
+            if (b.caught >= 0 && clock - b.caught < MochiDraw.BUZZ_END && (e.getKey() == self.m_19879_() || b.victims.contains(self.m_19879_()))) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    static boolean filming() {
+        return filmed() != null;
+    }
+
+    /** Into the third person for the cutscene (the owner: "This move is a cutscene for both parties"), back to what it was after. */
+    static void cinema(Minecraft minecraft) {
+        boolean on = filming();
+        if (on && savedCamera == null) {
+            savedCamera = minecraft.f_91066_.m_92176_();
+            minecraft.f_91066_.m_92157_(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
+        } else if (!on && savedCamera != null) {
+            minecraft.f_91066_.m_92157_(savedCamera);
+            savedCamera = null;
+        }
+    }
+
+    /**
+     * Where the cutscene's camera is (client/dragon/DragonCamera.position asks), or null: by the user's side at the catch and the swing,
+     * high over them looking down through the whirl (the reference's view of the vortex), low in front looking up at the raised arm and
+     * its slam (the show's frames 120 to 250), pulled back over the crater after.
+     */
+    public static Vec3 camera(Entity entity, float partial) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        Buzz b = filmed();
+        if (b == null || entity != minecraft.f_91074_ || b.feet == null) {
+            return null;
+        }
+        double t = clock - b.caught + partial;
+        double r = Math.toRadians(b.yaw0);
+        double fx = -Math.sin(r);
+        double fz = Math.cos(r);
+        double rx = -Math.cos(r);
+        double rz = -Math.sin(r);
+        Vec3 f = b.feet;
+        if (t < MochiDraw.BUZZ_HIT + 3) {
+            return f.m_82520_(rx * 5.0 - fx * 3.0, 2.2, rz * 5.0 - fz * 3.0);
+        }
+        if (t < MochiDraw.BUZZ_WHIRL) {
+            return f.m_82520_(-fx * 3.0, 13.0, -fz * 3.0);
+        }
+        if (t < MochiDraw.BUZZ_SLAM + 4) {
+            return f.m_82520_(fx * 4.0 - rx * 3.0, 0.5, fz * 4.0 - rz * 3.0);
+        }
+        return f.m_82520_(-fx * 6.0 + rx * 4.0, 7.0, -fz * 6.0 + rz * 4.0);
+    }
+
+    /** The cutscene's camera turned to what it films: the user, the raised ball, the slam's ground. */
+    @SubscribeEvent
+    public static void filmAngles(net.minecraftforge.client.event.ViewportEvent.ComputeCameraAngles event) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        Buzz b = filmed();
+        if (b == null || minecraft.f_91074_ == null || b.feet == null) {
+            return;
+        }
+        float partial = (float) event.getPartialTick();
+        Vec3 cam = camera(minecraft.f_91074_, partial);
+        if (cam == null) {
+            return;
+        }
+        double t = clock - b.caught + partial;
+        double[] arm = MochiDraw.buzzArm(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, new double[8]);
+        Vec3 look;
+        if (t >= MochiDraw.BUZZ_WHIRL && t < MochiDraw.BUZZ_SLAM + 4) {
+            // the raised ball and its fall: between the user and the ball
+            look = new Vec3(arm[0] + arm[3] * arm[6] * 0.5, arm[1] + arm[4] * arm[6] * 0.5, arm[2] + arm[5] * arm[6] * 0.5);
+        } else if (t >= MochiDraw.BUZZ_SLAM + 4) {
+            look = new Vec3(arm[0] + arm[3] * arm[6], b.feet.f_82480_, arm[2] + arm[5] * arm[6]);
+        } else {
+            look = b.feet.m_82520_(0, 1.2, 0);
+        }
+        Vec3 to = look.m_82546_(cam);
+        double flat = Math.sqrt(to.f_82479_ * to.f_82479_ + to.f_82481_ * to.f_82481_);
+        event.setYaw((float) Math.toDegrees(Math.atan2(-to.f_82479_, to.f_82481_)));
+        event.setPitch((float) -Math.toDegrees(Math.atan2(to.f_82480_, flat)));
+    }
+
+    /** 3.6.3: a Buzz Cut Mochi message (its phases: server/MochiMoves.BUZZ_*). */
+    static void buzz(S2CUoFx m, Vec3 at, int phase) {
+        Buzz b = WHEELS.get(m.user());
+        switch (phase) {
+            case MochiMoves.BUZZ_ROLLING -> {
+                put(WHEELS, m.user(), new Buzz(clock, m.ticks(), m.id()));
+                if (self(m.user())) {
+                    carry = new Carry(m.ticks());
+                }
+            }
+            case MochiMoves.BUZZ_MISSED -> {
+                if (b != null) {
+                    b.missed = clock;
+                }
+                if (self(m.user())) {
+                    stopCarry();
+                }
+            }
+            case MochiMoves.BUZZ_CAUGHT -> {
+                if (b != null) {
+                    b.caught = clock;
+                    b.feet = at;
+                    b.yaw0 = m.by();
+                    b.victims.add(m.id());
+                }
+                if (self(m.user())) {
+                    stopCarry();
+                }
+            }
+            case MochiMoves.BUZZ_STUCK -> {
+                if (b != null) {
+                    b.victims.add(m.id());
+                }
+            }
+            case MochiMoves.BUZZ_BLOW, MochiMoves.BUZZ_GROUND -> {
+                add(MARKS, new BuzzMark(at, clock, m.id(), phase == MochiMoves.BUZZ_GROUND));
+                // the owner: "a violent black-and-white impact frame" at the blow and at the slam, for the user and the ones caught
+                net.minecraft.client.player.LocalPlayer self = Minecraft.m_91087_().f_91074_;
+                if (self != null && b != null && (self.m_19879_() == m.user() || b.victims.contains(self.m_19879_()))) {
+                    com.hexhaki.piece.client.fx.ClashFx.frame(at, phase == MochiMoves.BUZZ_GROUND ? 3.0F : 2.0F, 0xE0101E, m.id());
+                }
+            }
             default -> {
             }
         }
@@ -323,13 +531,13 @@ public final class MochiFx {
     // ------------------------------------------------------------------------------------------------------ one's own wheel
 
     /** Zan Giri Mochi: one's own body rolled to a place over so many ticks (the server snags whoever it meets on the way). */
+    /** 3.6.3: one's own Buzz Cut wheel rolling (its own client moves it, where one looks: the reference's winding path). */
     static final class Carry {
-        final Vec3 to;
-        int left;
+        final int ticks;
+        int age;
 
-        Carry(Vec3 to, int ticks) {
-            this.to = to;
-            this.left = Math.max(1, ticks);
+        Carry(int ticks) {
+            this.ticks = Math.max(1, ticks);
         }
     }
 
@@ -350,20 +558,19 @@ public final class MochiFx {
             carry = null;
             return;
         }
-        Vec3 pos = self.m_20182_();
-        double dx = (c.to.f_82479_ - pos.f_82479_) / Math.max(1, c.left);
-        double dz = (c.to.f_82481_ - pos.f_82481_) / Math.max(1, c.left);
-        // along the ground: its own fall kept (the wheel rolls over the land), never thrown up
-        self.m_20334_(dx, Math.min(0.0, self.m_20184_().f_82480_), dz);
+        // speeding up to its top speed, rolling where one looks, its own fall kept, never thrown up
+        double speed = MochiDraw.BUZZ_SPEED * Math.min(1.0, (c.age + 2) / 12.0);
+        Vec3 way = flat(self.m_20154_());
+        self.m_20334_(way.f_82479_ * speed, Math.min(0.0, self.m_20184_().f_82480_), way.f_82481_ * speed);
         self.f_19789_ = 0.0F;
-        if (--c.left <= 0) {
+        if (++c.age >= c.ticks) {
             stopCarry();
         }
     }
 
     @SubscribeEvent
     public static void steady(net.minecraftforge.client.event.MovementInputUpdateEvent event) {
-        if (carry == null || event.getEntity() != Minecraft.m_91087_().f_91074_) {
+        if (carry == null && !filming() || event.getEntity() != Minecraft.m_91087_().f_91074_) {
             return;
         }
         net.minecraft.client.player.Input input = event.getInput();
@@ -376,7 +583,8 @@ public final class MochiFx {
     /** The one rolling as a wheel is the wheel: their body is not drawn while it rolls. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void asWheel(RenderPlayerEvent.Pre event) {
-        if (!WHEELS.isEmpty() && WHEELS.containsKey(event.getEntity().m_19879_())) {
+        Buzz b = WHEELS.isEmpty() ? null : WHEELS.get(event.getEntity().m_19879_());
+        if (b != null && b.rolling(clock)) {
             event.setCanceled(true);
         }
     }
@@ -388,7 +596,8 @@ public final class MochiFx {
             return;
         }
         int id = minecraft.f_91074_.m_19879_();
-        if (!WHEELS.isEmpty() && WHEELS.containsKey(id)) {
+        Buzz b = WHEELS.isEmpty() ? null : WHEELS.get(id);
+        if (b != null && b.rolling(clock)) {
             event.setCanceled(true);
             return;
         }
@@ -413,6 +622,10 @@ public final class MochiFx {
      * punch's arm while it is out, both of Kaku Mochi's.
      */
     static int mochiArms(int user) {
+        Buzz b = WHEELS.isEmpty() ? null : WHEELS.get(user);
+        if (b != null && b.caught >= 0 && clock - b.caught < MochiDraw.BUZZ_END) {
+            return RIGHT; // 3.6.3: the right arm is the mace (MochiDraw.buzzMace)
+        }
         if (PUNCHES.isEmpty()) {
             return 0;
         }
@@ -487,7 +700,9 @@ public final class MochiFx {
         BOOMS.removeIf(b -> clock - b.born > MochiDraw.BOOM_LIFE + 1);
         SWELLS.entrySet().removeIf(e -> clock > e.getValue().until || level.m_6815_(e.getKey()) == null);
         FISTS.values().removeIf(f -> clock - f.born > f.flight + 1);
-        WHEELS.entrySet().removeIf(e -> clock - e.getValue().born > e.getValue().ticks + 2 || level.m_6815_(e.getKey()) == null);
+        WHEELS.entrySet().removeIf(e -> buzzDone(e.getValue()) || level.m_6815_(e.getKey()) == null);
+        MARKS.removeIf(k -> clock - k.born > (k.ground ? MochiDraw.BUZZ_CRATER_LIFE : 12.0) + 1);
+        buzzTick(level);
         CLUBS.removeIf(c -> clock - c.born > MochiDraw.CLUB_LIFE + 1);
         STUCKS.values().removeIf(s -> clock - s.born > s.ticks + 1);
         MUDDLES.removeIf(u -> clock - u.born > MochiDraw.MUDDLE_LIE + 1);
@@ -508,7 +723,7 @@ public final class MochiFx {
         return PUNCHES.isEmpty() && SPLATS.isEmpty() && BOOMS.isEmpty() && SWELLS.isEmpty() && FISTS.isEmpty() && WHEELS.isEmpty()
             && CLUBS.isEmpty() && STUCKS.isEmpty() && MUDDLES.isEmpty() && LOTUSES.isEmpty() && SLAMS.isEmpty() && RISES.isEmpty() && AIRS.isEmpty()
             && GROUNDS.isEmpty() && CHESTNUTS.isEmpty()
-            && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && carry == null;
+            && SPIKES.isEmpty() && AREAS.isEmpty() && STRIKES.isEmpty() && MARKS.isEmpty() && carry == null;
     }
 
     // ------------------------------------------------------------------------------------------------------ the drawing
@@ -618,6 +833,75 @@ public final class MochiFx {
     }
 
     private static final double[] STRIKE = new double[MOST * 5];
+
+    /** 3.6.3: Buzz Cut Mochi: the wheel, the torn ground, the mace and the whirl, the blows and the crater (MochiDraw.buzz*). */
+    static void drawBuzz(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial, double now, double cx, double cy, double cz) {
+        for (Map.Entry<Integer, Buzz> e : WHEELS.entrySet()) {
+            Buzz b = e.getValue();
+            Entity user = level.m_6815_(e.getKey());
+            if (b.count > 0) {
+                double[] path = new double[b.count * 3];
+                double[] ages = new double[b.count];
+                for (int k = 0; k < b.count; k++) {
+                    path[k * 3] = b.path[k * 3] - cx;
+                    path[k * 3 + 1] = b.path[k * 3 + 1] - cy;
+                    path[k * 3 + 2] = b.path[k * 3 + 2] - cz;
+                    ages[k] = now - b.passed[k];
+                }
+                MochiDraw.buzzTiles(SINK, path, ages, b.count, b.seed);
+            }
+            if (user == null) {
+                continue;
+            }
+            Vec3 feet = user.m_20318_(partial);
+            if (far(feet, cam)) {
+                continue;
+            }
+            double age = now - b.born;
+            double r = MochiDraw.BUZZ_WHEEL;
+            if (b.rolling(clock) && !(ownView(minecraft, user) && b.caught < 0 && b.missed < 0)) {
+                // the wheel (not in one's own first person: it would close round the view), unrolling into the body once it stops
+                double form = Math.min(1.0, age / 4.0);
+                if (b.caught >= 0) {
+                    form *= 1.0 - (now - b.caught) / 3.0;
+                } else if (b.missed >= 0) {
+                    form *= 1.0 - (now - b.missed) / 3.0;
+                }
+                Vec3 way = flat(user.m_20252_(partial));
+                double speed = b.caught < 0 && b.missed < 0 ? Math.min(1.0, (age + 2) / 12.0) : 0.3;
+                MochiDraw.buzzWheel(SINK, feet.f_82479_ - cx, feet.f_82480_ + r - cy, feet.f_82481_ - cz, way.f_82479_, way.f_82481_, b.rolled, speed,
+                    Math.max(0.0, form), age, b.seed);
+            }
+            if (b.caught >= 0 && b.feet != null) {
+                double t = now - b.caught;
+                if (t > MochiDraw.BUZZ_END) {
+                    continue;
+                }
+                double[] arm = MochiDraw.buzzArm(t, b.feet.f_82479_, b.feet.f_82480_, b.feet.f_82481_, b.yaw0, new double[8]);
+                double[] bend = MochiDraw.buzzBend(t, b.yaw0, new double[4]);
+                MochiDraw.buzzMace(SINK, arm[0] - cx, arm[1] - cy, arm[2] - cz, arm[3], arm[4], arm[5], arm[6], MochiDraw.buzzSwell(t), bend[0],
+                    bend[1], bend[2], bend[3], t, b.seed);
+                if (t >= MochiDraw.BUZZ_HIT && t < MochiDraw.BUZZ_WHIRL + 4) {
+                    double a = Math.min(1.0, (t - MochiDraw.BUZZ_HIT) / 6.0) * (1.0 - Math.max(0.0, (t - MochiDraw.BUZZ_WHIRL) / 4.0));
+                    MochiDraw.buzzVortex(SINK, b.feet.f_82479_ - cx, b.feet.f_82480_ - cy, b.feet.f_82481_ - cz, Math.atan2(arm[5], arm[3]), arm[6], a);
+                }
+            }
+        }
+        for (BuzzMark k : MARKS) {
+            if (far(k.at, cam)) {
+                continue;
+            }
+            double age = now - k.born;
+            if (k.ground) {
+                MochiDraw.buzzCrater(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, age, k.seed);
+            } else if (age < 12.0) {
+                // the swing's blow: a burst of white and a ring of shock off the ball
+                MochiDraw.splat(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, 0, 1, 0, 1.6, age, k.seed);
+                com.hexhaki.piece.dragon.FireMesh.ring(SINK, k.at.f_82479_ - cx, k.at.f_82480_ - cy, k.at.f_82481_ - cz, 0, 1, 0, 1.0 + 5.0 * age / 12.0,
+                    0.25, 0.1, 0xFFFFFF, 0.7 * (1.0 - age / 12.0));
+            }
+        }
+    }
 
     /** 3.6.3: Lotus Mochi Combo, every phase of it (MochiDraw.lotus, lotusRise, lotusAir, lotusSlam, lotusGround). */
     static void drawLotus(Minecraft minecraft, ClientLevel level, Vec3 cam, float partial, double now, double cx, double cy, double cz) {
@@ -797,21 +1081,7 @@ public final class MochiFx {
             MochiDraw.anemoneArea(SINK, n.at.f_82479_ - cx, n.at.f_82480_ - cy, n.at.f_82481_ - cz, n.radius, form, STRIKE, count, n.coat, age, n.seed,
                 ended);
         }
-        for (Map.Entry<Integer, Wheel> e : WHEELS.entrySet()) {
-            Entity user = level.m_6815_(e.getKey());
-            if (user == null || ownView(minecraft, user)) {
-                continue; // one's own wheel would close round the view: in first person one only feels the roll
-            }
-            Wheel w = e.getValue();
-            Vec3 feet = user.m_20318_(partial);
-            if (far(feet, cam)) {
-                continue;
-            }
-            Vec3 way = flat(w.to.m_82546_(w.from));
-            double rolled = feet.m_82546_(w.from).m_82526_(way);
-            MochiDraw.wheel(SINK, feet.f_82479_ - cx, feet.f_82480_ + w.radius - cy, feet.f_82481_ - cz, way.f_82479_, way.f_82481_, w.radius,
-                rolled / Math.max(0.3, w.radius), now - w.born, e.getKey());
-        }
+        drawBuzz(minecraft, level, cam, partial, now, cx, cy, cz);
         for (Club c : CLUBS) {
             Entity user = level.m_6815_(c.user);
             if (user == null) {
@@ -849,6 +1119,7 @@ public final class MochiFx {
         STUCKS.clear();
         MUDDLES.clear();
         LOTUSES.clear();
+        MARKS.clear();
         SLAMS.clear();
         RISES.clear();
         AIRS.clear();
