@@ -184,3 +184,64 @@ What the GIFs show (read frame by frame this chat):
   game objects (Vec3 is a stub that throws): keep positions in plain helpers (MochiDraw.chestnutOffset).
 - Lightning previews: SparkPreview.render draws glow as the game does (alpha = brightness); HakiColourShots is the owner's camera.
 - Stop rule: at 98% weekly usage write this file and next-prompt.md first, commit, push, stop without checking CI.
+
+## F. The next chat's requests, verbatim (newest last)
+
+1. (At the start, after the environment switch was first refused, then allowed: "Switch + add hosts"; the HexPiece environment now also
+   allows official-fruit-battlegrounds.fandom.com and static.wikia.nocookie.net.) The owner: "It is very important that you do not give
+   up until the moves look exactly like the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very
+   minute detail, I don't want them."
+
+## G. The base GIFs read frame by frame (the next chat; the target for every base move "to very minute detail")
+
+Timing: the WebP "GIFs" run 40 to 80 ms a frame (tools: the scratchpad's webpdur.py reads the ANMF durations; Pillow says 0), Buzzcut
+and Chestnut are real GIFs at 48 and 40 ms. Roughly one frame = one game tick (50 ms). "User" = the one using the move.
+
+- **Grilled Dough** (249 frames, 11.6 s; the target stands about 3 blocks in front of the user, side-on camera): f3 standing; f6 the
+  right arm thrust out level at the target; f9 a huge white puff bursts round the arm (bigger than the user); f12 it swells tallest
+  (twice the user's height, splatters flying); f15 to f30 it settles into a thick horizontal arm of dough (as thick as the user's torso,
+  about 1.5 user-heights long) from the shoulder, puffy and lumpy, a black Haki fist block at its end, drips falling off it and white
+  splats left on the floor under it; f33 another big puff (the throw); f36 the fist leaves, a spark of orange fire; f38 to f62 the
+  explosion at the target: a half-dome of CONCENTRIC RINGS (a tunnel: bright orange-yellow fire rings, a dark brown-black ring between
+  them, white-hot edges), facing the camera, fire filling its middle, black smoke puffs and white droplets thrown out, damage 60; f64 to
+  f110 the rings fade into a pale grey smoke dome shell with fire inside fading; then the target BURNS (2.5 damage ticks with a flame
+  icon) for about 6 s more.
+- **Dough Muddle** (129 frames, 6.1 s; camera behind the user, the target about 6 blocks ahead): f20 to f44 a charge pose (both arms out
+  to the sides, about 1.2 s); f44 to f46 the user dives forward; f48 a white block of dough engulfs the user; f50 to f54 a huge splash
+  bursts out and up (a column of dough, droplets thrown everywhere); f56 to f66 it lands as a big flat splat puddle round the user (the
+  user crouched in it, sunk to the waist), the column falling behind, translucent swirl rings (wind) round the puddle on the ground;
+  f70 to f82 the puddle runs forward to the target and under it (a broad white trail), the user stands up; f88 to f128 the puddle keeps
+  spreading wider with SPIKY radial splash edges (like spilled paint), splats scattered round, faint swirl rings.
+- **Lotus Dough Combo** (162 frames, 7.5 s; camera behind the user, the target about 6 blocks ahead): f18 a white ribbon of dough swoops
+  in from the user (a comet trail) and f21 curls into a swirling ring beside the target (on the user's left of it), f24 to f27 the
+  swirl balls up; f30 a big bright white flash ball with translucent shock rings round it; f33 to f48 a DONUT stands there facing the
+  target (its black fist in the hole), big spherical translucent white shock rings round it, white splats falling under it; f51 a big
+  white flash, the fist punches out of it into the target (f53 to f57), 11.2 damage, white splats; f59 to f69 the target is launched (the
+  camera shakes and follows it); f72 to f125 the target high in the sky: two or three white bursts with rings hit it there (11.2 each),
+  then a black Haki bar from above (f111 to f117), a white puff, the target falls with white speed streaks (f126 to f128); f130 a white
+  desaturated flash frame; f132 to f161 the slam: a flat white dough splat on the ground ringed by big tan rock chunks thrown up, cubes
+  flying, a white shock ring rising and widening above it, 45 damage.
+- **Chestnut** (247 frames, 9.9 s; the user at the right, three targets at the left): f17 to f21 a comet of dough flung UP from the user
+  curls into a swirl; f24 to f28 a white ball high over the user (about four user-heights up); f32 it flashes (a white puff with rings);
+  f36 a DARK SPIKED DISC (Haki black-grey, a flattened donut covered in spikes round its rim and on its faces, about 1.5 user-heights
+  across, tilted about 45 degrees) with a white translucent ring round it; f40 to f186 it hangs there and fires: a thin white tracer line
+  from it to the nearest target with a small black spike flying down it, a white-blue spark star on the hit (3.6 damage), one about
+  every 5 frames (4 ticks); about 6 s; f190 it turns white, f194 it falls flat (a white spiky disc) onto the user, f198 to f212 it splats
+  into a white puddle round the user's feet with droplets and a faint ring.
+- **Anemone** (274 frames, 9.1 s; the user in the foreground, the area about 8 blocks ahead): f12 to f18 about twenty small white donuts
+  pop up scattered over the area at many heights (1 to 6 blocks up, spread wide); f24 to f192 long black Haki bars shoot out of them
+  diagonally down into the area, many at once, white bursts where they land, a translucent white dome over the area, white and cyan swirl
+  trails, a dark crater in the middle, rocks; f192 to f210 a last strike, the dome collapses into splashes; f210 to f270 white splats left
+  on the ground fading out (about 2 s).
+- **Buzzcut** (200 frames, 9.6 s; camera above): f15 a white puff (the user becomes the wheel); f20 to f80 a bright white blurred wheel
+  rolling fast, black wind lines, a long winding DOUBLE ROW of torn-up floor tiles flipped up behind it; f85 to f95 it hits a target: a
+  black spiked club, 22 damage; f100 to f140 a whirling white vortex of motion rings on the ground round the user (the victim swung
+  round); f145 a grey frame; f150 to f160 a close cinematic camera on the user swinging the giant black arm down; f165 a pink-white flash
+  frame with red streaks; f170 to f180 the impact, red sparks; f185 to f195 a black star-shaped splatter crater with cracks, blocks flying.
+
+## H. The owner's next messages (verbatim; sent while the Mochi GIFs were being read, before "carry on")
+
+2. "before you carry on 2 things. I asked over 10 times, the conquerors haki is the 3d lightning, yet the AI keeps putting the 2d, over
+   and over and over again, please for the last time, make the lightning 3d once it for all, all of it.. im so tired of seeing this fuck
+   ass 2d lightning, I keep asking for it to be gone, yet you keep flipping me off."
+3. "Also when powers are turned off, the hud on the screen is to dissappear until the power is once again activated."
