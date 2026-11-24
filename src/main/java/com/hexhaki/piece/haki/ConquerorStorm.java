@@ -453,6 +453,15 @@ public final class ConquerorStorm {
      */
     public static List<Bolt> strike(double[] a, double[] b, float width, float tip, int rim, float delay, int duration, float crawl,
                                     long seed) {
+        return strike(a, b, width, tip, rim, delay, duration, crawl, seed, true);
+    }
+
+    /**
+     * As above; {@code sharp} (3.6.3: "the tip of the lightning has to be sharp"): its far end drawn to a needle point ({@link #sharpen});
+     * false for a piece of a chain whose end the next piece carries on from (its free ends pointed by BoltPainter.point).
+     */
+    public static List<Bolt> strike(double[] a, double[] b, float width, float tip, int rim, float delay, int duration, float crawl,
+                                    long seed, boolean sharp) {
         double[] p = jagged(a, b, seed);
         int n = p.length / 3;
         double[] walked = new double[n];
@@ -470,6 +479,9 @@ public final class ConquerorStorm {
             swell = swell * swell * (3 - 2 * swell);
             w[i] = (float) (width * (0.6 + 0.4 * swell) * (1.0 - (1.0 - tip) * t));
         }
+        if (sharp) {
+            w = sharpen(p, w, false, true);
+        }
         List<Bolt> out = new ArrayList<>(2);
         out.add(new Bolt(p, w, BODY, Bolt.BODY, delay, duration, crawl, seed, 0.05));
         out.add(new Bolt(p, w, 0xFF000000 | rim, Bolt.EDGE, delay, duration, crawl, seed, 0.05));
@@ -482,12 +494,63 @@ public final class ConquerorStorm {
      */
     public static List<Bolt> bolts(Strand strand) {
         List<Bolt> out = new ArrayList<>(2);
-        out.add(new Bolt(strand.points(), strand.widths(), BODY, Bolt.BODY, strand.delay(), strand.duration(), strand.crawl(), strand.seed(),
-            0.03));
-        out.add(new Bolt(strand.points(), strand.widths(), EDGE, Bolt.EDGE, strand.delay(), strand.duration(), strand.crawl(), strand.seed(),
-            0.03));
+        // 3.6.3 (the owner: "the tip of the lightning has to be sharp"): drawn to a needle point at both its free ends (the strand's own
+        // widths, which the server reads for its strikes, are left as they are)
+        float[] w = sharpen(strand.points(), strand.widths(), true, true);
+        out.add(new Bolt(strand.points(), w, BODY, Bolt.BODY, strand.delay(), strand.duration(), strand.crawl(), strand.seed(), 0.03));
+        out.add(new Bolt(strand.points(), w, EDGE, Bolt.EDGE, strand.delay(), strand.duration(), strand.crawl(), strand.seed(), 0.03));
         return out;
     }
+
+    /**
+     * 3.6.3 (the owner: "the tip of the lightning has to be sharp"): {@code widths} along {@code points} brought down to nothing at the
+     * stroke's far end ({@code tip}) and its root ({@code root}) in a straight needle taper, about {@link #NEEDLE} times as long as the
+     * stroke is wide there (at least {@link #NEEDLE_LEAST} blocks, at most {@link #NEEDLE_MOST} of its length): a point, never a blunt
+     * or rounded end. A new array; {@code widths} is not changed.
+     */
+    public static float[] sharpen(double[] points, float[] widths, boolean root, boolean tip) {
+        int n = widths.length;
+        float[] out = widths.clone();
+        if (n < 2) {
+            return out;
+        }
+        double[] walked = new double[n];
+        for (int i = 1; i < n; i++) {
+            double dx = points[i * 3] - points[i * 3 - 3];
+            double dy = points[i * 3 + 1] - points[i * 3 - 2];
+            double dz = points[i * 3 + 2] - points[i * 3 - 1];
+            walked[i] = walked[i - 1] + Math.sqrt(dx * dx + dy * dy + dz * dz);
+        }
+        double total = walked[n - 1];
+        if (total < 1.0E-6) {
+            return out;
+        }
+        if (tip) {
+            double wide = Math.max(widths[n - 1], widths[Math.max(0, n - 2)]);
+            double len = Math.min(total * NEEDLE_MOST, Math.max(NEEDLE_LEAST, NEEDLE * wide));
+            for (int i = 0; i < n; i++) {
+                double back = total - walked[i];
+                if (back < len) {
+                    out[i] = (float) (out[i] * Math.max(0.0, back / len));
+                }
+            }
+        }
+        if (root) {
+            double wide = Math.max(widths[0], widths[1]);
+            double len = Math.min(total * NEEDLE_MOST * 0.6, Math.max(NEEDLE_LEAST * 0.6, NEEDLE * 0.6 * wide));
+            for (int i = 0; i < n; i++) {
+                if (walked[i] < len) {
+                    out[i] = (float) (out[i] * Math.max(0.0, walked[i] / len));
+                }
+            }
+        }
+        return out;
+    }
+
+    /** 3.6.3: a needle tip's length to the stroke's width there, its least (blocks) and its most (a share of the stroke's length). */
+    static final double NEEDLE = 6.0;
+    static final double NEEDLE_LEAST = 0.25;
+    static final double NEEDLE_MOST = 0.35;
 
     /**
      * 2.4.9: does the storm strike a body standing {@code x, z} from the releaser's feet (blocks), from {@code bottom} to {@code top}

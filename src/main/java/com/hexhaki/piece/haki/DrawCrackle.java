@@ -85,7 +85,7 @@ public final class DrawCrackle {
             // 3.6.0 (the owner: "only 1 type and style of haki  model should be in use, THE CONQUEROR HAKI RELEASE"): the release's
             // model (its black body and rim, its crooked runs: ConquerorStorm.strike), as wide as the old glow
             out.addAll(ConquerorStorm.strike(pieces[p], pieces[p + 1], w * 2.6F, 0.6F, color & 0xFFFFFF, start, life, 0.0F,
-                salt ^ p * 0x9E3779B97F4A7C15L));
+                salt ^ p * 0x9E3779B97F4A7C15L, false));
             chain.land(pieces[p], pieces[p + 1], start, life);
         }
     }

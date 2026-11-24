@@ -315,6 +315,11 @@ public final class BoltMesh {
         int color = bolt.color;
         switch (bolt.kind) {
             case Bolt.BODY -> {
+                if (paired(color)) {
+                    // 3.6.3: a storm's (a blast's, a clash's) body is drawn whole by its rim stroke on the same points (EDGE: one round
+                    // tube, black lit in its colour); drawn here too it would only hide under it
+                    return;
+                }
                 double scale = Math.sqrt(fade) * (1.0 + 0.15 * flash);
                 double[] half = S.d(count);
                 double[] ink = S.d(count);
@@ -333,28 +338,30 @@ public final class BoltMesh {
                 tube3d(p, count, side, half, lift, shade, pixel, dist, sink);
             }
             case Bolt.EDGE -> {
-                // round the black body (the same width rule as BODY's), a hot line in the colour hugging it, inked outside, and a wide
-                // glow beyond the ink: only bands outside the black (nothing of them lies behind the body to show through where a
-                // ribbon blocks wide twists at a kink: 2.2.5's "pink facets")
+                // 3.6.3 (the owner: "the conquerors haki is the 3d lightning, yet the AI keeps putting the 2d ... make the lightning 3d
+                // once it for all, all of it"): the storm's bolt is ONE round tube, no more flat bands of colour laid beside a black
+                // line: glossy black down its middle, the Haki colour lighting it round its sides (wrapping its silhouette, brightest at
+                // the very edge), its lit side lifted toward the colour and its shadow side black, a hard glossy highlight that slides
+                // along it with the light; inked outside, a wide glow beyond the ink
                 double scale = Math.sqrt(fade) * (1.0 + 0.15 * flash);
                 double bright = Math.min(1.0, flicker * (0.85 + 0.15 * fade) + 0.4 * flash);
-                double[] inner = S.d(count);
                 double[] rim = S.d(count);
                 double[] ink = S.d(count);
                 double[] halo = S.d(count);
+                double[] lift = S.d(count);
+                double[] inkLift = S.d(count);
                 for (int i = 0; i < count; i++) {
                     double body = Math.max(w[i] * 0.5 * BODY * scale, 1.3 * pixel * dist[i] * fade * tip[i]);
-                    inner[i] = body * 0.96;
                     rim[i] = body * 1.07 + 1.2 * pixel * dist[i] * fade * tip[i];
-                    ink[i] = rim[i] + (0.05 * body + 1.6 * pixel * dist[i]) * Math.min(1.0, fade * 1.6) * tip[i];
+                    ink[i] = rim[i] + outline(rim[i], pixel, dist[i], fade) * tip[i];
                     halo[i] = body * 2.3 + 0.12 * tip[i];
+                    inkLift[i] = -push(1.0, dist[i]);
                 }
                 // 3.6.0: the Haki colour's own glow (Green, Cyan and Black: cyan round a green rim)
                 int glowColor = scale(0xFF000000 | HakiColour.glowFor(color), (0.6 * bright * fade + 0.35 * flash) * shine);
                 glowBand(p, count, side, ink, halo, glowColor, sink);
-                int hot = mix(scale(color, bright), 0xFFFFFFFF, 0.3 + 0.35 * flash);
-                band(p, count, side, inner, rim, hot, scale(color, 0.75 + 0.25 * bright), -0.5, dist, sink);
-                band(p, count, side, rim, ink, INK, INK, -0.5, dist, sink);
+                inked(p, count, side, ink, inkLift, pointed, pixel, dist, sink);
+                tube3d(p, count, side, rim, lift, rimLitShade(color, bright, flash), pixel, dist, sink);
             }
             case Bolt.AURA -> {
                 double strength = ((color >>> 24) & 255) / 255.0 * 0.7 * fade * flicker * (1.0 + 0.6 * flash);
@@ -481,6 +488,64 @@ public final class BoltMesh {
             c = mix(c, 0xFFFFFFFF, 0.85 * spec + 0.3 * flash);
             return c;
         };
+    }
+
+    /**
+     * 3.6.3: the storm's round tube (a storm's, a blast's, a clash's bolt: {@link Bolt#EDGE}): glossy black where it faces the eye, lifted
+     * toward a dark sheen of its colour on its lit side, the colour wrapping round its silhouette (a wide rim light, white-hot at the very
+     * edge), a hard highlight in the colour gone white where the light glances off it. Read as a round black bolt lit in its colour from
+     * every angle, never a flat strip.
+     */
+    static Shade rimLitShade(int color, double bright, double flash) {
+        int hue = hue(color);
+        // the set's own body (Gold and Yellow, Purple, Green, Blue, Red and Light Red: HakiColour.body), else black
+        int own = HakiColour.bodyFor(color & 0xFFFFFF);
+        int black = own == 0 ? mix(0xFF050407, hue, 0.04) : mix(0xFF050407, 0xFF000000 | own, 0.55);
+        int sheen = own == 0 ? scale(hue, 0.5 * bright) : scale(0xFF000000 | own, 0.85 + 0.15 * bright);
+        int rim = scale(hue, bright);
+        int edge = mix(scale(hue, bright), 0xFFFFFFFF, 0.55);
+        int gloss = mix(hue, 0xFFFFFFFF, 0.55);
+        return (facing, lambert, spec) -> {
+            int c = mix(black, sheen, smooth(-0.15, 1.0, lambert));
+            double wrap = 1.0 - facing;
+            c = mix(c, rim, Math.min(1.0, Math.pow(wrap, 1.35) + 0.25 * flash));
+            c = mix(c, edge, Math.min(1.0, Math.pow(wrap, 4.0)));
+            // the highlight's lobe widened (spec comes in at a power of 22: a few rings round a tube would miss it)
+            c = mix(c, gloss, Math.min(1.0, 0.95 * Math.pow(spec, 0.33) + 0.2 * flash));
+            return c;
+        };
+    }
+
+    /**
+     * 3.6.3: a glow quad's corners as an alpha-blended batch draws them (client/haki/HakiBolts' rule, never additive): the hue of its
+     * brightest corner at full brightness, each corner as opaque as it was bright. For effects that draw the one Haki lightning into their
+     * own blended batch (style/StyleArt.crackle).
+     */
+    public static int[] glowed(int[] argb) {
+        int top = 0;
+        int hue = 0xFFFFFF;
+        for (int c : argb) {
+            int bright = Math.max((c >>> 16) & 255, Math.max((c >>> 8) & 255, c & 255));
+            if (bright > top) {
+                top = bright;
+                hue = c;
+            }
+        }
+        double s = top > 0 ? 255.0 / top : 0.0;
+        int rgb = (int) Math.min(255, ((hue >>> 16) & 255) * s) << 16 | (int) Math.min(255, ((hue >>> 8) & 255) * s) << 8
+            | (int) Math.min(255, (hue & 255) * s);
+        int[] out = new int[argb.length];
+        for (int k = 0; k < argb.length; k++) {
+            int c = argb[k];
+            int alpha = (int) Math.round(Math.max((c >>> 16) & 255, Math.max((c >>> 8) & 255, c & 255)) * 0.9);
+            out[k] = alpha << 24 | rgb;
+        }
+        return out;
+    }
+
+    /** 3.6.3: a storm's black body stroke (alpha 0xF0: ConquerorStorm.BODY, ClashBurst's), drawn whole by its rim stroke. */
+    static boolean paired(int argb) {
+        return (argb >>> 24) == 0xF0;
     }
 
     /** 3.6.0: is a body stroke's colour one of the Haki colours' own bodies (bright enough not to read black)? */

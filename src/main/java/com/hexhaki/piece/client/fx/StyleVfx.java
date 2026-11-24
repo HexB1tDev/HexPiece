@@ -180,6 +180,7 @@ public final class StyleVfx {
             StyleShow.Place place = new StyleShow.Place(feet.f_82479_ - cam.f_82479_, feet.f_82480_ - cam.f_82480_, feet.f_82481_ - cam.f_82481_,
                 Math.toRadians(yaw));
             boolean own = user == Minecraft.m_91087_().f_91074_ && Minecraft.m_91087_().f_91066_.m_92176_() == net.minecraft.client.CameraType.FIRST_PERSON;
+            rim(user);
             StyleShow.attached(COLLECT, a.move, haki(a.entity), (float) ticks, POSER, place, a.entity, own);
         }
         for (Iterator<Landed> it = LANDED.iterator(); it.hasNext(); ) {
@@ -193,9 +194,19 @@ public final class StyleVfx {
                 continue;
             }
             double[] at = {l.at().f_82479_ - cam.f_82479_, l.at().f_82480_ - cam.f_82480_, l.at().f_82481_ - cam.f_82481_};
+            rim(level.m_6815_(l.entity()));
             StyleShow.landed(COLLECT, l.move(), haki(l.entity()), age, at, l.dir(), l.size(), l.seed());
         }
         shots(cam, t, partial);
+    }
+
+    /**
+     * 3.6.3: the Haki crackle drawn next (style/StyleArt.crackle: the one 3D Haki lightning) in {@code user}'s Haki colour, as every
+     * Haki lightning is (client/haki/HakiBolts.colorOf); the release's red for nobody.
+     */
+    static void rim(Entity user) {
+        com.hexhaki.piece.style.StyleArt.crackleRim = user == null ? com.hexhaki.piece.haki.ConquerorStorm.EDGE & 0xFFFFFF
+            : com.hexhaki.piece.client.haki.HakiBolts.colorOf(user);
     }
 
     static void shots(Vec3 cam, long t, float partial) {
@@ -211,6 +222,8 @@ public final class StyleVfx {
             }
             double[] from = {s.from().f_82479_ - cam.f_82479_, s.from().f_82480_ - cam.f_82480_, s.from().f_82481_ - cam.f_82481_};
             double[] to = {s.to().f_82479_ - cam.f_82479_, s.to().f_82480_ - cam.f_82480_, s.to().f_82481_ - cam.f_82481_};
+            ClientLevel level = Minecraft.m_91087_().f_91073_;
+            rim(level == null ? null : level.m_6815_(s.entity()));
             StyleShow.shot(COLLECT, s.move(), haki(s.entity()), age, from, to, s.seed());
         }
     }

@@ -105,6 +105,7 @@ public final class ClashBurst {
         int duration = 12 + random.nextInt(5);
         float crawl = (float) (length / SPEED);
         long seed = random.nextLong();
+        w = ConquerorStorm.sharpen(p, w, true, true); // 3.6.3: "the tip of the lightning has to be sharp"
         out.add(new Bolt(p, w, 0xF0000000 | Bolt.body(rgb), Bolt.BODY, delay, duration, crawl, seed, 0.04));
         out.add(new Bolt(p, w, 0xFF000000 | rgb, Bolt.EDGE, delay, duration, crawl, seed, 0.04));
     }

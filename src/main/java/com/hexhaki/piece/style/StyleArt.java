@@ -434,13 +434,26 @@ public final class StyleArt {
     // ------------------------------------------------------------------------------------------------------------------ Haki
 
     /**
-     * Armament Haki crackling off a blow at {@code at}: {@code bolts} jagged bolts out every way (a little along {@code dir}), each a red
-     * glow round a black core, new shapes every tick ({@code tick}), {@code reach} long, fading by {@code fade}.
+     * 3.6.3: the rim colour (RGB) of the next {@link #crackle}: the blow's thrower's Haki colour (client/fx/StyleVfx sets it before it
+     * draws each one's blows); the release's own red when nobody set it.
+     */
+    public static int crackleRim = com.hexhaki.piece.haki.ConquerorStorm.EDGE & 0xFFFFFF;
+
+    /** 3.6.3: a pixel one block from the eye (client/haki/HakiBolts.PIXEL): the floor of the lightning's ink. */
+    static final double PIXEL = 2.0 * Math.tan(Math.toRadians(35.0)) / 1080.0;
+
+    /**
+     * Armament Haki crackling off a blow at {@code at}: {@code bolts} jagged bolts out every way (a little along {@code dir}), new shapes
+     * every tick ({@code tick}), {@code reach} long, thinning by {@code fade}. 3.6.3 (the owner: "the conquerors haki is the 3d
+     * lightning, yet the AI keeps putting the 2d ... make the lightning 3d once it for all, all of it"): each bolt is the one Haki
+     * lightning (the release's crooked strike, haki/ConquerorStorm.strike) drawn as it is everywhere else (haki/BoltMesh: a round black
+     * tube lit in the thrower's Haki colour, inked, glowing), no longer two flat crossed strips in a fixed red.
      */
     public static void crackle(FireMesh.Sink sink, double[] at, double[] dir, int tick, int bolts, double reach, double fade, int seed) {
         if (fade < 0.01) {
             return;
         }
+        java.util.List<com.hexhaki.piece.haki.Bolt> strokes = new java.util.ArrayList<>(bolts * 2);
         for (int i = 0; i < bolts; i++) {
             int s = seed * 31 + tick * 7 + i * 131;
             double ux = FireMesh.rand(s, 1) * 2 - 1 + dir[0] * 0.6;
@@ -450,48 +463,17 @@ public final class StyleArt {
             if (ul < 1.0e-6) {
                 continue;
             }
-            ux /= ul;
-            uy /= ul;
-            uz /= ul;
             double length = reach * (0.55 + 0.45 * FireMesh.rand(s, 4));
-            int segments = 5;
-            double[] b = new double[6];
-            FireMesh.basis(ux, uy, uz, b);
-            double[] prev = {at[0], at[1], at[2]};
-            for (int k = 1; k <= segments; k++) {
-                double t = k / (double) segments;
-                double jitter = k == segments ? 0.0 : length * 0.22;
-                double j1 = (FireMesh.rand(s, 10 + k) * 2 - 1) * jitter;
-                double j2 = (FireMesh.rand(s, 20 + k) * 2 - 1) * jitter;
-                double[] p = {at[0] + ux * length * t + b[0] * j1 + b[3] * j2, at[1] + uy * length * t + b[1] * j1 + b[4] * j2,
-                    at[2] + uz * length * t + b[2] * j1 + b[5] * j2};
-                double w0 = 0.05 * (1.0 - (t - 1.0 / segments) * 0.8);
-                double w1 = 0.05 * (1.0 - t * 0.8);
-                bolt(sink, prev, p, w0 * 2.2, w1 * 2.2, 0xD0102E, 0.55 * fade);
-                bolt(sink, prev, p, w0, w1, 0x050307, 0.95 * fade);
-                prev = p;
-            }
+            double[] end = {at[0] + ux / ul * length, at[1] + uy / ul * length, at[2] + uz / ul * length};
+            // as wide for its length as a release bolt near its root, thinning as the crackle fades
+            float width = (float) (Math.max(0.05, length * 0.22) * Math.sqrt(fade));
+            strokes.addAll(com.hexhaki.piece.haki.ConquerorStorm.strike(at, end, width, 0.3F, crackleRim, 0.0F, 4, 0.0F, s));
         }
-    }
-
-    /** A bolt's segment: two crossed strips {@code w0} to {@code w1} wide. */
-    static void bolt(FireMesh.Sink sink, double[] a, double[] c, double w0, double w1, int rgb, double alpha) {
-        double dx = c[0] - a[0];
-        double dy = c[1] - a[1];
-        double dz = c[2] - a[2];
-        double l = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (l < 1.0e-6) {
-            return;
-        }
-        double[] b = new double[6];
-        FireMesh.basis(dx / l, dy / l, dz / l, b);
-        int col = FireMesh.argb(alpha, rgb);
-        for (int side = 0; side < 2; side++) {
-            double sx = b[side * 3];
-            double sy = b[side * 3 + 1];
-            double sz = b[side * 3 + 2];
-            FireMesh.quad(sink, a[0] - sx * w0, a[1] - sy * w0, a[2] - sz * w0, col, a[0] + sx * w0, a[1] + sy * w0, a[2] + sz * w0, col,
-                c[0] + sx * w1, c[1] + sy * w1, c[2] + sz * w1, col, c[0] - sx * w1, c[1] - sy * w1, c[2] - sz * w1, col);
+        // the points are already eye-relative: drawn whole (aged into the middle of their short life), the glow made blended
+        com.hexhaki.piece.haki.BoltMesh.Frame frame = com.hexhaki.piece.haki.BoltMesh.Frame.at(0.0, 0.0, 0.0);
+        com.hexhaki.piece.haki.BoltMesh.Sink into = (glow, xyz, argb) -> sink.quad(xyz, glow ? com.hexhaki.piece.haki.BoltMesh.glowed(argb) : argb);
+        for (com.hexhaki.piece.haki.Bolt bolt : strokes) {
+            com.hexhaki.piece.haki.BoltMesh.build(bolt, frame, 1.0, PIXEL, into);
         }
     }
 

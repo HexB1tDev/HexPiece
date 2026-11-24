@@ -245,3 +245,28 @@ and Chestnut are real GIFs at 48 and 40 ms. Roughly one frame = one game tick (5
    and over and over again, please for the last time, make the lightning 3d once it for all, all of it.. im so tired of seeing this fuck
    ass 2d lightning, I keep asking for it to be gone, yet you keep flipping me off."
 3. "Also when powers are turned off, the hud on the screen is to dissappear until the power is once again activated."
+4. "the tip of the lightning has to be sharp" (sent while the 3D lightning was being built: every bolt's free end a sharp point, never
+   a round or blunt end).
+
+## I. Done in the next chat (committed; not yet versioned): the one Haki lightning made truly 3D, with sharp tips
+
+What was 2D (found by rendering the release and a move's blast close up, tools in the scratchpad: BoltLook = SparkPreview.render at
+960x640, HakiColourShots for all seven colours):
+- The storm's strokes (the release on G, every move's blast through ConquerorAura, the sparks, the clash, the sword and style crackles:
+  all ConquerorStorm.strike / bolts / blast / ClashBurst pairs of Bolt.BODY + Bolt.EDGE) drew their rim as FLAT bands (BoltMesh.band:
+  a stripe of colour each side of a black stripe, then a black ink stripe): at 3.6.0's thin widths the whole bolt read as a flat 2D
+  cartoon line. Now (BoltMesh EDGE case): ONE round lit tube (tube3d) shaded by BoltMesh.rimLitShade: glossy black (or the set's own body
+  colour) facing the eye, a dark sheen of the colour on its lit side, the Haki colour wrapping its silhouette (rim light, white-hot at the
+  very edge), a glossy highlight; inked outside; the glow beyond. The paired body stroke (alpha 0xF0: BoltMesh.paired) draws nothing
+  (it would only hide under the tube): no extra quads.
+- The fighting styles' Armament crackle (StyleArt.crackle) drew two crossed flat strips in a fixed red: now it is the one Haki lightning
+  (ConquerorStorm.strike drawn by BoltMesh.build into the style batch, the glow through BoltMesh.glowed), in the thrower's Haki colour
+  (client/fx/StyleVfx.rim sets StyleArt.crackleRim from HakiBolts.colorOf, now public).
+- The original's flat Photon beams were still made as a fallback (HakiLightning's 800-beam budget, and any composition not played
+  through HakiBolts): HakiLightning.draw no longer makes them at all; only the 3D bolts exist.
+- Sharp tips (owner: "the tip of the lightning has to be sharp"): ConquerorStorm.sharpen brings a stroke's width to 0 in a straight
+  needle at its free ends (about 6x its width long, 0.25 blocks at least, 35 % of it at most): every storm strand and blast bolt at both
+  ends (bolts(Strand); the strand's own widths, read by the server, untouched), every strike at its far end (strike(..., sharp); the
+  chained pieces of the original's compositions and the blade crackle pass false: BoltPainter.point points their free ends), ClashBurst.
+- LightningTests.solid3d: in every Haki colour the blast's rim strokes are shaded tubes (many shades, not bands), the body strokes add
+  nothing, every blast bolt is pointed at both ends, a strike at its far end, a chained piece keeps its end full.

@@ -31,6 +31,7 @@ public final class LightningTests {
         conquerorMix();
         lightningSounds();
         culled();
+        solid3d();
         Check.done("LightningTests");
     }
 
@@ -928,5 +929,58 @@ public final class LightningTests {
                 Check.that(Double.isFinite(f.angle()) && f.angle() >= -1e-9 && f.angle() < Math.toRadians(95), "a fall no further than flat");
             }
         }
+    }
+    /**
+     * 3.6.3 (the owner: "the conquerors haki is the 3d lightning, yet the AI keeps putting the 2d ... make the lightning 3d once it for
+     * all, all of it", and "the tip of the lightning has to be sharp"): the storm's rim stroke is one round lit tube (its quads shaded
+     * across, not bands of one colour), its body stroke adds nothing under it, and every free end comes to a point.
+     */
+    static void solid3d() {
+        com.hexhaki.piece.haki.HakiColour[] sets = com.hexhaki.piece.haki.HakiColour.values();
+        for (com.hexhaki.piece.haki.HakiColour set : sets) {
+            java.util.List<com.hexhaki.piece.haki.Bolt> blast = com.hexhaki.piece.haki.ConquerorStorm.blast(4.0, 10, -1.2, 14L, 1.0);
+            int solid = 0;
+            java.util.Set<Integer> shades = new java.util.HashSet<>();
+            int bodies = 0;
+            for (com.hexhaki.piece.haki.Bolt raw : blast) {
+                com.hexhaki.piece.haki.Bolt bolt = raw.tinted(set.rim);
+                double[] q = bolt.points.clone();
+                for (int i = 0; i < q.length; i += 3) {
+                    q[i + 2] += 6.0;
+                }
+                com.hexhaki.piece.haki.Bolt placed = new com.hexhaki.piece.haki.Bolt(q, bolt.widths, bolt.color, bolt.kind, bolt.delay,
+                    bolt.duration, bolt.crawl, bolt.seed, bolt.dance);
+                int[] count = {0};
+                com.hexhaki.piece.haki.BoltMesh.build(placed, com.hexhaki.piece.haki.BoltMesh.Frame.at(0, -1.0, 0), 4.0, 0.0013, (glow, xyz, argb) -> {
+                    if (!glow) {
+                        count[0]++;
+                        for (int c : argb) {
+                            shades.add(c & 0xF0F0F0);
+                        }
+                    }
+                });
+                if (bolt.kind == com.hexhaki.piece.haki.Bolt.BODY) {
+                    bodies += count[0];
+                } else {
+                    solid += count[0];
+                }
+                Check.that(bolt.widths[bolt.widths.length - 1] == 0.0F, set.display + ": a blast's bolt ends in a sharp point");
+                Check.that(bolt.widths[0] == 0.0F, set.display + ": a blast's bolt leaves the blast as a point");
+            }
+            Check.that(solid > 60, set.display + ": the blast's bolts are built as tubes (" + solid + " quads)");
+            Check.that(bodies == 0, set.display + ": the storm's body stroke is drawn whole by its rim stroke (nothing under it)");
+            Check.that(shades.size() > 12, set.display + ": the tubes are shaded round (" + shades.size() + " shades), not flat bands");
+        }
+        java.util.List<com.hexhaki.piece.haki.Bolt> strike = com.hexhaki.piece.haki.ConquerorStorm.strike(new double[] {0, 1, 0},
+            new double[] {3, 2, 1}, 0.2F, 0.3F, 0xFF1A2E, 0, 6, 0, 9L);
+        for (com.hexhaki.piece.haki.Bolt bolt : strike) {
+            Check.that(bolt.widths[bolt.widths.length - 1] == 0.0F, "a strike (sparks, a style blow's crackle) ends in a sharp point");
+        }
+        java.util.List<com.hexhaki.piece.haki.Bolt> chained = com.hexhaki.piece.haki.ConquerorStorm.strike(new double[] {0, 1, 0},
+            new double[] {3, 2, 1}, 0.2F, 0.3F, 0xFF1A2E, 0, 6, 0, 9L, false);
+        Check.that(chained.get(0).widths[chained.get(0).widths.length - 1] > 0.0F, "a piece of a chain keeps its end full for the next");
+        float[] w = com.hexhaki.piece.haki.ConquerorStorm.sharpen(new double[] {0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0}, new float[] {0.4F, 0.4F, 0.4F, 0.4F},
+            true, true);
+        Check.that(w[0] == 0.0F && w[3] == 0.0F && w[1] > 0.0F && w[2] > 0.0F, "sharpen points both ends and keeps the middle");
     }
 }

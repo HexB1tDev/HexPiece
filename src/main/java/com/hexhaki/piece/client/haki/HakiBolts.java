@@ -52,7 +52,7 @@ import org.joml.Vector3f;
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class HakiBolts {
-    /** Most strokes alive at once; past it a composition keeps the original's beams. */
+    /** Most strokes alive at once; past it a composition's lightning is left out (3.6.3: never the original's flat beams in its place). */
     static final int MOST = 5000;
     /** A pixel one block from the eye (70 degrees on a 1080-line screen): the floor for the ink's width. */
     static final double PIXEL = 2.0 * Math.tan(Math.toRadians(35.0)) / 1080.0;
@@ -374,7 +374,7 @@ public final class HakiBolts {
      * 2.2.4: the colour of the lightning an entity throws: a player's Ryou colour (every player has one from their first login), the
      * neutral pale steel for anyone else (a pirate captain) or while a player's has not arrived yet.
      */
-    static int colorOf(Entity owner) {
+    public static int colorOf(Entity owner) {
         if (!(owner instanceof Player)) {
             // 2.4.9: a Conqueror hit on a mob is drawn in the colour of the player whose release struck it (HakiTint)
             int struck = HakiTint.hitColour();
