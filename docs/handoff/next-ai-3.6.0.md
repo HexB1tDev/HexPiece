@@ -4,10 +4,9 @@ This is the newest handoff. It covers the whole chat that built 3.5.9 and starte
 `docs/handoff/next-ai-3.2.2.md` for every standing rule (sections POINT ONE and 0 to 7) and the history (8b to 8zzx). Where the two
 disagree, this file is newer and wins (POINT ONE 3 below is the owner's newest word on the lightning).
 
-Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. Last released version: **3.5.9, green on GitHub
-(Build HexPiece #216, Release HexPiece #150)**. `build.py`'s VERSION is still `3.5.9`: the 3.6.0 work below is committed on the branch
-(local commits pushed with this handoff) but **not versioned, not released**. The next version to release is **3.6.0**
-(`python3 tools/next_version.py --write`).
+Branch: `claude/nice-bell-gam7qf` (fetch it first). Repository: HexB1tDev/HexPiece. 3.5.9 is green on GitHub (Build HexPiece #216,
+Release HexPiece #150). **3.6.0 is versioned and pushed with its release notes (the next session's first push; section E 7 has the
+sounds it finished)**: check section H for its GitHub runs. The next version is **3.6.1** (`python3 tools/next_version.py --write`).
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -63,8 +62,7 @@ During the work (next-ai-3.2.2.md section 8zzv has them all verbatim, numbered 1
 9. The Haki colour on the start menu (seven sets; verbatim in 8zzv 5). **Done on the branch (3.6.0, not released).**
 10. "Also all lightning sounds are to change to new more bass boosted ones (get from the web) and be lowered in volume (ONLY the
     lightning sounds), Full COnqueror on releasing should not play all the lightning sounds at once, just one (currently they're all
-    playing at once when the key is released causing a ridiculously loud sound)." **Half done (3.6.0): the recordings are cut and checked,
-    NOT wired in yet. Section F step 1.**
+    playing at once when the key is released causing a ridiculously loud sound)." **Done in 3.6.0** (section E 7).
 11. "Haki Coated attacks from fruits and styles are to have the exact same LIGHTNING as the one in Conquerors's charge (Holding G)."
     **Done on the branch (3.6.0).**
 12. "Also every lightning should be more croocked ... only 1 type and style of haki model should be in use, THE CONQUEROR HAKI RELEASE
@@ -176,7 +174,29 @@ hands at `WifiDraw.drawTick`. SwordTests.wifi. Previews: the scratchpad's wifi_v
    eased between (the aura's outline is the bent box's and must not fold across the bend: a fixed top above the elbow broke RyouTests.aura
    for bent arms); `along(y, top)` fades over 62 % of the arm below the top (was 2.6 px: it stopped short). Render: tools/ryou_preview.py.
 
-Uncommitted at the moment this handoff was written (committed with it):
+7. **The lightning sounds (8zzv 6), finished in the next session:**
+   - sounds.json: `conqueror_release` -> piece/lightning/web/strike1..3 (volumes 0.385, 0.442, 0.5, attenuation 48), the original's
+     `armament_ambient_zap` -> zap1..3 (0.537, 0.61, 0.724, default attenuation as the original's) and `last_stand_lightning` ->
+     thunder (0.624, attenuation 64). Each volume sets the file's loudest moment (ffmpeg ebur128 momentary max) to -19 LUFS: 6 dB under
+     the old release thunders' -13 (the old Armament zap was -8, the old Last Stand lightning -11). build.py RENAMED[SOUNDS] adds
+     armament_ambient_zap and last_stand_lightning. The booms and every other sound unchanged.
+   - Where the original plays them (checked with javap): conqueror_release only in a PARTIAL release (HakiServerController
+     .releaseConqueror, through `sound` -> delayedSound -> ConquerorSounds.pos, 35 % quieter); the full (supreme) release played snap +
+     blast + rumble instead. armament_ambient_zap: HakiRenderHooks$ForgeBus.tick's playMildArmamentZap (every 110 ticks while Armament
+     is on, 0.16 to 0.21), StormLanceVfx.tick (Gear 5's lance, 0.8), and ours (HakiBolts.zap: compositions 0.18-0.55, landings 0.35,
+     clashes 0.5, body sparks 0.25, a drawn blade's 0.9; HakiDraw's crackle 0.05-0.155). last_stand_lightning: HakiEvents.tickLastStand
+     (the original's Last Stand, a burst every 10 to 18 ticks at 2.3) and HakiBolts.strike (the storm's landings, 1.6).
+   - **One at a time:** `haki/LightningGate` (pure: ranks ZAP 1, THUNDER 2, STRIKE 3; LENGTH the recordings' lengths 650 / 3500 /
+     4000 ms; a lightning sound starts only when none rings or it outranks the one that does) and `client/haki/LightningSounds` (a
+     Dist.CLIENT subscriber to Forge's PlaySoundEvent: every sound about to start is asked; a held-back one is set to null). One place for
+     every source, the server's and the original's included. verify/srg-shapes.txt gained SoundInstance.m_7904_ (tools/srg_shapes.py).
+   - **The full release's one sound:** `ConquerorRelease.sound` plays the release's strike (CONQUEROR_RELEASE at FULL_STRIKE 2.1, the
+     snap's pitch 0.96) where the dropped snap was, so a full release is heard as one strike with its explosion (told the owner in the
+     release notes).
+   - Test: LightningTests.lightningSounds (the three events play only the new credited CC0 files, each with a lowered volume, the files as
+     long as the gate holds, the explosion unchanged, the gate's rules).
+
+Committed with the handoff before (for the record):
 - `tools/web_sounds.py`: `BASS` (ffmpeg "highpass=f=45:poles=2,bass=g=7:f=120:w=0.9": the recording's low end lifted, nothing under 45
   Hz kept) and an optional `eq` on `pcm`/`clip`; a clip spec's sixth field is its eq.
 - `tools/lightning_sounds.py` and its output `src/main/resources/assets/hexhaki/sounds/piece/lightning/web/` (strike1..3, zap1..3,
@@ -191,7 +211,7 @@ Uncommitted at the moment this handoff was written (committed with it):
 
 ## F. What to do next, in order
 
-1. **Finish the lightning sounds (8zzv 6), then release 3.6.0.**
+1. **DONE (E 7): the lightning sounds, then 3.6.0 released.** What it said, kept for the record:
    - sounds.json: `conqueror_release` -> piece/lightning/web/strike1..3; override the original's `armament_ambient_zap` (HakiBolts.zap
      plays it for every Haki bolt, crackle, coated hit and landing) -> zap1..3; override `last_stand_lightning` (HakiBolts.strike's storm
      thunder) -> thunder. Give each a "volume" well under the old ones (the owner: "lowered in volume"; measure with ffmpeg ebur128 against
@@ -259,3 +279,50 @@ Uncommitted at the moment this handoff was written (committed with it):
   conqueror/web/thunder3); a narrow line more than ~6 dB over noise or a sub hum (under 60 Hz) means a different recording.
 - **Lag**: every effect under ~16k quads (DragonTests); the lightning's kinks cost quads: keep STEP at 3 unless the owner asks for more.
 - **Stop rule** (CLAUDE.md): at 98% weekly usage write the handoff and next-prompt first, commit, push, stop without checking CI.
+
+## H0. What 3.6.0 did about the owner's messages 19 to 22 (section I) before it was pushed
+
+The causes, found by measuring: (1) `ConquerorStorm.width` drew the release's bolts up to 3.6 x 0.75 = 2.7 blocks wide (a move's
+blast 1.3 blocks wide 10 blocks out), and with 3.6.0's kink every 3 blocks they folded over themselves; (2) each run's heading was a
+free wander (h x 0.35 + way x 0.65 + random x 0.85), so a bolt could turn back on itself: tangles and loops; (3) `Sphere.directions`
+then "down strands land, up strands rise" left no bolt going out level: the chest-high middle always empty (the owner's green lines);
+(4) the previews (SparkPreview.render and so HakiColourShots) drew BoltMesh's glow band OPAQUE (dark red fading to solid black), while
+the game (HakiBolts.write) draws it as its hue with alpha = brightness: the "thick black outlines" in the sheet were partly the preview's.
+What changed (one model: the release's, every blast's with it, POINT ONE 3 kept):
+- `ConquerorStorm.WIDEST` 0.9 (was 3.6): 0.68 blocks at the widest at size 1. `HIT_WIDTH` keeps `strikes()` (the release striking
+  bodies for its stun) as wide as before: gameplay unchanged. A branch's width share is width / WIDEST (it divided by the old 3.6).
+- The path: `bolt()`'s non-gliding runs zig-zag off the bolt's own way by ZIG_LEAST 25 to ZIG_MOST 55 degrees, alternating sides (80 %),
+  across a side that turns slowly (`across`); a run that strayed past 1 + 0.12 x walked from its line zags back. The glide of a
+  downward strand to where it lands is as before (landing tests pass). WANDER is gone.
+- `ConquerorStorm.spread(count)`: a golden-angle turn round the player per bolt, by thirds: level (LEVEL_LEAST 3 to LEVEL_MOST 14 degrees
+  up from the chest), up (20 to 72), down (15 to 55 under: they land and tear as before). Used by `release` and `blast` (blast's old
+  "two in three flipped up" is gone). A bolt not sent down never drops under AIR 0.7 over the ground.
+- `BoltMesh.near(dist)`: within NEAR 8 blocks of the eye a bolt's width falls to NEAR_LEAST 0.1 at the eye (one passing a third-person
+  camera never walls the screen).
+- `SparkPreview.glowed`: the preview draws glow as the game does. DragonTests' blast width checks follow WIDEST.
+- Renders judged: the seven-colour sheet from the owner's camera (HakiColourShots), and the scratchpad's Burst (the release round the
+  player from the front, behind in third person and far; a blast): thin crooked bolts every way, the middle filled.
+
+## H. 3.6.0 pushed (this file's last update)
+
+- 3.6.0 pushed with .github/release-notes-3.6.0.md: see the update below for its GitHub runs.
+- Sent the owner (SendUserFile, said to be previews, not the game): the start menu's Haki colour page (creation-3) and Ryou colour page
+  (creation-4) from UiPreview, and the seven-colour lightning sheet from HakiColourShots.
+- Next: section F steps 2 to 6 (ask the two open questions; /hp op on/off; the Mochi list after asking for the cut-off line; Buzz Cut
+  Mochi).
+
+## I. The owner's new message during 3.6.0's release (verbatim; 3.6.0 not pushed yet when it came)
+
+19. "JESUS WHY IS THE LIGHTNING SO THICK" (with a screenshot of HakiColourShots' sheet: the release seen over the shoulder at t6 and
+    t14 and a move's blast at t4, in all seven colours: wide flat ribbons with thick black outlines, folding at every kink).
+20. "this is how the lightnign should shoot, the green cirtcle is the player." (with a picture: an anime frame, Wano, two huge
+    characters behind; the player circled small in the middle; the Conqueror's lightning bursting OUT OF THE PLAYER in every direction,
+    left, right, up and down, long bolts reaching to the frame's edges, each crooked with sharp angular zig-zags and forks; near the player
+    thin white-hot lines, further out dark red bodies outlined in a bright white-pink glowing rim; the widest bolts about a third of the
+    player's height across (about half a block), most thinner: nothing near the 2.7 blocks the release was drawn at.)
+21. "see how different it is from your mess?" (with a crop of our HakiColourShots render: the release over the shoulder, its bolts wide
+    black-and-red ribbons stacked and folded on each other at every kink, a tangle above the player.)
+22. "notice that the green lines are always empty, you are never using those spaces, I been noticing that, its only shooting down and
+    up, the middle is empty" (with our render, two green lines drawn level out to either side of the player at chest height: no bolt
+    ever goes out sideways there; the release's bolts only rise into the sky or come down onto the ground.)
+

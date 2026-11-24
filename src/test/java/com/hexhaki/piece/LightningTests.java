@@ -29,6 +29,7 @@ public final class LightningTests {
         stunView();
         conquerorStun();
         conquerorMix();
+        lightningSounds();
         culled();
         Check.done("LightningTests");
     }
@@ -603,6 +604,67 @@ public final class LightningTests {
         Check.that(com.hexhaki.piece.server.ConquerorAura.CHARGE > com.hexhaki.piece.server.ConquerorAura.BLADE
             && com.hexhaki.piece.server.ConquerorAura.CHARGE_END == com.hexhaki.piece.server.ConquerorAura.CHARGE + 1,
             "the charge's messages are the Conqueror's kinds (S2CUoFx: 80 and on)");
+    }
+
+    /**
+     * 3.6.0 (the owner: "all lightning sounds are to change to new more bass boosted ones (get from the web) and be lowered in volume
+     * (ONLY the lightning sounds), Full COnqueror on releasing should not play all the lightning sounds at once, just one").
+     */
+    static void lightningSounds() {
+        String sounds = read("src/main/resources/assets/hexhaki/sounds.json");
+        String[][] events = {
+            {"conqueror_release", "strike1", "strike2", "strike3"},
+            {"armament_ambient_zap", "zap1", "zap2", "zap3"},
+            {"last_stand_lightning", "thunder"},
+        };
+        java.io.File web = new java.io.File("src/main/resources/assets/hexhaki/sounds/piece/lightning/web");
+        String credits = read(new java.io.File(web, "SOURCES.txt").getPath());
+        for (String[] event : events) {
+            String entry = entry(sounds, "\"" + event[0] + "\"");
+            int count = entry.split("\"name\"", -1).length - 1;
+            Check.that(count == event.length - 1, event[0] + " plays only the new recordings (" + count + ")");
+            for (int i = 1; i < event.length; i++) {
+                Check.that(entry.contains("\"hexhaki:piece/lightning/web/" + event[i] + "\""), event[0] + " plays " + event[i]);
+                Check.that(credits.contains(event[i] + ".ogg: ") && credits.contains("(CC0 1.0)"), event[i] + " is a credited CC0 recording");
+                double seconds = oggSeconds(new java.io.File(web, event[i] + ".ogg"));
+                long rings = com.hexhaki.piece.haki.LightningGate.LENGTH[com.hexhaki.piece.haki.LightningGate.rank("hexhaki", event[0])];
+                Check.that(Math.abs(seconds * 1000.0 - rings) <= 60.0, event[i] + " rings as long as the gate holds (" + seconds + " s)");
+            }
+            java.util.regex.Matcher volume = java.util.regex.Pattern.compile("\"volume\": ([0-9.]+)").matcher(entry);
+            int volumes = 0;
+            while (volume.find()) {
+                double v = Double.parseDouble(volume.group(1));
+                Check.that(v > 0.3 && v < 0.8, event[0] + "'s recordings are lowered (" + v + ")");
+                volumes++;
+            }
+            Check.that(volumes == event.length - 1, event[0] + ": every recording has its own lowered volume");
+        }
+        // the booms and every other sound keep theirs (the owner: "ONLY the lightning sounds")
+        Check.that(entry(sounds, "\"" + com.hexhaki.piece.haki.ConquerorMix.EXPLOSION + "\"").contains("\"volume\": 0.25"),
+            "the release's explosion is as loud as before");
+        // one lightning sound at a time
+        com.hexhaki.piece.haki.LightningGate gate = new com.hexhaki.piece.haki.LightningGate();
+        int zap = com.hexhaki.piece.haki.LightningGate.ZAP;
+        int thunder = com.hexhaki.piece.haki.LightningGate.THUNDER;
+        int strike = com.hexhaki.piece.haki.LightningGate.STRIKE;
+        Check.that(com.hexhaki.piece.haki.LightningGate.rank("hexhaki", "conqueror_release") == strike
+            && com.hexhaki.piece.haki.LightningGate.rank("hexhaki", "armament_ambient_zap") == zap
+            && com.hexhaki.piece.haki.LightningGate.rank("hexhaki", "last_stand_lightning") == thunder, "the three lightning events ranked");
+        Check.that(com.hexhaki.piece.haki.LightningGate.rank("hexhaki", "piece.conqueror.explosion") == 0
+            && com.hexhaki.piece.haki.LightningGate.rank("minecraft", "conqueror_release") == 0
+            && com.hexhaki.piece.haki.LightningGate.rank("hexhaki", "conqueror_supreme_blast") == 0, "nothing else is held back");
+        Check.that(gate.allow(0, 0L) && gate.allow(0, 0L), "a sound that is not lightning always plays");
+        Check.that(gate.allow(zap, 1000L), "a zap plays");
+        Check.that(!gate.allow(zap, 1200L) && !gate.allow(zap, 1600L), "a second zap under it does not");
+        Check.that(gate.allow(zap, 1700L), "once it has rung out the next one does");
+        Check.that(gate.allow(strike, 1800L), "the release's strike plays over a zap");
+        for (long at = 1900L; at < 1800L + 4000L; at += 100L) {
+            Check.that(!gate.allow(zap, at) && !gate.allow(thunder, at) && !gate.allow(strike, at),
+                "while the strike rings, no other lightning sound starts (" + at + " ms)");
+        }
+        Check.that(gate.allow(thunder, 5800L) && !gate.allow(zap, 6000L), "after it, a thunder; a zap not under the thunder");
+        Check.that(com.hexhaki.piece.server.ConquerorRelease.FULL_STRIKE > 1F,
+            "the full release's one strike is asked at least as loud as a partial release's");
     }
 
     static String read(String path) {

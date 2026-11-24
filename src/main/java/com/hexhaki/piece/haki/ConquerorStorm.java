@@ -30,11 +30,15 @@ public final class ConquerorStorm {
     public static final int EDGE = 0xFFFF1433;
     /**
      * 3.6.0 (the owner: "every lightning should be more croocked, its going too straight Look at haki references man"): the straight runs
-     * between kinks, about this long (was 6: long sticks), each turned hard off the last ({@link #WANDER}) and kinked again inside.
+     * between kinks, about this long (was 6: long sticks), each zig-zagging sharply off the bolt's way ({@link #ZIG_LEAST} to {@link #ZIG_MOST} degrees) and kinked again inside.
      */
     static final double STEP = 3.0;
-    /** 3.6.0: how hard each run turns off the last (was 0.42). */
-    static final double WANDER = 0.85;
+    /**
+     * 3.6.0 (the owner's reference, "this is how the lightnign should shoot"): how sharply each run zig-zags off the bolt's own way out
+     * of the player, in degrees, least and most (it was a free wander of 0.85 a run, which could turn a bolt back on itself: tangles).
+     */
+    static final double ZIG_LEAST = 25.0;
+    static final double ZIG_MOST = 55.0;
     /** Where the bolts leave the flash (blocks from the chest). */
     static final double START = 2.2;
     /** The chest, above the feet. */
@@ -75,6 +79,37 @@ public final class ConquerorStorm {
         return 7 + (int) Math.round(2 * m + 16 * m * m * m);
     }
 
+    /**
+     * 3.6.0 (the owner: "the green lines are always empty, you are never using those spaces ... its only shooting down and up, the
+     * middle is empty", and their reference of the bolts shooting out of the player every way): the ways {@code count} bolts leave the
+     * player, all round them (a golden-angle turn each), by thirds: one out level at the chest (rising {@link #LEVEL_LEAST} to
+     * {@link #LEVEL_MOST} degrees), one up into the sky (20 to 72), one down to strike the ground out where it lands (15 to 55 under).
+     */
+    static double[] spread(int count, SplittableRandom random) {
+        int n = Math.max(1, count);
+        double[] out = new double[n * 3];
+        double yaw = random.nextDouble() * Math.PI * 2.0;
+        for (int i = 0; i < n; i++) {
+            yaw += 2.399963229728653 + random.nextDouble(-0.25, 0.25);
+            double up = switch (i % 3) {
+                case 0 -> LEVEL_LEAST + (LEVEL_MOST - LEVEL_LEAST) * random.nextDouble();
+                case 1 -> 20.0 + 52.0 * random.nextDouble();
+                default -> -15.0 - 40.0 * random.nextDouble();
+            };
+            double r = Math.toRadians(up);
+            out[i * 3] = Math.cos(yaw) * Math.cos(r);
+            out[i * 3 + 1] = Math.sin(r);
+            out[i * 3 + 2] = Math.sin(yaw) * Math.cos(r);
+        }
+        return out;
+    }
+
+    /** 3.6.0: how steeply a level bolt rises as it shoots out from the chest (degrees): it stays out in the middle, off the ground. */
+    static final double LEVEL_LEAST = 3.0;
+    static final double LEVEL_MOST = 14.0;
+    /** 3.6.0: the least a bolt not sent down stays over the ground (blocks): it never drops out of the middle into the ground. */
+    static final double AIR = 0.7;
+
     /** The whole storm of one full-power release. */
     public static List<Strand> release(int mastery, long seed, boolean supreme) {
         double m = Math.max(0.0, Math.min(1.0, mastery / 1000.0));
@@ -85,7 +120,7 @@ public final class ConquerorStorm {
         // fucking tearing the floor. I want massive amounts of lightning shooting everywhere, up, down ... it's meant to be ridiculous"):
         // seven to ten bolts a young Conqueror, then steeply more toward mastery 1000 (some 26): those that come down tear the ground
         int count = count(mastery) + (supreme ? 1 : 0);
-        double[] directions = Sphere.directions(count, random);
+        double[] directions = spread(count, random);
         for (int i = 0; i < count; i++) {
             double[] dir = {directions[i * 3], directions[i * 3 + 1], directions[i * 3 + 2]};
             bolt(out, random, dir, reach * (0.7 + 0.3 * random.nextDouble()), (float) (random.nextDouble() * 1.2), 1.0 + 0.35 * m);
@@ -119,14 +154,10 @@ public final class ConquerorStorm {
         SplittableRandom random = new SplittableRandom(seed ^ 0x424C_4153_54L);
         double height = Math.max(GROUND + 0.3, -floor);
         int n = Math.max(1, Math.min(6, 1 + count / 3));
-        double[] directions = Sphere.directions(n, random);
+        double[] directions = spread(n, random);
         List<Strand> strands = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             double[] dir = {directions[i * 3], directions[i * 3 + 1], directions[i * 3 + 2]};
-            if (i % 3 != 2 && dir[1] < 0.0) {
-                dir[1] = -dir[1] * 0.8;
-                dir = normalise(dir);
-            }
             double length = Math.max(8.0, Math.min(40.0, radius * 2.5)) * (0.75 + 0.25 * random.nextDouble());
             // the release's very bolt, cut short: its width by the distance from the blast as along a release bolt, its kinks the release's
             bolt(strands, random, dir, length, (float) (random.nextDouble() * 0.8), size, height, 0.4, STEP, RELEASE_SPAN);
@@ -156,12 +187,21 @@ public final class ConquerorStorm {
         return (float) (width(Math.min(1.0, walked / span), size) * (0.25 + 0.75 * Math.min(1.0, left)));
     }
 
+    /**
+     * 3.6.0 (the owner: "JESUS WHY IS THE LIGHTNING SO THICK", with their reference: bolts shooting out of the player, the widest about
+     * half a block): the widest a bolt is drawn, in blocks, at size 1, before its taper ({@link #width}: 0.68 blocks at its widest; it was
+     * 3.6, 2.7 blocks: folded ribbons). The one Haki lightning's width: the release's and every blast's with it.
+     */
+    public static final double WIDEST = 0.9;
+    /** The width a bolt had before 3.6.0, over its width now: the storm still strikes bodies as far from its line as before. */
+    static final double HIT_WIDTH = 3.6 / WIDEST;
+
     /** The stroke width at {@code t} (0 at the flash, 1 at the far end), times {@code size}: swelling out of the flash, tapering far out. */
     static float width(double t, double size) {
         // thin out of the flash (the player is never walled in by their own storm), full by a third of the way, tapering far out
         double swell = Math.min(1.0, t / 0.33);
         swell = swell * swell * (3 - 2 * swell);
-        return (float) (size * 3.6 * (0.12 + 0.88 * swell) * (1.0 - 0.75 * t));
+        return (float) (size * WIDEST * (0.12 + 0.88 * swell) * (1.0 - 0.75 * t));
     }
 
     /** The strands' points as they are built. */
@@ -247,6 +287,10 @@ public final class ConquerorStorm {
         boolean grounded = a[1] <= GROUND;
         b.add(a, grounded ? 1.0 : 0.0);
         double walked = 0.0;
+        // 3.6.0 (the owner's reference: "this is how the lightnign should shoot": every bolt shooting straight out of the player, kinked
+        // sharply): the side the runs zig-zag to (across the bolt's way, turning slowly), and which side the next run goes
+        double[] side = across(dir, Sphere.unit(random));
+        double zig = random.nextBoolean() ? 1.0 : -1.0;
         List<Object[]> branches = new ArrayList<>();
         while (walked < length - 0.5) {
             double step = Math.min(length - walked, STEP * (0.6 + 0.8 * random.nextDouble()));
@@ -254,23 +298,35 @@ public final class ConquerorStorm {
             boolean wasGrounded = grounded;
             if (!grounded) {
                 double[] wander = Sphere.unit(random);
-                // 3.6.0: each run turned hard off the last, pulled back toward the bolt's way (a jagged line, never a straight stick); on
-                // its glide down to where it lands as before (it must land out where it was sent, never back at the feet)
                 boolean gliding = land > 0.0 && walked < land;
-                double keep = gliding ? 0.55 : 0.35;
-                double pull = gliding ? 0.45 : 0.65;
-                double turn = gliding ? 0.42 : WANDER;
-                h = normalise(new double[] {h[0] * keep + dir[0] * pull + wander[0] * turn, h[1] * keep + dir[1] * pull + wander[1] * turn,
-                    h[2] * keep + dir[2] * pull + wander[2] * turn});
+                if (gliding) {
+                    // on its glide down to where it lands as before (it must land out where it was sent, never back at the feet)
+                    h = normalise(new double[] {h[0] * 0.55 + dir[0] * 0.45 + wander[0] * 0.42, h[1] * 0.55 + dir[1] * 0.45 + wander[1] * 0.42,
+                        h[2] * 0.55 + dir[2] * 0.45 + wander[2] * 0.42});
+                } else {
+                    // 3.6.0 (the owner's reference): each run a sharp zig-zag off the bolt's own straight way out (25 to 55 degrees), now
+                    // one side, now the other, never turning back on itself; one that has strayed far off its line zags back toward it
+                    side = across(dir, new double[] {side[0] + wander[0] * 0.5, side[1] + wander[1] * 0.5, side[2] + wander[2] * 0.5});
+                    zig = random.nextDouble() < 0.8 ? -zig : zig;
+                    double[] line = {a[0], a[1] - CHEST, a[2]};
+                    double along = line[0] * dir[0] + line[1] * dir[1] + line[2] * dir[2];
+                    double[] off = {line[0] - dir[0] * along, line[1] - dir[1] * along, line[2] - dir[2] * along};
+                    double stray = Math.sqrt(off[0] * off[0] + off[1] * off[1] + off[2] * off[2]);
+                    if (stray > 1.0 + 0.12 * walked) {
+                        zig = (off[0] * side[0] + off[1] * side[1] + off[2] * side[2]) > 0.0 ? -1.0 : 1.0;
+                    }
+                    double k = Math.tan(Math.toRadians(ZIG_LEAST + (ZIG_MOST - ZIG_LEAST) * random.nextDouble()));
+                    h = normalise(new double[] {dir[0] + side[0] * zig * k, dir[1] + side[1] * zig * k, dir[2] + side[2] * zig * k});
+                }
                 next = new double[] {a[0] + h[0] * step, a[1] + h[1] * step, a[2] + h[2] * step};
                 if (land > 0.0) {
                     // on its glide down to where it lands, wandering a little either side of it
                     double share = Math.min(1.0, (walked + step) / land);
                     next[1] = share >= 1.0 ? GROUND - 1.0 : CHEST + (GROUND - CHEST) * share + random.nextDouble(-0.3, 0.3) * (1.0 - share);
                 }
-                if (land <= 0.0 && next[1] < GROUND + 0.4 && Math.hypot(next[0], next[2]) < 3.5) {
-                    // 3.6.0: its harder turns never bring it down to the ground at the player's feet (that is a downward strand's, far out)
-                    next[1] = GROUND + 0.4;
+                if (land <= 0.0 && next[1] < GROUND + AIR) {
+                    // 3.6.0: its zig-zags never bring a bolt sent level or up down into the ground (that is a downward strand's, far out)
+                    next[1] = GROUND + AIR + random.nextDouble() * 0.3;
                 }
                 if (next[1] < GROUND) {
                     // it struck the ground: from here it tears along it, outward
@@ -330,8 +386,9 @@ public final class ConquerorStorm {
             b.add(next, grounded ? 0.35 : 0.0);
             a = next;
         }
-        // its width: the bolt's at the fork, tapering (Builder's taper on a branch's own length, scaled to the fork's width)
-        Strand s = b.build(delay, 18 + random.nextInt(6), 1.0, width / 3.6, random.nextLong());
+        // its width: the bolt's at the fork, tapering (Builder's taper on a branch's own length, scaled to the fork's width; 3.6.0: over
+        // WIDEST, it was over the old 3.6)
+        Strand s = b.build(delay, 18 + random.nextInt(6), 1.0, width / WIDEST, random.nextLong());
         out.add(s);
     }
 
@@ -452,7 +509,7 @@ public final class ConquerorStorm {
                 double t = len < 1.0E-12 ? 0.0 : Math.max(0.0, Math.min(1.0, ((x - ax) * dx + (z - az) * dz) / len));
                 double ex = ax + dx * t - x;
                 double ez = az + dz * t - z;
-                double reach = half + strand.widths()[Math.min(strand.widths().length - 1, i)] / 2.0;
+                double reach = half + strand.widths()[Math.min(strand.widths().length - 1, i)] * HIT_WIDTH / 2.0;
                 double y = ay + dy * t;
                 if (ex * ex + ez * ez <= reach * reach && y >= bottom - 0.5 && y <= top + 0.5) {
                     return true;
@@ -460,6 +517,16 @@ public final class ConquerorStorm {
             }
         }
         return false;
+    }
+
+    /** {@code v} with its part along {@code way} taken out, made a unit (any unit across {@code way} when nothing is left). */
+    static double[] across(double[] way, double[] v) {
+        double d = v[0] * way[0] + v[1] * way[1] + v[2] * way[2];
+        double[] o = {v[0] - way[0] * d, v[1] - way[1] * d, v[2] - way[2] * d};
+        if (o[0] * o[0] + o[1] * o[1] + o[2] * o[2] < 1.0E-8) {
+            o = Math.abs(way[1]) < 0.9 ? new double[] {-way[2], 0.0, way[0]} : new double[] {1.0, 0.0, 0.0};
+        }
+        return normalise(o);
     }
 
     static double[] normalise(double[] v) {

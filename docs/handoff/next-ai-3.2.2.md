@@ -3743,7 +3743,7 @@ Where they stand: see section 8zzw (3.5.9 as built) for what is done; anything n
 
 3.5.9 is green (Build #216, Release #150).
 
-## 8zzx. 3.6.0 in progress (8zzv 5, 7, 8, 12 and the owner's glow note), NOT pushed yet
+## 8zzx. 3.6.0 (8zzv 5, 6, 7, 8, 12 and the owner's glow note): released
 
 The owner after the arm render (circling the forearm's sides above where the glow stopped): "make sure the haki glow fades properly,its
 ending too shortly all of a sudden."
@@ -3769,8 +3769,11 @@ Done on the branch (local commits; build green):
   starts at FistAura.top(bend) (1.2 px on a straight arm, 4.6 below the elbow when bent) and fades over 62 % of the arm below it
   (along): no longer stopping short. tools/ryou_preview.py renders it.
 
-Still to do for 3.6.0: the lightning sounds (8zzv 6: bass-heavier CC0 web recordings, quieter, one sound on the full release), then
-release notes, version 3.6.0, push, CI. Then 8zzv 9 (op mode), 11 (the Mochi list) and 10 (Buzz Cut Mochi).
+Finished in the next session (next-ai-3.6.0.md E 7): the lightning sounds (8zzv 6): conqueror_release -> strike1..3,
+armament_ambient_zap -> zap1..3, last_stand_lightning -> thunder, each 6 dB under the old at its loudest; haki/LightningGate and
+client/haki/LightningSounds (PlaySoundEvent) let one Haki lightning sound ring at a time; the full release plays one strike where its
+snap was. 3.6.0 versioned, released (release-notes-3.6.0.md) and pushed. Then 8zzv 9 (op mode), 11 (the Mochi list) and 10 (Buzz Cut
+Mochi).
 
 ## 9. What to do next (after 3.3.7)
 

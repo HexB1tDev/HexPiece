@@ -103,6 +103,33 @@ public final class SparkPreview {
     /** 3.1.5: the blast row seen from further back, over the caster's shoulder. */
     static boolean far;
 
+    /**
+     * 3.6.0: a glow quad's colours as the game draws them (client/haki/HakiBolts.write): the hue of its brightest corner at full
+     * brightness, each corner as opaque as it is bright (x 0.9), so a glow fades out to nothing. (Drawn opaque before, the preview showed
+     * every glow band as solid dark red fading to black: thick black outlines the game never draws.)
+     */
+    static int[] glowed(int[] argb) {
+        int top = 0;
+        int hue = 0xFFFFFF;
+        for (int c : argb) {
+            int bright = Math.max((c >>> 16) & 255, Math.max((c >>> 8) & 255, c & 255));
+            if (bright > top) {
+                top = bright;
+                hue = c;
+            }
+        }
+        double scale = top > 0 ? 255.0 / top : 0.0;
+        int rgb = (int) Math.min(255, ((hue >>> 16) & 255) * scale) << 16 | (int) Math.min(255, ((hue >>> 8) & 255) * scale) << 8
+            | (int) Math.min(255, (hue & 255) * scale);
+        int[] out = new int[argb.length];
+        for (int k = 0; k < argb.length; k++) {
+            int c = argb[k];
+            int alpha = (int) Math.round(Math.max((c >>> 16) & 255, Math.max((c >>> 8) & 255, c & 255)) * 0.9);
+            out[k] = alpha << 24 | rgb;
+        }
+        return out;
+    }
+
     static BufferedImage render(List<Bolt> bolts, double age, int w, int h) {
         double[] eye = far ? new double[] {4.5, 3.4, -5.0} : new double[] {3.2, 1.6, -2.4};
         double[] target = far ? new double[] {0, 1.5, 7.0} : new double[] {0, 1.0, 0.6};
@@ -133,8 +160,9 @@ public final class SparkPreview {
         list.removeIf(q -> !q.glow());
         list.sort(Comparator.comparingDouble(Quad::far).reversed());
         for (Quad q : list) {
-            FxPreview.tri(raster, eye, q.xyz(), q.argb(), 0, 1, 2);
-            FxPreview.tri(raster, eye, q.xyz(), q.argb(), 0, 2, 3);
+            int[] c = glowed(q.argb());
+            FxPreview.tri(raster, eye, q.xyz(), c, 0, 1, 2);
+            FxPreview.tri(raster, eye, q.xyz(), c, 0, 2, 3);
         }
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
         img.setRGB(0, 0, w, h, raster.rgb, 0, w);

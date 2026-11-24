@@ -63,6 +63,11 @@ import net.minecraft.world.phys.Vec3;
  * </ul>
  */
 public final class ConquerorRelease {
+    /**
+     * 3.6.0: how loud the full release's strike is asked (the most a partial release asks, 1.45 + 0.65: past 1 it only carries further;
+     * ConquerorSounds plays it 35 % quieter and the strike's own sounds.json volume sets how loud it is heard).
+     */
+    public static final float FULL_STRIKE = 2.1F;
     /** The seed of each player's release just sent, by entity id (taken by the fissures in the same tick). */
     private static final Map<Integer, Long> SEEDS = new HashMap<>();
     /** 2.4.9: the game tick each charging player's charge filled (a full charge's stun grows with how long G is held after). */
@@ -146,6 +151,10 @@ public final class ConquerorRelease {
     public static void sound(ServerPlayer player, SoundEvent sound, float volume, float pitch) {
         current = null; // the release is done (its sounds come last)
         if (sound == ModSounds.CONQUEROR_SUPREME_SNAP.get()) {
+            // 3.6.0 (the owner: "Full COnqueror on releasing should not play all the lightning sounds at once, just one"): the full
+            // release's one lightning sound is the release's strike (a bass-heavy web thunder, client/haki/LightningSounds lets no other
+            // lightning sound play under it), where its old snap was
+            HakiServerController.delayedSound(player, ModSounds.CONQUEROR_RELEASE.get(), FULL_STRIKE, pitch);
             return;
         }
         HakiServerController.delayedSound(player, sound, volume, pitch);

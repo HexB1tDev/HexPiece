@@ -215,10 +215,13 @@ public final class DragonTests {
         // 3.6.0 (the owner: "more croocked"): a kink every three blocks or so costs a quarter more than the old long runs (was < 1600)
         Check.that(blastMost < 2200, "the biggest blast's lightning fits (" + blastMost + " quads)");
         // 3.2.5 (the owner: "The lightning is to be exactly the same as the one in Conqueror's Haki release"): a release bolt cut short:
-        // as thin where it leaves the blast as the release's leaves the player (3.6 x 0.12 x 1.35 = 0.58), never wider than the release's
-        // widest (3.6 x 1.35), and not the thin lines of 3.2.2 (it swells as it goes)
-        Check.that(leaving < 0.75F, "a blast's bolts leave it as thin as the release's leave the player (" + leaving + " blocks)");
-        Check.that(widest > 1.0F && widest <= 3.6F * 1.35F + 0.01F, "a blast's bolts swell as the release's do (" + widest + " blocks)");
+        // as thin where it leaves the blast as the release's leaves the player (WIDEST x 0.12 x 1.35), never wider than the release's
+        // widest (WIDEST x 1.35), and it swells as it goes (to over a quarter of WIDEST); 3.6.0 (the owner: "JESUS WHY IS THE LIGHTNING SO
+        // THICK"): WIDEST 0.9 blocks (was 3.6), the release's and every blast's together
+        double most = com.hexhaki.piece.haki.ConquerorStorm.WIDEST;
+        Check.that(most <= 1.0, "the one Haki lightning is never the fat ribbons again (" + most + " blocks at its widest)");
+        Check.that(leaving < most * 0.12 * 1.35 * 1.3, "a blast's bolts leave it as thin as the release's leave the player (" + leaving + " blocks)");
+        Check.that(widest > most * 0.28 && widest <= most * 1.35 + 0.01, "a blast's bolts swell as the release's do (" + widest + " blocks)");
         // 3.1.8: the ground bent (Heave.bend); 3.2.2: in the cone (the owner: "in a cone ... you made a sphere, like a circle"): a trench
         // deepening forward with heaved sides, squares lifted and sunk, nothing behind the feet or out past the cone's sides
         for (double length : new double[] {com.hexhaki.piece.gura.Heave.REACH, com.hexhaki.piece.gura.Heave.BEND_MOST}) {

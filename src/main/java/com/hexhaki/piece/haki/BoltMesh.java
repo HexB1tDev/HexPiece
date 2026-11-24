@@ -306,6 +306,9 @@ public final class BoltMesh {
             dist[i] = Math.max(1.0E-6, Math.sqrt(p[i * 3] * p[i * 3] + p[i * 3 + 1] * p[i * 3 + 1] + p[i * 3 + 2] * p[i * 3 + 2]));
             // the least width a stroke keeps far away (a pixel or so) gives way where the stroke itself comes to a point
             tip[i] = widest <= 0 ? 1.0 : Math.min(1.0, w[i] / (0.35 * widest));
+            // 3.6.0 (the owner: "JESUS WHY IS THE LIGHTNING SO THICK"): within NEAR blocks of the eye a bolt thins, so one shooting past
+            // the camera (a level bolt of the release passes a third-person camera at a block or two) never walls the screen
+            w[i] *= (float) near(dist[i]);
         }
         boolean pointed = widest > 0 && w[count - 1] <= POINTED * widest;
         double[] side = sides(p, count);
@@ -486,6 +489,15 @@ public final class BoltMesh {
         int g = (argb >>> 8) & 255;
         int b = argb & 255;
         return Math.max(r, Math.max(g, b)) > 45;
+    }
+
+    /** 3.6.0: within this many blocks of the eye a bolt is drawn thinner ({@link #near}), to {@link #NEAR_LEAST} of its width at the eye. */
+    public static final double NEAR = 8.0;
+    public static final double NEAR_LEAST = 0.1;
+
+    /** 3.6.0: how much of its width a bolt keeps {@code dist} blocks from the eye: all of it from {@link #NEAR} out. */
+    public static double near(double dist) {
+        return Math.max(NEAR_LEAST, Math.min(1.0, dist / NEAR));
     }
 
     /** 3.6.0: a coloured body: glossy in its own colour, deep where the light leaves it, edge-lit brighter. */

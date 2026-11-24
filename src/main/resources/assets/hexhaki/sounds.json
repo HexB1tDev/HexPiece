@@ -666,15 +666,18 @@
     "subtitle": "subtitles.hexhaki.conqueror_release",
     "sounds": [
       {
-        "name": "hexhaki:piece/conqueror/web/thunder1",
+        "name": "hexhaki:piece/lightning/web/strike1",
+        "volume": 0.385,
         "attenuation_distance": 48
       },
       {
-        "name": "hexhaki:piece/conqueror/web/thunder2",
+        "name": "hexhaki:piece/lightning/web/strike2",
+        "volume": 0.442,
         "attenuation_distance": 48
       },
       {
-        "name": "hexhaki:piece/conqueror/web/thunder3",
+        "name": "hexhaki:piece/lightning/web/strike3",
+        "volume": 0.5,
         "attenuation_distance": 48
       }
     ]
@@ -1660,6 +1663,33 @@
       {
         "name": "hexhaki:piece/gura/rumble",
         "attenuation_distance": 96
+      }
+    ]
+  },
+  "armament_ambient_zap": {
+    "subtitle": "subtitles.hexhaki.armament_crackle",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/lightning/web/zap1",
+        "volume": 0.537
+      },
+      {
+        "name": "hexhaki:piece/lightning/web/zap2",
+        "volume": 0.61
+      },
+      {
+        "name": "hexhaki:piece/lightning/web/zap3",
+        "volume": 0.724
+      }
+    ]
+  },
+  "last_stand_lightning": {
+    "subtitle": "subtitles.hexhaki.last_stand_lightning",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/lightning/web/thunder",
+        "volume": 0.624,
+        "attenuation_distance": 64
       }
     ]
   }

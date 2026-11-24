@@ -13,20 +13,17 @@ of every fruit throws the Conqueror's lightning, out of its end explosion when i
 game, the Conqueror's release's (G), crooked as 3.6.0 made it (ConquerorStorm.jagged / strike for every other maker), drawn in the
 player's chosen Haki colour. Never add another lightning look; render any lightning change beside the release from the same camera.
 
-Where things stand: 3.5.9 is released and green (Build #216, Release #150): hold R turns every power off but fruit passives, Meteor
-Fist one size, Blue Hole remade, Galaxy Impact lighter, impact frames only on clashes (for both fighters), WiFi Haki a Swordsman's on K
-with its slow partial draw and lightning from the sheath's gap, the Galaxy Fist and the Haki Grip removed. 3.6.0 is on the branch, NOT
-versioned or released: the Haki colour and Ryou colour pages on the start menu (existing players get them once), one crooked Haki
-lightning everywhere (coated hits included), the coat past the elbow with a ragged edge, the arm glow fading up the arm. The new
-bass-heavy lightning recordings are cut and checked (sounds/piece/lightning/web, tools/lightning_sounds.py) but NOT wired in.
+Where things stand: 3.5.9 is released and green (Build #216, Release #150). 3.6.0 is released (check its runs in next-ai-3.6.0.md
+section H): the Haki colour and Ryou colour pages on the start menu (existing players get them once), one crooked Haki lightning
+everywhere (coated hits included), the coat past the elbow with a ragged edge, the arm glow fading up the arm, and the new bass-heavy
+CC0 lightning sounds (6 dB quieter, one lightning sound at a time through haki/LightningGate and client/haki/LightningSounds, the full
+release heard as one strike). The owner has been sent the colour pages and the seven-colour lightning sheet (previews).
 
-Do next, in order (next-ai-3.6.0.md section F has the detail): (1) wire the lightning sounds (sounds.json: conqueror_release ->
-strike1..3, the original's armament_ambient_zap -> zap1..3 and last_stand_lightning -> thunder, all quieter; build.py RENAMED[SOUNDS];
-one lightning sound at a time on the client so the full release is heard as one), then release 3.6.0 (next_version, release notes,
-handoff, push, both GitHub runs green) and send the owner the colour pages and the seven-colour lightning renders (previews, not the
-game); (2) ask the owner the two open questions (the Quake ultimate's own impact frame; Meteor Fist's growing speed and blast); (3)
-make every new fruit and every style obey /hp op on/off; (4) the owner's Mochi list (ask for the end of their cut-off line about the
-rolling donut, with its picture, first); (5) Buzz Cut Mochi: references first, then plan, then build as one uninterrupted cinematic.
+Do next, in order (next-ai-3.6.0.md section F has the detail): (2) ask the owner the two open questions (the Quake ultimate's own
+impact frame; Meteor Fist's growing speed and blast) unless already asked; wait for their notes on 3.5.9 and 3.6.0; (3) make every new
+fruit and every style obey /hp op on/off; (4) the owner's Mochi list (ask for the end of their cut-off line about the rolling donut,
+with its picture, first); (5) Buzz Cut Mochi: references first, then plan, then build as one uninterrupted cinematic. The next version
+is 3.6.1.
 
 The cloud environment must be the personal "HexPiece" (it allows freesound.org): if a session starts on Default, get_environment, then
 switch_environment to HexPiece (network_only, its switch_statement copied exactly).

@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.5.9"
+VERSION = "3.6.0"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -199,7 +199,11 @@ RENAMED = {LANG: {"key.categories.hexhaki", "key.hexhaki.mastery", "key.hexhaki.
                     # cartoon CC0 recordings (gear/GearSounds.REDONE, tools/gear_sounds.py)
                     "gear5_pistol", "gear5_impact", "gear5_gatling", "gear5_rocket", "gear5_dodge", "gear5_giant", "gear5_whip",
                     "gear5_bajrang_charge", "gear5_bajrang_slam", "gear5_bajrang_impact", "gear5_coil", "gear5_sky_bounce",
-                    "gear5_rubber_world"}}
+                    "gear5_rubber_world",
+                    # 3.6.0 (the owner: "all lightning sounds are to change to new more bass boosted ones (get from the web) and be
+                    # lowered in volume (ONLY the lightning sounds)"): the Haki zap and the storm's thunder on CC0 web recordings
+                    # (tools/lightning_sounds.py), quieter
+                    "armament_ambient_zap", "last_stand_lightning"}}
 # 2.1.1 (the owner: "Get rid of the Imu fruit (Devil Devil fruit). Get rid of it ENTIRELY, but keep it's assets, for future use on other
 # things"): no code, text or file name of the jar may name it; its assets (the Black Soul texture, model and name) stay.
 IMU = re.compile(rb"(?<![A-Za-z])(imu|Imu|IMU)(?![A-Za-z])|Akuma Akuma|akuma_akuma|AKUMA_AKUMA|Devil Devil|devil_devil")
