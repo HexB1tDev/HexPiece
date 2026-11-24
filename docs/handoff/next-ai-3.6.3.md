@@ -278,3 +278,7 @@ While every power is off (R held: server/Powers, the client's BindsClient.off th
 only thing left is the small fill bar while R is held toward the switch (feedback for turning them back on). Everything is back the
 moment the powers are on. Screen flashes of effects (IronFx, ClashFx, FinisherFx) and the broken-bones overlay are effects, not HUD:
 left as they were.
+
+5. The owner's answers (AskUserQuestion, after the 3D lightning and the HUD were committed): release: "Hold until Mochi is done" (no
+   3.6.3 yet: the lightning and HUD fixes ship with the finished Mochi kit); branch: "claude/nice-bell-gam7qf" (push there, where the
+   Build and Release workflows run; this session's own ccr-* branch has no workflow).
