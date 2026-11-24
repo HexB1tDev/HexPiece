@@ -171,6 +171,8 @@ public final class PiecePatch implements Opcodes {
     /** 3.5.9: the Conqueror's quick abilities (the Haki Grip and the Galaxy Fist gone, WiFi Haki a Swordsman's): server/HakiQuick. */
     static final String QUICK = "com/hexhaki/piece/server/HakiQuick";
     static final String PLAYER_VOID = "(Lnet/minecraft/server/level/ServerPlayer;)V";
+    /** 3.5.9: every power off or on (R held): server/Powers. */
+    static final String POWERS = "com/hexhaki/piece/server/Powers";
     static final String COATING = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/model/geom/ModelPart;FZLnet/minecraft/client/player/AbstractClientPlayer;Z)V";
     static final String AURA = "(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;Lnet/minecraft/client/player/AbstractClientPlayer;Lnet/minecraft/client/model/geom/ModelPart;FZFZZ)V";
     static final String AMBIENT = "(Lnet/minecraft/world/entity/Entity;FZJZ)V";
@@ -217,6 +219,17 @@ public final class PiecePatch implements Opcodes {
         {HAND, "renderFirstPerson", HAND, "renderArmAura", AURA, RYOU_HANDS, "armAura", 1},
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentAmbient", AMBIENT, RYOU_FX, "ambient", 1},
         {"com/hexhaki/client/render/HakiRenderHooks$ForgeBus", "tick", VFX, "armamentGroundStorm", GROUND_STORM, RYOU_FX, "groundStorm", 1},
+        // 3.5.9 (the owner: "HOLDING R will now fully disable all powers and abilities (but fruit passives)"): the original's powers
+        // switch (its "powers on/off" key, the Gomu fruit's) is server/Powers' (the kit cancelled, never removed: its passives stay); the
+        // fruit's passive protections ask whether it is owned, not whether its powers are on; a Gomu fruit eater's Haki no longer
+        // slips past the powers-off bit
+        {"com/hexhaki/fruit/FruitServer", "action", "com/hexhaki/fruit/FruitServer", "togglePowers", PLAYER_VOID, POWERS, "toggle", 1},
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "onAction", "com/hexhaki/fruit/FruitServer", "togglePowers", PLAYER_VOID,
+            POWERS, "toggle", 1},
+        {"com/hexhaki/fruit/FruitServer", "attacked", "com/hexhaki/fruit/FruitData", "active", "(Lnet/minecraft/server/level/ServerPlayer;)Z",
+            POWERS, "passives", 1},
+        {CONTROLLER, "onAction", "com/hexhaki/devilfruit/data/GearData", "hasFruit", "(Lnet/minecraft/world/entity/player/Player;)Z", POWERS,
+            "gomuThrough", 1},
         // 3.5.9 (the owner: "Galaxy Fist  Removed entirely.", "Haki Grip  Removed entirely as well", "Wifi haki becomes a Sword's man
         // ability only"): the Galaxy Fist's start and end (its "convergence") and the Haki Grip's (its "dominion") do nothing; WiFi Haki's
         // ("sovereign strike") go through HexPiece, which lets only a Swordsman hold it; its lightning leaves the saya's mouth at the hip
@@ -340,7 +353,7 @@ public final class PiecePatch implements Opcodes {
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura", "renderFirstPerson"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},
         {CONTROLLER, "sovereignStrike", "releaseSovereignStrike", "wifiHakiHandPoint", "applyConqueror", "forceMaxConquerorStun",
-            "isConquerorCombatTarget"}};
+            "isConquerorCombatTarget"}, {"com/hexhaki/devilfruit/gameplay/GearServerController", "endGearFive"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any
      * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either). 2.3.7: the Galaxy Fist's Armament 520.
@@ -516,6 +529,7 @@ public final class PiecePatch implements Opcodes {
         entries.put(HAKI_KEYS + ".class", transform(entries.get(HAKI_KEYS + ".class"), PiecePatch::keyDefaults));
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::slotLetters));
         entries.put(BINDS + ".class", transform(entries.get(BINDS + ".class"), PiecePatch::tidySlots));
+        entries.put(GEAR_SERVER + ".class", transform(entries.get(GEAR_SERVER + ".class"), PiecePatch::gomuPowersOff));
         entries.put(HAKI_ANIMATIONS + ".class", transform(entries.get(HAKI_ANIMATIONS + ".class"), node -> {
             firstPersonArms(node);
             toonClips(node);
@@ -1772,6 +1786,24 @@ public final class PiecePatch implements Opcodes {
         head.add(new VarInsnNode(ALOAD, 0));
         head.add(new MethodInsnNode(INVOKESTATIC, QUICK, "tidy", PLAYER_VOID, false));
         sync.instructions.insert(head);
+    }
+
+    /**
+     * 3.5.9 (the owner: "HOLDING R will now fully disable all powers and abilities (but fruit passives)"): the head of the Gomu fruit's
+     * {@code GearServerController.onAction(player, action)} returns at once while {@code server/Powers.refuse(player)} (every power
+     * off). One jump, its frame after its label.
+     */
+    static void gomuPowersOff(ClassNode node) {
+        MethodNode method = method(node, "onAction", "(Lnet/minecraft/server/level/ServerPlayer;Lcom/hexhaki/network/GearAction;)V");
+        InsnList head = new InsnList();
+        LabelNode on = new LabelNode();
+        head.add(new VarInsnNode(ALOAD, 0));
+        head.add(new MethodInsnNode(INVOKESTATIC, POWERS, "refuse", "(Lnet/minecraft/server/level/ServerPlayer;)Z", false));
+        head.add(new JumpInsnNode(IFEQ, on));
+        head.add(new InsnNode(RETURN));
+        head.add(on);
+        head.add(new FrameNode(F_SAME, 0, null, 0, null));
+        method.instructions.insert(head);
     }
 
     /** RyouServer.afterArmament(player) before every return of HakiServerController.toggleArmament. */

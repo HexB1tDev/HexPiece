@@ -22,8 +22,9 @@ public final class PieceNetwork {
      * S2CDragon carries the dragon's colour. 12 (2.7.2): S2CUoFx (17), C2SDragon (18), the Uo Uo no Mi's moves. 13 (3.2.0): S2CEnergy
      * (19). 14 (3.3.2): C2SNikaJump (20), Gear 5's jump. 15 (3.4.4): C2SNikaWhip (21), Goof Ball let go. 16, 17 (3.5.x): Sky Road's
      * C2SItoSky (22), S2CUoFx's two-byte kind. 18 (3.5.7): Fishman Karate removed and Iron Fist emptied: the styles' and their moves'
-     * ordinals changed, S2CWater keeps only the knock-down and the air bullets. */
-    private static final String PROTOCOL = "18";
+     * ordinals changed, S2CWater keeps only the knock-down and the air bullets. 19 (3.5.9): C2SPowers (23), R held: every power off
+     * or on. */
+    private static final String PROTOCOL = "19";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -63,6 +64,8 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(21, C2SNikaWhip.class, C2SNikaWhip::encode, C2SNikaWhip::decode, C2SNikaWhip::handle);
         // 3.5.2: Sky Road's strings and steps (client/ito/SkyRoad -> server/ItoMoves.skyString -> everyone near)
         CHANNEL.registerMessage(22, C2SItoSky.class, C2SItoSky::encode, C2SItoSky::decode, C2SItoSky::handle);
+        // 3.5.9: R held, every power off or on (client/CombatMode -> server/Powers)
+        CHANNEL.registerMessage(23, C2SPowers.class, C2SPowers::encode, C2SPowers::decode, C2SPowers::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

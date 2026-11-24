@@ -47,7 +47,9 @@ public final class PieceHooks {
      * reads it), never Haki. Only an open screen pauses them, as before.
      */
     public static boolean hakiKeysOff() {
-        return false;
+        // 3.5.9 (the owner: "HOLDING R will now fully disable all powers and abilities (but fruit passives)"): the powers-off bit is
+        // the original's again (server/Powers), and it now holds Haki back too
+        return com.hexhaki.binds.client.BindsClient.off();
     }
 
     /**

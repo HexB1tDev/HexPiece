@@ -3684,6 +3684,46 @@ With the prompt ("finish all four in one version 3.5.9"), then while 3.5.9 was b
 
 Where they stand: see section 8zzw (3.5.9 as built) for what is done; anything not listed there is still to do.
 
+## 8zzw. 3.5.9 as built (8zzu's four requests and 8zzv items 1 to 4)
+
+- (1) Hold R (server/Powers, network/C2SPowers id 23, PROTOCOL 19; client/CombatMode HOLD 12 ticks, the "hexpiece_powers" overlay: a
+  fill while R is held, a "POWERS OFF (hold R)" badge while off; a tap acts on release, Ctrl + R still Armament): the original's own
+  powers bit (Binds.off, synced: BindsClient.off) set; HakiServerController.cancelAll; the fruit kit's cancel (never removed: its
+  passives stay); the Gomu fruit's GearServerController.cancelAll and endGearFive (widened); combat mode, the sword, Iron Fist forgotten.
+  Held back while off: Haki (RyouServer.hakiOff, PieceHooks.hakiKeysOff now BindsClient.off, the Gomu eater's Haki through
+  Powers.gomuThrough), fruit abilities (FruitData.active, the original's), the Gomu fruit's actions (PiecePatch.gomuPowersOff: a guard
+  at the head of GearServerController.onAction), and the handlers of C2SCombat, C2SStyleAction, C2SSword, C2SDragon, C2SNikaJump,
+  C2SItoSky. FruitServer.attacked asks Powers.passives (owns) instead of active. The original's togglePowers (FruitServer.action code 5
+  and the Gomu onAction) go to Powers.toggle. StyleTests.powers. Not rendered: the overlay is GuiGraphics only (no offline preview).
+- (2) IronMove.METEOR_RADIUS 0.55 (speed and blast still grow with the hold: told the owner).
+- (3) Blue Hole as 8zzu planned: IronFx.hole phases 0 to 7 (Throw record and IronFx.thrown: the body's streak down; Carry.fall eases
+  the user's drop in), the clip style_brawler_blue_hole (35 ticks: uppercut on 6, leap 8 to 14, grab, wound back by the side 17, the
+  throw 18, landing low 29, leaning over the hole; lint clean), a miss clears the clip (FruitUtil.animate "__clear__") a tick after the
+  uppercut. Renders: IronShots ihup, ithrow, ihole. HudTests.ironFist checks the new beats.
+- (4a) S2CClash.CLASH (16) on Clashes' three messages; S2CClash.framed(self): the screen frame only for a clash and only on its a or b
+  (or the Gura ultimate's CLASSIC frame, kept and told to the owner). Every other sender (Hie, Magu, Pika, Gura hits) keeps its burst
+  but plays no frame; IronFist.frame and its six calls are gone. HudTests.
+- (4b) Galaxy Impact: IMPACT_CROUCH_EVERY 10 (was 5), IMPACT_CHARGE_EVERY 8 (was 3), impactBolts 2 to 5 (was 4 to 12), landing bolts
+  6 (10), the blast's bolts and rocks every 12 ticks (6) with 6 bolts and 10 rocks (10, 14), its foes every 4 ticks (2); the crater
+  IMPACT_CRATER 13 (15), IMPACT_DEPTH 6.5 (8 to 12) and 6 blocks above (10), IMPACT_SCATTER 600 (2600) with 6/3 above and 1 below; the
+  client's strike one dust wall (three). DragonTests.ironArt: the heaviest frame under 9000 quads.
+- 8zzv 1 to 4: haki/QuickSlots (pure: the Grip 101 and the Galaxy Fist 103 off every layout, WiFi Haki 102 a Swordsman's only, never
+  on L: on K, else H, else any free slot), server/HakiQuick (the patch sends beginDominion, releaseDominion, beginConvergence,
+  releaseConvergence to gone(); sovereignStrike / releaseSovereignStrike to wifi() / wifiRelease() (Swordsman check); the WiFi arc's
+  start wifiHakiHandPoint to mouth(): the koiguchi at the left hip when the katana is sheathed there (SwordServer.sheathedAtHip);
+  tidy() at the head of Binds.sync (PiecePatch.tidySlots) sets the slots right through Binds.set; ProfileServer.sync calls
+  Binds.sync). GalaxyFist.java and PieceRules.galaxyFist deleted, the INTS 520 row gone. The texts "[Hold L]" now "[Hold K]" (TEXTS).
+  LogbookData hides the Grip and the Galaxy Fist, WiFi Haki for Swordsmen only; AbilityHud's slots skip the gone ones.
+  WiFi Haki's animation: sword/WifiDraw (pure timeline: the hand on the hilt at 9, the thumb's 1.2 px at 14, 2.9 px at 40, held
+  trembling in an 8-tick loop, home in 5), tools/wifi_anims.py writes wifi_haki.json from sword_draw.json's own solved poses at the
+  draw tick where its blade is as far out (arms, body yaw and bend, leftItem; no head, no legs); client/sword/WifiPull (NikaToon.clip
+  hands it every clip: "wifi_haki" starts the pull, any other ends it) slides the blade in SwordLayer (the saya laid by the Haki
+  layer's leftItem while the clip plays) with HakiDraw.wifi crackling out of the gap; HolsterHand shows the draw's first-person hands at
+  WifiDraw.drawTick. SwordTests.wifi, StyleTests.galaxy. Renders: the clip with the katana (sword_rig), BoltPreview wifi (the gap's
+  lightning).
+
+3.5.9 is pushed; see the top of next-prompt.md for its CI state.
+
 ## 9. What to do next (after 3.3.7)
 
 1. 3.5.2 (8zzl: Sky Road rebuilt) is green (Build #200, Release #143); 3.5.3 (one thin string a step) is green (Build #201, Release #144);

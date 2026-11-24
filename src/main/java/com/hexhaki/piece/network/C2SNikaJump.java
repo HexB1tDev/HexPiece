@@ -22,7 +22,11 @@ public record C2SNikaJump() {
         NetworkEvent.Context context = supplier.get();
         ServerPlayer player = context.getSender();
         if (player != null) {
-            context.enqueueWork(() -> NikaJump.jumped(player));
+            context.enqueueWork(() -> {
+                if (!com.hexhaki.piece.server.Powers.off(player)) { // 3.5.9: every power off (R held)
+                    NikaJump.jumped(player);
+                }
+            });
         }
         context.setPacketHandled(true);
     }

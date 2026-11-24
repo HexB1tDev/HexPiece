@@ -20,7 +20,8 @@ public record C2SCombat(boolean on) {
         NetworkEvent.Context context = supplier.get();
         ServerPlayer sender = context.getSender();
         if (sender != null) {
-            context.enqueueWork(() -> StyleServer.combat(sender, message.on));
+            // 3.5.9: no combat mode while every power is off (R held)
+            context.enqueueWork(() -> StyleServer.combat(sender, message.on && !com.hexhaki.piece.server.Powers.off(sender)));
         }
         context.setPacketHandled(true);
     }

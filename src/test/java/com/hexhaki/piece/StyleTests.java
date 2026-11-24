@@ -21,6 +21,7 @@ public final class StyleTests {
         combo();
         rules();
         galaxy();
+        powers();
         removed();
         tumble();
         air();
@@ -143,6 +144,29 @@ public final class StyleTests {
         Check.that(PieceRules.renownFor(Faction.PIRATE, 2) > PieceRules.renownFor(Faction.PIRATE, 0), "a captain is worth more");
         Check.that(PieceRules.berries(1_234_000L).equals("1,234,000"), "berries print like a poster");
         Check.that(Faction.PIRATE.enemy() == Faction.MARINE && Faction.MARINE.enemy() == Faction.PIRATE, "the two sides");
+    }
+
+    /**
+     * 3.5.9 (the owner: "HOLDING R will now fully disable all powers and abilities (but fruit passives)"): R held switches every power;
+     * the original's switch comes here too and no longer removes the kit (its passives); every message that starts a power asks first.
+     */
+    static void powers() throws Exception {
+        String patch = java.nio.file.Files.readString(java.nio.file.Path.of("patch/PiecePatch.java"));
+        Check.that(patch.contains("\"togglePowers\", PLAYER_VOID, POWERS, \"toggle\", 1}")
+            && patch.contains("\"active\", \"(Lnet/minecraft/server/level/ServerPlayer;)Z\",\n            POWERS, \"passives\", 1}")
+            && patch.contains("\"hasFruit\", \"(Lnet/minecraft/world/entity/player/Player;)Z\", POWERS,\n            \"gomuThrough\", 1}")
+            && patch.contains("PiecePatch::gomuPowersOff"), "the original's switch, the passives, the Gomu fruit's Haki and actions: through Powers");
+        String powers = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/com/hexhaki/piece/server/Powers.java"));
+        Check.that(powers.contains("kit.cancel(player)") && !powers.contains("kit.removed(") && !powers.contains(".removed(player)"),
+            "powers off cancels the fruit's moves and forms, never removes it (its passives stay)");
+        for (String handler : new String[] {"C2SCombat", "C2SStyleAction", "C2SSword", "C2SDragon", "C2SNikaJump", "C2SItoSky"}) {
+            String code = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/com/hexhaki/piece/network/" + handler + ".java"));
+            Check.that(code.contains("Powers.off("), handler + " asks whether every power is off");
+        }
+        String ryou = java.nio.file.Files.readString(java.nio.file.Path.of("src/main/java/com/hexhaki/piece/server/RyouServer.java"));
+        Check.that(ryou.contains("|| Powers.off(player)"), "no Haki while every power is off");
+        Check.that(com.hexhaki.piece.client.CombatMode.HOLD >= 8 && com.hexhaki.piece.client.CombatMode.HOLD <= 20,
+            "R held about half a second switches the powers; a tap stays a tap");
     }
 
     /**

@@ -30,7 +30,11 @@ public record C2SItoSky(int mode, double x, double y, double z, float length, in
         NetworkEvent.Context context = supplier.get();
         ServerPlayer player = context.getSender();
         if (player != null) {
-            context.enqueueWork(() -> ItoMoves.skyString(player, message.mode, message.x, message.y, message.z, message.length, message.extra));
+            context.enqueueWork(() -> {
+                if (!com.hexhaki.piece.server.Powers.off(player)) { // 3.5.9: every power off (R held)
+                    ItoMoves.skyString(player, message.mode, message.x, message.y, message.z, message.length, message.extra);
+                }
+            });
         }
         context.setPacketHandled(true);
     }

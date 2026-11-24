@@ -39,13 +39,17 @@ Love, Z Meteor Fist held, X Mountain Crusher, C Blue Hole, V Galaxy Divide, B In
 regrows), and the owner's own impact frame (art/impact-frame.gif) in place of every impact frame but the Gura ultimate's; green
 (Build #213, Release #149).
 
-Next: 3.5.9, the owner's four requests after 3.5.8 (section 8zzu, verbatim, with what was found and the plan): (1) holding R turns
-every power and ability off (fruit passives kept), (2) Meteor Fist's cannonball one size (done in the patch), (3) Blue Hole remade:
-an uppercut, a miss ends it, a hit sends them flying, the user leaps after them, grabs them and throws them down hard (server side
-done in the patch, the client, the clip and the renders not), (4) Galaxy Impact too laggy, and impact frames ONLY when two attacks
-clash, for both of them. Start with `git apply docs/handoff/wip-3.5.9.patch` (it does not compile until IronFx.hole() is rewritten),
-then delete the patch file in the same commit. All four in one version. Then wait for the owner's notes on 3.5.9, 3.5.6 (Mochi),
-3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
+3.5.9 (sections 8zzu the requests, 8zzv the owner's further requests verbatim, 8zzw as built): hold R turns every power off but
+the fruit's passives, Meteor Fist's cannonball one size, Blue Hole remade (uppercut, leap, grab, throw down), Galaxy Impact lighter,
+impact frames only on clashes (for both), WiFi Haki a Swordsman's on K with its slow partial draw and lightning from the sheath's gap,
+the Galaxy Fist and the Haki Grip removed entirely. Pushed; check its Build and Release runs are green.
+
+Next (8zzv, the owner's requests not yet built, in this order): 3.6.0 the Haki colour choice on the start menu (seven sets, named by
+their colours only: never the forbidden fruit's owner's name, build.py check_imu), every lightning more crooked and ONE Haki lightning
+everywhere (the Conqueror's release, G; Haki-coated fruit and style attacks too: POINT ONE 3 updated), every lightning sound replaced by
+bass-heavier CC0 web recordings and lowered (lightning sounds only), the full release playing ONE lightning sound, not all at once; then
+every new fruit and style obeying /hp op on/off; then Mochi's Buzz Cut Mochi (8zzv 10, references first). Then wait for the owner's
+notes on 3.5.9, 3.5.6 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
 on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
 polygons are not acceptable; hot strings use ItoArt's HOT tint; never lay a see-through ribbon over or through an opaque body (it punches
 holes in it: 8zzk).

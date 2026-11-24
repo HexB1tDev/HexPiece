@@ -9,6 +9,7 @@ import com.hexhaki.network.HakiAction;
 import com.hexhaki.network.HakiNetwork;
 import com.hexhaki.piece.PieceProfile;
 import com.hexhaki.piece.network.C2SCombat;
+import com.hexhaki.piece.network.C2SPowers;
 import com.hexhaki.piece.network.PieceNetwork;
 import com.hexhaki.piece.style.FightingStyle;
 import net.minecraft.client.Minecraft;
@@ -44,8 +45,16 @@ import net.minecraftforge.fml.common.Mod;
 public final class CombatMode {
     /** Ticks a switch into combat mode waits for the server to end Devil Fruit mode before deciding it was refused. */
     private static final int SWITCH_GRACE = 40;
+    /**
+     * 3.5.9 (the owner: "HOLDING R will now fully disable all powers and abilities (but fruit passives)"): R held this long (ticks)
+     * turns every power off, or back on; a shorter press is the tap it always was, acted on when R is let go.
+     */
+    public static final int HOLD = 12;
     private static boolean on;
     private static long switchingUntil;
+    private static long pressedAt = -1;
+    private static boolean pressCtrl;
+    private static boolean fired;
 
     private CombatMode() {
     }
@@ -64,6 +73,22 @@ public final class CombatMode {
     static void reset() {
         on = false;
         switchingUntil = 0;
+        pressedAt = -1;
+        fired = false;
+    }
+
+    /** 3.5.9: is every power off (the original's bit, server/Powers)? */
+    static boolean powersOff() {
+        return com.hexhaki.binds.client.BindsClient.off();
+    }
+
+    /** 3.5.9: how far R has been held toward the switch (0 to 1), or -1 when it is not held. */
+    static double holding(float partial) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (pressedAt < 0 || fired || minecraft.f_91073_ == null) {
+            return -1.0;
+        }
+        return Math.min(1.0, (now(minecraft) - pressedAt + partial) / HOLD);
     }
 
     /** The player has set sail with a fighting style that has moves (3.5.7: Iron Fist has none yet): R is HexPiece's. */
@@ -99,18 +124,57 @@ public final class CombatMode {
         if (on && GearClientState.devilFruitMode() && now(minecraft) > switchingUntil) {
             set(false); // Devil Fruit mode came on another way (the X key): the fruit has the keys
         }
-        if (minecraft.f_91080_ != null) {
-            return; // the original drains R under a screen
+        if (on && powersOff()) {
+            set(false); // 3.5.9: every power off: no combat mode either
         }
+        if (minecraft.f_91080_ != null) {
+            pressedAt = -1; // the original drains R under a screen
+            return;
+        }
+        // 3.5.9: a tap of R (or Ctrl + R) acts when it is let go; held HOLD ticks it switches every power off or on instead
+        boolean down = HakiKeys.ARMAMENT.m_90857_();
+        int clicks = 0;
         while (HakiKeys.ARMAMENT.m_90859_()) {
-            if (com.hexhaki.piece.client.dragon.DragonClient.selfOut()) {
-                continue; // 2.7.3: the dragon keeps fruit mode and has no Haki (R and Ctrl + R do nothing)
+            clicks++;
+        }
+        long now = now(minecraft);
+        if (down && pressedAt < 0) {
+            pressedAt = now;
+            pressCtrl = Screen.m_96637_();
+            fired = false;
+        }
+        if (down && !fired && now - pressedAt >= HOLD) {
+            fired = true;
+            boolean off = !powersOff();
+            PieceNetwork.toServer(new C2SPowers(off));
+            if (off) {
+                set(false);
             }
-            if (Screen.m_96637_()) {
-                power();
-            } else {
-                swap(minecraft);
+        }
+        if (!down && pressedAt >= 0) {
+            if (!fired) {
+                tap(minecraft, pressCtrl);
             }
+            pressedAt = -1;
+        } else if (!down && clicks > 0) {
+            tap(minecraft, Screen.m_96637_()); // pressed and let go within one tick
+        }
+    }
+
+    /** R tapped (Ctrl: Armament), as R always was; nothing but a reminder while every power is off. */
+    static void tap(Minecraft minecraft, boolean ctrl) {
+        if (com.hexhaki.piece.client.dragon.DragonClient.selfOut()) {
+            return; // 2.7.3: the dragon keeps fruit mode and has no Haki (R and Ctrl + R do nothing)
+        }
+        if (powersOff()) {
+            minecraft.f_91074_.m_5661_(net.minecraft.network.chat.Component.m_237113_("Powers off: hold "
+                + AbilityHud.name(HakiKeys.ARMAMENT) + " to turn them on"), true);
+            return;
+        }
+        if (ctrl) {
+            power();
+        } else {
+            swap(minecraft);
         }
     }
 
@@ -143,6 +207,36 @@ public final class CombatMode {
             }
             set(true);
         }
+    }
+
+    /**
+     * 3.5.9: over the hotbar's middle: while R is held, a bar filling toward the switch ("Powers off" or "Powers on" when it fills);
+     * while every power is off, a badge saying so and how to turn them back on.
+     */
+    static void powers(GuiGraphics graphics, int width, int height, float partial) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (minecraft.f_91074_ == null || minecraft.f_91066_ == null || minecraft.f_91080_ != null) {
+            return;
+        }
+        Font font = minecraft.f_91062_;
+        double fill = holding(partial);
+        boolean off = powersOff();
+        if (fill < 0 && !off) {
+            return;
+        }
+        String key = AbilityHud.name(HakiKeys.ARMAMENT);
+        String text = fill >= 0 ? (off ? "Hold " + key + ": powers on" : "Hold " + key + ": powers off") : "POWERS OFF  (hold " + key + ")";
+        int w = font.m_92895_(text) + 16;
+        int x = width / 2 - w / 2;
+        int y = height - 74;
+        graphics.m_280509_(x, y, x + w, y + 16, 0xB0101014);
+        graphics.m_280509_(x, y + 14, x + w, y + 16, 0xFF2A2A30);
+        if (fill >= 0) {
+            graphics.m_280509_(x, y + 14, x + (int) Math.round(w * fill), y + 16, off ? 0xFF8CE07A : 0xFFE05050);
+        } else {
+            graphics.m_280509_(x, y, x + 3, y + 16, 0xFFE05050);
+        }
+        graphics.m_280056_(font, text, x + 8, y + 4, off && fill < 0 ? 0xFFFFB4B4 : 0xFFF4E8D0, true);
     }
 
     /** The badge over the hotbar's left end while combat mode is on: the style's colour and name, and its special keys. */
@@ -180,6 +274,8 @@ public final class CombatMode {
         // event, so two Overlay.register in one package shared one, and the game crashed on boot ("Overlay already registered")
         public static void registerCombatOverlay(RegisterGuiOverlaysEvent event) {
             event.registerBelowAll("hexpiece_combat", (gui, graphics, partialTick, width, height) -> draw(graphics, width, height));
+            // 3.5.9: R held toward the powers switch, and every power off
+            event.registerAboveAll("hexpiece_powers", (gui, graphics, partialTick, width, height) -> powers(graphics, width, height, partialTick));
         }
     }
 }

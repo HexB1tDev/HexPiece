@@ -30,7 +30,7 @@ public record C2SSword(int action) {
         ServerPlayer sender = context.getSender();
         if (sender != null) {
             context.enqueueWork(() -> {
-                if (!com.hexhaki.piece.server.HoroMoves.astral(sender)) { // 3.4.2: no style (the sword's included) as a spirit
+                if (!com.hexhaki.piece.server.HoroMoves.astral(sender) && !com.hexhaki.piece.server.Powers.off(sender)) { // 3.4.2, 3.5.9
                     SwordServer.input(sender, message.action);
                 }
             });

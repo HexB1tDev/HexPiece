@@ -20,7 +20,7 @@ public record C2SDragon(boolean flame) {
         NetworkEvent.Context context = supplier.get();
         ServerPlayer player = context.getSender();
         if (player != null) {
-            context.enqueueWork(() -> UoMoves.flame(player, message.flame()));
+            context.enqueueWork(() -> UoMoves.flame(player, message.flame() && !com.hexhaki.piece.server.Powers.off(player))); // 3.5.9
         }
         context.setPacketHandled(true);
     }

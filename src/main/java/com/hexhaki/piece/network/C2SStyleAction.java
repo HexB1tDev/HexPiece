@@ -27,7 +27,7 @@ public record C2SStyleAction(int slot) {
             context.enqueueWork(() -> {
                 // 3.4.2 (the owner, on the Horo fruit's Astral Projection: "in this form the user can do everything normal from minecraft,
                 // but cant use style or haki at all")
-                if (!com.hexhaki.piece.server.HoroMoves.astral(sender)) {
+                if (!com.hexhaki.piece.server.HoroMoves.astral(sender) && !com.hexhaki.piece.server.Powers.off(sender)) { // 3.5.9: powers off
                     if (message.slot >= com.hexhaki.piece.server.IronFist.RELEASE) {
                         StyleServer.ironInput(sender, message.slot);
                     } else {
