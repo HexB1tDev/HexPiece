@@ -3204,7 +3204,7 @@ Keys (the owner: the base kit as proposed, the Awakening **"M toggles a mode"**)
 ## 8zzp. 3.5.5 as built: the Mochi Mochi no Mi (Legendary, everything in one version, the owner's answers in 8zzo)
 
 State: built, rendered and judged (previews, never the game: docs/gifs/mochi-3.5.5-previews.png), the full build green locally at
-3.5.5 (13 suites), release notes .github/release-notes-3.5.5.md; pushed (see the header for the runs). Once green, the scheduled task
+3.5.5 (13 suites), release notes .github/release-notes-3.5.5.md; pushed and green (Build #207, Release #146); the scheduled task
 trig_01SQWxmmxqSfBkLCfxSWkZe2 is deleted. Not tested in game: the owner's notes come next.
 
 - Renders judged (tools/preview/MochiShots, FxPreview; the user posed in each clip by ItoShots.posed): the punch, Tsuki held and
