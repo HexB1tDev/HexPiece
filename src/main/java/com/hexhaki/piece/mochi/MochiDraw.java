@@ -1448,39 +1448,71 @@ public final class MochiDraw {
         }
     }
 
-    /** Mochi Anemone: how many donuts hang over its area, how high. */
-    public static final int ANEMONE_DONUTS = 8;
-    public static final double ANEMONE_HIGH = 4.2;
+    // ------------------------------------------------------------------------------------------------------ Mochi Anemone
+    // 3.6.3, after the reference's Anemone read frame by frame (next-ai-3.6.3.md G): about twenty small donuts pop up scattered over
+    // the area at every height, more stand half sunk in the ground round it like arches; long Haki bars shoot out of them into the area,
+    // several at once, a white burst where each leaves its donut and where it lands; a see-through white dome glows over it, swirls of
+    // white and pale blue wind round it, rocks lie torn up round a dark crater; let go, a last flash and the dome bursts into splashes,
+    // the donuts puff away, and white splats lie over the ground fading (ANEMONE_LINGER).
+
+    /** Mochi Anemone: how many donuts hang over its area (and how many stand in the ground round it), the highest, how long it lingers. */
+    public static final int ANEMONE_DONUTS = 20;
+    public static final int ANEMONE_ARCHES = 8;
+    public static final double ANEMONE_HIGH = 5.5;
+    public static final double ANEMONE_LINGER = 50.0;
+    /** 3.6.3: the reference's Anemone donuts are small (their outer radius). */
+    public static final double ANEMONE_SMALL = 0.6;
+
+    /** Where Anemone donut {@code k} hangs from the area's middle on the ground, {@code radius} round: into out (x, y, z). */
+    public static double[] anemoneDonut(int k, double radius, int seed, double[] out) {
+        double a = 2 * Math.PI * (k * 0.618 + 0.25 * FireMesh.rand(seed, k));
+        double r = radius * (0.35 + 1.25 * FireMesh.rand(seed, k + 20));
+        out[0] = Math.cos(a) * r;
+        out[1] = 1.4 + (ANEMONE_HIGH - 1.4) * FireMesh.rand(seed, k + 40);
+        out[2] = Math.sin(a) * r;
+        return out;
+    }
 
     /**
-     * Mochi Anemone (B) held: its donuts hanging in a dome over the area round (x, y, z) (the ground in its middle), {@code radius} round,
-     * {@code form} 0 to 1; {@code strikes} (donut, x, y, z, the punch's age: 5 a strike) the Haki fists punching down out of them.
+     * Mochi Anemone (B) held: its donuts over the area round (x, y, z) (the ground in its middle), {@code radius} round, {@code form} 0
+     * to 1 as it comes; {@code strikes} (donut, x, y, z, the punch's age: 5 a strike) the Haki bars shooting out of them;
+     * {@code ended} ticks since it was let go (negative: still held).
      */
     public static void anemoneArea(FireMesh.Sink sink, double x, double y, double z, double radius, double form, double[] strikes, int count,
-                                   boolean coat, double age, int seed) {
-        if (form < 0.02) {
-            return;
-        }
+                                   boolean coat, double age, int seed, double ended) {
+        boolean over = ended >= 0;
+        double going = over ? smooth(ended / 6.0) : 0.0;
+        double[] d = new double[3];
+        // its many small donuts drawn coarse (the budget: about 16k quads at most)
+        boolean wasLow = MochiArt.low;
+        MochiArt.low = true;
+        // ---- the donuts in the air, popping up one after another (frames 12 to 18), each facing the area's middle
         for (int k = 0; k < ANEMONE_DONUTS; k++) {
-            double a = 2 * Math.PI * (k + 0.3 * FireMesh.rand(seed, k)) / ANEMONE_DONUTS + age * 0.01;
-            double r = radius * (0.55 + 0.45 * FireMesh.rand(seed, k + 20));
-            double cx = x + Math.cos(a) * r;
-            double cy = y + ANEMONE_HIGH + 1.4 * FireMesh.rand(seed, k + 40) + 0.2 * Math.sin(age * 0.2 + k);
-            double cz = z + Math.sin(a) * r;
-            // each donut forms in its turn (they gather one after another), facing down at the middle
-            double f = Math.max(0.0, Math.min(1.0, form * 1.6 - k * 0.08));
+            anemoneDonut(k, radius, seed, d);
+            double cx = x + d[0];
+            double cy = y + d[1] + 0.15 * Math.sin(age * 0.2 + k);
+            double cz = z + d[2];
+            double f = smooth((age - k * 0.25) / 3.0) * form * (1.0 - going);
+            if (f < 0.02) {
+                if (over && ended < 8.0 && smooth((age - k * 0.25) / 3.0) > 0.5) {
+                    splat(sink, cx, cy, cz, 0, -1, 0, 0.6, ended * 1.6, seed + k);
+                }
+                continue;
+            }
             double out = 0.0;
             double tx = x;
-            double ty = y + 0.5;
+            double ty = y + 0.4;
             double tz = z;
+            double pa = -1.0;
             for (int s = 0; s < count; s++) {
-                double pa = strikes[s * 5 + 4];
-                if ((int) strikes[s * 5] != k || pa < 0 || pa > ANEMONE_PUNCH) {
+                double sa = strikes[s * 5 + 4];
+                if ((int) strikes[s * 5] != k || sa < 0 || sa > ANEMONE_PUNCH) {
                     continue;
                 }
-                double o = pa < 2.0 ? ease(pa / 2.0) : 1.0 - smooth((pa - 3.0) / (ANEMONE_PUNCH - 3.0));
+                double o = sa < 2.0 ? ease(sa / 2.0) : 1.0 - smooth((sa - 3.5) / (ANEMONE_PUNCH - 3.5));
                 if (o > out) {
                     out = o;
+                    pa = sa;
                     tx = strikes[s * 5 + 1];
                     ty = strikes[s * 5 + 2];
                     tz = strikes[s * 5 + 3];
@@ -1490,8 +1522,99 @@ public final class MochiDraw {
             double dy = ty - cy;
             double dz = tz - cz;
             double dl = Math.max(1.0E-6, Math.sqrt(dx * dx + dy * dy + dz * dz));
-            donut(sink, cx, cy, cz, dx / dl, dy / dl, dz / dl, ANEMONE_DONUT, f, 0.0, 2, out > 0.02 ? out : 0.0, cx + dx * out, cy + dy * out,
-                cz + dz * out, coat, age, seed + k, k % 2 == 1);
+            double big = ANEMONE_SMALL * (0.8 + 0.4 * FireMesh.rand(seed, k + 60));
+            donut(sink, cx, cy, cz, dx / dl, dy / dl, dz / dl, big, f, 0.0, 1, out > 0.02 ? out : 0.0, cx + dx * out, cy + dy * out, cz + dz * out,
+                coat, age, seed + k, k % 2 == 1);
+            if (pa >= 0 && pa < 2.5) {
+                // the white burst as the bar leaves its donut (frame 22)
+                MochiArt.glow(sink, cx, cy, cz, big * 1.6, 0xFFFFFF, 0.7 * (1.0 - pa / 2.5));
+                FireMesh.ring(sink, cx, cy, cz, dx / dl, dy / dl, dz / dl, big * (1.3 + 0.8 * pa / 2.5), 0.05, 0.0, 0xFFFFFF, 0.6 * (1.0 - pa / 2.5));
+            }
+            if (pa >= 1.5 && pa < 5.0) {
+                // and where it lands
+                double g = (pa - 1.5) / 3.5;
+                MochiArt.glow(sink, tx, ty, tz, 0.6 + 0.8 * g, 0xFFFFFF, 0.75 * (1.0 - g));
+            }
+        }
+        // ---- the donuts standing half sunk in the ground round the area, like arches (frame 14 on)
+        for (int k = 0; k < ANEMONE_ARCHES; k++) {
+            double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k + 80)) / ANEMONE_ARCHES;
+            double r = radius * (1.25 + 0.35 * FireMesh.rand(seed, k + 90));
+            double ax = Math.cos(a);
+            double az = Math.sin(a);
+            double f = smooth((age - 2.0 - k * 0.3) / 3.0) * form * (1.0 - going);
+            if (f > 0.02) {
+                donut(sink, x + ax * r, y + 0.05, z + az * r, -az, 0, ax, 0.55, f, 0.0, 0, 0.0, 0, 0, 0, coat, age, seed + 100 + k, false);
+            }
+        }
+        MochiArt.low = wasLow;
+        // toward the eye (eye-relative points): the dome's rim faces the one looking
+        double el = Math.max(1.0E-6, Math.sqrt(x * x + (y + 1.0) * (y + 1.0) + z * z));
+        double nx = -x / el;
+        double ny = -(y + 1.0) / el;
+        double nz = -z / el;
+        // ---- the see-through white dome over it (frames 30 to 196), brighter as the bars strike, its last flash at the end
+        double dome = smooth((age - 6.0) / 6.0) * form * (over ? 1.0 - smooth((ended - 2.0) / 5.0) : 1.0);
+        int live = 0;
+        for (int s = 0; s < count; s++) {
+            if (strikes[s * 5 + 4] >= 1.5 && strikes[s * 5 + 4] < 4.0) {
+                live++;
+            }
+        }
+        double flash = over ? Math.max(0.0, 1.0 - ended / 4.0) : 0.0;
+        if (dome > 0.02) {
+            double r = radius * 1.05;
+            // the reference's dome glows bright white (frames 30 to 196)
+            MochiArt.glow(sink, x, y + 0.4, z, r * (1.1 + 0.15 * flash), 0xFFFFFF, Math.min(0.9, (0.5 + 0.07 * live + 0.4 * flash) * dome));
+            MochiArt.glow(sink, x, y + 0.6, z, r * 0.6, 0xFFFFFF, Math.min(0.9, (0.35 + 0.08 * live) * dome));
+            FireMesh.ring(sink, x, y + 0.2, z, nx, ny, nz, r, 0.12, 0.0, 0xFFFFFF, 0.55 * dome);
+            FireMesh.ring(sink, x, y + 0.2, z, nx, ny, nz, r * 0.82, 0.06, 0.0, 0xFFFFFF, 0.3 * dome);
+            // swirls of wind round it, white low and pale blue high (frames 30 to 196)
+            for (int k = 0; k < 3; k++) {
+                double spin = age * (0.05 + 0.02 * k) + k * 2.1;
+                double tilt = 0.5 + 0.25 * k;
+                double ux = Math.cos(spin) * tilt;
+                double uz = Math.sin(spin) * tilt;
+                double ul = Math.sqrt(ux * ux + 1.0 + uz * uz);
+                FireMesh.ring(sink, x, y + 1.0 + 0.6 * k, z, ux / ul, 1.0 / ul, uz / ul, radius * (1.15 + 0.2 * k), 0.07, 0.0, 0xFFFFFF, 0.28 * dome);
+            }
+            for (int k = 0; k < 2; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 140) + age * 0.04;
+                FireMesh.ring(sink, x + Math.cos(a) * radius * 0.6, y + ANEMONE_HIGH + 1.0, z + Math.sin(a) * radius * 0.6, Math.cos(a) * 0.4, 1.0,
+                    Math.sin(a) * 0.4, radius * 0.9, 0.08, 0.0, 0x9FE9FF, 0.3 * dome);
+            }
+        }
+        // ---- the ground torn: a dark crater in the middle, rocks round it (frames 48 on)
+        double torn = smooth((age - 8.0) / 8.0) * (over ? 1.0 - smooth((ended - ANEMONE_LINGER + 10.0) / 10.0) : 1.0);
+        if (torn > 0.02) {
+            MochiArt.blob(sink, x, y + 0.02, z, 1, 0, 0, 0, 1, 0, radius * 0.4 * torn, 0.015, radius * 0.34 * torn, 0.8, 0.3, 0, seed + 160, MochiArt.HAKI,
+                1.0);
+            for (int k = 0; k < 10; k++) {
+                double a = 2 * Math.PI * FireMesh.rand(seed, k + 170);
+                double r = radius * (0.45 + 0.8 * FireMesh.rand(seed, k + 180));
+                com.hexhaki.piece.ironfist.IronArt.chunk(sink, x + Math.cos(a) * r, y + 0.12, z + Math.sin(a) * r, 0.25 + 0.25 * FireMesh.rand(seed, k + 190),
+                    k * 1.7, seed + 200 + k, torn);
+            }
+        }
+        // ---- let go: the dome bursts into splashes (frame 204), then white splats lie over the ground fading (to 270)
+        if (over) {
+            if (ended < 12.0) {
+                for (int k = 0; k < 5; k++) {
+                    double a = 2 * Math.PI * k / 5.0 + 0.3;
+                    splat(sink, x + Math.cos(a) * radius * 0.5, y + 0.6, z + Math.sin(a) * radius * 0.5, Math.cos(a), 0.6, Math.sin(a), 1.2, ended * 1.2,
+                        seed + 220 + k);
+                }
+            }
+            double lie = smooth(ended / 4.0) * (1.0 - smooth((ended - ANEMONE_LINGER + 18.0) / 18.0));
+            if (lie > 0.02) {
+                for (int k = 0; k < 14; k++) {
+                    double a = 2 * Math.PI * FireMesh.rand(seed, k + 240);
+                    double r = radius * 1.6 * Math.sqrt(FireMesh.rand(seed, k + 250));
+                    double sp = (0.3 + 0.5 * FireMesh.rand(seed, k + 260)) * lie;
+                    MochiArt.blob(sink, x + Math.cos(a) * r, y + 0.03, z + Math.sin(a) * r, Math.cos(a), 0, Math.sin(a), 0, 1, 0, sp * 1.6, 0.03, sp,
+                        0.85, 0.3, 0, seed + 270 + k, MochiArt.MOCHI, 1.0);
+                }
+            }
         }
     }
 

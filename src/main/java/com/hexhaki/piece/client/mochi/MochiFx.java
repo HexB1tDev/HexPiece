@@ -499,8 +499,8 @@ public final class MochiFx {
         CHESTNUTS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > MochiDraw.CHESTNUT_FALL + 2
             || clock > e.getValue().until + MochiDraw.CHESTNUT_FALL + 6 || level.m_6815_(e.getKey()) == null);
         SPIKES.removeIf(s -> clock - s.born > MochiDraw.SPIKE_LIFE + 1);
-        AREAS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > FORM
-            || clock > e.getValue().until + FORM || level.m_6815_(e.getKey()) == null);
+        AREAS.entrySet().removeIf(e -> e.getValue().ended >= 0 && clock - e.getValue().ended > MochiDraw.ANEMONE_LINGER + 1
+            || clock > e.getValue().until + MochiDraw.ANEMONE_LINGER + 4);
         STRIKES.removeIf(s -> clock - s.born > MochiDraw.ANEMONE_PUNCH + 1);
     }
 
@@ -779,7 +779,9 @@ public final class MochiFx {
                 continue;
             }
             double age = now - n.born;
-            double form = Math.min(1.0, age / FORM) * (n.ended >= 0 ? Math.max(0.0, 1.0 - (now - n.ended) / FORM) : 1.0);
+            // 3.6.3: its own art forms each donut and, let go, bursts the dome and leaves the splats (MochiDraw.anemoneArea)
+            double ended = n.ended >= 0 ? now - n.ended : now > n.until ? now - n.until : -1.0;
+            double form = 1.0;
             int count = 0;
             for (Strike s : STRIKES) {
                 if (s.user != e.getKey() || count >= MOST) {
@@ -792,7 +794,8 @@ public final class MochiFx {
                 STRIKE[count * 5 + 4] = now - s.born;
                 count++;
             }
-            MochiDraw.anemoneArea(SINK, n.at.f_82479_ - cx, n.at.f_82480_ - cy, n.at.f_82481_ - cz, n.radius, form, STRIKE, count, n.coat, age, n.seed);
+            MochiDraw.anemoneArea(SINK, n.at.f_82479_ - cx, n.at.f_82480_ - cy, n.at.f_82481_ - cz, n.radius, form, STRIKE, count, n.coat, age, n.seed,
+                ended);
         }
         for (Map.Entry<Integer, Wheel> e : WHEELS.entrySet()) {
             Entity user = level.m_6815_(e.getKey());

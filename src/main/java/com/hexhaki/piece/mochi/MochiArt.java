@@ -557,6 +557,11 @@ public final class MochiArt {
         double size = (big + thick) / Math.max(0.5, dist) * FireMesh.quality;
         int rows = size > 0.25 ? 20 : size > 0.08 ? 16 : 10; // (rows + 1) x (cols + 1) within GRID: 21 x 13
         int cols = size > 0.25 ? 12 : 8;
+        if (low) {
+            // 3.6.3: a field of many small donuts (the Anemone's) drawn coarser
+            rows = Math.min(rows, 12);
+            cols = Math.min(cols, 8);
+        }
         double tt = time * 0.04;
         for (int j = 0; j <= rows; j++) {
             double u = 2 * Math.PI * j / rows + turn;
@@ -654,6 +659,12 @@ public final class MochiArt {
         double uy = sz * fx - sx * fz;
         double uz = sx * fy - sy * fx;
         double h = size;
+        if (low) {
+            // 3.6.3: a field of many small fists (the Anemone's donuts): one rounded block with its knuckles' ridge, no fingers
+            blob(sink, cx + fx * h * 0.05, cy + fy * h * 0.05, cz + fz * h * 0.05, fx, fy, fz, ux, uy, uz, h * 0.8, h * 0.78, h * 0.98, 0.3, 0.0,
+                time, seed, bands, 1.0);
+            return;
+        }
         // the hand: a box, its back where the arm ends
         blob(sink, cx - fx * h * 0.22, cy - fy * h * 0.22, cz - fz * h * 0.22, fx, fy, fz, ux, uy, uz, h * 0.62, h * 0.76, h * 0.96, 0.3, 0.0,
             time, seed, bands, 1.0);

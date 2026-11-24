@@ -335,3 +335,10 @@ left as they were.
   tracer the whole way (FireMesh.ray), a black spike racing down it in 2 ticks, a white-blue spark star on the hit; it fires from 15 for
   CHESTNUT_FIRE 120 (server CHESTNUT_TICKS 135, 1.1 a spike), then turns white, lies flat, falls onto the user and splats into a
   puddle with droplets and a ring round their feet (CHESTNUT_FALL 30).
+- Mochi Anemone after its GIF (MochiDraw.anemoneArea, ANEMONE_*): 20 small donuts (ANEMONE_SMALL 0.6, anemoneDonut: scattered 0.35 to
+  1.6 radii out, 1.4 to 5.5 up) popping up one after another, 8 more standing half sunk in the ground round the area like arches; the
+  Haki bars shoot out of them into the area (the server's strikes), a white burst and ring where each leaves its donut, a glow where it
+  lands; a bright see-through white dome over the area (brighter the more bars strike), white swirls round it and pale blue ones high
+  over it, a dark crater and rocks; let go: a last flash, the dome bursts into splashes, the donuts puff away, 14 white splats lie over
+  the ground fading (ANEMONE_LINGER 50). Its many donuts are drawn coarse (MochiArt.low: coarser rings, each fist one rounded block):
+  about 6k quads without the bars (it was 12.8k).

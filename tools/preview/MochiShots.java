@@ -114,25 +114,27 @@ public final class MochiShots {
                 }
             }
             case "marea" -> {
-                // |marea:age[:c]: the Anemone over a place 8 ahead (radius 3.4), fists striking into it
+                // 3.6.3 |marea:age[:c[:ended]]: the Anemone over a place 8 ahead (radius 3.4) on its GIF's beats, two bars every 3 ticks
+                // into it; a 4th field: ticks since let go (the burst and the splats)
                 user(sink, "mochi_donuts", Math.min(age, 10), ex, ey, ez);
+                double ended = move.length > 3 ? Double.parseDouble(move[3]) : -1.0;
                 HieShots.body(sink, 0.6 - ex, -ey, 8.3 - ez);
-                double[] strikes = new double[8 * 5];
+                double[] strikes = new double[12 * 5];
                 int n = 0;
-                for (int k = 0; k < 8; k++) {
-                    double pa = (age - 5 - k * 1.5 + 100) % 7.0;
-                    if (age < 5) {
-                        break;
-                    }
-                    strikes[n * 5] = k;
-                    strikes[n * 5 + 1] = 0.6 + Math.cos(k) * 1.2 - ex;
-                    strikes[n * 5 + 2] = 1.0 - ey;
-                    strikes[n * 5 + 3] = 8.3 + Math.sin(k) * 1.2 - ez;
+                for (int k = 0; k < 12 && age >= 5 && ended < 0; k++) {
+                    double start = 5 + (k / 2) * 3 + (k % 2);
+                    double pa = age - start;
+                    double cycle = 18.0;
+                    pa = ((pa % cycle) + cycle) % cycle;
+                    strikes[n * 5] = (k * 7) % com.hexhaki.piece.mochi.MochiDraw.ANEMONE_DONUTS;
+                    strikes[n * 5 + 1] = 0.6 + Math.cos(k * 1.3) * 1.6 - ex;
+                    strikes[n * 5 + 2] = 0.3 - ey;
+                    strikes[n * 5 + 3] = 8.0 + Math.sin(k * 1.3) * 1.6 - ez;
                     strikes[n * 5 + 4] = pa;
                     n++;
                 }
-                com.hexhaki.piece.mochi.MochiDraw.anemoneArea(sink, -ex, -ey, 8.0 - ez, com.hexhaki.piece.server.MochiMoves.ANEMONE_RADIUS,
-                    Math.min(1.0, age / 6.0), strikes, n, coat, age, 9);
+                com.hexhaki.piece.mochi.MochiDraw.anemoneArea(sink, -ex, -ey, 8.0 - ez, com.hexhaki.piece.server.MochiMoves.ANEMONE_RADIUS, 1.0, strikes, n,
+                    coat, ended >= 0 ? 60 + ended : age, 9, ended);
             }
             case "mpunch" -> {
                 user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
