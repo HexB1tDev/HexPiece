@@ -798,3 +798,23 @@ close the honest gaps above.
 
     Other moves:
     https://official-fruit-battlegrounds.fandom.com/wiki/Phoenix#Move_Info"
+21. The owner's answers (AskUserQuestion): the meter: "No meter, cooldown (Recommended)" (Z turns the Phoenix on and off any time, a
+    short cooldown after turning back, as the dragon fruit does); the size: "Like the GIF (Recommended)" (wingspan about 7 blocks, the
+    body about as tall as the player).
+
+What the zip holds (read with Blender's own Python module: `python3 -m venv <scratch>/venv/bpy && <venv>/bin/pip install bpy` (5.3,
+Python 3.13); it opens the owner's .blend as it is): Marco_Phoenix.blend (Blender 4.3 file, zstd): 213 mesh parts (bill, eyes, feet,
+claws, 18 tail fans and their shafts, 98 tail flame parts, mane, mantle, wings), about 88k vertices and 175k triangles, each part
+weighted to one bone of a 21-bone rig ("RIG | Marco the Phoenix": root, body, neck, neck_reach, head, tail_root, tail.1-3, wing_inner,
+wing_elbow, wing_outer, wing_hand, wing_tip and leg each side), one action "Marco | soaring wingbeat" (frames 1 to 73 at 30 fps) and 36
+shape-key actions (flame flicker), flat materials glowing in their own colour (cyan plumage, gold and marigold mane and tail flames,
+ivory bill and feet, blue markings), three fire textures (Body_revival_fire.png, Flying_tongues.png, Tidal_fire.png), studio lights
+and five cameras; plus three reference images (Marco's phoenix). The wiki's Phoenix page (its Move Info read: Fujiazami, Talon Slam /
+Hawk Rush, Phoenix Inferno, Bluebird, Transform; the Phoenix Meter) and its ten GIFs are in the scratchpad (pgifs/).
+
+The plan (POINT ONE style: the owner's model exactly, uniformly scaled, never reshaped): bake the .blend with bpy into the dragon's
+model format (sea/DragonModel's .sry: parts, rigid skin to the 21 bones, the clips; a small palette texture with each material's colour,
+the glowing parts as glow) decimated for the phone, the flame flicker done in the renderer; reuse the dragon fruit's form machinery
+(DragonForm, DragonRenderer, flight, camera) for a Phoenix form; write its clips (hover, takeoff, soar and wingbeat, glide, dive, the
+wings wrapped round between beats as in the GIF, transform in a cyan sphere of light, back); then the moves: X Fujiazami, C Talon Slam
+(transformed Hawk Rush), V Phoenix Inferno, B Bluebird, both forms each, on the GIFs read frame by frame.
