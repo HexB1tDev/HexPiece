@@ -25,14 +25,13 @@ MochiArt.CHURN). Build every new move this way and judge every render for it.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.6.5 is the last release (commit 2b479fd; its Build #240 and Release #156 were still running when the last chat
-stopped: check them first and fix them if red): the base Mochi kit after the reference GIFs with the owner's notes (Buzz Cut's elastic
+Where things stand: 3.6.5 is the last release (Build #240, Release #156, green; check the last push's Build run first): the base Mochi kit after the reference GIFs with the owner's notes (Buzz Cut's elastic
 band leads the heavy ball; Lotus knocks them donut to donut like a rag doll; every mochi arm stretchy, wobbling and thinning as it
 stretches, the punch springing past its reach, the donuts breathing, the dough churning), WiFi Haki on the one 3D Haki lightning, and
 the Awakening on M with Trident Lacerations on the left click (Mogura held in hand). Committed after it, unversioned: Power Mochi
 (awakened V) built, its last render not yet judged (next-ai-3.6.3.md R).
 
-Do next (next-ai-3.6.3.md R): (1) check 3.6.5's runs; (2) finish Power Mochi: render and judge it beside Power_Dough.gif (frames 30,
+Do next (next-ai-3.6.3.md R): (1) check the last push's Build run; (2) finish Power Mochi: render and judge it beside Power_Dough.gif (frames 30,
 66 to 70), its budget in DragonTests and beats in HudTests, first person; (3) Z Grilled Lance, X Elastic Lasso, C Oblivion, B Blazing
 Storm, N Scorching Buzz Cut, each built on its GIF's beats (section P), rendered side by side with its GIF, fixed and rendered again
 until it matches; (4) release 3.6.6 (next_version, notes, handoff, push, both runs green, send previews). The owner's notes on anything

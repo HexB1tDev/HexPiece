@@ -642,8 +642,7 @@ and N 17 (WiFi Haki on the one 3D Haki lightning).
 
 ## R. Where the fourth Mochi chat stopped (the owner: "enough prompt + hand off now")
 
-Released this chat: 3.6.3 (Build #234, Release #154, green), 3.6.4 (Build #238, Release #155, green), **3.6.5** (pushed as commit
-2b479fd; its Build #240 and Release #156 were still running when the chat stopped: CHECK THEM FIRST and fix them if red).
+Released this chat: 3.6.3 (Build #234, Release #154, green), 3.6.4 (Build #238, Release #155, green), **3.6.5** (Build #240, Release #156, green).
 
 In progress, committed unversioned after 3.6.5 (the next version is **3.6.6**): **Power Mochi** (awakened V), built but not yet
 judged to the end:
