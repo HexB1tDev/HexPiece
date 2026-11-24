@@ -1,0 +1,11 @@
+The Haki lightning's sounds (tools/lightning_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+strike1.ogg: "Thunder big crack explosive close ms 77mel 190903.flac" by TRP, https://freesound.org/people/TRP/sounds/574412/ (CC0 1.0), from 1.4 s, 4.00 s long, its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)
+strike2.ogg: "LoudThunder with crack and Sizzle JULY 1 2023.WAV" by kvgarlic, https://freesound.org/people/kvgarlic/sounds/693540/ (CC0 1.0), from 2.5 s, 4.00 s long, its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)
+strike3.ogg: "Zoom H4n - Super Close Lightning Strike and Thunderstorm" by danielmcadams, https://freesound.org/people/danielmcadams/sounds/483684/ (CC0 1.0), from 18.8 s, 3.98 s long, its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)
+zap1.ogg: "Thunder big crack explosive close ms 77mel 190903.flac" by TRP, https://freesound.org/people/TRP/sounds/574412/ (CC0 1.0), from 1.6 s, 0.65 s long, its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)
+zap2.ogg: "210914 Thunder, crack, pretty close, bit of distortion, urban, TORONTO 1am.wav" by TRP, https://freesound.org/people/TRP/sounds/616992/ (CC0 1.0), from 1.1 s, 0.59 s long, its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)
+zap3.ogg: "Thunder Clap And Rumble #7" by Kinoton, https://freesound.org/people/Kinoton/sounds/760214/ (CC0 1.0), from 0.6 s, 0.60 s long, its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)
+thunder.ogg: "Thunder Clap And Rumble #7" by Kinoton, https://freesound.org/people/Kinoton/sounds/760214/ (CC0 1.0), from 0.6 s, 3.48 s long, its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)

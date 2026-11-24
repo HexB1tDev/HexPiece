@@ -1,70 +1,38 @@
 Continue HexPiece (repo HexB1tDev/HexPiece, branch claude/nice-bell-gam7qf: fetch it first, it is the newest).
 
-Read CLAUDE.md, then docs/handoff/next-ai-3.2.2.md whole: it holds every standing rule in one place (talking to the owner, the house
-rules, clean moves and animations, keeping lag to a minimum, rendering on the owner's Android phone, sounds only from the web and
-never made by hand, the Haki lightning style, what must never come back), where things stand and what to do next. The full history
-with the owner's verbatim messages is in docs/handoff/next-ai-2.7.0.md (2.7.0 to 2.9.5) and sections 8b to 8zzu of next-ai-3.2.2.md
-(2.9.6 to 3.5.9's requests); open the older next-ai-*.md only for a feature's detail.
+Read CLAUDE.md, then docs/handoff/next-ai-3.6.0.md WHOLE (the newest handoff: every request of the last chat verbatim, what 3.5.9 built,
+what 3.6.0 has built so far, exactly what is left and in which order, how to build, render and test here), then sections POINT ONE and
+0 to 7 of docs/handoff/next-ai-3.2.2.md (every standing rule: talking to the owner, the house rules, clean moves and animations, lag,
+rendering on the owner's Android phone, sounds only from the web and never made by hand, Haki and lightning). The full history with the
+owner's verbatim messages is in next-ai-3.2.2.md sections 8b to 8zzx (8zzv holds this chat's requests numbered 1 to 12, 8zzw 3.5.9 as
+built, 8zzx 3.6.0 in progress).
 
-POINT ONE of the handoff (the owner's, never drop it, pass it on): every fruit is made in the same style as the Light, Gura and Magma
-fruits (their 3D meshes, clips without legs or head, first-person hand moves, CC0 sounds); and with the Conqueror's Haki and Ryou on,
-every move of every fruit throws the Conqueror's lightning (visual only), out of the move's end explosion when it has one (not optional),
-and that lightning is EXACTLY the Conqueror's release's own bolts (ConquerorStorm.blast cuts the release's bolt short: never thin lines,
-never fat tubes, never re-scaled, never any other lightning; section 8zn has the owner's fury after it went wrong more than ten times:
-render any lightning change beside the release from the same camera before pushing).
+POINT ONE (the owner's, never drop it, pass it on): every fruit made in the style of the Light, Gura and Magma fruits (3D meshes, clips
+without the head or unused limbs, a first-person hand move per move, CC0 web sounds); with the Conqueror's Haki and Ryou on every move
+of every fruit throws the Conqueror's lightning, out of its end explosion when it has one; and there is ONE Haki lightning in the whole
+game, the Conqueror's release's (G), crooked as 3.6.0 made it (ConquerorStorm.jagged / strike for every other maker), drawn in the
+player's chosen Haki colour. Never add another lightning look; render any lightning change beside the release from the same camera.
 
-Where things stand: 3.4.9 (section 8zzh: the owner's Gear 5 list) is green (Build #196, Release #140). 3.5.0 (section 8zzj: the owner's
-Ito list, 8zzi verbatim) is green (Build #197, Release #141). 3.5.1 (section 8zzk: the Awakening's tentacles rebuilt massive: a giant
-rope of three thick twisted plies of white string shading lilac-purple, a Haki-black spear tip driven through the body, cords bursting
-from its foot; rooted beside a near body so it never comes up under the user) is green (Build #198, Release #142). 3.5.2 (section
-8zzl: Sky Road rebuilt at the owner's "Sky walk needs a rework ... make sky walk insanely epic": one string at a time, W/A/S/D a Spider-Man
-swing that holds its height, a tap of Space a leap to a string further away, Space held a climb on woven steps of string like stairs,
-Shift a drop, still one hand hanging; multiplayer through network/C2SItoSky and S2CUoFx 254) is green (Build #200, Release #143); 3.5.3 (the owner: "For the stairs its
-only 1 string not more", "No its a normal string. Not a thick one": one thin string a step) and 3.5.4 (section 8zzm: the owner's Birdcage bug: closing froze everyone and dragged them to the middle;
-now they move freely inside, only touching its strings cuts them and the closing wall sweeps them in, the full damage when it shuts)
-are green (3.5.3: Build #201, Release #144; 3.5.4: Build #202, Release #145).
+Where things stand: 3.5.9 is released and green (Build #216, Release #150): hold R turns every power off but fruit passives, Meteor
+Fist one size, Blue Hole remade, Galaxy Impact lighter, impact frames only on clashes (for both fighters), WiFi Haki a Swordsman's on K
+with its slow partial draw and lightning from the sheath's gap, the Galaxy Fist and the Haki Grip removed. 3.6.0 is on the branch, NOT
+versioned or released: the Haki colour and Ryou colour pages on the start menu (existing players get them once), one crooked Haki
+lightning everywhere (coated hits included), the coat past the elbow with a ragged edge, the arm glow fading up the arm. The new
+bass-heavy lightning recordings are cut and checked (sounds/piece/lightning/web, tools/lightning_sounds.py) but NOT wired in.
 
-3.5.5 (sections 8zzn verbatim, 8zzo the plan and the owner's answers, 8zzp as built): the Legendary Mochi Mochi no Mi, everything in
-one version (base moves on LMB RMB Z X C V B N, the Awakening on M a 30 s mode with its own five techniques on Z X C V B, Future Sight
-on a double tap of sneak, Haki-black fists and arms only with Armament) is green (Build #207, Release #146); its hourly resume task
-is deleted.
+Do next, in order (next-ai-3.6.0.md section F has the detail): (1) wire the lightning sounds (sounds.json: conqueror_release ->
+strike1..3, the original's armament_ambient_zap -> zap1..3 and last_stand_lightning -> thunder, all quieter; build.py RENAMED[SOUNDS];
+one lightning sound at a time on the client so the full release is heard as one), then release 3.6.0 (next_version, release notes,
+handoff, push, both GitHub runs green) and send the owner the colour pages and the seven-colour lightning renders (previews, not the
+game); (2) ask the owner the two open questions (the Quake ultimate's own impact frame; Meteor Fist's growing speed and blast); (3)
+make every new fruit and every style obey /hp op on/off; (4) the owner's Mochi list (ask for the end of their cut-off line about the
+rolling donut, with its picture, first); (5) Buzz Cut Mochi: references first, then plan, then build as one uninterrupted cinematic.
 
-3.5.6 (section 8zzq): the Mochi arms square bars with the fist a block at their very end, as the owner asked after 3.5.5; green
-(Build #209, Release #147).
+The cloud environment must be the personal "HexPiece" (it allows freesound.org): if a session starts on Default, get_environment, then
+switch_environment to HexPiece (network_only, its switch_statement copied exactly).
 
-3.5.7 (section 8zzr): Fishman Karate removed, Iron Fist emptied; green (Build #211, Release #148).
-
-3.5.8 (sections 8zzs verbatim with the owner's answers, 8zzt as built): Iron Fist remade as Garp's style (LMB punches, RMB Fist of
-Love, Z Meteor Fist held, X Mountain Crusher, C Blue Hole, V Galaxy Divide, B Infinitum Explosion, N Galaxy Impact; the torn ground
-regrows), and the owner's own impact frame (art/impact-frame.gif) in place of every impact frame but the Gura ultimate's; green
-(Build #213, Release #149).
-
-3.5.9 (sections 8zzu the requests, 8zzv the owner's further requests verbatim, 8zzw as built): hold R turns every power off but
-the fruit's passives, Meteor Fist's cannonball one size, Blue Hole remade (uppercut, leap, grab, throw down), Galaxy Impact lighter,
-impact frames only on clashes (for both), WiFi Haki a Swordsman's on K with its slow partial draw and lightning from the sheath's gap,
-the Galaxy Fist and the Haki Grip removed entirely. Green (Build #216, Release #150).
-
-Next (8zzv, the owner's requests not yet built, in this order): 3.6.0 the Haki colour choice on the start menu (seven sets, named by
-their colours only: never the forbidden fruit's owner's name, build.py check_imu), every lightning more crooked and ONE Haki lightning
-everywhere (the Conqueror's release, G; Haki-coated fruit and style attacks too: POINT ONE 3 updated), every lightning sound replaced by
-bass-heavier CC0 web recordings and lowered (lightning sounds only), the full release playing ONE lightning sound, not all at once; then
-every new fruit and style obeying /hp op on/off; then Mochi's Buzz Cut Mochi (8zzv 10, references first). Then wait for the owner's
-notes on 3.5.9, 3.5.6 (Mochi), 3.4.9 (Gear 5), 3.5.0 to 3.5.4 (Ito) and their lists for the other fruits. The fist is a right fist
-on the right arm (the owner: "thats the left hand on the right arm"). Read 8zz, 8zzb and 8zzk before any art: thin pale lines and flat
-polygons are not acceptable; hot strings use ItoArt's HOT tint; never lay a see-through ribbon over or through an opaque body (it punches
-holes in it: 8zzk).
-
-The cloud environment is the personal "HexPiece" (freesound.org, cdn.freesound.org, opengameart.org); if freesound.org is refused, the
-session is on Default: get_environment, then switch_environment to it (network_only). Freesound also rate-limits its pages for a minute or two (403):
-wait and retry. Check every new sound AS CUT with tools/tonal_lines.py against plain noise of the same length (8zzb).
-
-The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; never claim in-game testing;
-render and judge every animation and effect yourself, third and first person; never key the head or unused limbs; keep every effect
-cheap (about 16k quads at most, capped counts, no per-frame allocation, one small message and the clients build the rest); on the
-owner's phone everything alpha-blended and depth-tested, never additive, never a framebuffer blit; every sound a CC0 web recording
-(tools/web_sounds.py), never synthesised or mixed, never melodic (check a new sound's spectrum: broadband, no pitched lines), and no
-sound outlasting its move; no music (the owner: copyright); versions roll over at 9; a push is done only when GitHub's runs are green;
-at 98% weekly usage write the handoff and this prompt first, commit, push and stop without checking CI.
-
-The owner during 3.2.9: "I want gifs when it's all done"; during 3.3.4: "no need for gif, proceed to the next fruit". Send renders (or a
-GIF when the owner wants one) with SendUserFile, and say they are previews, not the game.
+The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; write every new request verbatim into
+the handoff the moment it arrives; never claim in-game testing; render and judge every animation, effect and menu yourself; never key
+the head or unused limbs; keep every effect cheap (about 16k quads at most); everything alpha-blended, never additive; every sound a CC0
+web recording checked with tools/tonal_lines.py; versions roll over at 9; a push is done only when GitHub's runs are green; at 98%
+weekly usage write the handoff and this prompt first, commit, push and stop without checking CI.

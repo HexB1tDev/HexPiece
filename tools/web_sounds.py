@@ -41,10 +41,17 @@ def fetch(user, sid):
     return out, title, preview
 
 
-def pcm(src, start, length):
-    """The part of {src} from {start} for {length} seconds (None: to the end), mono 44.1 kHz floats."""
+# 3.6.0 (the owner: "all lightning sounds are to change to new more bass boosted ones (get from the web)"): the recording's own punchy
+# low end lifted (a +7 dB shelf at 120 Hz, the 80 to 200 Hz speakers play) and nothing under 45 Hz kept (never sub: 2.4.8's lesson).
+# An equaliser on the recording itself: nothing is added to it.
+BASS = "highpass=f=45:poles=2,bass=g=7:f=120:w=0.9"
+
+
+def pcm(src, start, length, eq=None):
+    """The part of {src} from {start} for {length} seconds (None: to the end), mono 44.1 kHz floats; {eq} an ffmpeg filter (BASS)."""
     cut = ["-ss", f"{start:.3f}"] + (["-t", f"{length:.3f}"] if length else [])
-    raw = subprocess.run(["ffmpeg", "-v", "error", "-hide_banner"] + cut + ["-i", src, "-ac", "1", "-ar", "44100", "-f", "f32le", "-"],
+    af = ["-af", eq] if eq else []
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-hide_banner"] + cut + ["-i", src, "-ac", "1", "-ar", "44100"] + af + ["-f", "f32le", "-"],
                          capture_output=True, check=True).stdout
     a = array.array("f")
     a.frombytes(raw[:len(raw) // 4 * 4])
@@ -90,9 +97,10 @@ def punch(a):
     return b
 
 
-def clip(src, start, length, fade_in, fade_out, out, gain_db=0.0, louder=False):
-    """One clip of a recording (see the module), {gain_db} under full scale less 1 dB, {louder} pushed (punch); returns its length."""
-    a = pcm(src, start, length)
+def clip(src, start, length, fade_in, fade_out, out, gain_db=0.0, louder=False, eq=None):
+    """One clip of a recording (see the module), {gain_db} under full scale less 1 dB, {louder} pushed (punch), {eq} its equaliser
+    (BASS); returns its length."""
+    a = pcm(src, start, length, eq)
     if louder:
         a = punch(a)
     n = len(a)
@@ -149,8 +157,9 @@ def build(sounds, clips, loops, out_dir, title, only=None, level=None):
             what = f"a loop from {start:.1f} s, {seconds:.2f} s long"
         else:
             _, start, length, fade_in, fade_out = spec[:5]
-            seconds = clip(path, start, length, fade_in, fade_out, scratch, gain, louder)
-            what = f"from {start:.1f} s, {seconds:.2f} s long"
+            eq = spec[5] if len(spec) > 5 else None
+            seconds = clip(path, start, length, fade_in, fade_out, scratch, gain, louder, eq)
+            what = f"from {start:.1f} s, {seconds:.2f} s long" + (", its low end lifted (bass +7 dB at 120 Hz, nothing under 45 Hz)" if eq else "")
         if gain:
             what += f", {-gain:.1f} dB quieter"
         if louder:
