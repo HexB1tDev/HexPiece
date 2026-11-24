@@ -358,3 +358,50 @@ turning back. StyleTests.opMode checks each. The client's book and HUD still sho
 new Buzz Cut Mochi and Zan Giri mochi the rolling donut the player turns into it should look  like") and its picture; wait for it
 before the Mochi list, and for their word on 3.6.0's thinner lightning.
 
+## L. The owner's answer to the cut-off Mochi line (verbatim)
+
+25. "should look like the donuts in the awakening v move, look at it 1 of those" (the end of 8zzv 11's last line: "In the new Buzz Cut
+    Mochi and Zan Giri mochi the rolling donut the player turns into it should look like" the donuts of the Mochi Awakening's V move:
+    the rolling donut is ONE of those donuts.)
+26. "omg please look at these gifs in the page, they have the target looks, of every single move bro
+    https://official-fruit-battlegrounds.fandom.com/wiki/Dough" (the Fruit Battlegrounds wiki's Dough fruit page: its GIFs are the
+    owner's target look for every Mochi move. Study each GIF and describe it here before changing a move.)
+27. "their VFX especially the v2 is literally all I want, its beautiful" (the Dough page's GIFs, and above all the awakened DoughV2
+    page's: the target look of the Mochi fruit's effects.)
+
+## M. The owner's target look for the Mochi fruit: the Fruit Battlegrounds wiki's Dough and DoughV2 GIFs (described; not kept)
+
+How they were read: the page is behind a bot check, its API is not: `https://official-fruit-battlegrounds.fandom.com/api.php?action=
+parse&page=Dough&format=json&prop=images|wikitext` (and page=DoughV2), then `action=query&titles=File:X.gif&prop=imageinfo&iiprop=url`
+for each file (static.wikia.nocookie.net). The HexPiece environment now allows official-fruit-battlegrounds.fandom.com (added this
+session at the owner's request). Most "GIFs" are animated WebP: read them with Pillow (ImageSequence, convert each frame as it comes).
+Use them as a look to match in our own 3D art, never copied.
+
+The look overall: the dough is bright white to ivory, puffy, lumpy and splashy (never a clean geometric shape): blobs with soft grey
+shading, drips hanging off, droplets and splats flung off whenever it forms or hits; black Haki arms are long square bars; around every
+move a lot of secondary effect: orange fire (flames licking the dough, crescent fire arcs swirling round, embers), white motion arcs and
+swirl trails, shockwave rings, flying debris; explosions are a white-hot star burst with long spiky rays, then fire swirls and embers.
+- Dough, Grilled Dough (our C, Yaki Mochi): side-on, one arm out; a huge puffy white dough mass swells round that arm, splattering
+  droplets onto the ground, a black Haki fist at its end; held about a second; the fist flies and bursts in a fireball with concentric
+  rings of fire and a dark ring, a dome of heat.
+- Dough, Buzzcut: the user a bright white upright donut (motion-blurred) rolling fast, white wind slashes round it, white smoke puffs
+  behind, the floor's tiles torn up and flipping in a long winding double row along its path; on contact a black spiked club; the
+  victim swung round: a whirling white vortex of motion trails on the ground; a cinematic angle, a black-and-white frame; the slam: a
+  black splattered crater with red streaks, blocks flying.
+- Dough, Anemone: a cluster of many small white donuts in the air over the target area (ahead, not round the user), each firing long
+  black Haki arms down into it, white bursts, a white translucent dome flash, swirl trails, white splats left on the ground fading.
+- DoughV2, Power Dough: two big lumpy white donuts hover at the user's shoulders, drips hanging off them, a soft orange-red fire glow
+  behind them; a black fist fills each one's hole and punches out of it as a long black bar wrapped in orange fire arcs, embers flying;
+  a big fiery burst with rings when they appear.
+- DoughV2, Blazing Storm: a fiery burst with orange arcs; six long black square arms from white mochi puffs at the user thrust at the
+  target together in a barrage wrapped in fire and orange streaks; the last strike all six fully out; a big fire explosion with white
+  mochi blobs and black shards.
+- DoughV2, Scorching Buzzcut: the user an upright white wheel with black spikes, wreathed in flames, fire spraying off the ground as it
+  rolls, the ground cracking; the swing: a huge ring of motion on the ground (white swirl trails, a purple Haki glow ring, an orange
+  fire swirl ring, black rocks whirled round, red lightning); the victim flung up in a column of fire; a grey frame, a white flash; the
+  slam: a crater, blocks flying, red lightning, fire and purple arcs round it.
+- DoughV2, Grilled Lance (charged): the arm swells into a big round puffy mochi ball, purple Haki glints, flames flickering over it;
+  launched; a huge white-hot star burst with long spiky rays, the screen flashing white, then fire swirls, embers, flying chunks.
+- DoughV2, Oblivion: a surge of mochi erupts at the target (cream splashes, a swirl ring on the ground), rises into white walls round
+  it like a basin and holds it; then bursts outward: cream shards and splashes everywhere, pink-magenta energy and red lightning.
+

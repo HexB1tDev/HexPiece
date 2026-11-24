@@ -36,6 +36,11 @@ public final class AstralArt {
     static final double SHIN = 0.16;
 
     static final int[] PARTS = {StyleRig.RIGHT_ARM, StyleRig.LEFT_ARM, StyleRig.RIGHT_LEG, StyleRig.LEFT_LEG};
+    /**
+     * 3.6.3: the limbs left out of a posed body (bit i: PARTS[i]: 1 the right arm, 2 the left, 4 the right leg, 8 the left), as the game
+     * hides an arm or a leg turned into mochi (client/mochi/MochiFx.mochiArms); the previews (tools/preview/MochiShots) set it.
+     */
+    public static int hide;
     static final SkinBox.Part[] SKINS = {SkinBox.RIGHT_ARM, SkinBox.LEFT_ARM, SkinBox.RIGHT_LEG, SkinBox.LEFT_LEG};
 
     static final double[] C = new double[24];
@@ -215,6 +220,9 @@ public final class AstralArt {
             torso(pose, 6, 12, g);
             box(skin, glow, place, FACES[2][outer], alpha, ghost, shell);
             for (int i = 0; i < 4; i++) {
+                if ((hide & 1 << i) != 0) {
+                    continue;
+                }
                 for (int half = 0; half < 2; half++) {
                     double[] h = StyleRig.half(pose, PARTS[i], half == 1, g);
                     System.arraycopy(h, 0, C, 0, 24);

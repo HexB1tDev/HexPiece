@@ -367,8 +367,78 @@ public final class MochiFx {
     @SubscribeEvent
     public static void noHands(RenderHandEvent event) {
         Minecraft minecraft = Minecraft.m_91087_();
-        if (!WHEELS.isEmpty() && minecraft.f_91074_ != null && WHEELS.containsKey(minecraft.f_91074_.m_19879_())) {
+        if (minecraft.f_91074_ == null) {
+            return;
+        }
+        int id = minecraft.f_91074_.m_19879_();
+        if (!WHEELS.isEmpty() && WHEELS.containsKey(id)) {
             event.setCanceled(true);
+            return;
+        }
+        // 3.6.3: one's own arm turned into mochi is not drawn as a hand too (the main hand the right arm, the off hand the left)
+        int arms = mochiArms(id);
+        if (arms != 0 && (arms & (event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND ? RIGHT : LEFT)) != 0) {
+            event.setCanceled(true);
+        }
+    }
+
+    /** 3.6.3: a body's right and left arm (mochiArms). */
+    static final int RIGHT = 1;
+    static final int LEFT = 2;
+
+    /**
+     * 3.6.3 (the owner: "The mochi M1s should turn the user's arms into the mochi not create another arm above it", "X Should also turn
+     * the arms into mochi not create a layer above it"): which of {@code user}'s arms are mochi now ({@link #RIGHT}, {@link #LEFT}): a
+     * punch's arm while it is out, both of Kaku Mochi's.
+     */
+    static int mochiArms(int user) {
+        if (PUNCHES.isEmpty() && KAKUS.isEmpty()) {
+            return 0;
+        }
+        int arms = 0;
+        for (Punch p : PUNCHES) {
+            if (p.user == user && clock - p.born <= MochiDraw.PUNCH_LIFE) {
+                arms |= p.which == 0 ? RIGHT : LEFT;
+            }
+        }
+        for (Kaku k : KAKUS) {
+            if (k.user == user && clock - k.born <= MochiDraw.KAKU_LIFE) {
+                arms |= RIGHT | LEFT;
+            }
+        }
+        return arms;
+    }
+
+    /** 3.6.3: the parts hidden for this frame's body (restored as it is drawn), or null. */
+    private static net.minecraft.client.model.geom.ModelPart[] hidden;
+
+    /** 3.6.3: an arm turned into mochi: the body's own arm (and its sleeve) not drawn while it is. */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public static void hideArms(RenderPlayerEvent.Pre event) {
+        int arms = mochiArms(event.getEntity().m_19879_());
+        if (arms == 0 || event.isCanceled() || !(event.getRenderer().m_7200_() instanceof net.minecraft.client.model.PlayerModel<?> model)) {
+            return;
+        }
+        hidden = new net.minecraft.client.model.geom.ModelPart[] {(arms & RIGHT) != 0 ? model.f_102811_ : null,
+            (arms & RIGHT) != 0 ? model.f_103375_ : null, (arms & LEFT) != 0 ? model.f_102812_ : null, (arms & LEFT) != 0 ? model.f_103374_ : null};
+        for (int k = 0; k < hidden.length; k++) {
+            if (hidden[k] != null && hidden[k].f_104207_) {
+                hidden[k].f_104207_ = false;
+            } else {
+                hidden[k] = null;
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void showArms(RenderPlayerEvent.Post event) {
+        if (hidden != null) {
+            for (net.minecraft.client.model.geom.ModelPart part : hidden) {
+                if (part != null) {
+                    part.f_104207_ = true;
+                }
+            }
+            hidden = null;
         }
     }
 

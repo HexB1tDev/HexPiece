@@ -21,6 +21,8 @@ public final class MochiDraw {
     /** 3.5.5: a punch's arm, half its width (a bar), and its fist's half width (a little wider: the block at its end). */
     public static final double PUNCH_ARM = 0.21;
     public static final double PUNCH_FIST = 0.29;
+    /** 3.6.3: the punch's arm at rest, an arm's own length (the arm itself is the mochi: client/mochi/MochiFx.mochiArms hides the real one). */
+    public static final double PUNCH_REST = 0.7;
     /** Mochi Tsuki's thrust: out in {@link #TSUKI_OUT}, gone by {@link #TSUKI_LIFE}. */
     public static final double TSUKI_OUT = 3.0;
     public static final double TSUKI_LIFE = 14.0;
@@ -127,7 +129,7 @@ public final class MochiDraw {
             return;
         }
         double out = age < PUNCH_OUT ? ease(age / PUNCH_OUT) : age < PUNCH_OUT + 2 ? 1.0 : 1.0 - smooth((age - PUNCH_OUT - 2) / (PUNCH_LIFE - PUNCH_OUT - 2));
-        double d = 0.4 + (reach - 0.4) * out;
+        double d = PUNCH_REST + (reach - PUNCH_REST) * out;
         arm(sink, x, y, z, x + wx * d, y + wy * d, z + wz * d, PUNCH_ARM, PUNCH_FIST, 0.0, coat, age, seed, left);
     }
 

@@ -53,9 +53,75 @@ public final class MochiArt {
     static int shade(double x, double y, double z, double nx, double ny, double nz, int[] bands, double alpha) {
         double el = Math.max(1.0E-6, Math.sqrt(x * x + y * y + z * z));
         double facing = Math.abs((nx * x + ny * y + nz * z) / el);
+        if (bands == MOCHI || bands == HAKI || bands == IRON) {
+            // the side of the surface turned to the eye (a solid's inside seen through its open end lit as its outside)
+            double s = (nx * x + ny * y + nz * z) > 0.0 ? -1.0 : 1.0;
+            return FireMesh.argb(alpha, lit(nx * s, ny * s, nz * s, -x / el, -y / el, -z / el, bands));
+        }
         double lit = Math.max(0.0, nx * LX + ny * LY + nz * LZ);
         return FireMesh.argb(alpha, band(facing, lit, bands));
     }
+
+    /** The light's way, made unit. */
+    static final double LL = Math.sqrt(LX * LX + LY * LY + LZ * LZ);
+
+    /**
+     * 3.6.3 (the owner: "The Mochi material has to look more realistic, have more depth, shade and color to it, more 3d material too, its
+     * too flat"): mochi, Haki and iron lit smoothly instead of in five flat bands, at normal (nx, ny, nz) seen along (vx, vy, vz) (unit,
+     * toward the eye). Mochi: a soft light that wraps round it (it is a little see-through), cream where lit, a cool lilac in its shade
+     * and deeper still where it turns away (its thickness), a warm bounce from the ground under it, a warm glow through its lit edges and
+     * a soft satin shine. Haki: glossy black, a cold blue rim where it turns away and a sharp blue-white shine. Iron: dark grey metal.
+     */
+    static int lit(double nx, double ny, double nz, double vx, double vy, double vz, int[] bands) {
+        double lx = LX / LL;
+        double ly = LY / LL;
+        double lz = LZ / LL;
+        double lam = nx * lx + ny * ly + nz * lz;
+        double facing = Math.max(0.0, Math.min(1.0, nx * vx + ny * vy + nz * vz));
+        double edge = 1.0 - facing;
+        double hx = lx + vx;
+        double hy = ly + vy;
+        double hz = lz + vz;
+        double hl = Math.max(1.0E-9, Math.sqrt(hx * hx + hy * hy + hz * hz));
+        double half = Math.max(0.0, (nx * hx + ny * hy + nz * hz) / hl);
+        if (bands == MOCHI) {
+            double wrap = Math.max(0.0, Math.min(1.0, (lam + 0.3) / 1.3));
+            wrap = wrap * wrap * (3.0 - 2.0 * wrap);
+            int c = FireMesh.mix(MOCHI_SHADE, MOCHI_BODY, wrap);
+            // its thickness: deeper where it turns away from the eye, most on the shaded side
+            c = FireMesh.mix(c, MOCHI_DEEP, edge * edge * (0.6 - 0.35 * wrap));
+            // the ground's warm bounce under it
+            c = FireMesh.mix(c, MOCHI_BOUNCE, Math.max(0.0, -ny) * 0.3 * (1.0 - wrap));
+            // light through its lit edges (soft, a little see-through)
+            c = FireMesh.mix(c, MOCHI_GLOW, Math.pow(edge, 2.2) * Math.max(0.0, lam + 0.2) * 0.55);
+            // a soft satin shine
+            double shine = Math.pow(half, 26.0) * 0.55 + Math.pow(half, 6.0) * 0.08;
+            return FireMesh.mix(c, 0xFFFFFF, Math.min(1.0, shine));
+        }
+        if (bands == HAKI) {
+            double diff = Math.max(0.0, lam) * 0.8 + 0.2 * (0.5 + 0.5 * ny);
+            int c = FireMesh.mix(HAKI_BODY, HAKI_LIT, diff);
+            c = FireMesh.mix(c, HAKI_RIM, Math.pow(edge, 4.0) * 0.75);
+            double shine = Math.pow(half, 70.0) * 0.95 + Math.pow(half, 10.0) * 0.18;
+            return FireMesh.mix(c, HAKI_SHINE, Math.min(1.0, shine));
+        }
+        double diff = Math.max(0.0, lam) * 0.75 + 0.25 * (0.5 + 0.5 * ny);
+        int c = FireMesh.mix(0x2A2A33, 0x8A8A98, diff);
+        c = FireMesh.mix(c, 0x9EA0B8, Math.pow(edge, 3.0) * 0.6);
+        return FireMesh.mix(c, 0xE4E6F2, Math.min(1.0, Math.pow(half, 40.0) * 0.8));
+    }
+
+    /** 3.6.3: mochi lit, in its shade, turning away, the ground's bounce, the light through its edges. */
+    static final int MOCHI_BODY = 0xFCF8F1;
+    static final int MOCHI_SHADE = 0xC2B6C5;
+    static final int MOCHI_DEEP = 0x9C8DA6;
+    static final int MOCHI_BOUNCE = 0xE6D3C2;
+    static final int MOCHI_GLOW = 0xFFE7C6;
+    /** 3.6.3: Haki-black in the dark and lit, its cold rim, its shine (blue: never white). */
+    static final int HAKI_BODY = 0x0E0E14;
+    static final int HAKI_LIT = 0x2C2D3A;
+    static final int HAKI_RIM = 0x3B4FBF;
+    static final int HAKI_SHINE = 0x8EA6FF;
 
     // ------------------------------------------------------------------------------------------------------ the blob
 

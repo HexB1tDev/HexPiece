@@ -25,6 +25,13 @@ public final class MochiShots {
         ItoShots.posed(sink, clip, (float) Math.max(0.0, tick), 0.0, 0.0, 0.0, 0.0, 0.9, 0.0, ex, ey, ez, 0.0, 0.0);
     }
 
+    /** 3.6.3: the user with the limbs in {@code hide} turned into mochi (not drawn: AstralArt.hide, as MochiFx.mochiArms in the game). */
+    static void user(FireMesh.Sink sink, String clip, double tick, double ex, double ey, double ez, int hide) {
+        com.hexhaki.piece.horo.AstralArt.hide = hide;
+        user(sink, clip, tick, ex, ey, ez);
+        com.hexhaki.piece.horo.AstralArt.hide = 0;
+    }
+
     static boolean shot(FireMesh.Sink sink, double[] eye, String[] move) {
         double ex = eye[0];
         double ey = eye[1];
@@ -46,7 +53,7 @@ public final class MochiShots {
                 MochiArt.blob(sink, 1.0 - ex, 3.6 - ey, -ez, 1, 0, 0, 0, 1, 0, 0.8, 0.6, 0.5, 0.35, 0.0, age, 5, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
             }
             case "mpunch" -> {
-                user(sink, "mochi_punch_1", age, ex, ey, ez);
+                user(sink, "mochi_punch_1", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.PUNCH_LIFE ? 1 : 0);
                 com.hexhaki.piece.mochi.MochiDraw.punch(sink, -0.36 - ex, 1.4 - ey, -ez, 0, 0, 1, 6.0, age, coat, 3);
             }
             case "mtsuki" -> {
@@ -60,7 +67,7 @@ public final class MochiShots {
                 com.hexhaki.piece.mochi.MochiDraw.yanagi(sink, -0.15 - ex, 0.8 - ey, 0.2 - ez, 0, 1, -ey, age, 7);
             }
             case "mkaku" -> {
-                user(sink, "mochi_kaku", age, ex, ey, ez);
+                user(sink, "mochi_kaku", age, ex, ey, ez, age <= com.hexhaki.piece.mochi.MochiDraw.KAKU_LIFE ? 3 : 0);
                 HieShots.body(sink, -ex, -ey, 4.5 - ez);
                 com.hexhaki.piece.mochi.MochiDraw.kaku(sink, -ex, 1.4 - ey, -ez, -ex, -ey, 4.5 - ez, 0, 1, age, coat, 4);
             }
