@@ -822,6 +822,23 @@ public final class DragonTests {
             }
             check(count[0], finite[0], "Trident Lacerations", age);
         }
+        // 3.6.6: Power Mochi at its heaviest: both donuts forming (splash, fireball, the donut out of it) and every tick of a punch from
+        // one of them (its burst, the bar with its seams and flames, the blow), in third person and right by the eye
+        for (double eye : new double[] {6.0, 2.5}) {
+            for (int age = 0; age <= 70; age++) {
+                count[0] = 0;
+                for (int k = 0; k < 2; k++) {
+                    double px = k == 0 ? -1.4 : 1.4;
+                    double punch = age >= 40 ? age - 40.0 : -1.0;
+                    com.hexhaki.piece.mochi.MochiV2.powerDonut(sink, px, 1.75 - 1.6, eye, 0, 0, 1, age, -1.0,
+                        k == 0 && punch >= 0 ? com.hexhaki.piece.mochi.MochiV2.powerOut(punch) : 0.0, 3 + k * 7);
+                    if (k == 0 && punch >= 0) {
+                        com.hexhaki.piece.mochi.MochiV2.powerPunch(sink, px, 0.15, eye, 0.3, -0.5, eye + 7.0, punch, 9);
+                    }
+                }
+                check(count[0], finite[0], "Power Mochi", age);
+            }
+        }
         // 3.5.6 (the owner: "the arms are like squares. They're like basically rectangles that with the fist at the very edge"): the
         // arm's section at the shoulder is a square (its corners stand out from its middle as a square's do, a round tube's would not),
         // one flat face up, the same width all the way, and the fist is its very end

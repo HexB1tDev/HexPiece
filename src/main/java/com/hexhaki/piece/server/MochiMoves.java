@@ -172,7 +172,7 @@ public final class MochiMoves {
      */
     public static final int POWER = 285;
     public static final int POWER_PUNCH = 286;
-    static final int POWER_EVERY = 7;
+    public static final int POWER_EVERY = 7;
     static final float POWER_HURT = 6.0F;
     static final int POWER_BURN = 2;
     static final int POWER_COOL = 600;

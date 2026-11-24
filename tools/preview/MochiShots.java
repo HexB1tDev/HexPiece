@@ -214,7 +214,8 @@ public final class MochiShots {
                 double[] at = new double[3];
                 for (int k = 0; k < 2; k++) {
                     com.hexhaki.piece.mochi.MochiV2.powerAt(k, 0.0, age, at);
-                    com.hexhaki.piece.mochi.MochiV2.powerDonut(sink, at[0] - ex, at[1] - ey, at[2] - ez, 0, 0, 1, age, -1.0, 7 + k * 7);
+                    double out = punch >= 0 && side == k ? com.hexhaki.piece.mochi.MochiV2.powerOut(punch) : 0.0;
+                    com.hexhaki.piece.mochi.MochiV2.powerDonut(sink, at[0] - ex, at[1] - ey, at[2] - ez, 0, 0, 1, age, -1.0, out, 7 + k * 7);
                 }
                 if (punch >= 0) {
                     com.hexhaki.piece.mochi.MochiV2.powerAt(side, 0.0, age, at);
@@ -331,6 +332,21 @@ public final class MochiShots {
                     case "punch" -> com.hexhaki.piece.mochi.MochiDraw.punch(sink, sx - ex, sy - ey, sz - ez, 0, 0, 1, 6.0, age, coat, 3);
                     case "swell" -> com.hexhaki.piece.mochi.MochiDraw.swell(sink, -0.55 - ex, 1.02 - ey, 1.4 - ez, 0, 0, 1,
                         Math.min(1.0, age / 16.0), age, coat, 2);
+                    case "power" -> {
+                        // 3.6.6 |mfirst:age:-:power[:punch[:side]]: Power Mochi's donuts where client/mochi/MochiFx.powerPlace puts them
+                        // in one's own first person (2 ahead, 1.7 out, 0.55 low), a punch from side onto the crosshair 6 out
+                        double punch = move.length > 4 ? Double.parseDouble(move[4]) : -1.0;
+                        int side = move.length > 5 ? (int) Double.parseDouble(move[5]) : 0;
+                        for (int k = 0; k < 2; k++) {
+                            double px = k == 0 ? -1.7 : 1.7;
+                            double py = 1.62 - 0.55 + 0.05 * Math.sin(age * 0.16 + k * 2.1);
+                            double out = punch >= 0 && side == k ? com.hexhaki.piece.mochi.MochiV2.powerOut(punch) : 0.0;
+                            com.hexhaki.piece.mochi.MochiV2.powerDonut(sink, px - ex, py - ey, 2.0 - ez, 0, 0, 1, age, -1.0, out, 7 + k * 7);
+                            if (punch >= 0 && side == k) {
+                                com.hexhaki.piece.mochi.MochiV2.powerPunch(sink, px - ex, py - ey, 2.0 - ez, -ex, 1.62 - ey, 6.0 - ez, punch, 21);
+                            }
+                        }
+                    }
                     default -> {
                     }
                 }

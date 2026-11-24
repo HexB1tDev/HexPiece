@@ -673,3 +673,28 @@ How this chat worked (tools in the scratchpad, gone with the session; rebuild th
 e: shots), WifiShot (SparkPreview.render of a strike beside the release), pick.py/sheet.py (GIF frame sheets: `python3 -I`), FxPreview
 `--fov=70` (the game's field of view) for any camera shot the game frames. Compile previews against fresh classes: MochiArt, MochiDraw,
 MochiV2 and client/npc/MochiPoses + StylePoser (regenerated clips) into a scratch folder ahead of build/classes.
+
+## S. The fifth Mochi chat (after 3.6.5): Power Mochi finished, the five other awakened moves
+
+Build #243 (the handoff push before this chat) was checked first. The session was on Default: switched to HexPiece (network_only).
+
+- **Power Mochi** (awakened V) judged beside Power_Dough.gif frames 30, 50 to 56, 66 to 72 (side-by-side renders, the GIF's camera
+  behind-left of the user, the target ahead-right) and fixed (mochi/MochiV2):
+  - The donuts as big as the user (POWER_DONUT 0.9), head high at each side (POWER_UP 1.75, POWER_SIDE 1.4, POWER_BACK 0).
+  - The glow: a halo turned to the eye just behind each donut (MochiV2.halo: two FireMesh.rings, clear inside the outline, orange
+    then red outside it). It was a shell 1.1 behind the donut: from the GIF's camera it lay on the ground as an orange stain.
+  - The hole from behind: the dough the fist grows out of fills it (a flattened ball behind the fist): from behind it reads pale, as
+    the GIF's; the black fist only from the front, further out of the hole. While its punch is out the hole is empty (powerDonut's
+    new `out`, the client reads its PowerHit; MochiV2.powerOut).
+  - The punch: a thick black bar as wide as the hole (MochiDraw.hole), seams of fire glowing along each face by its edge, broken and
+    kinked, riding the bar's wobble exactly (new MochiDraw.armAt: the arm's centre and half width at t, which MochiDraw.arm now uses),
+    flames licking off its first half; the fist caught in a puff of white dough as it lands; fire and red sparks there.
+  - The launch burst (frames 52 to 56, a tick a frame): a fireball engulfing the donut (tick 0 to 2), yellow rays thrown forward,
+    thick crescents of orange fire with yellow hearts bracketing the donut either side and opening out (ticks 1 to 6), crimson
+    splinters sprayed all round (straight streaks: the GIF's jagged red lines are its lightning; ours is the one Haki lightning, which
+    the punch already throws with Haki and Ryou on, POINT ONE). Right by the eye the burst is drawn smaller (`near`).
+  - First person: one's own donuts 2 ahead, 1.7 out, 0.55 low (MochiFx.FP_*), half in view at the view's edges (at 1 ahead they
+    filled both sides of the view). Preview `|mfirst:age:-:power[:punch[:side]]` with `fp:0`.
+  - DragonTests: both donuts forming and every tick of a punch, near and far, under 16k (about 5.5k at most). HudTests.powerMochi:
+    20 s, its reach, the donuts taking turns (each fist back before its donut punches again), one at each side head high, the punch
+    springing past its reach and drawn back by its end.

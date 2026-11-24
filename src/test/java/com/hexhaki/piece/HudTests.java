@@ -1096,11 +1096,39 @@ public final class HudTests {
             Check.that(w[0] <= com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT && com.hexhaki.piece.mochi.MochiV2.TRIDENT_HIT <= w[1]
                 && w[1] <= com.hexhaki.piece.mochi.MochiV2.TRIDENT_SWING, "Trident Lacerations: each blow inside its swing's sweep");
         }
+        powerMochi();
         float[][] rest = new float[6][8];
         double[] fist = com.hexhaki.piece.mochi.MochiV2.mogura(rest, 0, 0, new double[3]);
         double[] tip = com.hexhaki.piece.mochi.MochiV2.mogura(rest, com.hexhaki.piece.mochi.MochiV2.TIP, 0, new double[3]);
         Check.that(tip[2] - fist[2] > 2.5 && Math.abs(tip[1] - fist[1]) < 0.5 && fist[1] > 0.5,
             "Mogura at rest: held at the hand, pointing ahead, its tip about three blocks out (" + (tip[2] - fist[2]) + ")");
+    }
+
+    /**
+     * 3.6.6: Power Mochi's beats (the reference's Power Dough: "two dough donuts with coated haki flaming fists for ~20 seconds that will
+     * act as your new and improved M1s with increased range"): out about 20 s; one donut at each side of the user, about head high; the
+     * left click their punches, longer than the Mochi Punch, one donut then the other, each fist back in its hole before that donut
+     * punches again; a punch shoots out past its reach, springs back and is drawn in by its end.
+     */
+    static void powerMochi() {
+        Check.that(com.hexhaki.piece.mochi.MochiV2.POWER_TICKS == 400, "Power Mochi: out 20 seconds (the reference's ~20)");
+        Check.that(com.hexhaki.piece.mochi.MochiV2.POWER_REACH > 6.0, "Power Mochi: its punches reach further than the Mochi Punch's");
+        Check.that(2 * com.hexhaki.piece.server.MochiMoves.POWER_EVERY >= com.hexhaki.piece.mochi.MochiV2.POWER_LIFE
+            && com.hexhaki.piece.server.MochiMoves.POWER_EVERY < com.hexhaki.piece.mochi.MochiV2.POWER_LIFE,
+            "Power Mochi: the donuts take turns, each fist back in its hole before its donut punches again");
+        double[] right = com.hexhaki.piece.mochi.MochiV2.powerAt(0, 0.0, 0.0, new double[3]);
+        double[] left = com.hexhaki.piece.mochi.MochiV2.powerAt(1, 0.0, 0.0, new double[3]);
+        // facing +z (yaw 0) the right is -x
+        Check.that(right[0] < -1.0 && left[0] > 1.0 && Math.abs(right[2]) < 0.5 && Math.abs(left[2]) < 0.5,
+            "Power Mochi: a donut at each side of the user (the reference's frame 30)");
+        Check.that(right[1] > 1.5 && right[1] < 2.1 && left[1] > 1.5 && left[1] < 2.1, "Power Mochi: the donuts hang about head high");
+        double most = 0;
+        for (double t = 0; t <= com.hexhaki.piece.mochi.MochiV2.POWER_LIFE; t += 0.25) {
+            most = Math.max(most, com.hexhaki.piece.mochi.MochiV2.powerOut(t));
+        }
+        Check.that(most > 1.03 && com.hexhaki.piece.mochi.MochiV2.powerOut(com.hexhaki.piece.mochi.MochiV2.POWER_LIFE) < 1.0E-6
+            && com.hexhaki.piece.mochi.MochiV2.powerOut(com.hexhaki.piece.mochi.MochiV2.POWER_OUT) > 0.95,
+            "Power Mochi: a punch shoots out past its reach and is drawn back in by its end (the mochi alive)");
     }
 
     /**

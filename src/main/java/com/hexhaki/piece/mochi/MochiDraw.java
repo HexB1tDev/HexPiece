@@ -63,6 +63,50 @@ public final class MochiDraw {
         double ux = dx / len;
         double uy = dy / len;
         double uz = dz / len;
+        double[] at = ARM_AT;
+        MochiArt.tubeBegin();
+        int n = len > 1.2 ? 10 : 3;
+        for (int k = 0; k <= n; k++) {
+            armAt(sx, sy, sz, fx, fy, fz, r, size, sag, coat, time, seed, k / (double) n, at);
+            MochiArt.tubePoint(at[0], at[1], at[2], at[3]);
+        }
+        // the owner: "The black fist is only with haki on, without haki on its fully white, and with haki on the entire fist and arm
+        // (thing connecting to the fist) as well are black"
+        MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
+        // the fist, its knuckles across the bar (level across the way: the bar's own side)
+        double kx = -uz;
+        double kz = ux;
+        double kl = Math.sqrt(kx * kx + kz * kz);
+        if (kl < 1.0E-4) {
+            kx = 1;
+            kz = 0;
+            kl = 1;
+        }
+        MochiArt.fist(sink, fx, fy, fz, ux, uy, uz, kx / kl, 0, kz / kl, size, coat, time, seed, left);
+    }
+
+    private static final double[] ARM_AT = new double[4];
+
+    /**
+     * 3.6.6: the point of {@link #arm}'s bar {@code t} of the way from the shoulder (0) to the back of the fist (1), as it is drawn (its
+     * wobble, its sag, its thinning) into out (x, y, z, its half width): what rides on the bar (Power Mochi's seams of fire) sits on it.
+     */
+    public static double[] armAt(double sx, double sy, double sz, double fx, double fy, double fz, double r, double size, double sag, boolean coat,
+                                 double time, int seed, double t, double[] out) {
+        double dx = fx - sx;
+        double dy = fy - sy;
+        double dz = fz - sz;
+        double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (len < 1.0E-4) {
+            out[0] = sx;
+            out[1] = sy;
+            out[2] = sz;
+            out[3] = r;
+            return out;
+        }
+        double ux = dx / len;
+        double uy = dy / len;
+        double uz = dz / len;
         // the bar runs into the back of the hand (the fist is its very end)
         double reach = Math.max(0.05, len - size * 0.5);
         // 3.6.5 (the owner: "feels like mochi is dead, it should be more stretchy, more animated, more squishy ... the arms should have
@@ -87,32 +131,17 @@ public final class MochiDraw {
         double vy = az * ux - ax * uz;
         double vz = ax * uy;
         double phase = seed * 1.7;
-        MochiArt.tubeBegin();
-        int n = len > 1.2 ? 10 : 3;
-        for (int k = 0; k <= n; k++) {
-            double t = k / (double) n;
-            double belly = Math.sin(Math.PI * t);
-            // the wobble and the sag eased in and out at both ends: the bar leaves the shoulder and enters the fist square on its way
-            double held = smooth((t - 0.1) / 0.2) * smooth((0.9 - t) / 0.2);
-            double drop = hang * 4.0 * t * (1.0 - t) * held;
-            double side = amp * belly * held * Math.sin(2 * Math.PI * 1.3 * t - time * 1.1 + phase);
-            double rise = 0.6 * amp * belly * held * Math.cos(2 * Math.PI * 0.9 * t - time * 0.8 + phase * 0.6);
-            MochiArt.tubePoint(sx + ux * reach * t + ax * side + vx * rise, sy + uy * reach * t + vy * rise - drop, sz + uz * reach * t + az * side
-                + vz * rise, r * (1.0 - thin * belly));
-        }
-        // the owner: "The black fist is only with haki on, without haki on its fully white, and with haki on the entire fist and arm
-        // (thing connecting to the fist) as well are black"
-        MochiArt.bar(sink, coat ? MochiArt.HAKI : MochiArt.MOCHI, 1.0);
-        // the fist, its knuckles across the bar (level across the way: the bar's own side)
-        double kx = -uz;
-        double kz = ux;
-        double kl = Math.sqrt(kx * kx + kz * kz);
-        if (kl < 1.0E-4) {
-            kx = 1;
-            kz = 0;
-            kl = 1;
-        }
-        MochiArt.fist(sink, fx, fy, fz, ux, uy, uz, kx / kl, 0, kz / kl, size, coat, time, seed, left);
+        double belly = Math.sin(Math.PI * t);
+        // the wobble and the sag eased in and out at both ends: the bar leaves the shoulder and enters the fist square on its way
+        double held = smooth((t - 0.1) / 0.2) * smooth((0.9 - t) / 0.2);
+        double drop = hang * 4.0 * t * (1.0 - t) * held;
+        double side = amp * belly * held * Math.sin(2 * Math.PI * 1.3 * t - time * 1.1 + phase);
+        double rise = 0.6 * amp * belly * held * Math.cos(2 * Math.PI * 0.9 * t - time * 0.8 + phase * 0.6);
+        out[0] = sx + ux * reach * t + ax * side + vx * rise;
+        out[1] = sy + uy * reach * t + vy * rise - drop;
+        out[2] = sz + uz * reach * t + az * side + vz * rise;
+        out[3] = r * (1.0 - thin * belly);
+        return out;
     }
 
     /** As {@link #arm} with a right fist. */

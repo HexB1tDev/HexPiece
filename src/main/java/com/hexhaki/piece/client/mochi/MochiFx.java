@@ -1008,8 +1008,15 @@ public final class MochiFx {
             Vec3 look = user.m_20252_(partial);
             for (int side = 0; side < 2; side++) {
                 Vec3 at = powerPlace(minecraft, user, side, age, partial);
+                // its fist out as a punch: the hole left empty while the bar is out
+                double out = 0.0;
+                for (PowerHit h : POWER_HITS) {
+                    if (h.user == e.getKey() && h.side == side) {
+                        out = Math.max(out, com.hexhaki.piece.mochi.MochiV2.powerOut(now - h.born));
+                    }
+                }
                 com.hexhaki.piece.mochi.MochiV2.powerDonut(SINK, at.f_82479_ - cx, at.f_82480_ - cy, at.f_82481_ - cz, look.f_82479_, look.f_82480_,
-                    look.f_82481_, age, gone, p.seed + side * 7);
+                    look.f_82481_, age, gone, out, p.seed + side * 7);
             }
         }
         for (PowerHit h : POWER_HITS) {
@@ -1031,6 +1038,10 @@ public final class MochiFx {
     }
 
     private static final double[] POWER_AT = new double[3];
+    /** One's own Power Mochi donuts in first person: ahead, out to each side, down from the eye (half in view at its edges). */
+    static final double FP_AHEAD = 2.0;
+    static final double FP_OUT = 1.7;
+    static final double FP_LOW = -0.55;
 
     /**
      * 3.6.6: where Power Mochi's donut {@code side} (0 the right) hangs: at the shoulder (MochiV2.powerAt) or, in one's own first person,
@@ -1041,8 +1052,8 @@ public final class MochiFx {
             Vec3 look = user.m_20252_(partial);
             Vec3 f = flat(look);
             Vec3 right = new Vec3(-f.f_82481_, 0, f.f_82479_);
-            return user.m_20299_(partial).m_82549_(look.m_82490_(1.0)).m_82549_(right.m_82490_(side == 0 ? 1.35 : -1.35)).m_82520_(0.0,
-                -0.45 + 0.05 * Math.sin(age * 0.16 + side * 2.1), 0.0);
+            return user.m_20299_(partial).m_82549_(look.m_82490_(FP_AHEAD)).m_82549_(right.m_82490_(side == 0 ? FP_OUT : -FP_OUT)).m_82520_(0.0,
+                FP_LOW + 0.05 * Math.sin(age * 0.16 + side * 2.1), 0.0);
         }
         com.hexhaki.piece.mochi.MochiV2.powerAt(side, yaw(user, partial), age, POWER_AT);
         return user.m_20318_(partial).m_82520_(POWER_AT[0], POWER_AT[1], POWER_AT[2]);
