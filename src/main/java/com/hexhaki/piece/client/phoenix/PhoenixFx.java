@@ -937,8 +937,8 @@ public final class PhoenixFx {
             -look.f_82481_ * back));
     }
 
-    /** Whether one's own player is the phoenix (the panel shows its moves). */
-    static boolean selfOut() {
+    /** Whether one's own player is the phoenix (the panel shows its moves; 3.7.7 client/CombatMode: no Style while it is). */
+    public static boolean selfOut() {
         Minecraft minecraft = Minecraft.m_91087_();
         return minecraft.f_91074_ != null && ENTRIES.containsKey(minecraft.f_91074_.m_19879_());
     }

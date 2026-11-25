@@ -102,6 +102,12 @@ public final class StyleServer {
         if (on && (!profile.chosen() || !profile.style().choice() || !profile.style().armed())) {
             return;
         }
+        // 3.7.7 (the owner: "In no ZOAN transformed state can you switch to Style or any other mode aside from fruit"): not while
+        // transformed (server/Transformed.zoan)
+        if (on && Transformed.zoan(player)) {
+            player.m_5661_(Component.m_237113_(Transformed.FRUIT_ONLY), true);
+            return;
+        }
         State state = state(player);
         if (state.combat == on) {
             return;

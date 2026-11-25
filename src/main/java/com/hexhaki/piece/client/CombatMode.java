@@ -77,6 +77,14 @@ public final class CombatMode {
         fired = false;
     }
 
+    /**
+     * 3.7.7: one's own player in a Zoan form (the dragon, the phoenix: from the change to the way back; Gear 5): the fruit's mode only.
+     */
+    static boolean zoan() {
+        return com.hexhaki.piece.client.dragon.DragonClient.selfOut() || com.hexhaki.piece.client.phoenix.PhoenixFx.selfOut()
+            || GearClientState.gearFive;
+    }
+
     /** 3.5.9: is every power off (the original's bit, server/Powers)? */
     static boolean powersOff() {
         return com.hexhaki.binds.client.BindsClient.off();
@@ -127,6 +135,9 @@ public final class CombatMode {
         if (on && powersOff()) {
             set(false); // 3.5.9: every power off: no combat mode either
         }
+        if (on && zoan()) {
+            set(false); // 3.7.7: transformed: only the fruit
+        }
         if (minecraft.f_91080_ != null) {
             pressedAt = -1; // the original drains R under a screen
             return;
@@ -165,6 +176,12 @@ public final class CombatMode {
     static void tap(Minecraft minecraft, boolean ctrl) {
         if (com.hexhaki.piece.client.dragon.DragonClient.selfOut()) {
             return; // 2.7.3: the dragon keeps fruit mode and has no Haki (R and Ctrl + R do nothing)
+        }
+        if (!ctrl && zoan()) {
+            // 3.7.7 (the owner: "In no ZOAN transformed state can you switch to Style or any other mode aside from fruit"): R does not
+            // leave the fruit while transformed (Ctrl + R, Armament Haki, is not a mode: it stays)
+            minecraft.f_91074_.m_5661_(net.minecraft.network.chat.Component.m_237113_(com.hexhaki.piece.server.Transformed.FRUIT_ONLY), true);
+            return;
         }
         if (powersOff()) {
             minecraft.f_91074_.m_5661_(net.minecraft.network.chat.Component.m_237113_("Powers off: hold "

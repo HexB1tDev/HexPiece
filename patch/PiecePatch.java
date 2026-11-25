@@ -233,6 +233,10 @@ public final class PiecePatch implements Opcodes {
         {"com/hexhaki/fruit/FruitServer", "action", "com/hexhaki/fruit/FruitServer", "togglePowers", PLAYER_VOID, POWERS, "toggle", 1},
         {"com/hexhaki/devilfruit/gameplay/GearServerController", "onAction", "com/hexhaki/fruit/FruitServer", "togglePowers", PLAYER_VOID,
             POWERS, "toggle", 1},
+        // 3.7.7 (the owner: "In no ZOAN transformed state can you switch to Style or any other mode aside from fruit. (Tori, gear 5,
+        // dragon, etc)"): the original's mode key (Devil Fruit mode and back) refused while transformed (server/Transformed)
+        {"com/hexhaki/devilfruit/gameplay/GearServerController", "onAction", "com/hexhaki/devilfruit/gameplay/GearServerController",
+            "switchMode", PLAYER_VOID, "com/hexhaki/piece/server/Transformed", "switchMode", 1},
         {"com/hexhaki/fruit/FruitServer", "attacked", "com/hexhaki/fruit/FruitData", "active", "(Lnet/minecraft/server/level/ServerPlayer;)Z",
             POWERS, "passives", 1},
         {CONTROLLER, "onAction", "com/hexhaki/devilfruit/data/GearData", "hasFruit", "(Lnet/minecraft/world/entity/player/Player;)Z", POWERS,
@@ -364,7 +368,7 @@ public final class PiecePatch implements Opcodes {
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura", "renderFirstPerson"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},
         {CONTROLLER, "sovereignStrike", "releaseSovereignStrike", "wifiHakiHandPoint", "applyConqueror", "forceMaxConquerorStun",
-            "isConquerorCombatTarget"}, {"com/hexhaki/devilfruit/gameplay/GearServerController", "endGearFive"}};
+            "isConquerorCombatTarget"}, {"com/hexhaki/devilfruit/gameplay/GearServerController", "endGearFive", "switchMode"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any
      * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either). 2.3.7: the Galaxy Fist's Armament 520.

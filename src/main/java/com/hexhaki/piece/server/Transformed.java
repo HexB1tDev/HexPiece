@@ -37,10 +37,37 @@ public final class Transformed {
         }
     }
 
+    /**
+     * 3.7.7 (the owner: "In no ZOAN transformed state can you switch to Style or any other mode aside from fruit. (Tori, gear 5, dragon,
+     * etc)"): whether {@code player} is in a Zoan form (the dragon, Gear 5, the phoenix: from the change to the way back).
+     */
+    public static boolean zoan(ServerPlayer player) {
+        return transformed(player) || PhoenixServer.phase(player) != com.hexhaki.piece.phoenix.PhoenixForm.HUMAN;
+    }
+
+    /** What the player is told when a switch out of the fruit is refused. */
+    public static final String FRUIT_ONLY = "Transformed: only the fruit's moves until you change back";
+
+    /**
+     * 3.7.7: the original's mode key (Devil Fruit mode and back: GearServerController.onAction's switchMode, redirected here by the patch)
+     * refused in a Zoan form (Gear 5 stays in Devil Fruit mode).
+     */
+    public static void switchMode(ServerPlayer player) {
+        if (zoan(player)) {
+            player.m_5661_(net.minecraft.network.chat.Component.m_237113_(FRUIT_ONLY), true);
+            return;
+        }
+        com.hexhaki.devilfruit.gameplay.GearServerController.switchMode(player);
+    }
+
     @SubscribeEvent
     public static void transformedTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer player) || player.f_19797_ % EVERY != 0) {
             return;
+        }
+        // 3.7.7: never the fighting style's stance in a Zoan form (however it came about)
+        if (StyleServer.inCombat(player) && zoan(player)) {
+            StyleServer.combat(player, false);
         }
         MobEffect effect = PieceEffects.TRANSFORMED.get();
         boolean want = player.m_6084_() && transformed(player);

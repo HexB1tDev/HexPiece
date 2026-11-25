@@ -124,7 +124,7 @@ https://official-fruit-battlegrounds.fandom.com/wiki/LeopardV2"
 - POINT ONE for every move: the house's 3D style (meshes, clips without the head, a first-person hand move per move, CC0 sounds) and
   the Conqueror's lightning on every move with Conqueror's Haki and Ryou (out of the end explosion when there is one).
 
-### 3.3 Zoan forms locked out of Style (not started)
+### 3.3 Zoan forms locked out of Style (DONE in 3.7.8: section 5)
 The owner, verbatim: "In no ZOAN transformed state can you switch to Style or any other mode aside from fruit. (Tori, gear 5,
 dragon, etc)."
 - The mode switch is client/CombatMode.java (R swaps between the fighting style and the fruit; the Gomu fruit through
@@ -196,3 +196,13 @@ dragon, etc)."
 - Tests: DragonTests.phoenix (the split: no face lost, 20 or more lower-jaw vertices, stable when split again; opened, the jaw's tip
   0.3 down, the upper bill still, the gape between the jaws facing ahead), phoenixMoves (the flamethrower's budget), the kit (6
   phoenix moves, FLAMETHROWER at 5).
+
+### 3.7.8: Zoan forms locked out of Style (3.3)
+- server/Transformed.zoan (transformed(): the dragon, Gear 5; or the phoenix from the change to the way back; ADD THE LEOPARD when it
+  comes), FRUIT_ONLY (the action-bar text). StyleServer.combat refuses "on" while zoan; Transformed.transformedTick drops a stance
+  found on while zoan (every 10 ticks).
+- The original's mode key (Devil Fruit mode / Haki mode: HakiKeys' LOADOUT -> GearKeys.switchMode -> GearServerController.onAction ->
+  switchMode): PiecePatch widens GearServerController.switchMode to public and redirects onAction's call to Transformed.switchMode
+  (refused while zoan, else the original's).
+- Client: CombatMode.zoan (DragonClient.selfOut, PhoenixFx.selfOut (now public), GearClientState.gearFive): R's tap refused with the
+  message (Ctrl + R Armament and R held for powers off unchanged); combat mode turned off if on while zoan.
