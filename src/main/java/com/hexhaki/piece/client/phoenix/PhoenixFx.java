@@ -58,7 +58,7 @@ import org.joml.Vector3f;
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class PhoenixFx {
     static final ResourceLocation TEXTURE = ResourceLocation.m_214293_("hexhaki", "textures/piece/phoenix/marco.png");
-    private static long clock;
+    static long clock;
     private static boolean kitAdded;
     private static boolean fromFirstPerson;
     private static DragonModel model;
@@ -132,6 +132,8 @@ public final class PhoenixFx {
     /** client/dragon/UoFx hands on the phoenix's messages (server/PhoenixServer: 400 to 419). */
     public static void accept(S2CUoFx m) {
         if (m.kind() != PhoenixServer.PHASE) {
+            // 3.7.2: the moves' messages (server/PhoenixMoves: 401 to 405)
+            PhoenixMoveFx.accept(m);
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -192,6 +194,7 @@ public final class PhoenixFx {
             return;
         }
         clock++;
+        PhoenixMoveFx.tick();
         if (!kitAdded) {
             kitAdded = true;
             ClientKits.KITS.put(Fruit.TORI, new PhoenixClient());
@@ -361,6 +364,9 @@ public final class PhoenixFx {
         }
     }
 
+    /** Scratch (the render thread only): a move's bank. */
+    private static final float[] BANK = new float[1];
+
     /** Scratch (the render thread only). */
     private static final float[] TINT = new float[3];
     private static final float[] PLACE = new float[12];
@@ -396,6 +402,14 @@ public final class PhoenixFx {
                     continue; // the eye is inside the phoenix: only the world is seen
                 }
                 draw(m, entry, player, stack, out, camera, partial, e.getKey());
+            }
+            // 3.7.2: the human's temporary phoenix wings and tail (a move's: server/PhoenixMoves.WINGS)
+            for (Map.Entry<Integer, PhoenixMoveFx.Wings> e : PhoenixMoveFx.WINGS.entrySet()) {
+                if (ENTRIES.containsKey(e.getKey()) || !(level.m_6815_(e.getKey()) instanceof Player player)
+                    || player == minecraft.f_91074_ && firstPerson) {
+                    continue;
+                }
+                wings(m, e.getValue(), player, stack, out, camera, partial, e.getKey());
             }
             buffers.m_109912_(body);
         } catch (RuntimeException failure) {
@@ -434,14 +448,16 @@ public final class PhoenixFx {
         mo.stride = entry.strideO + (entry.stride - entry.strideO) * partial;
         float shaped = PhoenixForm.shaped(entry.phase, t);
         mo.form = shaped;
+        // 3.7.2: a move's pose (server/PhoenixMoves' acts): swept, ramming, seizing; the whirl turns it, the glide round banks it
+        float whirl = PhoenixMoveFx.act(id, clock + partial, mo, BANK);
         float seconds = (clock + partial) / 20.0F + (id % 17) * 0.31F;
         float beat = entry.beatO + (entry.beat - entry.beatO) * partial;
         PhoenixForm.pose(m, shape, entry.pose, mo, beat, seconds);
         double x = player.f_19790_ + (player.m_20185_() - player.f_19790_) * partial;
         double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial;
         double z = player.f_19792_ + (player.m_20189_() - player.f_19792_) * partial;
-        float yaw = entry.yawO + wrap(entry.yaw - entry.yawO) * partial;
-        float bank = entry.bankO + (entry.bank - entry.bankO) * partial;
+        float yaw = entry.yawO + wrap(entry.yaw - entry.yawO) * partial + whirl;
+        float bank = entry.bankO + (entry.bank - entry.bankO) * partial + BANK[0];
         float lookPitch = player.f_19860_ + (player.m_146909_() - player.f_19860_) * partial;
         // climbing and dropping tilt it with the look, at speed
         float tilt = -lookPitch * 0.45F * mo.speed * (1.0F - mo.perch);
@@ -528,6 +544,76 @@ public final class PhoenixFx {
             case 2 -> shape.tailRoot;
             default -> shape.wing[(k - 3) / 3][1 + (k - 3) % 3];
         };
+    }
+
+    /** Each human's temporary wings' pose (by entity id) and skinned arrays. */
+    static final Map<Integer, Entry> WING_POSES = new HashMap<>();
+    /** The temporary wings' size (blocks a model unit: about 2.3 blocks across), and where their roots sit on the back. */
+    static final float WINGS_SCALE = 0.13F;
+
+    /**
+     * 3.7.2 (the reference's Inferno and Bluebird: "the user forms temporary wings and a tail"): the phoenix's own wings and tail (its
+     * Shape.wings parts) small on a human's back, their roots at the shoulders, facing the body's way, swept back (a dash) or spread and
+     * beating; grown out and burnt away (PhoenixMoveFx.wings).
+     */
+    static void wings(DragonModel m, PhoenixMoveFx.Wings w, Player player, PoseStack stack, VertexConsumer out, Vec3 camera, float partial,
+                      int id) {
+        float t = clock + partial - w.start;
+        float size = PhoenixMoveFx.wings(w, t);
+        if (size < 0.02F) {
+            return;
+        }
+        Entry entry = WING_POSES.computeIfAbsent(id, k -> new Entry());
+        if (entry.pose == null) {
+            entry.pose = new DragonPose(m);
+            entry.pos = new float[m.parts.length][];
+            entry.nrm = new float[m.parts.length][];
+            for (int i = 0; i < m.parts.length; i++) {
+                entry.pos[i] = new float[m.parts[i].vertices() * 3];
+                entry.nrm[i] = new float[m.parts[i].vertices() * 3];
+            }
+        }
+        PhoenixForm.Motion mo = NOW;
+        mo.speed = 0.0F;
+        mo.glide = 0.0F;
+        mo.dive = 0.0F;
+        mo.perch = 0.0F;
+        mo.walk = 0.0F;
+        mo.flare = 0.0F;
+        mo.land = 0.0F;
+        mo.form = 1.0F;
+        mo.sweep = 0.0F;
+        mo.reach = 0.0F;
+        mo.ram = w.pose == com.hexhaki.piece.server.PhoenixMoves.WINGS_SWEPT ? 1.0F : 0.0F;
+        float seconds = (clock + partial) / 20.0F + (id % 13) * 0.27F;
+        PhoenixForm.pose(m, shape, entry.pose, mo, seconds * PhoenixForm.beatRate(mo), seconds);
+        double x = player.f_19790_ + (player.m_20185_() - player.f_19790_) * partial;
+        double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial;
+        double z = player.f_19792_ + (player.m_20189_() - player.f_19792_) * partial;
+        float yaw = player.f_20884_ + wrap(player.f_20883_ - player.f_20884_) * partial;
+        double r = Math.toRadians(yaw);
+        // the roots at the shoulders, a little behind the back
+        double bx = Math.sin(r) * 0.22;
+        double bz = -Math.cos(r) * 0.22;
+        placement(x + bx - camera.f_82479_, y + 1.38 - camera.f_82480_, z + bz - camera.f_82481_, yaw, 0.0F, 0.0F, WINGS_SCALE * size,
+            shape.shoulder, PLACE);
+        Matrix4f view = stack.m_85850_().m_252922_();
+        Vector3f o = view.transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
+        Vector3f ax = view.transformDirection(new Vector3f(1.0F, 0.0F, 0.0F));
+        Vector3f ay = view.transformDirection(new Vector3f(0.0F, 1.0F, 0.0F));
+        Vector3f az = view.transformDirection(new Vector3f(0.0F, 0.0F, 1.0F));
+        float[] v = {ax.x, ay.x, az.x, o.x, ax.y, ay.y, az.y, o.y, ax.z, ay.z, az.z, o.z};
+        float[] mat = mul(v, PLACE);
+        Vector3f ny = stack.m_85850_().m_252943_().transform(new Vector3f(0.0F, 1.0F, 0.0F));
+        for (int i = 0; i < m.parts.length; i++) {
+            if (!shape.wings[i]) {
+                continue;
+            }
+            DragonModel.Part part = m.parts[i];
+            PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], 0.0F, seconds);
+            PhoenixForm.flame(shape, i, part, entry.pos[i], entry.nrm[i], seconds);
+            emit(out, shape, i, part, entry.pos[i], entry.nrm[i], mat, ny.x, ny.y, ny.z, seconds);
+        }
     }
 
     /**
@@ -652,6 +738,8 @@ public final class PhoenixFx {
         boolean firstPerson = minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON;
         try {
             SINK.buffer = buffers.m_6299_(type);
+            // 3.7.2: the moves' fire (client/phoenix/PhoenixMoveFx)
+            PhoenixMoveFx.draw(SINK, level, cam, partial);
             for (Map.Entry<Integer, Entry> e : ENTRIES.entrySet()) {
                 Entry entry = e.getValue();
                 if (!(level.m_6815_(e.getKey()) instanceof Player player)) {
@@ -724,6 +812,8 @@ public final class PhoenixFx {
     @SubscribeEvent
     public static void loggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
         ENTRIES.clear();
+        PhoenixMoveFx.clear();
+        WING_POSES.clear();
         fromFirstPerson = false;
     }
 }

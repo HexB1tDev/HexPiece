@@ -197,6 +197,10 @@ public final class HandMoves {
             case "mochi_oblivion" -> new Move(DOWN, 0);
             case "mochi_storm" -> new Move(PUSH, 0.6);
             case "mochi_power_1", "mochi_power_2" -> new Move(POINT, 0);
+            // 3.7.2: the Phoenix's: Fujiazami's dash (the hand swept back with the arms, flung out with the throw), Talon Slam's leap
+            // and its slam down (tools/phoenix_anims.py)
+            case "phoenix_fuji" -> new Move(PUSH, 0.8);
+            case "phoenix_talon" -> new Move(UP_DOWN, 0);
             default -> null;
         };
     }

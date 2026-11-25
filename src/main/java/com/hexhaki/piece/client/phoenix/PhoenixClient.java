@@ -6,7 +6,10 @@ import com.hexhaki.fruit.client.ClientKit;
 import com.hexhaki.piece.server.PhoenixKit;
 import java.util.List;
 
-/** 3.6.9: the Tori Tori no Mi, Model: Phoenix on the client (the original's ClientKits, put there by client/phoenix/PhoenixFx). */
+/**
+ * 3.6.9: the Tori Tori no Mi, Model: Phoenix on the client (the original's ClientKits, put there by client/phoenix/PhoenixFx). 3.7.2: the
+ * panel lists the form's own moves (the human's, or the phoenix's in the same keys), as the Mochi fruit's Awakening does.
+ */
 final class PhoenixClient implements ClientKit {
     @Override
     public Fruit fruit() {
@@ -15,6 +18,6 @@ final class PhoenixClient implements ClientKit {
 
     @Override
     public List<FruitMove> moves() {
-        return PhoenixKit.MOVES;
+        return PhoenixFx.selfOut() ? PhoenixKit.PHOENIX : PhoenixKit.HUMAN;
     }
 }

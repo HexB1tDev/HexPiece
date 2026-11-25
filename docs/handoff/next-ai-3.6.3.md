@@ -1073,3 +1073,38 @@ temporary phoenix wings and a gold tail of fire at their back. Frame numbers at 
   hovering (208 on). Four balls of 45, slow, range up.
 - The owner: "add a wake up in 5 hours", then "4 hours actions" (read as: 4 hours instead). Done: a scheduled message back into this
   session at 02:09 UTC on 25 November (4 hours after the request), to resume the Phoenix's moves from this handoff.
+
+## AE. 3.7.2: X Fujiazami and C Talon Slam / Hawk Rush, both forms (after the worker restarted at the wake-up time)
+
+- phoenix/PhoenixMoveArt: the timings (FUJI_CHARGE 8, FUJI_DASH 6, FUJI_REACH 12; FUJI_WIND 6, FUJI_RAM 8, FUJI_RAM_REACH 16,
+  FUJI_GLIDE 14, FUJI_BURST 22; TALON_CROUCH 4, RISE 12, HANG 8, DIVE 10, HEIGHT 7, REACH 6, RADIUS 4, CRATER 46; HAWK_WRAP 5, LEAST
+  10, MOST 100, WHIRL 14; talonLeg = the clip's right leg) and the fire: fujiCharge (tongues round the feet drawing in), fujiTrail
+  (up to 24 tall tongues along the path, a white shock ring at the start, a glow along it), fujiSheath (a ring of tongues set ahead
+  of the one dashing so the flames wrap them: the comet; no white streak: it read as a crystal), fujiBurst (22 tongues sprayed
+  forward and up, a white smoke dome, three white shock arcs), talonLeap (white ring and crescents), talonWind (three tilted white
+  arcs turning), legFire (a banded tube with turning stripes and tongues), talonBlast (a white flash dome, tongues thrown out, a
+  dark blue scorch disc, a wall of 16 tall tongues round the rim burning down), hawkFlash, hawkStreaks, hawkWhirl.
+- server/PhoenixMoves (kinds FUJI 401, TALON 402, HAWK 403, WINGS 404, ACT 405): Dash (charge or wind-up, then the dash along the
+  flat look (the phoenix: the full look), foes within 2.2 (3.0) caught and pinned in front, a wall ends it early, the throw: 12 (15)
+  and a push, ConquerorAura.exploded at the spray), Slam (crouch, the leap on an eased curve (drive: the velocity each tick, the
+  game's 0.08 gravity made up for unless on the ground or flying), foes within 3 staggered (1.5, MEDIUM hit), the hang, the dive onto
+  the ground in front within 6 or the aimed foe, UoMoves.explode radius 4 (14), a quake), Rush (wrap, the rush at 1.5 a tick while
+  held, the first foe within 2.6 of the claws seized (4), pinned circling 2.2 round for 14 ticks, thrown (15, HEAVY)). Cooldowns
+  160/200/220. PhoenixKit: HUMAN (Form, Fujiazami, Talon Slam), PHOENIX (Form, Phoenix: Fujiazami, Phoenix: Hawk Rush "[C] hold");
+  client/phoenix/PhoenixClient shows the form's list.
+- client/phoenix/PhoenixMoveFx: the effects list (drawn in PhoenixFx.fire), the acts (sweep, ram, reach, glide bank, whirl: the
+  phoenix's pose and facing in PhoenixFx.draw), the human's temporary wings (PhoenixFx.wings: the model's Shape.wings parts (wings,
+  tail streamers, blue fan) at WINGS_SCALE 0.13 on the back, swept back for the dash). PhoenixForm.Motion sweep (wings swept forward
+  round the body), ram (swept back as the dive's, no nose down), reach (claws forward, wings raised); preview states sweep, ram,
+  reach and move scenes m-fujih, m-fujip, m-talon, m-hawk (tools/preview/PhoenixPreview: the human stand-in moved, its wings, a dummy).
+- Clips (tools/phoenix_anims.py, legs keyed through pika_anims.write_parts: they kick and lunge): phoenix_fuji (lunge, arms swept
+  back, dash, the throw), phoenix_talon (crouch, leap with the arms up and wide (the lint: through the head at 150), the right leg
+  raised to -120 at 22, driven to +20 at 28, the landing crouch). tools/anim.skeleton: the body's pitch + leans BACK, its bend +
+  forward; an arm's pitch + back; a leg's - forward. HandMoves: phoenix_fuji PUSH, phoenix_talon UP_DOWN.
+- Sounds reused from the house's CC0 set: UoSounds GUST, FLAME_START, WHOOSH, BLAST, EXPLODE; IronSounds DASH, SLAM.
+- Tests: DragonTests.phoenixMoves (each move's frames in its order beside the phoenix under 16k: the ram's comet ends as its spray
+  begins; the trail at most 24 tongues), talonLeg (the clip's right-leg keys at 10, 22, 28 match PhoenixMoveArt.talonLeg), the lists.
+- GIFs sent: phoenix_fujiazami, phoenix_fujiazami_phoenix, phoenix_talon, phoenix_hawk.
+- Next: V Phoenix Inferno (human: temporary wings and tail, a barrage of kicks, the backflip, the burst; phoenix: the whirlpool of
+  fire and spin, the rise, the dive and the blast with blocks flung) and B Bluebird (human: held, wings and tail, the growing ball of
+  yellow and blue fire, launched; phoenix: four balls), on AD's frames.

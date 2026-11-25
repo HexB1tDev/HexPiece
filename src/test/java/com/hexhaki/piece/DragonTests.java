@@ -1070,6 +1070,103 @@ public final class DragonTests {
             && !com.hexhaki.piece.phoenix.PhoenixForm.humanHidden(going, com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_BACK)
             && com.hexhaki.piece.phoenix.PhoenixForm.grow(going, com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_BACK) > 0.0F,
             "the phoenix shaped as the human where it takes the human's place, the arms out as wings, let down as it goes");
+        phoenixMoves(faces, shape.anchors.length / 2, shape.anchorSize, points);
+    }
+
+    /**
+     * 3.7.2: the Phoenix's moves (server/PhoenixMoves, phoenix/PhoenixMoveArt): every frame of every move's fire under the phone's budget
+     * beside the phoenix and its own fire (the ram's trail, comet and spray at once; the rush's streaks, comet, whirl; Talon Slam's leg,
+     * wind and blast), finite; the forms' lists in the panel.
+     */
+    static void phoenixMoves(int faces, int n, float[] sizes, double[] points) {
+        int[] count = {0};
+        boolean[] finite = {true};
+        com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+            count[0]++;
+            for (double v : xyz) {
+                finite[0] &= Double.isFinite(v);
+            }
+        };
+        double[] glow = new double[9 * 3];
+        for (int k = 0; k < 9; k++) {
+            glow[k * 3] = Math.sin(k) * 3.0;
+            glow[k * 3 + 1] = 1.5;
+            glow[k * 3 + 2] = 6.0 + Math.cos(k);
+        }
+        for (int t = 0; t <= 40; t++) {
+            // the phoenix's Fujiazami: its own fire, the wind-up's flames, the ram's trail and comet, the spray
+            count[0] = 0;
+            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
+            // in its order (client/phoenix/PhoenixMoveFx): the wind-up's flames, then the ram's trail and comet, then the spray
+            int wind = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_WIND;
+            int ram = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_RAM;
+            if (t < wind + 2) {
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, 0, 1, 6, t, 2.2, 5);
+            }
+            if (t >= wind) {
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiTrail(sink, 0, 0, 4, 0, 0, 16, Math.min(1.0, (t - wind) / (double) ram), t - wind, 2.0, 5);
+            }
+            if (t >= wind && t < wind + ram) {
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, 0, 1, 6, 0, 0, 1, t - wind, 2.0, 5);
+            }
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiBurst(sink, 0, 1, 8, 0, 1, t - wind - ram, 2.0, 5);
+            check(count[0] + faces, finite[0], "the phoenix's Fujiazami", t);
+            // Hawk Rush: the flash, the streaks and comet, the whirl and its ring
+            count[0] = 0;
+            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkFlash(sink, 0, 1, 6, t);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkStreaks(sink, 0, 1, 6, 0, 0, 1, t, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, 0, 1, 6, 0, 0, 1, t, 1.3, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkWhirl(sink, 0, 1, 6, t);
+            com.hexhaki.piece.phoenix.PhoenixFire.touchdown(sink, 0, -1, 6, t * 0.7, 5);
+            check(count[0] + faces, finite[0], "Hawk Rush", t);
+        }
+        for (int t = 0; t <= com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_CRATER; t++) {
+            // the human's: Fujiazami (the charge, trail, comet, spray at once) and Talon Slam (the leap, wind, leg, blast at once)
+            count[0] = 0;
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, 0, -1, 6, t, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiTrail(sink, 0, -1, 4, 0, 0, 12, Math.min(1.0, t / 6.0), t, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, 0, 0, 6, 0, 0, 1, t, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiBurst(sink, 0, 0, 8, 0, 1, t - 6, 1.0, 5);
+            // (the human's at once, far over what any frame holds: no phoenix model beside it)
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.talonLeap(sink, 0, -1, 6, t);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.talonWind(sink, 0, 4, 6, t);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.legFire(sink, 0.1, 3.75, 6, 0.1, 3.4, 5.4, t, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.talonBlast(sink, 0, -1, 4, t, com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_RADIUS, 5);
+            check(count[0], finite[0], "the human's Fujiazami and Talon Slam", t);
+        }
+        Check.that(com.hexhaki.piece.server.PhoenixKit.HUMAN.size() == 3 && com.hexhaki.piece.server.PhoenixKit.PHOENIX.size() == 3
+            && com.hexhaki.piece.server.PhoenixKit.HUMAN.get(1).key().equals("[X]") && com.hexhaki.piece.server.PhoenixKit.HUMAN.get(2).key().equals("[C]")
+            && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(1).key().equals("[X]") && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(2).key().equals("[C] hold")
+            && com.hexhaki.piece.server.PhoenixKit.MOVES.containsAll(com.hexhaki.piece.server.PhoenixKit.PHOENIX)
+            && com.hexhaki.piece.server.PhoenixKit.MOVES.containsAll(com.hexhaki.piece.server.PhoenixKit.HUMAN),
+            "the Phoenix's moves: X Fujiazami, C Talon Slam (the phoenix: Hawk Rush, held), each form's list in the same keys");
+        Check.that(com.hexhaki.piece.server.PhoenixMoves.FUJI_HURT > 0.0F && com.hexhaki.piece.server.PhoenixMoves.FUJI_RAM_HURT
+            > com.hexhaki.piece.server.PhoenixMoves.FUJI_HURT && com.hexhaki.piece.server.PhoenixMoves.TALON_SLAM_HURT
+            > com.hexhaki.piece.server.PhoenixMoves.TALON_LEAP_HURT, "the phoenix's moves harder than the human's");
+    }
+
+    /** 3.7.2: the clip phoenix_talon's right leg keys match PhoenixMoveArt.talonLeg (the burning leg is drawn where the leg is). */
+    static void talonLeg(ZipFile zip) throws Exception {
+        String json;
+        try (InputStream in = zip.getInputStream(zip.getEntry("assets/hexhaki/player_animation/phoenix_talon.json"))) {
+            json = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\{\\s*\"tick\":\\s*(\\d+),\\s*\"easing\":\\s*\"[a-z]+\",\\s*\"rightLeg\":\\s*\\{\\s*\"pitch\":\\s*(-?[0-9.]+)")
+            .matcher(json);
+        int found = 0;
+        while (m.find()) {
+            int tick = Integer.parseInt(m.group(1));
+            float pitch = Float.parseFloat(m.group(2));
+            if (tick == 10 || tick == 22 || tick == 28) {
+                found++;
+                Check.that(Math.abs(com.hexhaki.piece.phoenix.PhoenixMoveArt.talonLeg(tick) - pitch) < 1.5F,
+                    "Talon Slam's burning leg where the clip's leg is at " + tick + " (" + com.hexhaki.piece.phoenix.PhoenixMoveArt.talonLeg(tick) + " vs " + pitch + ")");
+            }
+        }
+        Check.that(found == 3, "phoenix_talon keys its right leg at 10, 22 and 28 (" + found + ")");
     }
 
     /** 3.5.8: Iron Fist's heaviest frames (Galaxy Impact's dome with its quake, rings, dust and rocks; Galaxy Divide; the cannonball). */
@@ -1157,6 +1254,9 @@ public final class DragonTests {
                 && zip.getEntry("assets/hexhaki/textures/piece/phoenix/marco.png") != null, "the Phoenix fruit's icon, model and atlas");
             try (InputStream in = zip.getInputStream(zip.getEntry("assets/hexhaki/phoenix/marco.sry"))) {
                 phoenix(com.hexhaki.piece.dragon.DragonModel.read(in));
+            }
+            {
+                talonLeg(zip);
             }
             Check.that(zip.getEntry("assets/hexhaki/textures/item/mochi_mochi_no_mi.png") != null
                 && zip.getEntry("assets/hexhaki/models/item/mochi_mochi_no_mi.json") != null, "the Mochi fruit's icon and model");

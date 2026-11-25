@@ -158,6 +158,8 @@ public final class PhoenixForm {
          * from its bone's pivot (0 there, 1 at its farthest tip), and the points the fire's tongues stream off (part, vertex).
          */
         public final boolean[] fire;
+        /** 3.7.2: the parts a human's temporary wings and tail are (the wings, the tail's streamers and its blue fan). */
+        public final boolean[] wings;
         public final float[][] reach;
         public final int[] anchors;
         /** Each fire point's tongues' size (1 the wings' and the mantle's). */
@@ -177,6 +179,7 @@ public final class PhoenixForm {
             }
             int np = m.parts.length;
             this.fire = new boolean[np];
+            this.wings = new boolean[np];
             this.reach = new float[np][];
             // the fire points by body part (the reference: the flames stream off the wings' edges most, then the mantle, the crest
             // and the tail): each group's candidates, then each group's share of the tongues spread evenly over them
@@ -189,6 +192,7 @@ public final class PhoenixForm {
             for (int i = 0; i < np; i++) {
                 DragonModel.Part part = m.parts[i];
                 String name = part.name;
+                this.wings[i] = name.startsWith("Wing") || name.startsWith("Tail") || name.startsWith("Blue tail fan");
                 this.fire[i] = !(name.startsWith("Bill") || name.startsWith("Eye") || name.startsWith("Foot") || name.startsWith("Leg")
                     || name.startsWith("Insignia") || name.startsWith("Marco"));
                 int nv = part.vertices();
@@ -623,6 +627,13 @@ public final class PhoenixForm {
         public float stride;
         public float flare;
         public float land;
+        /**
+         * 3.7.2, a move's pose (server/PhoenixMoves' acts): the wings swept forward and up (the wind-up of a ram or a rush), swept back
+         * tight along the body (the ram), the claws thrust forward to seize (the rush and the grab); each 0 to 1.
+         */
+        public float sweep;
+        public float ram;
+        public float reach;
     }
 
     /**
@@ -652,7 +663,14 @@ public final class PhoenixForm {
         float land = clamp(mo.land) * (1.0F - human);
         float settle = (float) Math.pow(Math.max(0.0F, Math.sin(seconds * 0.55F)), 14.0F) * (1.0F - walk);
         float tuck = perch * (1.0F - human) * (1.0F - land) * (1.0F - 0.45F * settle);
-        float flap = (1.0F - glide) * (1.0F - dive) * (1.0F - human) * (1.0F - tuck) * (1.0F - 0.85F * flare) * (1.0F - land);
+        float sweep = clamp(mo.sweep) * (1.0F - human);
+        float ram = clamp(mo.ram) * (1.0F - human);
+        float reach = clamp(mo.reach) * (1.0F - human);
+        // the ram's wings swept back as the dive's (without the dive's nose down)
+        float back = Math.max(dive, ram);
+        tuck *= (1.0F - sweep) * (1.0F - ram) * (1.0F - reach);
+        float flap = (1.0F - glide) * (1.0F - back) * (1.0F - human) * (1.0F - tuck) * (1.0F - 0.85F * flare) * (1.0F - land) * (1.0F - sweep)
+            * (1.0F - 0.6F * reach);
         float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch);
         // the power stroke: the downstroke quick, the recovery slower (the phase run faster through the downstroke's middle)
         beat = beat + 0.35F * (float) Math.sin(beat);
@@ -660,14 +678,19 @@ public final class PhoenixForm {
         float cb = (float) Math.cos(beat);
         // the upstroke (the wing rising: sin falling) folds it in
         float up = Math.max(0.0F, -cb);
-        float fold = flap * 0.75F * up * up + dive * 0.85F;
+        float fold = flap * 0.75F * up * up + back * 0.85F;
         for (int s = 0; s < 2; s++) {
             float m0 = s == 0 ? 1.0F : -1.0F;
             int[] w = sh.wing[s];
             // the rest's raised wings levelled out for flight, the flap, its forward sweep down and back up, the dive's sweep
             // the stroke centred a little under the rest's raised wings: about 52 degrees up at its top, 16 under level at its bottom
-            turn(pose, sh, w[0], m0 * (amp * sb + 12.0F * flap + 14.0F * speed + 22.0F * dive), 0, 0, 1);
-            turn(pose, sh, w[0], m0 * (-9.0F * cb * flap + 55.0F * dive + 8.0F * speed), 0, 1, 0);
+            turn(pose, sh, w[0], m0 * (amp * sb + 12.0F * flap + 14.0F * speed + 22.0F * back), 0, 0, 1);
+            turn(pose, sh, w[0], m0 * (-9.0F * cb * flap + 55.0F * back + 8.0F * speed), 0, 1, 0);
+            // 3.7.2: the wind-up: swept forward and up round the body, the hands curled in; seizing: raised high and back
+            turn(pose, sh, w[0], m0 * 10.0F * sweep - m0 * 26.0F * reach, 0, 0, 1);
+            turn(pose, sh, w[0], -m0 * 72.0F * sweep + m0 * 18.0F * reach, 0, 1, 0);
+            turn(pose, sh, w[2], -m0 * 25.0F * sweep, 0, 1, 0);
+            turn(pose, sh, w[3], -m0 * 35.0F * sweep, 0, 1, 0);
             // the follow-through: every joint out along the wing a little later, the wave running out to the tips
             turn(pose, sh, w[1], m0 * amp * 0.32F * (float) Math.sin(beat - 0.6F), 0, 0, 1);
             turn(pose, sh, w[2], m0 * amp * 0.30F * (float) Math.sin(beat - 1.1F), 0, 0, 1);
@@ -694,13 +717,14 @@ public final class PhoenixForm {
             // (about the model's x a negative turn swings a hanging part back: the head is toward -Z)
             turn(pose, sh, sh.leg[s], -45.0F * speed - 30.0F * dive + 6.0F * flap * (float) Math.sin(beat - 2.0F), 1, 0, 0);
             // 3.7.1: walking, each leg stepping forward and back in turn; braking, both claws reaching forward for the ground
-            turn(pose, sh, sh.leg[s], m0 * STEP * walk * (float) Math.sin(mo.stride) + 38.0F * flare - 12.0F * land, 1, 0, 0);
+            turn(pose, sh, sh.leg[s], m0 * STEP * walk * (float) Math.sin(mo.stride) + 38.0F * flare - 12.0F * land + 70.0F * reach
+                - 20.0F * ram, 1, 0, 0);
         }
         // walking: the body bobbing up as each foot passes under it, rolling over the standing foot, leaning a little into the walk;
         // the neck pumping forward and back as a bird's does; braking: reared back; the touchdown: dipping forward
         pose.t[sh.root * 3 + 1] += walk * (0.18F * Math.abs((float) Math.sin(mo.stride)) - 0.1F) - 0.35F * land;
         turn(pose, sh, sh.root, 4.0F * walk * (float) Math.sin(mo.stride), 0, 0, 1);
-        turn(pose, sh, sh.root, -9.0F * walk + 16.0F * flare - 14.0F * land, 1, 0, 0);
+        turn(pose, sh, sh.root, -9.0F * walk + 16.0F * flare - 14.0F * land + 14.0F * sweep, 1, 0, 0);
         turn(pose, sh, sh.neck, 9.0F * walk * (float) Math.sin(2.0F * mo.stride + 0.7F) + 10.0F * land - 8.0F * flare, 1, 0, 0);
         // the body: lifted with each downstroke, rocked by it; leaning into the flight at speed and nose down in the dive
         pose.t[sh.root * 3 + 1] += 0.32F * flap * (1.0F - perch) * (float) Math.sin(beat - 1.0F);
@@ -773,6 +797,15 @@ public final class PhoenixForm {
             case "flare" -> {
                 mo.flare = 1.0F;
                 lift = 0.6F;
+            }
+            case "sweep" -> mo.sweep = 1.0F;
+            case "ram" -> {
+                mo.speed = 1.0F;
+                mo.ram = 1.0F;
+            }
+            case "reach" -> {
+                mo.speed = 0.8F;
+                mo.reach = 1.0F;
             }
             case "landseq" -> {
                 // dropping in braking for 0.6 s, the touchdown, standing

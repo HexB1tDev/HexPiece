@@ -66,6 +66,198 @@ public final class PhoenixPreview {
         ImageIO.write(sheet, "png", new File(args[2]));
     }
 
+    /** 3.7.2: where the human stand-in stands (a move scene moves it). */
+    static double OX;
+    static double OY;
+    static double OZ;
+
+    /**
+     * 3.7.2: a move scene (the state "m-fujih", "m-fujip", "m-talon", "m-hawk" at {@code ticks}): the phoenix's pose and place (or none),
+     * the human's place, their temporary wings, a dummy to seize, and the move's fire (phoenix/PhoenixMoveArt), as client/phoenix/PhoenixFx
+     * and PhoenixMoveFx draw them from server/PhoenixMoves' timings.
+     */
+    static final class Scene {
+        boolean bird;
+        final PhoenixForm.Motion mo = new PhoenixForm.Motion();
+        double bx;
+        double by;
+        double bz;
+        float yaw;
+        float bank;
+        float beat;
+        boolean human;
+        double hx;
+        double hy;
+        double hz;
+        int wings = -1;
+        float wingsSize;
+        boolean dummy;
+        double dx;
+        double dy;
+        double dz;
+        java.util.function.BiConsumer<com.hexhaki.piece.dragon.FireMesh.Sink, double[]> fire;
+    }
+
+    static double smooth(double t) {
+        t = Math.max(0.0, Math.min(1.0, t));
+        return t * t * (3.0 - 2.0 * t);
+    }
+
+    static Scene scene(String state, double t) {
+        if (!state.startsWith("m-")) {
+            return null;
+        }
+        Scene sc = new Scene();
+        sc.beat = (float) (t / 20.0 * PhoenixForm.beatRate(sc.mo));
+        switch (state) {
+            case "m-fujih" -> {
+                int c = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_CHARGE;
+                int d = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_DASH;
+                double reach = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_REACH;
+                sc.human = true;
+                sc.hz = -reach * Math.max(0.0, Math.min(1.0, (t - c) / d));
+                sc.wings = 0;
+                sc.wingsSize = (float) Math.min(Math.min(1.0, t / 4.0), Math.max(0.0, (c + d + 14 - t) / 4.0));
+                double hz = sc.hz;
+                sc.fire = (sink, e) -> {
+                    if (t < c) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, -e[0], -e[1], -e[2], t, 1.0, 3);
+                    } else {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiTrail(sink, -e[0], -e[1], -e[2], 0, 0, -reach, Math.min(1.0, (t - c) / d), t - c, 1.0, 3);
+                        if (t < c + d) {
+                            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, -e[0], 1.0 - e[1], hz - e[2], 0, 0, -1, t - c, 1.0, 3);
+                        }
+                    }
+                    if (t >= c + d) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiBurst(sink, -e[0], 1.0 - e[1], -reach - 1.4 - e[2], 0, -1, t - c - d, 1.0, 3);
+                    }
+                };
+            }
+            case "m-fujip" -> {
+                int w = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_WIND;
+                int r = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_RAM;
+                double reach = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_RAM_REACH;
+                sc.bird = true;
+                double got = Math.max(0.0, Math.min(1.0, (t - w) / r));
+                sc.by = 2.0;
+                sc.bz = -reach * got;
+                sc.mo.sweep = (float) Math.min(1.0, Math.min(t / 3.0, Math.max(0.0, (w + 1 - t) / 2.0)));
+                sc.mo.ram = (float) (t >= w - 1 && t < w + r + 2 ? Math.min(1.0, Math.min((t - w + 1) / 2.0, (w + r + 2 - t) / 2.0)) : 0.0);
+                sc.mo.speed = (float) (t >= w ? Math.max(0.0, 1.0 - Math.max(0.0, t - w - r) / 10.0) : 0.0);
+                double g = (t - w - r) / com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_GLIDE;
+                if (g > 0.0 && g < 1.0) {
+                    sc.mo.glide = 1.0F;
+                    sc.bank = (float) (38.0 * Math.sin(Math.PI * g));
+                    sc.yaw = (float) (-140.0 * smooth(g));
+                }
+                double bz = sc.bz;
+                sc.fire = (sink, e) -> {
+                    if (t < w + 2) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, -e[0], 2.6 - e[1], -e[2], t, 2.2, 5);
+                    }
+                    if (t >= w) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiTrail(sink, -e[0], 2.0 - e[1], -e[2], 0, 0, -reach, got, t - w, 2.0, 5);
+                        if (t < w + r) {
+                            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, -e[0], 3.6 - e[1], bz - e[2], 0, 0, -1, t - w, 2.0, 5);
+                        }
+                    }
+                    if (t >= w + r) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiBurst(sink, -e[0], 3.0 - e[1], -reach - 2.4 - e[2], 0, -1, t - w - r, 2.0, 5);
+                    }
+                };
+            }
+            case "m-talon" -> {
+                int c = com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_CROUCH;
+                int rise = com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_RISE;
+                int hang = com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_HANG;
+                double height = com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_HEIGHT;
+                double land = c + rise + hang + 4;
+                double tz = -com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_REACH * 0.6;
+                sc.human = true;
+                if (t < c) {
+                    sc.hy = 0.0;
+                } else if (t < c + rise) {
+                    double u = (t - c) / rise;
+                    sc.hy = height * (1.0 - (1.0 - u) * (1.0 - u));
+                } else if (t < c + rise + hang) {
+                    sc.hy = height;
+                } else {
+                    double u = Math.min(1.0, (t - c - rise - hang) / 4.0);
+                    sc.hy = height * (1.0 - u * u);
+                    sc.hz = tz * u;
+                }
+                double hy = sc.hy;
+                double hz = sc.hz;
+                sc.fire = (sink, e) -> {
+                    if (t < c) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, -e[0], -e[1], -e[2], t * 2.0, 0.7, 4);
+                    }
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.talonLeap(sink, -e[0], -e[1], -e[2], t - c);
+                    double top = t - c - rise;
+                    if (top >= 0.0 && t < land) {
+                        if (top < hang + 4) {
+                            com.hexhaki.piece.phoenix.PhoenixMoveArt.talonWind(sink, -e[0], hy + 1.0 - e[1], hz - e[2], top);
+                        }
+                        double a = Math.toRadians(-com.hexhaki.piece.phoenix.PhoenixMoveArt.talonLeg((float) t));
+                        double hx = 0.12;
+                        double hipY = hy + 0.75;
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.legFire(sink, hx - e[0], hipY - e[1], hz - e[2], hx - e[0], hipY - Math.cos(a) * 0.72 - e[1],
+                            hz - Math.sin(a) * 0.72 - e[2], top, Math.min(1.0, top / 4.0), 4);
+                    }
+                    if (t >= land) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.talonBlast(sink, -e[0], -e[1], tz - e[2], t - land,
+                            com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_RADIUS, 4);
+                    }
+                };
+            }
+            case "m-hawk" -> {
+                int w = com.hexhaki.piece.phoenix.PhoenixMoveArt.HAWK_WRAP;
+                int rush = 14;
+                int whirl = com.hexhaki.piece.phoenix.PhoenixMoveArt.HAWK_WHIRL;
+                sc.bird = true;
+                sc.by = 1.6;
+                double got = Math.max(0.0, Math.min(rush, t - w));
+                sc.bz = -1.5 * got;
+                sc.mo.sweep = (float) Math.min(1.0, Math.min(t / 2.0, Math.max(0.0, (w + 1 - t) / 2.0)));
+                sc.mo.reach = (float) (t >= w ? Math.min(1.0, (t - w) / 3.0) * Math.min(1.0, Math.max(0.0, (w + rush + whirl + 2 - t) / 3.0)) : 0.0);
+                sc.mo.speed = (float) (t >= w && t < w + rush ? 0.8 : 0.0);
+                double wh = (t - w - rush) / whirl;
+                sc.dummy = true;
+                sc.dz = -1.5 * rush - 1.2;
+                if (wh > 0.0) {
+                    double f = Math.min(1.0, wh);
+                    sc.yaw = (float) (360.0 * smooth(f));
+                    double ang = 2 * Math.PI * smooth(f);
+                    sc.dx = -Math.sin(ang) * 2.2;
+                    sc.dz = sc.bz - Math.cos(ang) * 2.2;
+                    sc.dy = sc.by - 0.6 - 0.9;
+                    if (wh >= 1.0) {
+                        double fly = (t - w - rush - whirl) * 1.2;
+                        sc.dz = sc.bz - 2.2 - fly;
+                        sc.dy = Math.max(0.0, sc.by - 1.5 + 0.6 * fly - 0.08 * fly * fly);
+                    }
+                }
+                double bz = sc.bz;
+                double by = sc.by;
+                sc.fire = (sink, e) -> {
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkFlash(sink, -e[0], by + 1.4 - e[1], -e[2], t);
+                    if (t >= w && t < w + rush) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkStreaks(sink, -e[0], by + 1.2 - e[1], bz - e[2], 0, 0, -1, t - w, 6);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, -e[0], by + 1.2 - e[1], bz - e[2], 0, 0, -1, t - w, 1.3, 6);
+                    }
+                    if (t >= w + rush) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkWhirl(sink, -e[0], by + 0.8 - e[1], bz - e[2], t - w - rush);
+                        com.hexhaki.piece.phoenix.PhoenixFire.touchdown(sink, -e[0], by - 1.0 - e[1], bz - 1.2 - e[2], (t - w - rush) * 0.7, 6);
+                    }
+                };
+            }
+            default -> {
+                return null;
+            }
+        }
+        return sc;
+    }
+
     static BufferedImage render(String shot) {
         String[] p = shot.split(":");
         String state = p[0];
@@ -78,7 +270,34 @@ public final class PhoenixPreview {
         int phase = state.equals("form") ? PhoenixForm.FORMING : PhoenixForm.UNFORMING;
         float ticks = (float) t * 20.0F;
         float grow = 1.0F;
-        if (change) {
+        Scene sc = scene(state, ticks);
+        OX = 0.0;
+        OY = 0.0;
+        OZ = 0.0;
+        if (sc != null) {
+            grow = sc.bird ? 1.0F : 0.0F;
+            PhoenixForm.pose(model, shape, pose, sc.mo, sc.beat, ticks / 20.0F);
+            float sca = PhoenixLook.SCALE;
+            double ry = Math.toRadians(sc.yaw);
+            double rz = Math.toRadians(sc.bank);
+            double cy = Math.cos(ry);
+            double sy = Math.sin(ry);
+            double cz = Math.cos(rz);
+            double sz = Math.sin(rz);
+            // Ry * Rz, its chest (in the air) at (bx, by + 0.9, bz) as in game
+            double[] r = {cy * cz, -cy * sz, sy, sz, cz, 0, -sy * cz, sy * sz, cy};
+            float anchor = shape.chest;
+            double[] at = {sc.bx, sc.by + 0.9, sc.bz};
+            for (int i = 0; i < 3; i++) {
+                place[i * 4] = (float) (r[i * 3] * sca);
+                place[i * 4 + 1] = (float) (r[i * 3 + 1] * sca);
+                place[i * 4 + 2] = (float) (r[i * 3 + 2] * sca);
+                place[i * 4 + 3] = (float) (at[i] - r[i * 3 + 1] * sca * anchor);
+            }
+            OX = sc.hx;
+            OY = sc.hy;
+            OZ = sc.hz;
+        } else if (change) {
             PhoenixForm.Motion mo = new PhoenixForm.Motion();
             mo.perch = 1.0F;
             float shaped = PhoenixForm.shaped(phase, ticks);
@@ -149,7 +368,14 @@ public final class PhoenixPreview {
             target[2] + dist * Math.cos(pitch) * Math.cos(yaw)};
         Raster ra = new Raster(W * SS, H * SS, eye, target);
         ra.ground(0.0);
-        if (change && !PhoenixForm.humanHidden(phase, ticks)) {
+        if (sc != null) {
+            if (sc.human) {
+                ra.human(0.0, false, false, false, false);
+            }
+            if (sc.dummy) {
+                ra.figure(sc.dx, sc.dy, sc.dz);
+            }
+        } else if (change && !PhoenixForm.humanHidden(phase, ticks)) {
             float[] burnt = new float[3];
             PhoenixForm.burning(phase, ticks, burnt);
             boolean fig = burnt[2] >= 0.5F;
@@ -178,6 +404,37 @@ public final class PhoenixPreview {
                 col[v * 4 + 3] = heat[v];
             }
             ra.mesh(part, wp, col);
+        }
+        // 3.7.2: the human's temporary phoenix wings and tail (client/phoenix/PhoenixFx.wings): the model's wing and tail parts small on the
+        // back, the roots at the shoulders, swept back (a dash) or spread
+        if (sc != null && sc.wings >= 0 && sc.wingsSize > 0.02F) {
+            DragonPose wp = new DragonPose(model);
+            PhoenixForm.Motion wm = new PhoenixForm.Motion();
+            wm.ram = sc.wings == 0 ? 1.0F : 0.0F;
+            PhoenixForm.pose(model, shape, wp, wm, ticks / 20.0F * PhoenixForm.beatRate(wm), ticks / 20.0F);
+            float ws = 0.13F * sc.wingsSize;
+            double[] root = {OX, OY + 1.38, OZ + 0.22};
+            for (int i = 0; i < model.parts.length; i++) {
+                if (!shape.wings[i]) {
+                    continue;
+                }
+                DragonModel.Part part = model.parts[i];
+                float[] pos = new float[part.vertices() * 3];
+                float[] nrm = new float[part.vertices() * 3];
+                PhoenixForm.skin(shape, wp, i, part, pos, nrm, 0.0F, ticks / 20.0F);
+                PhoenixForm.flame(shape, i, part, pos, nrm, ticks / 20.0F);
+                float[] col = new float[part.vertices() * 4];
+                PhoenixLook.glowing(part.kind, tint);
+                for (int v = 0; v < part.vertices(); v++) {
+                    pos[v * 3] = (float) (root[0] + pos[v * 3] * ws);
+                    pos[v * 3 + 1] = (float) (root[1] + (pos[v * 3 + 1] - shape.shoulder) * ws);
+                    pos[v * 3 + 2] = (float) (root[2] + pos[v * 3 + 2] * ws);
+                    col[v * 4] = tint[0];
+                    col[v * 4 + 1] = tint[1];
+                    col[v * 4 + 2] = tint[2];
+                }
+                ra.mesh(part, pos, col);
+            }
         }
         // the tongues of fire streaming off the body (PhoenixFire.burn), alpha blended over, far to near
         if (!state.equals("rest") && !state.startsWith("t") && !state.equals("soar")) {
@@ -226,6 +483,9 @@ public final class PhoenixPreview {
             }
             if (change) {
                 com.hexhaki.piece.phoenix.PhoenixFire.change(sink, -eye[0], -eye[1], -eye[2], 180.0F, phase, ticks, 7);
+            }
+            if (sc != null && sc.fire != null) {
+                sc.fire.accept(sink, eye);
             }
             quads.sort((x, y) -> Double.compare(y[16], x[16]));
             for (double[] q : quads) {
@@ -320,13 +580,13 @@ public final class PhoenixPreview {
          */
         void human(double raise, boolean noArms, boolean noBody, boolean noHead, boolean noLegs) {
             if (!noLegs) {
-                box(-0.25, 0.0, -0.125, 0.25, 0.75, 0.125, 0x3A4A7A);
+                box(OX - 0.25, OY, OZ - 0.125, OX + 0.25, OY + 0.75, OZ + 0.125, 0x3A4A7A);
             }
             if (!noBody) {
-                box(-0.25, 0.75, -0.125, 0.25, 1.5, 0.125, 0x3D8BC4);
+                box(OX - 0.25, OY + 0.75, OZ - 0.125, OX + 0.25, OY + 1.5, OZ + 0.125, 0x3D8BC4);
             }
             if (!noHead) {
-                box(-0.25, 1.5, -0.25, 0.25, 2.0, 0.25, 0xD9A77E);
+                box(OX - 0.25, OY + 1.5, OZ - 0.25, OX + 0.25, OY + 2.0, OZ + 0.25, 0xD9A77E);
             }
             double r = Math.toRadians(raise);
             for (int side = 0; side < 2 && !noArms; side++) {
@@ -334,7 +594,7 @@ public final class PhoenixPreview {
                 double[] d = {sgn * Math.sin(r), -Math.cos(r), 0};
                 double[] q = {sgn * Math.cos(r), Math.sin(r), 0};
                 double[] w = {0, 0, 1};
-                double[] o = {sgn * 0.375, 1.375, 0};
+                double[] o = {OX + sgn * 0.375, OY + 1.375, OZ};
                 double[][] c = new double[8][];
                 for (int k = 0; k < 8; k++) {
                     double a = (k & 1) == 0 ? -0.125 : 0.625;
