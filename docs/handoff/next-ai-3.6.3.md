@@ -1154,3 +1154,107 @@ temporary phoenix wings and a gold tail of fire at their back. Frame numbers at 
   the folded wings 22 degrees higher walking. PhoenixForm.skin now takes the Motion (the feet: PhoenixForm.foot; LAST_MOTION for the
   previews and tests); the standing anchor is Shape.feetStand. Test: the feet found and laid flat, the leg and stride sane.
 - GIFs: phoenix_walk (new), phoenix_feet (standing, orbiting the front and side), phoenix_land (redone); the GIF page updated.
+
+## AH. The owner's bug list after 3.7.4 (verbatim)
+
+"Bugs:
+
+1. During every buzz cut mochi the head is not meant to spin or rotate when looking around
+2. No vfx is showing with the tori tori no mi (untransformed)
+3. Still dont like the walk animation of the phoenix form, the body is hobbling too much, its meant to be imposing, but it just looks
+silly.
+4. Phoenix X is not approved, the phoenix should never do a 360, looks silly as shit, from now on X transformed becomes a massive
+tornado like the dragon fruit but bigger and made of beautiful flames (blue and yellow), causes burn and damage + carry stun. (With
+COnqueror + Ryou haki makes lightning from the tornado e makes it bigger.
+5. I dont like the fire particles from the moves.
+6. Explosions and slams from moves lack real explosion, it looks overall bad and goofy, the moves should never make the bird spin a
+360 and the B move should be 1 projectile that makes a massive explosion in the shape of a bird."
+"7. Horo Horo No Mi's projection move should not allow the arms to wobble when moving forward/back/sides. and should adopt the player
+model of the player (its always assuming the player is steve model)"
+
+## AI. The owner, while 3.7.5 was being built (verbatim; with the zip one-piece-bounty-rush-lucci-awakened-form.zip, kept in the
+## repository at input/neko/, see below)
+
+"Prompt and handoff for the next AI:
+Phoenix (tori tori) Changes:
+The Blue bird move should shoot and charge a sphere not a bird (made of flames).
+Transformed M1, shall make the bird open it's beak and act as a flamethrower (blasting flames at the target like the dragon does).
+
+New Fruit:
+
+Legendary Leopard Fruit
+Name: Neko Neko No Mi
+Type: Zoan
+
+Model in the Zip
+Size: 5 blocks tall
+
+Todo:
+
+Animate it properly, realistic fluid animations, the mane and body hair IS black flames, the black ribbon around the leopard is black
+flames as well, We need Idle, running, jumping, transforming and de-transforming animations, facial animations too (simple)
+
+
+
+Moves (Contains both transformed and untransformed):
+https://official-fruit-battlegrounds.fandom.com/wiki/LeopardV2
+
+Note:
+In no ZOAN transformed state can you switch to Style or any other mode aside from fruit.
+(Tori, gear 5, dragon, etc)."
+
+- Where the zip is: input/neko/one-piece-bounty-rush-lucci-awakened-form.zip (the owner's file, unchanged; never alter it). Inside:
+  textures/pl_lucci_eggh02_diff.png and source/lucci.rar. The rar holds lucci/pl_lucci_eggh02 (merge).fbx (8.5 MB, binary FBX,
+  skinned: bones such as b_c_hair_01..04, c_hair_sp_root, l/r_hair_sp_01..03, l/r_elbow_hair_joint, tail_hair, a mesh
+  pl_lucci_eggh02_trans_hair), lucci/pl_lucci_eggh02_diff.png and lucci/stg_gasha_tex_bayer_dither.png. No unrar in the container:
+  `pip install libarchive-c` (the system's libarchive13 reads RAR) and read the entries one by one (libarchive.file_reader, then
+  each entry's get_blocks(): extract_file stops on the folder entry). tools/fbx_reader.py and tools/phoenix_bake.py baked the
+  owner's phoenix (marco.sry) from an FBX: do the leopard the same way (dragon/DragonModel .sry, its own Shape and pose code).
+- What 3.7.5 already does for the Phoenix item: Bluebird charges and flies as a sphere of fire (PhoenixBlast.fireball: the house's
+  fireball) in both forms; only its blast is the bird (AH 6). Ask the owner if "a sphere not a bird" meant anything else.
+
+## AJ. 3.7.5 (done): the owner's bug list AH 1-7
+- AH 1, Buzz Cut: client/mochi/MochiFx.stillHead/headBack (RenderPlayerEvent.Pre/Post, LOWEST): from the catch to BUZZ_END the
+  player's yHeadRot, yHeadRotO, xRot, xRotO are set to the yaw at the catch for the draw and put back after.
+- AH 2, the human's effects: PhoenixFx.render and fire returned early when no phoenix entry existed (ENTRIES empty), so nothing of
+  PhoenixMoveFx (the human's fire and wings) was drawn. Now they return only when both are empty; the phoenix's own draw needs
+  entry.shown, grow > 0.05 and a shape.
+- AH 3, the walk: PhoenixForm.pose(): the root's drop over the planted leg 0.35 (was the full arc), roll 1.2 * walk * cos (was 5,
+  and the side sway removed), neck bob 2.5 (was 11), wings' bounce 1.5, WALK_SWING 50, the stride 1.35 times longer (slower steps),
+  the lean 6 * walk.
+- AH 4, X as the phoenix: server/PhoenixMoves.FireTornado (FUJI 401 phase FUJI_TORNADO 3: x, y, z the foot at the start, a its step
+  a tick, size its size, ticks its run): the wind-up ACT_SWEEP and FUJI_CHARGE (bird) for FUJI_WIND, then the foot on the ground 4
+  blocks ahead, running TORNADO_SPEED 0.5 a tick for TORNADO_RANGE 35; whoever is inside the funnel (radius TORNADO_LOW 2 to HIGH 6.5
+  over TALL 18, times 1.4 with ConquerorAura.awakened) is carried round it (counter-clockwise), drawn to a ring inside, lifted 0.24
+  a tick to the top and moved on with it (no fall damage), hurt TORNADO_HURT 2.5 every 10 ticks and set alight 4 s; flung on at the
+  end. With the Conqueror's Haki and Ryou, ConquerorAura.mixed out of the funnel every 6 ticks. Cooldown TORNADO_COOL 260. The
+  phoenix's Dash path is no longer used (Dash is only the human's now). Kit: FUJIAZAMI_PHOENIX is "Phoenix: Fire Tornado".
+  Client: PhoenixMoveFx.fuji draws PhoenixBlast.tornado at the foot plus a * age, rising over TORNADO_IN 8, dying over OUT 12.
+- AH 5, 6, the fire: phoenix/PhoenixBlast (new), the house's fire (dragon/UoFire) in the phoenix's palettes (PhoenixFire.CYAN,
+  GOLD): explosion (BURST_LIFE 32; one shell, a flash puff, 6 + 1.5 * radius puffs at most 14 burning white to cyan (a third gold)
+  to smoke, a ring over the ground, white shock crescents, sparks, rocks; share for fewer), flames (fire burning on the ground),
+  fireball (the house's: two shells, a puff, six tail puffs, sparks, crescents), tornado (the funnel: a tube, six bands wound up it,
+  eight puffs, white streaks, gold embers, 18 flame tongues as ribbons off its lip and wall, a ring, three flames at its foot), bird
+  (Bluebird's blast: an explosion at 0.55 share and a phoenix of flame rising out of it, turned to the thrower: each wing a fan of 11
+  flame feathers (ribbons, cyan or gold) off a white leading edge, beating once (60 to -2 degrees over 10 ticks) and lifting again;
+  body and head puffs, a crest of three flames, five tail streamers; BIRD_LIFE 40; about 2k quads). Detail: BLAST_QUALITY 0.7 (the
+  explosion, fireball and tornado puffs a step coarser), the bird's puffs 0.5: the phoenix's model is 11551 faces and its fire and
+  glow about 1.7k, so anything drawn beside it has about 2.7k quads of the 16k budget.
+  PhoenixMoveArt rewritten on it (no tongues anywhere in the moves): fujiCharge (a ring, five flames), fujiTrail, fujiSheath (the
+  fireball round the one dashing), fujiBurst (explosion), legFire, talonBlast (explosion, a scorched ring, eight flames round the
+  crater), kick, burst, vortex (seven bands, nine puffs), vortexBlast (talonBlast at 0.5 share, quality 0.5, four flames), blueBall
+  and blueTrail (the fireball), blueBoom (explosion; only if a bird can't be drawn). hawkWhirl is now a white flash ring and shell.
+- No 360s: Hawk Rush's seize is ACT_REACH: the one seized is pinned under the claws (1.6 ahead, 1.1 down) while the phoenix climbs
+  for HAWK_WHIRL ticks, then thrown, HAWK 403 phase HAWK_THROW 4 an explosion at them and ConquerorAura.exploded. Phoenix Inferno's
+  whirlpool sends ACT_SPREAD (no spin). PhoenixMoveFx.act never turns the phoenix now (old ACT_WHIRL/ACT_SPIN held still).
+- Bluebird: one ball in both forms (Charge; the phoenix's 2.2 across, BLUE_BIRD_HURT 22, radius 7; the human's 2.5 + 2 * size,
+  9 * (0.8 + 0.4 * size)), Impact.quake, BLUE_BOOM with a the ball's step and by 1 for the phoenix: PhoenixMoveFx draws
+  PhoenixBlast.bird (BIRD_SMALL 0.75, BIG 1.1 blocks a unit), facing the way the ball flew.
+- AH 7, Horo: horo/AstralArt.slim (set by HoroFx from the player's skin model, "slim"), RIGHT_ARM_SLIM/LEFT_ARM_SLIM (3 wide, the
+  outer side narrowed); floating(): the arms no longer swing with movement, only the punch.
+- Tests: DragonTests.phoenixMoves per phase: the fire tornado (its foot 8 to 50 blocks off, 1.4 size) beside the phoenix, Hawk Rush
+  and its throw, the whirlpool, its blast, the phoenix's Bluebird (charge, ball, the bird 12 off), the human's; the kit names; the
+  tornado bigger than the dragon's, the phoenix's Bluebird harder. Previews: m-fujip (tornado), m-hawk (carry, throw), m-infp (no
+  spin), m-bluep (one ball, the bird), m-blueh (the bird), m-boom, m-tornado, m-tornado2, m-bird.
+- Not done this chat: the GIFs of 3.7.5 and the GIF page update (https://claude.ai/artifact/8rkQGG2vrMuSZoZWoJdoB7): render them
+  with tools/preview/PhoenixPreview (scenes above) when there is time.

@@ -1,0 +1,503 @@
+package com.hexhaki.piece.phoenix;
+
+import com.hexhaki.piece.dragon.FireMesh;
+
+/**
+ * 3.7.5 (the owner: "I dont like the fire particles from the moves"; "Explosions and slams from moves lack real explosion, it looks overall
+ * bad and goofy"; "X transformed becomes a massive tornado like the dragon fruit but bigger and made of beautiful flames (blue and
+ * yellow)"; "the B move should be 1 projectile that makes a massive explosion in the shape of a bird"): the Phoenix's moves' fire in the
+ * house's own fire (FireMesh's banded fire puffs, the dragon fruit's explosions, fireballs and tornado: dragon/UoFire), in the phoenix's
+ * blue and gold (PhoenixFire.CYAN and GOLD), never the curling tongues. Pure: the client, the previews and the tests share it; points
+ * eye-relative.
+ */
+public final class PhoenixBlast {
+    private PhoenixBlast() {
+    }
+
+    static final double[] DIR = new double[3];
+    static final double[] BB = new double[6];
+
+    static double clamp(double t) {
+        return Math.max(0.0, Math.min(1.0, t));
+    }
+
+    static double ease(double t) {
+        double u = clamp(t);
+        return 1.0 - (1.0 - u) * (1.0 - u) * (1.0 - u);
+    }
+
+    /** A way from {@code seed}, {@code i}: spread over the sphere, lifted by {@code up} (0 any, 1 straight up). */
+    static void direction(int seed, int i, double up, double[] out) {
+        double a = FireMesh.rand(seed, i * 3) * Math.PI * 2.0;
+        double y = FireMesh.rand(seed, i * 3 + 1) * 2.0 - 1.0;
+        y = y + (1.0 - y) * up * FireMesh.rand(seed, i * 3 + 2);
+        double r = Math.sqrt(Math.max(0.0, 1.0 - y * y));
+        out[0] = Math.cos(a) * r;
+        out[1] = y;
+        out[2] = Math.sin(a) * r;
+    }
+
+    /** A puff of the phoenix's fire: cyan (or gold), as FireMesh.puff, its palette put back after. */
+    static void puff(FireMesh.Sink sink, double x, double y, double z, double radius, double vx, double vy, double vz, double stretch,
+                     double tongues, double heat, double rim, double alpha, double time, int seed, boolean gold) {
+        FireMesh.palette(gold ? PhoenixFire.GOLD : PhoenixFire.CYAN);
+        FireMesh.puff(sink, x, y, z, radius, vx, vy, vz, stretch, tongues, heat, rim, false, alpha, time, seed);
+        FireMesh.palette(FireMesh.BAND);
+    }
+
+    /** Smoke (the house's grey puff), its palette put back after. */
+    static void smoke(FireMesh.Sink sink, double x, double y, double z, double radius, double alpha, double time, int seed) {
+        FireMesh.palette(FireMesh.SMOKE);
+        FireMesh.puff(sink, x, y, z, radius, 0.0, 1.0, 0.0, 0.4, 0.1, 0.62, 0.45, false, alpha, time, seed);
+        FireMesh.palette(FireMesh.BAND);
+    }
+
+    // ------------------------------------------------------------------------------------------------------ the explosion
+
+    /** How long an explosion burns (ticks). */
+    public static final double BURST_LIFE = 32.0;
+
+    /**
+     * An explosion of {@code radius} at (x, y, z), {@code age} ticks old (as the dragon fruit's: dragon/UoFire.explosion): a white-hot
+     * flash, a ball of fire puffs thrown out and up that burn from white through cyan (a third of them gold) and go to smoke, a shock shell
+     * and a ring racing over the ground, white shock crescents, sparks of cyan and gold and rock shards thrown out on arcs, its light.
+     */
+    public static void explosion(FireMesh.Sink sink, double x, double y, double z, double radius, double age, int seed) {
+        explosion(sink, x, y, z, radius, age, seed, 1.0);
+    }
+
+    /** As above, {@code share} of its fire puffs, sparks and rocks (the bird of fire's blast: the bird is the most of its fire). */
+    public static void explosion(FireMesh.Sink sink, double x, double y, double z, double radius, double age, int seed, double share) {
+        if (age < 0.0 || age > BURST_LIFE) {
+            return;
+        }
+        double rr = Math.max(0.8, radius);
+        double k = Math.sqrt(rr);
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * BLAST_QUALITY;
+        // 3.7.5: its glow and its shock one shell (two before): the glow while the shock races out, then the glow fading
+        if (age < 9.0) {
+            double t = age / 9.0;
+            FireMesh.shell(sink, x, y, z, rr * (0.5 + 2.0 * Math.sqrt(t)), 0xFFFFFF, 0.25 * (1.0 - t), 0.8 * (1.0 - t));
+        } else if (age < 14.0) {
+            FireMesh.shell(sink, x, y, z, rr * 2.4, 0x8FF0FA, 0.5 * (14.0 - age) / 14.0, 0.0);
+        }
+        if (age < 5.0) {
+            double f = Math.sin(Math.PI * Math.min(1.0, age / 5.0 + 0.15));
+            puff(sink, x, y, z, rr * 0.8 * f, 0.0, 1.0, 0.0, 0.2, 0.1, 1.0, 0.0, 1.0, age, seed + 1, false);
+        }
+        int n = (int) Math.round(share * Math.min(14, 6 + (int) (rr * 1.5)));
+        for (int i = 0; i < n; i++) {
+            int s = seed * 13 + i;
+            direction(s, 0, 0.5, DIR);
+            double r0 = FireMesh.rand(s, 5);
+            double burn = 12.0 + 10.0 * FireMesh.rand(s, 8);
+            double t = clamp((age - burn) / (BURST_LIFE - burn));
+            double out = rr * (0.35 + 0.75 * r0) * ease(age / 6.0) * (1.0 + 0.5 * t);
+            double rise = age * 0.03 * rr * (0.5 + FireMesh.rand(s, 6)) + t * t * rr * 1.4;
+            double px = x + DIR[0] * out;
+            double py = y + DIR[1] * out + rise;
+            double pz = z + DIR[2] * out;
+            double size = rr * (0.5 + 0.3 * FireMesh.rand(s, 7)) * (0.5 + 0.5 * ease(age / 4.0));
+            double heat = 1.1 - 0.85 * age / burn;
+            if (age < burn) {
+                puff(sink, px, py, pz, size, DIR[0], DIR[1] + 0.3, DIR[2], 0.6, 0.2, heat, 0.65, 1.0, age * 1.5, s, i % 3 == 0);
+            } else {
+                smoke(sink, px, py, pz, size * (0.95 + 0.45 * t), 0.6 * (1.0 - t) * (1.0 - t), age, s);
+            }
+        }
+        if (age < 9.0) {
+            double t = age / 9.0;
+            for (int i = 0; i < 3; i++) {
+                direction(seed + 40, i, 0.2, DIR);
+                FireMesh.arc(sink, x, y, z, DIR[0], DIR[1], DIR[2], rr * (0.9 + 2.2 * Math.sqrt(t)), 0.25 + 0.25 * rr * (1.0 - t),
+                    FireMesh.rand(seed, 50 + i) * 6.28, 3.8, 0.0, 0xFFFFFF, 0.9 * (1.0 - t));
+            }
+        }
+        if (age < 14.0) {
+            double t = age / 14.0;
+            FireMesh.ring(sink, x, y - rr * 0.3, z, 0.0, 1.0, 0.0, rr * (0.7 + 3.2 * Math.sqrt(t)), rr * 0.7 * (1.0 - t) + 0.4, rr * 0.25,
+                0xD2FBFF, 0.75 * (1.0 - t));
+        }
+        for (int i = 0; i < (int) (24 * share); i++) {
+            double life = 10.0 + 6.0 * FireMesh.rand(seed + 60, i);
+            if (age > life) {
+                continue;
+            }
+            direction(seed + 61, i, 0.6, DIR);
+            double speed = (0.6 + 1.0 * FireMesh.rand(seed + 62, i)) * k * 0.6;
+            double px = x + DIR[0] * speed * age;
+            double py = y + DIR[1] * speed * age - 0.025 * age * age;
+            double pz = z + DIR[2] * speed * age;
+            FireMesh.streak(sink, px, py, pz, DIR[0] * speed, DIR[1] * speed - 0.05 * age, DIR[2] * speed, 1.4 + rr * 0.3, 0.1 + 0.04 * k,
+                i % 3 == 0 ? 0xFFBE2E : 0x46DDF5, 1.0 - age / life);
+        }
+        for (int i = 0; i < (int) (share * (8 + (int) (rr * 1.5))); i++) {
+            double life = 18.0 + 6.0 * FireMesh.rand(seed + 70, i);
+            if (age > life) {
+                continue;
+            }
+            direction(seed + 71, i, 0.75, DIR);
+            double speed = (0.35 + 0.5 * FireMesh.rand(seed + 72, i)) * k * 0.5;
+            double px = x + DIR[0] * speed * age;
+            double py = y + (DIR[1] * 1.6 + 0.4) * speed * age - 0.03 * age * age;
+            double pz = z + DIR[2] * speed * age;
+            double fade = clamp((life - age) / 4.0);
+            FireMesh.shard(sink, px, py, pz, (0.35 + 0.45 * FireMesh.rand(seed + 73, i)) * Math.min(2.2, k) * fade, age * 0.35, seed + i,
+                0x5A463A, 1.0);
+        }
+        FireMesh.quality = quality;
+    }
+
+    /**
+     * 3.7.5: the detail the blasts and the tornado are drawn at (FireMesh.quality's share): their puffs a step coarser than a lone puff's
+     * (a dozen big ones burn at once, beside the phoenix's own model, in a phone's budget); their cel bands hide the facets.
+     */
+    static final double BLAST_QUALITY = 0.7;
+
+    // ------------------------------------------------------------------------------------------------------ fire that burns on
+
+    /**
+     * Blue fire burning on the ground at (x, y, z) (a crater's rim, a dash's path), {@code amount} 0 to 1, {@code age} its clock: a few
+     * tall flame puffs licking up, cyan with gold among them.
+     */
+    public static void flames(FireMesh.Sink sink, double x, double y, double z, double size, double amount, double age, int seed) {
+        if (amount < 0.02) {
+            return;
+        }
+        for (int k = 0; k < 2; k++) {
+            double life = 9.0 + 3.0 * FireMesh.rand(seed, k);
+            double t = ((age + life * FireMesh.rand(seed, k + 5)) % life) / life;
+            double h = t * size * 1.6;
+            double r = size * 0.55 * (1.0 - 0.6 * t) * amount;
+            puff(sink, x + (FireMesh.rand(seed, k + 9) - 0.5) * size * 0.4, y + h + r * 0.6, z + (FireMesh.rand(seed, k + 13) - 0.5) * size * 0.4, r,
+                0.0, 1.0, 0.0, 1.0, 0.25, 1.0 - 0.7 * t, 0.7, 1.0, age * 1.4 + k, seed + k * 7, k == 1 && (seed & 1) == 0);
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------ the fireball
+
+    /**
+     * A ball of the phoenix's fire at (x, y, z) flying (vx, vy, vz), {@code size} round, {@code travelled} blocks from where it left (as
+     * the dragon fruit's fireball): a white-hot heart in a cyan blaze, a tail of fire burning down behind it from cyan to gold, sparks shed,
+     * white crescents spinning round it.
+     */
+    public static void fireball(FireMesh.Sink sink, double x, double y, double z, double vx, double vy, double vz, double size, double age,
+                                double travelled, int seed) {
+        double vl = Math.max(1.0E-6, Math.sqrt(vx * vx + vy * vy + vz * vz));
+        double ux = vx / vl;
+        double uy = vy / vl;
+        double uz = vz / vl;
+        FireMesh.basis(ux, uy, uz, BB);
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * BLAST_QUALITY;
+        FireMesh.shell(sink, x, y, z, size * 2.4, 0x8FF0FA, 0.4, 0.0);
+        FireMesh.shell(sink, x, y, z, size * 1.25, 0xFFD84E, 0.0, 0.6);
+        puff(sink, x, y, z, size, ux, uy, uz, 0.7, 0.16, 1.0, 0.55, 1.0, age * 2.0, seed, false);
+        int tail = 6;
+        double spacing = size * 0.9;
+        for (int j = 1; j <= tail; j++) {
+            double back = j * spacing;
+            if (back > travelled + size) {
+                break;
+            }
+            int s = seed * 7 + j;
+            double jit = size * 0.35 * (0.3 + 0.7 * j / (double) tail);
+            double a = FireMesh.rand(s, 0) * Math.PI * 2.0 + age * 0.3;
+            double px = x - ux * back + (BB[0] * Math.cos(a) + BB[3] * Math.sin(a)) * jit;
+            double py = y - uy * back + (BB[1] * Math.cos(a) + BB[4] * Math.sin(a)) * jit + j * 0.04 * size;
+            double pz = z - uz * back + (BB[2] * Math.cos(a) + BB[5] * Math.sin(a)) * jit;
+            double t = j / (double) tail;
+            double radius = size * (1.0 - 0.6 * t) * (0.8 + 0.4 * FireMesh.rand(s, 1));
+            puff(sink, px, py, pz, radius, ux, uy, uz, 1.1, 0.18, 0.95 - 0.6 * t, 0.7, 1.0, age * 1.6 + j, s, j % 3 == 2);
+        }
+        for (int k = 0; k < 6; k++) {
+            double life = 5.0;
+            double t = ((age + k * 0.6) % life) / life;
+            direction(seed + 30, k + (int) ((age + k * 0.6) / life) * 8, 0.0, DIR);
+            double back = t * size * 4.0;
+            double out = size * (0.6 + 1.2 * t);
+            FireMesh.streak(sink, x - ux * back + DIR[0] * out, y - uy * back + DIR[1] * out + 0.5 * t, z - uz * back + DIR[2] * out,
+                DIR[0] - ux, DIR[1] - uy + 0.3, DIR[2] - uz, size * 0.7, 0.04 + 0.02 * size, k % 2 == 0 ? 0xFFD84E : 0x8FF0FA, 1.0 - t);
+        }
+        for (int k = 0; k < 2; k++) {
+            double life = 6.0;
+            double t = ((age + k * 3.0) % life) / life;
+            FireMesh.arc(sink, x - ux * t * size * 3.0, y - uy * t * size * 3.0, z - uz * t * size * 3.0, ux, uy, uz, size * (1.3 + 1.6 * t),
+                0.3 + 0.2 * size, age * 0.5 + k * Math.PI, 3.4, -size * t, 0xFFFFFF, 0.85 * (1.0 - t));
+        }
+        FireMesh.quality = quality;
+    }
+
+    // ------------------------------------------------------------------------------------------------------ the fire tornado
+
+    /** The fire tornado's height, its radius at its foot and at its top (blocks; 1.4 times with the Conqueror's Haki and Ryou on). */
+    public static final double TORNADO_TALL = 18.0;
+    public static final double TORNADO_LOW = 2.0;
+    public static final double TORNADO_HIGH = 6.5;
+
+    /**
+     * The Phoenix's fire tornado with its foot at (x, y, z), {@code age} ticks old, {@code strength} 0 to 1 (it grows in and dies out),
+     * {@code big} its size (1, or 1.4 with the Conqueror's Haki and Ryou): as the dragon fruit's tornado (dragon/UoFire.tornado), bands of
+     * blue and gold flame wound up the funnel round a cyan core, flame puffs racing round and up it, gold embers carried round, white
+     * streaks whipping round, a ring of fire round its foot.
+     */
+    public static void tornado(FireMesh.Sink sink, double x, double y, double z, double age, double strength, double big, int seed) {
+        double st = clamp(strength);
+        if (st <= 0.0) {
+            return;
+        }
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * BLAST_QUALITY;
+        double tall = TORNADO_TALL * big * (0.4 + 0.6 * st);
+        double low = TORNADO_LOW * big;
+        double high = TORNADO_HIGH * big;
+        FireMesh.tube(sink, x, y, z, x, y + tall, z, low * 0.7 * st, high * 0.7 * st, 0x2DB8EC, 0x46DDF5, 0x8FF0FA, 0.3, 0.3 * st, 0.15, age, seed);
+        // the bands of flame wound up the funnel: cyan and gold, bright at their middle, clear at their edges
+        for (int k = 0; k < 6; k++) {
+            int steps = 22;
+            double prevIx = 0;
+            double prevIy = 0;
+            double prevIz = 0;
+            double prevOx = 0;
+            double prevOy = 0;
+            double prevOz = 0;
+            for (int i = 0; i <= steps; i++) {
+                double h = tall * i / steps;
+                double a = age * 0.55 + h * 0.5 + k * Math.PI * 2.0 / 6.0;
+                double rad = (low + (high - low) * h / tall) * st * (1.0 + 0.08 * Math.sin(age * 0.3 + k));
+                double band = (1.4 + 0.9 * h / tall) * big;
+                double ix = x + Math.cos(a) * rad;
+                double iy = y + h;
+                double iz = z + Math.sin(a) * rad;
+                double ox = x + Math.cos(a - 0.35) * rad * 1.04;
+                double oy = y + h + band;
+                double oz = z + Math.sin(a - 0.35) * rad * 1.04;
+                if (i > 0) {
+                    double fade = Math.sin(Math.PI * i / steps);
+                    int colour = k % 3 == 2 ? 0xFFBE2E : k % 3 == 1 ? 0x46DDF5 : 0x8FF0FA;
+                    int edge = FireMesh.argb(0.0, colour);
+                    int mid = FireMesh.argb(0.88 * st * fade, colour);
+                    FireMesh.quad(sink, prevIx, prevIy, prevIz, mid, prevOx, prevOy, prevOz, edge, ox, oy, oz, edge, ix, iy, iz, mid);
+                }
+                prevIx = ix;
+                prevIy = iy;
+                prevIz = iz;
+                prevOx = ox;
+                prevOy = oy;
+                prevOz = oz;
+            }
+        }
+        // the flames racing round and up it
+        for (int k = 0; k < 8; k++) {
+            double h = tall * ((FireMesh.rand(seed, 20 + k) + age * 0.015) % 1.0);
+            double a = age * 0.5 + k * 1.57 + h * 0.5;
+            double rad = (low + (high - low) * h / tall) * st;
+            puff(sink, x + Math.cos(a) * rad, y + h, z + Math.sin(a) * rad, (0.55 + 0.6 * h / tall) * st * big, -Math.sin(a), 0.3, Math.cos(a), 1.4,
+                0.3, 0.72, 0.75, 0.9 * st, age * 1.5, seed + 30 + k, k % 2 == 0);
+        }
+        for (int k = 0; k < 8; k++) {
+            double h = tall * FireMesh.rand(seed, k);
+            double a = age * 0.75 + k * 0.8 + h * 0.5;
+            double rad = (low + (high - low) * h / tall) * st * 1.1;
+            FireMesh.streak(sink, x + Math.cos(a) * rad, y + h, z + Math.sin(a) * rad, -Math.sin(a), 0.25, Math.cos(a), 3.0 * big, 0.05, 0xFFFFFF,
+                0.8 * st);
+        }
+        for (int k = 0; k < 8; k++) {
+            double h = tall * ((FireMesh.rand(seed, 40 + k) + age * 0.02) % 1.0);
+            double a = age * 0.5 + k * 1.3 + h * 0.5;
+            double rad = (low + (high - low) * h / tall) * st * 0.9;
+            FireMesh.shard(sink, x + Math.cos(a) * rad, y + h, z + Math.sin(a) * rad, 0.2 + 0.15 * FireMesh.rand(seed, 50 + k), age * 0.5, seed + k,
+                0xFFD84E, 1.0);
+        }
+        // flames licking up off its lip and out of its wall, turning with it
+        for (int k = 0; k < 18; k++) {
+            boolean lip = k < 10;
+            double h = lip ? tall * (0.96 + 0.04 * FireMesh.rand(seed, 100 + k)) : tall * (0.25 + 0.6 * ((FireMesh.rand(seed, 100 + k) + age * 0.02) % 1.0));
+            double a = age * 0.55 + h * 0.5 + (lip ? k * 0.628 : k * 2.4);
+            double rad = (low + (high - low) * h / tall) * st;
+            double ox = Math.cos(a);
+            double oz = Math.sin(a);
+            double len = (lip ? 2.6 + 1.6 * FireMesh.rand(seed, 120 + k) : 1.6 + 1.0 * FireMesh.rand(seed, 120 + k)) * big * st;
+            double up = lip ? 0.9 : 0.35;
+            double[] a0 = {x + ox * rad, y + h, z + oz * rad};
+            double[] a1 = {a0[0] + (ox * 0.5 - oz * 0.6) * len, a0[1] + up * len, a0[2] + (oz * 0.5 + ox * 0.6) * len};
+            ribbon(sink, a0, a1, -oz, 0.0, ox, 0.0, 1.0, 0.0, (lip ? 1.9 : 1.3) * big, 0.0, k % 3 == 0 ? 0xFFF0B0 : 0xD2FBFF,
+                k % 3 == 0 ? 0xFFBE2E : 0x2DB8EC, 0.8 * st, age, seed + 130 + k, 3);
+        }
+        FireMesh.ring(sink, x, y + 0.15, z, 0.0, 1.0, 0.0, low * 1.6 * st + 0.3 * Math.sin(age * 0.4), 1.6 * big, 0.6, 0x46DDF5, 0.6 * st);
+        for (int k = 0; k < 3; k++) {
+            double a = 2 * Math.PI * k / 3.0 + age * 0.3;
+            flames(sink, x + Math.cos(a) * low * 1.5 * st, y, z + Math.sin(a) * low * 1.5 * st, 1.3 * big, st, age, seed + 60 + k);
+        }
+        FireMesh.quality = quality;
+    }
+
+    // ------------------------------------------------------------------------------------------------------ the bird of fire
+
+    /** How long the bird of fire burns (ticks). */
+    public static final double BIRD_LIFE = 40.0;
+    /** Its wing's feathers, a wing's length (units of its size), its tail's streamers. */
+    static final int FEATHERS = 11;
+    static final double WING = 7.0;
+    static final int STREAMERS = 5;
+
+    /**
+     * Bluebird's blast (the owner: "a massive explosion in the shape of a bird"): an explosion at (x, y, z) and out of it a phoenix of
+     * blue flame rising, {@code scale} blocks a unit (its wings about 15 units across), turned to the one who threw it (the ball flew
+     * {@code yaw}, radians, the game's): its wings spread wide to either side, each a fan of flame feathers hanging off a white-hot leading
+     * edge, beating once, hard, as it is born and lifting again; its body and head white-hot in cyan with a crest of flame; five gold-tipped
+     * streamers of a tail hanging under it. It grows out of the blast in a few ticks, rises, and burns away. {@code age} ticks after it.
+     */
+    public static void bird(FireMesh.Sink sink, double x, double y, double z, double yaw, double scale, double age, int seed) {
+        if (age < 0.0 || age > BIRD_LIFE) {
+            return;
+        }
+        explosion(sink, x, y, z, scale * 2.6, age, seed, 0.55);
+        double grow = 0.25 + 0.75 * ease(age / 6.0);
+        double fade = clamp((BIRD_LIFE - age) / 14.0) * clamp(age / 2.0);
+        double sz = scale * grow;
+        // its frame: right (across the way the ball flew), up, back (the way the ball flew: the thrower sees its breast)
+        double bx = -Math.sin(yaw);
+        double bz = Math.cos(yaw);
+        double rx = -bz;
+        double rz = bx;
+        double cx = x;
+        double cy = y + scale * (2.2 + 0.12 * age);
+        double cz = z;
+        // the beat: born with its wings raised high, one hard downstroke, then lifted again as it rises
+        double beat = age < 10.0 ? 60.0 - 62.0 * ease(age / 10.0) : -2.0 + 34.0 * ease((age - 10.0) / 18.0);
+        double e = Math.toRadians(beat);
+        for (int side = -1; side <= 1; side += 2) {
+            // the wing's bone: out to the side, up by the beat, swept a little back
+            double ou = Math.cos(e) * side;
+            double ov = Math.sin(e);
+            double ow = 0.15;
+            double ol = Math.sqrt(ou * ou + ov * ov + ow * ow);
+            ou /= ol;
+            ov /= ol;
+            ow /= ol;
+            double su = 0.55 * side;
+            double sv = 0.6;
+            double[] root = at(cx, cy, cz, rx, rz, bx, bz, su * sz, sv * sz, 0.0);
+            double[] tipAt = at(cx, cy, cz, rx, rz, bx, bz, (su + ou * WING) * sz, (sv + ov * WING) * sz, ow * WING * sz);
+            double[] across = dir(rx, rz, bx, bz, 0.0, 0.0, 1.0);
+            // the feathers first (the leading edge burns over them)
+            for (int k = 0; k < FEATHERS; k++) {
+                double u = 0.1 + 0.9 * k / (FEATHERS - 1.0);
+                double tip = k / (FEATHERS - 1.0);
+                // each hangs off the bone: the inner ones straight down, the outer ones fanned out past the wing's tip
+                double gu = tip * tip * ou * 1.1;
+                double gv = -(1.0 - tip * tip) + tip * tip * (ov - 0.45);
+                double gw = 0.25;
+                double gl = Math.sqrt(gu * gu + gv * gv + gw * gw);
+                double len = (2.6 + 2.8 * tip) * (0.9 + 0.2 * FireMesh.rand(seed + side, k)) * sz;
+                double pu = (su + ou * WING * u) * sz;
+                double pv = (sv + ov * WING * u) * sz;
+                double pw = ow * WING * u * sz;
+                double[] a = at(cx, cy, cz, rx, rz, bx, bz, pu, pv, pw);
+                double[] b = at(cx, cy, cz, rx, rz, bx, bz, pu + gu / gl * len, pv + gv / gl * len, pw + gw / gl * len);
+                // its width laid along the bone: the feathers overlap into one sheet of flame
+                double[] w = dir(rx, rz, bx, bz, ou, ov, ow);
+                boolean gold = k % 3 == 1;
+                ribbon(sink, a, b, w[0], w[1], w[2], across[0], across[1], across[2], (1.9 + 0.9 * tip) * sz, 0.25 * sz, gold ? 0xFFF0B0 : 0xD2FBFF,
+                    gold ? 0xFFBE2E : 0x2DB8EC, 0.9 * fade, age, seed + side * 31 + k, 4);
+            }
+            // the leading edge: a white-hot band along the bone
+            double[] up = dir(rx, rz, bx, bz, 0.0, 1.0, 0.0);
+            ribbon(sink, root, tipAt, up[0], up[1], up[2], across[0], across[1], across[2], 0.8 * sz, 0.2 * sz, 0xFFFFFF, 0x8FF0FA, fade, age,
+                seed + side, 6);
+        }
+        // the tail: streamers hanging under it, fanned, gold at their ends
+        for (int k = 0; k < STREAMERS; k++) {
+            double spread = (k - (STREAMERS - 1) / 2.0) / ((STREAMERS - 1) / 2.0);
+            double[] a = at(cx, cy, cz, rx, rz, bx, bz, 0.0, -0.8 * sz, 0.0);
+            double[] b = at(cx, cy, cz, rx, rz, bx, bz, spread * 2.2 * sz, -(5.5 - 1.2 * Math.abs(spread)) * sz, 0.6 * sz);
+            double[] w = dir(rx, rz, bx, bz, 1.0, 0.0, 0.0);
+            ribbon(sink, a, b, w[0], w[1], w[2], 0.0, 0.0, 1.0, 0.9 * sz, 0.3 * sz, 0x8FF0FA, 0xFFBE2E, 0.9 * fade, age, seed + 70 + k, 5);
+        }
+        // its body and head: white-hot in cyan, a crest of flame streaming up off the head
+        double heat = 1.15 - 0.6 * clamp(age / BIRD_LIFE);
+        double[] chest = at(cx, cy, cz, rx, rz, bx, bz, 0.0, 0.0, 0.0);
+        double[] head = at(cx, cy, cz, rx, rz, bx, bz, 0.0, 2.0 * sz, -0.2 * sz);
+        puff(sink, chest[0], chest[1], chest[2], 1.3 * sz, 0.0, 1.0, 0.0, 0.9, 0.2, heat, 0.6, fade, age * 1.4, seed + 80, false);
+        puff(sink, head[0], head[1], head[2], 0.85 * sz, 0.0, 1.0, 0.0, 0.5, 0.2, heat, 0.6, fade, age * 1.4, seed + 81, false);
+        for (int k = 0; k < 3; k++) {
+            double[] b = at(cx, cy, cz, rx, rz, bx, bz, (k - 1) * 0.8 * sz, (3.6 - 0.3 * Math.abs(k - 1)) * sz, 0.3 * sz);
+            double[] w = dir(rx, rz, bx, bz, 1.0, 0.0, 0.0);
+            ribbon(sink, head, b, w[0], w[1], w[2], 0.0, 0.0, 1.0, 0.5 * sz, 0.0, 0xFFFFFF, 0xFFBE2E, 0.9 * fade, age, seed + 90 + k, 3);
+        }
+    }
+
+    /** A point (u right, v up, w back) of the bird's frame about (cx, cy, cz). */
+    static double[] at(double cx, double cy, double cz, double rx, double rz, double bx, double bz, double u, double v, double w) {
+        return new double[] {cx + rx * u + bx * w, cy + v, cz + rz * u + bz * w};
+    }
+
+    /** A way (u right, v up, w back) of the bird's frame in the world. */
+    static double[] dir(double rx, double rz, double bx, double bz, double u, double v, double w) {
+        return new double[] {rx * u + bx * w, v, rz * u + bz * w};
+    }
+
+    /**
+     * A ribbon of flame from {@code a} to {@code b} in {@code n} pieces, {@code wide} across at its root narrowing to {@code end}, laid
+     * along (wx, wy, wz) (or, where that runs along the ribbon, along (vx, vy, vz)): bright {@code root} colour to {@code tip}, clear at
+     * its edges and its end, licking side to side as it burns.
+     */
+    static void ribbon(FireMesh.Sink sink, double[] a, double[] b, double wx, double wy, double wz, double vx, double vy, double vz, double wide,
+                       double end, int root, int tip, double alpha, double age, int seed, int n) {
+        double lx = b[0] - a[0];
+        double ly = b[1] - a[1];
+        double lz = b[2] - a[2];
+        double len = Math.sqrt(lx * lx + ly * ly + lz * lz);
+        if (len < 1.0E-4 || alpha <= 0.0) {
+            return;
+        }
+        lx /= len;
+        ly /= len;
+        lz /= len;
+        // the side: the given way with its share along the ribbon taken out
+        double d = wx * lx + wy * ly + wz * lz;
+        double sx = wx - lx * d;
+        double sy = wy - ly * d;
+        double sz = wz - lz * d;
+        double sl = Math.sqrt(sx * sx + sy * sy + sz * sz);
+        if (sl < 0.2) {
+            d = vx * lx + vy * ly + vz * lz;
+            sx = vx - lx * d;
+            sy = vy - ly * d;
+            sz = vz - lz * d;
+            sl = Math.sqrt(sx * sx + sy * sy + sz * sz);
+        }
+        if (sl < 1.0E-4) {
+            return;
+        }
+        sx /= sl;
+        sy /= sl;
+        sz /= sl;
+        // the lick: across the ribbon's face (its side crossed with its length)
+        double nx = sy * lz - sz * ly;
+        double ny = sz * lx - sx * lz;
+        double nz = sx * ly - sy * lx;
+        double phase = FireMesh.rand(seed, 3) * 6.28;
+        double[] prev = null;
+        for (int i = 0; i <= n; i++) {
+            double t = i / (double) n;
+            double lick = Math.sin(age * 0.55 + phase + t * 3.2) * 0.18 * len * t * t;
+            double px = a[0] + lx * len * t + nx * lick;
+            double py = a[1] + ly * len * t + ny * lick;
+            double pz = a[2] + lz * len * t + nz * lick;
+            double half = 0.5 * (wide + (end - wide) * t);
+            int mid = FireMesh.argb(alpha * (1.0 - 0.85 * t * t), FireMesh.mix(root, tip, t));
+            int edge = FireMesh.argb(0.0, FireMesh.mix(root, tip, t));
+            double[] cur = {px, py, pz, px + sx * half, py + sy * half, pz + sz * half, px - sx * half, py - sy * half, pz - sz * half, mid, edge};
+            if (prev != null) {
+                int pm = (int) prev[9];
+                int pe = (int) prev[10];
+                FireMesh.quad(sink, prev[0], prev[1], prev[2], pm, prev[3], prev[4], prev[5], pe, cur[3], cur[4], cur[5], edge, px, py, pz, mid);
+                FireMesh.quad(sink, prev[0], prev[1], prev[2], pm, prev[6], prev[7], prev[8], pe, cur[6], cur[7], cur[8], edge, px, py, pz, mid);
+            }
+            prev = cur;
+        }
+    }
+}

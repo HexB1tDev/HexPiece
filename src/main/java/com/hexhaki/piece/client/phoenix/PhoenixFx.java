@@ -375,7 +375,9 @@ public final class PhoenixFx {
     /** The phoenixes, after the entities. */
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void render(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || ENTRIES.isEmpty()) {
+        // 3.7.5 (the owner: "No vfx is showing with the tori tori no mi (untransformed)"): the human's temporary wings are drawn here too:
+        // this returned whenever nobody was the phoenix
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || ENTRIES.isEmpty() && PhoenixMoveFx.WINGS.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -721,7 +723,8 @@ public final class PhoenixFx {
     /** The tongues of flame streaming off every phoenix, and its forming and going, after the particles. */
     @SubscribeEvent
     public static void fire(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty() || shape == null) {
+        // 3.7.5: the moves' fire is drawn whoever is the phoenix or not (this returned whenever nobody was: no human move showed anything)
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty() && PhoenixMoveFx.FX.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -747,7 +750,7 @@ public final class PhoenixFx {
                 }
                 float t = ticks(entry, partial);
                 float grow = Math.max(0.0F, PhoenixForm.grow(entry.phase, t));
-                if (entry.shown && grow > 0.05F) {
+                if (entry.shown && grow > 0.05F && shape != null) {
                     // the wind of its own flight streams them back
                     PhoenixFire.burn(SINK, entry.points, shape.anchorSize, entry.points.length / 3, clock + partial, -entry.vx * 0.5, -entry.vy * 0.3,
                         -entry.vz * 0.5, Math.min(1.0, grow), e.getKey());

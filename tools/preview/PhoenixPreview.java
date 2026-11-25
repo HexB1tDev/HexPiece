@@ -141,36 +141,18 @@ public final class PhoenixPreview {
                 };
             }
             case "m-fujip" -> {
+                // 3.7.5: the phoenix's X: the wings swept forward and beaten, the fire tornado rising 4 blocks ahead and running on
                 int w = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_WIND;
-                int r = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_RAM;
-                double reach = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_RAM_REACH;
                 sc.bird = true;
-                double got = Math.max(0.0, Math.min(1.0, (t - w) / r));
                 sc.by = 2.0;
-                sc.bz = -reach * got;
                 sc.mo.sweep = (float) Math.min(1.0, Math.min(t / 3.0, Math.max(0.0, (w + 1 - t) / 2.0)));
-                sc.mo.ram = (float) (t >= w - 1 && t < w + r + 2 ? Math.min(1.0, Math.min((t - w + 1) / 2.0, (w + r + 2 - t) / 2.0)) : 0.0);
-                sc.mo.speed = (float) (t >= w ? Math.max(0.0, 1.0 - Math.max(0.0, t - w - r) / 10.0) : 0.0);
-                double g = (t - w - r) / com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_GLIDE;
-                if (g > 0.0 && g < 1.0) {
-                    sc.mo.glide = 1.0F;
-                    sc.bank = (float) (38.0 * Math.sin(Math.PI * g));
-                    sc.yaw = (float) (-140.0 * smooth(g));
-                }
-                double bz = sc.bz;
+                double age = t - w;
+                double tz = -4.0 - 0.5 * Math.max(0.0, age);
                 sc.fire = (sink, e) -> {
-                    if (t < w + 2) {
+                    if (t < w) {
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, -e[0], 2.6 - e[1], -e[2], t, 2.2, 5);
                     }
-                    if (t >= w) {
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiTrail(sink, -e[0], 2.0 - e[1], -e[2], 0, 0, -reach, got, t - w, 2.0, 5);
-                        if (t < w + r) {
-                            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, -e[0], 3.6 - e[1], bz - e[2], 0, 0, -1, t - w, 2.0, 5);
-                        }
-                    }
-                    if (t >= w + r) {
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiBurst(sink, -e[0], 3.0 - e[1], -reach - 2.4 - e[2], 0, -1, t - w - r, 2.0, 5);
-                    }
+                    com.hexhaki.piece.phoenix.PhoenixBlast.tornado(sink, -e[0], -e[1], tz - e[2], age, Math.min(1.0, age / 8.0), 1.0, 5);
                 };
             }
             case "m-talon" -> {
@@ -232,16 +214,16 @@ public final class PhoenixPreview {
                 sc.dummy = true;
                 sc.dz = -1.5 * rush - 1.2;
                 if (wh > 0.0) {
+                    // 3.7.5: carried under its claws as it climbs (no whirl), then thrown on in a blast
                     double f = Math.min(1.0, wh);
-                    sc.yaw = (float) (360.0 * smooth(f));
-                    double ang = 2 * Math.PI * smooth(f);
-                    sc.dx = -Math.sin(ang) * 2.2;
-                    sc.dz = sc.bz - Math.cos(ang) * 2.2;
-                    sc.dy = sc.by - 0.6 - 0.9;
+                    sc.by = 1.6 + 1.5 * f;
+                    sc.bz = -1.5 * rush - 0.35 * whirl * f;
+                    sc.dz = sc.bz - 1.6;
+                    sc.dy = sc.by - 1.1 - 0.9;
                     if (wh >= 1.0) {
                         double fly = (t - w - rush - whirl) * 1.2;
-                        sc.dz = sc.bz - 2.2 - fly;
-                        sc.dy = Math.max(0.0, sc.by - 1.5 + 0.6 * fly - 0.08 * fly * fly);
+                        sc.dz = sc.bz - 1.6 - fly;
+                        sc.dy = Math.max(0.0, sc.by - 2.0 + 0.6 * fly - 0.08 * fly * fly);
                     }
                 }
                 double bz = sc.bz;
@@ -253,9 +235,9 @@ public final class PhoenixPreview {
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, -e[0], by + 1.2 - e[1], bz - e[2], 0, 0, -1, t - w, 1.3, 6);
                     }
                     if (t >= w + rush) {
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkWhirl(sink, -e[0], by + 0.8 - e[1], bz - e[2], t - w - rush);
-                        com.hexhaki.piece.phoenix.PhoenixFire.touchdown(sink, -e[0], by - 1.0 - e[1], bz - 1.2 - e[2], (t - w - rush) * 0.7, 6);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkWhirl(sink, -e[0], 1.6 + 0.8 - e[1], -1.5 * rush - e[2], t - w - rush);
                     }
+                    com.hexhaki.piece.phoenix.PhoenixBlast.explosion(sink, -e[0], by - 2.0 + 0.9 - e[1], bz - 1.6 - e[2], 2.6, t - w - rush - whirl, 6);
                 };
             }
             case "m-infh" -> {
@@ -300,7 +282,6 @@ public final class PhoenixPreview {
                 if (t < spin) {
                     double f = t / spin;
                     sc.mo.spread = (float) Math.min(1.0, t / 3.0);
-                    sc.yaw = (float) (1080.0 * f * f);
                 } else if (t < spin + rise) {
                     sc.by = 2.0 + height * (t - spin) / rise;
                 } else {
@@ -339,42 +320,38 @@ public final class PhoenixPreview {
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 1.35 - e[1], z - e[2], size, t, 10, true);
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, -e[0], 1.35 - e[1], z - e[2], 0, 0, -1, t, size, 10);
                     } else {
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, -e[0], 1.35 - e[1], -15.2 - e[2], t - held - fly, 2.0 + 1.5 * size, 10);
+                        com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, -e[0], 0.5 - e[1], -15.2 - e[2], Math.PI, 0.75, t - held - fly, 10);
                     }
                 };
             }
             case "m-bluep" -> {
-                // 3.7.3: Bluebird, the phoenix: wings spread, the flames gathering and the orb, four balls
+                // 3.7.5: Bluebird, the phoenix: wings spread, the flames gathering and the orb, one great ball, its blast a bird of fire
                 int held = 30;
-                int gap = com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_GAP;
                 double speed = com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_BIRD_SPEED;
+                double fly = 16.0 / speed;
                 sc.bird = true;
                 sc.by = 2.0;
-                sc.mo.spread = (float) Math.min(1.0, Math.min(t / 3.0, Math.max(0.0, (held + 4 * gap + 2 - t) / 3.0)));
+                sc.mo.spread = (float) Math.min(1.0, Math.min(t / 3.0, Math.max(0.0, (held + 6 - t) / 3.0)));
                 sc.fire = (sink, e) -> {
                     if (t < held) {
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, -e[0], 2.6 - e[1], -e[2], t, 2.4, 11);
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 4.4 - e[1], -2.2 - e[2], 0.5 + 0.8 * Math.min(1.0, t / 12.0), t, 11);
+                    } else if (t < held + fly) {
+                        double bz = -3.0 - speed * (t - held);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 4.0 - e[1], bz - e[2], 2.2, t, 12, true);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, -e[0], 4.0 - e[1], bz - e[2], 0, 0, -1, t, 2.2, 12);
                     }
-                    double[][] ways = {{-0.12, 0.0}, {0.12, 0.0}, {0.0, 0.08}, {0.0, -0.08}};
-                    for (int k = 0; k < 4; k++) {
-                        double age = t - held - k * gap;
-                        if (age < 0.0) {
-                            continue;
-                        }
-                        double bz = -3.0 - speed * age;
-                        double bx = ways[k][0] * speed * age;
-                        double byy = 4.0 + ways[k][1] * speed * age;
-                        if (age < 20) {
-                            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, bx - e[0], byy - e[1], bz - e[2], 1.8, t, 12 + k, true);
-                            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, bx - e[0], byy - e[1], bz - e[2], 0, 0, -1, t, 1.8, 12 + k);
-                        } else {
-                            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, ways[k][0] * speed * 20 - e[0], 4.0 + ways[k][1] * speed * 20 - e[1],
-                                -3.0 - speed * 20 - e[2], age - 20, 4.7, 12 + k);
-                        }
-                    }
+                    com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, -e[0], 1.0 - e[1], -3.0 - 16.0 - e[2], Math.PI, 1.1, t - held - fly, 12);
                 };
             }
+            case "m-boom" -> sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixBlast.explosion(sink, -e[0], 1.0 - e[1], -e[2], 4.0, t, 3);
+            case "m-tornado" -> {
+                sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixBlast.tornado(sink, -e[0], -e[1], -e[2], t, Math.min(1.0, t / 6.0), 1.0, 3);
+            }
+            case "m-tornado2" -> {
+                sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixBlast.tornado(sink, -e[0], -e[1], -e[2], t, Math.min(1.0, t / 6.0), 1.4, 3);
+            }
+            case "m-bird" -> sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, -e[0], -e[1], -e[2], Math.PI, 1.1, t, 3);
             default -> {
                 return null;
             }

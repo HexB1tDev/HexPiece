@@ -449,7 +449,9 @@ public final class HoroFx {
                 Vec3 feet = player.m_20318_(partial);
                 if (!far(feet, cam)) {
                     spiritPose(player, age, partial);
+                    AstralArt.slim = "slim".equals(player.m_108564_());
                     AstralArt.spirit(null, SINK, POSE, place(feet, cam, bodyYaw(player, partial)), Math.min(1.0, age / 6.0));
+                    AstralArt.slim = false;
                 }
             }
         }
@@ -466,6 +468,8 @@ public final class HoroFx {
             return;
         }
         SKIN.use(player.m_108560_());
+        // 3.7.5: the player's own model (slim arms or wide), not always the wide one
+        AstralArt.slim = "slim".equals(player.m_108564_());
         if (!far(astral.feet, cam)) {
             SKIN.shaded = true;
             SKIN.light = LevelRenderer.m_109541_(level, BlockPos.m_274561_(astral.feet.f_82479_, astral.feet.f_82480_ + 1.0, astral.feet.f_82481_));
@@ -479,6 +483,7 @@ public final class HoroFx {
             spiritPose(player, clock + partial - astral.born, partial);
             AstralArt.spirit(SKIN, null, POSE, place(feet, cam, bodyYaw(player, partial)), Math.min(1.0, (clock + partial - astral.born) / 6.0));
         }
+        AstralArt.slim = false;
     }
 
     /** Whether this is one's own spirit seen from inside its head (first person: not drawn, as the game draws no body of one's own). */

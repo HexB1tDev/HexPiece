@@ -504,12 +504,12 @@ public final class PhoenixForm {
     /** How much of the shank's forward lean is taken back standing (its feet under its body). */
     static final float STAND_BACK = 0.6F;
     /** Walking: each leg's swing each way (degrees), how high a foot is lifted (model units). */
-    static final float WALK_SWING = 45.0F;
+    static final float WALK_SWING = 50.0F;
     static final float WALK_LIFT = 0.45F;
 
     /** Blocks walked for one stride (a step of each foot): the feet planted (a little over, so the step is never fussy). */
     public static float stride(Shape sh) {
-        return (float) (4.0 * sh.legLength * Math.sin(Math.toRadians(WALK_SWING)) * PhoenixLook.SCALE * 1.15);
+        return (float) (4.0 * sh.legLength * Math.sin(Math.toRadians(WALK_SWING)) * PhoenixLook.SCALE * 1.35);
     }
 
     /**
@@ -1003,7 +1003,7 @@ public final class PhoenixForm {
             // 3.7.1 folded at its sides on the ground: the wing let down and swept back along the body, the elbow back, the hand
             // forward along the forearm, the tip back; bouncing a little with each step
             // 3.7.4: walking, the folded wings held up off the ground (a bird keeps them clear of its feet), bouncing with each step
-            turn(pose, sh, w[0], m0 * tuck * (TUCK_DOWN - 22.0F * walk + 5.0F * walk * (float) Math.sin(2.0F * mo.stride)), 0, 0, 1);
+            turn(pose, sh, w[0], m0 * tuck * (TUCK_DOWN - 22.0F * walk + 1.5F * walk * (float) Math.sin(2.0F * mo.stride)), 0, 0, 1);
             turn(pose, sh, w[0], m0 * tuck * TUCK_BACK, 0, 1, 0);
             turn(pose, sh, w[1], m0 * tuck * TUCK_ELBOW, 0, 1, 0);
             turn(pose, sh, w[3], -m0 * tuck * TUCK_HAND, 0, 1, 0);
@@ -1047,13 +1047,13 @@ public final class PhoenixForm {
         // the neck pumping forward and back as a bird's does; braking: reared back; the touchdown: dipping forward
         // the body highest as each standing leg passes under it, rolling and swaying over the standing foot (a big bird's waddle),
         // leaning a little into the walk; the head thrust forward with each step and held (a bird's head bob)
-        pose.t[sh.root * 3 + 1] += -walk * planted - 0.35F * land;
-        pose.t[sh.root * 3] += walk * 0.16F * (float) Math.cos(mo.stride);
-        turn(pose, sh, sh.root, 5.0F * walk * (float) Math.cos(mo.stride), 0, 0, 1);
-        // (3.7.4: walking upright, chest out, as it stands: leaning into the walk laid it on its belly)
-        turn(pose, sh, sh.root, 4.0F * walk + 16.0F * flare - 14.0F * land + 14.0F * sweep, 1, 0, 0);
-        float bob = (float) Math.sin(2.0F * mo.stride);
-        turn(pose, sh, sh.neck, 11.0F * walk * Math.max(-0.4F, bob) + 10.0F * land - 8.0F * flare, 1, 0, 0);
+        // 3.7.5 (the owner: "the body is hobbling too much, its meant to be imposing, but it just looks silly"): the body carried
+        // steady over its stride, only a third of the planted leg's arc, a slight roll, no sway; the head held level, a slow nod
+        pose.t[sh.root * 3 + 1] += -walk * planted * 0.35F - 0.35F * land;
+        turn(pose, sh, sh.root, 1.2F * walk * (float) Math.cos(mo.stride), 0, 0, 1);
+        // (3.7.4: walking upright, chest out, as it stands: leaning into the walk laid it on its belly; 3.7.5 prouder still)
+        turn(pose, sh, sh.root, 6.0F * walk + 16.0F * flare - 14.0F * land + 14.0F * sweep, 1, 0, 0);
+        turn(pose, sh, sh.neck, 2.5F * walk * (float) Math.sin(2.0F * mo.stride - 0.8F) + 10.0F * land - 8.0F * flare, 1, 0, 0);
         // the body: lifted with each downstroke, rocked by it; leaning into the flight at speed and nose down in the dive
         pose.t[sh.root * 3 + 1] += 0.32F * flap * (1.0F - perch) * (float) Math.sin(beat - 1.0F);
         turn(pose, sh, sh.root, -65.0F * speed - 30.0F * dive, 1, 0, 0);

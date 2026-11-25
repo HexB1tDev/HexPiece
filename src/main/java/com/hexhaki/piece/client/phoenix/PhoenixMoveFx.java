@@ -2,6 +2,7 @@ package com.hexhaki.piece.client.phoenix;
 
 import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.network.S2CUoFx;
+import com.hexhaki.piece.phoenix.PhoenixBlast;
 import com.hexhaki.piece.phoenix.PhoenixFire;
 import com.hexhaki.piece.phoenix.PhoenixForm;
 import com.hexhaki.piece.phoenix.PhoenixMoveArt;
@@ -138,18 +139,18 @@ final class PhoenixMoveFx {
     static int life(Fx f) {
         return switch (f.kind) {
             case PhoenixMoves.FUJI -> f.phase == PhoenixMoves.FUJI_END ? PhoenixMoveArt.FUJI_BURST : f.phase == PhoenixMoves.FUJI_DASH ? f.ticks + 16
-                : f.ticks + 2;
+                : f.phase == PhoenixMoves.FUJI_TORNADO ? f.ticks + TORNADO_OUT : f.ticks + 2;
             case PhoenixMoves.TALON -> f.phase == PhoenixMoves.TALON_BLAST ? PhoenixMoveArt.TALON_CRATER : f.phase == PhoenixMoves.TALON_TOP ? 40
                 : 12;
             case PhoenixMoves.HAWK -> f.phase == PhoenixMoves.HAWK_RUSH ? PhoenixMoveArt.HAWK_MOST + 4 : f.phase == PhoenixMoves.HAWK_GRAB
-                ? PhoenixMoveArt.HAWK_WHIRL + 6 : PhoenixMoveArt.HAWK_WRAP + 4;
+                ? PhoenixMoveArt.HAWK_WHIRL + 6 : f.phase == PhoenixMoves.HAWK_THROW ? (int) PhoenixBlast.BURST_LIFE : PhoenixMoveArt.HAWK_WRAP + 4;
             case PhoenixMoves.INFERNO -> switch (f.phase) {
                 case PhoenixMoves.VORTEX_ON -> PhoenixMoveArt.VORTEX + 8;
                 case PhoenixMoves.VORTEX_BLAST -> PhoenixMoveArt.VORTEX_BLAST_LIFE;
                 case PhoenixMoves.VORTEX_RISE, PhoenixMoves.VORTEX_DIVE -> 14;
                 default -> 14;
             };
-            case PhoenixMoves.BLUE -> f.phase == PhoenixMoves.BLUE_BOOM ? PhoenixMoveArt.BLUE_BOOM : f.phase == PhoenixMoves.BLUE_CHARGE
+            case PhoenixMoves.BLUE -> f.phase == PhoenixMoves.BLUE_BOOM ? (int) PhoenixBlast.BIRD_LIFE : f.phase == PhoenixMoves.BLUE_CHARGE
                 ? PhoenixMoveArt.BLUE_MOST + 30 : f.ticks + 2;
             default -> 0;
         };
@@ -174,6 +175,10 @@ final class PhoenixMoveFx {
             || f.kind == PhoenixMoves.BLUE && f.phase != PhoenixMoves.BLUE_BOOM || f.kind == PhoenixMoves.INFERNO && f.phase == PhoenixMoves.VORTEX_DIVE;
     }
 
+    /** 3.7.5: how long the fire tornado takes to rise and to die out (ticks). */
+    static final int TORNADO_IN = 8;
+    static final int TORNADO_OUT = 12;
+
     /** How long the temporary wings take to come and go (ticks). */
     static final int WINGS_FADE = 4;
 
@@ -186,7 +191,8 @@ final class PhoenixMoveFx {
 
     /**
      * A phoenix's move pose into {@code mo} (PhoenixForm.Motion's sweep, ram, reach), {@code t} its clock (ticks, with the partial):
-     * returns the extra turn of its facing (degrees: the whirl) and puts the glide's bank into {@code bank[0]}.
+     * returns the extra turn of its facing (degrees; 3.7.5 always none: the owner, "the phoenix should never do a 360", "the moves should
+     * never make the bird spin a 360") and puts the glide's bank into {@code bank[0]}.
      */
     static float act(int user, float t, PhoenixForm.Motion mo, float[] bank) {
         mo.sweep = 0.0F;
@@ -211,16 +217,9 @@ final class PhoenixMoveFx {
                 mo.glide = Math.max(mo.glide, k);
                 bank[0] = 38.0F * (float) Math.sin(Math.PI * f);
             }
-            case PhoenixMoves.ACT_WHIRL -> {
-                mo.reach = k;
-                return 360.0F * (f * f * (3.0F - 2.0F * f));
-            }
-            case PhoenixMoves.ACT_SPIN -> {
-                // 3.7.3: spinning in its whirlpool, faster as it goes, wings spread
-                mo.spread = k;
-                return 1080.0F * f * f;
-            }
-            case PhoenixMoves.ACT_SPREAD -> mo.spread = k;
+            // 3.7.5: the old whirl and spin (a server of 3.7.2 to 3.7.4) are held without turning
+            case PhoenixMoves.ACT_WHIRL -> mo.reach = k;
+            case PhoenixMoves.ACT_SPREAD, PhoenixMoves.ACT_SPIN -> mo.spread = k;
             default -> {
             }
         }
@@ -265,6 +264,11 @@ final class PhoenixMoveFx {
             } else {
                 PhoenixMoveArt.fujiCharge(sink, x, y, z, age, 1.0, f.id);
             }
+        } else if (f.phase == PhoenixMoves.FUJI_TORNADO) {
+            // 3.7.5: the phoenix's fire tornado, its foot running on the way it was sent, rising in and dying out
+            double st = Math.min(1.0, age / TORNADO_IN) * Math.max(0.0, Math.min(1.0, (f.ticks + TORNADO_OUT - age) / TORNADO_OUT));
+            double run = Math.min(age, f.ticks);
+            PhoenixBlast.tornado(sink, x + f.ax * run, y + f.ay * run, z + f.az * run, age, st, f.size > 0.5 ? f.size : 1.0, f.id);
         } else if (f.phase == PhoenixMoves.FUJI_DASH) {
             double got = Math.min(1.0, age / Math.max(1, f.ticks));
             PhoenixMoveArt.fujiTrail(sink, x, y, z, f.ax, f.ay, f.az, got, age, big, f.id);
@@ -329,6 +333,10 @@ final class PhoenixMoveFx {
                 Vec3 look = e != null ? e.m_20154_() : new Vec3(f.ax / l, f.ay / l, f.az / l);
                 PhoenixMoveArt.hawkStreaks(sink, at.f_82479_, at.f_82480_ + 1.2, at.f_82481_, look.f_82479_, look.f_82480_, look.f_82481_, age, f.id);
                 PhoenixMoveArt.fujiSheath(sink, at.f_82479_, at.f_82480_ + 1.2, at.f_82481_, look.f_82479_, look.f_82480_, look.f_82481_, age, 1.3, f.id);
+            }
+            case PhoenixMoves.HAWK_THROW -> {
+                // 3.7.5: the one thrown goes in a blast of fire
+                PhoenixBlast.explosion(sink, x, y, z, 2.6, age, f.id);
             }
             default -> {
                 if (at != null) {
@@ -398,9 +406,17 @@ final class PhoenixMoveFx {
                     PhoenixMoveArt.blueTrail(sink, bx, by, bz, f.ax / l, f.ay / l, f.az / l, age, f.size, f.id);
                 }
             }
-            default -> PhoenixMoveArt.blueBoom(sink, x, y, z, age, f.size, f.id);
+            default -> {
+                // 3.7.5 (the owner: "the B move should be 1 projectile that makes a massive explosion in the shape of a bird"): out of the
+                // blast a phoenix of fire, flying on the way the ball went (the phoenix's the bigger)
+                PhoenixBlast.bird(sink, x, y, z, Math.atan2(-f.ax, f.az), f.bird ? BIRD_BIG : BIRD_SMALL, age, f.id);
+            }
         }
     }
+
+    /** 3.7.5: the bird of fire's size (blocks a unit; its wings about 13 units across): the human's Bluebird, the phoenix's. */
+    static final double BIRD_SMALL = 0.75;
+    static final double BIRD_BIG = 1.1;
 
     static void clear() {
         FX.clear();

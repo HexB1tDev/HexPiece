@@ -770,6 +770,43 @@ public final class MochiFx {
         return arms;
     }
 
+    /**
+     * 3.7.5 (the owner: "During every buzz cut mochi the head is not meant to spin or rotate when looking around"): through the whole move
+     * (both versions) the head is drawn still, facing where the body faces (the body held at the catch: buzzTick), level, whatever the
+     * user looks at; the look itself (the camera) is untouched: only this frame's drawing, put back as soon as the body is drawn.
+     */
+    private static float[] headWas;
+    private static LivingEntity headOf;
+
+    // LOWEST: after every other handler (one that cancels the drawing would leave no Post to put the head back: a cancelled event does
+    // not reach this one)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void stillHead(RenderPlayerEvent.Pre event) {
+        Buzz b = WHEELS.get(event.getEntity().m_19879_());
+        if (b == null || b.caught < 0 || clock - b.caught >= MochiDraw.BUZZ_END) {
+            return;
+        }
+        LivingEntity body = event.getEntity();
+        headWas = new float[] {body.f_20885_, body.f_20886_, body.m_146909_(), body.f_19860_};
+        headOf = body;
+        body.f_20885_ = b.yaw0;
+        body.f_20886_ = b.yaw0;
+        body.m_146926_(0.0F);
+        body.f_19860_ = 0.0F;
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void headBack(RenderPlayerEvent.Post event) {
+        if (headOf != null && headOf == event.getEntity() && headWas != null) {
+            headOf.f_20885_ = headWas[0];
+            headOf.f_20886_ = headWas[1];
+            headOf.m_146926_(headWas[2]);
+            headOf.f_19860_ = headWas[3];
+        }
+        headOf = null;
+        headWas = null;
+    }
+
     /** 3.6.3: the parts hidden for this frame's body (restored as it is drawn), or null. */
     private static net.minecraft.client.model.geom.ModelPart[] hidden;
 

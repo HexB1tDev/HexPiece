@@ -1116,35 +1116,37 @@ public final class DragonTests {
             glow[k * 3 + 1] = 1.5;
             glow[k * 3 + 2] = 6.0 + Math.cos(k);
         }
-        for (int t = 0; t <= 40; t++) {
-            // the phoenix's Fujiazami: its own fire, the wind-up's flames, the ram's trail and comet, the spray
+        int wind = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_WIND;
+        for (int t = 0; t <= 90; t++) {
+            // 3.7.5, the phoenix's X: the fire tornado (its foot 4 blocks ahead of the phoenix, the camera 4 behind it, then running
+            // on), the Conqueror's size, with the wind-up's flames off the phoenix
             count[0] = 0;
             com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
             com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
-            // in its order (client/phoenix/PhoenixMoveFx): the wind-up's flames, then the ram's trail and comet, then the spray
-            int wind = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_WIND;
-            int ram = com.hexhaki.piece.phoenix.PhoenixMoveArt.FUJI_RAM;
-            if (t < wind + 2) {
-                com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, 0, 1, 6, t, 2.2, 5);
+            if (t < wind) {
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, 0, 1, 4, t, 2.2, 5);
             }
-            if (t >= wind) {
-                com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiTrail(sink, 0, 0, 4, 0, 0, 16, Math.min(1.0, (t - wind) / (double) ram), t - wind, 2.0, 5);
-            }
-            if (t >= wind && t < wind + ram) {
-                com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, 0, 1, 6, 0, 0, 1, t - wind, 2.0, 5);
-            }
-            com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiBurst(sink, 0, 1, 8, 0, 1, t - wind - ram, 2.0, 5);
-            check(count[0] + faces, finite[0], "the phoenix's Fujiazami", t);
-            // Hawk Rush: the flash, the streaks and comet, the whirl and its ring
+            double age = t - wind;
+            com.hexhaki.piece.phoenix.PhoenixBlast.tornado(sink, 0, -2, 8 + 0.5 * Math.max(0.0, age), age, Math.min(1.0, age / 8.0), 1.4, 5);
+            check(count[0] + faces, finite[0], "the phoenix's fire tornado", t);
+        }
+        for (int t = 0; t <= 40; t++) {
+            // Hawk Rush: the flash, then the streaks and comet round the rushing phoenix
             count[0] = 0;
             com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
             com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkFlash(sink, 0, 1, 6, t);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkStreaks(sink, 0, 1, 6, 0, 0, 1, t, 5);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, 0, 1, 6, 0, 0, 1, t, 1.3, 5);
+            check(count[0] + faces, finite[0], "Hawk Rush", t);
+            // 3.7.5: the seize (its flash and ring), the carry, the throw's blast at the one thrown
+            count[0] = 0;
+            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.hawkWhirl(sink, 0, 1, 6, t);
             com.hexhaki.piece.phoenix.PhoenixFire.touchdown(sink, 0, -1, 6, t * 0.7, 5);
-            check(count[0] + faces, finite[0], "Hawk Rush", t);
+            com.hexhaki.piece.phoenix.PhoenixBlast.explosion(sink, 0, 0, 8, 2.6, t - com.hexhaki.piece.phoenix.PhoenixMoveArt.HAWK_WHIRL, 5);
+            check(count[0] + faces, finite[0], "Hawk Rush's throw", t);
         }
         for (int t = 0; t <= com.hexhaki.piece.phoenix.PhoenixMoveArt.TALON_CRATER; t++) {
             // the human's: Fujiazami (the charge, trail, comet, spray at once) and Talon Slam (the leap, wind, leg, blast at once)
@@ -1177,25 +1179,22 @@ public final class DragonTests {
             count[0] = 0;
             com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
             com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
+            // 3.7.5: one ball (was four), its blast a bird of fire ten blocks off
             if (t < 30) {
                 com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, 0, 0, 6, t, 2.4, 5);
                 com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, 0, 2, 4, 1.3, t, 5);
+            } else if (t < 38) {
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, 0, 2, 4 + (t - 30), 2.2, t, 5, true);
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, 0, 2, 4 + (t - 30), 0, 0, 1, t, 2.2, 5);
             }
-            for (int k = 0; k < 4; k++) {
-                double age = t - 30 - k * com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_GAP;
-                if (age >= 0 && age < 20) {
-                    com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, k - 2, 2, 4 + age, 1.8, t, 5 + k, true);
-                    com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, k - 2, 2, 4 + age, 0, 0, 1, t, 1.8, 5 + k);
-                }
-                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, k - 2, 2, 24, age - 20, 4.7, 5 + k);
-            }
+            com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, 0, 1, 12, Math.PI, 1.1, t - 38, 5);
             check(count[0] + faces, finite[0], "the phoenix's Bluebird", t);
             // the human's: the kicks and the bursts, the ball and its blast (no model beside them)
             count[0] = 0;
             com.hexhaki.piece.phoenix.PhoenixMoveArt.burst(sink, 0, 0, 6, t, 1.0, 5);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.kick(sink, 0.1, -0.5, 6, 0, 1, t % 6, t % 2 == 0, 5);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, 0, 0, 7, com.hexhaki.piece.phoenix.PhoenixMoveArt.blueSize(t), t, 5);
-            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, 0, 0, 12, t, 4.4, 5);
+            com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, 0, 0, 6, 0.0, 0.75, t, 5);
             check(count[0], finite[0], "the human's Phoenix Inferno and Bluebird", t);
         }
         Check.that(com.hexhaki.piece.server.PhoenixKit.HUMAN.size() == 5 && com.hexhaki.piece.server.PhoenixKit.PHOENIX.size() == 5
@@ -1210,7 +1209,14 @@ public final class DragonTests {
             && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(1).key().equals("[X]") && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(2).key().equals("[C] hold")
             && com.hexhaki.piece.server.PhoenixKit.MOVES.containsAll(com.hexhaki.piece.server.PhoenixKit.PHOENIX)
             && com.hexhaki.piece.server.PhoenixKit.MOVES.containsAll(com.hexhaki.piece.server.PhoenixKit.HUMAN),
-            "the Phoenix's moves: X Fujiazami, C Talon Slam (the phoenix: Hawk Rush, held), V, B, each form's list in the same keys");
+            "the Phoenix's moves: X Fujiazami (the phoenix: the fire tornado), C Talon Slam (the phoenix: Hawk Rush, held), V, B, each form's"
+                + " list in the same keys");
+        Check.that(com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(1).name().contains("Tornado")
+            && com.hexhaki.piece.phoenix.PhoenixBlast.TORNADO_TALL > com.hexhaki.piece.dragon.UoFire.TORNADO_TALL
+            && com.hexhaki.piece.phoenix.PhoenixBlast.TORNADO_HIGH > com.hexhaki.piece.dragon.UoFire.TORNADO_HIGH
+            && com.hexhaki.piece.server.PhoenixMoves.TORNADO_HURT > 0.0F && com.hexhaki.piece.server.PhoenixMoves.BLUE_BIRD_HURT
+            > com.hexhaki.piece.server.PhoenixMoves.BLUE_HURT, "3.7.5: the phoenix's X a fire tornado bigger than the dragon's; its Bluebird one"
+                + " harder ball");
         Check.that(com.hexhaki.piece.server.PhoenixMoves.FUJI_HURT > 0.0F && com.hexhaki.piece.server.PhoenixMoves.FUJI_RAM_HURT
             > com.hexhaki.piece.server.PhoenixMoves.FUJI_HURT && com.hexhaki.piece.server.PhoenixMoves.TALON_SLAM_HURT
             > com.hexhaki.piece.server.PhoenixMoves.TALON_LEAP_HURT, "the phoenix's moves harder than the human's");

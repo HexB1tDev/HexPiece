@@ -22,7 +22,9 @@ public final class AstralPreview {
 
     public static void main(String[] args) throws Exception {
         BufferedImage skin = ImageIO.read(new File(args[1]));
-        boolean night = args.length > 2 && args[2].equals("--night");
+        boolean night = java.util.Arrays.asList(args).contains("--night");
+        // 3.7.5: a slim skin (three pixel arms) drawn as the game draws it
+        AstralArt.slim = java.util.Arrays.asList(args).contains("--slim");
         // views: eye (x, y, z) and the point looked at; the spirit floats 1.2 up at (0, 0, 0) facing +z (yaw 0), the body stands at
         // (1.6, 0, -1.2) facing +z
         double[][] eyes = System.getenv("ASTRAL_SIDE") != null ? new double[][] {{3.2, 2.2, 0.0}, {-3.2, 2.2, 0.3}, {0.3, 2.2, 3.2}, {0.3, 2.2, -3.2}, {2.4, 3.4, 2.4}, {2.3, 1.2, -2.3}} : new double[][] {{3.4, 2.4, 4.2}, {-3.6, 2.2, 3.4}, {4.2, 1.8, -1.0}, {0.4, 2.0, -4.6}, {0.2, 2.6, 4.6}, {4.0, 2.2, 3.0}};

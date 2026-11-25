@@ -34,6 +34,9 @@ public final class PhoenixMoves {
     public static final int FUJI_CHARGE = 0;
     public static final int FUJI_DASH = 1;
     public static final int FUJI_END = 2;
+    /** 3.7.5: the phoenix's X, the fire tornado: x, y, z its foot at the start, a its step a tick, size its size (1, 1.4 with the
+     * Conqueror's Haki and Ryou), ticks how long it runs. */
+    public static final int FUJI_TORNADO = 3;
     /** Talon Slam: user; bx TALON_CROUCH, TALON_LEAP (x, y, z the feet), TALON_TOP (ticks the hang), TALON_BLAST (x, y, z the ground). */
     public static final int TALON = 402;
     public static final int TALON_CROUCH = 0;
@@ -46,6 +49,8 @@ public final class PhoenixMoves {
     public static final int HAWK_RUSH = 1;
     public static final int HAWK_GRAB = 2;
     public static final int HAWK_END = 3;
+    /** 3.7.5: the throw's blast (x, y, z where the one thrown was). */
+    public static final int HAWK_THROW = 4;
     /** The human's temporary phoenix wings and tail: user; bx 1 on (ticks how long, by the pose: WINGS_SWEPT, WINGS_SPREAD), 0 off. */
     public static final int WINGS = 404;
     public static final int WINGS_SWEPT = 0;
@@ -97,6 +102,14 @@ public final class PhoenixMoves {
     public static final double HAWK_CATCH = 2.6;
     public static final double HAWK_SPEED = 1.5;
     static final int FUJI_COOL = 160;
+    /** 3.7.5: the fire tornado (the owner: "X transformed becomes a massive tornado like the dragon fruit but bigger and made of beautiful
+     * flames (blue and yellow), causes burn and damage + carry stun"): its pace, how far it runs, its burn every 10 ticks, how long a
+     * body caught burns (seconds), its cooldown. */
+    static final double TORNADO_SPEED = 0.5;
+    static final double TORNADO_RANGE = 35.0;
+    public static final float TORNADO_HURT = 2.5F;
+    static final int TORNADO_FIRE = 4;
+    static final int TORNADO_COOL = 260;
     static final int TALON_COOL = 200;
     static final int HAWK_COOL = 220;
     /** 3.7.3 (the reference's: Phoenix Inferno 12 ticks of 2.5 then 75, transformed 42 ticks of 0.9, 75 the leap, 75 the slam; Bluebird
@@ -107,6 +120,8 @@ public final class PhoenixMoves {
     public static final float VORTEX_LEAP_HURT = 15.0F;
     public static final float VORTEX_BLAST_HURT = 15.0F;
     public static final float BLUE_HURT = 9.0F;
+    /** 3.7.5: the phoenix's one Bluebird (was four of 9). */
+    public static final float BLUE_BIRD_HURT = 22.0F;
     static final int INFERNO_COOL = 300;
     static final int BLUE_COOL = 240;
 
@@ -177,8 +192,9 @@ public final class PhoenixMoves {
         if (slot == PhoenixKit.FUJIAZAMI.slot()) {
             com.hexhaki.fruit.FruitMove move = bird ? PhoenixKit.FUJIAZAMI_PHOENIX : PhoenixKit.FUJIAZAMI;
             if (ItoMoves.ready(player, move)) {
-                ItoMoves.cool(player, move, FUJI_COOL);
-                start(player, s, new Dash(player, bird, now));
+                ItoMoves.cool(player, move, bird ? TORNADO_COOL : FUJI_COOL);
+                // 3.7.5: as the phoenix, X is the fire tornado (the ram is gone: "the phoenix should never do a 360")
+                start(player, s, bird ? new FireTornado(player, now) : new Dash(player, false, now));
             }
         } else if (slot == PhoenixKit.TALON_SLAM.slot()) {
             if (bird) {
@@ -373,6 +389,133 @@ public final class PhoenixMoves {
         }
     }
 
+    /** The fire art's lifetimes (phoenix/PhoenixBlast) as tick counts for the messages. */
+    static final class PhoenixBlastTicks {
+        static final double BURST = com.hexhaki.piece.phoenix.PhoenixBlast.BURST_LIFE;
+        static final double BIRD = com.hexhaki.piece.phoenix.PhoenixBlast.BIRD_LIFE;
+    }
+
+    /**
+     * 3.7.5, X as the phoenix (the owner: "X transformed becomes a massive tornado like the dragon fruit but bigger and made of beautiful
+     * flames (blue and yellow), causes burn and damage + carry stun. (With COnqueror + Ryou haki makes lightning from the tornado e makes
+     * it bigger."): the phoenix sweeps its wings forward and beats them, and a fire tornado rises in front of it and runs on along the
+     * ground the way it looked ({@link #TORNADO_RANGE} blocks): whoever its funnel takes is carried round and up in it (the stun), burnt
+     * ({@link #TORNADO_HURT} every 10 ticks, set alight) and flung on at its end. With the Conqueror's Haki and Ryou on it is 1.4 times as
+     * big and throws the Conqueror's lightning out of its funnel.
+     */
+    static final class FireTornado implements UoMoves.Live {
+        final ServerPlayer user;
+        final ServerLevel level;
+        final long born;
+        final int seed = ++seeds;
+        final List<LivingEntity> caught = new ArrayList<>();
+        final double big;
+        Vec3 base;
+        Vec3 step;
+        int life;
+        boolean over;
+
+        FireTornado(ServerPlayer user, long now) {
+            this.user = user;
+            this.level = (ServerLevel) user.m_9236_();
+            this.born = now;
+            this.big = ConquerorAura.awakened(user) ? 1.4 : 1.0;
+            fx(user, ACT, this.seed, user.m_20182_(), Vec3.f_82478_, ACT_SWEEP, 0, PhoenixMoveArt.FUJI_WIND);
+            // its flames end as the tornado rises (the charge's life is its ticks and 2)
+            fx(user, FUJI, this.seed, user.m_20182_(), Vec3.f_82478_, FUJI_CHARGE, 1, PhoenixMoveArt.FUJI_WIND - 2);
+            sound(user, user.m_20182_(), UoSounds.GUST, 1.3F, 0.9F);
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (this.over) {
+                return true;
+            }
+            if (!this.user.m_6084_() || this.user.m_9236_() != this.level) {
+                return true;
+            }
+            long t = now - this.born;
+            if (t < PhoenixMoveArt.FUJI_WIND) {
+                if (STATES.containsKey(this.user.m_20148_())) {
+                    drive(this.user, Vec3.f_82478_);
+                }
+                return false;
+            }
+            if (this.base == null) {
+                Vec3 flat = ItoMoves.flat(this.user);
+                Vec3 ahead = this.user.m_20182_().m_82549_(flat.m_82490_(4.0));
+                Vec3 g = ItoMoves.ground(this.level, ahead, 3.0, 16.0);
+                this.base = g != null ? g : ahead;
+                this.step = flat.m_82490_(TORNADO_SPEED);
+                this.life = (int) Math.round(TORNADO_RANGE / TORNADO_SPEED);
+                fx(this.user, FUJI, this.seed, this.base, this.step, FUJI_TORNADO, 0, this.big, this.life);
+                sound(this.user, this.base, UoSounds.TORNADO, 2.0F, 0.9F);
+                sound(this.user, this.base, UoSounds.FLAME_START, 1.6F, 0.8F);
+                done(this.user);
+            }
+            int age = (int) (t - PhoenixMoveArt.FUJI_WIND);
+            this.base = this.base.m_82549_(this.step);
+            if (age % 80 == 0 && age > 0 && age + 20 < this.life) {
+                sound(this.user, this.base.m_82520_(0.0, 2.0, 0.0), UoSounds.TORNADO, 2.0F, 0.9F);
+            }
+            double tall = com.hexhaki.piece.phoenix.PhoenixBlast.TORNADO_TALL * this.big;
+            double low = com.hexhaki.piece.phoenix.PhoenixBlast.TORNADO_LOW * this.big;
+            double high = com.hexhaki.piece.phoenix.PhoenixBlast.TORNADO_HIGH * this.big;
+            for (LivingEntity body : ItoMoves.foes(this.user, this.base.m_82520_(0.0, tall * 0.5, 0.0), high + tall * 0.5)) {
+                double h = Math.max(0.0, Math.min(tall, body.m_20186_() - this.base.f_82480_));
+                double radius = low + (high - low) * h / tall;
+                double dx = body.m_20185_() - this.base.f_82479_;
+                double dz = body.m_20189_() - this.base.f_82481_;
+                double r = Math.sqrt(dx * dx + dz * dz);
+                if (r > radius + 0.6 || body.m_20186_() < this.base.f_82480_ - 1.0) {
+                    continue;
+                }
+                if (!this.caught.contains(body)) {
+                    this.caught.add(body);
+                }
+                // carried round the funnel (counter-clockwise from above), drawn to a ring inside it, lifted, on with it
+                double ring = Math.max(1.0, radius * 0.55);
+                double ux = r < 1.0E-3 ? 1.0 : dx / r;
+                double uz = r < 1.0E-3 ? 0.0 : dz / r;
+                double pull = (ring - r) * 0.35;
+                double vx = -uz * 0.6 + ux * pull + this.step.f_82479_;
+                double vz = ux * 0.6 + uz * pull + this.step.f_82481_;
+                double vy = h < tall - 2.0 ? 0.24 : 0.02;
+                body.m_20334_(vx, vy, vz);
+                body.f_19864_ = true;
+                body.f_19789_ = 0.0F;
+                if (age % 10 == 0) {
+                    hit(this.user, body, TORNADO_HURT, Vec3.f_82478_);
+                    body.m_20254_(TORNADO_FIRE);
+                }
+            }
+            // the Conqueror's lightning out of its funnel (visual only)
+            if (this.big > 1.0 && age % 6 == 0) {
+                double a = age * 0.7;
+                double h = tall * (0.2 + 0.6 * ((age * 0.37) % 1.0));
+                double rad = low + (high - low) * h / tall;
+                ConquerorAura.mixed(this.user, this.base.m_82520_(Math.cos(a) * rad, h, Math.sin(a) * rad), 4.0, 3, -1.0);
+            }
+            if (age >= this.life) {
+                this.over = true;
+                Vec3 forward = this.step.m_82541_();
+                for (LivingEntity body : this.caught) {
+                    if (body.m_6084_()) {
+                        body.m_20334_(forward.f_82479_ * 1.4, 0.8, forward.f_82481_ * 1.4);
+                        body.f_19864_ = true;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ C: Talon Slam
 
     /**
@@ -550,27 +693,29 @@ public final class PhoenixMoves {
                     this.grabbed = now;
                     hit(this.user, body, HAWK_GRAB_HURT, Vec3.f_82478_);
                     fx(this.user, HAWK, body.m_19879_(), StyleCombat.middle(body), look, HAWK_GRAB, 0, PhoenixMoveArt.HAWK_WHIRL);
-                    fx(this.user, ACT, this.seed, this.user.m_20182_(), Vec3.f_82478_, ACT_WHIRL, 0, PhoenixMoveArt.HAWK_WHIRL);
+                    fx(this.user, ACT, this.seed, this.user.m_20182_(), Vec3.f_82478_, ACT_REACH, 0, PhoenixMoveArt.HAWK_WHIRL);
                     sound(this.user, claws, IronSounds.SLAM, 1.2F, 1.3F);
                     break;
                 }
                 return false;
             }
-            // seized: whirled round the phoenix once, under its claws, then thrown on the way it looks
+            // 3.7.5 (the owner: "the moves should never make the bird spin a 360"): seized, carried a moment under its claws as it climbs,
+            // then thrown on the way it looks in a blast of its fire
             long w = now - this.grabbed;
-            drive(this.user, Vec3.f_82478_);
+            drive(this.user, look.m_82490_(0.35).m_82520_(0.0, 0.12, 0.0));
             if (w < PhoenixMoveArt.HAWK_WHIRL && this.seized.m_6084_()) {
-                double a = Math.toRadians(this.user.m_146908_()) + w / (double) PhoenixMoveArt.HAWK_WHIRL * 2.0 * Math.PI;
-                Vec3 round = new Vec3(-Math.sin(a) * 2.2, -0.6, Math.cos(a) * 2.2);
-                pin(this.seized, this.user.m_20182_().m_82549_(round));
+                pin(this.seized, this.user.m_20182_().m_82549_(look.m_82490_(1.6)).m_82520_(0.0, -1.1, 0.0));
                 return false;
             }
             if (this.seized.m_6084_()) {
                 Vec3 flat = ItoMoves.flat(this.user);
+                Vec3 at = StyleCombat.middle(this.seized);
                 hit(this.user, this.seized, HAWK_THROW_HURT, flat.m_82490_(2.4).m_82520_(0.0, 0.6, 0.0));
                 Impact.hit(this.user, this.seized, StyleCombat.spec(com.hexhaki.piece.style.Hit.Weight.HEAVY,
                     flat.m_82490_(2.4).m_82520_(0.0, 0.6, 0.0)));
-                sound(this.user, StyleCombat.middle(this.seized), UoSounds.BLAST, 1.4F, 1.2F);
+                fx(this.user, HAWK, this.seed, at, flat, HAWK_THROW, 0, (int) PhoenixBlastTicks.BURST);
+                ConquerorAura.exploded(this.user, this.level, at, 2.5);
+                sound(this.user, at, UoSounds.BLAST, 1.4F, 1.2F);
             }
             stop();
             return true;
@@ -698,7 +843,8 @@ public final class PhoenixMoves {
             Vec3 g = ItoMoves.ground(this.level, feet, 1.0, 12.0);
             this.middle = g != null ? g : feet;
             fx(user, INFERNO, this.seed, this.middle, Vec3.f_82478_, VORTEX_ON, 0, PhoenixMoveArt.VORTEX);
-            fx(user, ACT, this.seed, feet, Vec3.f_82478_, ACT_SPIN, 0, PhoenixMoveArt.VORTEX);
+            // 3.7.5: held in its whirlpool, wings spread (no spin: "the moves should never make the bird spin a 360")
+            fx(user, ACT, this.seed, feet, Vec3.f_82478_, ACT_SPREAD, 0, PhoenixMoveArt.VORTEX);
             sound(user, feet, UoSounds.TORNADO, 1.4F, 1.1F);
         }
 
@@ -795,7 +941,7 @@ public final class PhoenixMoves {
             this.bird = bird;
             this.born = now;
             if (bird) {
-                fx(user, ACT, this.seed, user.m_20182_(), Vec3.f_82478_, ACT_SPREAD, 0, PhoenixMoveArt.BLUE_MOST + 4 * PhoenixMoveArt.BLUE_GAP);
+                fx(user, ACT, this.seed, user.m_20182_(), Vec3.f_82478_, ACT_SPREAD, 0, PhoenixMoveArt.BLUE_MOST + PhoenixMoveArt.BLUE_GAP);
             } else {
                 ItoMoves.animate(user, "phoenix_bluebird");
                 fx(user, WINGS, this.seed, user.m_20182_(), Vec3.f_82478_, 1, WINGS_SPREAD, PhoenixMoveArt.BLUE_MOST + 8);
@@ -840,21 +986,15 @@ public final class PhoenixMoves {
                 }
             }
             long f = now - this.fired;
-            int balls = this.bird ? 4 : 1;
+            // 3.7.5 (the owner: "the B move should be 1 projectile that makes a massive explosion in the shape of a bird")
+            int balls = 1;
             if (f % PhoenixMoveArt.BLUE_GAP == 0 && f / PhoenixMoveArt.BLUE_GAP < balls) {
                 int k = (int) (f / PhoenixMoveArt.BLUE_GAP);
                 Vec3 look = this.user.m_20154_();
-                if (this.bird) {
-                    // the four a little apart: left, right, high, low
-                    double yaw = Math.toRadians(new double[] {-7.0, 7.0, 0.0, 0.0}[k]);
-                    double pitch = new double[] {0.0, 0.0, 0.08, -0.08}[k];
-                    look = new Vec3(look.f_82479_ * Math.cos(yaw) - look.f_82481_ * Math.sin(yaw), look.f_82480_ + pitch,
-                        look.f_82481_ * Math.cos(yaw) + look.f_82479_ * Math.sin(yaw)).m_82541_();
-                }
                 double speed = this.bird ? PhoenixMoveArt.BLUE_BIRD_SPEED : PhoenixMoveArt.BLUE_SPEED;
-                double heart = this.bird ? 1.8 : this.size;
+                double heart = this.bird ? 2.2 : this.size;
                 Vec3 from = ItoMoves.chest(this.user).m_82549_(look.m_82490_(this.bird ? 3.0 : 1.2)).m_82520_(0.0, this.bird ? 0.8 : 0.0, 0.0);
-                Ball ball = new Ball(this.user, from, look.m_82490_(speed), heart, ++seeds);
+                Ball ball = new Ball(this.user, from, look.m_82490_(speed), heart, this.bird, ++seeds);
                 LIVE.add(ball);
                 fx(this.user, BLUE, ball.id, from, look.m_82490_(speed), BLUE_FIRE, this.bird ? 1 : 0, heart,
                     (int) (PhoenixMoveArt.BLUE_RANGE / speed) + 2);
@@ -878,17 +1018,19 @@ public final class PhoenixMoves {
         final ServerLevel level;
         final Vec3 step;
         final double size;
+        final boolean bird;
         final int id;
         Vec3 at;
         double gone;
         boolean over;
 
-        Ball(ServerPlayer user, Vec3 from, Vec3 step, double size, int id) {
+        Ball(ServerPlayer user, Vec3 from, Vec3 step, double size, boolean bird, int id) {
             this.user = user;
             this.level = (ServerLevel) user.m_9236_();
             this.at = from;
             this.step = step;
             this.size = size;
+            this.bird = bird;
             this.id = id;
         }
 
@@ -918,10 +1060,14 @@ public final class PhoenixMoves {
             this.gone += this.step.m_82553_();
             if (wall || met || this.gone >= PhoenixMoveArt.BLUE_RANGE) {
                 this.over = true;
-                double radius = 2.0 + 1.5 * this.size;
-                UoMoves.explode(this.user, this.level, this.at, this.step.m_82541_(), radius,
-                    ItoMoves.coated(this.user) ? BLUE_HURT * 1.25F : BLUE_HURT, 0, 1.1);
-                fx(this.user, BLUE, this.id, this.at, Vec3.f_82478_, BLUE_BOOM, 0, radius, PhoenixMoveArt.BLUE_BOOM);
+                // the massive blast: wide (the phoenix's the widest), harder the bigger the ball; a bird of fire bursts out of it
+                boolean bird = this.bird;
+                double radius = bird ? 7.0 : 2.5 + 2.0 * this.size;
+                float hurt = bird ? BLUE_BIRD_HURT : BLUE_HURT * (float) (0.8 + 0.4 * this.size);
+                UoMoves.explode(this.user, this.level, this.at, this.step.m_82541_(), radius, ItoMoves.coated(this.user) ? hurt * 1.25F : hurt, 0,
+                    1.4);
+                Impact.quake(this.level, this.at, radius * 3.0, 0.6F, 10);
+                fx(this.user, BLUE, this.id, this.at, this.step, BLUE_BOOM, bird ? 1 : 0, radius, (int) PhoenixBlastTicks.BIRD);
                 sound(this.user, this.at, UoSounds.EXPLODE, 1.4F, 1.15F);
                 return true;
             }

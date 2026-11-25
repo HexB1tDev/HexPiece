@@ -1,14 +1,12 @@
 package com.hexhaki.piece.phoenix;
 
 import com.hexhaki.piece.dragon.FireMesh;
-import com.hexhaki.piece.mochi.MochiArt;
 
 /**
- * 3.7.2 (the owner: "Proceed": the Phoenix's moves on the wiki's GIFs, docs/handoff/next-ai-3.6.3.md AD): the moves' fire, in the
- * phoenix's own style (PhoenixFire's tongues: curling tapered banded tubes of cyan and gold, the house's alpha-blended quads; white
- * shock rings and arcs as the reference's): X Fujiazami's charge, its streak along the dash, the comet of fire round the one dashing and
- * the spray where it ends; C Talon Slam's rings at the leap and round the top, the burning leg and the blast with its crater of blue
- * fire; Hawk Rush's speed streaks and the white whirl. Every timing the server's (server/PhoenixMoves) and the client's
+ * 3.7.2 (the owner: "Proceed": the Phoenix's moves on the wiki's GIFs, docs/handoff/next-ai-3.6.3.md AD): the moves' timings and fire.
+ * 3.7.5 (the owner: "I dont like the fire particles from the moves"; "Explosions and slams from moves lack real explosion"): the fire is
+ * the house's (phoenix/PhoenixBlast: FireMesh's banded fire puffs, the dragon fruit's explosions and fireballs, in the phoenix's blue and
+ * gold), the white shock rings and arcs as the reference's. Every timing the server's (server/PhoenixMoves) and the client's
  * (client/phoenix/PhoenixFx) are these constants. Pure: the game's renderer, the previews and the tests share it; points eye-relative.
  */
 public final class PhoenixMoveArt {
@@ -100,26 +98,27 @@ public final class PhoenixMoveArt {
     // ------------------------------------------------------------------------------------------------------ Fujiazami
 
     /**
-     * The blue fire gathering round the feet at (x, y, z) before the dash ({@code ticks} into the charge, of {@link #FUJI_CHARGE}):
-     * tongues licking up in a ring that draws in and grows, a ring of flame on the ground.
+     * 3.7.5 (the owner: "I dont like the fire particles from the moves"): the blue fire gathering round the feet at (x, y, z) before the
+     * dash ({@code ticks} into the charge): the house's fire (PhoenixBlast's flame puffs) licking up round the feet, drawing in, a ring.
      */
     public static void fujiCharge(FireMesh.Sink sink, double x, double y, double z, double ticks, double big, int seed) {
         double f = Math.min(1.0, ticks / FUJI_CHARGE);
-        double r = (1.1 - 0.6 * f) * big;
+        double r = (1.0 - 0.5 * f) * big;
         FireMesh.ring(sink, x, y + 0.05, z, 0, 1, 0, r + 0.2, 0.35 * big, 0.1, 0x2DB8EC, 0.6 * f);
-        for (int k = 0; k < 8; k++) {
-            double a = 2 * Math.PI * (k + 0.3 * FireMesh.rand(seed, k)) / 8.0 + ticks * 0.15;
-            double life = 6.0 + 2.0 * FireMesh.rand(seed, k + 8);
-            double age = (ticks + life * FireMesh.rand(seed, k + 16)) % life;
-            PhoenixFire.tongue(sink, x + Math.cos(a) * r, y, z + Math.sin(a) * r, -Math.cos(a) * 0.04, 0.0, -Math.sin(a) * 0.04, age, life,
-                (0.6 + 0.8 * f) * big, k % 3 == 0, seed + k * 13 + (int) ((ticks + life * FireMesh.rand(seed, k + 16)) / life));
+        // (a step coarser: round the phoenix they burn beside its own model, in a phone's budget)
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * 0.7;
+        for (int k = 0; k < 5; k++) {
+            double a = 2 * Math.PI * (k + 0.3 * FireMesh.rand(seed, k)) / 5.0 + ticks * 0.15;
+            PhoenixBlast.flames(sink, x + Math.cos(a) * r, y, z + Math.sin(a) * r, (0.6 + 0.5 * f) * big, f, ticks, seed + k * 5);
         }
+        FireMesh.quality = quality;
     }
 
     /**
-     * The streak of fire left along the dash from (x, y, z) along (dx, dy, dz) (the whole way), the one dashing {@code got} of the way
-     * along it: tongues standing along the path behind them, licking up and back and burning down from the start, a white shock ring
-     * on the ground where it set off; {@code ticks} since the dash began.
+     * The fire left along the dash from (x, y, z) along (dx, dy, dz) (the whole way), the one dashing {@code got} of the way along it:
+     * flames standing along the path behind them, burning down from the start; a white shock ring where it set off; {@code ticks} since
+     * the dash began.
      */
     public static void fujiTrail(FireMesh.Sink sink, double x, double y, double z, double dx, double dy, double dz, double got, double ticks,
                                  double big, int seed) {
@@ -127,111 +126,38 @@ public final class PhoenixMoveArt {
         if (len < 0.1) {
             return;
         }
-        double ux = dx / len;
-        double uz = dz / len;
-        // the start's shock: a white ring running out over the ground and gone in 8 ticks
         if (ticks < 8.0) {
             double f = ticks / 8.0;
             FireMesh.ring(sink, x, y + 0.08, z, 0, 1, 0, (0.8 + 3.2 * f) * big, 0.55 * big, 0.25, 0xF4FBFF, 0.85 * (1.0 - f));
-            FireMesh.ring(sink, x, y + 0.08, z, 0, 1, 0, (0.5 + 2.0 * f) * big, 0.3 * big, 0.1, 0xD2FBFF, 0.6 * (1.0 - f));
         }
-        int n = (int) Math.max(8, Math.min(24, len * 2.0));
+        int n = (int) Math.max(5, Math.min(12, len * 0.9));
         for (int k = 0; k < n; k++) {
             double u = (k + 0.5) / n;
             if (u > got) {
                 break;
             }
-            // each tongue born as the dasher passes it, lives 14 ticks, the side ones fanned out (the reference's band of flame along
-            // the dash, taller than the one dashing)
             double born = u / Math.max(1.0E-3, got) * Math.min(ticks, FUJI_DASH);
             double age = ticks - born;
-            double life = 14.0 + 4.0 * FireMesh.rand(seed, k);
-            if (age < 0.0 || age > life) {
-                continue;
-            }
-            double side = (FireMesh.rand(seed, k + 30) - 0.5) * 1.2 * big;
-            double px = x + dx * u - uz * side;
-            double pz = z + dz * u + ux * side;
-            PhoenixFire.tongue(sink, px, y + dy * u + 0.1 + 0.6 * big * FireMesh.rand(seed, k + 40), pz, -ux * 0.08, 0.0, -uz * 0.08, age, life,
-                (1.4 + 1.0 * FireMesh.rand(seed, k + 50)) * big, FireMesh.rand(seed, k + 60) < 0.3, seed + k * 7);
-        }
-        // the band's light along it, fading from its start
-        for (int k = 0; k < 4; k++) {
-            double u = (k + 0.5) / 4.0;
-            if (u > got) {
-                break;
-            }
-            double fade = Math.max(0.0, 1.0 - (ticks - u * FUJI_DASH) / 14.0);
-            FireMesh.shell(sink, x + dx * u, y + dy * u + 0.9 * big, z + dz * u, 1.4 * big, 0x46DDF5, 0.18 * fade, 0.0);
+            double burn = 1.0 - Math.max(0.0, Math.min(1.0, (age - 4.0) / 14.0));
+            PhoenixBlast.flames(sink, x + dx * u, y + dy * u, z + dz * u, 1.2 * big, burn, ticks, seed + k * 11);
         }
     }
 
     /**
-     * The comet of fire round the one dashing at (x, y, z) (their middle) along (wx, wy, wz) (unit): a white-hot core, a sheath of
-     * tongues streaming back off them, cyan and gold; {@code big} 1 for the human, about 2 for the phoenix (the reference's screen-filling
-     * burst as it rams).
+     * The one dashing at (x, y, z) (their middle) wrapped in fire, going (wx, wy, wz) (unit): the house's fireball round them, its tail
+     * of fire burning down behind; {@code big} 1 for the human, more for the phoenix.
      */
     public static void fujiSheath(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double ticks, double big,
                                   int seed) {
-        double sx = -wz;
-        double sz = wx;
-        double sl = Math.sqrt(sx * sx + sz * sz);
-        if (sl < 1.0E-4) {
-            sx = 1.0;
-            sz = 0.0;
-            sl = 1.0;
-        }
-        sx /= sl;
-        sz /= sl;
-        int n = big > 1.5 ? 18 : 12;
-        for (int k = 0; k < n; k++) {
-            double a = 2 * Math.PI * k / n + ticks * 0.6;
-            // a ring round it set a little ahead of it, so the flames streaming back wrap it whole (the comet's head)
-            double r = (0.45 + 0.45 * FireMesh.rand(seed, k)) * big;
-            double ahead = (0.3 + 0.5 * FireMesh.rand(seed, k + 40)) * big;
-            double ox = sx * Math.cos(a) * r + wx * ahead;
-            double oy = Math.sin(a) * r + wy * ahead;
-            double oz = sz * Math.cos(a) * r + wz * ahead;
-            double life = 5.0 + 2.0 * FireMesh.rand(seed, k + 10);
-            double age = (ticks + life * FireMesh.rand(seed, k + 20)) % life;
-            PhoenixFire.tongue(sink, x + ox, y + oy, z + oz, -wx * 0.35, -wy * 0.35, -wz * 0.35, age, life, (1.3 + 0.8 * FireMesh.rand(seed, k + 30)) * big,
-                k % 3 == 1, seed + k * 11 + (int) ((ticks + life * FireMesh.rand(seed, k + 20)) / life));
-        }
-        PhoenixFire.glow(sink, new double[] {x, y, z, x - wx * big, y - wy * big, z - wz * big}, 2, 1.6 * big, ticks);
+        PhoenixBlast.fireball(sink, x + wx * 0.4 * big, y + wy * 0.4 * big, z + wz * 0.4 * big, wx, wy, wz, 0.9 * big, ticks, 4.0 * big, seed);
     }
 
-    /**
-     * The end of the dash at (x, y, z) facing (wx, wz) (flat, unit), {@code ticks} after it (the GIF's 36 to 54): a great spray of
-     * blue and gold tongues flung forward and up, a dome of white smoke swelling and thinning, thin white shock arcs round it.
-     */
+    /** The end of the dash at (x, y, z) facing (wx, wz), {@code ticks} after it: an explosion of the phoenix's fire (PhoenixBlast). */
     public static void fujiBurst(FireMesh.Sink sink, double x, double y, double z, double wx, double wz, double ticks, double big, int seed) {
-        if (ticks < 0.0 || ticks > FUJI_BURST) {
+        if (ticks < 0.0 || ticks > FUJI_BURST + 10) {
             return;
         }
-        double f = ticks / FUJI_BURST;
-        double out = 1.0 - Math.pow(1.0 - f, 2.2);
-        // the smoke dome
-        FireMesh.shell(sink, x, y, z, (0.8 + 2.6 * out) * big, 0xE6EEF4, 0.32 * (1.0 - f), 0.05 * (1.0 - f));
-        // the spray: tongues flung out in a fan ahead and up
-        for (int k = 0; k < 22; k++) {
-            double a = (FireMesh.rand(seed, k) - 0.5) * 2.6;
-            double up = 0.25 + 0.9 * FireMesh.rand(seed, k + 40);
-            double ca = Math.cos(a);
-            double sa = Math.sin(a);
-            double fx = wx * ca - wz * sa;
-            double fz = wz * ca + wx * sa;
-            double reach = (0.6 + 2.8 * out) * big * (0.6 + 0.6 * FireMesh.rand(seed, k + 80));
-            PhoenixFire.tongue(sink, x + fx * reach, y + up * reach * 0.6, z + fz * reach, fx * 0.12, up * 0.05, fz * 0.12, ticks, FUJI_BURST,
-                (1.1 + 1.0 * FireMesh.rand(seed, k + 90)) * big * (1.0 - 0.3 * f), FireMesh.rand(seed, k + 99) < 0.35, seed + k * 17);
-        }
-        // the shock arcs (the GIF's 45 to 54): thin white crescents round it, opening out
-        if (ticks > 4.0 && ticks < 16.0) {
-            double g = (ticks - 4.0) / 12.0;
-            for (int k = 0; k < 3; k++) {
-                double r = (1.4 + 2.4 * g + k * 0.5) * big;
-                FireMesh.arc(sink, x, y + 0.6 * big, z, wx, 0.0, wz, r, 0.12 * big, k * 2.1 + ticks * 0.08, 1.9, 0.3, 0xFFFFFF, 0.7 * (1.0 - g));
-            }
-        }
+        PhoenixBlast.explosion(sink, x + wx * 0.5, y, z + wz * 0.5, 2.4 * big, ticks, seed);
     }
 
     // ------------------------------------------------------------------------------------------------------ Talon Slam
@@ -264,69 +190,41 @@ public final class PhoenixMoveArt {
         }
     }
 
-    /** The burning leg from the hip (hx, hy, hz) to the foot (fx, fy, fz): a tube of blue fire, tongues licking off it. */
+    /** The burning leg from the hip (hx, hy, hz) to the foot (fx, fy, fz): flame puffs along it, the most at the foot. */
     public static void legFire(FireMesh.Sink sink, double hx, double hy, double hz, double fx, double fy, double fz, double ticks, double amount,
                                int seed) {
         if (amount < 0.02) {
             return;
         }
-        double dx = fx - hx;
-        double dy = fy - hy;
-        double dz = fz - hz;
-        MochiArt.tubeBegin();
-        for (int i = 0; i <= 6; i++) {
-            double t = i / 6.0;
-            double swell = 1.0 + 0.18 * Math.sin(t * 8.0 - ticks * 1.1);
-            double end = Math.sqrt(Math.max(0.0, Math.sin(Math.PI * Math.min(1.0, 0.1 + t * 0.85))));
-            MochiArt.tubePoint(hx + dx * t, hy + dy * t, hz + dz * t, 0.2 * amount * Math.max(0.4, end) * swell);
-        }
-        MochiArt.tube(sink, 8, PhoenixFire.CYAN_TUBE, 1.6, ticks * 0.3);
-        for (int k = 0; k < 4; k++) {
-            double t = 0.3 + 0.2 * k;
-            double life = 6.0 + 2.0 * FireMesh.rand(seed, k);
-            double age = (ticks + life * FireMesh.rand(seed, k + 5)) % life;
-            PhoenixFire.tongue(sink, hx + dx * t, hy + dy * t, hz + dz * t, 0.0, 0.0, 0.0, age, life, 0.6 * amount, k == 2,
-                seed + k * 9 + (int) ((ticks + life * FireMesh.rand(seed, k + 5)) / life));
+        for (int k = 0; k < 3; k++) {
+            double t = 0.3 + 0.35 * k;
+            double r = (0.22 + 0.08 * k) * amount;
+            PhoenixBlast.puff(sink, hx + (fx - hx) * t, hy + (fy - hy) * t, hz + (fz - hz) * t, r, 0.0, 1.0, 0.0, 0.9, 0.25, 0.95, 0.6, 1.0,
+                ticks * 1.6 + k, seed + k, k == 2);
         }
     }
 
     /**
-     * The slam at (x, y, z) (on the ground), {@code ticks} after it (the GIF's 57 to 84): a white flash dome, a blast of blue and gold
-     * flame thrown up and out, then the crater: the ground scorched dark blue and a wall of blue flames licking up round its rim, burning
-     * down over {@link #TALON_CRATER} ticks.
+     * The slam at (x, y, z) (on the ground), {@code ticks} after it: a real explosion (PhoenixBlast.explosion: the flash, the fire ball
+     * going to smoke, the shock shell and ring, sparks and rocks), then the crater: the ground scorched dark blue and blue fire burning
+     * round its rim, burning down over {@link #TALON_CRATER} ticks.
      */
     public static void talonBlast(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, int seed) {
+        talonBlast(sink, x, y, z, ticks, radius, seed, 1.0, 8);
+    }
+
+    /** As above, {@code share} of the blast's fire puffs, {@code rim} flames burning round the crater. */
+    static void talonBlast(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, int seed, double share, int rim) {
         if (ticks < 0.0 || ticks > TALON_CRATER) {
             return;
         }
-        // the flash (white, a few ticks)
-        if (ticks < 6.0) {
-            double f = ticks / 6.0;
-            FireMesh.shell(sink, x, y + 0.3, z, radius * (0.5 + 1.0 * f), 0xFFFFFF, 0.35 * (1.0 - f), 0.25 * (1.0 - f));
-        }
-        // the blast: tongues thrown up and out
-        if (ticks < 18.0) {
-            double f = ticks / 18.0;
-            double out = 1.0 - Math.pow(1.0 - f, 2.0);
-            for (int k = 0; k < 14; k++) {
-                double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k)) / 14.0;
-                double r = radius * (0.2 + 0.8 * out) * (0.6 + 0.5 * FireMesh.rand(seed, k + 20));
-                PhoenixFire.tongue(sink, x + Math.cos(a) * r, y + 0.2 + 1.5 * out * FireMesh.rand(seed, k + 40), z + Math.sin(a) * r, Math.cos(a) * 0.1,
-                    0.08, Math.sin(a) * 0.1, ticks, 18.0, 2.2 * (1.0 - 0.4 * f), FireMesh.rand(seed, k + 60) < 0.35, seed + k * 21);
-            }
-        }
-        // the crater: the scorch (a dark blue disc, its edge soft) and the wall of fire round its rim
+        PhoenixBlast.explosion(sink, x, y + 0.6, z, radius * 0.9, ticks, seed, share);
         double burn = ticks < 8.0 ? ticks / 8.0 : Math.max(0.0, 1.0 - (ticks - 8.0) / (TALON_CRATER - 8.0));
         FireMesh.ring(sink, x, y + 0.04, z, 0, 1, 0, radius * 0.5, radius * 1.05, 0.0, 0x0D2A6A, 0.55 * burn);
         FireMesh.ring(sink, x, y + 0.05, z, 0, 1, 0, radius * 0.95, 0.6, 0.12, 0x2DB8EC, 0.6 * burn);
-        int n = 16;
-        for (int k = 0; k < n; k++) {
-            double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k + 70)) / n;
-            double life = 8.0 + 3.0 * FireMesh.rand(seed, k + 75);
-            double start = life * FireMesh.rand(seed, k + 80);
-            double age = (ticks + start) % life;
-            PhoenixFire.tongue(sink, x + Math.cos(a) * radius, y + 0.05, z + Math.sin(a) * radius, -Math.cos(a) * 0.02, 0.0, -Math.sin(a) * 0.02,
-                age, life, (1.5 + 1.0 * FireMesh.rand(seed, k + 85)) * burn, k % 4 == 0, seed + k * 5 + (int) ((ticks + start) / life));
+        for (int k = 0; k < rim; k++) {
+            double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k + 70)) / rim;
+            PhoenixBlast.flames(sink, x + Math.cos(a) * radius, y, z + Math.sin(a) * radius, 1.3, burn, ticks, seed + k * 13);
         }
     }
 
@@ -361,25 +259,24 @@ public final class PhoenixMoveArt {
         }
     }
 
-    /** The grab's whirl round (x, y, z), {@code ticks} into it (the GIF's 27 to 42): white rings sweeping round, tilted, opening out. */
+    /**
+     * 3.7.5 (the owner: "the phoenix should never do a 360"): the seize at (x, y, z), {@code ticks} into it: a white flash ring where the
+     * claws strike (no whirl round: the phoenix carries them a moment and throws them).
+     */
     public static void hawkWhirl(FireMesh.Sink sink, double x, double y, double z, double ticks) {
-        if (ticks < 0.0 || ticks > HAWK_WHIRL + 6) {
+        if (ticks < 0.0 || ticks > 10.0) {
             return;
         }
-        double f = ticks / (HAWK_WHIRL + 6.0);
-        double a = 1.0 - f;
-        for (int k = 0; k < 3; k++) {
-            double r = 2.0 + 1.8 * f + 0.6 * k;
-            FireMesh.arc(sink, x, y + (k - 1) * 0.5, z, 0.15 * k, 1.0, 0.1, r, 0.18, ticks * 0.6 + k * 2.0, 3.8, 0.3, 0xFFFFFF, 0.7 * a);
-        }
-        FireMesh.ring(sink, x, y - 0.8, z, 0, 1, 0, 1.5 + 3.0 * f, 0.5, 0.2, 0xF4FBFF, 0.5 * a);
+        double f = ticks / 10.0;
+        FireMesh.ring(sink, x, y, z, 0, 1, 0, 0.8 + 2.4 * f, 0.4, 0.2, 0xFFFFFF, 0.8 * (1.0 - f));
+        FireMesh.shell(sink, x, y, z, 0.6 + 1.6 * f, 0xFFFFFF, 0.0, 0.7 * (1.0 - f));
     }
 
     // ------------------------------------------------------------------------------------------------------ 3.7.3: Phoenix Inferno
 
     /**
-     * A kick of the barrage from the hip (hx, hy, hz) out along (wx, wz) (flat, unit), {@code ticks} after it (the GIF's 20 to 56: the leg
-     * a blur of fire, white arcs of air in front): the burning leg thrust out and back, a white crescent of air ahead of the foot.
+     * A kick of the barrage from the hip (hx, hy, hz) out along (wx, wz), {@code ticks} after it: the foot a puff of fire thrust out and
+     * back, a white crescent and ring of air ahead of it; {@code up} the last kick.
      */
     public static void kick(FireMesh.Sink sink, double hx, double hy, double hz, double wx, double wz, double ticks, boolean up, int seed) {
         if (ticks < 0.0 || ticks > 6.0) {
@@ -390,43 +287,21 @@ public final class PhoenixMoveArt {
         double fx = hx + wx * 0.75 * out;
         double fy = hy + rise * out - 0.1;
         double fz = hz + wz * 0.75 * out;
-        legFire(sink, hx, hy, hz, fx, fy, fz, ticks, 1.2 * out + 0.3, seed);
+        legFire(sink, hx, hy, hz, fx, fy, fz, ticks, 0.8 * out + 0.3, seed);
         double a = 1.0 - ticks / 6.0;
         FireMesh.arc(sink, fx + wx * 0.3, fy, fz + wz * 0.3, wx, up ? 0.8 : 0.0, wz, 0.7 + 1.3 * (ticks / 6.0), 0.16, seed * 0.7, 2.8, 0.25,
             0xFFFFFF, 0.85 * a);
         FireMesh.ring(sink, fx + wx * 0.2, fy, fz + wz * 0.2, wx, 0.0, wz, 0.4 + 1.1 * (ticks / 6.0), 0.16, 0.05, 0xF4FBFF, 0.65 * a);
-        // a tongue flung off the foot along the kick
-        PhoenixFire.tongue(sink, fx, fy, fz, wx * 0.2, 0.05, wz * 0.2, ticks, 6.0, 0.9, seed % 3 == 0, seed * 3);
     }
 
-    /**
-     * Blue fire bursting round the one at (x, y, z) (their middle), {@code ticks} into it, {@code big} its size: the wings and tail forming
-     * (the GIF's 12 to 16), or the landing burst scattering them (76 to 84): tongues flung out all round, gold embers.
-     */
+    /** Blue fire bursting round (x, y, z), {@code ticks} into it, {@code big} its size: a small explosion of the phoenix's fire. */
     public static void burst(FireMesh.Sink sink, double x, double y, double z, double ticks, double big, int seed) {
-        if (ticks < 0.0 || ticks > 14.0) {
-            return;
-        }
-        double f = ticks / 14.0;
-        double out = 1.0 - Math.pow(1.0 - f, 2.0);
-        for (int k = 0; k < 12; k++) {
-            double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k)) / 12.0;
-            double up = FireMesh.rand(seed, k + 20) * 1.6 - 0.5;
-            double r = (0.4 + 1.6 * out) * big;
-            PhoenixFire.tongue(sink, x + Math.cos(a) * r, y + up * r * 0.5, z + Math.sin(a) * r, Math.cos(a) * 0.1, 0.02, Math.sin(a) * 0.1, ticks,
-                14.0, (0.8 + 0.6 * FireMesh.rand(seed, k + 40)) * big, k % 3 == 0, seed + k * 13);
-        }
-        for (int k = 0; k < 10; k++) {
-            double a = 2 * Math.PI * FireMesh.rand(seed, k + 60);
-            double r = (0.6 + 2.4 * out) * big * FireMesh.rand(seed, k + 70);
-            FireMesh.shard(sink, x + Math.cos(a) * r, y + 0.4 + 1.2 * out * FireMesh.rand(seed, k + 80) * big, z + Math.sin(a) * r, 0.12, ticks * 0.4,
-                seed + k, 0xFFD84E, 1.0 - f);
-        }
+        PhoenixBlast.explosion(sink, x, y, z, 1.4 * big, ticks, seed);
     }
 
     /**
-     * The phoenix's whirlpool of fire round (x, y, z) (the ground under it), {@code ticks} into it (Inferno2's 12 to 96): rings of cyan and
-     * white fire swirling round it at heights, tongues racing round it and up, white flames flung round; {@code radius} out.
+     * The phoenix's whirlpool of fire round (x, y, z) (the ground under it), {@code ticks} into it: bands of cyan, white and gold fire
+     * swirling round it at heights, the house's flame puffs racing round it and climbing; {@code radius} out.
      */
     public static void vortex(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, int seed) {
         if (ticks < 0.0 || ticks > VORTEX + 6) {
@@ -435,143 +310,67 @@ public final class PhoenixMoveArt {
         double in = Math.min(1.0, ticks / 8.0);
         double out = Math.min(1.0, Math.max(0.0, (VORTEX + 6 - ticks) / 8.0));
         double k0 = Math.min(in, out);
-        // the swirling bands (cyan and white), each at its height and speed
         for (int b = 0; b < 7; b++) {
             double h = 0.3 + b * 0.85;
             double r = radius * (0.6 + 0.09 * b) * (0.6 + 0.4 * in);
             double turn = ticks * (0.28 + 0.04 * b) + b * 1.1;
-            int col = b % 2 == 0 ? 0x46DDF5 : 0xF4FBFF;
+            int col = b % 3 == 2 ? 0xFFBE2E : b % 2 == 0 ? 0x46DDF5 : 0xF4FBFF;
             FireMesh.arc(sink, x, y + h, z, 0.06 * Math.sin(b), 1.0, 0.06 * Math.cos(b), r, 1.5 - 0.1 * b, turn, 4.4, 0.8, col, (0.6 - 0.04 * b) * k0);
         }
         FireMesh.ring(sink, x, y + 0.05, z, 0, 1, 0, radius * 0.9, radius * 0.5, 0.0, 0x2DB8EC, 0.3 * k0);
-        // the tongues racing round it, climbing
-        int n = 20;
-        for (int k = 0; k < n; k++) {
-            double a = 2 * Math.PI * k / n + ticks * 0.32;
+        // (nine flame puffs round it, a step coarser, beside the phoenix's own model: a phone's budget)
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * 0.7;
+        for (int k = 0; k < 9; k++) {
+            double a = 2 * Math.PI * k / 9.0 + ticks * 0.32;
             double r = radius * (0.55 + 0.4 * FireMesh.rand(seed, k));
-            double h = (FireMesh.rand(seed, k + 20) * 4.0 + 0.12 * ((ticks + k * 3) % 20));
+            double h = 0.4 + 4.0 * ((FireMesh.rand(seed, k + 20) + ticks * 0.012) % 1.0);
             double c = Math.cos(a);
             double sn = Math.sin(a);
-            double life = 8.0 + 3.0 * FireMesh.rand(seed, k + 30);
-            double age = (ticks + life * FireMesh.rand(seed, k + 40)) % life;
-            PhoenixFire.tongue(sink, x + c * r, y + h, z + sn * r, -sn * 0.18, 0.02, c * 0.18, age, life, (1.7 + 1.1 * FireMesh.rand(seed, k + 50)) * k0,
-                k % 4 == 0, seed + k * 7 + (int) ((ticks + life * FireMesh.rand(seed, k + 40)) / life));
+            PhoenixBlast.puff(sink, x + c * r, y + h, z + sn * r, (1.0 + 0.6 * FireMesh.rand(seed, k + 50)) * k0, -sn, 0.3, c, 1.3, 0.3, 0.8, 0.7,
+                0.9 * k0, ticks * 1.5 + k, seed + k * 7, k % 3 == 0);
         }
+        FireMesh.quality = quality;
     }
 
-    /**
-     * The phoenix's blast at (x, y, z) (on the ground), {@code ticks} after it (Inferno2's 132 to 168): a flash, a great burst of blue, white
-     * and gold fire thrown up and out, rubble of the ground flung up and falling, the scorched crater with its rim of flame.
-     */
+    /** The phoenix's blast at (x, y, z) (on the ground), {@code ticks} after it: a great explosion and the burning crater (as the slam's). */
     public static void vortexBlast(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, int seed) {
         if (ticks < 0.0 || ticks > VORTEX_BLAST_LIFE) {
             return;
         }
-        talonBlast(sink, x, y, z, ticks * (TALON_CRATER / (double) VORTEX_BLAST_LIFE), radius, seed);
-        if (ticks < 12.0) {
-            double f = ticks / 12.0;
-            FireMesh.shell(sink, x, y + 1.0, z, radius * (0.6 + 0.8 * f), 0x8FF0FA, 0.35 * (1.0 - f), 0.15 * (1.0 - f));
-            for (int k = 0; k < 10; k++) {
-                double a = 2 * Math.PI * (k + 0.3 * FireMesh.rand(seed, k + 90)) / 10.0;
-                double r = radius * 0.5 * f;
-                PhoenixFire.tongue(sink, x + Math.cos(a) * r, y + 0.5 + 3.0 * f * FireMesh.rand(seed, k + 95), z + Math.sin(a) * r, Math.cos(a) * 0.05,
-                    0.15, Math.sin(a) * 0.05, ticks, 12.0, 2.6 * (1.0 - 0.3 * f), k % 3 == 0, seed + k * 29);
-            }
-        }
-        // the rubble: blocks of the ground flung up and falling back
-        for (int k = 0; k < 14; k++) {
-            double a = 2 * Math.PI * FireMesh.rand(seed, k + 110);
-            double v = 0.25 + 0.25 * FireMesh.rand(seed, k + 120);
-            double up = 0.45 + 0.35 * FireMesh.rand(seed, k + 130);
-            double tt = Math.min(ticks, 30.0);
-            double h = up * tt - 0.04 * tt * tt;
-            if (h < -0.2) {
-                continue;
-            }
-            double r = 0.5 + v * tt;
-            int stone = FireMesh.rand(seed, k + 140) < 0.5 ? 0x6E6A66 : 0x8A847C;
-            FireMesh.shard(sink, x + Math.cos(a) * r, y + Math.max(0.0, h), z + Math.sin(a) * r, 0.35 + 0.3 * FireMesh.rand(seed, k + 150), tt * 0.3,
-                seed + k, stone, 1.0);
-        }
+        // 3.7.5: beside the diving phoenix (its own model most of a phone's budget): the blast's fire puffs a step coarser and fewer, four
+        // flames on its rim
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * 0.5;
+        talonBlast(sink, x, y, z, ticks * (TALON_CRATER / (double) VORTEX_BLAST_LIFE), radius, seed, 0.5, 4);
+        FireMesh.quality = quality;
     }
 
     // ------------------------------------------------------------------------------------------------------ 3.7.3: Bluebird
 
     /**
      * Bluebird's ball of yellow and blue fire at (x, y, z), {@code size} across its heart, {@code ticks} its clock (the GIF's 42 to 140:
-     * crackling with rays, swirling gold arcs, growing): a white-hot heart, cyan and gold tongues licking out of it, rays of light
-     * crackling off it, gold arcs swirling round.
+     * growing): 3.7.5 the house's fireball (PhoenixBlast.fireball) held still, its heart white-hot in a cyan blaze, sparks of cyan and
+     * gold shed, white crescents turning round it.
      */
     public static void blueBall(FireMesh.Sink sink, double x, double y, double z, double size, double ticks, int seed) {
         blueBall(sink, x, y, z, size, ticks, seed, false);
     }
 
-    /** As above; {@code lite}: a ball in flight (the phoenix throws four at once: fewer tongues and rays, one arc, no halo). */
+    /** As above ({@code lite} kept for the callers: every ball is the house's fireball now). */
     public static void blueBall(FireMesh.Sink sink, double x, double y, double z, double size, double ticks, int seed, boolean lite) {
-        FireMesh.shell(sink, x, y, z, size * 0.55, 0xFFFFFF, 0.9, 0.3);
-        if (!lite) {
-            FireMesh.shell(sink, x, y, z, size * 1.1, 0x8FF0FA, 0.35, 0.0);
-        }
-        int tongues = lite ? 5 : 7;
-        for (int k = 0; k < tongues; k++) {
-            double a = 2 * Math.PI * (k + 0.5 * FireMesh.rand(seed, k)) / tongues + ticks * 0.2;
-            double b = (FireMesh.rand(seed, k + 10) - 0.5) * 2.0;
-            double ux = Math.cos(a) * Math.cos(b);
-            double uy = Math.sin(b);
-            double uz = Math.sin(a) * Math.cos(b);
-            double life = 5.0 + 2.0 * FireMesh.rand(seed, k + 20);
-            double age = (ticks + life * FireMesh.rand(seed, k + 30)) % life;
-            PhoenixFire.tongue(sink, x + ux * size * 0.4, y + uy * size * 0.4, z + uz * size * 0.4, ux * 0.08, uy * 0.08, uz * 0.08, age, life,
-                size * (0.6 + 0.5 * FireMesh.rand(seed, k + 40)), k % 2 == 0, seed + k * 5 + (int) ((ticks + life * FireMesh.rand(seed, k + 30)) / life));
-        }
-        // the crackling rays (each a flicker of a few ticks), white and gold
-        for (int k = 0; k < (lite ? 4 : 8); k++) {
-            int round = (int) (ticks / 3.0);
-            double a = 2 * Math.PI * FireMesh.rand(seed + round, k);
-            double b = (FireMesh.rand(seed + round, k + 8) - 0.5) * 2.8;
-            FireMesh.ray(sink, x, y, z, Math.cos(a) * Math.cos(b), Math.sin(b), Math.sin(a) * Math.cos(b), size * (1.2 + 1.2 * FireMesh.rand(seed + round, k + 16)),
-                0.06 * size + 0.03, 0, 0.0, k % 2 == 0 ? 0xFFFFFF : 0xFFD84E, 0.8);
-        }
-        for (int k = 0; k < (lite ? 1 : 2); k++) {
-            FireMesh.arc(sink, x, y, z, Math.sin(ticks * 0.1 + k * 1.7), 1.0, Math.cos(ticks * 0.13 + k), size * (0.85 + 0.2 * k), 0.08 * size + 0.04,
-                ticks * 0.5 + k * 3.0, 2.6, 0.15, 0xFFBE2E, 0.75);
-        }
+        PhoenixBlast.fireball(sink, x, y, z, 0.0, 0.01, 0.0, size * 0.55, ticks, 0.0, seed);
     }
 
-    /** A ball in flight's trail: four tongues streaming back off it along (wx, wy, wz) (unit), cyan and gold. */
+    /** A ball in flight going (wx, wy, wz): the house's fireball's tail behind it (drawn by PhoenixBlast.fireball). */
     public static void blueTrail(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double ticks, double size,
                                  int seed) {
-        for (int k = 0; k < 3; k++) {
-            double life = 6.0;
-            double start = life * k / 3.0;
-            double age = (ticks + start) % life;
-            double a = 2 * Math.PI * k / 3.0 + ticks * 0.5;
-            double sx = -wz * Math.cos(a) * size * 0.35;
-            double sz = wx * Math.cos(a) * size * 0.35;
-            double sy = Math.sin(a) * size * 0.35;
-            PhoenixFire.tongue(sink, x + sx, y + sy, z + sz, -wx * 0.4, -wy * 0.4, -wz * 0.4, age, life, size * 1.3, k % 2 == 0,
-                seed + k * 3 + (int) ((ticks + start) / life));
-        }
+        PhoenixBlast.fireball(sink, x, y, z, wx, wy, wz, size * 0.55, ticks, 30.0, seed);
     }
 
-    /** Bluebird's blast at (x, y, z), {@code ticks} after it, {@code radius} out: a white flash, a burst of blue and gold fire, gold embers. */
+    /** Bluebird's blast (without its bird: PhoenixBlast.bird draws that) at (x, y, z), {@code ticks} after it. */
     public static void blueBoom(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, int seed) {
-        if (ticks < 0.0 || ticks > BLUE_BOOM) {
-            return;
-        }
-        double f = ticks / BLUE_BOOM;
-        if (ticks < 6.0) {
-            FireMesh.shell(sink, x, y, z, radius * (0.5 + 0.8 * ticks / 6.0), 0xFFFFFF, 0.35 * (1.0 - ticks / 6.0), 0.15 * (1.0 - ticks / 6.0));
-        }
-        FireMesh.ring(sink, x, y, z, 0, 1, 0, radius * (0.5 + 1.2 * f), 0.5, 0.2, 0x46DDF5, 0.7 * (1.0 - f));
-        // eight tongues flung out all round (the four balls' blasts can all burn at once beside the phoenix: kept light)
-        double out = 1.0 - Math.pow(1.0 - f, 2.0);
-        for (int k = 0; k < 8; k++) {
-            double a = 2 * Math.PI * (k + 0.4 * FireMesh.rand(seed, k)) / 8.0;
-            double up = FireMesh.rand(seed, k + 20) * 1.6 - 0.5;
-            double r = (0.3 + 1.2 * out) * radius * 0.7;
-            PhoenixFire.tongue(sink, x + Math.cos(a) * r, y + up * r * 0.5, z + Math.sin(a) * r, Math.cos(a) * 0.1, 0.02, Math.sin(a) * 0.1, ticks,
-                BLUE_BOOM, (0.8 + 0.6 * FireMesh.rand(seed, k + 40)) * radius * 0.6, k % 3 == 0, seed + k * 13);
-        }
+        PhoenixBlast.explosion(sink, x, y, z, radius * 0.7, ticks, seed);
     }
+
 }

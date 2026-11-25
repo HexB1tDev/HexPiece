@@ -42,6 +42,13 @@ public final class AstralArt {
      */
     public static int hide;
     static final SkinBox.Part[] SKINS = {SkinBox.RIGHT_ARM, SkinBox.LEFT_ARM, SkinBox.RIGHT_LEG, SkinBox.LEFT_LEG};
+    /**
+     * 3.7.5 (the owner: the projection "should adopt the player model of the player (its always assuming the player is steve model)"):
+     * whether the body drawn has the slim (three pixel) arms of its skin (AbstractClientPlayer.getModelName "slim"); the caller sets it.
+     */
+    public static boolean slim;
+    static final SkinBox.Part RIGHT_ARM_SLIM = new SkinBox.Part(40, 16, 3, 12, 4, 40, 32);
+    static final SkinBox.Part LEFT_ARM_SLIM = new SkinBox.Part(32, 48, 3, 12, 4, 48, 48);
 
     static final double[] C = new double[24];
     static final double[] W = new double[24];
@@ -73,11 +80,11 @@ public final class AstralArt {
         double sway = Math.sin(age * 0.067);
         set(pose, StyleRig.BODY, 0.0, 0.07 * bob, 0.0, 0.0, 0.0, 2.0 * sway, 4.0);
         set(pose, StyleRig.HEAD, 0.0, 0.0, 0.0, headPitch, headYaw, 0.0, 0.0);
-        double s = Math.max(0.0, Math.min(1.0, speed));
-        double swing = 40.0 * s * Math.sin(age * 0.6662);
+        // 3.7.5 (the owner: the projection "should not allow the arms to wobble when moving forward/back/sides"): the arms hang still
+        // whichever way it moves (no walking swing: a spirit floats, it does not walk); only the punch swings the right one
         double punch = Math.sin(Math.PI * Math.max(0.0, Math.min(1.0, attack)));
-        set(pose, StyleRig.RIGHT_ARM, 0.0, 0.0, 0.0, -swing - 75.0 * punch, -18.0 * punch, 3.0, 0.0);
-        set(pose, StyleRig.LEFT_ARM, 0.0, 0.0, 0.0, swing, 0.0, -3.0, 0.0);
+        set(pose, StyleRig.RIGHT_ARM, 0.0, 0.0, 0.0, -75.0 * punch, -18.0 * punch, 3.0, 0.0);
+        set(pose, StyleRig.LEFT_ARM, 0.0, 0.0, 0.0, 0.0, 0.0, -3.0, 0.0);
         set(pose, StyleRig.RIGHT_LEG, 0.0, 0.0, 0.0, 9.0 + 3.0 * sway, 0.0, 2.0, 6.0 + 3.0 * bob);
         set(pose, StyleRig.LEFT_LEG, 0.0, 0.0, 0.0, 13.0 - 3.0 * sway, 0.0, -2.0, 8.0 - 3.0 * bob);
     }
@@ -191,6 +198,17 @@ public final class AstralArt {
 
     /** Each box's faces (SkinBox.faces is built once here): [box][outer], boxes the head, the torso's halves, then each limb's halves. */
     static final int[][][][] FACES = new int[11][2][][];
+    /** 3.7.5: the slim arms' faces ([arm 0 right, 1 left][half][outer]). */
+    static final int[][][][][] SLIM_FACES = new int[2][2][2][][];
+
+    static {
+        for (int outer = 0; outer < 2; outer++) {
+            for (int half = 0; half < 2; half++) {
+                SLIM_FACES[0][half][outer] = SkinBox.faces(RIGHT_ARM_SLIM, outer == 1, half * 6, half * 6 + 6);
+                SLIM_FACES[1][half][outer] = SkinBox.faces(LEFT_ARM_SLIM, outer == 1, half * 6, half * 6 + 6);
+            }
+        }
+    }
 
     static {
         for (int outer = 0; outer < 2; outer++) {
@@ -226,8 +244,22 @@ public final class AstralArt {
                 for (int half = 0; half < 2; half++) {
                     double[] h = StyleRig.half(pose, PARTS[i], half == 1, g);
                     System.arraycopy(h, 0, C, 0, 24);
+                    boolean thin = slim && i < 2;
+                    if (thin) {
+                        // the slim arm: three pixels wide, its outer side drawn in by one (the right arm's -x side, the left's +x)
+                        for (int k = 0; k < 8; k++) {
+                            boolean outerSide = i == 0 ? (k & 1) == 0 : (k & 1) == 1;
+                            if (outerSide) {
+                                int other = k ^ 1;
+                                for (int r = 0; r < 3; r++) {
+                                    C[k * 3 + r] += (h[other * 3 + r] - h[k * 3 + r]) * 0.25;
+                                }
+                            }
+                        }
+                    }
                     double fade = !ghost || i < 2 || knightWash != 0 ? 1.0 : half == 0 ? THIGH : SHIN;
-                    box(skin, glow, place, FACES[3 + i * 2 + half][outer], alpha * fade, ghost, scale(shell, fade));
+                    box(skin, glow, place, thin ? SLIM_FACES[i][half][outer] : FACES[3 + i * 2 + half][outer], alpha * fade, ghost,
+                        scale(shell, fade));
                 }
             }
         }
