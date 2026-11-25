@@ -66,6 +66,13 @@ public final class PhoenixPreview {
         ImageIO.write(sheet, "png", new File(args[2]));
     }
 
+    /** 3.7.4: the motion the pose was made with (PhoenixForm.preview fills LAST_MOTION), for the feet in skin(). */
+    static final PhoenixForm.Motion PREVIEW_MO = new PhoenixForm.Motion();
+
+    static PhoenixForm.Motion previewMotion(String state, boolean ground) {
+        return PhoenixForm.LAST_MOTION != null ? PhoenixForm.LAST_MOTION : PREVIEW_MO;
+    }
+
     /** 3.7.2: where the human stand-in stands (a move scene moves it). */
     static double OX;
     static double OY;
@@ -424,7 +431,7 @@ public final class PhoenixPreview {
             PhoenixForm.pose(model, shape, pose, mo, beat, ticks / 20.0F);
             grow = Math.max(0.0F, PhoenixForm.grow(phase, ticks));
             float g = grow * PhoenixLook.SCALE;
-            float anchor = shape.shoulder + (shape.feet - shape.shoulder) * shaped;
+            float anchor = shape.shoulder + (shape.feetStand - shape.shoulder) * shaped;
             float rise = 1.4F * (1.0F - shaped);
             float[] p0 = {g, 0, 0, 0, 0, g, 0, rise - anchor * g, 0, 0, g, 0};
             System.arraycopy(p0, 0, place, 0, 12);
@@ -447,7 +454,7 @@ public final class PhoenixPreview {
             if (state.equals("rest") || state.equals("soar") || state.startsWith("t")) {
                 pose.skin(part, pos, nrm);
             } else {
-                PhoenixForm.skin(shape, pose, skinned.size() / 3, part, pos, nrm, ground ? 1.0F : 0.0F, (float) t);
+                PhoenixForm.skin(shape, pose, skinned.size() / 3, part, pos, nrm, previewMotion(state, ground), (float) t);
             }
             if (!state.equals("rest") && !state.startsWith("t")) {
                 PhoenixForm.flame(shape, model, part, pos, nrm, (float) t);
@@ -538,7 +545,7 @@ public final class PhoenixPreview {
                 DragonModel.Part part = model.parts[i];
                 float[] pos = new float[part.vertices() * 3];
                 float[] nrm = new float[part.vertices() * 3];
-                PhoenixForm.skin(shape, wp, i, part, pos, nrm, 0.0F, ticks / 20.0F);
+                PhoenixForm.skin(shape, wp, i, part, pos, nrm, wm, ticks / 20.0F);
                 PhoenixForm.flame(shape, i, part, pos, nrm, ticks / 20.0F);
                 float[] col = new float[part.vertices() * 4];
                 PhoenixLook.glowing(part.kind, tint);

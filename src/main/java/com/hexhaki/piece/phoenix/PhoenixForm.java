@@ -146,6 +146,26 @@ public final class PhoenixForm {
          * how far along its streamer it is (0 at the root, 1 at the tip).
          */
         public final float[][] straight;
+        /**
+         * 3.7.4 (the owner: "I dont like the walk animations and the feet of the bird"): the feet as modelled are the flight's (the toes
+         * curled down about 42 degrees, the claws pointing at the ground, the shank leaning forward): on the ground it stood on its claw
+         * tips like forks. Each leg and foot part's side (-1: none), whether it is the shank (moves with the leg only), and for the toes,
+         * their claws and scales: the pivot at the toe's root (rest y, z) and the turns that lay it flat on the ground (about x) and fan it
+         * out (about y); each foot's ankle (rest y, z); the shank's forward lean (degrees); the lowest point standing with the feet flat
+         * and level under it; the hip to the sole standing (model units).
+         */
+        public final int[] footSide;
+        public final boolean[] shank;
+        public final float[] toeX;
+        public final float[] toeY;
+        public final float[] toeZ;
+        public final float[] toeFlat;
+        public final float[] toeSpread;
+        public final float[] ankleY = new float[2];
+        public final float[] ankleZ = new float[2];
+        public final float legSlant;
+        public final float feetStand;
+        public final float legLength;
         /** The same, the line lying back along the ground behind it as it stands (its tip on the ground). */
         public final float[][] lying;
         public final float[] along;
@@ -293,6 +313,19 @@ public final class PhoenixForm {
             at.solve();
             this.chest = bodyBone < 0 ? (lo + hi) * 0.5F : at.global[bodyBone * 12 + 7] + 0.6F;
             this.shoulder = this.wing[0][0] < 0 ? this.chest : at.global[this.wing[0][0] * 12 + 7];
+            float[] feet = feet(m, at, this.leg);
+            this.footSide = FOOT_SIDE;
+            this.shank = FOOT_SHANK;
+            this.toeX = FOOT_X;
+            this.toeY = FOOT_Y;
+            this.toeZ = FOOT_Z;
+            this.toeFlat = FOOT_FLAT;
+            this.toeSpread = FOOT_SPREAD;
+            System.arraycopy(feet, 0, this.ankleY, 0, 2);
+            System.arraycopy(feet, 2, this.ankleZ, 0, 2);
+            this.legSlant = feet[4];
+            this.feetStand = feet[5];
+            this.legLength = feet[6];
             this.straight = new float[np][];
             this.lying = new float[np][];
             this.along = new float[np];
@@ -301,6 +334,182 @@ public final class PhoenixForm {
                 straighten(m, at, k, TAIL_GROUND[k], this.lying, this.along);
             }
         }
+    }
+
+    /** Scratch of feet() (the constructor's only), handed to the Shape's fields. */
+    private static int[] FOOT_SIDE;
+    private static boolean[] FOOT_SHANK;
+    private static float[] FOOT_X;
+    private static float[] FOOT_Y;
+    private static float[] FOOT_Z;
+    private static float[] FOOT_FLAT;
+    private static float[] FOOT_SPREAD;
+
+    /**
+     * 3.7.4: the feet read from the model (Shape.footSide and the rest): each foot's parts by name ("Foot L/R ...": the palm, the three
+     * forward toes, their claws and scales, the rear toe and its claw; "Leg L/R ... shank"); each toe's root (its highest point, by the
+     * palm) and its way to its tip; the turn about x that lays that way level (the forward toes' tips lifted, the rear toe's let down), a
+     * fan of 12 degrees for the outer toes. Returns the ankles (y, z), the shank's lean, the lowest point standing (the feet flat and
+     * level, the legs turned back by {@link #STAND_BACK} of the lean) and the hip to that sole.
+     */
+    static float[] feet(DragonModel m, DragonPose at, int[] legs) {
+        int np = m.parts.length;
+        FOOT_SIDE = new int[np];
+        FOOT_SHANK = new boolean[np];
+        FOOT_X = new float[np];
+        FOOT_Y = new float[np];
+        FOOT_Z = new float[np];
+        FOOT_FLAT = new float[np];
+        FOOT_SPREAD = new float[np];
+        java.util.Arrays.fill(FOOT_SIDE, -1);
+        float[] out = new float[7];
+        float slant = 0.0F;
+        float lowest = Float.MAX_VALUE;
+        float hipY = 0.0F;
+        for (int side = 0; side < 2; side++) {
+            String foot = side == 0 ? "Foot L" : "Foot R";
+            String legName = side == 0 ? "Leg L" : "Leg R";
+            // the toes first (each one's root and the turn laying it flat), then the parts that ride on them
+            float palmX = 0.0F;
+            float palmY = 0.0F;
+            float palmZ = 0.0F;
+            for (int i = 0; i < np; i++) {
+                DragonModel.Part part = m.parts[i];
+                if (part.name.startsWith(foot) && part.name.contains("palm")) {
+                    float[] c = centre(part);
+                    palmX = c[0];
+                    palmY = c[1];
+                    palmZ = c[2];
+                }
+            }
+            out[side] = palmY;
+            out[2 + side] = palmZ;
+            String[] toes = {"forward toe 0", "forward toe 1", "forward toe 2", "rear toe"};
+            String[][] riders = {{"pointed claw 0", "toe scale 0"}, {"pointed claw 1", "toe scale 1"}, {"pointed claw 2", "toe scale 2"}, {"rear claw"}};
+            for (int k = 0; k < toes.length; k++) {
+                int toe = -1;
+                for (int i = 0; i < np; i++) {
+                    if (m.parts[i].name.startsWith(foot) && m.parts[i].name.contains(toes[k])) {
+                        toe = i;
+                    }
+                }
+                if (toe < 0) {
+                    continue;
+                }
+                DragonModel.Part part = m.parts[toe];
+                // its root: the highest point; its tip: the farthest from the root
+                int nv = part.vertices();
+                int root = 0;
+                for (int v = 1; v < nv; v++) {
+                    if (part.pos[v * 3 + 1] > part.pos[root * 3 + 1]) {
+                        root = v;
+                    }
+                }
+                float rx = part.pos[root * 3];
+                float ry = part.pos[root * 3 + 1];
+                float rz = part.pos[root * 3 + 2];
+                float far = -1.0F;
+                float dy = 0.0F;
+                float dz = 0.0F;
+                for (int v = 0; v < nv; v++) {
+                    float ey = part.pos[v * 3 + 1] - ry;
+                    float ez = part.pos[v * 3 + 2] - rz;
+                    if (ey * ey + ez * ez > far) {
+                        far = ey * ey + ez * ez;
+                        dy = ey;
+                        dz = ez;
+                    }
+                }
+                float flat = Math.abs(dz) < 1.0E-4F ? 0.0F : (float) Math.toDegrees(Math.atan(dy / dz)) * 0.92F;
+                float[] c = centre(part);
+                float spread = k == 3 ? 0.0F : -12.0F * Math.signum(c[0] - palmX) * (Math.abs(c[0] - palmX) > 0.08F ? 1.0F : 0.0F);
+                for (int i = 0; i < np; i++) {
+                    String name = m.parts[i].name;
+                    boolean mine = i == toe;
+                    for (String r : riders[k]) {
+                        mine |= name.startsWith(foot) && name.contains(r);
+                    }
+                    if (mine) {
+                        FOOT_X[i] = rx;
+                        FOOT_Y[i] = ry;
+                        FOOT_Z[i] = rz;
+                        FOOT_FLAT[i] = flat;
+                        FOOT_SPREAD[i] = spread;
+                    }
+                }
+            }
+            for (int i = 0; i < np; i++) {
+                String name = m.parts[i].name;
+                if (name.startsWith(foot) || name.startsWith(legName)) {
+                    FOOT_SIDE[i] = side;
+                    FOOT_SHANK[i] = name.startsWith(legName);
+                    if (FOOT_SHANK[i]) {
+                        // the shank's lean: from its highest point to its lowest
+                        DragonModel.Part part = m.parts[i];
+                        int hi = 0;
+                        int lo = 0;
+                        for (int v = 1; v < part.vertices(); v++) {
+                            hi = part.pos[v * 3 + 1] > part.pos[hi * 3 + 1] ? v : hi;
+                            lo = part.pos[v * 3 + 1] < part.pos[lo * 3 + 1] ? v : lo;
+                        }
+                        float ly = part.pos[hi * 3 + 1] - part.pos[lo * 3 + 1];
+                        float lz = part.pos[hi * 3 + 2] - part.pos[lo * 3 + 2];
+                        slant = (float) Math.toDegrees(Math.atan2(lz, ly));
+                    }
+                }
+            }
+            int bone = legs[side];
+            hipY = bone < 0 ? palmY + 1.0F : at.global[bone * 12 + 7];
+            float hipZ = bone < 0 ? palmZ : at.global[bone * 12 + 11];
+            // standing: the legs turned back (the ankle round the hip), the feet laid flat and level: the lowest point of them
+            double back = Math.toRadians(-slant * STAND_BACK);
+            double ay = palmY - hipY;
+            double az = palmZ - hipZ;
+            double ankleY = hipY + ay * Math.cos(back) - az * Math.sin(back);
+            for (int i = 0; i < np; i++) {
+                DragonModel.Part part = m.parts[i];
+                if (FOOT_SIDE[i] != side || FOOT_SHANK[i]) {
+                    continue;
+                }
+                for (int v = 0; v < part.vertices(); v++) {
+                    float y = part.pos[v * 3 + 1];
+                    float z = part.pos[v * 3 + 2];
+                    if (FOOT_FLAT[i] != 0.0F) {
+                        double f = Math.toRadians(FOOT_FLAT[i]);
+                        float ty = y - FOOT_Y[i];
+                        float tz = z - FOOT_Z[i];
+                        y = FOOT_Y[i] + (float) (ty * Math.cos(f) - tz * Math.sin(f));
+                    }
+                    lowest = (float) Math.min(lowest, ankleY + (y - palmY));
+                }
+            }
+        }
+        out[4] = slant;
+        out[5] = lowest == Float.MAX_VALUE ? 0.0F : lowest;
+        out[6] = hipY - out[5];
+        return out;
+    }
+
+    static float[] centre(DragonModel.Part part) {
+        float[] c = new float[3];
+        int n = Math.max(1, part.vertices());
+        for (int v = 0; v < part.vertices(); v++) {
+            for (int r = 0; r < 3; r++) {
+                c[r] += part.pos[v * 3 + r] / n;
+            }
+        }
+        return c;
+    }
+
+    /** How much of the shank's forward lean is taken back standing (its feet under its body). */
+    static final float STAND_BACK = 0.6F;
+    /** Walking: each leg's swing each way (degrees), how high a foot is lifted (model units). */
+    static final float WALK_SWING = 45.0F;
+    static final float WALK_LIFT = 0.45F;
+
+    /** Blocks walked for one stride (a step of each foot): the feet planted (a little over, so the step is never fussy). */
+    public static float stride(Shape sh) {
+        return (float) (4.0 * sh.legLength * Math.sin(Math.toRadians(WALK_SWING)) * PhoenixLook.SCALE * 1.15);
     }
 
     /**
@@ -447,10 +656,17 @@ public final class PhoenixForm {
 
     /**
      * A part skinned (DragonPose.skin), a tail streamer's flame first laid out on its straight line: streaming down behind it in the air
-     * (Shape.straight), lying back along the ground {@code ground} (0 to 1) of the way as it stands (Shape.lying); a slow wave running
-     * down it so it is never stiff. One thread (the render thread; the previews and tests one each).
+     * (Shape.straight), lying back along the ground as it stands ({@code mo}'s perch, Shape.lying); a slow wave running down it so it is
+     * never stiff. 3.7.4: a foot's parts laid flat and levelled on the ground ({@link #feet}: each toe turned flat about its root and
+     * fanned, curling as the foot is lifted; the whole foot turned about its ankle against its leg's turn; the foot and shank lifted in a
+     * step). One thread (the render thread; the previews and tests one each).
      */
-    public static void skin(Shape sh, DragonPose pose, int index, DragonModel.Part part, float[] pos, float[] nrm, float ground, float seconds) {
+    public static void skin(Shape sh, DragonPose pose, int index, DragonModel.Part part, float[] pos, float[] nrm, Motion mo, float seconds) {
+        if (sh.footSide[index] >= 0) {
+            foot(sh, pose, index, part, pos, nrm, mo);
+            return;
+        }
+        float ground = mo.perch;
         float[] air = sh.straight[index];
         float[] lie = sh.lying[index];
         if (air == null || lie == null) {
@@ -488,6 +704,73 @@ public final class PhoenixForm {
             restNrm[v * 3] = anx + (lie[0] * nx + lie[1] * ny + lie[2] * nz - anx) * g;
             restNrm[v * 3 + 1] = any + (lie[4] * nx + lie[5] * ny + lie[6] * nz - any) * g;
             restNrm[v * 3 + 2] = anz + (lie[8] * nx + lie[9] * ny + lie[10] * nz - anz) * g;
+        }
+        pose.skin(part, restPos, restNrm, pos, nrm);
+    }
+
+    /** A foot part skinned from its rest laid flat, levelled, lifted (see {@link #skin}). */
+    static void foot(Shape sh, DragonPose pose, int index, DragonModel.Part part, float[] pos, float[] nrm, Motion mo) {
+        int side = sh.footSide[index];
+        int nv = part.vertices();
+        if (restPos.length < nv * 3) {
+            restPos = new float[nv * 3];
+            restNrm = new float[nv * 3];
+        }
+        float curl = clamp(mo.curl[side]);
+        float flat = clamp(mo.flat);
+        boolean toe = !sh.shank[index] && sh.toeFlat[index] != 0.0F;
+        double ta = Math.toRadians(toe ? sh.toeFlat[index] * flat * (1.0F - curl) - Math.signum(sh.toeFlat[index]) * 22.0F * curl : 0.0F);
+        double sa = Math.toRadians(toe ? sh.toeSpread[index] * flat : 0.0F);
+        double la = Math.toRadians(sh.shank[index] ? 0.0F : mo.level[side]);
+        double tc = Math.cos(ta);
+        double ts = Math.sin(ta);
+        double sc = Math.cos(sa);
+        double ss = Math.sin(sa);
+        double lc = Math.cos(la);
+        double ls = Math.sin(la);
+        float ay = sh.ankleY[side];
+        float az = sh.ankleZ[side];
+        float lift = mo.lift[side];
+        for (int v = 0; v < nv; v++) {
+            double x = part.pos[v * 3];
+            double y = part.pos[v * 3 + 1];
+            double z = part.pos[v * 3 + 2];
+            double nx = part.nrm[v * 3];
+            double ny = part.nrm[v * 3 + 1];
+            double nz = part.nrm[v * 3 + 2];
+            if (toe) {
+                // laid flat about its root (about x), then fanned (about y)
+                double py = y - sh.toeY[index];
+                double pz = z - sh.toeZ[index];
+                y = sh.toeY[index] + py * tc - pz * ts;
+                z = sh.toeZ[index] + py * ts + pz * tc;
+                double qy = ny * tc - nz * ts;
+                nz = ny * ts + nz * tc;
+                ny = qy;
+                double px = x - sh.toeX[index];
+                pz = z - sh.toeZ[index];
+                x = sh.toeX[index] + px * sc + pz * ss;
+                z = sh.toeZ[index] - px * ss + pz * sc;
+                double qx = nx * sc + nz * ss;
+                nz = -nx * ss + nz * sc;
+                nx = qx;
+            }
+            if (la != 0.0) {
+                // the foot kept level against its leg's turn, about the ankle
+                double py = y - ay;
+                double pz = z - az;
+                y = ay + py * lc - pz * ls;
+                z = az + py * ls + pz * lc;
+                double qy = ny * lc - nz * ls;
+                nz = ny * ls + nz * lc;
+                ny = qy;
+            }
+            restPos[v * 3] = (float) x;
+            restPos[v * 3 + 1] = (float) (y + lift);
+            restPos[v * 3 + 2] = (float) z;
+            restNrm[v * 3] = (float) nx;
+            restNrm[v * 3 + 1] = (float) ny;
+            restNrm[v * 3 + 2] = (float) nz;
         }
         pose.skin(part, restPos, restNrm, pos, nrm);
     }
@@ -594,10 +877,9 @@ public final class PhoenixForm {
     static final float TUCK_ELBOW = 75.0F;
     static final float TUCK_HAND = 100.0F;
     static final float TUCK_TIP = 30.0F;
-    /** How far each leg swings forward and back walking (degrees). */
-    static final float STEP = 24.0F;
-    /** Blocks walked for one stride (a step of each foot), at its full size. */
-    public static final float STRIDE = 2.6F;
+
+    /** The motion the last pose was made with (its feet's turns: {@link #skin}), for the previews and tests. */
+    public static Motion LAST_MOTION;
 
     /** How far the rest's raised wings are let down to hold them out level as arms (degrees). */
     static final float ARMS_LEVEL = 36.0F;
@@ -636,6 +918,15 @@ public final class PhoenixForm {
         public float reach;
         /** 3.7.3: 0 to 1: the wings held spread wide and still (spinning in its whirlpool, gathering Bluebird). */
         public float spread;
+        /**
+         * 3.7.4, worked out by {@link #pose} for {@link #skin}: how flat the feet are laid (0 the flight's curled toes, 1 flat on the
+         * ground), each foot's turn about its ankle keeping it level (degrees), how high it is lifted (model units), how far its toes
+         * curl (0 to 1: lifted in a step).
+         */
+        public float flat;
+        public final float[] level = new float[2];
+        public final float[] lift = new float[2];
+        public final float[] curl = new float[2];
     }
 
     /**
@@ -648,6 +939,7 @@ public final class PhoenixForm {
      * diving the wings sweep back folded.
      */
     public static void pose(DragonModel m, Shape sh, DragonPose pose, Motion mo, float beat, float seconds) {
+        LAST_MOTION = mo;
         pose.rest();
         // 3.7.0: shaped as the human it comes out of (the change): no beat, no lean, upright, its wings out level where the arms were
         float human = 1.0F - clamp(mo.form);
@@ -672,6 +964,7 @@ public final class PhoenixForm {
         // the ram's wings swept back as the dive's (without the dive's nose down)
         float back = Math.max(dive, ram);
         tuck *= (1.0F - sweep) * (1.0F - ram) * (1.0F - reach) * (1.0F - spread);
+        float planted = 0.0F;
         float flap = (1.0F - glide) * (1.0F - back) * (1.0F - human) * (1.0F - tuck) * (1.0F - 0.85F * flare) * (1.0F - land) * (1.0F - sweep)
             * (1.0F - 0.6F * reach) * (1.0F - 0.85F * spread);
         float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch);
@@ -709,7 +1002,8 @@ public final class PhoenixForm {
             turn(pose, sh, w[0], m0 * human * ARMS_LEVEL, 0, 0, 1);
             // 3.7.1 folded at its sides on the ground: the wing let down and swept back along the body, the elbow back, the hand
             // forward along the forearm, the tip back; bouncing a little with each step
-            turn(pose, sh, w[0], m0 * tuck * (TUCK_DOWN + 5.0F * walk * (float) Math.sin(2.0F * mo.stride)), 0, 0, 1);
+            // 3.7.4: walking, the folded wings held up off the ground (a bird keeps them clear of its feet), bouncing with each step
+            turn(pose, sh, w[0], m0 * tuck * (TUCK_DOWN - 22.0F * walk + 5.0F * walk * (float) Math.sin(2.0F * mo.stride)), 0, 0, 1);
             turn(pose, sh, w[0], m0 * tuck * TUCK_BACK, 0, 1, 0);
             turn(pose, sh, w[1], m0 * tuck * TUCK_ELBOW, 0, 1, 0);
             turn(pose, sh, w[3], -m0 * tuck * TUCK_HAND, 0, 1, 0);
@@ -721,16 +1015,45 @@ public final class PhoenixForm {
             // the legs tucked up and back in flight, hanging under the hover
             // (about the model's x a negative turn swings a hanging part back: the head is toward -Z)
             turn(pose, sh, sh.leg[s], -45.0F * speed - 30.0F * dive + 6.0F * flap * (float) Math.sin(beat - 2.0F), 1, 0, 0);
-            // 3.7.1: walking, each leg stepping forward and back in turn; braking, both claws reaching forward for the ground
-            turn(pose, sh, sh.leg[s], m0 * STEP * walk * (float) Math.sin(mo.stride) + 38.0F * flare - 12.0F * land + 70.0F * reach
-                - 20.0F * ram, 1, 0, 0);
+            // 3.7.4 (the owner: "I dont like the walk animations and the feet of the bird"): on the ground the legs turned back under
+            // the body, the feet flat and level; walking, a bird's gait: each foot planted while the body passes over it (its leg
+            // swinging back as far as the body goes: no sliding), then lifted, its toes curling, swung forward and set down ahead;
+            // braking, both claws reaching forward for the ground
+            float phase = mo.stride + (s == 0 ? 0.0F : (float) Math.PI);
+            float u = (float) (((phase / (2.0 * Math.PI)) % 1.0 + 1.0) % 1.0);
+            float gait;
+            float lifted;
+            if (u < 0.5F) {
+                gait = WALK_SWING * (1.0F - 4.0F * u);
+                lifted = 0.0F;
+            } else {
+                float v = (u - 0.5F) * 2.0F;
+                gait = -WALK_SWING + 2.0F * WALK_SWING * smooth(v);
+                lifted = (float) Math.sin(Math.PI * v);
+            }
+            float ground = perch * (1.0F - human);
+            float standing = ground * (-sh.legSlant * STAND_BACK + walk * gait);
+            turn(pose, sh, sh.leg[s], standing + 38.0F * flare - 12.0F * land + 70.0F * reach - 20.0F * ram, 1, 0, 0);
+            mo.level[s] = -standing;
+            mo.lift[s] = ground * walk * lifted * WALK_LIFT;
+            mo.curl[s] = ground * walk * lifted;
+            if (u < 0.5F) {
+                // the planted leg slanting fore or aft lowers the hip over it: the body rides that arc
+                planted = sh.legLength * (1.0F - (float) Math.cos(Math.toRadians(gait)));
+            }
         }
+        mo.flat = perch * (1.0F - human);
         // walking: the body bobbing up as each foot passes under it, rolling over the standing foot, leaning a little into the walk;
         // the neck pumping forward and back as a bird's does; braking: reared back; the touchdown: dipping forward
-        pose.t[sh.root * 3 + 1] += walk * (0.18F * Math.abs((float) Math.sin(mo.stride)) - 0.1F) - 0.35F * land;
-        turn(pose, sh, sh.root, 4.0F * walk * (float) Math.sin(mo.stride), 0, 0, 1);
-        turn(pose, sh, sh.root, -9.0F * walk + 16.0F * flare - 14.0F * land + 14.0F * sweep, 1, 0, 0);
-        turn(pose, sh, sh.neck, 9.0F * walk * (float) Math.sin(2.0F * mo.stride + 0.7F) + 10.0F * land - 8.0F * flare, 1, 0, 0);
+        // the body highest as each standing leg passes under it, rolling and swaying over the standing foot (a big bird's waddle),
+        // leaning a little into the walk; the head thrust forward with each step and held (a bird's head bob)
+        pose.t[sh.root * 3 + 1] += -walk * planted - 0.35F * land;
+        pose.t[sh.root * 3] += walk * 0.16F * (float) Math.cos(mo.stride);
+        turn(pose, sh, sh.root, 5.0F * walk * (float) Math.cos(mo.stride), 0, 0, 1);
+        // (3.7.4: walking upright, chest out, as it stands: leaning into the walk laid it on its belly)
+        turn(pose, sh, sh.root, 4.0F * walk + 16.0F * flare - 14.0F * land + 14.0F * sweep, 1, 0, 0);
+        float bob = (float) Math.sin(2.0F * mo.stride);
+        turn(pose, sh, sh.neck, 11.0F * walk * Math.max(-0.4F, bob) + 10.0F * land - 8.0F * flare, 1, 0, 0);
         // the body: lifted with each downstroke, rocked by it; leaning into the flight at speed and nose down in the dive
         pose.t[sh.root * 3 + 1] += 0.32F * flap * (1.0F - perch) * (float) Math.sin(beat - 1.0F);
         turn(pose, sh, sh.root, -65.0F * speed - 30.0F * dive, 1, 0, 0);
@@ -748,9 +1071,6 @@ public final class PhoenixForm {
         }
         pose.solve();
     }
-
-    /** The previews' walk: the stride as at the full size. */
-    static final float SCALE_WALK = 1.0F;
 
     /** 3.7.1: the touchdown's rise and fall, {@code ticks} after the claws touch (0 to 1: up in 3 ticks, gone by 14). */
     public static float landing(float ticks) {
@@ -796,7 +1116,7 @@ public final class PhoenixForm {
             case "walk" -> {
                 mo.perch = 1.0F;
                 mo.walk = 1.0F;
-                mo.stride = seconds * (float) (2 * Math.PI) * 4.3F / (STRIDE * SCALE_WALK);
+                mo.stride = seconds * (float) (2 * Math.PI) * 4.3F / stride(shape);
                 lift = 0.0F;
             }
             case "flare" -> {
@@ -846,10 +1166,10 @@ public final class PhoenixForm {
         }
         float s = PhoenixLook.SCALE;
         boolean ground = state.equals("perch") || state.equals("walk") || state.equals("land");
-        float base = ground ? -shape.feet * s : -shape.floor * s + lift;
+        float base = ground ? -shape.feetStand * s : -shape.floor * s + lift;
         if (state.equals("landseq")) {
             // the claws over the ground by the lift, on it from the touchdown
-            base = -shape.feet * s + lift;
+            base = -shape.feetStand * s + lift;
         }
         float[] p = {s, 0, 0, 0, 0, s, 0, base, 0, 0, s, 0};
         System.arraycopy(p, 0, place, 0, 12);

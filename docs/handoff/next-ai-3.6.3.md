@@ -1137,3 +1137,20 @@ temporary phoenix wings and a gold tail of fire at their back. Frame numbers at 
   they never meet), the human's, the lists.
 - GIFs sent: phoenix_inferno, phoenix_inferno_phoenix, phoenix_bluebird, phoenix_bluebird_phoenix.
 - Next: the owner's word on the moves in game. Item 4 of Mochi note 22 still unknown.
+
+## AG. The owner, after the GIF page (https://claude.ai/artifact/8rkQGG2vrMuSZoZWoJdoB7, all the Phoenix GIFs): "I dont like the walk
+## animations and the feet of the bird"
+- 3.7.4 (done): the cause, seen in renders: the model's feet are posed for flight (forward toes curled about 42 degrees down, the
+  claws at the bottom, the shank leaning 39 degrees forward), so standing it rested on its claw tips like forks; the walk swung each
+  rigid leg from the hip, the feet tilting and sliding, the body leaning into the walk (laid on its belly), the folded wings dragging.
+  PhoenixForm.feet (Shape.footSide, shank, toeX/Y/Z, toeFlat, toeSpread, ankleY/Z, legSlant, feetStand, legLength): each foot's 19
+  parts found by name, each toe's root (highest point) and the turn that lays it level (atan(dy/dz) * 0.92: forward toes' tips
+  lifted, the rear toe's let down), the outer toes fanned 12 degrees, the claws and scales riding on their toe. Motion.flat, level[2],
+  lift[2], curl[2] worked out by pose(): on the ground the legs turned back by STAND_BACK 0.6 of the lean, the feet flat and kept level
+  (turned about the ankle against the leg's turn); walking, the gait: stance (u < 0.5) the leg swings from +WALK_SWING 45 to -45 as
+  far as the body goes (no sliding), swing the foot lifted WALK_LIFT 0.45 with its toes curling (22 degrees past the model's curl)
+  and set down ahead; PhoenixForm.stride(shape) = 4 * leg * sin(45) * SCALE * 1.15 (about 1.9 blocks); the body rides the planted
+  leg's arc (down by leg * (1 - cos)), rolls 5 and sways 0.16 over it, leans back 4 (upright), the head bob 11 at twice the stride;
+  the folded wings 22 degrees higher walking. PhoenixForm.skin now takes the Motion (the feet: PhoenixForm.foot; LAST_MOTION for the
+  previews and tests); the standing anchor is Shape.feetStand. Test: the feet found and laid flat, the leg and stride sane.
+- GIFs: phoenix_walk (new), phoenix_feet (standing, orbiting the front and side), phoenix_land (redone); the GIF page updated.

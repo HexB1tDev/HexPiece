@@ -985,6 +985,28 @@ public final class DragonTests {
             }
         }
         Check.that(laid == 98, "the three tail streamers' 98 flames laid straight (" + laid + ")");
+        // 3.7.4 (the owner: "I dont like the walk animations and the feet of the bird"): both feet found (each with its shank, palm, three
+        // forward toes laid flat by lifting their tips, the rear toe by letting its tip down), standing on flat feet higher than on
+        // the curled claws, legs long enough to walk on, a stride the feet can keep up with
+        int feet = 0;
+        int shanks = 0;
+        boolean toes = true;
+        for (int i = 0; i < m.parts.length; i++) {
+            if (shape.footSide[i] >= 0) {
+                feet++;
+                shanks += shape.shank[i] ? 1 : 0;
+                String name = m.parts[i].name;
+                if (name.contains("forward toe")) {
+                    toes &= shape.toeFlat[i] > 20.0F && shape.toeFlat[i] < 70.0F;
+                } else if (name.contains("rear toe")) {
+                    toes &= shape.toeFlat[i] < -20.0F;
+                }
+            }
+        }
+        Check.that(feet == 2 * 19 && shanks == 2 && toes && shape.feetStand > shape.feet && shape.legLength > 0.6F
+            && com.hexhaki.piece.phoenix.PhoenixForm.stride(shape) > 0.8F && com.hexhaki.piece.phoenix.PhoenixForm.stride(shape) < 3.0F,
+            "the phoenix's feet laid flat to stand on, its legs and stride (" + feet + " parts, stand " + shape.feetStand + ", leg "
+                + shape.legLength + ", stride " + com.hexhaki.piece.phoenix.PhoenixForm.stride(shape) + ")");
         Check.that(com.hexhaki.piece.phoenix.PhoenixForm.landing(-1.0F) == 0.0F && com.hexhaki.piece.phoenix.PhoenixForm.landing(3.0F) > 0.99F
             && com.hexhaki.piece.phoenix.PhoenixForm.landing(14.0F) < 0.01F, "the touchdown rises in 3 ticks and is gone by 14");
         for (String state : states) {
@@ -996,7 +1018,8 @@ public final class DragonTests {
                     com.hexhaki.piece.dragon.DragonModel.Part part = m.parts[i];
                     float[] pos = new float[part.vertices() * 3];
                     float[] nrm = new float[part.vertices() * 3];
-                    com.hexhaki.piece.phoenix.PhoenixForm.skin(shape, pose, i, part, pos, nrm, k / 7.0F, k * 0.13F);
+                    com.hexhaki.piece.phoenix.PhoenixForm.skin(shape, pose, i, part, pos, nrm, com.hexhaki.piece.phoenix.PhoenixForm.LAST_MOTION,
+                        k * 0.13F);
                     com.hexhaki.piece.phoenix.PhoenixForm.flame(shape, i, part, pos, nrm, k * 0.13F);
                     for (float v : pos) {
                         ok &= Float.isFinite(v);

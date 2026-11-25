@@ -268,7 +268,7 @@ public final class PhoenixFx {
         mo.land = PhoenixForm.landing(clock - entry.landed);
         entry.strideO = entry.stride;
         if (ground) {
-            entry.stride += (float) (flat / PhoenixForm.STRIDE * 2.0 * Math.PI);
+            entry.stride += (float) (flat / (shape == null ? 1.8F : PhoenixForm.stride(shape)) * 2.0 * Math.PI);
             if (entry.stride > 2000.0F * Math.PI) {
                 entry.stride -= (float) (2000.0 * Math.PI);
                 entry.strideO -= (float) (2000.0 * Math.PI);
@@ -464,7 +464,7 @@ public final class PhoenixFx {
         float s = PhoenixLook.SCALE * grow;
         // in flight its chest held at the player's middle; standing, its claws on the ground; 3.7.0: shaped as the human (the
         // change), its wings' roots where the shoulders are, so the wings open out of the arms
-        float anchor = shape.chest + (shape.feet - shape.chest) * mo.perch;
+        float anchor = shape.chest + (shape.feetStand - shape.chest) * mo.perch;
         float rise = 0.9F * (1.0F - mo.perch);
         anchor = shape.shoulder + (anchor - shape.shoulder) * shaped;
         rise = SHOULDER + (rise - SHOULDER) * shaped;
@@ -488,7 +488,7 @@ public final class PhoenixFx {
         float upZ = ny.z;
         for (int i = 0; i < m.parts.length; i++) {
             DragonModel.Part part = m.parts[i];
-            PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], mo.perch, seconds);
+            PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], mo, seconds);
             PhoenixForm.flame(shape, i, part, entry.pos[i], entry.nrm[i], seconds);
             emit(out, shape, i, part, entry.pos[i], entry.nrm[i], mat, upX, upY, upZ, seconds);
         }
@@ -610,7 +610,7 @@ public final class PhoenixFx {
                 continue;
             }
             DragonModel.Part part = m.parts[i];
-            PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], 0.0F, seconds);
+            PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], mo, seconds);
             PhoenixForm.flame(shape, i, part, entry.pos[i], entry.nrm[i], seconds);
             emit(out, shape, i, part, entry.pos[i], entry.nrm[i], mat, ny.x, ny.y, ny.z, seconds);
         }

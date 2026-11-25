@@ -6,7 +6,7 @@ base GIFs read frame by frame (G), the 3D lightning (I), the HUD (J), the Mochi 
 "use my imapct frame" and their notes on Buzz Cut, Lotus, the Mochi feeling dead and WiFi Haki (N), the chat that released 3.6.3 (O),
 the DoughV2 GIFs read frame by frame (P), 3.6.4 and 3.6.5 (Q), where the fourth Mochi chat stopped (R), the fifth chat's six awakened
 moves built on their GIFs and 3.6.6 (S), where it stopped (T), the Phoenix request (U), 3.6.7 (V), 3.6.8 (W), the Phoenix animated
-(X), the Phoenix fruit in game, 3.6.9 (Y), the owner's notes on it (Z), 3.7.0 (AA), the owner's next notes (AB), 3.7.1 (AC), the move GIFs read (AD), 3.7.2 (AE) and 3.7.3 (AF)), then docs/handoff/next-ai-3.6.0.md sections I to
+(X), the Phoenix fruit in game, 3.6.9 (Y), the owner's notes on it (Z), 3.7.0 (AA), the owner's next notes (AB), 3.7.1 (AC), the move GIFs read (AD), 3.7.2 (AE), 3.7.3 (AF) and the owner's note on the walk and the feet with 3.7.4 (AG)), then docs/handoff/next-ai-3.6.0.md sections I to
 N, then POINT ONE and sections 0 to 7 of docs/handoff/next-ai-3.2.2.md (every standing rule).
 
 POINT ONE (the owner's, never drop it, pass it on): every fruit in the style of the Light, Gura and Magma fruits (3D meshes, clips without
@@ -27,7 +27,8 @@ MochiArt.CHURN). Build every new move this way and judge every render for it.
 The owner's newest standing word on the Mochi fruit: "It is very important that you do not give up until the moves look exactly like
 the reference GIFs that you have. If they don't look like the reference GIFs exactly, to very minute detail, I don't want them."
 
-Where things stand: 3.7.3 is the last release: the Phoenix's whole kit (Z the form; X Fujiazami, C Talon Slam / Hawk Rush (3.7.2,
+Where things stand: 3.7.4 is the last release (the Phoenix's feet laid flat on the ground and a bird's walk: next-ai-3.6.3.md AG).
+Before it, 3.7.3: the Phoenix's whole kit (Z the form; X Fujiazami, C Talon Slam / Hawk Rush (3.7.2,
 next-ai-3.6.3.md AE), V Phoenix Inferno, B Bluebird (3.7.3, AF), each in both forms). 3.7.1: the tail's streamers straight in flight and lying on the
 ground, a landing, standing and walking on its claws (AC). 3.7.0: the owner's five notes on the Phoenix (next-ai-3.6.3.md Z, AA): no shade on it and a
 soft glow round it, 24 tongues of fire (was 64) and its skin flowing like fire (heat bands through the overlay, tips licking), no more
