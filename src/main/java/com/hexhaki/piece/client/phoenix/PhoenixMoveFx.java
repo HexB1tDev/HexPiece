@@ -43,6 +43,8 @@ final class PhoenixMoveFx {
         int ticks;
         /** For an effect that follows its user: whether it is still on. */
         boolean on = true;
+        /** 3.7.3: a ball's heart, a blast's radius. */
+        double size;
     }
 
     /** A phoenix's pose for a move (server/PhoenixMoves.ACT_*), since when, for how long. */
@@ -93,14 +95,23 @@ final class PhoenixMoveFx {
                 // a later phase ends what followed the user before it (the dash's comet, the burning leg, the rush)
                 if (m.kind() == PhoenixMoves.TALON && phase == PhoenixMoves.TALON_BLAST || m.kind() == PhoenixMoves.HAWK
                     && (phase == PhoenixMoves.HAWK_END || phase == PhoenixMoves.HAWK_GRAB) || m.kind() == PhoenixMoves.FUJI
-                    && phase == PhoenixMoves.FUJI_END) {
+                    && phase == PhoenixMoves.FUJI_END || m.kind() == PhoenixMoves.INFERNO && phase == PhoenixMoves.VORTEX_BLAST) {
                     for (Fx f : FX) {
                         if (f.user == m.user() && f.kind == m.kind()) {
                             f.on = false;
                         }
                     }
                 }
-                if (m.kind() == PhoenixMoves.HAWK && phase == PhoenixMoves.HAWK_END) {
+                // 3.7.3: Bluebird: a ball fired ends the charge; its blast ends the ball (by its id)
+                if (m.kind() == PhoenixMoves.BLUE) {
+                    for (Fx f : FX) {
+                        if (f.kind == PhoenixMoves.BLUE && (f.phase == PhoenixMoves.BLUE_CHARGE && f.user == m.user() && phase != PhoenixMoves.BLUE_BOOM
+                            || f.phase == PhoenixMoves.BLUE_FIRE && phase == PhoenixMoves.BLUE_BOOM && f.id == m.id())) {
+                            f.on = false;
+                        }
+                    }
+                }
+                if (m.kind() == PhoenixMoves.HAWK && phase == PhoenixMoves.HAWK_END || m.kind() == PhoenixMoves.BLUE && phase == PhoenixMoves.BLUE_OFF) {
                     return;
                 }
                 Fx f = new Fx();
@@ -117,6 +128,7 @@ final class PhoenixMoveFx {
                 f.az = m.az();
                 f.bird = m.by() > 0.5F;
                 f.ticks = m.ticks();
+                f.size = m.size();
                 FX.add(f);
             }
         }
@@ -131,6 +143,14 @@ final class PhoenixMoveFx {
                 : 12;
             case PhoenixMoves.HAWK -> f.phase == PhoenixMoves.HAWK_RUSH ? PhoenixMoveArt.HAWK_MOST + 4 : f.phase == PhoenixMoves.HAWK_GRAB
                 ? PhoenixMoveArt.HAWK_WHIRL + 6 : PhoenixMoveArt.HAWK_WRAP + 4;
+            case PhoenixMoves.INFERNO -> switch (f.phase) {
+                case PhoenixMoves.VORTEX_ON -> PhoenixMoveArt.VORTEX + 8;
+                case PhoenixMoves.VORTEX_BLAST -> PhoenixMoveArt.VORTEX_BLAST_LIFE;
+                case PhoenixMoves.VORTEX_RISE, PhoenixMoves.VORTEX_DIVE -> 14;
+                default -> 14;
+            };
+            case PhoenixMoves.BLUE -> f.phase == PhoenixMoves.BLUE_BOOM ? PhoenixMoveArt.BLUE_BOOM : f.phase == PhoenixMoves.BLUE_CHARGE
+                ? PhoenixMoveArt.BLUE_MOST + 30 : f.ticks + 2;
             default -> 0;
         };
     }
@@ -150,7 +170,8 @@ final class PhoenixMoveFx {
 
     /** Whether an effect follows its user (it ends when the next phase comes). */
     static boolean follows(Fx f) {
-        return f.kind == PhoenixMoves.TALON && f.phase == PhoenixMoves.TALON_TOP || f.kind == PhoenixMoves.HAWK && f.phase == PhoenixMoves.HAWK_RUSH;
+        return f.kind == PhoenixMoves.TALON && f.phase == PhoenixMoves.TALON_TOP || f.kind == PhoenixMoves.HAWK && f.phase == PhoenixMoves.HAWK_RUSH
+            || f.kind == PhoenixMoves.BLUE && f.phase != PhoenixMoves.BLUE_BOOM || f.kind == PhoenixMoves.INFERNO && f.phase == PhoenixMoves.VORTEX_DIVE;
     }
 
     /** How long the temporary wings take to come and go (ticks). */
@@ -171,6 +192,7 @@ final class PhoenixMoveFx {
         mo.sweep = 0.0F;
         mo.ram = 0.0F;
         mo.reach = 0.0F;
+        mo.spread = 0.0F;
         bank[0] = 0.0F;
         Act a = ACTS.get(user);
         if (a == null) {
@@ -193,6 +215,12 @@ final class PhoenixMoveFx {
                 mo.reach = k;
                 return 360.0F * (f * f * (3.0F - 2.0F * f));
             }
+            case PhoenixMoves.ACT_SPIN -> {
+                // 3.7.3: spinning in its whirlpool, faster as it goes, wings spread
+                mo.spread = k;
+                return 1080.0F * f * f;
+            }
+            case PhoenixMoves.ACT_SPREAD -> mo.spread = k;
             default -> {
             }
         }
@@ -219,6 +247,8 @@ final class PhoenixMoveFx {
                 case PhoenixMoves.FUJI -> fuji(sink, f, age, x, y, z, at, big);
                 case PhoenixMoves.TALON -> talon(sink, f, age, x, y, z, at, user, partial);
                 case PhoenixMoves.HAWK -> hawk(sink, f, age, x, y, z, at, level);
+                case PhoenixMoves.INFERNO -> inferno(sink, f, age, x, y, z, at);
+                case PhoenixMoves.BLUE -> blue(sink, f, age, x, y, z, user, partial, cam);
                 default -> {
                 }
             }
@@ -306,6 +336,69 @@ final class PhoenixMoveFx {
                 }
                 PhoenixFire.touchdown(sink, x, y - 1.0, z, age * 0.7, f.id);
             }
+        }
+    }
+
+    /** 3.7.3: Phoenix Inferno's fire: the wings forming, each kick, the landing burst; the whirlpool, the rise, the dive, the blast. */
+    static void inferno(FireMesh.Sink sink, Fx f, float age, double x, double y, double z, Vec3 at) {
+        switch (f.phase) {
+            case PhoenixMoves.INFERNO_FORM, PhoenixMoves.INFERNO_LAND -> PhoenixMoveArt.burst(sink, x, y + (f.phase == PhoenixMoves.INFERNO_LAND ? 0.8 : 0.0),
+                z, age, 1.0, f.id);
+            case PhoenixMoves.INFERNO_KICK -> {
+                double l = Math.sqrt(f.ax * f.ax + f.az * f.az);
+                // the hip (on the kicking side) and the way of the kick
+                double wx = l < 1.0E-3 ? 0.0 : f.ax / l;
+                double wz = l < 1.0E-3 ? 1.0 : f.az / l;
+                PhoenixMoveArt.kick(sink, x - wz * 0.12, y, z + wx * 0.12, wx, wz, age, f.bird, f.id);
+            }
+            case PhoenixMoves.VORTEX_ON -> PhoenixMoveArt.vortex(sink, x, y, z, age, PhoenixMoveArt.VORTEX_RADIUS, f.id);
+            case PhoenixMoves.VORTEX_RISE -> PhoenixMoveArt.talonLeap(sink, x, y, z, age);
+            case PhoenixMoves.VORTEX_DIVE -> {
+                double l = Math.sqrt(f.ax * f.ax + f.ay * f.ay + f.az * f.az);
+                if (at != null && f.on && l > 1.0E-3) {
+                    PhoenixMoveArt.fujiSheath(sink, at.f_82479_, at.f_82480_ + 1.4, at.f_82481_, f.ax / l, f.ay / l, f.az / l, age, 1.8, f.id);
+                }
+            }
+            default -> PhoenixMoveArt.vortexBlast(sink, x, y, z, age, PhoenixMoveArt.VORTEX_BLAST, f.id);
+        }
+    }
+
+    /** 3.7.3: Bluebird's fire: the ball growing in front of the chest (the phoenix: the flames gathering, the orb), a ball in flight, its blast. */
+    static void blue(FireMesh.Sink sink, Fx f, float age, double x, double y, double z, Entity user, float partial, Vec3 cam) {
+        switch (f.phase) {
+            case PhoenixMoves.BLUE_CHARGE -> {
+                if (user == null || !f.on) {
+                    return;
+                }
+                Vec3 eye = user.m_20299_(partial);
+                Vec3 look = user.m_20252_(partial);
+                double cx = eye.f_82479_ - cam.f_82479_;
+                double cy = eye.f_82480_ - 0.4 - cam.f_82480_;
+                double cz = eye.f_82481_ - cam.f_82481_;
+                if (f.bird) {
+                    // the phoenix: the flames gathering round it, a white orb growing at its chest
+                    PhoenixMoveArt.fujiCharge(sink, cx, cy - 0.4, cz, age, 2.4, f.id);
+                    double orb = Math.min(1.0, age / 12.0);
+                    PhoenixMoveArt.blueBall(sink, cx + look.f_82479_ * 2.2, cy + 0.8, cz + look.f_82481_ * 2.2, 0.5 + 0.8 * orb, age, f.id);
+                } else {
+                    PhoenixMoveArt.blueBall(sink, cx + look.f_82479_ * 1.2, cy + look.f_82480_ * 1.2, cz + look.f_82481_ * 1.2,
+                        PhoenixMoveArt.blueSize(age), age, f.id);
+                }
+            }
+            case PhoenixMoves.BLUE_FIRE -> {
+                if (!f.on) {
+                    return;
+                }
+                double bx = x + f.ax * age;
+                double by = y + f.ay * age;
+                double bz = z + f.az * age;
+                double l = Math.sqrt(f.ax * f.ax + f.ay * f.ay + f.az * f.az);
+                PhoenixMoveArt.blueBall(sink, bx, by, bz, f.size, age, f.id, true);
+                if (l > 1.0E-3) {
+                    PhoenixMoveArt.blueTrail(sink, bx, by, bz, f.ax / l, f.ay / l, f.az / l, age, f.size, f.id);
+                }
+            }
+            default -> PhoenixMoveArt.blueBoom(sink, x, y, z, age, f.size, f.id);
         }
     }
 

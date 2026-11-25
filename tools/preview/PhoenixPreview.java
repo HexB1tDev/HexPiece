@@ -251,6 +251,123 @@ public final class PhoenixPreview {
                     }
                 };
             }
+            case "m-infh" -> {
+                // 3.7.3: Phoenix Inferno, human: the wings and tail, the kicks, the backflip, the landing burst
+                sc.human = true;
+                sc.wings = 1;
+                int flip = com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_FLIP;
+                int last = com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_LAST;
+                sc.wingsSize = (float) Math.min(Math.min(1.0, t / 4.0), Math.max(0.0, (flip + 6 - t) / 4.0));
+                sc.dummy = true;
+                sc.dz = -2.6;
+                if (t > last && t < flip) {
+                    double u = (t - last) / (double) (flip - last);
+                    sc.hy = 1.4 * Math.sin(Math.PI * u);
+                    sc.hz = 1.0 * u;
+                    sc.dy = Math.min(4.0, 0.9 * (t - last) - 0.04 * (t - last) * (t - last) * 0.5);
+                } else if (t >= flip) {
+                    sc.hz = 1.0;
+                    sc.dy = Math.max(0.0, 0.9 * (t - last) - 0.04 * (t - last) * (t - last));
+                }
+                double hz = sc.hz;
+                sc.fire = (sink, e) -> {
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.burst(sink, -e[0], 1.2 - e[1], -e[2], t, 1.0, 8);
+                    int form = com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_FORM;
+                    int every = com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_EVERY;
+                    for (int k = 0; k <= com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_KICKS; k++) {
+                        double at = form + k * every;
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.kick(sink, 0.12 - e[0], 0.75 - e[1], -e[2], 0, -1, t - at,
+                            k == com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_KICKS, 8 + k);
+                    }
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.burst(sink, -e[0], 0.8 - e[1], hz - e[2], t - flip, 1.0, 9);
+                };
+            }
+            case "m-infp" -> {
+                // 3.7.3: Phoenix Inferno, the phoenix: the whirlpool and the spin, the rise, the dive, the blast
+                int spin = com.hexhaki.piece.phoenix.PhoenixMoveArt.VORTEX;
+                int rise = com.hexhaki.piece.phoenix.PhoenixMoveArt.VORTEX_RISE;
+                int dive = com.hexhaki.piece.phoenix.PhoenixMoveArt.VORTEX_DIVE;
+                double height = com.hexhaki.piece.phoenix.PhoenixMoveArt.VORTEX_HEIGHT;
+                sc.bird = true;
+                sc.by = 2.0;
+                if (t < spin) {
+                    double f = t / spin;
+                    sc.mo.spread = (float) Math.min(1.0, t / 3.0);
+                    sc.yaw = (float) (1080.0 * f * f);
+                } else if (t < spin + rise) {
+                    sc.by = 2.0 + height * (t - spin) / rise;
+                } else {
+                    double u = Math.min(1.0, (t - spin - rise) / dive);
+                    sc.by = 2.0 + height * (1.0 - u * u) - 1.6 * u;
+                    sc.mo.ram = (float) (u < 1.0 ? 1.0 : 0.0);
+                    sc.mo.speed = (float) (u < 1.0 ? 1.0 : 0.0);
+                }
+                double by = sc.by;
+                sc.fire = (sink, e) -> {
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.vortex(sink, -e[0], -e[1], -e[2], t, com.hexhaki.piece.phoenix.PhoenixMoveArt.VORTEX_RADIUS, 9);
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.talonLeap(sink, -e[0], 2.0 - e[1], -e[2], t - spin);
+                    if (t >= spin + rise && t < spin + rise + dive) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiSheath(sink, -e[0], by + 1.4 - e[1], -e[2], 0, -1, 0, t - spin - rise, 1.8, 9);
+                    }
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.vortexBlast(sink, -e[0], -e[1], -e[2], t - spin - rise - dive,
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.VORTEX_BLAST, 9);
+                };
+            }
+            case "m-blueh" -> {
+                // 3.7.3: Bluebird, human: held 40 ticks, let go, the ball flying, its blast 14 blocks on
+                int held = 40;
+                sc.human = true;
+                sc.wings = 1;
+                sc.wingsSize = (float) Math.min(Math.min(1.0, t / 4.0), Math.max(0.0, (held + 8 + 4 - t) / 4.0));
+                double size = com.hexhaki.piece.phoenix.PhoenixMoveArt.blueSize(Math.min(t, held));
+                double speed = com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_SPEED;
+                double fly = 14.0 / speed;
+                sc.dummy = true;
+                sc.dz = -15.2;
+                sc.fire = (sink, e) -> {
+                    if (t < held) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 1.35 - e[1], -1.2 - e[2], size, t, 10);
+                    } else if (t < held + fly) {
+                        double z = -1.2 - speed * (t - held);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 1.35 - e[1], z - e[2], size, t, 10, true);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, -e[0], 1.35 - e[1], z - e[2], 0, 0, -1, t, size, 10);
+                    } else {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, -e[0], 1.35 - e[1], -15.2 - e[2], t - held - fly, 2.0 + 1.5 * size, 10);
+                    }
+                };
+            }
+            case "m-bluep" -> {
+                // 3.7.3: Bluebird, the phoenix: wings spread, the flames gathering and the orb, four balls
+                int held = 30;
+                int gap = com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_GAP;
+                double speed = com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_BIRD_SPEED;
+                sc.bird = true;
+                sc.by = 2.0;
+                sc.mo.spread = (float) Math.min(1.0, Math.min(t / 3.0, Math.max(0.0, (held + 4 * gap + 2 - t) / 3.0)));
+                sc.fire = (sink, e) -> {
+                    if (t < held) {
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, -e[0], 2.6 - e[1], -e[2], t, 2.4, 11);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 4.4 - e[1], -2.2 - e[2], 0.5 + 0.8 * Math.min(1.0, t / 12.0), t, 11);
+                    }
+                    double[][] ways = {{-0.12, 0.0}, {0.12, 0.0}, {0.0, 0.08}, {0.0, -0.08}};
+                    for (int k = 0; k < 4; k++) {
+                        double age = t - held - k * gap;
+                        if (age < 0.0) {
+                            continue;
+                        }
+                        double bz = -3.0 - speed * age;
+                        double bx = ways[k][0] * speed * age;
+                        double byy = 4.0 + ways[k][1] * speed * age;
+                        if (age < 20) {
+                            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, bx - e[0], byy - e[1], bz - e[2], 1.8, t, 12 + k, true);
+                            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, bx - e[0], byy - e[1], bz - e[2], 0, 0, -1, t, 1.8, 12 + k);
+                        } else {
+                            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, ways[k][0] * speed * 20 - e[0], 4.0 + ways[k][1] * speed * 20 - e[1],
+                                -3.0 - speed * 20 - e[2], age - 20, 4.7, 12 + k);
+                        }
+                    }
+                };
+            }
             default -> {
                 return null;
             }
@@ -412,7 +529,7 @@ public final class PhoenixPreview {
             PhoenixForm.Motion wm = new PhoenixForm.Motion();
             wm.ram = sc.wings == 0 ? 1.0F : 0.0F;
             PhoenixForm.pose(model, shape, wp, wm, ticks / 20.0F * PhoenixForm.beatRate(wm), ticks / 20.0F);
-            float ws = 0.13F * sc.wingsSize;
+            float ws = 0.18F * sc.wingsSize;
             double[] root = {OX, OY + 1.38, OZ + 0.22};
             for (int i = 0; i < model.parts.length; i++) {
                 if (!shape.wings[i]) {

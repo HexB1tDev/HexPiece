@@ -634,6 +634,8 @@ public final class PhoenixForm {
         public float sweep;
         public float ram;
         public float reach;
+        /** 3.7.3: 0 to 1: the wings held spread wide and still (spinning in its whirlpool, gathering Bluebird). */
+        public float spread;
     }
 
     /**
@@ -666,11 +668,12 @@ public final class PhoenixForm {
         float sweep = clamp(mo.sweep) * (1.0F - human);
         float ram = clamp(mo.ram) * (1.0F - human);
         float reach = clamp(mo.reach) * (1.0F - human);
+        float spread = clamp(mo.spread) * (1.0F - human);
         // the ram's wings swept back as the dive's (without the dive's nose down)
         float back = Math.max(dive, ram);
-        tuck *= (1.0F - sweep) * (1.0F - ram) * (1.0F - reach);
+        tuck *= (1.0F - sweep) * (1.0F - ram) * (1.0F - reach) * (1.0F - spread);
         float flap = (1.0F - glide) * (1.0F - back) * (1.0F - human) * (1.0F - tuck) * (1.0F - 0.85F * flare) * (1.0F - land) * (1.0F - sweep)
-            * (1.0F - 0.6F * reach);
+            * (1.0F - 0.6F * reach) * (1.0F - 0.85F * spread);
         float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch);
         // the power stroke: the downstroke quick, the recovery slower (the phase run faster through the downstroke's middle)
         beat = beat + 0.35F * (float) Math.sin(beat);
@@ -691,6 +694,8 @@ public final class PhoenixForm {
             turn(pose, sh, w[0], -m0 * 72.0F * sweep + m0 * 18.0F * reach, 0, 1, 0);
             turn(pose, sh, w[2], -m0 * 25.0F * sweep, 0, 1, 0);
             turn(pose, sh, w[3], -m0 * 35.0F * sweep, 0, 1, 0);
+            // 3.7.3 spread: let down from the rest's V to level, opened straight out, the tips trembling
+            turn(pose, sh, w[0], m0 * spread * (26.0F + 3.0F * (float) Math.sin(seconds * 9.0F + s)), 0, 0, 1);
             // the follow-through: every joint out along the wing a little later, the wave running out to the tips
             turn(pose, sh, w[1], m0 * amp * 0.32F * (float) Math.sin(beat - 0.6F), 0, 0, 1);
             turn(pose, sh, w[2], m0 * amp * 0.30F * (float) Math.sin(beat - 1.1F), 0, 0, 1);
@@ -799,6 +804,7 @@ public final class PhoenixForm {
                 lift = 0.6F;
             }
             case "sweep" -> mo.sweep = 1.0F;
+            case "spread" -> mo.spread = 1.0F;
             case "ram" -> {
                 mo.speed = 1.0F;
                 mo.ram = 1.0F;

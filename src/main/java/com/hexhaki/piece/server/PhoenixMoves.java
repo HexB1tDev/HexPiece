@@ -57,6 +57,31 @@ public final class PhoenixMoves {
     public static final int ACT_GLIDE = 3;
     public static final int ACT_REACH = 4;
     public static final int ACT_WHIRL = 5;
+    /** 3.7.3: spinning in place, wings spread (the whirlpool); held spread and still (Bluebird's charge). */
+    public static final int ACT_SPIN = 6;
+    public static final int ACT_SPREAD = 7;
+    /**
+     * 3.7.3: Phoenix Inferno: user; bx INFERNO_FORM (x, y, z the chest: the wings and tail forming), INFERNO_KICK (x, y, z the hip, a the
+     * way; by 1 the last kick, up), INFERNO_LAND (x, y, z the feet: the burst scattering the wings), VORTEX_ON (x, y, z the ground under
+     * it, ticks), VORTEX_RISE (x, y, z where it rose from), VORTEX_DIVE (a the way down), VORTEX_BLAST (x, y, z the ground).
+     */
+    public static final int INFERNO = 406;
+    public static final int INFERNO_FORM = 0;
+    public static final int INFERNO_KICK = 1;
+    public static final int INFERNO_LAND = 2;
+    public static final int VORTEX_ON = 10;
+    public static final int VORTEX_RISE = 11;
+    public static final int VORTEX_DIVE = 12;
+    public static final int VORTEX_BLAST = 13;
+    /**
+     * 3.7.3: Bluebird: user; bx BLUE_CHARGE (ticks the longest hold; by 1 the phoenix), BLUE_FIRE (id the ball, x, y, z from, a its step
+     * a tick, size its heart, ticks its longest flight), BLUE_BOOM (id the ball, x, y, z where, size the blast's radius), BLUE_OFF.
+     */
+    public static final int BLUE = 407;
+    public static final int BLUE_CHARGE = 0;
+    public static final int BLUE_FIRE = 1;
+    public static final int BLUE_BOOM = 2;
+    public static final int BLUE_OFF = 3;
 
     /** Damage (the reference's at max level, about a fifth: Fujiazami 60 and 75, Talon Slam 7 then 70, Hawk Rush 95). */
     public static final float FUJI_HURT = 12.0F;
@@ -74,12 +99,24 @@ public final class PhoenixMoves {
     static final int FUJI_COOL = 160;
     static final int TALON_COOL = 200;
     static final int HAWK_COOL = 220;
+    /** 3.7.3 (the reference's: Phoenix Inferno 12 ticks of 2.5 then 75, transformed 42 ticks of 0.9, 75 the leap, 75 the slam; Bluebird
+     * 45, transformed 4 of 45). */
+    public static final float INFERNO_KICK_HURT = 0.5F;
+    public static final float INFERNO_LAST_HURT = 15.0F;
+    public static final float VORTEX_HURT = 0.4F;
+    public static final float VORTEX_LEAP_HURT = 15.0F;
+    public static final float VORTEX_BLAST_HURT = 15.0F;
+    public static final float BLUE_HURT = 9.0F;
+    static final int INFERNO_COOL = 300;
+    static final int BLUE_COOL = 240;
 
     static final class State {
         long busyUntil;
         UoMoves.Live move;
         /** Hawk Rush held (let go: it ends once the shortest rush is done). */
         boolean hawkHeld;
+        /** 3.7.3: Bluebird held (let go: the ball flies, once the shortest hold is done). */
+        boolean blueHeld;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -99,6 +136,10 @@ public final class PhoenixMoves {
 
     static void fx(ServerPlayer player, int kind, int id, Vec3 at, Vec3 a, double bx, double by, int ticks) {
         ItoMoves.fx(player, kind, id, at, a, bx, by, 0, ticks);
+    }
+
+    static void fx(ServerPlayer player, int kind, int id, Vec3 at, Vec3 a, double bx, double by, double size, int ticks) {
+        ItoMoves.fx(player, kind, id, at, a, bx, by, size, ticks);
     }
 
     static void sound(ServerPlayer player, Vec3 at, String name, float volume, float pitch) {
@@ -150,6 +191,19 @@ public final class PhoenixMoves {
                 ItoMoves.cool(player, PhoenixKit.TALON_SLAM, TALON_COOL);
                 start(player, s, new Slam(player, now));
             }
+        } else if (slot == PhoenixKit.INFERNO.slot()) {
+            com.hexhaki.fruit.FruitMove move = bird ? PhoenixKit.INFERNO_PHOENIX : PhoenixKit.INFERNO;
+            if (ItoMoves.ready(player, move)) {
+                ItoMoves.cool(player, move, INFERNO_COOL);
+                start(player, s, bird ? new Vortex(player, now) : new Kicks(player, now));
+            }
+        } else if (slot == PhoenixKit.BLUEBIRD.slot()) {
+            com.hexhaki.fruit.FruitMove move = bird ? PhoenixKit.BLUEBIRD_PHOENIX : PhoenixKit.BLUEBIRD;
+            if (ItoMoves.ready(player, move)) {
+                ItoMoves.cool(player, move, BLUE_COOL);
+                s.blueHeld = true;
+                start(player, s, new Charge(player, bird, now));
+            }
         }
     }
 
@@ -157,6 +211,9 @@ public final class PhoenixMoves {
         State s = STATES.get(player.m_20148_());
         if (s != null && slot == PhoenixKit.TALON_SLAM.slot()) {
             s.hawkHeld = false;
+        }
+        if (s != null && slot == PhoenixKit.BLUEBIRD.slot()) {
+            s.blueHeld = false;
         }
     }
 
@@ -527,6 +584,351 @@ public final class PhoenixMoves {
         }
     }
 
+    // ------------------------------------------------------------------------------------------------------ 3.7.3, V: Phoenix Inferno
+
+    /**
+     * Phoenix Inferno, human (the reference's: "The user forms temporary wings and a tail and then does a barrage of kicks dealing
+     * multiple ticks of damage before doing a backflip, ending the move"): the wings and tail form in a burst of fire, twelve kicks at
+     * whoever is in front (held where they stand), the last kick up launching them, a backflip, the landing burst scattering the wings.
+     */
+    static final class Kicks implements UoMoves.Live {
+        final ServerPlayer user;
+        final ServerLevel level;
+        final long born;
+        final int seed = ++seeds;
+        final List<LivingEntity> held = new ArrayList<>();
+        boolean over;
+
+        Kicks(ServerPlayer user, long now) {
+            this.user = user;
+            this.level = (ServerLevel) user.m_9236_();
+            this.born = now;
+            ItoMoves.animate(user, "phoenix_inferno");
+            fx(user, WINGS, this.seed, user.m_20182_(), Vec3.f_82478_, 1, WINGS_SPREAD, PhoenixMoveArt.INFERNO_FLIP + 2);
+            fx(user, INFERNO, this.seed, ItoMoves.chest(user), Vec3.f_82478_, INFERNO_FORM, 0, 14);
+            sound(user, user.m_20182_(), UoSounds.FLAME_START, 1.1F, 1.0F);
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (this.over) {
+                return true;
+            }
+            if (!this.user.m_6084_() || this.user.m_9236_() != this.level || !STATES.containsKey(this.user.m_20148_())) {
+                this.over = true;
+                return true;
+            }
+            long t = now - this.born;
+            Vec3 flat = ItoMoves.flat(this.user);
+            Vec3 feet = this.user.m_20182_();
+            Vec3 hip = feet.m_82520_(0.0, 0.75, 0.0);
+            int form = PhoenixMoveArt.INFERNO_FORM;
+            int last = PhoenixMoveArt.INFERNO_LAST;
+            if (t >= form && t < last && (t - form) % PhoenixMoveArt.INFERNO_EVERY == 0) {
+                fx(this.user, INFERNO, this.seed + (int) t, hip, flat, INFERNO_KICK, 0, 6);
+                ItoMoves.sounds(this.user, hip, com.hexhaki.piece.pika.PikaSounds.KICK_BLAST, 0.7F, 1.2F + 0.05F * (t % 4), 1, 2);
+                for (LivingEntity body : ItoMoves.ahead(this.user, PhoenixMoveArt.INFERNO_REACH, 60.0)) {
+                    if (!this.held.contains(body)) {
+                        this.held.add(body);
+                    }
+                    hit(this.user, body, INFERNO_KICK_HURT, Vec3.f_82478_);
+                }
+            }
+            // whoever is kicked is held where they stand through the barrage
+            if (t < last) {
+                for (LivingEntity body : this.held) {
+                    if (body.m_6084_()) {
+                        body.m_20256_(Vec3.f_82478_);
+                        body.f_19864_ = true;
+                    }
+                }
+            }
+            if (t == last) {
+                fx(this.user, INFERNO, this.seed, hip, flat, INFERNO_KICK, 1, 6);
+                sound(this.user, hip, com.hexhaki.piece.pika.PikaSounds.KICK_BLAST, 1.2F, 0.85F);
+                for (LivingEntity body : ItoMoves.ahead(this.user, PhoenixMoveArt.INFERNO_REACH + 0.5, 70.0)) {
+                    Vec3 up = flat.m_82490_(0.6).m_82520_(0.0, 1.2, 0.0);
+                    hit(this.user, body, INFERNO_LAST_HURT, up);
+                    Impact.hit(this.user, body, StyleCombat.spec(com.hexhaki.piece.style.Hit.Weight.HEAVY, up));
+                }
+                // the backflip's hop up and back
+                drive(this.user, flat.m_82490_(-0.25).m_82520_(0.0, 0.5, 0.0));
+            }
+            if (t > last && t < PhoenixMoveArt.INFERNO_FLIP) {
+                this.user.f_19789_ = 0.0F;
+            }
+            if (t == PhoenixMoveArt.INFERNO_FLIP) {
+                fx(this.user, INFERNO, this.seed, feet, flat, INFERNO_LAND, 0, 14);
+                sound(this.user, feet, UoSounds.BLAST, 1.0F, 1.3F);
+                ConquerorAura.exploded(this.user, this.level, feet.m_82520_(0.0, 1.0, 0.0), 2.5);
+            }
+            if (t >= PhoenixMoveArt.INFERNO_LAND) {
+                this.over = true;
+                done(this.user);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Phoenix Inferno, as the phoenix (the reference's: "user starts spinning around dealing damage to enemy, after spinning user flies
+     * up and falls down followed up with a blue flame explosion"): the phoenix spins in place inside a whirlpool of fire for
+     * {@link PhoenixMoveArt#VORTEX} ticks (those inside it burnt every 3 ticks and held), rises (those inside launched up with it), dives
+     * back down onto the whirlpool's middle and blows up there (UoMoves.explode: the Conqueror's lightning out of it).
+     */
+    static final class Vortex implements UoMoves.Live {
+        final ServerPlayer user;
+        final ServerLevel level;
+        final long born;
+        final int seed = ++seeds;
+        final Vec3 middle;
+        boolean over;
+
+        Vortex(ServerPlayer user, long now) {
+            this.user = user;
+            this.level = (ServerLevel) user.m_9236_();
+            this.born = now;
+            Vec3 feet = user.m_20182_();
+            Vec3 g = ItoMoves.ground(this.level, feet, 1.0, 12.0);
+            this.middle = g != null ? g : feet;
+            fx(user, INFERNO, this.seed, this.middle, Vec3.f_82478_, VORTEX_ON, 0, PhoenixMoveArt.VORTEX);
+            fx(user, ACT, this.seed, feet, Vec3.f_82478_, ACT_SPIN, 0, PhoenixMoveArt.VORTEX);
+            sound(user, feet, UoSounds.TORNADO, 1.4F, 1.1F);
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (this.over) {
+                return true;
+            }
+            if (!this.user.m_6084_() || this.user.m_9236_() != this.level || !STATES.containsKey(this.user.m_20148_()) || !phoenix(this.user)) {
+                this.over = true;
+                fx(this.user, ACT, this.seed, this.user.m_20182_(), Vec3.f_82478_, 0, 0, 0);
+                return true;
+            }
+            long t = now - this.born;
+            int spin = PhoenixMoveArt.VORTEX;
+            int rise = spin + PhoenixMoveArt.VORTEX_RISE;
+            Vec3 heart = this.middle.m_82520_(0.0, 1.0, 0.0);
+            if (t < spin) {
+                drive(this.user, Vec3.f_82478_);
+                if (t % 3 == 0) {
+                    for (LivingEntity body : ItoMoves.foes(this.user, heart, PhoenixMoveArt.VORTEX_RADIUS)) {
+                        hit(this.user, body, VORTEX_HURT, Vec3.f_82478_);
+                        body.m_20256_(heart.m_82546_(StyleCombat.middle(body)).m_82490_(0.06));
+                        body.f_19864_ = true;
+                    }
+                }
+                return false;
+            }
+            if (t == spin) {
+                fx(this.user, INFERNO, this.seed, this.user.m_20182_(), Vec3.f_82478_, VORTEX_RISE, 0, PhoenixMoveArt.VORTEX_RISE);
+                sound(this.user, this.user.m_20182_(), UoSounds.WHOOSH, 1.4F, 0.9F);
+                for (LivingEntity body : ItoMoves.foes(this.user, heart, PhoenixMoveArt.VORTEX_RADIUS)) {
+                    Vec3 up = new Vec3(0.0, 1.4, 0.0);
+                    hit(this.user, body, VORTEX_LEAP_HURT, up);
+                    Impact.hit(this.user, body, StyleCombat.spec(com.hexhaki.piece.style.Hit.Weight.HEAVY, up));
+                }
+            }
+            if (t < rise) {
+                drive(this.user, new Vec3(0.0, PhoenixMoveArt.VORTEX_HEIGHT / PhoenixMoveArt.VORTEX_RISE, 0.0));
+                return false;
+            }
+            Vec3 at = this.user.m_20182_();
+            Vec3 to = this.middle.m_82546_(at);
+            if (t == rise) {
+                fx(this.user, INFERNO, this.seed, at, to, VORTEX_DIVE, 0, PhoenixMoveArt.VORTEX_DIVE + 4);
+                fx(this.user, ACT, this.seed, at, Vec3.f_82478_, ACT_RAM, 0, PhoenixMoveArt.VORTEX_DIVE + 2);
+                sound(this.user, at, UoSounds.WHOOSH, 1.4F, 0.7F);
+            }
+            boolean landed = t > rise + 1 && (this.user.m_20096_() || to.m_82553_() < 0.8);
+            if (!landed && t < rise + PhoenixMoveArt.VORTEX_DIVE + 4) {
+                double speed = 1.8 + 0.3 * (t - rise);
+                drive(this.user, to.m_82553_() <= speed ? to : to.m_82541_().m_82490_(speed));
+                return false;
+            }
+            this.over = true;
+            drive(this.user, Vec3.f_82478_);
+            UoMoves.explode(this.user, this.level, heart, new Vec3(0.0, 1.0, 0.0), PhoenixMoveArt.VORTEX_BLAST,
+                ItoMoves.coated(this.user) ? VORTEX_BLAST_HURT * 1.25F : VORTEX_BLAST_HURT, 0, 1.6);
+            Impact.quake(this.level, this.middle, 24.0, 0.8F, 12);
+            fx(this.user, INFERNO, this.seed, this.middle, Vec3.f_82478_, VORTEX_BLAST, 0, PhoenixMoveArt.VORTEX_BLAST_LIFE);
+            sound(this.user, this.middle, UoSounds.EXPLODE, 2.0F, 0.8F);
+            sound(this.user, this.middle, IronSounds.SLAM, 1.6F, 0.8F);
+            done(this.user);
+            return true;
+        }
+    }
+
+    // ------------------------------------------------------------------------------------------------------ 3.7.3, B: Bluebird
+
+    /**
+     * Bluebird held (the reference's: "The user forms temporary wings and creates a ball of yellow and blue flame in front of them. When
+     * they let go of their mouse, the projectile will be launched forward ... Holding this skill increases its hitbox. On transform user
+     * fires 4 balls instead of one"): the wings and tail, the ball growing in front of the chest while B is held (the phoenix: its wings
+     * held spread, the flames gathering, a white orb at its chest), let go (after the shortest hold, or at the longest) and it flies.
+     */
+    static final class Charge implements UoMoves.Live {
+        final ServerPlayer user;
+        final ServerLevel level;
+        final boolean bird;
+        final long born;
+        final int seed = ++seeds;
+        long fired = -1;
+        double size;
+        boolean over;
+
+        Charge(ServerPlayer user, boolean bird, long now) {
+            this.user = user;
+            this.level = (ServerLevel) user.m_9236_();
+            this.bird = bird;
+            this.born = now;
+            if (bird) {
+                fx(user, ACT, this.seed, user.m_20182_(), Vec3.f_82478_, ACT_SPREAD, 0, PhoenixMoveArt.BLUE_MOST + 4 * PhoenixMoveArt.BLUE_GAP);
+            } else {
+                ItoMoves.animate(user, "phoenix_bluebird");
+                fx(user, WINGS, this.seed, user.m_20182_(), Vec3.f_82478_, 1, WINGS_SPREAD, PhoenixMoveArt.BLUE_MOST + 8);
+            }
+            fx(user, BLUE, this.seed, ItoMoves.chest(user), Vec3.f_82478_, BLUE_CHARGE, bird ? 1 : 0, PhoenixMoveArt.BLUE_MOST);
+            sound(user, user.m_20182_(), UoSounds.CHARGE, 1.0F, bird ? 0.9F : 1.2F);
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (this.over) {
+                return true;
+            }
+            boolean gone = !this.user.m_6084_() || this.user.m_9236_() != this.level || !STATES.containsKey(this.user.m_20148_())
+                || this.bird != phoenix(this.user);
+            if (gone) {
+                this.over = true;
+                fx(this.user, BLUE, this.seed, this.user.m_20182_(), Vec3.f_82478_, BLUE_OFF, 0, 0);
+                fx(this.user, ACT, this.seed, this.user.m_20182_(), Vec3.f_82478_, 0, 0, 0);
+                return true;
+            }
+            long t = now - this.born;
+            if (this.fired < 0) {
+                State s = STATES.get(this.user.m_20148_());
+                boolean held = s != null && s.blueHeld;
+                if (this.bird) {
+                    drive(this.user, Vec3.f_82478_);
+                }
+                if (t < PhoenixMoveArt.BLUE_MOST && (held || t < PhoenixMoveArt.BLUE_LEAST)) {
+                    return false;
+                }
+                this.fired = now;
+                this.size = PhoenixMoveArt.blueSize(t);
+                if (!this.bird) {
+                    ItoMoves.animate(this.user, "phoenix_bluebird_throw");
+                    fx(this.user, WINGS, this.seed, this.user.m_20182_(), Vec3.f_82478_, 1, WINGS_SPREAD, 8);
+                }
+            }
+            long f = now - this.fired;
+            int balls = this.bird ? 4 : 1;
+            if (f % PhoenixMoveArt.BLUE_GAP == 0 && f / PhoenixMoveArt.BLUE_GAP < balls) {
+                int k = (int) (f / PhoenixMoveArt.BLUE_GAP);
+                Vec3 look = this.user.m_20154_();
+                if (this.bird) {
+                    // the four a little apart: left, right, high, low
+                    double yaw = Math.toRadians(new double[] {-7.0, 7.0, 0.0, 0.0}[k]);
+                    double pitch = new double[] {0.0, 0.0, 0.08, -0.08}[k];
+                    look = new Vec3(look.f_82479_ * Math.cos(yaw) - look.f_82481_ * Math.sin(yaw), look.f_82480_ + pitch,
+                        look.f_82481_ * Math.cos(yaw) + look.f_82479_ * Math.sin(yaw)).m_82541_();
+                }
+                double speed = this.bird ? PhoenixMoveArt.BLUE_BIRD_SPEED : PhoenixMoveArt.BLUE_SPEED;
+                double heart = this.bird ? 1.8 : this.size;
+                Vec3 from = ItoMoves.chest(this.user).m_82549_(look.m_82490_(this.bird ? 3.0 : 1.2)).m_82520_(0.0, this.bird ? 0.8 : 0.0, 0.0);
+                Ball ball = new Ball(this.user, from, look.m_82490_(speed), heart, ++seeds);
+                LIVE.add(ball);
+                fx(this.user, BLUE, ball.id, from, look.m_82490_(speed), BLUE_FIRE, this.bird ? 1 : 0, heart,
+                    (int) (PhoenixMoveArt.BLUE_RANGE / speed) + 2);
+                sound(this.user, from, UoSounds.FIREBALL, 1.2F, this.bird ? 0.9F + 0.08F * k : 1.0F);
+                if (k == balls - 1) {
+                    this.over = true;
+                    if (this.bird) {
+                        fx(this.user, ACT, this.seed, this.user.m_20182_(), Vec3.f_82478_, 0, 0, 0);
+                    }
+                    done(this.user);
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /** One of Bluebird's balls in flight: on until it meets someone, a block or the end of its range; then its blast. */
+    static final class Ball implements UoMoves.Live {
+        final ServerPlayer user;
+        final ServerLevel level;
+        final Vec3 step;
+        final double size;
+        final int id;
+        Vec3 at;
+        double gone;
+        boolean over;
+
+        Ball(ServerPlayer user, Vec3 from, Vec3 step, double size, int id) {
+            this.user = user;
+            this.level = (ServerLevel) user.m_9236_();
+            this.at = from;
+            this.step = step;
+            this.size = size;
+            this.id = id;
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (this.over) {
+                return true;
+            }
+            if (!this.user.m_6084_() || this.user.m_9236_() != this.level) {
+                this.over = true;
+                return true;
+            }
+            Vec3 next = this.at.m_82549_(this.step);
+            net.minecraft.world.phys.BlockHitResult block = this.level.m_45547_(new net.minecraft.world.level.ClipContext(this.at, next,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this.user));
+            boolean wall = block.m_6662_() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+            if (wall) {
+                next = block.m_82450_();
+            }
+            boolean met = !ItoMoves.foes(this.user, next, this.size * 0.5 + 0.6).isEmpty();
+            this.at = next;
+            this.gone += this.step.m_82553_();
+            if (wall || met || this.gone >= PhoenixMoveArt.BLUE_RANGE) {
+                this.over = true;
+                double radius = 2.0 + 1.5 * this.size;
+                UoMoves.explode(this.user, this.level, this.at, this.step.m_82541_(), radius,
+                    ItoMoves.coated(this.user) ? BLUE_HURT * 1.25F : BLUE_HURT, 0, 1.1);
+                fx(this.user, BLUE, this.id, this.at, Vec3.f_82478_, BLUE_BOOM, 0, radius, PhoenixMoveArt.BLUE_BOOM);
+                sound(this.user, this.at, UoSounds.EXPLODE, 1.4F, 1.15F);
+                return true;
+            }
+            return false;
+        }
+    }
+
     // ------------------------------------------------------------------------------------------------------ the rest
 
     static void forget(ServerPlayer player) {
@@ -535,6 +937,7 @@ public final class PhoenixMoves {
             fx(player, ACT, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0);
             fx(player, WINGS, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0);
             fx(player, HAWK, 0, player.m_20182_(), Vec3.f_82478_, HAWK_END, 0, 0);
+            fx(player, BLUE, 0, player.m_20182_(), Vec3.f_82478_, BLUE_OFF, 0, 0);
         }
     }
 

@@ -201,6 +201,10 @@ public final class HandMoves {
             // and its slam down (tools/phoenix_anims.py)
             case "phoenix_fuji" -> new Move(PUSH, 0.8);
             case "phoenix_talon" -> new Move(UP_DOWN, 0);
+            // 3.7.3: Phoenix Inferno (the hands braced out for the kicks), Bluebird (the hands cupped round the ball, then thrust out)
+            case "phoenix_inferno" -> new Move(DOWN, 0);
+            case "phoenix_bluebird" -> new Move(DEEP, 1.2);
+            case "phoenix_bluebird_throw" -> new Move(PUSH, 0.4);
             default -> null;
         };
     }

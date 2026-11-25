@@ -1108,3 +1108,32 @@ temporary phoenix wings and a gold tail of fire at their back. Frame numbers at 
 - Next: V Phoenix Inferno (human: temporary wings and tail, a barrage of kicks, the backflip, the burst; phoenix: the whirlpool of
   fire and spin, the rise, the dive and the blast with blocks flung) and B Bluebird (human: held, wings and tail, the growing ball of
   yellow and blue fire, launched; phoenix: four balls), on AD's frames.
+
+## AF. 3.7.3: V Phoenix Inferno and B Bluebird, both forms (the Phoenix's whole kit)
+
+- PhoenixMoveArt: INFERNO_FORM 8, KICKS 12, EVERY 3, LAST 44, FLIP 50, LAND 62, REACH 3.5; VORTEX 60, RADIUS 6, RISE 8, HEIGHT 9,
+  DIVE 6, BLAST 6, BLAST_LIFE 40; BLUE_MOST 60, LEAST 8, SPEED 1.2, BIRD_SPEED 0.9, RANGE 40, GAP 4, BOOM 24, blueSize (0.6 to 1.6).
+  Art: kick (the burning leg out, a white crescent and ring of air, a tongue off the foot), burst (12 tongues and gold shards: the
+  wings forming, the landing), vortex (7 swirling bands cyan and white up to 5.4 high, a glow on the ground, 20 tongues racing round
+  and up), vortexBlast (talonBlast's flash, blast and crater at its own pace, a cyan flash, 10 tall tongues, 14 rubble shards flung
+  up and falling), blueBall (a white heart, a halo, tongues, crackling rays, gold arcs; lite in flight: 5 tongues, 4 rays, 1 arc, no
+  halo), blueTrail (3 tongues), blueBoom (a flash, a ring, 8 tongues: four can burn at once beside the phoenix).
+- server/PhoenixMoves: INFERNO 406 (FORM, KICK (by 1 the last), LAND, VORTEX_ON, VORTEX_RISE, VORTEX_DIVE, VORTEX_BLAST), BLUE 407
+  (CHARGE, FIRE (id the ball), BOOM, OFF); acts SPIN (1080 degrees over the whirlpool, wings spread) and SPREAD (Motion.spread: the
+  wings let down level and held still). Kicks (the wings spread, a kick every 3 ticks at ahead(3.5, 60) held still, the last kick
+  launches (HEAVY), the backflip hop, the landing burst and ConquerorAura.exploded), Vortex (held in place, foes within 6 burnt 0.4
+  every 3 ticks and drawn in, the rise launching them (15), the dive onto the middle, UoMoves.explode radius 6 (15), a quake),
+  Charge (held; human: the clip phoenix_bluebird, the wings; phoenix: SPREAD; let go after 8 or at 60: one ball (size by the hold)
+  or four (1.8, 4 ticks apart, 7 degrees left and right, up and down)), Ball (moves, a block or a foe or the range ends it:
+  UoMoves.explode radius 2 + 1.5 size, 9). Damage: kick 0.5, last 15, whirlpool 0.4, rise 15, blast 15, ball 9. Cooldowns 300, 240.
+- PhoenixKit: INFERNO "[V]", BLUEBIRD "[B] hold" and their phoenix twins; HUMAN and PHOENIX lists of five.
+- Client (PhoenixMoveFx): inferno(), blue() (the charge follows the user: the ball in front of the chest; the phoenix's gathering and
+  orb; a ball flies by its step until its BOOM by id), acts SPIN and SPREAD. Temporary wings WINGS_SCALE 0.13 -> 0.18 (about 3.2
+  blocks: the reference's are wider than the player).
+- Clips: phoenix_inferno (right-leg kicks every 3 ticks from 8, the last up at 44, the backflip: the body's pitch 0 to 360 from 45 to
+  54, the landing at 56), phoenix_bluebird (hands cupped, held, trembling), phoenix_bluebird_throw. HandMoves: inferno DOWN,
+  bluebird DEEP, bluebird_throw PUSH.
+- Preview scenes m-infh, m-infp, m-blueh, m-bluep; tests: every frame of each beside the phoenix (the whirlpool and the blast apart:
+  they never meet), the human's, the lists.
+- GIFs sent: phoenix_inferno, phoenix_inferno_phoenix, phoenix_bluebird, phoenix_bluebird_phoenix.
+- Next: the owner's word on the moves in game. Item 4 of Mochi note 22 still unknown.

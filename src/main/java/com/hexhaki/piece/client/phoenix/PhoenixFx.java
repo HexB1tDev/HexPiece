@@ -548,8 +548,8 @@ public final class PhoenixFx {
 
     /** Each human's temporary wings' pose (by entity id) and skinned arrays. */
     static final Map<Integer, Entry> WING_POSES = new HashMap<>();
-    /** The temporary wings' size (blocks a model unit: about 2.3 blocks across), and where their roots sit on the back. */
-    static final float WINGS_SCALE = 0.13F;
+    /** The temporary wings' size (blocks a model unit: about 3.2 blocks across), and where their roots sit on the back. */
+    static final float WINGS_SCALE = 0.18F;
 
     /**
      * 3.7.2 (the reference's Inferno and Bluebird: "the user forms temporary wings and a tail"): the phoenix's own wings and tail (its

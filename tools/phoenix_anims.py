@@ -82,6 +82,59 @@ def talon():
        " landing.", ALL)
 
 
+def inferno():
+    """3.7.3: V Phoenix Inferno (phoenix/PhoenixMoveArt.INFERNO_*: the wings form by 8; twelve kicks every 3 ticks from 8, the right leg
+    out at each, chambered between; the last kick up at 44; the backflip 45 to 54 (the body's pitch round a whole turn, legs tucked);
+    the landing at 56; up by 66)."""
+    stance = p(rightArm=arm(-20, 0, 60, -20), leftArm=mirror(arm(-30, 0, 50, -30)), rightLeg=leg(-40, 4, 70), leftLeg=leg(6, -4, 22),
+               body={"yaw": 24, "bend": -4, "pitch": 4})
+    out = p(stance, rightLeg=leg(-92, 4, 2), body={"yaw": 30, "bend": -6, "pitch": 6})
+    chamber = p(stance, rightLeg=leg(-55, 4, 80))
+    beats = [(0, "linear", STAND), (6, "outsine", stance)]
+    for k in range(12):
+        t = 8 + 3 * k
+        beats.append((t, "outexpo", p(out, rightLeg={"pitch": -92 + (6 if k % 2 else 0)})))
+        beats.append((t + 2, "insine", chamber))
+    up = p(stance, rightLeg=leg(-150, 4, 0), leftLeg=leg(4, -4, 10), rightArm=arm(10, 0, 70, -10), leftArm=mirror(arm(10, 0, 70, -10)),
+           body={"yaw": 10, "bend": -10, "pitch": 14})
+    tuck = p(rightArm=arm(-40, 0, 30, -60), leftArm=mirror(arm(-40, 0, 30, -60)), rightLeg=leg(-70, 4, 100), leftLeg=leg(-70, -4, 100),
+             body={"yaw": 0, "bend": 10})
+    land = p(rightArm=arm(30, 0, 40, -20), leftArm=mirror(arm(30, 0, 40, -20)), rightLeg=leg(-30, 3, 64), leftLeg=leg(-30, -3, 64),
+             body={"yaw": 0, "bend": 16, "pitch": -6})
+    beats += [
+        (44, "outexpo", up),
+        (45, "linear", p(up, body={"pitch": 20})),
+        (48, "linear", p(tuck, body={"pitch": 140})),
+        (51, "linear", p(tuck, body={"pitch": 270})),
+        (54, "outsine", p(tuck, body={"pitch": 360})),
+        (56, "outsine", p(land, body={"pitch": 360})),
+        (66, "inoutsine", p(STAND, body={"pitch": 360})),
+    ]
+    pika_anims.write_parts("phoenix_inferno", 66, beats,
+                           "Tori Tori, Model: Phoenix: Phoenix Inferno: twelve burning kicks of the right leg, the last one up, a backflip,"
+                           " the landing.", ALL)
+
+
+def bluebird():
+    """3.7.3: B Bluebird (held: PhoenixMoveArt.BLUE_MOST 60): the hands cupped in front of the chest round the growing ball, held,
+    trembling with its weight; let go (phoenix_bluebird_throw): both arms thrust out after it, then let down."""
+    cup = p(rightArm=arm(-72, 18, 6, -30), leftArm=mirror(arm(-72, 18, 6, -30)), body={"yaw": 0, "bend": 4})
+    beats = [(0, "linear", REST), (6, "outsine", cup)]
+    for k in range(9):
+        t = 10 + 6 * k
+        beats.append((t, "inoutsine", p(cup, rightArm={"pitch": -72 + (2 if k % 2 else -2)}, leftArm={"pitch": -72 - (2 if k % 2 else -2)})))
+    beats.append((64, "linear", cup))
+    write_parts("phoenix_bluebird", 64, beats, "Tori Tori, Model: Phoenix: Bluebird: the hands cupped round the ball of fire, held.",
+                PARTS)
+    thrust = p(rightArm=arm(-92, 4, 6, -2), leftArm=mirror(arm(-92, 4, 6, -2)), body={"yaw": 0, "bend": 8})
+    write_parts("phoenix_bluebird_throw", 16, [
+        (0, "linear", cup),
+        (2, "outexpo", thrust),
+        (7, "linear", thrust),
+        (16, "inoutsine", REST),
+    ], "Tori Tori, Model: Phoenix: Bluebird let go: both arms thrust out after the ball.", PARTS)
+
+
 def main():
     write_parts("phoenix_form", 40, [
         (0, "linear", REST),
@@ -96,7 +149,9 @@ def main():
     ], "Tori Tori, Model: Phoenix: the arms held out as the phoenix closes back into the human, then let down.", PARTS)
     fuji()
     talon()
-    print("wrote phoenix_form, phoenix_unform, phoenix_fuji and phoenix_talon")
+    inferno()
+    bluebird()
+    print("wrote phoenix_form, phoenix_unform, phoenix_fuji, phoenix_talon, phoenix_inferno, phoenix_bluebird, phoenix_bluebird_throw")
 
 
 if __name__ == "__main__":

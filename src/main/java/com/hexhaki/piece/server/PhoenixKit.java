@@ -10,8 +10,8 @@ import net.minecraft.server.level.ServerPlayer;
  * 3.6.9 (the owner: "Mythical Fruit: Tori Tori no Mi, Model: Phoenix. Zoan Type. I made the model and sent it in the zip, first of all
  * animate it so it looks good, good flying animations, etc. Z (transforms/detransforms)"): Marco's fruit. Z turns the player into the
  * owner's phoenix and back (server/PhoenixServer). 3.7.2 (the owner: "Proceed"): the reference's moves (docs/handoff/next-ai-3.6.3.md
- * AD), each in both forms (server/PhoenixMoves): X Fujiazami, C Talon Slam (as the phoenix: Hawk Rush, held). The panel shows the form's
- * own list (client/phoenix/PhoenixClient).
+ * AD), each in both forms (server/PhoenixMoves): X Fujiazami, C Talon Slam (as the phoenix: Hawk Rush, held), 3.7.3 V Phoenix Inferno,
+ * B Bluebird (held). The panel shows the form's own list (client/phoenix/PhoenixClient).
  */
 public final class PhoenixKit extends FruitKit {
     public static final FruitMove FORM = new FruitMove("Phoenix Form", "[Z]", 0, null,
@@ -29,11 +29,25 @@ public final class PhoenixKit extends FruitKit {
     public static final FruitMove HAWK_RUSH = new FruitMove("Phoenix: Hawk Rush", "[C] hold", 0, "phoenix_talon",
         "As the phoenix: wings wrapped forward, you rush ahead low, steering where you look, for as long as you hold (up to five seconds);"
             + " the first one you meet is seized in your claws, whirled round and thrown.");
+    /** 3.7.3: V and B. */
+    public static final FruitMove INFERNO = new FruitMove("Phoenix Inferno", "[V]", 0, "phoenix_inferno",
+        "Phoenix wings and a tail of fire burst out of your back and you rain a barrage of burning kicks on whoever is in front of you,"
+            + " holding them there; the last kick throws them high, you backflip away and the wings scatter in a burst of flame.");
+    public static final FruitMove BLUEBIRD = new FruitMove("Bluebird", "[B] hold", 0, "phoenix_bluebird",
+        "Hold: phoenix wings spread at your back and a ball of yellow and blue fire grows in front of you, crackling, bigger the longer you"
+            + " hold; let go and it flies, blowing up on whatever it meets.");
+    public static final FruitMove INFERNO_PHOENIX = new FruitMove("Phoenix: Phoenix Inferno", "[V]", 0, "phoenix_inferno",
+        "As the phoenix: you spin inside a whirlpool of blue and white fire that burns and holds whoever is in it, then fly up, throwing"
+            + " them high, and dive back down into the middle of it in a huge blast of blue flame that throws the ground up.");
+    public static final FruitMove BLUEBIRD_PHOENIX = new FruitMove("Phoenix: Bluebird", "[B] hold", 0, "phoenix_bluebird",
+        "As the phoenix, hold: your wings spread and the fire gathers round you into a white orb at your chest; let go and four balls of"
+            + " blue and gold fire fly out one after another.");
     /** The human's moves and the phoenix's, in the same keys (the panel shows the form's). */
-    public static final List<FruitMove> HUMAN = List.of(FORM, FUJIAZAMI, TALON_SLAM);
-    public static final List<FruitMove> PHOENIX = List.of(FORM, FUJIAZAMI_PHOENIX, HAWK_RUSH);
+    public static final List<FruitMove> HUMAN = List.of(FORM, FUJIAZAMI, TALON_SLAM, INFERNO, BLUEBIRD);
+    public static final List<FruitMove> PHOENIX = List.of(FORM, FUJIAZAMI_PHOENIX, HAWK_RUSH, INFERNO_PHOENIX, BLUEBIRD_PHOENIX);
     /** Every move (the energy list, the tests). */
-    public static final List<FruitMove> MOVES = List.of(FORM, FUJIAZAMI, TALON_SLAM, FUJIAZAMI_PHOENIX, HAWK_RUSH);
+    public static final List<FruitMove> MOVES = List.of(FORM, FUJIAZAMI, TALON_SLAM, INFERNO, BLUEBIRD, FUJIAZAMI_PHOENIX, HAWK_RUSH,
+        INFERNO_PHOENIX, BLUEBIRD_PHOENIX);
 
     @Override
     public Fruit fruit() {
