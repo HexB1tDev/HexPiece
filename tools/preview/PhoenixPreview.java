@@ -98,6 +98,12 @@ public final class PhoenixPreview {
         double hz;
         int wings = -1;
         float wingsSize;
+        /** 3.7.6: the stand-in's arms raised out to the sides (degrees), its arms the wings. */
+        double raise;
+        /** 3.7.6: how long the move holds the arms' wings (ticks; 0: the old wingsSize, held whole). */
+        float held;
+        /** More fire, drawn with the scene's. */
+        final java.util.List<java.util.function.BiConsumer<com.hexhaki.piece.dragon.FireMesh.Sink, double[]>> more = new ArrayList<>();
         boolean dummy;
         double dx;
         double dy;
@@ -317,15 +323,14 @@ public final class PhoenixPreview {
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 1.35 - e[1], -1.2 - e[2], size, t, 10);
                     } else if (t < held + fly) {
                         double z = -1.2 - speed * (t - held);
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 1.35 - e[1], z - e[2], size, t, 10, true);
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, -e[0], 1.35 - e[1], z - e[2], 0, 0, -1, t, size, 10);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueFlying(sink, -e[0], 1.35 - e[1], z - e[2], 0, 0, -1, t, size, 10);
                     } else {
-                        com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, -e[0], 0.5 - e[1], -15.2 - e[2], Math.PI, 0.75, t - held - fly, 10);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, -e[0], 1.35 - e[1], -15.2 - e[2], t - held - fly, 2.5 + 2.0 * size, 10);
                     }
                 };
             }
             case "m-bluep" -> {
-                // 3.7.5: Bluebird, the phoenix: wings spread, the flames gathering and the orb, one great ball, its blast a bird of fire
+                // 3.7.6: Bluebird, the phoenix: wings spread, the flames gathering into the sphere, the sphere flying, its blast
                 int held = 30;
                 double speed = com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_BIRD_SPEED;
                 double fly = 16.0 / speed;
@@ -335,13 +340,12 @@ public final class PhoenixPreview {
                 sc.fire = (sink, e) -> {
                     if (t < held) {
                         com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, -e[0], 2.6 - e[1], -e[2], t, 2.4, 11);
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 4.4 - e[1], -2.2 - e[2], 0.5 + 0.8 * Math.min(1.0, t / 12.0), t, 11);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 4.4 - e[1], -2.6 - e[2], 0.6 + 1.6 * Math.min(1.0, t / 24.0), t, 11);
                     } else if (t < held + fly) {
                         double bz = -3.0 - speed * (t - held);
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 4.0 - e[1], bz - e[2], 2.2, t, 12, true);
-                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, -e[0], 4.0 - e[1], bz - e[2], 0, 0, -1, t, 2.2, 12);
+                        com.hexhaki.piece.phoenix.PhoenixMoveArt.blueFlying(sink, -e[0], 4.0 - e[1], bz - e[2], 0, 0, -1, t, 2.2, 12);
                     }
-                    com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, -e[0], 1.0 - e[1], -3.0 - 16.0 - e[2], Math.PI, 1.1, t - held - fly, 12);
+                    com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, -e[0], 4.0 - e[1], -3.0 - 16.0 - e[2], t - held - fly, 7.0, 12);
                 };
             }
             case "m-boom" -> sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixBlast.explosion(sink, -e[0], 1.0 - e[1], -e[2], 4.0, t, 3);
@@ -351,7 +355,14 @@ public final class PhoenixPreview {
             case "m-tornado2" -> {
                 sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixBlast.tornado(sink, -e[0], -e[1], -e[2], t, Math.min(1.0, t / 6.0), 1.4, 3);
             }
-            case "m-bird" -> sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, -e[0], -e[1], -e[2], Math.PI, 1.1, t, 3);
+            case "m-armwings" -> {
+                // 3.7.6: the arms become the wings (held 24 ticks, the arms out level), burning in and burning away
+                sc.human = true;
+                sc.wings = 1;
+                sc.held = 24.0F;
+                sc.raise = 85.0;
+            }
+            case "m-sphere" -> sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 2.0 - e[1], -e[2], 2.2, t, 3);
             default -> {
                 return null;
             }
@@ -471,7 +482,8 @@ public final class PhoenixPreview {
         ra.ground(0.0);
         if (sc != null) {
             if (sc.human) {
-                ra.human(0.0, false, false, false, false);
+                boolean gone = sc.wings >= 0 && (sc.held > 0.0F ? PhoenixForm.armHidden(ticks, sc.held) : sc.wingsSize > 0.35F);
+                ra.human(sc.raise, gone, false, false, false);
             }
             if (sc.dummy) {
                 ra.figure(sc.dx, sc.dy, sc.dz);
@@ -506,35 +518,95 @@ public final class PhoenixPreview {
             }
             ra.mesh(part, wp, col);
         }
-        // 3.7.2: the human's temporary phoenix wings and tail (client/phoenix/PhoenixFx.wings): the model's wing and tail parts small on the
-        // back, the roots at the shoulders, swept back (a dash) or spread
-        if (sc != null && sc.wings >= 0 && sc.wingsSize > 0.02F) {
+        // 3.7.6: the human's arms become the phoenix's wings (client/phoenix/PhoenixFx.armWings, PhoenixForm.armWing): one laid along each
+        // of the stand-in's arms from the shoulder, the arms hidden
+        if (sc != null && sc.wings >= 0 && (sc.held > 0.0F || sc.wingsSize > 0.02F)) {
+            float armFire = sc.held > 0.0F ? PhoenixForm.armFire(ticks, sc.held) : 0.0F;
+            float shown = sc.held > 0.0F ? PhoenixForm.wingShown(ticks, sc.held) : sc.wingsSize > 0.35F ? 1.0F : 0.0F;
+            boolean hidden = sc.held > 0.0F && PhoenixForm.armHidden(ticks, sc.held);
             DragonPose wp = new DragonPose(model);
             PhoenixForm.Motion wm = new PhoenixForm.Motion();
-            wm.ram = sc.wings == 0 ? 1.0F : 0.0F;
+            wm.form = 0.0F;
             PhoenixForm.pose(model, shape, wp, wm, ticks / 20.0F * PhoenixForm.beatRate(wm), ticks / 20.0F);
-            float ws = 0.18F * sc.wingsSize;
-            double[] root = {OX, OY + 1.38, OZ + 0.22};
-            for (int i = 0; i < model.parts.length; i++) {
-                if (!shape.wings[i]) {
+            float[] arm = new float[12];
+            double r = Math.toRadians(sc.raise);
+            for (int side = 0; side < 2; side++) {
+                // the stand-in faces -Z, its right toward +X; the arm's frame: x across (the left's out, the right's in), y down it, z behind
+                double sgn = side == 1 ? 1 : -1;
+                double[] d = {sgn * Math.sin(r), -Math.cos(r), 0};
+                double[] q = {sgn * Math.cos(r), Math.sin(r), 0};
+                double[] xa = side == 0 ? q : new double[] {-q[0], -q[1], -q[2]};
+                double[] o = {OX + sgn * 0.375, OY + 1.375, OZ};
+                // the world's down in the arm's frame (x across, z behind)
+                PhoenixForm.armWing(wp, shape, side, 0.18F, (float) -xa[1], 0.0F, arm);
+                int root = shape.wing[side][0];
+                int tipBone = shape.wing[side][4];
+                float rootX = wp.global[root * 12 + 3];
+                float rootY = wp.global[root * 12 + 7];
+                float rootZ = wp.global[root * 12 + 11];
+                float span = side == 0 ? -1.0F : 1.0F;
+                float length = Math.max(1.0F, Math.abs(wp.global[tipBone * 12 + 3] - rootX) * 1.25F);
+                // the arm burning (as the whole change's), the burning edge of the wing taking shape
+                double[] hand = {o[0] + xa[0] * 0.0625 * (side == 0 ? 1 : -1) + d[0] * 0.625, o[1] + xa[1] * 0.0625 * (side == 0 ? 1 : -1) + d[1] * 0.625,
+                    o[2] + d[2] * 0.625};
+                double[] top = {o[0] - d[0] * 0.125, o[1] - d[1] * 0.125, o[2] - d[2] * 0.125};
+                int sd = side;
+                float tk = ticks;
+                if (armFire > 0.01F && (!hidden || shown < 0.6F)) {
+                    sc.more.add((sink, e) -> com.hexhaki.piece.phoenix.PhoenixFire.arm(sink, hand[0] - e[0], hand[1] - e[1], hand[2] - e[2], top[0] - e[0],
+                        top[1] - e[1], top[2] - e[2], armFire, tk, 7 + sd));
+                }
+                if (shown > 0.01F && shown < 0.99F) {
+                    for (int k = 0; k < 2; k++) {
+                        float mx = rootX + span * shown * length * 0.85F;
+                        float mz = rootZ + 0.6F + 1.6F * k;
+                        double lx = arm[0] * mx + arm[1] * rootY + arm[2] * mz + arm[3];
+                        double ly = arm[4] * mx + arm[5] * rootY + arm[6] * mz + arm[7];
+                        double lz = arm[8] * mx + arm[9] * rootY + arm[10] * mz + arm[11];
+                        double[] at = {o[0] + xa[0] * lx + d[0] * ly, o[1] + xa[1] * lx + d[1] * ly, o[2] + xa[2] * lx + d[2] * ly + lz};
+                        double size = 0.2 - 0.05 * k;
+                        int kk = k;
+                        sc.more.add((sink, e) -> com.hexhaki.piece.phoenix.PhoenixFire.front(sink, at[0] - e[0], at[1] - e[1], at[2] - e[2], size, tk,
+                            9 + sd * 2 + kk));
+                    }
+                }
+                if (shown < 0.01F) {
                     continue;
                 }
-                DragonModel.Part part = model.parts[i];
-                float[] pos = new float[part.vertices() * 3];
-                float[] nrm = new float[part.vertices() * 3];
-                PhoenixForm.skin(shape, wp, i, part, pos, nrm, wm, ticks / 20.0F);
-                PhoenixForm.flame(shape, i, part, pos, nrm, ticks / 20.0F);
-                float[] col = new float[part.vertices() * 4];
-                PhoenixLook.glowing(part.kind, tint);
-                for (int v = 0; v < part.vertices(); v++) {
-                    pos[v * 3] = (float) (root[0] + pos[v * 3] * ws);
-                    pos[v * 3 + 1] = (float) (root[1] + (pos[v * 3 + 1] - shape.shoulder) * ws);
-                    pos[v * 3 + 2] = (float) (root[2] + pos[v * 3 + 2] * ws);
-                    col[v * 4] = tint[0];
-                    col[v * 4 + 1] = tint[1];
-                    col[v * 4 + 2] = tint[2];
+                for (int i = 0; i < model.parts.length; i++) {
+                    if (shape.wingSide[i] != side) {
+                        continue;
+                    }
+                    DragonModel.Part part = model.parts[i];
+                    float[] pos = new float[part.vertices() * 3];
+                    float[] nrm = new float[part.vertices() * 3];
+                    PhoenixForm.skin(shape, wp, i, part, pos, nrm, wm, ticks / 20.0F);
+                    PhoenixForm.flame(shape, i, part, pos, nrm, ticks / 20.0F);
+                    float[] col = new float[part.vertices() * 4];
+                    PhoenixLook.glowing(part.kind, tint);
+                    float[] modelX = new float[part.vertices()];
+                    for (int v = 0; v < part.vertices(); v++) {
+                        modelX[v] = pos[v * 3];
+                        double mx = pos[v * 3];
+                        double my = pos[v * 3 + 1];
+                        double mz = pos[v * 3 + 2];
+                        double lx = arm[0] * mx + arm[1] * my + arm[2] * mz + arm[3];
+                        double ly = arm[4] * mx + arm[5] * my + arm[6] * mz + arm[7];
+                        double lz = arm[8] * mx + arm[9] * my + arm[10] * mz + arm[11];
+                        pos[v * 3] = (float) (o[0] + xa[0] * lx + d[0] * ly);
+                        pos[v * 3 + 1] = (float) (o[1] + xa[1] * lx + d[1] * ly);
+                        pos[v * 3 + 2] = (float) (o[2] + xa[2] * lx + d[2] * ly + lz);
+                        col[v * 4] = tint[0];
+                        col[v * 4 + 1] = tint[1];
+                        col[v * 4 + 2] = tint[2];
+                    }
+                    if (shown < 1.0F) {
+                        // the wing taken shape so far, from the root out: the rest of it not there yet (or burnt away)
+                        ra.meshShown(part, pos, col, modelX, rootX, span, length, shown);
+                    } else {
+                        ra.mesh(part, pos, col);
+                    }
                 }
-                ra.mesh(part, pos, col);
             }
         }
         // the tongues of fire streaming off the body (PhoenixFire.burn), alpha blended over, far to near
@@ -587,6 +659,11 @@ public final class PhoenixPreview {
             }
             if (sc != null && sc.fire != null) {
                 sc.fire.accept(sink, eye);
+            }
+            if (sc != null) {
+                for (var f : sc.more) {
+                    f.accept(sink, eye);
+                }
             }
             quads.sort((x, y) -> Double.compare(y[16], x[16]));
             for (double[] q : quads) {
@@ -719,6 +796,24 @@ public final class PhoenixPreview {
                 int col = scale(color, shade[k]);
                 tri(c[f[k][0]], c[f[k][1]], c[f[k][2]], null, null, col);
                 tri(c[f[k][0]], c[f[k][2]], c[f[k][3]], null, null, col);
+            }
+        }
+
+        /** 3.7.6: only the quads within {@code shown} of the way out along the span (as client/phoenix/PhoenixFx.emit). */
+        void meshShown(DragonModel.Part part, float[] pos, float[] col, float[] modelX, float rootX, float span, float length, float shown) {
+            int[] q = part.quads;
+            for (int i = 0; i < q.length; i += 4) {
+                float far = -Float.MAX_VALUE;
+                for (int j = 0; j < 4; j++) {
+                    far = Math.max(far, (modelX[q[i + j]] - rootX) * span / length);
+                }
+                if (far > shown) {
+                    continue;
+                }
+                face(part, pos, col, q[i], q[i + 1], q[i + 2]);
+                if (q[i + 3] != q[i + 2]) {
+                    face(part, pos, col, q[i], q[i + 2], q[i + 3]);
+                }
             }
         }
 

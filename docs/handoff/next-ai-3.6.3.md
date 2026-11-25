@@ -1258,3 +1258,46 @@ In no ZOAN transformed state can you switch to Style or any other mode aside fro
   spin), m-bluep (one ball, the bird), m-blueh (the bird), m-boom, m-tornado, m-tornado2, m-bird.
 - Not done this chat: the GIFs of 3.7.5 and the GIF page update (https://claude.ai/artifact/8rkQGG2vrMuSZoZWoJdoB7): render them
   with tools/preview/PhoenixPreview (scenes above) when there is time.
+
+## AK. The owner, after 3.7.5 was pushed (verbatim)
+"go ahead and make blue bird the sphere I asked for or rever that shit ass projectile"
+- Read with AI's "The Blue bird move should shoot and charge a sphere not a bird (made of flames)": Bluebird is a sphere of flames
+  that is charged, shot and blows up; no bird anywhere (3.7.5's bird-shaped blast and its fireball with a comet's tail are gone):
+  3.7.6.
+
+## AL. The owner, with a screenshot of the preview of the human's Bluebird (the stand-in player, the sphere, the temporary wings
+## of fire behind the back circled) (verbatim)
+"the arms of the player SHOULD become the wings not create a layer behind them bro"
+- The human's temporary phoenix wings (Fujiazami, Phoenix Inferno, Bluebird: PhoenixFx.wings) must BE the arms: each wing laid along
+  its arm from the shoulder (following the arm's pose), the arm burning into it, never a second pair on the back: 3.7.6.
+
+## AM. The owner, on the arms' wings (verbatim)
+"and I mean that for every move literally" (the arms become the wings in every human move: Talon Slam got them too)
+"the disappear animation should be the same as the de-transformation, arms burning slowly and turning back to normal, same for the
+turning into the wings, burn and shape into the wings like the full transformation, not just shrink into being, this whole shrinking
+the model till it disappears sucks major  ass, I dont wanna see it again"
+- Standing rule from this: NEVER scale a model or a body in or out to make it appear or go. Things burn into being and burn away.
+
+## AN. 3.7.6 (done): Bluebird a sphere; the human's arms become the wings, burning in and away
+- Bluebird (AI, AK): phoenix/PhoenixBlast.sphere (a cyan glow shell with a gold rim, a ragged cyan blaze puff round a white-hot heart
+  at the full detail, 22 flame ribbons over its skin on a golden-angle spiral turning with it, sparks shed behind it in flight; no
+  tail). PhoenixMoveArt.blueBall (held: the charge; size * 0.6 its radius), blueFlying (in flight), blueBoom (the house's explosion at
+  0.7 radius, 0.7 share, quality 0.5). The phoenix's orb grows to the flying size (0.6 to 2.2 over 24 ticks). The bird of fire
+  (3.7.5's PhoenixBlast.bird), birdPoints and blueTrail are gone. Kit texts say sphere.
+- The arms' wings (AL, AM): PhoenixForm.Shape.wingSide (each "Wing" part by its side), PhoenixForm.armWing(pose, shape, side, scale,
+  downX, downZ, out): the 3 x 4 matrix laying wing side (0 left, the model's -X) along that arm in the player model's ModelPart frame
+  (y down the arm, x across: the left arm's out +x, the right's -x, z behind; a proper turn, tested), the root on the shoulder
+  (ARM_OUT, ARM_UP), the feathers turned about the arm toward the world's down (DROOP 1.5: half way between behind and down with the
+  arm out level, behind with it hanging). Posed with Motion.form 0 (the wings straight out). Client: PhoenixClient.renderBody ->
+  PhoenixFx.armWings (in the player's own layer, ModelPart.translateAndRotate per arm), the arms hidden by hideHuman; the old back
+  wings (PhoenixFx.wings) are gone. WINGS_SCALE 0.18 (each wing about 1.6 blocks from the shoulder).
+- Burning in and away, never scaled (PhoenixForm.armFire, armHidden, wingShown; ARM_CATCH 5, ARM_SHAPE 6, ARM_BURN 6, ARM_COOL 9,
+  ARM_BACK 4, ARM_LAST 13): the fire runs up each arm from the hand (PhoenixFire.arm: the whole change's burning limb, a banded tube,
+  no tongues), the arm hidden once ARMS_TAKEN of it burns, the wing revealed from the shoulder out along its span (PhoenixFx.emit's
+  shown clip: a quad drawn once all its corners are within shown of the span) with a burning edge (PhoenixFire.front, two puffs);
+  going, the wing burnt away from the tip back, the arm back as fire, then shown again with the fire dying off it from the shoulder
+  down to the hand. PhoenixMoveFx keeps wings already out when a move sends them again (Bluebird's throw): no burning in twice.
+- Server: Talon Slam (human) now sends WINGS too ("for every move literally").
+- Previews: m-armwings (held 24 ticks, the arms out at 85 degrees: the whole burn in and away), m-sphere; m-blueh, m-bluep with the
+  sphere; the stand-in's arms hidden while they are wings.
+- Not done: the first-person hand (the arm in first person is not a wing yet); ask the owner if they want it there too.

@@ -313,6 +313,16 @@ public final class PhoenixFx {
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public static void hideHuman(RenderPlayerEvent.Pre event) {
+        // 3.7.6 (the owner: "the arms of the player SHOULD become the wings"): while a move's wings are out, the arms are the wings
+        // (armWings lays one along each): the arms themselves hidden
+        PhoenixMoveFx.Wings w = PhoenixMoveFx.WINGS.isEmpty() ? null : PhoenixMoveFx.WINGS.get(event.getEntity().m_19879_());
+        if (w != null && !ENTRIES.containsKey(event.getEntity().m_19879_())
+            && PhoenixForm.armHidden(clock + event.getPartialTick() - w.start, w.ticks) && event.getRenderer().m_7200_() instanceof PlayerModel<?> arms) {
+            arms.f_102811_.f_104207_ = false;
+            arms.f_102812_.f_104207_ = false;
+            arms.f_103375_.f_104207_ = false;
+            arms.f_103374_.f_104207_ = false;
+        }
         if (ENTRIES.isEmpty()) {
             return;
         }
@@ -375,9 +385,8 @@ public final class PhoenixFx {
     /** The phoenixes, after the entities. */
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void render(RenderLevelStageEvent event) {
-        // 3.7.5 (the owner: "No vfx is showing with the tori tori no mi (untransformed)"): the human's temporary wings are drawn here too:
-        // this returned whenever nobody was the phoenix
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || ENTRIES.isEmpty() && PhoenixMoveFx.WINGS.isEmpty()) {
+        // (3.7.6: the human's temporary wings are drawn on their arms, in the player's own layer: PhoenixClient.renderBody, armWings)
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES || ENTRIES.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -404,14 +413,6 @@ public final class PhoenixFx {
                     continue; // the eye is inside the phoenix: only the world is seen
                 }
                 draw(m, entry, player, stack, out, camera, partial, e.getKey());
-            }
-            // 3.7.2: the human's temporary phoenix wings and tail (a move's: server/PhoenixMoves.WINGS)
-            for (Map.Entry<Integer, PhoenixMoveFx.Wings> e : PhoenixMoveFx.WINGS.entrySet()) {
-                if (ENTRIES.containsKey(e.getKey()) || !(level.m_6815_(e.getKey()) instanceof Player player)
-                    || player == minecraft.f_91074_ && firstPerson) {
-                    continue;
-                }
-                wings(m, e.getValue(), player, stack, out, camera, partial, e.getKey());
             }
             buffers.m_109912_(body);
         } catch (RuntimeException failure) {
@@ -548,21 +549,26 @@ public final class PhoenixFx {
         };
     }
 
-    /** Each human's temporary wings' pose (by entity id) and skinned arrays. */
-    static final Map<Integer, Entry> WING_POSES = new HashMap<>();
-    /** The temporary wings' size (blocks a model unit: about 3.2 blocks across), and where their roots sit on the back. */
-    static final float WINGS_SCALE = 0.18F;
-
     /**
-     * 3.7.2 (the reference's Inferno and Bluebird: "the user forms temporary wings and a tail"): the phoenix's own wings and tail (its
-     * Shape.wings parts) small on a human's back, their roots at the shoulders, facing the body's way, swept back (a dash) or spread and
-     * beating; grown out and burnt away (PhoenixMoveFx.wings).
+     * 3.7.6, every move of the human's (the owner: "the arms of the player SHOULD become the wings not create a layer behind them bro",
+     * "and I mean that for every move literally"): the phoenix's own wings (Shape.wingSide), shaped as the human (straight out), one laid
+     * along each arm from the shoulder down past the hand (PhoenixForm.armWing), turning with the arm as the move's clip moves it, the
+     * arm itself hidden in it (hideHuman). They come and go as the whole change does, never grown or shrunk (PhoenixForm.armFire,
+     * armHidden, wingShown): the arms catch fire from the hands up and burn into the wings, which take shape out of the fire from the
+     * shoulder to the tip; going, the wings burn away from the tips back, the arms come back burning and the fire dies off them. Drawn in
+     * the player's own layer ({@code pose} the player model's frame: PhoenixClient.renderBody).
      */
-    static void wings(DragonModel m, PhoenixMoveFx.Wings w, Player player, PoseStack stack, VertexConsumer out, Vec3 camera, float partial,
-                      int id) {
+    static void armWings(PoseStack pose, MultiBufferSource buffers, Player player, PlayerModel<?> body, float partial) {
+        int id = player.m_19879_();
+        PhoenixMoveFx.Wings w = PhoenixMoveFx.WINGS.isEmpty() ? null : PhoenixMoveFx.WINGS.get(id);
+        DragonModel m = w == null || ENTRIES.containsKey(id) ? null : model();
+        if (m == null || shape == null) {
+            return;
+        }
         float t = clock + partial - w.start;
-        float size = PhoenixMoveFx.wings(w, t);
-        if (size < 0.02F) {
+        float fire = PhoenixForm.armFire(t, w.ticks);
+        float shown = PhoenixForm.wingShown(t, w.ticks);
+        if (fire < 0.01F && shown < 0.01F) {
             return;
         }
         Entry entry = WING_POSES.computeIfAbsent(id, k -> new Entry());
@@ -583,40 +589,85 @@ public final class PhoenixFx {
         mo.walk = 0.0F;
         mo.flare = 0.0F;
         mo.land = 0.0F;
-        mo.form = 1.0F;
+        mo.form = 0.0F;
         mo.sweep = 0.0F;
         mo.reach = 0.0F;
-        mo.ram = w.pose == com.hexhaki.piece.server.PhoenixMoves.WINGS_SWEPT ? 1.0F : 0.0F;
+        mo.ram = 0.0F;
+        mo.spread = 0.0F;
         float seconds = (clock + partial) / 20.0F + (id % 13) * 0.27F;
         PhoenixForm.pose(m, shape, entry.pose, mo, seconds * PhoenixForm.beatRate(mo), seconds);
-        double x = player.f_19790_ + (player.m_20185_() - player.f_19790_) * partial;
-        double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partial;
-        double z = player.f_19792_ + (player.m_20189_() - player.f_19792_) * partial;
-        float yaw = player.f_20884_ + wrap(player.f_20883_ - player.f_20884_) * partial;
-        double r = Math.toRadians(yaw);
-        // the roots at the shoulders, a little behind the back
-        double bx = Math.sin(r) * 0.22;
-        double bz = -Math.cos(r) * 0.22;
-        placement(x + bx - camera.f_82479_, y + 1.38 - camera.f_82480_, z + bz - camera.f_82481_, yaw, 0.0F, 0.0F, WINGS_SCALE * size,
-            shape.shoulder, PLACE);
-        Matrix4f view = stack.m_85850_().m_252922_();
-        Vector3f o = view.transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
-        Vector3f ax = view.transformDirection(new Vector3f(1.0F, 0.0F, 0.0F));
-        Vector3f ay = view.transformDirection(new Vector3f(0.0F, 1.0F, 0.0F));
-        Vector3f az = view.transformDirection(new Vector3f(0.0F, 0.0F, 1.0F));
-        float[] v = {ax.x, ay.x, az.x, o.x, ax.y, ay.y, az.y, o.y, ax.z, ay.z, az.z, o.z};
-        float[] mat = mul(v, PLACE);
-        Vector3f ny = stack.m_85850_().m_252943_().transform(new Vector3f(0.0F, 1.0F, 0.0F));
-        for (int i = 0; i < m.parts.length; i++) {
-            if (!shape.wings[i]) {
-                continue;
+        VertexConsumer out = buffers.m_6299_(RenderType.m_110458_(TEXTURE));
+        // every normal the world's up (the game's lights shade no side of it): the model frame's up is its -y
+        Vector3f ny = pose.m_85850_().m_252943_().transform(new Vector3f(0.0F, -1.0F, 0.0F));
+        // the world's down (the model frame's +y) in the view, to droop the feathers by
+        Vector3f down = pose.m_85850_().m_252922_().transformDirection(new Vector3f(0.0F, 1.0F, 0.0F));
+        boolean hidden = PhoenixForm.armHidden(t, w.ticks);
+        for (int side = 0; side < 2; side++) {
+            pose.m_85836_();
+            (side == 0 ? body.f_102812_ : body.f_102811_).m_104299_(pose);
+            Matrix4f arm = pose.m_85850_().m_252922_();
+            Vector3f local = new Matrix4f(arm).invert().transformDirection(new Vector3f(down.x, down.y, down.z));
+            float ll = (float) Math.sqrt(local.x * local.x + local.y * local.y + local.z * local.z);
+            if (ll > 1.0E-6F) {
+                local.x /= ll;
+                local.z /= ll;
             }
-            DragonModel.Part part = m.parts[i];
-            PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], mo, seconds);
-            PhoenixForm.flame(shape, i, part, entry.pos[i], entry.nrm[i], seconds);
-            emit(out, shape, i, part, entry.pos[i], entry.nrm[i], mat, ny.x, ny.y, ny.z, seconds);
+            // the arm burning (as the whole change's arms): from the hand up while it turns, from the shoulder down to the hand coming back
+            float across = side == 0 ? 0.0625F : -0.0625F;
+            float wingAt = shown;
+            ARM_SINK.matrix = arm;
+            ARM_SINK.buffer = buffers.m_6299_(RenderType.m_269166_());
+            if (fire > 0.01F && (!hidden || shown < 0.6F)) {
+                PhoenixFire.arm(ARM_SINK, across, 0.625, 0.0, across, -0.125, 0.0, fire, clock + partial, id * 2 + side);
+            }
+            Vector3f o = arm.transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
+            Vector3f ax = arm.transformDirection(new Vector3f(1.0F, 0.0F, 0.0F));
+            Vector3f ay = arm.transformDirection(new Vector3f(0.0F, 1.0F, 0.0F));
+            Vector3f az = arm.transformDirection(new Vector3f(0.0F, 0.0F, 1.0F));
+            float[] v = {ax.x, ay.x, az.x, o.x, ax.y, ay.y, az.y, o.y, ax.z, ay.z, az.z, o.z};
+            PhoenixForm.armWing(entry.pose, shape, side, WINGS_SCALE, local.x, local.z, ARM);
+            float[] mat = mul(v, ARM);
+            // the wing taken shape so far, from the shoulder (its root) out along its span; its burning edge where it ends
+            int root = shape.wing[side][0];
+            int tip = shape.wing[side][4];
+            float rootX = root < 0 ? 0.0F : entry.pose.global[root * 12 + 3];
+            float rootY = root < 0 ? shape.shoulder : entry.pose.global[root * 12 + 7];
+            float rootZ = root < 0 ? 0.0F : entry.pose.global[root * 12 + 11];
+            float span = side == 0 ? -1.0F : 1.0F;
+            float length = Math.max(1.0F, Math.abs((tip < 0 ? rootX + span * 8.0F : entry.pose.global[tip * 12 + 3]) - rootX) * 1.25F);
+            if (wingAt > 0.01F) {
+                for (int i = 0; i < m.parts.length; i++) {
+                    if (shape.wingSide[i] != side) {
+                        continue;
+                    }
+                    DragonModel.Part part = m.parts[i];
+                    PhoenixForm.skin(shape, entry.pose, i, part, entry.pos[i], entry.nrm[i], mo, seconds);
+                    PhoenixForm.flame(shape, i, part, entry.pos[i], entry.nrm[i], seconds);
+                    emit(out, shape, i, part, entry.pos[i], entry.nrm[i], mat, ny.x, ny.y, ny.z, seconds, rootX, span, length, wingAt);
+                }
+            }
+            if (wingAt > 0.01F && wingAt < 0.99F) {
+                for (int k = 0; k < 2; k++) {
+                    float mx = rootX + span * wingAt * length * 0.85F;
+                    float mz = rootZ + 0.6F + 1.6F * k;
+                    float lx = ARM[0] * mx + ARM[1] * rootY + ARM[2] * mz + ARM[3];
+                    float ly = ARM[4] * mx + ARM[5] * rootY + ARM[6] * mz + ARM[7];
+                    float lz = ARM[8] * mx + ARM[9] * rootY + ARM[10] * mz + ARM[11];
+                    PhoenixFire.front(ARM_SINK, lx, ly, lz, 0.2 - 0.05 * k, clock + partial, id * 4 + side * 2 + k);
+                }
+            }
+            pose.m_85849_();
         }
     }
+
+    private static final float[] ARM = new float[12];
+    /** The arms' fire, in an arm's own frame (armWings). */
+    private static final Writer ARM_SINK = new Writer();
+
+    /** Each human's temporary wings' pose (by entity id) and skinned arrays. */
+    static final Map<Integer, Entry> WING_POSES = new HashMap<>();
+    /** The temporary wings' size (blocks a model unit: each about 1.6 blocks long, from the shoulder past the hand). */
+    static final float WINGS_SCALE = 0.18F;
 
     /**
      * The model's place (3 x 4 row-major, blocks, camera-relative): its point {@code anchor} high (model units) at (x, y, z), facing the
@@ -678,6 +729,15 @@ public final class PhoenixFx {
      */
     static void emit(VertexConsumer out, PhoenixForm.Shape sh, int index, DragonModel.Part part, float[] pos, float[] nrm, float[] m, float upX,
                      float upY, float upZ, float seconds) {
+        emit(out, sh, index, part, pos, nrm, m, upX, upY, upZ, seconds, 0.0F, 0.0F, 1.0F, 2.0F);
+    }
+
+    /**
+     * As above, 3.7.6 only the quads within {@code shown} of the way out along the span (the model's x from {@code rootX} by {@code span},
+     * over {@code length}): a wing taking shape out of the fire, or burning away.
+     */
+    static void emit(VertexConsumer out, PhoenixForm.Shape sh, int index, DragonModel.Part part, float[] pos, float[] nrm, float[] m, float upX,
+                     float upY, float upZ, float seconds, float rootX, float span, float length, float shown) {
         int[] q = part.quads;
         float[] uv = part.uv;
         float[] light = PhoenixLook.LIGHT;
@@ -688,6 +748,16 @@ public final class PhoenixFx {
         }
         for (int i = 0; i < q.length; i++) {
             int k = q[i];
+            if (shown < 1.0F && i % 4 == 0) {
+                float far = -Float.MAX_VALUE;
+                for (int j = 0; j < 4; j++) {
+                    far = Math.max(far, (pos[q[i + j] * 3] - rootX) * span / length);
+                }
+                if (far > shown) {
+                    i += 3;
+                    continue;
+                }
+            }
             float x = pos[k * 3];
             float y = pos[k * 3 + 1];
             float z = pos[k * 3 + 2];

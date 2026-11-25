@@ -1093,6 +1093,52 @@ public final class DragonTests {
             && !com.hexhaki.piece.phoenix.PhoenixForm.humanHidden(going, com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_BACK)
             && com.hexhaki.piece.phoenix.PhoenixForm.grow(going, com.hexhaki.piece.phoenix.PhoenixForm.HUMAN_BACK) > 0.0F,
             "the phoenix shaped as the human where it takes the human's place, the arms out as wings, let down as it goes");
+        // 3.7.6 (the owner: "the arms of the player SHOULD become the wings"): each wing laid along its arm, a true turn (no mirror), the
+        // wing's parts on both sides, its root on the shoulder and its length down the arm past the hand
+        com.hexhaki.piece.dragon.DragonPose armPose = new com.hexhaki.piece.dragon.DragonPose(m);
+        com.hexhaki.piece.phoenix.PhoenixForm.Motion armMo = new com.hexhaki.piece.phoenix.PhoenixForm.Motion();
+        armMo.form = 0.0F;
+        com.hexhaki.piece.phoenix.PhoenixForm.pose(m, shape, armPose, armMo, 0.0F, 0.0F);
+        int[] sides = new int[2];
+        for (int i = 0; i < m.parts.length; i++) {
+            if (shape.wingSide[i] >= 0) {
+                sides[shape.wingSide[i]]++;
+            }
+        }
+        Check.that(sides[0] > 0 && sides[0] == sides[1], "the wing parts split evenly between the arms (" + sides[0] + ", " + sides[1] + ")");
+        for (int side = 0; side < 2; side++) {
+            for (float droop : new float[] {0.0F, 1.0F, -1.0F}) {
+                float[] a = new float[12];
+                com.hexhaki.piece.phoenix.PhoenixForm.armWing(armPose, shape, side, 0.18F, droop, 0.0F, a);
+                double det = a[0] * (a[5] * a[10] - a[6] * a[9]) - a[1] * (a[4] * a[10] - a[6] * a[8]) + a[2] * (a[4] * a[9] - a[5] * a[8]);
+                int tip = shape.wing[side][4];
+                float tx = armPose.global[tip * 12 + 3];
+                float ty = armPose.global[tip * 12 + 7];
+                float tz = armPose.global[tip * 12 + 11];
+                double down = a[4] * tx + a[5] * ty + a[6] * tz + a[7];
+                Check.that(det > 0.0 && Math.abs(Math.cbrt(det) - 0.18) < 1.0E-3 && down > 0.9,
+                    "wing " + side + " laid along its arm, turned not mirrored, its tip down the arm past the hand (" + det + ", " + down + ")");
+            }
+        }
+        // 3.7.6 (the owner: "burn and shape into the wings like the full transformation, not just shrink into being"): the arms catch fire,
+        // go into it, the wing takes shape from the shoulder; it burns away from the tip, the arms come back burning, the fire dies off
+        float held = 24.0F;
+        float armLast = held + com.hexhaki.piece.phoenix.PhoenixForm.ARM_LAST;
+        boolean shapes = true;
+        float before = 0.0F;
+        for (float t = 0.0F; t < held; t += 0.5F) {
+            float shownNow = com.hexhaki.piece.phoenix.PhoenixForm.wingShown(t, held);
+            shapes &= shownNow >= before;
+            before = shownNow;
+        }
+        Check.that(com.hexhaki.piece.phoenix.PhoenixForm.armFire(0.0F, held) == 0.0F && !com.hexhaki.piece.phoenix.PhoenixForm.armHidden(0.0F, held)
+            && com.hexhaki.piece.phoenix.PhoenixForm.wingShown(0.0F, held) == 0.0F && shapes
+            && com.hexhaki.piece.phoenix.PhoenixForm.armHidden(held - 1.0F, held) && com.hexhaki.piece.phoenix.PhoenixForm.wingShown(held - 1.0F, held) == 1.0F
+            && com.hexhaki.piece.phoenix.PhoenixForm.wingShown(held + com.hexhaki.piece.phoenix.PhoenixForm.ARM_BURN, held) == 0.0F
+            && com.hexhaki.piece.phoenix.PhoenixForm.armFire(held + com.hexhaki.piece.phoenix.PhoenixForm.ARM_BACK + 1.0F, held) > 0.5F
+            && !com.hexhaki.piece.phoenix.PhoenixForm.armHidden(armLast - 2.0F, held) && com.hexhaki.piece.phoenix.PhoenixForm.armFire(armLast, held) == 0.0F
+            && !com.hexhaki.piece.phoenix.PhoenixForm.armHidden(armLast, held),
+            "the arms burn into the wings and back as the whole change does (no growing or shrinking)");
         phoenixMoves(faces, shape.anchors.length / 2, shape.anchorSize, points);
     }
 
@@ -1179,22 +1225,22 @@ public final class DragonTests {
             count[0] = 0;
             com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
             com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
-            // 3.7.5: one ball (was four), its blast a bird of fire ten blocks off
+            // 3.7.6: one sphere of flames (3.7.5's ball, 3.7.3's four), charged to its full size, flying, its blast ten blocks off
             if (t < 30) {
                 com.hexhaki.piece.phoenix.PhoenixMoveArt.fujiCharge(sink, 0, 0, 6, t, 2.4, 5);
-                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, 0, 2, 4, 1.3, t, 5);
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, 0, 2, 4, 0.6 + 1.6 * Math.min(1.0, t / 24.0), t, 5);
             } else if (t < 38) {
-                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, 0, 2, 4 + (t - 30), 2.2, t, 5, true);
-                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueTrail(sink, 0, 2, 4 + (t - 30), 0, 0, 1, t, 2.2, 5);
+                com.hexhaki.piece.phoenix.PhoenixMoveArt.blueFlying(sink, 0, 2, 4 + (t - 30), 0, 0, 1, t, 2.2, 5);
             }
-            com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, 0, 1, 12, Math.PI, 1.1, t - 38, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, 0, 2, 12, t - 38, 7.0, 5);
             check(count[0] + faces, finite[0], "the phoenix's Bluebird", t);
             // the human's: the kicks and the bursts, the ball and its blast (no model beside them)
             count[0] = 0;
             com.hexhaki.piece.phoenix.PhoenixMoveArt.burst(sink, 0, 0, 6, t, 1.0, 5);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.kick(sink, 0.1, -0.5, 6, 0, 1, t % 6, t % 2 == 0, 5);
             com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, 0, 0, 7, com.hexhaki.piece.phoenix.PhoenixMoveArt.blueSize(t), t, 5);
-            com.hexhaki.piece.phoenix.PhoenixBlast.bird(sink, 0, 0, 6, 0.0, 0.75, t, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueFlying(sink, 0, 0, 9, 0, 0, 1, t, 1.6, 5);
+            com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, 0, 0, 12, t, 5.7, 5);
             check(count[0], finite[0], "the human's Phoenix Inferno and Bluebird", t);
         }
         Check.that(com.hexhaki.piece.server.PhoenixKit.HUMAN.size() == 5 && com.hexhaki.piece.server.PhoenixKit.PHOENIX.size() == 5

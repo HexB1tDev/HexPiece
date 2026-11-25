@@ -333,110 +333,54 @@ public final class PhoenixBlast {
         FireMesh.quality = quality;
     }
 
-    // ------------------------------------------------------------------------------------------------------ the bird of fire
-
-    /** How long the bird of fire burns (ticks). */
-    public static final double BIRD_LIFE = 40.0;
-    /** Its wing's feathers, a wing's length (units of its size), its tail's streamers. */
-    static final int FEATHERS = 11;
-    static final double WING = 7.0;
-    static final int STREAMERS = 5;
+    // ------------------------------------------------------------------------------------------------------ the sphere of flames
 
     /**
-     * Bluebird's blast (the owner: "a massive explosion in the shape of a bird"): an explosion at (x, y, z) and out of it a phoenix of
-     * blue flame rising, {@code scale} blocks a unit (its wings about 15 units across), turned to the one who threw it (the ball flew
-     * {@code yaw}, radians, the game's): its wings spread wide to either side, each a fan of flame feathers hanging off a white-hot leading
-     * edge, beating once, hard, as it is born and lifting again; its body and head white-hot in cyan with a crest of flame; five gold-tipped
-     * streamers of a tail hanging under it. It grows out of the blast in a few ticks, rises, and burns away. {@code age} ticks after it.
+     * 3.7.6, Bluebird's sphere (the owner: "The Blue bird move should shoot and charge a sphere not a bird (made of flames)", "make blue
+     * bird the sphere I asked for"): a ball of fire {@code radius} round at (x, y, z), {@code age} its clock, going (vx, vy, vz) (zero:
+     * held): a white-hot heart in a round cyan blaze, its whole skin flames licking out and up all round it and turning with it, a gold
+     * rim and a soft cyan glow, sparks shed behind it as it flies. No tail: it stays a sphere.
      */
-    public static void bird(FireMesh.Sink sink, double x, double y, double z, double yaw, double scale, double age, int seed) {
-        if (age < 0.0 || age > BIRD_LIFE) {
+    public static void sphere(FireMesh.Sink sink, double x, double y, double z, double radius, double vx, double vy, double vz, double age,
+                              int seed) {
+        if (radius < 0.05) {
             return;
         }
-        explosion(sink, x, y, z, scale * 2.6, age, seed, 0.55);
-        double grow = 0.25 + 0.75 * ease(age / 6.0);
-        double fade = clamp((BIRD_LIFE - age) / 14.0) * clamp(age / 2.0);
-        double sz = scale * grow;
-        // its frame: right (across the way the ball flew), up, back (the way the ball flew: the thrower sees its breast)
-        double bx = -Math.sin(yaw);
-        double bz = Math.cos(yaw);
-        double rx = -bz;
-        double rz = bx;
-        double cx = x;
-        double cy = y + scale * (2.2 + 0.12 * age);
-        double cz = z;
-        // the beat: born with its wings raised high, one hard downstroke, then lifted again as it rises
-        double beat = age < 10.0 ? 60.0 - 62.0 * ease(age / 10.0) : -2.0 + 34.0 * ease((age - 10.0) / 18.0);
-        double e = Math.toRadians(beat);
-        for (int side = -1; side <= 1; side += 2) {
-            // the wing's bone: out to the side, up by the beat, swept a little back
-            double ou = Math.cos(e) * side;
-            double ov = Math.sin(e);
-            double ow = 0.15;
-            double ol = Math.sqrt(ou * ou + ov * ov + ow * ow);
-            ou /= ol;
-            ov /= ol;
-            ow /= ol;
-            double su = 0.55 * side;
-            double sv = 0.6;
-            double[] root = at(cx, cy, cz, rx, rz, bx, bz, su * sz, sv * sz, 0.0);
-            double[] tipAt = at(cx, cy, cz, rx, rz, bx, bz, (su + ou * WING) * sz, (sv + ov * WING) * sz, ow * WING * sz);
-            double[] across = dir(rx, rz, bx, bz, 0.0, 0.0, 1.0);
-            // the feathers first (the leading edge burns over them)
-            for (int k = 0; k < FEATHERS; k++) {
-                double u = 0.1 + 0.9 * k / (FEATHERS - 1.0);
-                double tip = k / (FEATHERS - 1.0);
-                // each hangs off the bone: the inner ones straight down, the outer ones fanned out past the wing's tip
-                double gu = tip * tip * ou * 1.1;
-                double gv = -(1.0 - tip * tip) + tip * tip * (ov - 0.45);
-                double gw = 0.25;
-                double gl = Math.sqrt(gu * gu + gv * gv + gw * gw);
-                double len = (2.6 + 2.8 * tip) * (0.9 + 0.2 * FireMesh.rand(seed + side, k)) * sz;
-                double pu = (su + ou * WING * u) * sz;
-                double pv = (sv + ov * WING * u) * sz;
-                double pw = ow * WING * u * sz;
-                double[] a = at(cx, cy, cz, rx, rz, bx, bz, pu, pv, pw);
-                double[] b = at(cx, cy, cz, rx, rz, bx, bz, pu + gu / gl * len, pv + gv / gl * len, pw + gw / gl * len);
-                // its width laid along the bone: the feathers overlap into one sheet of flame
-                double[] w = dir(rx, rz, bx, bz, ou, ov, ow);
-                boolean gold = k % 3 == 1;
-                ribbon(sink, a, b, w[0], w[1], w[2], across[0], across[1], across[2], (1.9 + 0.9 * tip) * sz, 0.25 * sz, gold ? 0xFFF0B0 : 0xD2FBFF,
-                    gold ? 0xFFBE2E : 0x2DB8EC, 0.9 * fade, age, seed + side * 31 + k, 4);
-            }
-            // the leading edge: a white-hot band along the bone
-            double[] up = dir(rx, rz, bx, bz, 0.0, 1.0, 0.0);
-            ribbon(sink, root, tipAt, up[0], up[1], up[2], across[0], across[1], across[2], 0.8 * sz, 0.2 * sz, 0xFFFFFF, 0x8FF0FA, fade, age,
-                seed + side, 6);
+        FireMesh.shell(sink, x, y, z, radius * 1.6, 0x46DDF5, 0.35, 0.25);
+        // a cyan blaze, ragged with flame, round a white-hot heart (at the full detail: the sphere is the whole move)
+        puff(sink, x, y, z, radius, 0.0, 1.0, 0.0, 0.0, 0.42, 0.85, 0.75, 0.9, age * 2.4, seed, false);
+        puff(sink, x, y, z, radius * 0.55, 0.0, 1.0, 0.0, 0.0, 0.2, 1.2, 0.3, 1.0, age * 2.0, seed + 1, false);
+        // its skin of flames: points spread evenly over it (a golden-angle spiral), turning, each a flame licking out and a little up
+        int n = 22;
+        double spin = age * 0.12;
+        for (int k = 0; k < n; k++) {
+            double v = 1.0 - 2.0 * (k + 0.5) / n;
+            double ring = Math.sqrt(Math.max(0.0, 1.0 - v * v));
+            double a = k * 2.39996 + spin;
+            double dx = Math.cos(a) * ring;
+            double dy = v;
+            double dz = Math.sin(a) * ring;
+            double flick = 0.5 + 0.5 * Math.sin(age * 0.9 + k * 1.7);
+            double len = radius * (0.8 + 0.6 * flick) * (0.8 + 0.4 * FireMesh.rand(seed, k));
+            double[] a0 = {x + dx * radius * 0.6, y + dy * radius * 0.6, z + dz * radius * 0.6};
+            double[] a1 = {a0[0] + (dx * 0.85) * len, a0[1] + (dy * 0.85 + 0.45) * len, a0[2] + (dz * 0.85) * len};
+            boolean gold = k % 4 == 1;
+            ribbon(sink, a0, a1, -dz, 0.0, dx, 0.0, 1.0, 0.0, radius * 1.1, 0.0, gold ? 0xFFE27A : 0x8FF0FA, gold ? 0xFFBE2E : 0x2DB8EC,
+                0.95, age, seed + 10 + k, 3);
         }
-        // the tail: streamers hanging under it, fanned, gold at their ends
-        for (int k = 0; k < STREAMERS; k++) {
-            double spread = (k - (STREAMERS - 1) / 2.0) / ((STREAMERS - 1) / 2.0);
-            double[] a = at(cx, cy, cz, rx, rz, bx, bz, 0.0, -0.8 * sz, 0.0);
-            double[] b = at(cx, cy, cz, rx, rz, bx, bz, spread * 2.2 * sz, -(5.5 - 1.2 * Math.abs(spread)) * sz, 0.6 * sz);
-            double[] w = dir(rx, rz, bx, bz, 1.0, 0.0, 0.0);
-            ribbon(sink, a, b, w[0], w[1], w[2], 0.0, 0.0, 1.0, 0.9 * sz, 0.3 * sz, 0x8FF0FA, 0xFFBE2E, 0.9 * fade, age, seed + 70 + k, 5);
+        // sparks shed off it: behind it as it flies, all round it held
+        double vl = Math.sqrt(vx * vx + vy * vy + vz * vz);
+        for (int k = 0; k < 8; k++) {
+            double life = 6.0;
+            double t = ((age + k * 0.75) % life) / life;
+            direction(seed + 40, k + (int) ((age + k * 0.75) / life) * 8, 0.2, DIR);
+            double out = radius * (1.0 + 1.4 * t);
+            double bx = vl > 1.0E-3 ? -vx / vl * t * radius * 2.5 : 0.0;
+            double by = vl > 1.0E-3 ? -vy / vl * t * radius * 2.5 : 0.0;
+            double bz = vl > 1.0E-3 ? -vz / vl * t * radius * 2.5 : 0.0;
+            FireMesh.streak(sink, x + DIR[0] * out + bx, y + DIR[1] * out + by + 0.4 * t, z + DIR[2] * out + bz, DIR[0], DIR[1] + 0.3, DIR[2],
+                radius * 0.5, 0.04 + 0.02 * radius, k % 3 == 0 ? 0xFFD84E : 0x8FF0FA, 1.0 - t);
         }
-        // its body and head: white-hot in cyan, a crest of flame streaming up off the head
-        double heat = 1.15 - 0.6 * clamp(age / BIRD_LIFE);
-        double[] chest = at(cx, cy, cz, rx, rz, bx, bz, 0.0, 0.0, 0.0);
-        double[] head = at(cx, cy, cz, rx, rz, bx, bz, 0.0, 2.0 * sz, -0.2 * sz);
-        puff(sink, chest[0], chest[1], chest[2], 1.3 * sz, 0.0, 1.0, 0.0, 0.9, 0.2, heat, 0.6, fade, age * 1.4, seed + 80, false);
-        puff(sink, head[0], head[1], head[2], 0.85 * sz, 0.0, 1.0, 0.0, 0.5, 0.2, heat, 0.6, fade, age * 1.4, seed + 81, false);
-        for (int k = 0; k < 3; k++) {
-            double[] b = at(cx, cy, cz, rx, rz, bx, bz, (k - 1) * 0.8 * sz, (3.6 - 0.3 * Math.abs(k - 1)) * sz, 0.3 * sz);
-            double[] w = dir(rx, rz, bx, bz, 1.0, 0.0, 0.0);
-            ribbon(sink, head, b, w[0], w[1], w[2], 0.0, 0.0, 1.0, 0.5 * sz, 0.0, 0xFFFFFF, 0xFFBE2E, 0.9 * fade, age, seed + 90 + k, 3);
-        }
-    }
-
-    /** A point (u right, v up, w back) of the bird's frame about (cx, cy, cz). */
-    static double[] at(double cx, double cy, double cz, double rx, double rz, double bx, double bz, double u, double v, double w) {
-        return new double[] {cx + rx * u + bx * w, cy + v, cz + rz * u + bz * w};
-    }
-
-    /** A way (u right, v up, w back) of the bird's frame in the world. */
-    static double[] dir(double rx, double rz, double bx, double bz, double u, double v, double w) {
-        return new double[] {rx * u + bx * w, v, rz * u + bz * w};
     }
 
     /**

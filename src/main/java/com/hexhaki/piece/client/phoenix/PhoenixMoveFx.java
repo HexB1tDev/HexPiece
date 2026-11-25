@@ -82,8 +82,13 @@ final class PhoenixMoveFx {
                 }
             }
             case PhoenixMoves.WINGS -> {
+                Wings had = WINGS.get(m.user());
                 if (phase == 0) {
                     WINGS.remove(m.user());
+                } else if (had != null && now - had.start < had.ticks) {
+                    // 3.7.6: wings already out (or still burning away): kept, held on for this move's ticks (they never burn in twice)
+                    had.ticks = (int) (now - had.start) + Math.max(1, m.ticks());
+                    had.pose = Math.round(m.by());
                 } else {
                     Wings w = new Wings();
                     w.start = now;
@@ -150,7 +155,7 @@ final class PhoenixMoveFx {
                 case PhoenixMoves.VORTEX_RISE, PhoenixMoves.VORTEX_DIVE -> 14;
                 default -> 14;
             };
-            case PhoenixMoves.BLUE -> f.phase == PhoenixMoves.BLUE_BOOM ? (int) PhoenixBlast.BIRD_LIFE : f.phase == PhoenixMoves.BLUE_CHARGE
+            case PhoenixMoves.BLUE -> f.phase == PhoenixMoves.BLUE_BOOM ? (int) PhoenixBlast.BURST_LIFE : f.phase == PhoenixMoves.BLUE_CHARGE
                 ? PhoenixMoveArt.BLUE_MOST + 30 : f.ticks + 2;
             default -> 0;
         };
@@ -166,7 +171,7 @@ final class PhoenixMoveFx {
             }
         }
         ACTS.values().removeIf(a -> now - a.start > a.ticks + 2);
-        WINGS.values().removeIf(w -> now - w.start > w.ticks + WINGS_FADE);
+        WINGS.values().removeIf(w -> now - w.start > w.ticks + PhoenixForm.ARM_LAST + 1);
     }
 
     /** Whether an effect follows its user (it ends when the next phase comes). */
@@ -179,15 +184,6 @@ final class PhoenixMoveFx {
     static final int TORNADO_IN = 8;
     static final int TORNADO_OUT = 12;
 
-    /** How long the temporary wings take to come and go (ticks). */
-    static final int WINGS_FADE = 4;
-
-    /** The wings' size now (0 to 1: grown out, burning away). */
-    static float wings(Wings w, float t) {
-        float in = Math.min(1.0F, t / WINGS_FADE);
-        float out = Math.min(1.0F, Math.max(0.0F, (w.ticks + WINGS_FADE - t) / WINGS_FADE));
-        return Math.min(in, out);
-    }
 
     /**
      * A phoenix's move pose into {@code mo} (PhoenixForm.Motion's sweep, ram, reach), {@code t} its clock (ticks, with the partial):
@@ -384,10 +380,10 @@ final class PhoenixMoveFx {
                 double cy = eye.f_82480_ - 0.4 - cam.f_82480_;
                 double cz = eye.f_82481_ - cam.f_82481_;
                 if (f.bird) {
-                    // the phoenix: the flames gathering round it, a white orb growing at its chest
+                    // the phoenix: the flames gathering round it, the sphere growing at its chest to the size it flies at
                     PhoenixMoveArt.fujiCharge(sink, cx, cy - 0.4, cz, age, 2.4, f.id);
-                    double orb = Math.min(1.0, age / 12.0);
-                    PhoenixMoveArt.blueBall(sink, cx + look.f_82479_ * 2.2, cy + 0.8, cz + look.f_82481_ * 2.2, 0.5 + 0.8 * orb, age, f.id);
+                    double orb = Math.min(1.0, age / 24.0);
+                    PhoenixMoveArt.blueBall(sink, cx + look.f_82479_ * 2.6, cy + 0.8, cz + look.f_82481_ * 2.6, 0.6 + 1.6 * orb, age, f.id);
                 } else {
                     PhoenixMoveArt.blueBall(sink, cx + look.f_82479_ * 1.2, cy + look.f_82480_ * 1.2, cz + look.f_82481_ * 1.2,
                         PhoenixMoveArt.blueSize(age), age, f.id);
@@ -401,22 +397,14 @@ final class PhoenixMoveFx {
                 double by = y + f.ay * age;
                 double bz = z + f.az * age;
                 double l = Math.sqrt(f.ax * f.ax + f.ay * f.ay + f.az * f.az);
-                PhoenixMoveArt.blueBall(sink, bx, by, bz, f.size, age, f.id, true);
-                if (l > 1.0E-3) {
-                    PhoenixMoveArt.blueTrail(sink, bx, by, bz, f.ax / l, f.ay / l, f.az / l, age, f.size, f.id);
-                }
+                // 3.7.6: the sphere of flames flying (no tail: "a sphere not a bird")
+                PhoenixMoveArt.blueFlying(sink, bx, by, bz, l > 1.0E-3 ? f.ax / l : 0.0, l > 1.0E-3 ? f.ay / l : 0.0, l > 1.0E-3 ? f.az / l : 0.0,
+                    age, f.size, f.id);
             }
-            default -> {
-                // 3.7.5 (the owner: "the B move should be 1 projectile that makes a massive explosion in the shape of a bird"): out of the
-                // blast a phoenix of fire, flying on the way the ball went (the phoenix's the bigger)
-                PhoenixBlast.bird(sink, x, y, z, Math.atan2(-f.ax, f.az), f.bird ? BIRD_BIG : BIRD_SMALL, age, f.id);
-            }
+            // 3.7.6: the sphere's blast, a great explosion (the bird of fire gone: "a sphere not a bird")
+            default -> PhoenixMoveArt.blueBoom(sink, x, y, z, age, f.size, f.id);
         }
     }
-
-    /** 3.7.5: the bird of fire's size (blocks a unit; its wings about 13 units across): the human's Bluebird, the phoenix's. */
-    static final double BIRD_SMALL = 0.75;
-    static final double BIRD_BIG = 1.1;
 
     static void clear() {
         FX.clear();

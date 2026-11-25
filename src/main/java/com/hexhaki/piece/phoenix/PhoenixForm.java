@@ -180,6 +180,11 @@ public final class PhoenixForm {
         public final boolean[] fire;
         /** 3.7.2: the parts a human's temporary wings and tail are (the wings, the tail's streamers and its blue fan). */
         public final boolean[] wings;
+        /**
+         * 3.7.6 (the owner: "the arms of the player SHOULD become the wings not create a layer behind them"): which arm each wing part is
+         * laid along (0 its left wing, the model's -X; 1 its right; -1 not a wing).
+         */
+        public final int[] wingSide;
         public final float[][] reach;
         public final int[] anchors;
         /** Each fire point's tongues' size (1 the wings' and the mantle's). */
@@ -200,6 +205,7 @@ public final class PhoenixForm {
             int np = m.parts.length;
             this.fire = new boolean[np];
             this.wings = new boolean[np];
+            this.wingSide = new int[np];
             this.reach = new float[np][];
             // the fire points by body part (the reference: the flames stream off the wings' edges most, then the mantle, the crest
             // and the tail): each group's candidates, then each group's share of the tongues spread evenly over them
@@ -213,6 +219,11 @@ public final class PhoenixForm {
                 DragonModel.Part part = m.parts[i];
                 String name = part.name;
                 this.wings[i] = name.startsWith("Wing") || name.startsWith("Tail") || name.startsWith("Blue tail fan");
+                float meanX = 0.0F;
+                for (int v = 0; v < part.vertices(); v++) {
+                    meanX += part.pos[v * 3];
+                }
+                this.wingSide[i] = !name.startsWith("Wing") ? -1 : meanX < 0.0F ? 0 : 1;
                 this.fire[i] = !(name.startsWith("Bill") || name.startsWith("Eye") || name.startsWith("Foot") || name.startsWith("Leg")
                     || name.startsWith("Insignia") || name.startsWith("Marco"));
                 int nv = part.vertices();
@@ -880,6 +891,106 @@ public final class PhoenixForm {
 
     /** The motion the last pose was made with (its feet's turns: {@link #skin}), for the previews and tests. */
     public static Motion LAST_MOTION;
+
+    /**
+     * 3.7.6, the human's moves (the owner: "the arms of the player SHOULD become the wings not create a layer behind them", "for every
+     * move literally"): the matrix (3 x 4, row-major) that lays wing {@code side} (0 its left, 1 its right) of {@code pose} (posed shaped
+     * as the human: Motion.form 0, its wings straight out level) along that arm of a player, from model units into the arm's own frame
+     * (the player model's ModelPart frame after the arm's turn, in blocks: y down the arm from the shoulder toward the hand, x across (the
+     * left arm's outside +x, the right's -x), z behind): the wing's root on the shoulder, its length down the arm and on past the hand,
+     * its upper face out, its feathers trailing behind the arm; {@code scale} blocks a model unit.
+     */
+    public static void armWing(com.hexhaki.piece.dragon.DragonPose pose, Shape sh, int side, float scale, float[] out) {
+        armWing(pose, sh, side, scale, 0.0F, 0.0F, out);
+    }
+
+    /**
+     * As above, its feathers drooping toward the ground: ({@code downX}, {@code downZ}) the world's down in the arm's frame across it
+     * (its share along the arm left out: 0 when the arm hangs straight down): the wing turned about the arm so its feathers trail
+     * between behind and down ({@link #DROOP}), its face seen from behind and before whatever the arm does.
+     */
+    public static void armWing(com.hexhaki.piece.dragon.DragonPose pose, Shape sh, int side, float scale, float downX, float downZ,
+                               float[] out) {
+        int root = sh.wing[side][0];
+        float rx = root < 0 ? 0.0F : pose.global[root * 12 + 3];
+        float ry = root < 0 ? sh.shoulder : pose.global[root * 12 + 7];
+        float rz = root < 0 ? 0.0F : pose.global[root * 12 + 11];
+        float span = side == 0 ? -1.0F : 1.0F;
+        float across = side == 0 ? 1.0F : -1.0F;
+        // x (across) from the model's up, y (down the arm) from its span, z (behind) from its back; the root a pixel out on the shoulder
+        out[0] = 0.0F;
+        out[1] = across * scale;
+        out[2] = 0.0F;
+        out[3] = -across * scale * ry + across * ARM_OUT;
+        out[4] = span * scale;
+        out[5] = 0.0F;
+        out[6] = 0.0F;
+        out[7] = -span * scale * rx - ARM_UP;
+        out[8] = 0.0F;
+        out[9] = 0.0F;
+        out[10] = scale;
+        out[11] = -scale * rz;
+        // the twist about the arm (its y): behind (+z) turned toward the trailing way
+        float tx = DROOP * downX;
+        float tz = 1.0F + DROOP * downZ;
+        float tl = (float) Math.sqrt(tx * tx + tz * tz);
+        if (tl > 1.0E-4F) {
+            float s = tx / tl;
+            float c = tz / tl;
+            for (int k = 0; k < 4; k++) {
+                float x = out[k];
+                float z = out[8 + k];
+                out[k] = c * x + s * z;
+                out[8 + k] = -s * x + c * z;
+            }
+        }
+    }
+
+    /** How far the arms' wings' feathers droop from behind toward the ground (1: halfway, at the arm held out level). */
+    static final float DROOP = 1.5F;
+
+    /**
+     * 3.7.6, the arms' wings coming and going as the whole change does, never grown or shrunk (the owner: "burn and shape into the wings
+     * like the full transformation, not just shrink into being"; "the disappear animation should be the same as the de-transformation,
+     * arms burning slowly and turning back to normal"; "this whole shrinking the model till it disappears sucks major ass, I dont wanna
+     * see it again"). Coming: the fire catches on the hands and runs up the arms ({@link #ARM_CATCH}), the arms gone into it, the wing
+     * shaped out of the fire from the shoulder to its tip ({@link #ARM_SHAPE}). Going: the wing burns away from its tip back to the
+     * shoulder ({@link #ARM_BURN}), the arm back in the fire, the fire dying off it from the shoulder down to the hand ({@link #ARM_COOL}).
+     */
+    public static final float ARM_CATCH = 5.0F;
+    public static final float ARM_SHAPE = 6.0F;
+    public static final float ARM_BURN = 6.0F;
+    public static final float ARM_COOL = 9.0F;
+    /** When the arm is back out of the wing, after the move lets it go (ticks). */
+    public static final float ARM_BACK = ARM_BURN - 2.0F;
+    /** How long after the move lets them go the arms are themselves again (ticks). */
+    public static final float ARM_LAST = ARM_BACK + ARM_COOL;
+
+    /** How much of the arm is on fire (0 to 1, from the hand up), {@code t} ticks into the move's wings, {@code held} how long it holds them. */
+    public static float armFire(float t, float held) {
+        if (t < held || t - held < ARM_BACK) {
+            return clamp(t / ARM_CATCH);
+        }
+        return clamp(1.0F - (t - held - ARM_BACK) / ARM_COOL);
+    }
+
+    /** Whether the arm is gone into the fire and the wing (as the whole change takes a limb: once {@link #ARMS_TAKEN} of it burns). */
+    public static boolean armHidden(float t, float held) {
+        if (t < held || t - held < ARM_BACK) {
+            return t >= ARM_CATCH * ARMS_TAKEN;
+        }
+        return armFire(t, held) >= ARMS_TAKEN;
+    }
+
+    /** How much of the wing there is (0 to 1, from the shoulder out to its tip). */
+    public static float wingShown(float t, float held) {
+        float in = clamp((Math.min(t, held) - (ARM_CATCH - 1.0F)) / ARM_SHAPE);
+        return t < held ? in : Math.min(in, clamp(1.0F - (t - held) / ARM_BURN));
+    }
+
+    /** Where the wing's root sits on the arm (blocks): out from the pivot to the arm's outer side, up to the shoulder's top. */
+    static final float ARM_OUT = 0.06F;
+    static final float ARM_UP = 0.1F;
 
     /** How far the rest's raised wings are let down to hold them out level as arms (degrees). */
     static final float ARMS_LEVEL = 36.0F;

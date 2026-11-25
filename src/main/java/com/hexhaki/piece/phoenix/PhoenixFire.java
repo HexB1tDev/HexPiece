@@ -203,6 +203,24 @@ public final class PhoenixFire {
         }
     }
 
+    /**
+     * 3.7.6: an arm turning to (or back from) a wing, burning as the whole change's arms do: the fire from the hand at (hx, hy, hz) back
+     * {@code cover} (0 to 1) of the way to the shoulder's top at (sx, sy, sz), the burning front brightest; any frame of reference.
+     */
+    public static void arm(FireMesh.Sink sink, double hx, double hy, double hz, double sx, double sy, double sz, double cover, double ticks,
+                           int seed) {
+        if (cover < 0.02) {
+            return;
+        }
+        limb(sink, hx, hy, hz, hx + (sx - hx) * cover, hy + (sy - hy) * cover, hz + (sz - hz) * cover, ARM_R * (1.05 + 0.25 * cover), ticks,
+            seed);
+    }
+
+    /** 3.7.6: the burning edge of a wing taking shape (or burning away) at (x, y, z): a puff of white-hot fire {@code size} across. */
+    public static void front(FireMesh.Sink sink, double x, double y, double z, double size, double ticks, int seed) {
+        PhoenixBlast.puff(sink, x, y, z, size, 0.0, 1.0, 0.0, 0.3, 0.3, 1.05, 0.6, 0.95, ticks * 1.5, seed, false);
+    }
+
     /** One burning limb from (ax, ay, az) to (bx, by, bz): a banded tube of fire, its surface swelling and licking up as it burns. */
     static void limb(FireMesh.Sink sink, double ax, double ay, double az, double bx, double by, double bz, double r, double ticks, int seed) {
         double dx = bx - ax;

@@ -35,14 +35,14 @@ public final class PhoenixKit extends FruitKit {
         "Phoenix wings and a tail of fire burst out of your back and you rain a barrage of burning kicks on whoever is in front of you,"
             + " holding them there; the last kick throws them high, you backflip away and the wings scatter in a burst of flame.");
     public static final FruitMove BLUEBIRD = new FruitMove("Bluebird", "[B] hold", 0, "phoenix_bluebird",
-        "Hold: phoenix wings spread at your back and a ball of yellow and blue fire grows in front of you, bigger the longer you hold; let"
-            + " go and it flies, blowing up on whatever it meets in an explosion in the shape of a phoenix.");
+        "Hold: phoenix wings spread at your back and a sphere of yellow and blue flames grows in front of you, bigger the longer you hold; let"
+            + " go and it flies, blowing up on whatever it meets in a great explosion.");
     public static final FruitMove INFERNO_PHOENIX = new FruitMove("Phoenix: Phoenix Inferno", "[V]", 0, "phoenix_inferno",
         "As the phoenix: you spin inside a whirlpool of blue and white fire that burns and holds whoever is in it, then fly up, throwing"
             + " them high, and dive back down into the middle of it in a huge blast of blue flame that throws the ground up.");
     public static final FruitMove BLUEBIRD_PHOENIX = new FruitMove("Phoenix: Bluebird", "[B] hold", 0, "phoenix_bluebird",
-        "As the phoenix, hold: your wings spread and the fire gathers round you into a white orb at your chest; let go and one great ball of"
-            + " blue and gold fire flies out and blows up in a massive explosion in the shape of a phoenix.");
+        "As the phoenix, hold: your wings spread and the fire gathers round you into a sphere of flames at your chest; let go and one great sphere"
+            + " of blue and gold flames flies out and blows up in a massive explosion.");
     /** The human's moves and the phoenix's, in the same keys (the panel shows the form's). */
     public static final List<FruitMove> HUMAN = List.of(FORM, FUJIAZAMI, TALON_SLAM, INFERNO, BLUEBIRD);
     public static final List<FruitMove> PHOENIX = List.of(FORM, FUJIAZAMI_PHOENIX, HAWK_RUSH, INFERNO_PHOENIX, BLUEBIRD_PHOENIX);

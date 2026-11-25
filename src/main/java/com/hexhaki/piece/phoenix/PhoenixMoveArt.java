@@ -349,28 +349,28 @@ public final class PhoenixMoveArt {
     // ------------------------------------------------------------------------------------------------------ 3.7.3: Bluebird
 
     /**
-     * Bluebird's ball of yellow and blue fire at (x, y, z), {@code size} across its heart, {@code ticks} its clock (the GIF's 42 to 140:
-     * growing): 3.7.5 the house's fireball (PhoenixBlast.fireball) held still, its heart white-hot in a cyan blaze, sparks of cyan and
-     * gold shed, white crescents turning round it.
+     * Bluebird's sphere of flames at (x, y, z), {@code size} across its heart, {@code ticks} its clock (3.7.6: PhoenixBlast.sphere, held
+     * still: the charge).
      */
     public static void blueBall(FireMesh.Sink sink, double x, double y, double z, double size, double ticks, int seed) {
-        blueBall(sink, x, y, z, size, ticks, seed, false);
+        PhoenixBlast.sphere(sink, x, y, z, size * 0.6, 0.0, 0.0, 0.0, ticks, seed);
     }
 
-    /** As above ({@code lite} kept for the callers: every ball is the house's fireball now). */
-    public static void blueBall(FireMesh.Sink sink, double x, double y, double z, double size, double ticks, int seed, boolean lite) {
-        PhoenixBlast.fireball(sink, x, y, z, 0.0, 0.01, 0.0, size * 0.55, ticks, 0.0, seed);
+    /** The sphere in flight going (wx, wy, wz) (unit): sparks shed behind it, no tail (3.7.6: it stays a sphere). */
+    public static void blueFlying(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double ticks, double size,
+                                  int seed) {
+        PhoenixBlast.sphere(sink, x, y, z, size * 0.6, wx, wy, wz, ticks, seed);
     }
 
-    /** A ball in flight going (wx, wy, wz): the house's fireball's tail behind it (drawn by PhoenixBlast.fireball). */
-    public static void blueTrail(FireMesh.Sink sink, double x, double y, double z, double wx, double wy, double wz, double ticks, double size,
-                                 int seed) {
-        PhoenixBlast.fireball(sink, x, y, z, wx, wy, wz, size * 0.55, ticks, 30.0, seed);
-    }
-
-    /** Bluebird's blast (without its bird: PhoenixBlast.bird draws that) at (x, y, z), {@code ticks} after it. */
+    /**
+     * Bluebird's blast at (x, y, z), {@code ticks} after it, {@code radius} the server's: the house's explosion (its fire puffs a step
+     * coarser and fewer: the phoenix's is beside its own model).
+     */
     public static void blueBoom(FireMesh.Sink sink, double x, double y, double z, double ticks, double radius, int seed) {
-        PhoenixBlast.explosion(sink, x, y, z, radius * 0.7, ticks, seed);
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * 0.5;
+        PhoenixBlast.explosion(sink, x, y, z, radius * 0.7, ticks, seed, 0.7);
+        FireMesh.quality = quality;
     }
 
 }

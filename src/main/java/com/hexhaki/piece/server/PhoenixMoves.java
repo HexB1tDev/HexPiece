@@ -392,7 +392,6 @@ public final class PhoenixMoves {
     /** The fire art's lifetimes (phoenix/PhoenixBlast) as tick counts for the messages. */
     static final class PhoenixBlastTicks {
         static final double BURST = com.hexhaki.piece.phoenix.PhoenixBlast.BURST_LIFE;
-        static final double BIRD = com.hexhaki.piece.phoenix.PhoenixBlast.BIRD_LIFE;
     }
 
     /**
@@ -540,6 +539,9 @@ public final class PhoenixMoves {
             this.feet = user.m_20182_();
             ItoMoves.animate(user, "phoenix_talon");
             fx(user, TALON, this.seed, this.feet, Vec3.f_82478_, TALON_CROUCH, 0, PhoenixMoveArt.TALON_CROUCH);
+            // 3.7.6 (the owner: the arms become the wings "for every move literally"): the arms are wings from the crouch to the slam
+            fx(user, WINGS, this.seed, user.m_20182_(), Vec3.f_82478_, 1, WINGS_SPREAD, PhoenixMoveArt.TALON_CROUCH + PhoenixMoveArt.TALON_RISE
+                + PhoenixMoveArt.TALON_HANG + PhoenixMoveArt.TALON_DIVE + 2);
         }
 
         @Override
@@ -986,7 +988,7 @@ public final class PhoenixMoves {
                 }
             }
             long f = now - this.fired;
-            // 3.7.5 (the owner: "the B move should be 1 projectile that makes a massive explosion in the shape of a bird")
+            // 3.7.5 (the owner: "the B move should be 1 projectile"); 3.7.6 a sphere of flames ("a sphere not a bird")
             int balls = 1;
             if (f % PhoenixMoveArt.BLUE_GAP == 0 && f / PhoenixMoveArt.BLUE_GAP < balls) {
                 int k = (int) (f / PhoenixMoveArt.BLUE_GAP);
@@ -1060,14 +1062,14 @@ public final class PhoenixMoves {
             this.gone += this.step.m_82553_();
             if (wall || met || this.gone >= PhoenixMoveArt.BLUE_RANGE) {
                 this.over = true;
-                // the massive blast: wide (the phoenix's the widest), harder the bigger the ball; a bird of fire bursts out of it
+                // the massive blast: wide (the phoenix's the widest), harder the bigger the sphere (3.7.6: a great explosion, no bird)
                 boolean bird = this.bird;
                 double radius = bird ? 7.0 : 2.5 + 2.0 * this.size;
                 float hurt = bird ? BLUE_BIRD_HURT : BLUE_HURT * (float) (0.8 + 0.4 * this.size);
                 UoMoves.explode(this.user, this.level, this.at, this.step.m_82541_(), radius, ItoMoves.coated(this.user) ? hurt * 1.25F : hurt, 0,
                     1.4);
                 Impact.quake(this.level, this.at, radius * 3.0, 0.6F, 10);
-                fx(this.user, BLUE, this.id, this.at, this.step, BLUE_BOOM, bird ? 1 : 0, radius, (int) PhoenixBlastTicks.BIRD);
+                fx(this.user, BLUE, this.id, this.at, this.step, BLUE_BOOM, bird ? 1 : 0, radius, (int) PhoenixBlastTicks.BURST);
                 sound(this.user, this.at, UoSounds.EXPLODE, 1.4F, 1.15F);
                 return true;
             }
