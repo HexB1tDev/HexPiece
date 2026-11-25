@@ -444,4 +444,144 @@ public final class PhoenixBlast {
             prev = cur;
         }
     }
+    // ------------------------------------------------------------------------------------------------------ the flamethrower (M1 held)
+
+    /**
+     * 3.7.7 (the owner: "Transformed M1, shall make the bird open it's beak and act as a flamethrower (blasting flames at the target like
+     * the dragon does)"): how many puffs a tick leave the beak, how long each lives to reach the end (ticks), how far the flame runs out
+     * of the beak's own way before it has turned onto the aim (blocks), its detail (the phoenix's own model beside it: the phone's budget).
+     */
+    public static final double BREATH_RATE = 1.0;
+    public static final double BREATH_LIFE = 12.0;
+    public static final double BREATH_TURN = 3.0;
+    static final double BREATH_QUALITY = 0.65;
+    static final double[] AIM = new double[9];
+    static final double[] AT = new double[3];
+
+    /** How far a puff born {@code age} ticks ago has gone of {@code range}: fast out of the beak, slowing to a stop at the end. */
+    public static double reach(double age, double range) {
+        double u = clamp(age / BREATH_LIFE);
+        return range * (1.0 - Math.pow(1.0 - u, 1.6));
+    }
+
+    /** The point {@code d} blocks along the flame leaving the beak in {@link #AIM}: straight out of it, turned onto the aim. */
+    static void along(double d, double[] out) {
+        double s = BREATH_TURN * (1.0 - Math.exp(-d / BREATH_TURN));
+        out[0] = AIM[0] + AIM[6] * s + AIM[3] * (d - s);
+        out[1] = AIM[1] + AIM[7] * s + AIM[4] * (d - s);
+        out[2] = AIM[2] + AIM[8] * s + AIM[5] * (d - s);
+    }
+
+    /**
+     * The phoenix's flamethrower, on for {@code on} ticks (off for {@code off}, -1 while on), as the dragon's breath (dragon/UoFire.breath)
+     * in the phoenix's fire: a white-hot jet out of the open beak turning to pale cyan, a stream of fire puffs that bloom as they go out to
+     * {@code range} and burn from white through cyan (one in three gold) to the deep blue of its edge, white shock rings racing out round
+     * it, and its blue light. {@code aim} gives the beak (eye-relative), the aim and the beak's own way, as they were {@code ago} ticks back
+     * (so the stream bends as the phoenix turns its head).
+     */
+    public static void breath(FireMesh.Sink sink, com.hexhaki.piece.dragon.UoFire.Aim aim, double on, double off, double range, int seed) {
+        double quality = FireMesh.quality;
+        FireMesh.quality = quality * BREATH_QUALITY;
+        double now = on;
+        int last = (int) Math.floor(now * BREATH_RATE);
+        int first = Math.max(0, (int) Math.ceil((now - BREATH_LIFE) * BREATH_RATE));
+        double stopped = off < 0.0 ? Double.MAX_VALUE : now - off;
+        for (int k = last; k >= first; k--) {
+            double born = k / BREATH_RATE;
+            if (born > stopped) {
+                continue;
+            }
+            double age = now - born;
+            if (age < 0.0) {
+                continue;
+            }
+            aim.at(age, AIM);
+            double u = age / BREATH_LIFE;
+            double d = reach(age, range);
+            int s = seed * 31 + k;
+            double r0 = FireMesh.rand(s, 0);
+            double r1 = FireMesh.rand(s, 1) * 2.0 - 1.0;
+            double r2 = FireMesh.rand(s, 2) * 2.0 - 1.0;
+            FireMesh.basis(AIM[3], AIM[4], AIM[5], BB);
+            double clear = Math.max(0.0, d - 1.2); // out of the beak: from here it may bloom
+            double spread = d * 0.03 + clear * 0.09;
+            along(d, AT);
+            double px = AT[0] + (BB[0] * r1 + BB[3] * r2) * spread;
+            double py = AT[1] + (BB[1] * r1 + BB[4] * r2) * spread;
+            double pz = AT[2] + (BB[2] * r1 + BB[5] * r2) * spread;
+            // a narrow jet at the beak, a wall of blue fire at the end
+            double radius = (0.12 + d * 0.06 + clear * 0.13) * (0.75 + 0.5 * r0);
+            double end = Math.max(0.0, (u - 0.78) / 0.22);
+            radius *= 1.0 - end * end;
+            // white out of the beak, burning to cyan and the deep blue of its edge as it goes (the phoenix's flame is blue)
+            double heat = 1.0 - 0.62 * Math.pow(u, 0.6) + 0.06 * r0;
+            double turn = Math.exp(-d / BREATH_TURN);
+            double vx = AIM[3] + (AIM[6] - AIM[3]) * turn;
+            double vy = AIM[4] + (AIM[7] - AIM[4]) * turn + 0.08 * u;
+            double vz = AIM[5] + (AIM[8] - AIM[5]) * turn;
+            double stretch = (1.0 - 0.5 * u) * Math.min(1.0, clear / 2.5);
+            // torn into tongues, a dark blue line round each spent flame (the anime's cel outline)
+            FireMesh.palette(k % 4 == 1 ? PhoenixFire.GOLD : PhoenixFire.CYAN);
+            FireMesh.puff(sink, px, py, pz, radius, vx, vy, vz, stretch, 0.3, heat, 0.45, true, 1.0, now + k * 3.7, s);
+            FireMesh.palette(FireMesh.BAND);
+        }
+        // the jet: white-hot out of the beak, as long as the flame has had time to throw it (gone a few ticks after it stops)
+        double fade = off < 0.0 ? 1.0 : Math.max(0.0, 1.0 - off / 4.0);
+        if (fade > 0.0) {
+            aim.at(0.0, AIM);
+            double length = Math.min(range * 0.3, now * 4.0) * fade;
+            double grow = Math.min(1.0, now / 3.0);
+            double[] cut = {0.0, 0.8, 2.0, 4.0, 7.0, length};
+            double ax = AIM[0];
+            double ay = AIM[1];
+            double az = AIM[2];
+            for (int i = 1; i < cut.length && cut[i - 1] < length; i++) {
+                double d = Math.min(cut[i], length);
+                along(d, AT);
+                // narrow: the flame is its puffs; the jet only the white-hot rush out of the beak, cooling to cyan
+                double ra = (0.08 + 0.6 * cut[i - 1] / (range * 0.3)) * grow;
+                double rb = (0.08 + 0.6 * d / (range * 0.3)) * grow;
+                FireMesh.tube(sink, ax, ay, az, AT[0], AT[1], AT[2], ra, rb, FireMesh.mix(0xFFFFFF, 0x8FF0FA, cut[i - 1] / length),
+                    FireMesh.mix(0xFFFFFF, 0x8FF0FA, d / length), 0x2DB8EC, 0.35, 0.9, 0.22, now, seed + i);
+                ax = AT[0];
+                ay = AT[1];
+                az = AT[2];
+            }
+            // the white heart in the beak, its light filling the gape
+            puff(sink, AIM[0], AIM[1], AIM[2], 0.22 * grow * fade, AIM[6], AIM[7], AIM[8], 0.6, 0.12, 1.1, 0.0, 1.0, now, seed + 5, false);
+            FireMesh.shell(sink, AIM[0] + AIM[6] * 0.3, AIM[1] + AIM[7] * 0.3, AIM[2] + AIM[8] * 0.3,
+                Math.min(0.8 * grow * fade, 0.9 * Math.sqrt(AIM[0] * AIM[0] + AIM[1] * AIM[1] + AIM[2] * AIM[2])), 0xD2FBFF, 0.55, 0.0);
+        }
+        // the light round the stream: thin and cool (light, not smoke)
+        double front = reach(Math.min(now, BREATH_LIFE), range);
+        double back = off < 0.0 ? 0.0 : reach(Math.min(off, BREATH_LIFE), range);
+        if (front - back >= 0.5) {
+            aim.at(0.0, AIM);
+            for (int j = 0; j < 2; j++) {
+                double d = back + (front - back) * (j + 0.5) / 2.0;
+                double radius = (0.25 + d * 0.06 + Math.max(0.0, d - 1.2) * 0.15) * 2.0;
+                along(d, AT);
+                double eye = Math.sqrt(AT[0] * AT[0] + AT[1] * AT[1] + AT[2] * AT[2]);
+                FireMesh.shell(sink, AT[0], AT[1], AT[2], Math.min(radius, eye * 0.9), 0x46DDF5, 0.26, 0.0);
+            }
+        }
+        // the shock rings: one every 4 ticks, out along the flame, widening as they go
+        int arcs = (int) Math.floor(now / 4.0);
+        for (int k = arcs; k >= 0 && k > arcs - 3; k--) {
+            double born = k * 4.0 + 1.0;
+            double age = now - born;
+            if (age < 0.0 || born > stopped || age > 9.0) {
+                continue;
+            }
+            aim.at(age, AIM);
+            double t = age / 9.0;
+            double d = reach(age * 1.4, range) * 0.75 + 1.5;
+            along(d, AT);
+            double radius = 1.0 + 4.0 * Math.sqrt(t);
+            double start = FireMesh.rand(seed * 17 + k, 0) * Math.PI * 2.0;
+            FireMesh.arc(sink, AT[0], AT[1], AT[2], AIM[3], AIM[4], AIM[5], radius, 0.25 + 0.3 * (1.0 - t), start, 3.2, -2.0 * t - 0.6,
+                0xE8FFFF, 0.75 * (1.0 - t * t));
+        }
+        FireMesh.quality = quality;
+    }
 }

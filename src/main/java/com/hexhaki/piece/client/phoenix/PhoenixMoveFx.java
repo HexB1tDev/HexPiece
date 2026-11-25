@@ -70,6 +70,7 @@ final class PhoenixMoveFx {
         long now = PhoenixFx.clock;
         int phase = Math.round(m.bx());
         switch (m.kind()) {
+            case PhoenixMoves.FLAME -> PhoenixBreath.accept(m.user(), phase == 1); // 3.7.7: the flamethrower
             case PhoenixMoves.ACT -> {
                 if (phase == 0) {
                     ACTS.remove(m.user());
@@ -248,6 +249,7 @@ final class PhoenixMoveFx {
                 }
             }
         }
+        PhoenixBreath.draw(sink, level, cam, partial);
     }
 
     static void fuji(FireMesh.Sink sink, Fx f, float age, double x, double y, double z, Vec3 at, double big) {
@@ -410,5 +412,6 @@ final class PhoenixMoveFx {
         FX.clear();
         ACTS.clear();
         WINGS.clear();
+        PhoenixBreath.clear();
     }
 }

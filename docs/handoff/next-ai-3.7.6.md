@@ -36,7 +36,7 @@ Read CLAUDE.md first, then this file whole, then next-ai-3.6.3.md sections AH to
 
 ## 3. What to do next, in order
 
-### 3.1 The Phoenix's transformed M1: a flamethrower out of its opened beak (not started)
+### 3.1 The Phoenix's transformed M1: a flamethrower out of its opened beak (DONE in 3.7.7: section 5)
 The owner, verbatim: "Transformed M1, shall make the bird open it's beak and act as a flamethrower (blasting flames at the target like
 the dragon does)."
 - The dragon's M1 fire breath is the model: server/UoMoves.flame (M1 held in dragon form: C2SDragon from client/dragon/DragonInput;
@@ -156,3 +156,43 @@ dragon, etc)."
   English, do exactly what is asked and nothing unasked.
 - At 98% weekly usage: write the handoff and next-prompt.md first, commit, push, stop (no CI wait).
 - Commits end with the trailers the session gives (Co-Authored-By and Claude-Session); no model names in commits or code.
+
+## 5. The next session (started Sunday): what it did
+
+- Started on Default; switched to the personal "HexPiece" environment (network_only). 3.7.6's runs were green (Build #261, Release
+  #167; the handoff push Build #262 green). The owner sent no word on 3.7.5 or 3.7.6 in game this session.
+- The local branch was a stale clone (ba40945, 50 commits behind the force-updated remote): kept on the local branch
+  `backup/stale-ba40945` (never pushed), the branch reset to the remote's d81ffdb.
+
+### 3.7.7: the Phoenix's transformed M1, the flamethrower (3.1)
+- **The beak:** phoenix/PhoenixForm.split (run by Shape's constructor): the owner's bill ("Bill | ivory tapered profile", one closed
+  mesh, no jaw bone) split along its mouth lines ("Bill L/R | mouth line": their points fitted with a straight line): each face whose
+  middle lies under it (JAW_LINE 0.004), within the lines' length (the hook in front is the upper bill's), is the lower jaw's; vertices
+  both jaws use are copied (dragon/DragonModel.replace: in memory only, the file never changed; no face added). Shape.bill, jaw[],
+  hingeY/Z (the mouth lines' back ends), billTip, jawTip, corners. PhoenixForm.skin -> jaw(): the lower jaw turned down about the
+  hinge by Motion.beak * JAW_OPEN (30 degrees). PhoenixForm.gape: the flame's point (GAPE 0.7 of the way from the corners to the
+  jaws' tips) and the beak's way.
+- **The pose:** Motion.beak, breath, aim (the look's pitch). pose(): breathing, the body reared back (BREATH_REAR 10), the neck thrust
+  (BREATH_THRUST -22 - 0.4 aim, a shudder), the head (BREATH_HEAD 16 - 0.35 aim), the idle look about held still, the wings held
+  wide, the beat's amplitude cut by 45%.
+- **The art:** phoenix/PhoenixBlast.breath (UoFire.breath's construction in the phoenix's palettes): BREATH_RATE 1 puff a tick living
+  BREATH_LIFE 12 ticks (cyan, every fourth gold, torn into tongues, the dark-blue cel outline), the white jet cooling to cyan (30% of
+  the range), the heart in the beak, two glows, shock rings every 4 ticks; BREATH_QUALITY 0.65. Budget: about 2.6k quads at its
+  peak; DragonTests.phoenixMoves checks it beside the phoenix (every frame < 16k).
+- **Server:** server/PhoenixMoves.flame (public; network/C2SDragon calls it beside UoMoves.flame, each returning for the other's
+  form), class Flame (a Live move: other moves refused while it runs): FLAME 408 on/off, FLAME_RANGE 24, FLAME_CONE 10, FLAME_MAX 100,
+  FLAME_LEAST 6, a burn every FLAME_EVERY 5 ticks of FLAME_HURT 3 (hit(): the Conqueror's lightning at the one burnt; at the wall it
+  strikes when none), alight FLAME_FIRE 5 s, cooldown FLAME_COOL 80 when it stops; the beak at BEAK_UP 2.2 over the feet, BEAK_AHEAD
+  2.3 along the look; sounds UoSounds.FLAME_START, FLAME_LOOP (pitch 1.15). server/PhoenixKit.FLAMETHROWER ("Phoenix: Flamethrower",
+  "[LMB] hold", "phoenix_flame"), in PHOENIX (6 moves now) and MOVES.
+- **Client:** client/phoenix/PhoenixBreath (new): the flames (accept from PhoenixMoveFx), the gape where PhoenixFx.draw last drew it
+  (PhoenixBreath.drawn), a 24-tick track of the beak and aim (the puffs follow the aim they left with), the reach eased to the wall,
+  pose() (beak opens over 3 ticks, shuts over 5; the aim in over 4, out over 8), draw() from PhoenixMoveFx.draw. In first person the
+  flame leaves from 2.5 ahead and 0.9 under the view. PhoenixFx.phoenixAttack cancels the game's attack while one's phoenix is out;
+  PhoenixFx.flame sends C2SDragon on M1's state (selfPhoenix: out, no screen).
+- Previews: tools/preview/PhoenixPreview scenes m-beak (the beak alone opening and shutting), m-flame (held 40 ticks, aim 8 down),
+  m-flamed (aim 35 down, 9 blocks), m-flameg (standing on the ground); compile with phoenix/*.java, dragon/DragonPose, DragonModel,
+  FireMesh, UoFire (the scratchpad's pprev.sh).
+- Tests: DragonTests.phoenix (the split: no face lost, 20 or more lower-jaw vertices, stable when split again; opened, the jaw's tip
+  0.3 down, the upper bill still, the gape between the jaws facing ahead), phoenixMoves (the flamethrower's budget), the kit (6
+  phoenix moves, FLAMETHROWER at 5).

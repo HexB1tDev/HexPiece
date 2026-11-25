@@ -6,7 +6,10 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
-/** 2.7.2: M1 held down (or let go) in dragon form: the dragon's fire breath (client/dragon/DragonInput -> server/UoMoves.flame). */
+/**
+ * 2.7.2: M1 held down (or let go) in dragon form: the dragon's fire breath (client/dragon/DragonInput -> server/UoMoves.flame). 3.7.7: as the
+ * phoenix, its flamethrower (client/phoenix/PhoenixFx -> server/PhoenixMoves.flame).
+ */
 public record C2SDragon(boolean flame) {
     public static void encode(C2SDragon m, FriendlyByteBuf buffer) {
         buffer.writeBoolean(m.flame);
@@ -20,7 +23,12 @@ public record C2SDragon(boolean flame) {
         NetworkEvent.Context context = supplier.get();
         ServerPlayer player = context.getSender();
         if (player != null) {
-            context.enqueueWork(() -> UoMoves.flame(player, message.flame() && !com.hexhaki.piece.server.Powers.off(player))); // 3.5.9
+            context.enqueueWork(() -> {
+                boolean on = message.flame() && !com.hexhaki.piece.server.Powers.off(player); // 3.5.9
+                UoMoves.flame(player, on);
+                // 3.7.7: the phoenix's M1 held, its flamethrower (each returns at once for the other's form)
+                com.hexhaki.piece.server.PhoenixMoves.flame(player, on);
+            });
         }
         context.setPacketHandled(true);
     }

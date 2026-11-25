@@ -109,7 +109,12 @@ public final class PhoenixPreview {
         double dy;
         double dz;
         java.util.function.BiConsumer<com.hexhaki.piece.dragon.FireMesh.Sink, double[]> fire;
+        /** 3.7.7: the scene needs the open beak's place (BEAK, from the skinned bill). */
+        boolean beak;
     }
+
+    /** 3.7.7: the gape's point and the beak's way in the world (PhoenixForm.gape), [6] 1 when found this frame. */
+    static final double[] BEAK = new double[7];
 
     static double smooth(double t) {
         t = Math.max(0.0, Math.min(1.0, t));
@@ -363,6 +368,39 @@ public final class PhoenixPreview {
                 sc.raise = 85.0;
             }
             case "m-sphere" -> sc.fire = (sink, e) -> com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBall(sink, -e[0], 2.0 - e[1], -e[2], 2.2, t, 3);
+            case "m-beak" -> {
+                // 3.7.7: the beak alone, opening and shutting (no fire): judged close up
+                sc.bird = true;
+                sc.by = 2.0;
+                sc.mo.beak = (float) Math.max(0.0, Math.sin(Math.PI * Math.min(1.0, t / 30.0)));
+                sc.mo.breath = sc.mo.beak;
+                sc.mo.aim = 8.0F;
+            }
+            case "m-flame", "m-flamed", "m-flameg" -> {
+                // 3.7.7: the phoenix's M1 held: the beak opening, the flamethrower (on 40 ticks, then let go), aimed a little down (m-flamed: well
+                // down at the ground; m-flameg: standing on the ground)
+                int held = 40;
+                sc.bird = true;
+                boolean ground = state.equals("m-flameg");
+                sc.by = ground ? 0.0 : 2.0;
+                sc.mo.perch = ground ? 1.0F : 0.0F;
+                double open = Math.min(Math.min(1.0, t / 3.0), Math.max(0.0, (held + 5 - t) / 5.0));
+                sc.mo.beak = (float) open;
+                sc.mo.breath = (float) Math.min(Math.min(1.0, t / 4.0), Math.max(0.0, (held + 8 - t) / 8.0));
+                sc.mo.aim = state.equals("m-flamed") ? 35.0F : 8.0F;
+                double pitch = Math.toRadians(sc.mo.aim);
+                double on = t;
+                double off = t > held ? t - held : -1.0;
+                sc.beak = true;
+                sc.fire = (sink, e) -> {
+                    if (BEAK[6] == 0.0) {
+                        return;
+                    }
+                    double[] fixed = {BEAK[0] - e[0], BEAK[1] - e[1], BEAK[2] - e[2], 0.0, -Math.sin(pitch), -Math.cos(pitch), BEAK[3], BEAK[4], BEAK[5]};
+                    com.hexhaki.piece.phoenix.PhoenixBlast.breath(sink, (ago, out) -> System.arraycopy(fixed, 0, out, 0, 9), on, off,
+                        state.equals("m-flamed") ? 9.0 : 24.0, 5);
+                };
+            }
             default -> {
                 return null;
             }
@@ -398,8 +436,8 @@ public final class PhoenixPreview {
             double sz = Math.sin(rz);
             // Ry * Rz, its chest (in the air) at (bx, by + 0.9, bz) as in game
             double[] r = {cy * cz, -cy * sz, sy, sz, cz, 0, -sy * cz, sy * sz, cy};
-            float anchor = shape.chest;
-            double[] at = {sc.bx, sc.by + 0.9, sc.bz};
+            float anchor = sc.mo.perch > 0.5F ? shape.feetStand : shape.chest;
+            double[] at = {sc.bx, sc.by + (sc.mo.perch > 0.5F ? 0.0 : 0.9), sc.bz};
             for (int i = 0; i < 3; i++) {
                 place[i * 4] = (float) (r[i * 3] * sca);
                 place[i * 4 + 1] = (float) (r[i * 3 + 1] * sca);
@@ -471,6 +509,11 @@ public final class PhoenixPreview {
             skinned.add(wp);
             skinned.add(wn);
             skinned.add(heat);
+        }
+        BEAK[6] = 0.0;
+        if (sc != null && sc.beak && shape.bill >= 0) {
+            BEAK[6] = PhoenixForm.gape(shape, skinned.get(shape.bill * 3), skinned.get(shape.corners[0] * 3), skinned.get(shape.corners[2] * 3),
+                BEAK) ? 1.0 : 0.0;
         }
         double[] target = {(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2};
         if (p.length >= 8) {

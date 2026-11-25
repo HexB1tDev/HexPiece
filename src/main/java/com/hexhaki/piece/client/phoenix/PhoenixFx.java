@@ -195,6 +195,9 @@ public final class PhoenixFx {
         }
         clock++;
         PhoenixMoveFx.tick();
+        Minecraft mc = Minecraft.m_91087_();
+        PhoenixBreath.tick(mc.f_91073_);
+        flame(mc);
         if (!kitAdded) {
             kitAdded = true;
             ClientKits.KITS.put(Fruit.TORI, new PhoenixClient());
@@ -300,6 +303,39 @@ public final class PhoenixFx {
         entry.bank += (bankTarget - entry.bank) * 0.2F;
     }
 
+    /** 3.7.7: whether the local player's flamethrower is on (as last sent). */
+    private static boolean flameSent;
+
+    /** The local player the phoenix now (out: not forming or going). */
+    static boolean selfPhoenix() {
+        Minecraft minecraft = Minecraft.m_91087_();
+        Entry entry = minecraft.f_91074_ == null ? null : ENTRIES.get(minecraft.f_91074_.m_19879_());
+        return entry != null && entry.phase == PhoenixForm.PHOENIX;
+    }
+
+    /**
+     * 3.7.7 (the owner: "Transformed M1, shall make the bird open it's beak and act as a flamethrower"): as the phoenix, M1 held is its
+     * flamethrower (sent as the dragon's breath is: network/C2SDragon, server/PhoenixMoves.flame), never a punch or a block broken
+     * under it: while the phoenix is out the game's attack is taken here.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public static void phoenixAttack(net.minecraftforge.client.event.InputEvent.InteractionKeyMappingTriggered event) {
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (!ENTRIES.isEmpty() && minecraft.f_91074_ != null && ENTRIES.containsKey(minecraft.f_91074_.m_19879_()) && event.isAttack()) {
+            event.setCanceled(true);
+            event.setSwingHand(false);
+        }
+    }
+
+    /** Each tick: the flame follows M1 (held, no screen open, the phoenix out). */
+    static void flame(Minecraft minecraft) {
+        boolean want = minecraft.f_91074_ != null && selfPhoenix() && minecraft.f_91080_ == null && minecraft.f_91066_.f_92096_.m_90857_();
+        if (want != flameSent) {
+            flameSent = want;
+            com.hexhaki.piece.network.PieceNetwork.toServer(new com.hexhaki.piece.network.C2SDragon(want));
+        }
+    }
+
     static float wrap(float degrees) {
         float d = degrees % 360.0F;
         if (d >= 180.0F) {
@@ -380,6 +416,8 @@ public final class PhoenixFx {
     /** Scratch (the render thread only). */
     private static final float[] TINT = new float[3];
     private static final float[] PLACE = new float[12];
+    private static final double[] GAPE = new double[6];
+    private static final double[] GAPE_PLACED = new double[6];
     private static final PhoenixForm.Motion NOW = new PhoenixForm.Motion();
 
     /** The phoenixes, after the entities. */
@@ -453,6 +491,8 @@ public final class PhoenixFx {
         mo.form = shaped;
         // 3.7.2: a move's pose (server/PhoenixMoves' acts): swept, ramming, seizing; the whirl turns it, the glide round banks it
         float whirl = PhoenixMoveFx.act(id, clock + partial, mo, BANK);
+        // 3.7.7: its flamethrower: the beak open, the head aimed down the look
+        PhoenixBreath.pose(id, clock + partial, mo, player.f_19860_ + (player.m_146909_() - player.f_19860_) * partial);
         float seconds = (clock + partial) / 20.0F + (id % 17) * 0.31F;
         float beat = entry.beatO + (entry.beat - entry.beatO) * partial;
         PhoenixForm.pose(m, shape, entry.pose, mo, beat, seconds);
@@ -507,6 +547,27 @@ public final class PhoenixFx {
             }
         }
         entry.drawnScale = s;
+        // 3.7.7: where its open beak is this frame (camera-relative), for its flame
+        if (mo.beak > 0.0F && shape.bill >= 0 && PhoenixForm.gape(shape, entry.pos[shape.bill], entry.pos[shape.corners[0]],
+            entry.pos[shape.corners[2]], GAPE)) {
+            double gx = GAPE[0];
+            double gy = GAPE[1];
+            double gz = GAPE[2];
+            double wx = GAPE[3];
+            double wy = GAPE[4];
+            double wz = GAPE[5];
+            for (int r = 0; r < 3; r++) {
+                GAPE_PLACED[r] = PLACE[r * 4] * gx + PLACE[r * 4 + 1] * gy + PLACE[r * 4 + 2] * gz + PLACE[r * 4 + 3];
+                GAPE_PLACED[r + 3] = PLACE[r * 4] * wx + PLACE[r * 4 + 1] * wy + PLACE[r * 4 + 2] * wz;
+            }
+            double wl = Math.sqrt(GAPE_PLACED[3] * GAPE_PLACED[3] + GAPE_PLACED[4] * GAPE_PLACED[4] + GAPE_PLACED[5] * GAPE_PLACED[5]);
+            if (wl > 1.0E-6) {
+                GAPE_PLACED[3] /= wl;
+                GAPE_PLACED[4] /= wl;
+                GAPE_PLACED[5] /= wl;
+                PhoenixBreath.drawn(id, GAPE_PLACED, camera);
+            }
+        }
         // the fire points, placed (camera-relative) for the tongues drawn after the particles
         int[] an = shape.anchors;
         for (int k = 0; k < an.length / 2; k++) {
@@ -794,7 +855,7 @@ public final class PhoenixFx {
     @SubscribeEvent
     public static void fire(RenderLevelStageEvent event) {
         // 3.7.5: the moves' fire is drawn whoever is the phoenix or not (this returned whenever nobody was: no human move showed anything)
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty() && PhoenixMoveFx.FX.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty() && PhoenixMoveFx.FX.isEmpty() && PhoenixBreath.BREATHS.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -888,5 +949,6 @@ public final class PhoenixFx {
         PhoenixMoveFx.clear();
         WING_POSES.clear();
         fromFirstPerson = false;
+        flameSent = false;
     }
 }

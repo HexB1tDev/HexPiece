@@ -189,8 +189,31 @@ public final class PhoenixForm {
         public final int[] anchors;
         /** Each fire point's tongues' size (1 the wings' and the mantle's). */
         public final float[] anchorSize;
+        /**
+         * 3.7.7 (the owner: "Transformed M1, shall make the bird open it's beak and act as a flamethrower"): the owner's model has no jaw
+         * bone and its bill ("Bill | ivory tapered profile") is one closed mesh, so it is split along the mouth line drawn on its sides
+         * ({@link #split}): the faces under that line are the lower jaw (their vertices made their own, in memory: the file is never
+         * changed), turned down about the hinge at the mouth's corners as the beak opens ({@link #skin}, Motion.beak). The bill's part
+         * (-1: none), each of its vertices whether it is the lower jaw's, the hinge (rest y, z), the upper bill's hooked tip and the lower
+         * jaw's (vertices of the bill), and the mouth's two corners (part, vertex: the back ends of the mouth lines).
+         */
+        public final int bill;
+        public final boolean[] jaw;
+        public final float hingeY;
+        public final float hingeZ;
+        public final int billTip;
+        public final int jawTip;
+        public final int[] corners;
 
         public Shape(DragonModel m) {
+            Jaw cut = split(m);
+            this.bill = cut.part;
+            this.jaw = cut.lower;
+            this.hingeY = cut.hingeY;
+            this.hingeZ = cut.hingeZ;
+            this.billTip = cut.billTip;
+            this.jawTip = cut.jawTip;
+            this.corners = cut.corners;
             this.parent = m.parent;
             DragonPose rest = new DragonPose(m);
             rest.solve();
@@ -345,6 +368,161 @@ public final class PhoenixForm {
                 straighten(m, at, k, TAIL_GROUND[k], this.lying, this.along);
             }
         }
+    }
+
+    /** What {@link #split} found (the Shape's constructor's only). */
+    static final class Jaw {
+        int part = -1;
+        boolean[] lower = new boolean[0];
+        float hingeY;
+        float hingeZ;
+        int billTip = -1;
+        int jawTip = -1;
+        int[] corners = {-1, -1, -1, -1};
+    }
+
+    /** How far over the mouth line (model units) a face of the bill may lie and still be the lower jaw's. */
+    static final float JAW_LINE = 0.004F;
+
+    /**
+     * 3.7.7: the bill split into its two jaws (see Shape.bill): the mouth lines' points (z, y) fitted with a straight line; each face of the
+     * bill whose middle lies under it, within the lines' length (the hook in front of them is the upper bill's), is the lower jaw's; a
+     * vertex both jaws' faces use is copied for the lower jaw's, so the two come apart; the part replaced in memory with the split mesh
+     * (the same quads, more vertices). Running it again on a split model changes nothing.
+     */
+    static Jaw split(DragonModel m) {
+        Jaw j = new Jaw();
+        int bill = -1;
+        double n = 0;
+        double sz = 0;
+        double sy = 0;
+        double szz = 0;
+        double szy = 0;
+        float zLo = Float.MAX_VALUE;
+        int corner = 0;
+        for (int i = 0; i < m.parts.length; i++) {
+            DragonModel.Part part = m.parts[i];
+            if (part.name.startsWith("Bill |")) {
+                bill = i;
+            } else if (part.name.startsWith("Bill") && part.name.contains("mouth line") && part.vertices() > 0 && corner < 2) {
+                int back = 0;
+                for (int v = 0; v < part.vertices(); v++) {
+                    float y = part.pos[v * 3 + 1];
+                    float z = part.pos[v * 3 + 2];
+                    n++;
+                    sz += z;
+                    sy += y;
+                    szz += (double) z * z;
+                    szy += (double) z * y;
+                    zLo = Math.min(zLo, z);
+                    if (z > part.pos[back * 3 + 2]) {
+                        back = v;
+                    }
+                }
+                j.corners[corner * 2] = i;
+                j.corners[corner * 2 + 1] = back;
+                corner++;
+            }
+        }
+        double det = n * szz - sz * sz;
+        if (bill < 0 || corner < 2 || n < 4 || Math.abs(det) < 1.0E-9) {
+            return j;
+        }
+        double slope = (n * szy - sz * sy) / det;
+        double cut = (sy - slope * sz) / n;
+        DragonModel.Part p = m.parts[bill];
+        int nv = p.vertices();
+        int nq = p.quads.length / 4;
+        boolean[] lowQuad = new boolean[nq];
+        boolean[] usedLow = new boolean[nv];
+        boolean[] usedUp = new boolean[nv];
+        for (int q = 0; q < nq; q++) {
+            float cy = 0.0F;
+            float cz = 0.0F;
+            for (int k = 0; k < 4; k++) {
+                int v = p.quads[q * 4 + k];
+                cy += p.pos[v * 3 + 1] * 0.25F;
+                cz += p.pos[v * 3 + 2] * 0.25F;
+            }
+            lowQuad[q] = cz >= zLo && cy < cut + slope * cz + JAW_LINE;
+            for (int k = 0; k < 4; k++) {
+                int v = p.quads[q * 4 + k];
+                if (lowQuad[q]) {
+                    usedLow[v] = true;
+                } else {
+                    usedUp[v] = true;
+                }
+            }
+        }
+        int extra = 0;
+        for (int v = 0; v < nv; v++) {
+            if (usedLow[v] && usedUp[v]) {
+                extra++;
+            }
+        }
+        int total = nv + extra;
+        boolean[] lower = new boolean[total];
+        int[] copy = new int[nv];
+        java.util.Arrays.fill(copy, -1);
+        if (extra > 0) {
+            float[] pos = java.util.Arrays.copyOf(p.pos, total * 3);
+            float[] uv = java.util.Arrays.copyOf(p.uv, total * 2);
+            float[] nrm = java.util.Arrays.copyOf(p.nrm, total * 3);
+            byte[] bone = java.util.Arrays.copyOf(p.bone, total * 4);
+            float[] weight = java.util.Arrays.copyOf(p.weight, total * 4);
+            int next = nv;
+            for (int v = 0; v < nv; v++) {
+                if (usedLow[v] && usedUp[v]) {
+                    copy[v] = next;
+                    System.arraycopy(p.pos, v * 3, pos, next * 3, 3);
+                    System.arraycopy(p.uv, v * 2, uv, next * 2, 2);
+                    System.arraycopy(p.nrm, v * 3, nrm, next * 3, 3);
+                    System.arraycopy(p.bone, v * 4, bone, next * 4, 4);
+                    System.arraycopy(p.weight, v * 4, weight, next * 4, 4);
+                    next++;
+                }
+            }
+            int[] quads = p.quads.clone();
+            for (int q = 0; q < nq; q++) {
+                if (lowQuad[q]) {
+                    for (int k = 0; k < 4; k++) {
+                        int v = quads[q * 4 + k];
+                        if (copy[v] >= 0) {
+                            quads[q * 4 + k] = copy[v];
+                        }
+                    }
+                }
+            }
+            m.replace(bill, pos, uv, nrm, bone, weight, quads);
+            p = m.parts[bill];
+        }
+        for (int v = 0; v < nv; v++) {
+            lower[v] = usedLow[v] && !usedUp[v];
+            if (copy[v] >= 0) {
+                lower[copy[v]] = true;
+            }
+        }
+        j.part = bill;
+        j.lower = lower;
+        float hy = 0.0F;
+        float hz = 0.0F;
+        for (int k = 0; k < 2; k++) {
+            DragonModel.Part line = m.parts[j.corners[k * 2]];
+            hy += line.pos[j.corners[k * 2 + 1] * 3 + 1] * 0.5F;
+            hz += line.pos[j.corners[k * 2 + 1] * 3 + 2] * 0.5F;
+        }
+        j.hingeY = hy;
+        j.hingeZ = hz;
+        for (int v = 0; v < total; v++) {
+            if (lower[v]) {
+                if (j.jawTip < 0 || p.pos[v * 3 + 2] < p.pos[j.jawTip * 3 + 2]) {
+                    j.jawTip = v;
+                }
+            } else if (j.billTip < 0 || p.pos[v * 3 + 2] < p.pos[j.billTip * 3 + 2]) {
+                j.billTip = v;
+            }
+        }
+        return j;
     }
 
     /** Scratch of feet() (the constructor's only), handed to the Shape's fields. */
@@ -673,6 +851,10 @@ public final class PhoenixForm {
      * step). One thread (the render thread; the previews and tests one each).
      */
     public static void skin(Shape sh, DragonPose pose, int index, DragonModel.Part part, float[] pos, float[] nrm, Motion mo, float seconds) {
+        if (index == sh.bill && mo.beak > 0.001F && sh.jaw.length == part.vertices()) {
+            jaw(sh, pose, part, pos, nrm, mo.beak);
+            return;
+        }
         if (sh.footSide[index] >= 0) {
             foot(sh, pose, index, part, pos, nrm, mo);
             return;
@@ -717,6 +899,91 @@ public final class PhoenixForm {
             restNrm[v * 3 + 2] = anz + (lie[8] * nx + lie[9] * ny + lie[10] * nz - anz) * g;
         }
         pose.skin(part, restPos, restNrm, pos, nrm);
+    }
+
+    /** 3.7.7: how far the lower jaw turns down with the beak wide open (degrees). */
+    public static final float JAW_OPEN = 30.0F;
+    /** 3.7.7, breathing fire (degrees about the model's x, nose up positive): the body reared back, the neck thrust out, the head. */
+    static final float BREATH_REAR = 10.0F;
+    static final float BREATH_THRUST = -22.0F;
+    static final float BREATH_HEAD = 16.0F;
+
+    /** 3.7.7: the bill skinned with its lower jaw turned down about the hinge by {@code open} of {@link #JAW_OPEN} (Shape.bill). */
+    static void jaw(Shape sh, DragonPose pose, DragonModel.Part part, float[] pos, float[] nrm, float open) {
+        int nv = part.vertices();
+        if (restPos.length < nv * 3) {
+            restPos = new float[nv * 3];
+            restNrm = new float[nv * 3];
+        }
+        double a = Math.toRadians(JAW_OPEN * clamp(open));
+        float c = (float) Math.cos(a);
+        float s = (float) Math.sin(a);
+        float hy = sh.hingeY;
+        float hz = sh.hingeZ;
+        for (int v = 0; v < nv; v++) {
+            float x = part.pos[v * 3];
+            float y = part.pos[v * 3 + 1];
+            float z = part.pos[v * 3 + 2];
+            float nx = part.nrm[v * 3];
+            float ny = part.nrm[v * 3 + 1];
+            float nz = part.nrm[v * 3 + 2];
+            if (sh.jaw[v]) {
+                // about the model's x through the hinge: the jaw's tip (toward -Z, ahead) swings down
+                float dy = y - hy;
+                float dz = z - hz;
+                y = hy + dy * c + dz * s;
+                z = hz - dy * s + dz * c;
+                float qy = ny * c + nz * s;
+                nz = -ny * s + nz * c;
+                ny = qy;
+            }
+            restPos[v * 3] = x;
+            restPos[v * 3 + 1] = y;
+            restPos[v * 3 + 2] = z;
+            restNrm[v * 3] = nx;
+            restNrm[v * 3 + 1] = ny;
+            restNrm[v * 3 + 2] = nz;
+        }
+        pose.skin(part, restPos, restNrm, pos, nrm);
+    }
+
+    /** 3.7.7: how far from the corners of the mouth toward the jaws' tips the flame leaves the beak (inside the gape). */
+    static final float GAPE = 0.7F;
+
+    /**
+     * 3.7.7: where the flame leaves the open beak and the beak's way out, from the skinned bill and the two mouth lines (as {@link #skin}
+     * leaves them, in any frame the three share: the model's, or placed in the world): {@code out} gets the point between the jaws a little
+     * inside the gape (x, y, z) and the way from the corners of the mouth between the jaws' tips (unit). False when the model has no split
+     * bill.
+     */
+    public static boolean gape(Shape sh, float[] bill, float[] lineA, float[] lineB, double[] out) {
+        if (sh.bill < 0 || sh.billTip < 0 || sh.jawTip < 0 || sh.corners[1] < 0 || sh.corners[3] < 0) {
+            return false;
+        }
+        int a = sh.corners[1] * 3;
+        int b = sh.corners[3] * 3;
+        double hx = (lineA[a] + lineB[b]) * 0.5;
+        double hy = (lineA[a + 1] + lineB[b + 1]) * 0.5;
+        double hz = (lineA[a + 2] + lineB[b + 2]) * 0.5;
+        int u = sh.billTip * 3;
+        int l = sh.jawTip * 3;
+        double tx = (bill[u] + bill[l]) * 0.5;
+        double ty = (bill[u + 1] + bill[l + 1]) * 0.5;
+        double tz = (bill[u + 2] + bill[l + 2]) * 0.5;
+        double wx = tx - hx;
+        double wy = ty - hy;
+        double wz = tz - hz;
+        double len = Math.sqrt(wx * wx + wy * wy + wz * wz);
+        if (len < 1.0E-6) {
+            return false;
+        }
+        out[0] = hx + wx * GAPE;
+        out[1] = hy + wy * GAPE;
+        out[2] = hz + wz * GAPE;
+        out[3] = wx / len;
+        out[4] = wy / len;
+        out[5] = wz / len;
+        return true;
     }
 
     /** A foot part skinned from its rest laid flat, levelled, lifted (see {@link #skin}). */
@@ -1030,6 +1297,14 @@ public final class PhoenixForm {
         /** 3.7.3: 0 to 1: the wings held spread wide and still (spinning in its whirlpool, gathering Bluebird). */
         public float spread;
         /**
+         * 3.7.7, the flamethrower (M1 held as the phoenix): how far the beak is open (0 shut, 1 wide: Shape.bill's lower jaw turned down
+         * {@link #JAW_OPEN}); how far into breathing it is (0 to 1: the neck thrust out along the aim, the head aimed down it, the body
+         * reared back against the blast, the wings held wide and beating short); the aim's pitch (degrees, down positive: the look's).
+         */
+        public float beak;
+        public float breath;
+        public float aim;
+        /**
          * 3.7.4, worked out by {@link #pose} for {@link #skin}: how flat the feet are laid (0 the flight's curled toes, 1 flat on the
          * ground), each foot's turn about its ankle keeping it level (degrees), how high it is lifted (model units), how far its toes
          * curl (0 to 1: lifted in a step).
@@ -1078,7 +1353,7 @@ public final class PhoenixForm {
         float planted = 0.0F;
         float flap = (1.0F - glide) * (1.0F - back) * (1.0F - human) * (1.0F - tuck) * (1.0F - 0.85F * flare) * (1.0F - land) * (1.0F - sweep)
             * (1.0F - 0.6F * reach) * (1.0F - 0.85F * spread);
-        float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch);
+        float amp = (34.0F - 10.0F * speed) * flap * (1.0F - 0.35F * perch) * (1.0F - 0.45F * clamp(mo.breath) * (1.0F - human));
         // the power stroke: the downstroke quick, the recovery slower (the phase run faster through the downstroke's middle)
         beat = beat + 0.35F * (float) Math.sin(beat);
         float sb = (float) Math.sin(beat);
@@ -1172,7 +1447,24 @@ public final class PhoenixForm {
         // the head held steady against the body's rock, lifted back up to look ahead when it leans
         turn(pose, sh, sh.neck, -4.0F * flap * (float) Math.sin(beat - 0.4F) + 38.0F * speed + 15.0F * dive, 1, 0, 0);
         turn(pose, sh, sh.head, 2.0F * (float) Math.sin(seconds * 0.9F) + 10.0F * speed, 1, 0, 0);
-        turn(pose, sh, sh.head, (6.0F + 14.0F * perch) * (float) Math.sin(seconds * 0.43F), 0, 1, 0);
+        // 3.7.7: breathing fire it looks only down its flame (the idle look about held still)
+        float breath = clamp(mo.breath) * (1.0F - human);
+        turn(pose, sh, sh.head, (6.0F + 14.0F * perch) * (float) Math.sin(seconds * 0.43F) * (1.0F - 0.9F * breath), 0, 1, 0);
+        if (breath > 0.0F) {
+            // the flamethrower: the body reared back against the blast, the neck thrust out and the head aimed down the look (the bill,
+            // modelled a little nose down, levelled), shuddering with the roar of it
+            float aim = Math.max(-50.0F, Math.min(60.0F, mo.aim));
+            float shudder = 1.6F * (float) Math.sin(seconds * 31.0F) * (float) Math.sin(seconds * 7.0F);
+            turn(pose, sh, sh.root, breath * BREATH_REAR, 1, 0, 0);
+            turn(pose, sh, sh.neck, breath * (BREATH_THRUST - 0.4F * aim + shudder), 1, 0, 0);
+            turn(pose, sh, sh.head, breath * (BREATH_HEAD - 0.35F * aim - shudder * 0.5F), 1, 0, 0);
+            // the wings held wide, beating short to hold it in the air (the beat's amplitude cut: flap above)
+            for (int s = 0; s < 2; s++) {
+                float m0 = s == 0 ? 1.0F : -1.0F;
+                turn(pose, sh, sh.wing[s][0], m0 * breath * 12.0F * (1.0F - perch), 0, 0, 1);
+                turn(pose, sh, sh.wing[s][0], -m0 * breath * 10.0F, 0, 1, 0);
+            }
+        }
         // the tail: swinging late behind the beat, streaming out behind at speed; its three streamers swaying on their own
         turn(pose, sh, sh.tailRoot, 8.0F * flap * (float) Math.sin(beat - 1.7F) - 30.0F * speed - 30.0F * dive, 1, 0, 0);
         for (int k = 0; k < 3; k++) {

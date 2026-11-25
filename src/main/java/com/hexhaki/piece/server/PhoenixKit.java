@@ -11,7 +11,8 @@ import net.minecraft.server.level.ServerPlayer;
  * animate it so it looks good, good flying animations, etc. Z (transforms/detransforms)"): Marco's fruit. Z turns the player into the
  * owner's phoenix and back (server/PhoenixServer). 3.7.2 (the owner: "Proceed"): the reference's moves (docs/handoff/next-ai-3.6.3.md
  * AD), each in both forms (server/PhoenixMoves): X Fujiazami, C Talon Slam (as the phoenix: Hawk Rush, held), 3.7.3 V Phoenix Inferno,
- * B Bluebird (held). The panel shows the form's own list (client/phoenix/PhoenixClient).
+ * B Bluebird (held). The panel shows the form's own list (client/phoenix/PhoenixClient). 3.7.7: M1 held as the phoenix, the flamethrower
+ * (server/PhoenixMoves.flame, from network/C2SDragon).
  */
 public final class PhoenixKit extends FruitKit {
     public static final FruitMove FORM = new FruitMove("Phoenix Form", "[Z]", 0, null,
@@ -43,12 +44,16 @@ public final class PhoenixKit extends FruitKit {
     public static final FruitMove BLUEBIRD_PHOENIX = new FruitMove("Phoenix: Bluebird", "[B] hold", 0, "phoenix_bluebird",
         "As the phoenix, hold: your wings spread and the fire gathers round you into a sphere of flames at your chest; let go and one great sphere"
             + " of blue and gold flames flies out and blows up in a massive explosion.");
+    /** 3.7.7 (the owner: "Transformed M1, shall make the bird open it's beak and act as a flamethrower"): M1 held as the phoenix. */
+    public static final FruitMove FLAMETHROWER = new FruitMove("Phoenix: Flamethrower", "[LMB] hold", 0, "phoenix_flame",
+        "As the phoenix, hold M1: your beak opens and a stream of blue and gold flame pours out of it at whatever you aim at, burning and"
+            + " setting alight everyone in it, for as long as you hold (up to five seconds).");
     /** The human's moves and the phoenix's, in the same keys (the panel shows the form's). */
     public static final List<FruitMove> HUMAN = List.of(FORM, FUJIAZAMI, TALON_SLAM, INFERNO, BLUEBIRD);
-    public static final List<FruitMove> PHOENIX = List.of(FORM, FUJIAZAMI_PHOENIX, HAWK_RUSH, INFERNO_PHOENIX, BLUEBIRD_PHOENIX);
+    public static final List<FruitMove> PHOENIX = List.of(FORM, FUJIAZAMI_PHOENIX, HAWK_RUSH, INFERNO_PHOENIX, BLUEBIRD_PHOENIX, FLAMETHROWER);
     /** Every move (the energy list, the tests). */
     public static final List<FruitMove> MOVES = List.of(FORM, FUJIAZAMI, TALON_SLAM, INFERNO, BLUEBIRD, FUJIAZAMI_PHOENIX, HAWK_RUSH,
-        INFERNO_PHOENIX, BLUEBIRD_PHOENIX);
+        INFERNO_PHOENIX, BLUEBIRD_PHOENIX, FLAMETHROWER);
 
     @Override
     public Fruit fruit() {

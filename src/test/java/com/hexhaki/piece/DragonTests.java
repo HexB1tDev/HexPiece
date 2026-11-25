@@ -973,6 +973,45 @@ public final class DragonTests {
             && shape.feet > shape.floor - 1.0E-3 && shape.chest > shape.feet && shape.shoulder > shape.chest - 2.0F,
             "the phoenix's fire points (fewer), its claws, its chest and its wings' roots");
         com.hexhaki.piece.dragon.DragonPose pose = new com.hexhaki.piece.dragon.DragonPose(m);
+        // 3.7.7 (the owner: "Transformed M1, shall make the bird open it's beak and act as a flamethrower"): the bill split along its mouth
+        // line into two jaws (no face lost, a few vertices copied, the split stable when done again), the hinge at the mouth's corners
+        // behind the tips; opened, the lower jaw's tip drops under the shut one and the upper bill stays; the gape found between them
+        int faces2 = 0;
+        for (com.hexhaki.piece.dragon.DragonModel.Part part : m.parts) {
+            faces2 += part.quads.length / 4;
+        }
+        int lower = 0;
+        for (boolean j : shape.jaw) {
+            lower += j ? 1 : 0;
+        }
+        com.hexhaki.piece.dragon.DragonModel.Part bill = shape.bill < 0 ? null : m.parts[shape.bill];
+        int billVertices = bill == null ? 0 : bill.vertices();
+        com.hexhaki.piece.phoenix.PhoenixForm.Shape again = new com.hexhaki.piece.phoenix.PhoenixForm.Shape(m);
+        Check.that(bill != null && faces2 == faces && lower >= 20 && lower < billVertices / 2 && shape.jaw.length == billVertices
+            && again.bill == shape.bill && m.parts[shape.bill].vertices() == billVertices && shape.billTip >= 0 && shape.jawTip >= 0
+            && shape.hingeZ > bill.pos[shape.jawTip * 3 + 2] + 0.5F, "the phoenix's bill split into two jaws (" + lower + " of "
+            + billVertices + " vertices the lower jaw's)");
+        pose.rest();
+        pose.solve();
+        com.hexhaki.piece.phoenix.PhoenixForm.Motion shut = new com.hexhaki.piece.phoenix.PhoenixForm.Motion();
+        com.hexhaki.piece.phoenix.PhoenixForm.Motion open = new com.hexhaki.piece.phoenix.PhoenixForm.Motion();
+        open.beak = 1.0F;
+        float[] p0 = new float[billVertices * 3];
+        float[] p1 = new float[billVertices * 3];
+        float[] nn = new float[billVertices * 3];
+        com.hexhaki.piece.phoenix.PhoenixForm.skin(shape, pose, shape.bill, bill, p0, nn, shut, 0.0F);
+        com.hexhaki.piece.phoenix.PhoenixForm.skin(shape, pose, shape.bill, bill, p1, nn, open, 0.0F);
+        int jt = shape.jawTip * 3;
+        int bt = shape.billTip * 3;
+        float[] lineA = new float[m.parts[shape.corners[0]].vertices() * 3];
+        float[] lineB = new float[m.parts[shape.corners[2]].vertices() * 3];
+        pose.skin(m.parts[shape.corners[0]], lineA, new float[lineA.length]);
+        pose.skin(m.parts[shape.corners[2]], lineB, new float[lineB.length]);
+        double[] gape = new double[6];
+        boolean found = com.hexhaki.piece.phoenix.PhoenixForm.gape(shape, p1, lineA, lineB, gape);
+        Check.that(p1[jt + 1] < p0[jt + 1] - 0.3F && Math.abs(p1[bt + 1] - p0[bt + 1]) < 1.0E-4F && found && gape[5] < -0.8
+            && gape[1] < p1[bt + 1] + 0.3 && gape[1] > p1[jt + 1] - 0.3, "the phoenix's beak opens (the lower jaw " + (p0[jt + 1] - p1[jt + 1])
+            + " down), the flame's gape between the jaws, facing ahead");
         String[] states = {"hover", "fly", "fast", "glide", "dive", "perch", "human", "walk", "flare", "land", "landseq"};
         // 3.7.1 (the owner: "when flying the tails should go straight"): every one of the three streamers' flames has its straight line
         // in the air and lying on the ground, ordered root to tip
@@ -1176,6 +1215,16 @@ public final class DragonTests {
             com.hexhaki.piece.phoenix.PhoenixBlast.tornado(sink, 0, -2, 8 + 0.5 * Math.max(0.0, age), age, Math.min(1.0, age / 8.0), 1.4, 5);
             check(count[0] + faces, finite[0], "the phoenix's fire tornado", t);
         }
+        for (int t = 0; t <= 60; t++) {
+            // 3.7.7: the flamethrower (M1 held 40 ticks, then let go), out of the beak 6 blocks ahead of the eye, beside the phoenix
+            count[0] = 0;
+            com.hexhaki.piece.phoenix.PhoenixFire.burn(sink, points, sizes, n, t, 0.0, 0.0, 0.3, 1.0, 5);
+            com.hexhaki.piece.phoenix.PhoenixFire.glow(sink, glow, 9, 1.8, t);
+            double[] beak = {0.3, 1.2, 6.0, 0.0, -0.1, 0.995, 0.0, -0.25, 0.97};
+            com.hexhaki.piece.phoenix.PhoenixBlast.breath(sink, (ago, out) -> System.arraycopy(beak, 0, out, 0, 9), t, t > 40 ? t - 40 : -1.0,
+                24.0, 5);
+            check(count[0] + faces, finite[0], "the phoenix's flamethrower", t);
+        }
         for (int t = 0; t <= 40; t++) {
             // Hawk Rush: the flash, then the streaks and comet round the rushing phoenix
             count[0] = 0;
@@ -1243,20 +1292,26 @@ public final class DragonTests {
             com.hexhaki.piece.phoenix.PhoenixMoveArt.blueBoom(sink, 0, 0, 12, t, 5.7, 5);
             check(count[0], finite[0], "the human's Phoenix Inferno and Bluebird", t);
         }
-        Check.that(com.hexhaki.piece.server.PhoenixKit.HUMAN.size() == 5 && com.hexhaki.piece.server.PhoenixKit.PHOENIX.size() == 5
+        Check.that(com.hexhaki.piece.server.PhoenixKit.HUMAN.size() == 5 && com.hexhaki.piece.server.PhoenixKit.PHOENIX.size() == 6
             && com.hexhaki.piece.server.PhoenixKit.HUMAN.get(3).key().equals("[V]") && com.hexhaki.piece.server.PhoenixKit.HUMAN.get(4).key().equals("[B] hold")
             && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(3).key().equals("[V]") && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(4).key().equals("[B] hold")
             && com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_LAST == com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_FORM
             + com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_KICKS * com.hexhaki.piece.phoenix.PhoenixMoveArt.INFERNO_EVERY
             && com.hexhaki.piece.phoenix.PhoenixMoveArt.blueSize(com.hexhaki.piece.phoenix.PhoenixMoveArt.BLUE_MOST)
             > com.hexhaki.piece.phoenix.PhoenixMoveArt.blueSize(0), "Phoenix Inferno on V, Bluebird held on B (its ball bigger the longer)");
-        Check.that(com.hexhaki.piece.server.PhoenixKit.HUMAN.size() == 5 && com.hexhaki.piece.server.PhoenixKit.PHOENIX.size() == 5
+        Check.that(com.hexhaki.piece.server.PhoenixKit.HUMAN.size() == 5 && com.hexhaki.piece.server.PhoenixKit.PHOENIX.size() == 6
             && com.hexhaki.piece.server.PhoenixKit.HUMAN.get(1).key().equals("[X]") && com.hexhaki.piece.server.PhoenixKit.HUMAN.get(2).key().equals("[C]")
             && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(1).key().equals("[X]") && com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(2).key().equals("[C] hold")
             && com.hexhaki.piece.server.PhoenixKit.MOVES.containsAll(com.hexhaki.piece.server.PhoenixKit.PHOENIX)
             && com.hexhaki.piece.server.PhoenixKit.MOVES.containsAll(com.hexhaki.piece.server.PhoenixKit.HUMAN),
             "the Phoenix's moves: X Fujiazami (the phoenix: the fire tornado), C Talon Slam (the phoenix: Hawk Rush, held), V, B, each form's"
                 + " list in the same keys");
+        // 3.7.7: M1 held as the phoenix, the flamethrower (its message among the Phoenix's 400 to 419)
+        Check.that(com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(5) == com.hexhaki.piece.server.PhoenixKit.FLAMETHROWER
+            && com.hexhaki.piece.server.PhoenixKit.FLAMETHROWER.key().equals("[LMB] hold") && !com.hexhaki.piece.server.PhoenixKit.HUMAN.contains(
+            com.hexhaki.piece.server.PhoenixKit.FLAMETHROWER) && com.hexhaki.piece.server.PhoenixMoves.FLAME >= 400
+            && com.hexhaki.piece.server.PhoenixMoves.FLAME < 420 && com.hexhaki.piece.server.PhoenixMoves.FLAME_HURT > 0.0F
+            && com.hexhaki.piece.server.PhoenixMoves.FLAME_RANGE > 10.0, "the phoenix's M1 held: its flamethrower");
         Check.that(com.hexhaki.piece.server.PhoenixKit.PHOENIX.get(1).name().contains("Tornado")
             && com.hexhaki.piece.phoenix.PhoenixBlast.TORNADO_TALL > com.hexhaki.piece.dragon.UoFire.TORNADO_TALL
             && com.hexhaki.piece.phoenix.PhoenixBlast.TORNADO_HIGH > com.hexhaki.piece.dragon.UoFire.TORNADO_HIGH

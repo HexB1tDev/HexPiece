@@ -97,6 +97,15 @@ public final class DragonModel {
         }
     }
 
+    /**
+     * 3.7.7: part {@code index} replaced, in memory only (the file is never changed), by the same mesh with its own vertex arrays (4 bones
+     * and weights a vertex, 2 uvs, 4 indices a quad): the phoenix's bill split into its two jaws (PhoenixForm.Shape).
+     */
+    public void replace(int index, float[] pos, float[] uv, float[] nrm, byte[] bone, float[] weight, int[] quads) {
+        Part old = this.parts[index];
+        this.parts[index] = new Part(old.name, old.kind, pos, uv, nrm, bone, weight, quads);
+    }
+
     public int bones() {
         return this.names.length;
     }

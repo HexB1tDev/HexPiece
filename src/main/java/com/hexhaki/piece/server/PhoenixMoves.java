@@ -87,6 +87,24 @@ public final class PhoenixMoves {
     public static final int BLUE_FIRE = 1;
     public static final int BLUE_BOOM = 2;
     public static final int BLUE_OFF = 3;
+    /** 3.7.7: the phoenix's flamethrower (M1 held): user; bx 1 on, 0 off. */
+    public static final int FLAME = 408;
+    /**
+     * 3.7.7 (the owner: "Transformed M1, shall make the bird open it's beak and act as a flamethrower (blasting flames at the target like the
+     * dragon does)"), as the dragon's breath (server/UoMoves.flame): how far it reaches (blocks), its cone's half-angle (degrees), how long
+     * it can be held (ticks), the shortest flame (ticks), its burn every {@link #FLAME_EVERY} ticks, how long a body caught burns
+     * (seconds), its cooldown once it stops; where the beak is (blocks over the feet, ahead along the look: the phoenix's, hovering).
+     */
+    public static final double FLAME_RANGE = 24.0;
+    static final double FLAME_CONE = 10.0;
+    public static final int FLAME_MAX = 100;
+    static final int FLAME_LEAST = 6;
+    static final int FLAME_EVERY = 5;
+    public static final float FLAME_HURT = 3.0F;
+    static final int FLAME_FIRE = 5;
+    static final int FLAME_COOL = 80;
+    public static final double BEAK_UP = 2.2;
+    public static final double BEAK_AHEAD = 2.3;
 
     /** Damage (the reference's at max level, about a fifth: Fujiazami 60 and 75, Talon Slam 7 then 70, Hawk Rush 95). */
     public static final float FUJI_HURT = 12.0F;
@@ -132,6 +150,8 @@ public final class PhoenixMoves {
         boolean hawkHeld;
         /** 3.7.3: Bluebird held (let go: the ball flies, once the shortest hold is done). */
         boolean blueHeld;
+        /** 3.7.7: M1 held (let go: the flame stops, once the shortest is done). */
+        boolean flameHeld;
     }
 
     private static final Map<UUID, State> STATES = new HashMap<>();
@@ -231,6 +251,33 @@ public final class PhoenixMoves {
         if (s != null && slot == PhoenixKit.BLUEBIRD.slot()) {
             s.blueHeld = false;
         }
+    }
+
+    /**
+     * 3.7.7: M1 held down or let go as the phoenix (network/C2SDragon): the flamethrower on (not while another move runs, while it
+     * changes, or before its cooldown is over) and off. Returns at once for anyone who is not the phoenix.
+     */
+    public static void flame(ServerPlayer player, boolean on) {
+        if (!on) {
+            State s = STATES.get(player.m_20148_());
+            if (s != null) {
+                s.flameHeld = false;
+            }
+            return;
+        }
+        if (!phoenix(player)) {
+            return;
+        }
+        State s = state(player);
+        long now = now(player);
+        if (s.move != null && !LIVE.contains(s.move)) {
+            s.move = null;
+        }
+        if (now < s.busyUntil || s.move != null || player.m_20159_() || !ItoMoves.ready(player, PhoenixKit.FLAMETHROWER)) {
+            return;
+        }
+        s.flameHeld = true;
+        start(player, s, new Flame(player, now));
     }
 
     static void start(ServerPlayer player, State s, UoMoves.Live move) {
@@ -1079,6 +1126,98 @@ public final class PhoenixMoves {
 
     // ------------------------------------------------------------------------------------------------------ the rest
 
+    // ------------------------------------------------------------------------------------------------------ M1: the flamethrower
+
+    /** 3.7.7: where the phoenix's beak is (as it hovers: PhoenixForm's model placed as client/phoenix/PhoenixFx places it). */
+    static Vec3 beak(ServerPlayer player) {
+        return player.m_20182_().m_82520_(0.0, BEAK_UP, 0.0).m_82549_(player.m_20154_().m_82490_(BEAK_AHEAD));
+    }
+
+    /**
+     * The phoenix's flamethrower (M1 held), as the dragon's breath (server/UoMoves.breathe): the beak opens and a cone of blue fire pours
+     * out of it onto what the player aims at (UoMoves.toward: the crosshair's first block or foe), stopped by the first block; every
+     * {@link #FLAME_EVERY} ticks whoever is in it is burnt and set alight, the Conqueror's lightning at the one burnt (or where the flame
+     * strikes a wall: POINT ONE). It lasts while M1 is held, at most {@link #FLAME_MAX} ticks; its cooldown starts when it stops.
+     */
+    static final class Flame implements UoMoves.Live {
+        final ServerPlayer user;
+        final ServerLevel level;
+        final long born;
+        boolean over;
+
+        Flame(ServerPlayer user, long now) {
+            this.user = user;
+            this.level = (ServerLevel) user.m_9236_();
+            this.born = now;
+            fx(user, FLAME, 0, user.m_20182_(), Vec3.f_82478_, 1, 0, FLAME_MAX);
+            sound(user, beak(user), UoSounds.FLAME_START, 1.8F, 1.15F);
+        }
+
+        @Override
+        public ServerLevel level() {
+            return this.level;
+        }
+
+        @Override
+        public boolean tick(long now) {
+            if (this.over) {
+                return true;
+            }
+            State s = STATES.get(this.user.m_20148_());
+            long t = now - this.born;
+            if (!this.user.m_6084_() || this.user.m_9236_() != this.level || s == null || !phoenix(this.user) || t > FLAME_MAX
+                || !s.flameHeld && t >= FLAME_LEAST) {
+                stop();
+                return true;
+            }
+            if (t % FLAME_EVERY == 0) {
+                burn();
+            }
+            if (t >= 30 && (t - 30) % 45 == 0) {
+                sound(this.user, beak(this.user), UoSounds.FLAME_LOOP, 1.6F, 1.15F); // its roar held while it burns
+            }
+            return false;
+        }
+
+        void stop() {
+            this.over = true;
+            fx(this.user, FLAME, 0, this.user.m_20182_(), Vec3.f_82478_, 0, 0, 0);
+            ItoMoves.cool(this.user, PhoenixKit.FLAMETHROWER, FLAME_COOL);
+            done(this.user);
+        }
+
+        /** One burn of the cone. */
+        void burn() {
+            Vec3 from = beak(this.user);
+            Vec3 look = UoMoves.toward(this.user, from, FLAME_RANGE);
+            Vec3 to = from.m_82549_(look.m_82490_(FLAME_RANGE));
+            net.minecraft.world.phys.BlockHitResult wall = this.level.m_45547_(new net.minecraft.world.level.ClipContext(from, to,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, this.user));
+            boolean blocked = wall.m_6662_() == net.minecraft.world.phys.HitResult.Type.BLOCK;
+            double reach = blocked ? wall.m_82450_().m_82554_(from) : FLAME_RANGE;
+            double tan = Math.tan(Math.toRadians(FLAME_CONE));
+            net.minecraft.world.phys.AABB box = UoMoves.box(from, from.m_82549_(look.m_82490_(reach))).m_82400_(reach * tan + 1.0);
+            boolean struck = false;
+            for (LivingEntity body : this.level.m_6443_(LivingEntity.class, box, e -> e != this.user && e.m_6084_() && !e.m_5833_()
+                && com.hexhaki.fruit.FruitUtil.foe(this.user, e))) {
+                Vec3 rel = StyleCombat.middle(body).m_82546_(from);
+                double along = rel.m_82526_(look);
+                if (along < 0.0 || along > reach) {
+                    continue;
+                }
+                double off = rel.m_82546_(look.m_82490_(along)).m_82553_();
+                if (off <= along * tan + 0.8 + body.m_20205_() * 0.5) {
+                    hit(this.user, body, FLAME_HURT, look.m_82490_(0.2));
+                    body.m_20254_(FLAME_FIRE);
+                    struck = true;
+                }
+            }
+            if (!struck && blocked) {
+                ItoMoves.lightning(this.user, wall.m_82450_()); // the Conqueror's lightning where the flame strikes
+            }
+        }
+    }
+
     static void forget(ServerPlayer player) {
         State s = STATES.remove(player.m_20148_());
         if (s != null && s.move != null) {
@@ -1086,6 +1225,7 @@ public final class PhoenixMoves {
             fx(player, WINGS, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0);
             fx(player, HAWK, 0, player.m_20182_(), Vec3.f_82478_, HAWK_END, 0, 0);
             fx(player, BLUE, 0, player.m_20182_(), Vec3.f_82478_, BLUE_OFF, 0, 0);
+            fx(player, FLAME, 0, player.m_20182_(), Vec3.f_82478_, 0, 0, 0);
         }
     }
 
