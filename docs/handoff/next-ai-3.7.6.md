@@ -327,6 +327,9 @@ swinging or lose momentum, currently both things are happening which ruin the fu
     on the string (the plain projection loses 0.4 or more there), `way`, `slide`, no time limit; the leap and step checks kept.
 - Release notes .github/release-notes-3.8.0.md. Next version 3.8.1.
 
+- 3.8.0's runs: Build #266 and Release #171 green.
+- The owner, after the summary (verbatim): "Peak gj! see ya tomorrow twin" (not said to be tested in game: ask how the Sky Road felt).
+
 ## 8. What to do next
-1. Check 3.8.0's Build and Release runs; the owner's word on the Sky Road in game comes first (verbatim into this file).
+1. The owner's word on the Sky Road in game comes first (verbatim into this file).
 2. Then section 6 (the Leopard's other moves), as before.
