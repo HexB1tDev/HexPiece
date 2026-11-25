@@ -205,8 +205,11 @@ public final class ItoMoves {
     public static final double CAGE_SHUT = 1.2;
     static final float CAGE_DAMAGE = 18.0F;
     /** Break White: three waves, born so many ticks apart, rolling so fast, so far. */
-    /** Sky Road: the longest run (ticks), the rest after it, and how long on the ground ends it. */
-    public static final int SKY_MOST = 600;
+    /**
+     * Sky Road: no time limit (3.8.0, the owner: "not stop swinging": it ended after 30 seconds, wherever the runner was): it lasts until
+     * the ground (SKY_MOST only keeps the clients' count of it far away); the rest after it, and how long on the ground ends it.
+     */
+    public static final int SKY_MOST = Integer.MAX_VALUE / 4;
     static final int SKY_REST = 30;
     static final int SKY_GROUNDED = 3;
     /** Self-Surgery: below this share of the health, once in so many ticks, healing so long. */
@@ -1414,8 +1417,8 @@ public final class ItoMoves {
      * Sky Road (3.4.3): the jump pressed again in the air: the user is held up by strings to anchors in the sky and runs through it,
      * moved by their own client (client/ito/SkyRoad: momentum, arcs, the slingshot, the hover) as the Light fruit's glide is; here only
      * what the server must keep: the player may fly while it lasts (so no server kicks a floating runner; flying itself is kept off), no
-     * fall is counted, and it ends on the ground ({@link #SKY_GROUNDED} ticks), at {@link #SKY_MOST}, or on riding or dying. A second air
-     * jump while it runs is the runner going up (the client), never a toggle.
+     * fall is counted, and it ends on the ground ({@link #SKY_GROUNDED} ticks), in water, or on riding or dying (3.8.0: never on a
+     * timer). A second air jump while it runs is the runner going up (the client), never a toggle.
      */
     static void sky(ServerPlayer player, State s) {
         long now = now(player);
@@ -1442,7 +1445,7 @@ public final class ItoMoves {
         }
         player.f_19789_ = 0.0F;
         s.skyGrounded = player.m_20096_() ? s.skyGrounded + 1 : 0;
-        if (now >= s.skyUntil || s.skyGrounded >= SKY_GROUNDED || player.m_20159_() || !player.m_6084_() || player.m_20069_()) {
+        if (s.skyGrounded >= SKY_GROUNDED || player.m_20159_() || !player.m_6084_() || player.m_20069_()) {
             skyEnd(player, s);
         }
     }

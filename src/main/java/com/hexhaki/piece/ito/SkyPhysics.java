@@ -37,9 +37,12 @@ public final class SkyPhysics {
     public static final double REACH_FAST = 12.0;
     public static final double RISE = 10.0;
     public static final double THROW = 3.0;
-    /** Never a string shorter (it would jerk), nor one that swings the feet lower than this over the ground. */
+    /**
+     * Never a string shorter (it would jerk), nor one that swings the feet lower than this over the ground (3.8.0: 4 blocks, was 1.3: a
+     * swing that grazed the ground ended the run and every bump of the terrain in its way stopped it dead).
+     */
     public static final double SHORTEST = 4.0;
-    public static final double CLEAR = 1.3;
+    public static final double CLEAR = 4.0;
     /** Let go past this angle ahead of the anchor while rising and slowing (or past {@link #LET_GO_MOST} at once): the kick then. */
     public static final double LET_GO = Math.toRadians(30.0);
     public static final double LET_GO_MOST = Math.toRadians(60.0);
@@ -70,6 +73,15 @@ public final class SkyPhysics {
      * is put back on its sphere (a string pulls, never pushes: slack, it falls free), the velocity what gets it there. At most {@link #TOP}.
      */
     public static void swing(double[] h, double[] v, double[] a, double length, double[] push, double drag) {
+        swing(h, v, a, length, push, drag, false);
+    }
+
+    /**
+     * As {@link #swing(double[], double[], double[], double, double[], double)}; with {@code keep} (a swing's string, 3.8.0), the tick a
+     * slack string snaps taut turns the body's speed along the swing instead of losing the part of it going away from the anchor (it was
+     * a quarter of the speed at every catch: with no key held the run died in four swings).
+     */
+    public static void swing(double[] h, double[] v, double[] a, double length, double[] push, double drag, boolean keep) {
         double vx = (v[0] + push[0]) * drag;
         double vy = (v[1] + push[1] - GRAVITY) * drag;
         double vz = (v[2] + push[2]) * drag;
@@ -81,6 +93,9 @@ public final class SkyPhysics {
         double dz = qz - a[2];
         double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
         if (d > length && d > 1.0E-9) {
+            if (keep && catchTaut(h, a, length, vx, vy, vz, v)) {
+                return;
+            }
             qx = a[0] + dx / d * length;
             qy = a[1] + dy / d * length;
             qz = a[2] + dz / d * length;
@@ -93,6 +108,48 @@ public final class SkyPhysics {
         v[2] = vz;
         clamp(v, TOP);
     }
+
+    /**
+     * A string snapping taut this tick (the body's next place past its sphere, going away from the anchor faster than {@link #CATCH}: it
+     * flew free inside a slack string, or the string reeled in onto it): the velocity (vx, vy, vz) becomes one of the same speed (at most
+     * {@link #TOP}) that lands the grip exactly on the sphere, its part along the string what it must be and the rest along the way the
+     * body was already going across it (into {@code v}). False on a string already taut (a swing's own pull: gravity's share along it is
+     * at most 0.085) or a body falling straight along it (the plain projection then).
+     */
+    static boolean catchTaut(double[] h, double[] a, double length, double vx, double vy, double vz, double[] v) {
+        double hx = h[0] - a[0];
+        double hy = h[1] - a[1];
+        double hz = h[2] - a[2];
+        double was = Math.sqrt(hx * hx + hy * hy + hz * hz);
+        if (was < 1.0E-6) {
+            return false;
+        }
+        double nx = hx / was;
+        double ny = hy / was;
+        double nz = hz / was;
+        double out = vx * nx + vy * ny + vz * nz;
+        if (out < CATCH) {
+            return false;
+        }
+        double tx = vx - out * nx;
+        double ty = vy - out * ny;
+        double tz = vz - out * nz;
+        double across = Math.sqrt(tx * tx + ty * ty + tz * tz);
+        double speed = Math.min(TOP, Math.sqrt(vx * vx + vy * vy + vz * vz));
+        // |h - a + v| = length with |v| = speed: the part out of the anchor is (length^2 - speed^2 - was^2) / (2 was)
+        double along = (length * length - speed * speed - was * was) / (2.0 * was);
+        if (across < 1.0E-6 || Math.abs(along) > speed) {
+            return false;
+        }
+        double side = Math.sqrt(speed * speed - along * along);
+        v[0] = tx / across * side + nx * along;
+        v[1] = ty / across * side + ny * along;
+        v[2] = tz / across * side + nz * along;
+        return true;
+    }
+
+    /** Going away from the anchor faster than this (blocks a tick) as the string bites, it snaps taut: the speed is kept. */
+    static final double CATCH = 0.12;
 
     /** One tick flying free (let go, leaping, dropping): gravity, the fall at most {@link #FALL_MOST}, a touch of drag. */
     public static void fly(double[] v, double gravity) {
@@ -171,8 +228,15 @@ public final class SkyPhysics {
             return false;
         }
         double angle = Math.atan2(ahead, -ry);
-        return angle > LET_GO_MOST || angle > LET_GO && v[1] > 0.0 || angle > PEAK && v[1] <= 0.0 && v[0] * wx + v[2] * wz < 0.05;
+        // 3.8.0: the faster, the flatter the let go (the momentum flung on ahead, not straight up into the sky)
+        double fast = Math.max(0.0, Math.min(1.0, (Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) - FLAT_FROM) / FLAT_FROM));
+        double at = LET_GO + (LET_GO_FAST - LET_GO) * fast;
+        return angle > LET_GO_MOST || angle > at && v[1] > 0.0 || angle > PEAK && v[1] <= 0.0 && v[0] * wx + v[2] * wz < 0.05;
     }
+
+    /** 3.8.0: at {@link #FLAT_FROM} blocks a tick a swing lets go at {@link #LET_GO}, at twice that already at this angle. */
+    public static final double LET_GO_FAST = Math.toRadians(18.0);
+    public static final double FLAT_FROM = 0.6;
 
     /** A weak swing's top, this far ahead of the anchor at the least, lets go too. */
     public static final double PEAK = Math.toRadians(10.0);
@@ -213,6 +277,96 @@ public final class SkyPhysics {
         v[0] = wx * STEP_ALONG * f;
         v[1] = STEP_RISE * f;
         v[2] = wz * STEP_ALONG * f;
+    }
+
+    // ------------------------------------------------------------------------------------------------------ 3.8.0: momentum kept
+
+    /*
+     * 3.8.0 (the owner: "make the Ito ito no mi, not stop swinging or lose momentum, currently both things are happening which ruin the
+     * fun"). What stopped it: letting go of the keys for a moment turned the swing into the hang, whose drag took the speed in half a
+     * second (0.66 to 0.03 blocks a tick); a turn threw the next string where the keys pointed, across the body's own way; the swings
+     * bottomed out a block over the ground, so the terrain scraped them (a wall's touch cut all the speed to 0.3) and a graze ended the
+     * run; and the run itself ended after 30 seconds. Now a swing carries on on its own momentum, string after string, until it is
+     * really spent; a turn bends the run round; the swings keep clear of the ground; a wall only stops the way it blocks; no time limit.
+     */
+
+    /**
+     * The flat speed (blocks a tick) a run carries on swinging with, no key held: let go of the keys and it coasts on string after string
+     * (the speed fading a tenth a swing), settling into the one-handed hang once under this.
+     */
+    public static final double CARRY = 0.45;
+    /**
+     * A held key's swings build up to this speed (blocks a tick: 21 blocks a second; sprinting 27), pumped less as they near it, not at
+     * all past it, and kicked on at the let go only under it: with the catches keeping the speed, a swing's pump would otherwise carry
+     * every run to {@link #TOP}, sprinting or not.
+     */
+    public static final double SWING_SPEED = 1.05;
+    public static final double SPRINT_SPEED = 1.35;
+    static final double PUMP_EASE = 0.25;
+
+    /** A tick's pump for a held key at velocity {@code v}: {@link #PUMP} (sprinting {@link #PUMP_SPRINT}) eased to none at the speed. */
+    public static double pump(double[] v, boolean sprint) {
+        double target = sprint ? SPRINT_SPEED : SWING_SPEED;
+        double speed = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+        return (sprint ? PUMP_SPRINT : PUMP) * Math.max(0.0, Math.min(1.0, (target - speed) / PUMP_EASE));
+    }
+
+    /** Whether a let go kicks on ({@link #kick}): only with a key held and under its speed. */
+    public static boolean kicks(double[] v, boolean moving, boolean sprint) {
+        return moving && Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) < (sprint ? SPRINT_SPEED : SWING_SPEED);
+    }
+    /** A turn: how far the next string leans from the keys' way toward the way the body already goes (at {@link #KEEP_SPEED} or faster). */
+    public static final double KEEP = 0.6;
+    public static final double KEEP_SPEED = 0.6;
+
+    /**
+     * The flat way the next swing goes, into {@code out} (x, z: unit), or false for none (hang): the keys' way ({@code kx}, {@code kz}, any
+     * length; none: 0, 0) leaned toward the flat drift ({@code vx}, {@code vz}) by up to {@link #KEEP} (the faster, the more), so a turn
+     * bends the run round instead of throwing the body across its own way; with no key, on along the drift while it still has
+     * {@link #CARRY}.
+     */
+    public static boolean way(double kx, double kz, double vx, double vz, double[] out) {
+        double speed = Math.sqrt(vx * vx + vz * vz);
+        double kl = Math.sqrt(kx * kx + kz * kz);
+        double x;
+        double z;
+        if (kl > 0.01) {
+            double keep = speed > 1.0E-6 ? KEEP * Math.min(1.0, speed / KEEP_SPEED) / speed : 0.0;
+            x = kx / kl + vx * keep;
+            z = kz / kl + vz * keep;
+        } else if (speed >= CARRY) {
+            x = vx;
+            z = vz;
+        } else {
+            return false;
+        }
+        double l = Math.sqrt(x * x + z * z);
+        out[0] = x / l;
+        out[1] = z / l;
+        return true;
+    }
+
+    /**
+     * Whether a swing with no key held is spent (it settles into the hang): it never got ahead of its anchor along its way (wx, wz) and
+     * is swinging back, slower than {@link #CARRY}. A swing still going forward always reaches its let go.
+     */
+    public static boolean spent(double[] h, double[] a, double[] v, double wx, double wz) {
+        double ahead = (h[0] - a[0]) * wx + (h[2] - a[2]) * wz;
+        double along = v[0] * wx + v[2] * wz;
+        return ahead <= 0.0 && along < 0.0 && Math.sqrt(v[0] * v[0] + v[2] * v[2]) < CARRY;
+    }
+
+    /**
+     * A wall touched: only the way it blocked is stopped. The body was to move {@code want} along one flat axis and moved {@code moved}:
+     * held back to under half, the wall took that way (0); else the speed along it is kept (the body slides on along the wall).
+     */
+    public static double slide(double want, double moved) {
+        return Math.abs(moved) < Math.abs(want) * 0.5 ? 0.0 : want;
+    }
+
+    /** The lowest the swings hold over ground at {@code groundY}: their bottom, {@link #DIP} under it, keeps {@link #CLEAR} under the feet. */
+    public static double floor(double groundY) {
+        return groundY + GRIP + CLEAR + DIP;
     }
 
     /** At most {@code most} long. */

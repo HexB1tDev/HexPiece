@@ -1275,72 +1275,67 @@ public final class HudTests {
      * I wanna jump from 1 string to another further away, I want to swing like spiderman"): held forward, swings one string at a time
      * hold their height and carry the body far and fast (never past the game's movement check), each let go ahead of its anchor; a leap
      * lands where it aims; a climb's step rises a step; a string never yanks the body in nor swings the feet into the ground.
+     * 3.8.0 (the owner: "make the Ito ito no mi, not stop swinging or lose momentum, currently both things are happening which ruin the
+     * fun"): {@link #skyRun} runs client/ito/SkyRoad.drive's swing, let go and flight with its numbers: held forward it builds to its
+     * speed and holds it (sprinting faster); a moment off the keys or a turn keeps the speed; let go of the keys, it coasts on for swings
+     * and only then hangs; a string snapping taut keeps the speed; the swings keep clear of the ground; a wall stops only what it blocks.
      */
     static void skyRoad() {
-        double[] h = {0, 30, 0};
-        double[] v = {0, 0, 0};
-        double[] an = new double[5];
-        double[] a = new double[3];
-        double[] push = {0, 0, com.hexhaki.piece.ito.SkyPhysics.PUMP};
-        double cruise = 30;
-        int swings = 0;
-        double low = 1e9;
-        double high = -1e9;
-        double fastest = 0;
-        int mode = 0;
-        int since = 0;
-        double length = 0;
-        double first = 0;
-        for (int t = 0; t < 400; t++) {
-            since++;
-            if (mode == 0) {
-                com.hexhaki.piece.ito.SkyPhysics.anchor(h, 0, 1, Math.hypot(v[0], v[2]), 0.5, cruise, Double.NaN, an);
-                double gap = Math.sqrt((an[0] - h[0]) * (an[0] - h[0]) + (an[1] - h[1]) * (an[1] - h[1]) + (an[2] - h[2]) * (an[2] - h[2]));
-                Check.that(an[4] >= gap - 1.0E-9, "Sky Road: a string catches no shorter than the gap (never a snap)");
-                a[0] = an[0];
-                a[1] = an[1];
-                a[2] = an[2];
-                length = an[4];
-                first = an[3];
-                mode = 1;
-                since = 0;
-            }
-            if (mode == 1) {
-                com.hexhaki.piece.ito.SkyPhysics.fly(v, com.hexhaki.piece.ito.SkyPhysics.FLY_GRAVITY);
-                if (since >= com.hexhaki.piece.ito.SkyPhysics.THROW) {
-                    mode = 2;
-                    since = 0;
-                    swings++;
-                }
-            } else if (mode == 2) {
-                length = com.hexhaki.piece.ito.SkyPhysics.reel(length, first);
-                com.hexhaki.piece.ito.SkyPhysics.swing(h, v, a, length, push, com.hexhaki.piece.ito.SkyPhysics.SWING_DRAG);
-                if (com.hexhaki.piece.ito.SkyPhysics.letGo(h, a, v, 0, 1)) {
-                    Check.that(h[2] > a[2], "Sky Road: a swing lets go ahead of its anchor");
-                    com.hexhaki.piece.ito.SkyPhysics.kick(v);
-                    mode = 3;
-                    since = 0;
-                }
-                Check.that(since < 60, "Sky Road: every swing lets go");
-            } else {
-                com.hexhaki.piece.ito.SkyPhysics.fly(v, com.hexhaki.piece.ito.SkyPhysics.FLY_GRAVITY);
-                if (since >= com.hexhaki.piece.ito.SkyPhysics.NEXT_LATEST
-                    || since >= com.hexhaki.piece.ito.SkyPhysics.NEXT_SOONEST && v[1] < 0.05) {
-                    mode = 0;
-                }
-            }
-            h[0] += v[0];
-            h[1] += v[1];
-            h[2] += v[2];
-            low = Math.min(low, h[1]);
-            high = Math.max(high, h[1]);
-            fastest = Math.max(fastest, Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]));
-        }
-        Check.that(swings >= 10 && h[2] > 250, "Sky Road: swinging carries the body far: " + swings + " swings, " + h[2] + " blocks in 20 s");
-        Check.that(low > cruise - 5 && high < cruise + 6, "Sky Road: a swing holds its height: " + low + " to " + high);
-        Check.that(fastest <= com.hexhaki.piece.ito.SkyPhysics.TOP + 1.0E-9 && com.hexhaki.piece.ito.SkyPhysics.TOP < 3.0,
+        double cruise = 30 + com.hexhaki.piece.ito.SkyPhysics.GRIP;
+        SkyStats held = skyRun(400, t -> 0.0, false, 30.0, Double.NaN, -1);
+        Check.that(held.swings >= 10 && held.z > 300, "Sky Road: swinging carries the body far: " + held.swings + " swings, " + held.z
+            + " blocks in 20 s");
+        Check.that(held.low > cruise - 5 && held.high < cruise + 6, "Sky Road: a swing holds its height: " + held.low + " to " + held.high);
+        Check.that(held.fastest <= com.hexhaki.piece.ito.SkyPhysics.TOP + 1.0E-9 && com.hexhaki.piece.ito.SkyPhysics.TOP < 3.0,
             "Sky Road: never faster than the movement check allows");
+        Check.that(held.hangs == 0 && held.lateSpeed > 0.85, "Sky Road: held forward the swings keep their speed: " + held.lateSpeed);
+        SkyStats sprint = skyRun(400, t -> 0.0, true, 30.0, Double.NaN, -1);
+        Check.that(sprint.lateSpeed > held.lateSpeed + 0.15, "Sky Road: sprinting swings faster: " + sprint.lateSpeed + " against "
+            + held.lateSpeed);
+        // a moment off the keys (half a second every three) or a steady turn: no speed lost, never a hang
+        SkyStats blink = skyRun(400, t -> t % 60 >= 50 ? Double.NaN : 0.0, false, 30.0, Double.NaN, -1);
+        Check.that(blink.hangs == 0 && blink.lateSpeed > held.lateSpeed * 0.92, "Sky Road: a moment off the keys keeps the momentum: "
+            + blink.lateSpeed + " against " + held.lateSpeed);
+        SkyStats turn = skyRun(400, t -> t * 0.5, false, 30.0, Double.NaN, -1);
+        Check.that(turn.hangs == 0 && turn.lateSpeed > held.lateSpeed * 0.92, "Sky Road: turning keeps the momentum: " + turn.lateSpeed);
+        // let go of the keys: it coasts on string after string, slowing a little a swing, and only then hangs by one hand
+        SkyStats coast = skyRun(900, t -> t < 200 ? 0.0 : Double.NaN, false, 30.0, Double.NaN, 200);
+        Check.that(coast.swingsAfter >= 5 && coast.speedAfter[2] > coast.speedAfter[0] * 0.7, "Sky Road: off the keys the run coasts on: "
+            + coast.swingsAfter + " swings, " + coast.speedAfter[0] + " then " + coast.speedAfter[2]);
+        Check.that(coast.hangs == 1 && coast.end < com.hexhaki.piece.ito.SkyPhysics.CARRY, "Sky Road: a spent coast hangs by one hand");
+        // off a start a block over the ground the swings rise clear of it and never touch it
+        SkyStats low = skyRun(400, t -> 0.0, false, 1.2, 0.0, -1);
+        Check.that(low.grounded == 0 && low.lowFeetLate >= com.hexhaki.piece.ito.SkyPhysics.CLEAR - 0.5,
+            "Sky Road: the swings keep clear of the ground: the feet " + low.lowFeetLate + " over it at the least");
+        // a slack string snapping taut (the body past its anchor, plunging on out to the end of it) keeps the speed and lands the grip on
+        // its string
+        double[] ah = {0, 0, 0};
+        double[] hh = {3, -8.5, 0};
+        double[] vh = {1.2, -0.8, 0.0};
+        double fall = 0.8 + com.hexhaki.piece.ito.SkyPhysics.GRAVITY;
+        double speed0 = Math.sqrt(1.44 + fall * fall);
+        com.hexhaki.piece.ito.SkyPhysics.swing(hh, vh, ah, 9.5, new double[3], 1.0, true);
+        double sp = Math.sqrt(vh[0] * vh[0] + vh[1] * vh[1] + vh[2] * vh[2]);
+        double on = Math.sqrt((hh[0] + vh[0]) * (hh[0] + vh[0]) + (hh[1] + vh[1]) * (hh[1] + vh[1]) + (hh[2] + vh[2]) * (hh[2] + vh[2]));
+        Check.that(Math.abs(sp - speed0) < 1.0E-6 && Math.abs(on - 9.5) < 1.0E-6, "Sky Road: a string snapping taut keeps the speed: "
+            + sp + " of " + speed0 + ", on the string at " + on);
+        double[] vp = {1.2, -0.8, 0.0};
+        double[] hp = {3, -8.5, 0};
+        com.hexhaki.piece.ito.SkyPhysics.swing(hp, vp, ah, 9.5, new double[3], 1.0);
+        Check.that(Math.sqrt(vp[0] * vp[0] + vp[1] * vp[1]) < sp - 0.4, "Sky Road: (the plain projection, the hang's, loses it)");
+        // the next swing's way: a turn leans it toward the drift; keys against the drift still win; no key, on along the drift or none
+        double[] w = new double[2];
+        Check.that(com.hexhaki.piece.ito.SkyPhysics.way(1, 0, 0, 1.0, w) && w[0] > 0.6 && w[1] > 0.3 && w[1] < 0.8,
+            "Sky Road: a turn bends the run round");
+        Check.that(com.hexhaki.piece.ito.SkyPhysics.way(0, -1, 0, 1.0, w) && w[1] < -0.9, "Sky Road: the keys against the drift turn it back");
+        Check.that(com.hexhaki.piece.ito.SkyPhysics.way(0, 0, 0.8, 0, w) && w[0] > 0.999, "Sky Road: no key, the momentum carries it on");
+        Check.that(!com.hexhaki.piece.ito.SkyPhysics.way(0, 0, 0.2, 0, w), "Sky Road: no key and slow, it hangs");
+        // a wall stops only the way it blocks
+        Check.that(com.hexhaki.piece.ito.SkyPhysics.slide(0.9, 0.0) == 0.0 && com.hexhaki.piece.ito.SkyPhysics.slide(0.7, 0.7) == 0.7,
+            "Sky Road: a wall stops only the way it blocks, the body slides on along it");
+        Check.that(com.hexhaki.piece.server.ItoMoves.SKY_MOST > 20 * 60 * 60 * 24, "Sky Road: no time limit");
         // near the ground the anchor is raised so the swing's bottom keeps the feet off it
+        double[] an = new double[5];
         double[] g = {0, 3.5, 0};
         com.hexhaki.piece.ito.SkyPhysics.anchor(g, 1, 0, 0.5, 0.0, 3.5, 0.0, an);
         Check.that(an[1] - an[3] >= com.hexhaki.piece.ito.SkyPhysics.GRIP + com.hexhaki.piece.ito.SkyPhysics.CLEAR - 1.0E-9,
@@ -1370,6 +1365,141 @@ public final class HudTests {
             up += sv[1];
         }
         Check.that(Math.abs(up - com.hexhaki.piece.ito.SkyPhysics.STEP_RISE) < 1.0E-9, "Sky Road: a step climbs one step");
+    }
+
+    /** What {@link #skyRun} saw. */
+    static final class SkyStats {
+        int swings;
+        int hangs;
+        int grounded;
+        int swingsAfter;
+        double z;
+        double low = 1.0E9;
+        double high = -1.0E9;
+        double fastest;
+        double lateSpeed;
+        double lowFeetLate = 1.0E9;
+        double end;
+        final double[] speedAfter = new double[3];
+    }
+
+    /**
+     * A Sky Road run as client/ito/SkyRoad.drive moves one's own body (its swing, let go, flight and next string; the ground at
+     * {@code groundY}, NaN for none), from the feet at {@code feet}: {@code key.applyAsDouble(t)} is the yaw the forward key is held
+     * toward at tick t (NaN: no key); from {@code letGoAt} on (when given) no key is held any more and the swings after are counted.
+     */
+    static SkyStats skyRun(int ticks, java.util.function.IntToDoubleFunction key, boolean sprint, double feet, double groundY,
+                           int letGoAt) {
+        SkyStats st = new SkyStats();
+        double[] p = {0, feet, 0};
+        double[] v = {0, 0.05, 0.3};
+        double[] h = new double[3];
+        double[] a = new double[3];
+        double[] out = new double[5];
+        double[] push = new double[3];
+        double[] way = new double[2];
+        double cruise = feet + com.hexhaki.piece.ito.SkyPhysics.GRIP;
+        double swingX = 0;
+        double swingZ = 1;
+        double length = 0;
+        double target = 0;
+        int mode = 2;
+        int since = com.hexhaki.piece.ito.SkyPhysics.NEXT_LATEST;
+        int ropeAge = 0;
+        double sum = 0;
+        int counted = 0;
+        for (int t = 0; t < ticks; t++) {
+            double yaw = key.applyAsDouble(t);
+            boolean moving = !Double.isNaN(yaw);
+            double wx = moving ? -Math.sin(Math.toRadians(yaw)) : 0.0;
+            double wz = moving ? Math.cos(Math.toRadians(yaw)) : 0.0;
+            boolean after = letGoAt >= 0 && t >= letGoAt;
+            h[0] = p[0];
+            h[1] = p[1] + com.hexhaki.piece.ito.SkyPhysics.GRIP;
+            h[2] = p[2];
+            since++;
+            ropeAge++;
+            if (mode == 2) {
+                com.hexhaki.piece.ito.SkyPhysics.fly(v, com.hexhaki.piece.ito.SkyPhysics.FLY_GRAVITY);
+                if (since >= com.hexhaki.piece.ito.SkyPhysics.NEXT_LATEST || since >= com.hexhaki.piece.ito.SkyPhysics.NEXT_SOONEST && v[1] < 0.05) {
+                    if (com.hexhaki.piece.ito.SkyPhysics.way(wx, wz, v[0], v[2], way)) {
+                        if (!Double.isNaN(groundY)) {
+                            cruise = Math.max(cruise, com.hexhaki.piece.ito.SkyPhysics.floor(groundY));
+                        }
+                        com.hexhaki.piece.ito.SkyPhysics.anchor(h, way[0], way[1], Math.hypot(v[0], v[2]), 0.5, cruise, groundY, out);
+                        swingX = way[0];
+                        swingZ = way[1];
+                        length = out[4];
+                        target = out[3];
+                        mode = 1;
+                        st.swings++;
+                        if (after) {
+                            if (st.swingsAfter < 3) {
+                                st.speedAfter[st.swingsAfter] = Math.hypot(v[0], v[2]);
+                            }
+                            st.swingsAfter++;
+                        }
+                    } else {
+                        com.hexhaki.piece.ito.SkyPhysics.hangAnchor(h, v[0], v[2], out);
+                        length = out[3];
+                        target = out[3];
+                        mode = 0;
+                        st.hangs++;
+                    }
+                    a[0] = out[0];
+                    a[1] = out[1];
+                    a[2] = out[2];
+                    ropeAge = 0;
+                    since = 0;
+                }
+            } else if (ropeAge < com.hexhaki.piece.ito.SkyPhysics.THROW) {
+                com.hexhaki.piece.ito.SkyPhysics.fly(v, com.hexhaki.piece.ito.SkyPhysics.FLY_GRAVITY);
+            } else if (mode == 1) {
+                double pump = moving ? com.hexhaki.piece.ito.SkyPhysics.pump(v, sprint) : 0.0;
+                push[0] = wx * pump;
+                push[2] = wz * pump;
+                length = com.hexhaki.piece.ito.SkyPhysics.reel(length, target);
+                com.hexhaki.piece.ito.SkyPhysics.swing(h, v, a, length, push, com.hexhaki.piece.ito.SkyPhysics.SWING_DRAG, true);
+                if (com.hexhaki.piece.ito.SkyPhysics.letGo(h, a, v, swingX, swingZ)) {
+                    Check.that((h[0] - a[0]) * swingX + (h[2] - a[2]) * swingZ > 0.0, "Sky Road: a swing lets go ahead of its anchor");
+                    if (com.hexhaki.piece.ito.SkyPhysics.kicks(v, moving, sprint)) {
+                        com.hexhaki.piece.ito.SkyPhysics.kick(v);
+                    }
+                    mode = 2;
+                    since = 0;
+                } else if (!moving && com.hexhaki.piece.ito.SkyPhysics.spent(h, a, v, swingX, swingZ)) {
+                    mode = 0;
+                    st.hangs++;
+                }
+                Check.that(since < 80, "Sky Road: every swing lets go");
+            } else {
+                com.hexhaki.piece.ito.SkyPhysics.swing(h, v, a, length, new double[3], com.hexhaki.piece.ito.SkyPhysics.HANG_DRAG);
+            }
+            p[0] += v[0];
+            p[1] += v[1];
+            p[2] += v[2];
+            if (!Double.isNaN(groundY) && p[1] <= groundY) {
+                st.grounded++;
+                p[1] = groundY;
+                v[1] = Math.max(0.0, v[1]);
+            }
+            st.fastest = Math.max(st.fastest, Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]));
+            if (t >= 100) {
+                st.low = Math.min(st.low, p[1] + com.hexhaki.piece.ito.SkyPhysics.GRIP);
+                st.high = Math.max(st.high, p[1] + com.hexhaki.piece.ito.SkyPhysics.GRIP);
+                if (!Double.isNaN(groundY)) {
+                    st.lowFeetLate = Math.min(st.lowFeetLate, p[1] - groundY);
+                }
+                if (!after) {
+                    sum += Math.hypot(v[0], v[2]);
+                    counted++;
+                }
+            }
+        }
+        st.z = Math.hypot(p[0], p[2]);
+        st.lateSpeed = counted > 0 ? sum / counted : 0.0;
+        st.end = Math.hypot(v[0], v[2]);
+        return st;
     }
 
     /**

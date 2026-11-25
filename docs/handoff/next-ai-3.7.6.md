@@ -8,6 +8,8 @@ Read CLAUDE.md first, then this file whole, then next-ai-3.6.3.md sections AH to
 ## 1. Where things stand
 
 - Repo HexB1tDev/HexPiece, branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest; push only there; no pull requests).
+- **Updated on Wednesday (section 7):** 3.8.0 the Ito Ito no Mi's Sky Road keeps swinging and its speed (the owner's only request);
+  `build.py` VERSION 3.8.0, the next is 3.8.1.
 - **Updated at the end of the Sunday session:** last releases 3.7.7 (the phoenix's flamethrower; Build #263, Release #168 green),
   3.7.8 (Zoan forms locked out of Style), 3.7.9 (the Leopard fruit: Z, the base animations, the M1s, the icon); sections 5 and 6 at
   the end of this file say what each did and what is next. `build.py` VERSION 3.7.9; the next version is **3.8.0** (versions roll over
@@ -282,3 +284,49 @@ are real looking burning flames and call it a day enough work, push, handoff and
    afterimages, a last strike), B Unrelenting Assault (teleport, claw barrage, a slam), and Heavens Demise (transformed only: grab,
    launch, a cutscene-like blitz, a Rokuogan straight down). POINT ONE for each; the Conqueror's lightning out of every end explosion.
 3. Then 3.4's small items (the phoenix's arm wings in first person: ask; the Mochi note 22 item 4: ask).
+
+## 7. The next session (Wednesday): 3.8.0, the Ito Ito no Mi's Sky Road keeps swinging and keeps its speed
+
+The owner, verbatim (the session's only request): "If possible using the very latest release, please make the Ito ito no mi, not stop
+swinging or lose momentum, currently both things are happening which ruin the fun, dont touch Tori TOri or the Neko Neko, only ito"
+- The latest release was v3.7.9 = the branch's head ec5695a: built on it. Only the Ito fruit's Sky Road was changed (ito/SkyPhysics,
+  client/ito/SkyRoad, server/ItoMoves' Sky Road timer, ItoKit's Sky Road text, HudTests.skyRoad, tools/preview/SkyRun); no Tori, Neko
+  or other fruit file touched.
+- **What stopped it and lost the momentum** (found by running client/ito/SkyRoad.drive's own state machine tick by tick against
+  SkyPhysics; the scratchpad's sim/Sim3.java): (1) letting go of the keys even for half a second turned the swing into the hang, whose
+  HANG_DRAG 0.93 took the speed from 0.66 to 0.03 blocks a tick in 10 ticks; with no key the next string was a hang too; (2) every
+  string snapping taut (the body flying free inside a slack string, or the string reeling in onto a falling body) projected the body
+  back onto the string's sphere and threw away the part of the velocity going out of the anchor: a quarter of the speed at a usual
+  catch, three quarters when fast (1.6 to 0.37 in one tick); (3) the next string went along the keys' way, across the body's own way
+  after a turn; (4) the swings bottomed out CLEAR 1.3 over the ground under the hand/anchor, so the terrain between scraped them (a wall
+  touched cut V to 0.3 on both flat axes) and 3 ticks on the ground ended the run; (5) ItoMoves ended every run at SKY_MOST 600 (30 s).
+- **3.8.0 as built** (nothing tested in game; build EXIT 0, 13 suites; the run simulated; SkyRun frames rendered and judged):
+  - ito/SkyPhysics: `swing(..., keep)`: a swing's string (keep true; the hang keeps the plain projection) snapping taut (`catchTaut`:
+    going out of the anchor faster than CATCH 0.12 a tick as it bites) gets a velocity of the same speed (at most TOP) that lands the grip
+    exactly on the sphere (the part out of the anchor (L^2 - s^2 - was^2) / 2 was, the rest along the body's own way across it).
+    `way(keys, drift)`: the next swing's flat way, the keys' way leaned toward the drift by up to KEEP 0.6 (at KEEP_SPEED 0.6 or faster),
+    or with no key along the drift while the flat speed is CARRY 0.45 or more (else none: a hang). `spent`: a no-key swing that never got
+    ahead and swings back slower than CARRY settles into the hang. `pump(v, sprint)`: PUMP / PUMP_SPRINT eased to none at SWING_SPEED
+    1.05 / SPRINT_SPEED 1.35 (PUMP_EASE 0.25); `kicks`: the let go's kick only with a key and under that speed (with the catches keeping
+    the speed, the old constant pump took every run to TOP, sprinting or not). `letGo`: the faster, the flatter: LET_GO 30 degrees at
+    FLAT_FROM 0.6 a tick down to LET_GO_FAST 18 at 1.2. CLEAR 4.0 (was 1.3); `floor(groundY)` = ground + GRIP + CLEAR + DIP. `slide`: a
+    wall stops only the axis it held back to under half.
+  - client/ito/SkyRoad.drive: SWING goes on with or without a key (pump only with one; the cruise's look-up nudge only with one); let go
+    kicks by `kicks`; no key and `spent` -> HANG. next(): `way` decides swing or hang; the cruise raised to `floor` of the ground found
+    (under the hand and the anchor). The wall: LAST (one's own feet last tick) vs V per axis by `slide` (was V x 0.3).
+  - server/ItoMoves: SKY_MOST Integer.MAX_VALUE / 4 (only the clients' count of it); skyTick no longer ends at the time; it ends on the
+    ground (SKY_GROUNDED 3), in water, riding, dying.
+  - ItoKit.SKY's text says so. tools/preview/SkyRun mirrors the new swing (pump, keep, kicks, spent, way, floor).
+  - Numbers (the sim, held W from 30 blocks up, 20 s): the flat speed held at about 1.0 a tick (21 blocks a second; 3.7.9: 0.76),
+    sprinting 1.27 (3.7.9: 0.93); a half second off the keys every three seconds or a steady turn: the same; let go of the keys at 1.0:
+    0.89, 0.88, 0.82, 0.72, 0.63 ... a swing, the hang after about 12 s; the swings within -3 / +3 of the cruise; a start 1.2 over the
+    ground rises clear and the feet never come under 4 over it again.
+  - Tests: HudTests.skyRoad rewritten round `skyRun` (drive's swing, let go, flight and next string with SkyPhysics): far and fast held,
+    heights held, never past TOP, sprint faster by 0.15, a moment off the keys and a turn keep 92% of the speed, a coast goes on 5 swings
+    or more keeping 70% over its first three and then hangs, a low start stays clear of the ground, the taut catch keeps the speed and lands
+    on the string (the plain projection loses 0.4 or more there), `way`, `slide`, no time limit; the leap and step checks kept.
+- Release notes .github/release-notes-3.8.0.md. Next version 3.8.1.
+
+## 8. What to do next
+1. Check 3.8.0's Build and Release runs; the owner's word on the Sky Road in game comes first (verbatim into this file).
+2. Then section 6 (the Leopard's other moves), as before.

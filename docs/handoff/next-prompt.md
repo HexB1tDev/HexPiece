@@ -25,11 +25,12 @@ usage: do what they ask first and keep each step small and released.
 The owner's standing order on the Mochi's feel: the mochi is FLUID AND ALIVE, never stiff or still (next-ai-3.6.3.md N 19), and "It is
 very important that you do not give up until the moves look exactly like the reference GIFs that you have."
 
-Do next, in this order: (1) check the last push's Build and Release runs (3.7.9; 3.7.7 was Build #263 / Release #168 green); (2) the
-owner's word on 3.7.7, 3.7.8 and 3.7.9 in game comes first (write it verbatim into the handoff, fix, render, release); (3) the Leopard's
+Do next, in this order: (1) check the last push's Build and Release runs (3.8.0: the Ito Ito no Mi's Sky Road keeps swinging and keeps
+its speed, next-ai-3.7.6.md section 7); (2) the owner's word on 3.8.0's Sky Road and on 3.7.7, 3.7.8 and 3.7.9 in game comes first
+(write it verbatim into the handoff, fix, render, release); (3) the Leopard's
 other moves, each in both forms, after reading their GIFs frame by frame (next-ai-3.7.6.md 3.2's table and section 6): X Finger Pistol
 Barrage, C Sonic Kick, V Infinity Drive, B Unrelenting Assault, and the transformed-only Heavens Demise; release each step the owner
-should test as its own version (3.8.0 next; versions roll over at 9).
+should test as its own version (3.8.1 next; versions roll over at 9).
 
 The cloud environment must be the personal "HexPiece" (it allows static.wikia.nocookie.net for the reference GIFs; download them into the
 scratchpad, never commit them; they are animated WebP at 100 ms a frame). A session on Default: get_environment, then

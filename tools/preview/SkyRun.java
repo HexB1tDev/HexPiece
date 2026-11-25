@@ -90,6 +90,7 @@ public final class SkyRun {
         double[] a = new double[3];
         double[] out = new double[5];
         double[] push = new double[3];
+        double[] way = new double[2];
         double[] still = new double[3];
         double[] leapAt = new double[3];
         double fx = 0;
@@ -236,14 +237,18 @@ public final class SkyRun {
                         a[0] = rope[0];
                         a[1] = rope[1];
                         a[2] = rope[2];
-                        if (mode == SWING && moving) {
-                            push[0] = wx * SkyPhysics.PUMP;
+                        if (mode == SWING) {
+                            // 3.8.0 as client/ito/SkyRoad.drive: pumped toward its speed with a key, coasting on without one
+                            double pump = moving ? SkyPhysics.pump(v, false) : 0.0;
+                            push[0] = wx * pump;
                             push[1] = 0.0;
-                            push[2] = wz * SkyPhysics.PUMP;
+                            push[2] = wz * pump;
                             ropeLength = SkyPhysics.reel(ropeLength, ropeTarget);
-                            SkyPhysics.swing(h, v, a, ropeLength, push, SkyPhysics.SWING_DRAG);
+                            SkyPhysics.swing(h, v, a, ropeLength, push, SkyPhysics.SWING_DRAG, true);
                             if (SkyPhysics.letGo(h, a, v, swingX, swingZ)) {
-                                SkyPhysics.kick(v);
+                                if (SkyPhysics.kicks(v, moving, false)) {
+                                    SkyPhysics.kick(v);
+                                }
                                 old = rope;
                                 oldDropped = t;
                                 rope = null;
@@ -251,12 +256,11 @@ public final class SkyRun {
                                 since = 0;
                                 want = tricks++ % 2 == 0 ? "ito_sky_backflip" : "ito_sky_leap";
                                 trickUntil = t + (want.equals("ito_sky_backflip") ? 14 : 12);
-                            }
-                        } else {
-                            if (mode == SWING) {
+                            } else if (!moving && SkyPhysics.spent(h, a, v, swingX, swingZ)) {
                                 mode = HANG;
                                 want = "ito_sky_hang";
                             }
+                        } else {
                             SkyPhysics.swing(h, v, a, ropeLength, still, SkyPhysics.HANG_DRAG);
                             v[1] += 0.006 * Math.sin(t * 0.12);
                         }
@@ -270,13 +274,14 @@ public final class SkyRun {
                     old = rope;
                     oldDropped = t;
                 }
-                if (moving) {
-                    SkyPhysics.anchor(h, wx, wz, Math.hypot(v[0], v[2]), (t * 0.37) % 1.0, cruise, 0.0, out);
+                if (SkyPhysics.way(wx, wz, v[0], v[2], way)) {
+                    cruise = Math.max(cruise, SkyPhysics.floor(0.0));
+                    SkyPhysics.anchor(h, way[0], way[1], Math.hypot(v[0], v[2]), (t * 0.37) % 1.0, cruise, 0.0, out);
                     rope = new double[] {out[0], out[1], out[2]};
                     ropeLength = out[4];
                     ropeTarget = out[3];
-                    swingX = wx;
-                    swingZ = wz;
+                    swingX = way[0];
+                    swingZ = way[1];
                     mode = SWING;
                     want = "ito_sky_swinging";
                 } else {

@@ -43,10 +43,12 @@ public final class ItoKit extends FruitKit {
             + " the ground and the trees at every hostile creature near you; their Haki-black tips impale it, lift it into the sky and"
             + " throw it.");
     public static final FruitMove SKY = new FruitMove("Sky Road", "passive", 0, null,
-        "Double-tap jump in the air: a string from your fingers catches the clouds, one at a time, for up to thirty seconds. Hold a"
-            + " direction to swing from string to string like a pendulum, letting go at the top with a flip (sprint to swing harder); tap"
-            + " jump to leap to a string further away; hold jump to climb steps of string like stairs; sneak to drop. Let go of every key"
-            + " to hang by one hand. Touching the ground ends it, and no fall hurts you when the strings let go.");
+        "Double-tap jump in the air: a string from your fingers catches the clouds, one at a time, for as long as you stay in the air."
+            + " Hold a direction to swing from string to string like a pendulum, building speed and letting go at the top with a flip"
+            + " (sprint to swing faster); turning bends your swings round without losing speed. Let go of the keys and your momentum"
+            + " carries you on, swing after swing, until you slow down and hang by one hand. Tap jump to leap to a string further away;"
+            + " hold jump to climb steps of string like stairs; sneak to drop. Touching the ground ends it, and no fall hurts you when"
+            + " the strings let go.");
     public static final FruitMove SURGERY = new FruitMove("Self-Surgery", "passive", 0, null,
         "Below a third of your health, strings stitch your wounds: you heal for a few seconds, once a minute.");
     public static final List<FruitMove> MOVES = List.of(SLASH, BULLET, GOSHIKI, OVERHEAT, PARASITE, WEB, KNIGHT, CAGE, AWAKEN, SKY, SURGERY);

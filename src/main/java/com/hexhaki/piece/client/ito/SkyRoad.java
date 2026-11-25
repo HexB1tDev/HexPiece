@@ -140,6 +140,9 @@ public final class SkyRoad {
     static final double[] OUT = new double[5];
     static final double[] PUSH = new double[3];
     static final double[] STILL = new double[3];
+    /** 3.8.0: the next swing's flat way (SkyPhysics.way), and where one's own body stood last tick (NaN: not yet), to see what a wall took. */
+    static final double[] WAY = new double[2];
+    static final double[] LAST = {Double.NaN, 0.0, 0.0};
 
     private SkyRoad() {
     }
@@ -223,6 +226,7 @@ public final class SkyRoad {
         // the first string at once (a hang, or a swing if a key is held)
         since = SkyPhysics.NEXT_LATEST;
         cruise = self.m_20186_() + SkyPhysics.GRIP;
+        LAST[0] = Double.NaN;
         // the jump press that started it is no tap and no climb: ignored until let go
         ignoreJump = true;
         jumpWas = true;
@@ -328,12 +332,16 @@ public final class SkyRoad {
         H[0] = pos.f_82479_;
         H[1] = pos.f_82480_ + SkyPhysics.GRIP;
         H[2] = pos.f_82481_;
-        // what the game stopped stays stopped (a wall, a ceiling)
+        // what the game stopped stays stopped (a wall, a ceiling); 3.8.0: a wall stops only the way it blocked, the body slides on
+        // along it with the rest of its speed (it was all cut to 0.3: every tree brushed stopped the run)
         LivingEntity living = self;
-        if (living.f_19862_) {
-            V[0] *= 0.3;
-            V[2] *= 0.3;
+        if (living.f_19862_ && !Double.isNaN(LAST[0])) {
+            V[0] = SkyPhysics.slide(V[0], pos.f_82479_ - LAST[0]);
+            V[2] = SkyPhysics.slide(V[2], pos.f_82481_ - LAST[2]);
         }
+        LAST[0] = pos.f_82479_;
+        LAST[1] = pos.f_82480_;
+        LAST[2] = pos.f_82481_;
         if (living.f_19863_ && V[1] > 0.0) {
             V[1] = 0.0;
         }
@@ -408,24 +416,28 @@ public final class SkyRoad {
                     A[0] = r.rope.f_82479_;
                     A[1] = r.rope.f_82480_;
                     A[2] = r.rope.f_82481_;
-                    if (r.mode == SWING && moving) {
-                        double pump = sprint ? SkyPhysics.PUMP_SPRINT : SkyPhysics.PUMP;
+                    if (r.mode == SWING) {
+                        // pumped along the keys' way while one is held; 3.8.0: with none it swings on, on its own momentum, lets go at the
+                        // top and the next string carries it on (it used to fall into the hang at once, the speed gone in half a second)
+                        double pump = moving ? SkyPhysics.pump(V, sprint) : 0.0;
                         PUSH[0] = wx * pump;
                         PUSH[1] = 0.0;
                         PUSH[2] = wz * pump;
                         r.ropeLength = SkyPhysics.reel(r.ropeLength, ropeTarget);
-                        SkyPhysics.swing(H, V, A, r.ropeLength, PUSH, SkyPhysics.SWING_DRAG);
-                        // looking up or down as it swings raises or lowers the height the swings hold, a little
-                        cruise += Math.max(-1.0, Math.min(1.0, -Math.sin(Math.toRadians(pitchDeg)))) * 0.03;
-                        if (SkyPhysics.letGo(H, A, V, swingX, swingZ)) {
-                            release(id, r, pos);
+                        SkyPhysics.swing(H, V, A, r.ropeLength, PUSH, SkyPhysics.SWING_DRAG, true);
+                        if (moving) {
+                            // looking up or down as it swings raises or lowers the height the swings hold, a little
+                            cruise += Math.max(-1.0, Math.min(1.0, -Math.sin(Math.toRadians(pitchDeg)))) * 0.03;
                         }
-                    } else {
-                        // no key: the swing dies away and it hangs under its string, bobbing
-                        if (r.mode == SWING) {
+                        if (SkyPhysics.letGo(H, A, V, swingX, swingZ)) {
+                            release(id, r, pos, SkyPhysics.kicks(V, moving, sprint));
+                        } else if (!moving && SkyPhysics.spent(H, A, V, swingX, swingZ)) {
+                            // a swing that never got ahead and is slow: it settles under its string
                             r.mode = HANG;
                             clip(id, r, HANG_CLIP, 6);
                         }
+                    } else {
+                        // hanging (no key and no speed left): it settles under its string, bobbing
                         SkyPhysics.swing(H, V, A, r.ropeLength, STILL, SkyPhysics.HANG_DRAG);
                         V[1] += 0.006 * Math.sin(clock * 0.12);
                     }
@@ -443,26 +455,35 @@ public final class SkyRoad {
         fovSpeed += (Math.min(1.0, Math.sqrt(V[0] * V[0] + V[2] * V[2]) / 1.2) - fovSpeed) * 0.15;
     }
 
-    /** The next string: a swing's ahead along the keys' way (or the drift) when a key is held, else a hang's straight up. */
+    /**
+     * The next string: a swing's when a key is held (along the keys' way leaned toward the drift: SkyPhysics.way) or, 3.8.0, with none
+     * while the body still has its momentum (on along the drift); else, slow and no key, a hang's straight up.
+     */
     static void next(Minecraft minecraft, LocalPlayer self, Runner r, boolean moving, double wx, double wz) {
         int id = self.m_19879_();
         Vec3 hand = new Vec3(H[0], H[1], H[2]);
         double speed = Math.sqrt(V[0] * V[0] + V[2] * V[2]);
-        if (moving) {
+        if (SkyPhysics.way(moving ? wx : 0.0, moving ? wz : 0.0, V[0], V[2], WAY)) {
+            double sx = WAY[0];
+            double sz = WAY[1];
             // the ground under the hand and under where the swing bottoms out (ahead, under the anchor): the higher (a hill ahead)
             double r01 = FireMesh.rand(id + (int) clock, 3);
-            SkyPhysics.anchor(H, wx, wz, speed, r01, cruise, Double.NaN, OUT);
+            SkyPhysics.anchor(H, sx, sz, speed, r01, cruise, Double.NaN, OUT);
             double ground = ground(self, hand);
             double ahead = ground(self, new Vec3(OUT[0], H[1] + 2.0, OUT[2]));
             if (Double.isNaN(ground) || !Double.isNaN(ahead) && ahead > ground) {
                 ground = ahead;
             }
-            SkyPhysics.anchor(H, wx, wz, speed, r01, cruise, ground, OUT);
+            if (!Double.isNaN(ground)) {
+                // 3.8.0: the swings hold clear of the terrain (off a low start, over a hill they rise; Shift brings them back down to it)
+                cruise = Math.max(cruise, SkyPhysics.floor(ground));
+            }
+            SkyPhysics.anchor(H, sx, sz, speed, r01, cruise, ground, OUT);
             Vec3 want = new Vec3(OUT[0], OUT[1], OUT[2]);
             Vec3 at = clipped(self, hand, want);
             double length = at == want ? OUT[4] : Math.max(SkyPhysics.SHORTEST, at.m_82554_(hand));
-            swingX = wx;
-            swingZ = wz;
+            swingX = sx;
+            swingZ = sz;
             throwString(id, r, at, length, true);
             if (at == want) {
                 ropeTarget = OUT[3];
@@ -488,9 +509,11 @@ public final class SkyRoad {
         send(swing ? ItoMoves.ROPE_SWING : ItoMoves.ROPE_HANG, at, length, 0);
     }
 
-    /** A swing let go: kicked on and up, flying free with a backflip or a split leap until the next string. */
-    static void release(int id, Runner r, Vec3 pos) {
-        SkyPhysics.kick(V);
+    /** A swing let go: kicked on and up (with a key held, under its speed), flying free with a backflip or a split leap until the next string. */
+    static void release(int id, Runner r, Vec3 pos, boolean kick) {
+        if (kick) {
+            SkyPhysics.kick(V);
+        }
         letGo(r);
         int trick = FireMesh.rand(id * 7 + (int) clock, 9) < 0.5 ? ItoMoves.SKY_BACKFLIP : ItoMoves.SKY_LEAP;
         trick(id, r, trick);
