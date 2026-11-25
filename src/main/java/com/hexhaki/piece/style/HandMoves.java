@@ -135,6 +135,11 @@ public final class HandMoves {
             case "pika_clones", "pika_murakumo", "pika_yata" -> new Move(THROW, 0);
             // the Gura fruit
             case "gura_punch", "magu_punch" -> new Move(JAB, 0);
+            // 3.7.9: the Leopard fruit's Six Styles (a punch for the kicks: the hand pulled in as the leg goes)
+            case "neko_m1_1", "neko_m1_3" -> new Move(DRAWN, 0);
+            case "neko_m1_2" -> new Move(SIDE_QUICK, 0);
+            case "neko_m1_4" -> new Move(JAB, 0);
+            case "neko_m1_5" -> new Move(BIG, 0);
             case "gura_charge", "magu_charge" -> new Move(DRAWN, 1.0);
             case "gura_fist_charge" -> new Move(DEEP, 1.2);
             case "gura_release", "gura_gekishin", "magu_release" -> new Move(BIG, 0);

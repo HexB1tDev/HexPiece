@@ -8,9 +8,11 @@ Read CLAUDE.md first, then this file whole, then next-ai-3.6.3.md sections AH to
 ## 1. Where things stand
 
 - Repo HexB1tDev/HexPiece, branch `claude/nice-bell-gam7qf` (fetch it first: it is the newest; push only there; no pull requests).
-- Last release **3.7.6**, GitHub green: Build #261, Release #167 (3.7.5: Build #260, Release #166). `build.py` VERSION 3.7.6; the next
-  version the owner should test is **3.7.7** (`python3 tools/next_version.py 3.7.6`). After a version bump delete the old jar from
-  `build/` (DragonTests reads the first `build/hexpiece-*.jar` it finds).
+- **Updated at the end of the Sunday session:** last releases 3.7.7 (the phoenix's flamethrower; Build #263, Release #168 green),
+  3.7.8 (Zoan forms locked out of Style), 3.7.9 (the Leopard fruit: Z, the base animations, the M1s, the icon); sections 5 and 6 at
+  the end of this file say what each did and what is next. `build.py` VERSION 3.7.9; the next version is **3.8.0** (versions roll over
+  at 9). After a version bump delete the old jar from `build/` (DragonTests reads the first `build/hexpiece-*.jar` it finds).
+- (Written at 3.7.6:) Last release **3.7.6**, GitHub green: Build #261, Release #167 (3.7.5: Build #260, Release #166).
 - 3.7.5 (next-ai-3.6.3.md AJ): the owner's bug list AH 1-7: Buzz Cut's head held still, the Tori human's effects drawn again, a calm
   imposing phoenix walk, X as the phoenix a fire tornado (blue and gold; carries, burns, flings; 1.4x with Conqueror's lightning under
   Conqueror's Haki and Ryou), every Phoenix move's fire rebuilt in the house's style (phoenix/PhoenixBlast: real explosions,
@@ -50,7 +52,7 @@ the dragon does)."
   Render it (tools/preview/PhoenixPreview, a new scene) and judge it.
 - Wire M1 for the phoenix only while transformed (PhoenixServer's form state; the human keeps its M1).
 
-### 3.2 The new fruit: Neko Neko no Mi, Model: Leopard (Lucci) (not started)
+### 3.2 The new fruit: Neko Neko no Mi, Model: Leopard (Lucci) (first part DONE in 3.7.9: Z, base animations, M1s; sections 5, 6)
 The owner, verbatim:
 "New Fruit:
 Legendary Leopard Fruit
@@ -206,3 +208,77 @@ dragon, etc)."
   (refused while zoan, else the original's).
 - Client: CombatMode.zoan (DragonClient.selfOut, PhoenixFx.selfOut (now public), GearClientState.gearFive): R's tap refused with the
   message (Ctrl + R Armament and R held for powers off unchanged); combat mode turned off if on while zoan.
+
+### The owner, during the Leopard work (verbatim; with a 2D picture of the fruit)
+"first of all, Z (transformation, get the base animations, and m1s.) thats your only goal today Im runnin out of usage.
+
+I also sent the pic of the fruit 2d"
+- The picture (not saved in the repository; describe, never copy it): a golden-yellow heart-shaped fruit with a cat's face shape, two
+  pointed cat ears at the top each with a black spiral swirl on a pale inner ear, the whole skin covered in leopard rosettes (dark brown
+  rings round lighter brown centres), a glossy white highlight on the left, and a green stem rising from the top centre into a T: one
+  arm curling into a spiral on the left, the other ending in a small round yellow bud on the right. Black ink outline.
+- So the Leopard's first version is: Z (the transformation and its reverse), the base animations (idle, run, jump, the face) and the
+  M1s (Six Styles, both forms), and the fruit's item icon drawn after the picture. The other moves (X, C, V, B, Heavens Demise) later.
+
+### The owner, while 3.7.9 was being finished (verbatim)
+"the transformation should be a ball of burning flames with evil red eyes within, the flames of the mane, tail and ribbon make sure those
+are real looking burning flames and call it a day enough work, push, handoff and prompt"
+- And then (verbatim): "black flames not purple" (the flames' palette is black to charcoal only: no purple, no red; the red only in
+  the ball's eyes and Rokuogan's rim).
+
+### 3.7.9: the Neko Neko no Mi, Model: Leopard, first part (Z, the base animations, the M1s, the icon)
+- **The model:** tools/leopard_bake.py (Blender's Python module: `/tmp/bpy/bin/python tools/leopard_bake.py`; it patches one line of
+  the venv's FBX importer first and asks to be run again) bakes input/neko/lucci into assets/hexhaki/neko/lucci.sry (22 parts, 69
+  bones, 4 weights a vertex, 27 takes at 25 a second, about 2.5 units tall) and copies the file's texture to
+  textures/piece/neko/lucci.png. Kinds: 0 skin, 2 the black-flame hair (hair, tail_hair, elbow_hair, hair_sp, beard), 3 the ribbon
+  (hagoromo). build.py NEW_PREFIXES has "assets/hexhaki/neko/".
+- **neko/LeopardForm (pure):** SCALE 2.08 (the idle stands 5.0 blocks); Shape (each part's kind, face (face_normal, face_attack,
+  face_damage, face_sp01) and hand pose (l/r_hand_open, close, shigan, shugan) shown one at a time: shown(); each flame vertex's
+  reach; the tongues' anchors: 18 far tips of the mane, tail tuft, ribbon, elbow and shoulder hair, beard); Motion (speed, stride,
+  air, up, down, face, hands, blow, blowAge, roar); pose(): idle_a always, run by the speed (its phase from the ground covered:
+  NekoFx.STRIDE 5.5 blocks a cycle), jump (take-off TAKE_OFF 8), jump_lp in the air, jump_end landing (LANDING 12); a blow: one of
+  the model's takes (BLOW_TAKES combo_a, combo_b, combo_c, combo_a, skill_b, from BLOW_FROM, over BLOW_TICKS 10 or 18) with the take's
+  ground travel pinned out (world_joint and Body_Pelvis x, z kept). flame(): the flame vertices lick and flow; flameColour(): black
+  with charcoal sheen flowing out along them. The change (the owner's "ball of burning flames with evil red eyes within"):
+  FORM_TICKS 34 (the ball gathers over BALL_IN 6 round the slouching human, who is hidden from then; the roar at ROAR 24 bursts it
+  and the leopard is there), UNFORM_TICKS 24 (the bigger ball gathers round the leopard by 6, the leopard gone; it burns away from
+  BURN_AWAY 12, the human back at HUMAN_BACK 15); BALL_SMALL 1.55 at 1.0 over the feet, BALL_BIG 2.6 at 2.3; revealed(),
+  humanHidden(), ball(). Never scaled.
+- **neko/LeopardArt (pure):** BLACK_FIRE (the black flames' palette), puff, ball (16 black flame puffs flying in on a golden spiral,
+  rolling, licking up; a dark heart; two red eyes: a glow, a slanted slit, a white-hot point), tongue (a black flame rising off a
+  point, thinning to smoke), human (flames rising round the slouching human), line (unused now), roar (a dark shell racing out, a
+  ring, white crescents, black flames thrown), strike (blows 1 to 4: an arc, three claw streaks, a wide flat arc, two jab streaks),
+  land (a shock ring, a flash, sparks), rokuogan (a white shock shell with a dark red rim, two rings along the blow, crescents, sparks).
+- **Server:** server/NekoServer (PHASE 420; Z toggles; REST 60; the roar at ROAR throws everyone within ROAR_REACH 7 back
+  (ROAR_PUSH 1.4, ROAR_LIFT 0.45), UoSounds.ROAR pitched 1.35, ConquerorAura.exploded; Speed 5 (SPEED 4) renewed every 10 ticks as
+  the leopard; the sea reverts it; restore on death, leaving, a change of world). server/NekoMoves (M1 421 thrown, M1_LAND 422
+  landed): five blows by click (M1_EVERY 8, the leopard 7; after the fifth COMBO_REST 16; a pause over COMBO_WINDOW 26 starts again);
+  each lands M1_HIT 3 ticks after the click (Rokuogan 5) on ItoMoves.ahead (REACH 3.4, the leopard 5.2, ARC 55): M1_HURT 2, 2, 2,
+  2.5, 5 (the reference's 69 over five, a fifth; the same in both forms), a small push, Rokuogan's throw (ROKU_PUSH 2, ROKU_LIFT
+  0.55), the Conqueror's lightning at each one hit and out of Rokuogan (ConquerorAura.exploded); IronSounds SWING, PUNCH, BOOM.
+  server/NekoKit (FORM [Z], SIX_STYLES / SIX_STYLES_LEOPARD [LMB]; action kind 0 Z, kind 2 the attack button). PiecePatch NEKO
+  (ordinal 12, colour E8B020), HexPiece registers it, FruitRanks LEGENDARY, lang "item.hexhaki.neko_neko_no_mi", the icon
+  (tools/neko_icon.py) and item model. Transformed.zoan includes the leopard.
+- **The human's clips:** tools/neko_anims.py: neko_form (slouch, the roar), neko_unform, neko_m1_1 to 5 (kick, claw swipe,
+  roundhouse, double punch, Rokuogan); lint clean. style/HandMoves: neko_m1_* move the first-person hand.
+- **Client:** client/neko/NekoFx (S2CUoFx 420 to 439 from client/dragon/UoFx; the leopard skinned on the CPU and drawn in the entity
+  buffer (RenderType m_110458_, full bright, LeopardForm.tint's own shade), its flame parts and tongues after the particles (debugQuads,
+  alpha blended), the ball, the roar, the blows; the human hidden; third person on the change; DragonCamera asks NekoFx.camera (4 +
+  4.5 back, 2 up); the hurt face from the health dropping), client/neko/NekoClient (the panel: the form's list), CombatMode.zoan
+  includes it.
+- **Previews:** tools/preview/LeopardPreview (compile with neko/*.java, phoenix/*.java, dragon/DragonPose, DragonModel, FireMesh,
+  UoFire, PhoenixPreview; the scratchpad's lprev.sh): states bind, take=<name>, idle, run, walk, jump, land, blow1 to 5, form, unform,
+  fx1 to 5 (the leopard's blows with their effects), hfx1 to 5 (the human's); ",face=N", ",hands=N".
+- **Tests:** DragonTests.leopard (parts, bones, takes; one face, one hand pose each side; 5 blocks tall; every state finite; the blows
+  stay in place; the change one way, never scaled; the ball, the roar, the tongues and the blows beside the model under 16k; the kit).
+
+## 6. What to do next (the Leopard, in order)
+1. Check 3.7.9's runs; the owner's word on 3.7.7 (flamethrower), 3.7.8 (Zoan lock) and 3.7.9 (the Leopard) comes first, verbatim.
+2. The Leopard's other moves, each in both forms, after reading their GIFs frame by frame (section 3.2's table; the scratchpad's
+   reading so far: Transform = slouch in black and purple light, a roar, a black dome bursting out (now the owner's ball of black
+   flames with red eyes instead); Six Styles = five blows half a second apart then Rokuogan launching the target; Finger Pistol =
+   a storm of finger-jab streaks with black speed lines dragging the target, ending in a black burst that sends them flying): X Finger
+   Pistol Barrage (the hands' shigan pose exists), C Sonic Kick (a bird-shaped air blade that explodes), V Infinity Drive (teleport,
+   afterimages, a last strike), B Unrelenting Assault (teleport, claw barrage, a slam), and Heavens Demise (transformed only: grab,
+   launch, a cutscene-like blitz, a Rokuogan straight down). POINT ONE for each; the Conqueror's lightning out of every end explosion.
+3. Then 3.4's small items (the phoenix's arm wings in first person: ask; the Mochi note 22 item 4: ask).

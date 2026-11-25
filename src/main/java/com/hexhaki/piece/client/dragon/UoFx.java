@@ -139,6 +139,10 @@ public final class UoFx {
             com.hexhaki.piece.client.horo.HoroFx.accept(m); // 3.3.6: the Horo fruit's (220 to 239)
             return;
         }
+        if (m.kind() >= 420 && m.kind() < 440) {
+            com.hexhaki.piece.client.neko.NekoFx.accept(m); // 3.7.9: the Leopard fruit's (420 to 439)
+            return;
+        }
         if (m.kind() >= 400 && m.kind() < 420) {
             com.hexhaki.piece.client.phoenix.PhoenixFx.accept(m); // 3.6.9: the Phoenix fruit's (400 to 419)
             return;

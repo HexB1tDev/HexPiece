@@ -42,7 +42,8 @@ public final class Transformed {
      * etc)"): whether {@code player} is in a Zoan form (the dragon, Gear 5, the phoenix: from the change to the way back).
      */
     public static boolean zoan(ServerPlayer player) {
-        return transformed(player) || PhoenixServer.phase(player) != com.hexhaki.piece.phoenix.PhoenixForm.HUMAN;
+        return transformed(player) || PhoenixServer.phase(player) != com.hexhaki.piece.phoenix.PhoenixForm.HUMAN
+            || NekoServer.phase(player) != com.hexhaki.piece.neko.LeopardForm.HUMAN;
     }
 
     /** What the player is told when a switch out of the fruit is refused. */

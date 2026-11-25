@@ -82,7 +82,7 @@ public final class CombatMode {
      */
     static boolean zoan() {
         return com.hexhaki.piece.client.dragon.DragonClient.selfOut() || com.hexhaki.piece.client.phoenix.PhoenixFx.selfOut()
-            || GearClientState.gearFive;
+            || com.hexhaki.piece.client.neko.NekoFx.selfOut() || GearClientState.gearFive;
     }
 
     /** 3.5.9: is every power off (the original's bit, server/Powers)? */
