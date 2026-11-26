@@ -244,7 +244,12 @@ public final class IronFist {
         s.left = !left;
         animate(player, left ? "style_brawler_punch_l" : "style_brawler_punch_r");
         sound(player, chest(player), IronSounds.SWING, 0.6F, 1.2F + (left ? 0.0F : 0.1F));
+        boolean[] cut = ClashBoard.swing(player, now, now + IronMove.PUNCH_HIT, IronMove.PUNCH_REACH, armament(player) ? 5.0 : 4.0,
+            com.hexhaki.piece.clash.ClashRules.Kind.FIST); // 3.8.4: on the clash board
         later(player, IronMove.PUNCH_HIT, () -> {
+            if (ClashBoard.lands(player, cut)) {
+                return; // met by a blow coming back: the clash played instead
+            }
             Vec3 f = flat(player);
             boolean landed = false;
             for (LivingEntity body : ahead(player, IronMove.PUNCH_REACH, 35)) {

@@ -89,13 +89,24 @@ public final class NekoMoves {
         Vec3 look = player.m_20154_();
         ItoMoves.fx(player, M1, blow, ItoMoves.chest(player), look, blow, leopard ? 1 : 0, 0, blow == BLOWS ? 16 : 10);
         ItoMoves.sound(player, ItoMoves.chest(player), IronSounds.SWING, leopard ? 1.0F : 0.7F, leopard ? 0.8F : 1.1F + blow * 0.04F);
-        DUE.add(new Due(player, now + (blow == BLOWS ? M1_HIT + 2 : M1_HIT), blow, leopard));
+        Due due = new Due(player, now + (blow == BLOWS ? M1_HIT + 2 : M1_HIT), blow, leopard);
+        DUE.add(due);
+        // 3.8.4: on the clash board (HexGhoul's): a blow coming back at this one as it lands meets it (server/Clashes)
+        ClashBoard.swing(player, now, due.at(), leopard ? REACH_LEOPARD : REACH, M1_HURT[blow - 1],
+            blow == 1 || blow == 3 ? com.hexhaki.piece.clash.ClashRules.Kind.KICK : com.hexhaki.piece.clash.ClashRules.Kind.FIST, () -> true,
+            () -> DUE.remove(due));
     }
 
     /** The blow lands: whoever is in front struck, pushed (Rokuogan throws them far), the lightning at each. */
     static void land(Due due) {
         ServerPlayer player = due.player();
         if (!player.m_6084_()) {
+            return;
+        }
+        // 3.8.4: met by a blow coming back at it: the clash plays instead (server/Clashes)
+        boolean met = Clashes.landing(player, player.m_9236_().m_46467_(), other -> com.hexhaki.fruit.FruitUtil.foe(player, other));
+        ClashBoard.landed(player);
+        if (met) {
             return;
         }
         int blow = due.blow();

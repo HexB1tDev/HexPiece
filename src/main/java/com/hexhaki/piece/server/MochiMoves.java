@@ -429,7 +429,12 @@ public final class MochiMoves {
         fx(player, TRIDENT, ++seeds, at, f, k, 0, TRIDENT_REACH, 0);
         sound(player, ItoMoves.chest(player), k >= 3 ? com.hexhaki.piece.sword.SwordSounds.SWING_HEAVY : com.hexhaki.piece.sword.SwordSounds.SWING,
             0.9F, 1.05F - k * 0.04F);
-        later(player, MochiV2.TRIDENT_HIT, () -> tridentHit(player, k));
+        boolean[] cut = ClashBoard.swing(player, now, now + MochiV2.TRIDENT_HIT, TRIDENT_REACH, 6.0, com.hexhaki.piece.clash.ClashRules.Kind.BLADE); // 3.8.4: on the clash board
+        later(player, MochiV2.TRIDENT_HIT, () -> {
+            if (!ClashBoard.lands(player, cut)) {
+                tridentHit(player, k);
+            }
+        });
     }
 
     /**
@@ -882,7 +887,11 @@ public final class MochiMoves {
         Vec3 shoulder = ItoMoves.chest(player).m_82520_(0, 0.1, 0).m_82549_(side.m_82490_(which == 0 ? 0.36 : -0.36));
         fx(player, PUNCH, which, shoulder, look, which, 0, PUNCH_REACH, 0);
         sound(player, shoulder, MochiSounds.STRETCH, 0.7F, 1.25F + which * 0.1F);
+        boolean[] cut = ClashBoard.swing(player, now, now + (int) MochiDraw.PUNCH_OUT, PUNCH_REACH, PUNCH_DAMAGE, com.hexhaki.piece.clash.ClashRules.Kind.FIST); // 3.8.4
         later(player, (int) MochiDraw.PUNCH_OUT, () -> {
+            if (ClashBoard.lands(player, cut)) {
+                return; // met by a blow coming back: the clash played instead
+            }
             for (LivingEntity body : ItoMoves.ahead(player, PUNCH_REACH, PUNCH_ARC)) {
                 hit(player, body, PUNCH_DAMAGE, f.m_82490_(0.55).m_82520_(0, 0.12, 0));
             }

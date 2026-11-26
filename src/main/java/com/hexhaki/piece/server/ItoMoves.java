@@ -489,7 +489,11 @@ public final class ItoMoves {
         // forehand (the strings swept right to left: ItoArt.lash which 0) then backhand
         animate(player, which == 0 ? "ito_slash_1" : "ito_slash_2");
         sound(player, chest(player), ItoSounds.SWISH, 0.8F, 1.1F + which * 0.1F);
+        boolean[] cut = ClashBoard.swing(player, now, now + 2, SLASH_REACH, 4.5, com.hexhaki.piece.clash.ClashRules.Kind.BLADE); // 3.8.4: on the clash board
         later(player, 2, () -> {
+            if (ClashBoard.lands(player, cut)) {
+                return; // met by a blow coming back: the clash played instead
+            }
             Vec3 f = flat(player);
             fx(player, SLASH, which, chest(player), f, which, 0, SLASH_REACH, 0);
             for (LivingEntity body : ahead(player, SLASH_REACH, SLASH_ARC)) {

@@ -172,13 +172,51 @@ public final class Clashes {
     static ClashRules.Blow blowOf(LivingEntity body, long now) {
         if (body instanceof ServerPlayer player) {
             ClashRules.Blow blow = StyleServer.blow(player, now);
-            return blow != null ? blow : SwordServer.blow(player, now);
+            blow = blow != null ? blow : SwordServer.blow(player, now);
+            return blow != null ? blow : ClashBoard.blow(player, now); // 3.8.4: a fruit's blow on the board (HexGhoul's)
         }
         return body instanceof SeaFighter fighter ? fighter.blow(now) : null;
     }
 
+    /**
+     * 3.8.4 (the owner: "I want a proper clashing system like our other mod has HexGhoul"): how far {@code body} has come, as HexGhoul's
+     * ClashPower counts it (clash/ClashPower): a player by the mastery of what strikes (the sword for a blade; the fruit for a fruit's
+     * blow on the board; else their style), their Armament and their Conqueror's; a sea fighter by its rank's mastery.
+     */
+    static double progress(LivingEntity body, ClashRules.Blow blow, boolean board) {
+        if (body instanceof ServerPlayer player) {
+            int discipline;
+            if (blow.blade()) {
+                discipline = SwordServer.mastery(player);
+            } else if (board) {
+                discipline = Math.max(com.hexhaki.fruit.FruitData.mastery(player), ProfileServer.of(player).mastery(ProfileServer.of(player).style()));
+            } else {
+                discipline = ProfileServer.of(player).mastery(ProfileServer.of(player).style());
+            }
+            return com.hexhaki.piece.clash.ClashPower.progress(discipline,
+                com.hexhaki.data.HakiData.mastery(player, com.hexhaki.data.HakiType.ARMAMENT),
+                com.hexhaki.data.HakiData.mastery(player, com.hexhaki.data.HakiType.CONQUEROR));
+        }
+        if (body instanceof SeaFighter fighter) {
+            int m = com.hexhaki.piece.npc.SeaRules.MASTERY[Math.max(0, Math.min(com.hexhaki.piece.npc.SeaRules.MASTERY.length - 1, fighter.rank()))];
+            return com.hexhaki.piece.clash.ClashPower.progress(m, m, m / 2);
+        }
+        return 0.0;
+    }
+
+    /** 3.8.4: {@code body}'s blow as it counts in a clash: its heft times who swings it (clash/ClashPower). */
+    static double strength(LivingEntity body, ClashRules.Blow blow, long now) {
+        boolean board = body instanceof ServerPlayer player && StyleServer.blow(player, now) == null && SwordServer.blow(player, now) == null;
+        try {
+            return com.hexhaki.piece.clash.ClashPower.blow(progress(body, blow, board), blow.hit(), blow.armed());
+        } catch (RuntimeException failure) {
+            return com.hexhaki.piece.clash.ClashPower.blow(0.0, blow.hit(), blow.armed());
+        }
+    }
+
     /** {@code body}'s move cut off where it is; {@code recoil}: knocked back in a clash (its recoil plays), else simply dropped. */
     static void stop(LivingEntity body, long now, boolean recoil) {
+        ClashBoard.stop(body); // 3.8.4: a fruit's blow on the board cut off too
         if (body instanceof ServerPlayer player) {
             StyleServer.clashed(player, recoil);
             SwordServer.clashed(player, now, recoil);
@@ -190,8 +228,12 @@ public final class Clashes {
     /** {@code a} and {@code b} meet: both stopped and staggered, held, thrown apart, the ground shaken, heard and seen. */
     static void collide(ServerLevel level, LivingEntity a, ClashRules.Blow blowA, LivingEntity b, ClashRules.Blow blowB, long now) {
         float power = ClashRules.power(blowA.hit(), blowB.hit());
-        double ratioA = ClashRules.ratio(blowA.hit(), blowB.hit());
-        double ratioB = ClashRules.ratio(blowB.hit(), blowA.hit());
+        // 3.8.4 (HexGhoul's): who is thrown is by the gap between the two as they count (the blow's heft times who swings it), not the
+        // blows' damage alone: a master stands its ground against a beginner's heavy move, the weaker is the one sent flying
+        double strengthA = strength(a, blowA, now);
+        double strengthB = strength(b, blowB, now);
+        double ratioA = ClashRules.ratio(strengthA, strengthB);
+        double ratioB = ClashRules.ratio(strengthB, strengthA);
         Vec3 chestA = a.m_20182_().m_82520_(0.0, a.m_20206_() * 0.6, 0.0);
         Vec3 chestB = b.m_20182_().m_82520_(0.0, b.m_20206_() * 0.6, 0.0);
         Vec3 line = chestB.m_82546_(chestA);
@@ -207,10 +249,10 @@ public final class Clashes {
         stagger(b, now, ClashRules.stagger(ratioB));
         int hold = ClashRules.frameTicks(power) + 2;
         if (a.m_20182_().m_82554_(at) <= NEAR) {
-            Impact.hit(b, a, spec(power, hold, -dx, -dz, ClashRules.thrown(power, ratioA), ClashRules.lifted(ratioA)));
+            thrown(level, b, a, power, hold, -dx, -dz, ratioA);
         }
         if (b.m_20182_().m_82554_(at) <= NEAR) {
-            Impact.hit(a, b, spec(power, hold, dx, dz, ClashRules.thrown(power, ratioB), ClashRules.lifted(ratioB)));
+            thrown(level, a, b, power, hold, dx, dz, ratioB);
         }
         if (ClashRules.quakes(power)) {
             Vec3 ground = new Vec3(at.f_82479_, Math.min(a.m_20186_(), b.m_20186_()), at.f_82481_);
@@ -228,6 +270,29 @@ public final class Clashes {
             blowB.ryou(), a.m_19879_(), b.m_19879_(), flags);
         PieceNetwork.around(a, message);
         PieceNetwork.around(b, message); // a viewer seeing both is sent it twice: the client plays one clash per id
+    }
+
+    /**
+     * 3.8.4: how far and fast an overwhelmed body is flung (HexGhoul's: "pretty much the same effect entirely of the kick without the
+     * animation, send them through blocks"): level, through whatever is in the way, for this many ticks, then down for {@link #FLUNG_DOWN}.
+     */
+    static final double FLUNG_SPEED = 1.7;
+    static final int FLUNG_TICKS = 11;
+    static final int FLUNG_DOWN = 50;
+
+    /**
+     * {@code who} (out-hit {@code ratio} times by {@code by}) thrown from the clash along (x, z): held and thrown back as before, the
+     * weaker further; 3.8.4: overwhelmed ({@link ClashRules#overwhelmed}), flung level through everything in its way and knocked down
+     * (ragdolled, stunned till it is up), as HexGhoul flings the overwhelmed.
+     */
+    static void thrown(ServerLevel level, LivingEntity by, LivingEntity who, float power, int hold, double x, double z, double ratio) {
+        if (!ClashRules.overwhelmed(ratio)) {
+            Impact.hit(by, who, spec(power, hold, x, z, ClashRules.thrown(power, ratio), ClashRules.lifted(ratio)));
+            return;
+        }
+        Impact.hit(by, who, spec(power, 2, x, z, 0.0, 0.0));
+        ConquerorClash.launch(level, who, x * FLUNG_SPEED, z * FLUNG_SPEED, FLUNG_TICKS, FLUNG_DOWN);
+        PieceSounds.playAt(who, who.m_20185_(), who.m_20186_() + 1.0, who.m_20189_(), "piece.iron.boom", 1.2F, 0.9F);
     }
 
     /** The impact a clash gives one of the two: held {@code hold} ticks, then thrown {@code push} along (x, z) and {@code lift} up. */

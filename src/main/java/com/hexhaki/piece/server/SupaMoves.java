@@ -307,7 +307,11 @@ public final class SupaMoves {
         animate(player, which == 0 ? "pika_sword_2" : "pika_sword_1");
         parts(player, s, CLAWS, 18);
         sound(player, chest(player), SupaSounds.SWISH, 0.8F, 1.15F + which * 0.1F);
+        boolean[] cut = ClashBoard.swing(player, now, now + 2, CLAW_REACH, 4.0, com.hexhaki.piece.clash.ClashRules.Kind.BLADE); // 3.8.4: on the clash board
         later(player, 2, () -> {
+            if (ClashBoard.lands(player, cut)) {
+                return; // met by a blow coming back: the clash played instead
+            }
             Vec3 f = flat(player);
             fx(player, CLAW, which, chest(player), f, which, CLAW_REACH * 0.55, 0);
             for (LivingEntity body : ahead(player, CLAW_REACH, CLAW_ARC)) {

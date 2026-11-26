@@ -21,7 +21,38 @@ public final class ClashTests {
         frame();
         burst();
         recoils();
+        power();
         Check.done("ClashTests");
+    }
+
+    /** 3.8.4: HexGhoul's clash power (clash/ClashPower): who swings counts more than how heavy the blow is. */
+    static void power() {
+        double fresh = com.hexhaki.piece.clash.ClashPower.progress(0, 0, 0);
+        double master = com.hexhaki.piece.clash.ClashPower.progress(1000, 1000, 1000);
+        Check.near(fresh, 0.0, 1e-9, "a fresh fighter has come nowhere");
+        Check.near(master, 1.0, 1e-9, "a master all the way");
+        Check.that(com.hexhaki.piece.clash.ClashPower.progress(1000, 0, 0) < com.hexhaki.piece.clash.ClashPower.progress(1000, 1000, 0),
+            "Armament adds to it");
+        double beginnerHeavy = com.hexhaki.piece.clash.ClashPower.blow(fresh, 12.0, false);
+        double masterJab = com.hexhaki.piece.clash.ClashPower.blow(master, 4.0, false);
+        Check.that(masterJab > beginnerHeavy * 1.5, "a master's jab out-weighs a beginner's heavy move (" + masterJab + " vs " + beginnerHeavy + ")");
+        double ratioBeginner = com.hexhaki.piece.clash.ClashRules.ratio(beginnerHeavy, masterJab);
+        double ratioMaster = com.hexhaki.piece.clash.ClashRules.ratio(masterJab, beginnerHeavy);
+        double masterThrown = com.hexhaki.piece.clash.ClashRules.thrown(1.4F, ratioMaster);
+        double beginnerThrown = com.hexhaki.piece.clash.ClashRules.thrown(1.4F, ratioBeginner);
+        Check.that(beginnerThrown > 0.5 && masterThrown < beginnerThrown / 4.0, "the master barely moves, the beginner is thrown (" + masterThrown
+            + " vs " + beginnerThrown + ")");
+        Check.that(com.hexhaki.piece.clash.ClashRules.thrown(1.4F, com.hexhaki.piece.clash.ClashRules.ratio(masterJab * 1.2, beginnerHeavy * 0.5))
+            == 0.0, "twice as strong: it stands its ground");
+        double maxed = com.hexhaki.piece.clash.ClashPower.blow(master, 5.0, true);
+        double novice = com.hexhaki.piece.clash.ClashPower.blow(fresh, 5.0, false);
+        Check.that(com.hexhaki.piece.clash.ClashRules.overwhelmed(com.hexhaki.piece.clash.ClashRules.ratio(novice, maxed)),
+            "a maxed, armed fighter overwhelms a novice (flung through blocks, knocked down)");
+        double even = com.hexhaki.piece.clash.ClashPower.blow(0.5, 5.0, false);
+        Check.near(com.hexhaki.piece.clash.ClashRules.ratio(even, even), 1.0, 1e-9, "even fighters, even blows: an even clash");
+        Check.that(com.hexhaki.piece.clash.ClashPower.blow(0.5, 5.0, true) > even, "Armament makes the blow count for more");
+        Check.that(com.hexhaki.piece.clash.ClashPower.heft(50.0) <= Math.sqrt(3.0) + 1e-9 && com.hexhaki.piece.clash.ClashPower.heft(0.0)
+            >= Math.sqrt(0.3) - 1e-9, "a blow's weight counts within its bounds");
     }
 
     static Blow fist(boolean armed, int ryou) {

@@ -205,3 +205,25 @@ HakiVfx read with javap):
   SPACING_*, NARROW; archipelago_data LOWER, ISLANDS, ISLAND_NOISE, WIDEN, BEACH_Y, DEEPER); a new world is needed.
 - Not done: vanilla's own river biomes elsewhere (none: rivers come only from RiverField); lakes inside islands may exist (lagoons
   where the island noise dips; they are not rivers).
+
+## 6. 3.8.4: clashes as HexGhoul's (request 1 item 4)
+
+HexGhoul's (read at its tag v4.3.1, cloned read-only into /home/user/hexb1tdev/hexghoul: `control/server/KaguneClash`, `control/ClashPower`,
+`control/ClashRules`) and HexPiece's (2.3.6: `server/Clashes`, `clash/ClashRules` already took HexGhoul's 3.4.3 rules: STANDS, GAP 2,
+thrown by the ratio) compared. What HexPiece lacked, now done:
+- **The clash board** (`server/ClashBoard`, KaguneClash's swing/landed): a blow that is not a style's or a sword's says when it sets
+  out (`swing(player, now, lands, reach, hit, kind, live, stop)`, or `swing(...)` returning a `cut` flag for a scheduled hit) and
+  `lands(player, cut)` at its landing (Clashes.landing, then off the board). `Clashes.blowOf` falls back to the board, `Clashes.stop`
+  stops a board blow. On the board: NekoMoves.m1/land (Six Styles, both forms: kicks KICK, the rest FIST), MochiMoves.punch (FIST)
+  and tridentSwing (BLADE), SupaMoves.claw (BLADE), ItoMoves.slash (BLADE), IronFist.punch (FIST). Not on it: Gura's punch (a quake
+  shock, not a blow), fruit moves other than M1s, projectiles (HexGhoul's swat of shards: not done).
+- **Strength** (`clash/ClashPower`, HexGhoul's 3.2.4 scale): BLOW 5 x power (LOW 1 to HIGH 3 by `progress`: 0.5 the discipline's
+  mastery (the sword's for a blade, the fruit's (FruitData.mastery, 0-1000) or the style's for a board blow, else the style's), 0.3
+  Armament's, 0.2 Conqueror's) x heft (root of hit / BLOW, 0.3..3) x ARMED 1.25. `Clashes.strength`/`progress` (a sea fighter by
+  SeaRules.MASTERY[rank]); `collide` throws by the ratio of the strengths (its power, the burst's size, still from the blows' damage).
+- **Overwhelmed** (ratio >= GAP 2): `Clashes.thrown` flings level through blocks (ConquerorClash.launch: FLUNG_SPEED 1.7 a tick for
+  FLUNG_TICKS 11) and knocks down (HakiFalls, FLUNG_DOWN 50), piece.iron.boom.
+- Tests: ClashTests.power (a master's jab out-weighs a beginner's heavy move, the master barely moves and stands at 2x, a maxed armed
+  fighter overwhelms a novice, even is even, Armament counts, heft bounded).
+- To ask the owner: whether more moves should be on the board (fruit X/C/V moves, projectiles meeting blows), how often clashes
+  happen (ClashRules.WINDUP 3, FACING), whether the strength weights feel right.
