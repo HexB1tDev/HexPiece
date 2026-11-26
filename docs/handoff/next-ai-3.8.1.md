@@ -230,7 +230,7 @@ thrown by the ratio) compared. What HexPiece lacked, now done:
 
 ## 7. What to do next (in order)
 
-1. 3.8.4 green (Release #175; Build #272), 3.8.5 green (Build #273, Release #176). Check 3.8.6's runs.
+1. 3.8.4 green (Release #175; Build #272), 3.8.5 green (Build #273, Release #176). Check 3.8.6's runs (Release #177; Build #274 may show cancelled by the handoff push after it: the Build on the handoff commit builds the same code).
 2. The owner's word on 3.8.1 (the release's lag), 3.8.2 (the Conqueror's clash), 3.8.3 (the archipelago: needs a new world),
    3.8.4 (the clashes) comes first: write it verbatim here, fix, render, release.
 3. The weapon reworks (section 2; the owner put them after the world and the Conqueror's Haki, both done):
