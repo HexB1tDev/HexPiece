@@ -227,3 +227,34 @@ thrown by the ratio) compared. What HexPiece lacked, now done:
   fighter overwhelms a novice, even is even, Armament counts, heft bounded).
 - To ask the owner: whether more moves should be on the board (fruit X/C/V moves, projectiles meeting blows), how often clashes
   happen (ClashRules.WINDUP 3, FACING), whether the strength weights feel right.
+
+## 7. What to do next (in order)
+
+1. Check 3.8.4's runs (Build and Release on the branch) are green.
+2. The owner's word on 3.8.1 (the release's lag), 3.8.2 (the Conqueror's clash), 3.8.3 (the archipelago: needs a new world),
+   3.8.4 (the clashes) comes first: write it verbatim here, fix, render, release.
+3. The weapon reworks (section 2; the owner put them after the world and the Conqueror's Haki, both done):
+   - A blade drawn by a swordsman forces third person, the camera set to aid the swings and the aim (first person's sword holding
+     disliked whole: "very strange way and unrealistic, I dont Like any of it").
+   - Weapon categories (THE STANDING RULE below): sort every katana into Katana, Gryphon into Saber, Yoru into Yoru; the Saber's
+     more aggressive attack animations (idle and draw as they are); the Mace (First_mace.blend: rests on the back like Yoru, a slow
+     draw, idle on the right shoulder, reach, ragdolling hits, slow to cock, fast swing); the Gun (First_gun.blend: one-handed in the
+     right hand in a badass pose, one bullet a shot and a reload putting one bullet in the barrel's mouth, the bullet model the owner
+     will send (ask for it if it has not come), Haki on: pure black bullets, much faster, through up to 10 blocks; relaxed lowered
+     poses pointing at the floor, spinning it on the hand, a running animation; for every gun).
+   - The clothes replacements (Clothes_Replacements.blend; more to come).
+   - The Blender files are in input/newmodels/NewModels.zip (unpack into the scratchpad; Blender's Python module as for the
+     leopard: python3 -m venv /tmp/bpy && /tmp/bpy/bin/pip install bpy).
+4. Then the Leopard's other moves (next-ai-3.7.6.md section 6), as before.
+
+## THE STANDING RULE: weapon categories (the owner: "Whenever I give you a weapon from now on Ill name one of these categories, write this
+in every handoff")
+Every weapon the owner gives comes with one of these categories and is made with its category's animations:
+- **Katana**: as the katanas are now (every katana is a Katana).
+- **Saber**: like the katanas but more aggressive; the idle and the draw stay as they are (Gryphon is a Saber).
+- **Mace**: right-handed, rests on the back like Yoru, a slow pull-out, at idle rested on the right shoulder; has range; its hits
+  ragdoll; slow to cock, fast on the swing.
+- **Yoru**: one of a kind, stays as it is, uncontested the strongest blade that will ever be added (Yoru alone).
+- **Gun** (pistols): right hand, a badass pose; one bullet a shot, reloads by itself (one bullet into the barrel's mouth); every bullet
+  the same model (the owner sends it); Haki on: pure black bullets, much faster, through blocks (10 at most); relaxed lowered poses
+  pointing at the floor, spun on the hand, a running animation; these animations for every gun.
