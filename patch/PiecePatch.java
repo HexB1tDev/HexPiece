@@ -288,6 +288,12 @@ public final class PiecePatch implements Opcodes {
         {CONTROLLER, "releaseConqueror", CONTROLLER, "applyConqueror", APPLY_CONQUEROR, CONQUEROR, "apply", 1},
         {CONTROLLER, "releaseConqueror", CONTROLLER, "forceMaxConquerorStun", "(Lnet/minecraft/server/level/ServerPlayer;DI)V", CONQUEROR,
             "forceMax", 1},
+        // 3.8.2 (the owner's Conqueror's Haki clash: server/ConquerorClash): a release swallowed by a clash plays neither the full
+        // charge's camera cinematic nor its aftershocks (the clash is shown instead)
+        {CONTROLLER, "releaseConqueror", "com/hexhaki/network/HakiNetwork", "to", "(Lnet/minecraft/server/level/ServerPlayer;Ljava/lang/Object;)V",
+            CONQUEROR, "cinematic", 1},
+        {CONTROLLER, "releaseConqueror", CONTROLLER, "scheduleAftershocks", "(Lnet/minecraft/server/level/ServerPlayer;)V", CONQUEROR,
+            "aftershocks", 1},
         {CONTROLLER, "lambda$applyConqueror$1", CONTROLLER, "isConquerorCombatTarget", COMBAT_TARGET, CONQUEROR, "target", 1},
         {CONTROLLER, "lambda$forceMaxConquerorStun$2", CONTROLLER, "isConquerorCombatTarget", COMBAT_TARGET, CONQUEROR, "target", 1},
         // 2.5.1 (the owner: "evil gets one animation (EVIL/Disturbing) and good gets another (Peaceful/in pain)"): the charge's and the
@@ -375,7 +381,7 @@ public final class PiecePatch implements Opcodes {
     /** 2.1.3: methods widened to public (bodies untouched) so HexPiece can call the originals: class, names. */
     static final String[][] WIDENED = {{HAND, "renderArmAura", "renderFirstPerson"}, {COMMANDS, "reply"}, {IMPACT, "drawFlash"},
         {CONTROLLER, "sovereignStrike", "releaseSovereignStrike", "wifiHakiHandPoint", "applyConqueror", "forceMaxConquerorStun",
-            "isConquerorCombatTarget"}, {"com/hexhaki/devilfruit/gameplay/GearServerController", "endGearFive", "switchMode"}};
+            "isConquerorCombatTarget", "scheduleAftershocks"}, {"com/hexhaki/devilfruit/gameplay/GearServerController", "endGearFive", "switchMode"}};
     /**
      * 2.2.5: int constants: class, method, from, to, how many. The Conqueror's supreme (JoyBoy) release asked for mastery 1000: any
      * mastery now ({@link #CALL_REDIRECTS}: no JoyBoy switch either). 2.3.7: the Galaxy Fist's Armament 520.

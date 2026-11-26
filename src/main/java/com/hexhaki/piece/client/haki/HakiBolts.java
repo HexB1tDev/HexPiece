@@ -405,7 +405,7 @@ public final class HakiBolts {
 
     @SubscribeEvent
     public static void stage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || LIVE.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || LIVE.isEmpty() && !ConquerorClashFx.any()) {
             return;
         }
         ClientLevel level = Minecraft.m_91087_().f_91073_;
@@ -503,6 +503,9 @@ public final class HakiBolts {
                 BoltMesh.landing(landing.x - cam.f_82479_, landing.y - cam.f_82480_, landing.z - cam.f_82481_, age, landing.color, landing.size,
                     shine, sink);
             }
+        }
+        if (ConquerorClashFx.any()) {
+            ConquerorClashFx.draw(cam, level, partial, shine, sink); // 3.8.2: the Conqueror's clash's impact, streams and bubble
         }
         write(Minecraft.m_91087_().m_91269_().m_110104_(), pose.m_85850_().m_252922_(), pose.m_85850_().m_252943_(), 0, 0, 0, true);
         BoltMesh.heavy = BoltMesh.heavy(BoltMesh.heavy, SOLID.size + GLOW.size); // 3.8.1: the next frame drawn lighter if this one was heavy

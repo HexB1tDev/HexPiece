@@ -118,9 +118,24 @@ public final class ConquerorRelease {
 
     /** The original's {@code HakiServerController.visual}, with the seed kept. */
     public static void visual(ServerPlayer player, S2CHakiVisual.Visual visual, float power, int variant) {
-        HakiFalls.released(player); // 2.4.4: the bodies it knocks down fall away from it
         long seed = player.m_217043_().m_188505_();
         current = null;
+        boolean conqueror = visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE || visual == S2CHakiVisual.Visual.CONQUEROR_TAP_CONE;
+        if (conqueror && ConquerorClash.busy(player)) {
+            return; // 3.8.2: in a clash: nothing else is let out
+        }
+        if (visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE) {
+            // 3.8.2 (the owner's Conqueror's Haki clash): a release held 2 seconds or more meeting another's charge near collides with it
+            // (server/ConquerorClash): it goes off as neither release, the clash plays instead
+            try {
+                if (ConquerorClash.begin(player, power, ConquerorClash.held(player))) {
+                    return;
+                }
+            } catch (RuntimeException failure) {
+                // the release goes on as a release
+            }
+        }
+        HakiFalls.released(player); // 2.4.4: the bodies it knocks down fall away from it
         if (visual == S2CHakiVisual.Visual.CONQUEROR_RELEASE) {
             SEEDS.put(player.m_19879_(), seed);
             AlignmentSounds.released(player, power); // 2.4.6: an evil player's full release roars
@@ -139,7 +154,7 @@ public final class ConquerorRelease {
     /** In place of the supreme release's permanent destruction: fissures under the storm, that heal. */
     public static void fissures(ServerPlayer player, double radius) {
         Long seed = SEEDS.remove(player.m_19879_());
-        if (seed != null) {
+        if (seed != null && !ConquerorClash.busy(player)) {
             Fissures.open(player, seed, HakiData.mastery(player, HakiType.CONQUEROR));
         }
     }
@@ -150,6 +165,9 @@ public final class ConquerorRelease {
      */
     public static void sound(ServerPlayer player, SoundEvent sound, float volume, float pitch) {
         current = null; // the release is done (its sounds come last)
+        if (ConquerorClash.busy(player)) {
+            return; // 3.8.2: swallowed by a clash, which is heard instead
+        }
         if (sound == ModSounds.CONQUEROR_SUPREME_SNAP.get()) {
             // 3.6.0 (the owner: "Full COnqueror on releasing should not play all the lightning sounds at once, just one"): the full
             // release's one lightning sound is the release's strike (a bass-heavy web thunder, client/haki/LightningSounds lets no other
@@ -158,6 +176,20 @@ public final class ConquerorRelease {
             return;
         }
         HakiServerController.delayedSound(player, sound, volume, pitch);
+    }
+
+    /** 3.8.2: the full release's camera cinematic ({@code HakiNetwork.to} in releaseConqueror), not for a release a clash swallowed. */
+    public static void cinematic(ServerPlayer player, Object message) {
+        if (!ConquerorClash.busy(player)) {
+            com.hexhaki.network.HakiNetwork.to(player, message);
+        }
+    }
+
+    /** 3.8.2: the full release's aftershocks ({@code scheduleAftershocks}), not for a release a clash swallowed. */
+    public static void aftershocks(ServerPlayer player) {
+        if (!ConquerorClash.busy(player)) {
+            HakiServerController.scheduleAftershocks(player);
+        }
     }
 
     /** The full release's rumble ({@code scheduleSupremeAudio}): left out. */
@@ -172,6 +204,7 @@ public final class ConquerorRelease {
 
     /** 2.4.9: called each server tick for a player (AlignmentSounds): the moment their Conqueror's charge fills is kept. */
     static void charging(ServerPlayer player, boolean charging, int charge) {
+        ConquerorClash.charging(player, charging); // 3.8.2: how long each has charged (a clash needs 2 seconds of it on both sides)
         UUID id = player.m_20148_();
         if (!charging) {
             FULL_SINCE.remove(id);
@@ -192,6 +225,9 @@ public final class ConquerorRelease {
      * it hit (the original stunned them 1.5 seconds) for {@link ConquerorStun#TAP}.
      */
     public static void apply(ServerPlayer player, double radius, float power, ConquerorMode mode, boolean joy, boolean maxHold, boolean tapped) {
+        if (ConquerorClash.busy(player)) {
+            return; // 3.8.2: swallowed by a clash
+        }
         Release r = active(player);
         if (r != null && r.tap != tapped) {
             r = null; // not the release this is (never: one release a tick)
@@ -295,6 +331,9 @@ public final class ConquerorRelease {
      * and slowed and weakened for exactly that long ({@link #hold}).
      */
     public static void forceMax(ServerPlayer player, double radius, int ticks) {
+        if (ConquerorClash.busy(player)) {
+            return; // 3.8.2: swallowed by a clash
+        }
         Release r = active(player);
         int stun = r != null ? r.stun : ticks;
         HakiServerController.forceMaxConquerorStun(player, radius, stun);
@@ -334,6 +373,9 @@ public final class ConquerorRelease {
      * releaser's own mount and riders; else the original's (players, hostile mobs, bosses, a mob that targets the releaser).
      */
     public static boolean target(ServerPlayer source, LivingEntity body) {
+        if (ConquerorClash.busy(body)) {
+            return false; // 3.8.2: two locked in a Conqueror's clash are beyond anyone else's release
+        }
         Release r = active(source);
         if (r != null && (r.tap || ConquerorStun.fellsAll(r.alignment, r.full))) {
             return felled(source, body);

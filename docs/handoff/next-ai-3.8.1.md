@@ -122,3 +122,49 @@ HakiVfx read with javap):
 - Not changed: the storm's bolts, the fissures' shape and timing, the release's sounds, stun and throws.
 - Nothing tested in game. Ask the owner how the full release feels now (and whether any lag is left: if so, when: at the release, the
   next two seconds, or 15-25 s later when the ground grows back).
+- 3.8.1's runs: Build #268 and Release #172 green (v3.8.1 is the latest release).
+
+## 4. 3.8.2: the Conqueror's Haki clash (request 1 item 2)
+
+- **Rules (pure, tested):** `haki/ConquerorClashRules`: HOLD_LEAST 40 ticks on both sides; `clashes(releaseHeld, chargeHeld, distance,
+  rRelease, rCharge)` (distance <= the smaller radius); INTRO 30 ticks (the collision, the bar growing in), GAME_MOST 300 (15 s; then
+  whoever is ahead, even: the greater mastery, then A); `weight(mine, theirs)` = 2 (m + 150) / (m + t + 300) (1000 vs 0: 1.69 vs 0.31);
+  TAP 0.045 a tap times the weight; `drift` DRIFT 0.004 x the weights' difference a tick (the stronger presses on its own); TAP_GAP 1
+  tick; `meeting(v)` 0.5 + 0.3 v along A to B; `bubble(gap)` max(8, gap/2 + 5) round the middle; `caught` within SKIN 2 of it;
+  BLAST_SPEED 2.6 a tick level for BLAST_TICKS 14, down BLAST_DOWN 70; the loser THROW_SPEED 3.2 for THROW_TICKS 20 after FINISH 8;
+  `loserStun(winnerAlignment)` = 2 x ConquerorStun.most (800 or 1200 ticks).
+- **Server:** `server/ConquerorClash`: `charging` (when each began charging, from ConquerorRelease.charging), `held`, `busy`, `begin`
+  (from ConquerorRelease.visual at a radial release: the nearest other player charging 2 s+ within both radii
+  (ConquerorLightningPath.radius for each); B's charge ended (HakiData conquerorCharging false, charge 0); both faced to each other
+  (ServerPlayer teleportTo with yaw), the `conqueror_clash` clip on both, ModSounds.CONQUEROR_SUPREME_BLAST, piece.clash,
+  piece.gura.quake, Impact.quake, S2CConquerorClash START), `tap` (C2SConquerorTap), the tick (both held (teleport back past 0.3 blocks,
+  velocity 0), the tug from INTRO, S2C TUG every 2 ticks, WON (the winner's supreme_conqueror_release by alignment), after FINISH the
+  loser launched + ConquerorRelease.hold for the stun, END; GONE if either dies, leaves or changes world), `wind` (every entity but the
+  two, not riding, not a spectator, within the bubble + SKIN: launched outward level), `launch`/`fly` (a Blast: teleportTo along the
+  level line each tick, through blocks, then up to the first room (Level.noCollision, 48 at most); a living body knocked down
+  (HakiFalls.knockDown, its ragdoll) with the blast's velocity set first so it falls away), `attacked` (no damage while flying).
+- **Swallowed releases:** ConquerorRelease.visual (begin, or nothing while busy), apply, forceMax, fissures, sound, `cinematic` and
+  `aftershocks` (new patch redirects in releaseConqueror: HakiNetwork.to (the supreme cinematic) and scheduleAftershocks, widened)
+  do nothing for a player in a clash; `target` never takes a player in a clash (another's release leaves the two alone).
+- **Network:** S2CConquerorClash (id 24; phases START, TUG, WON, END, GONE; both ids, positions, radius, v, colours, masteries, age),
+  C2SConquerorTap (25); PROTOCOL 21.
+- **Client:** `client/haki/ConquerorClashFx`: accept (START: ClashFx's impact frame on the two (an S2CClash with CLASH|OVERWHELMED,
+  power 3) and HakiBolts.clash power 3 at the meeting point; WON: another; END: one at the loser in the winner's colour), tick (the
+  bar eased toward the server's, HakiBolts.clash power 2 every 9 ticks at the meeting point), `attack` (M1 cancelled for the two, a tap
+  sent after INTRO, a soft clash sound), `draw` (from HakiBolts.draw: ClashArt.impact, two ClashArt.stream, ClashArt.bubble,
+  ClashArt.wave), `hud` (ClashBarView for the two; it fades out over 30 ticks after the end). HakiBolts.stage also runs while a clash
+  is on.
+- **Art:** `haki/ClashArt` (pure): impact (CORE 1.9, bursting to BURST 4.2 at the collision, SIDES 36: a white-hot core, a black ink
+  ring (opaque), jagged flares in each half's colour beyond it, facing the eye, split by A's way), stream (16 flowing ribbons of the
+  fighter's colour into the impact), bubble (WIND 56 white streaks racing out, three faint rings), wave (WAVE 16 ticks: a ring facing
+  the eye racing out to 1.6 x the bubble, half in each colour, its foot a white ring on the ground). About 600-900 quads.
+- **The bar:** `ui/ClashBarView` (pure, UiCanvas): at 72% of the screen's height, half width 34% of it (70 to 150); renders:
+  tools/preview/ClashBarPreview (docs/images/clash-bar-3.8.2.png).
+- **The stance:** tools/conqueror_anims.py CLASH `conqueror_clash` (looping 46 ticks, CLASH_IN 6: braced, fists clenched low and
+  flared, leaning in, the head glaring; a tremor, the breath, a surge once a loop); lint clean; rendered and judged.
+- Renders: tools/preview/ConquerorClashPreview (docs/images/conqueror-clash-3.8.2.png: the collision, the pressure wave, the holding
+  clash, the meeting point pushed each way).
+- Tests: LightningTests.conquerorClash (the rules: who clashes, weights, the drift, the tug held at even taps, a lone tapper wins in
+  4 s, a novice cannot out-tap an idle master, time up, the meeting point, the bubble, the stun; the art's budget and finiteness).
+- Not done / to ask: moves other than M1 are not blocked during a clash (the fruit's keys still work while held in place); the camera
+  is left as it is; NPCs never clash (players only, as asked).

@@ -24,7 +24,7 @@ public final class PieceNetwork {
      * C2SItoSky (22), S2CUoFx's two-byte kind. 18 (3.5.7): Fishman Karate removed and Iron Fist emptied: the styles' and their moves'
      * ordinals changed, S2CWater keeps only the knock-down and the air bullets. 19 (3.5.9): C2SPowers (23), R held: every power off
      * or on. 20 (3.6.0): C2SCreate carries the Haki colour, S2COpenCreation the colour page alone. */
-    private static final String PROTOCOL = "20";
+    private static final String PROTOCOL = "21";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -66,6 +66,9 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(22, C2SItoSky.class, C2SItoSky::encode, C2SItoSky::decode, C2SItoSky::handle);
         // 3.5.9: R held, every power off or on (client/CombatMode -> server/Powers)
         CHANNEL.registerMessage(23, C2SPowers.class, C2SPowers::encode, C2SPowers::decode, C2SPowers::handle);
+        // 3.8.2: the Conqueror's Haki clash (server/ConquerorClash, client/haki/ConquerorClashFx)
+        CHANNEL.registerMessage(24, S2CConquerorClash.class, S2CConquerorClash::encode, S2CConquerorClash::decode, S2CConquerorClash::handle);
+        CHANNEL.registerMessage(25, C2SConquerorTap.class, C2SConquerorTap::encode, C2SConquerorTap::decode, C2SConquerorTap::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

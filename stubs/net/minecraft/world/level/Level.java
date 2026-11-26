@@ -22,6 +22,8 @@ public abstract class Level implements LevelAccessor {
     /** isRainingAt(pos): rain falling on that block (open sky, a rainy biome) (4.1.15: a kiss in the rain) */ public boolean m_46758_(net.minecraft.core.BlockPos pos) { throw new UnsupportedOperationException(); }
     /** getRandom (the original HexHaki jar calls it on ServerLevel) */ public net.minecraft.util.RandomSource m_213780_() { throw new UnsupportedOperationException(); }
     /** addFreshEntity */ public boolean m_7967_(net.minecraft.world.entity.Entity entity) { throw new UnsupportedOperationException(); }
+    /** 3.8.2: getEntities(except, box) (EntityGetter's; the original calls it on ServerLevel) */ public java.util.List<net.minecraft.world.entity.Entity> m_45933_(net.minecraft.world.entity.Entity except, net.minecraft.world.phys.AABB box) { throw new UnsupportedOperationException(); }
+
     /** getEntitiesOfClass */ public <T extends net.minecraft.world.entity.Entity> java.util.List<T> m_6443_(Class<T> type, net.minecraft.world.phys.AABB box, java.util.function.Predicate<? super T> filter) { throw new UnsupportedOperationException(); }
     /** blockEvent(pos, block, type, data) (1.3.29: a chest's lid up while it is tidied) */ public void m_7696_(net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.Block block, int type, int data) { throw new UnsupportedOperationException(); }
 }

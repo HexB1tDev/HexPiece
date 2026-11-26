@@ -45,7 +45,9 @@ SUPREME = "supreme_conqueror_release"
 PARTIAL = "conqueror_gear5_release"
 GOOD = ("conqueror_good_charge", "conqueror_good_release", "conqueror_good_release_partial")
 EVIL = ("conqueror_evil_charge", "conqueror_evil_release", "conqueror_evil_release_partial")
-NAMES = (CHARGE, SUPREME, PARTIAL) + GOOD + EVIL
+# 3.8.2: the Conqueror's Haki clash (server/ConquerorClash): both fighters braced against the other's Haki, looping until it ends
+CLASH = "conqueror_clash"
+NAMES = (CHARGE, SUPREME, PARTIAL) + GOOD + EVIL + (CLASH,)
 # every part a pose may name (the legs and the body's other channels are only ever zero here and never written)
 PARTS = {
     "body": ("x", "y", "z", "pitch", "yaw", "roll", "bend"),
@@ -378,6 +380,42 @@ def evil_release(length, reach, laugh_end, drop):
 
 # ------------------------------------------------------------------------------------------------------------- the files
 
+# ------------------------------------------------------------------------------------------------------------- the clash
+# 3.8.2: braced against the other's Haki: the body leaned into it, the fists clenched low and a little back, the elbows bent and flared,
+# the chest pushed forward, the head held level glaring ahead; straining: a tremor through the arms and head, the breath heaving, a surge
+# of effort leaning in harder once a loop (every wave whole cycles in the loop; the ends the same).
+CLASH_IN = 6
+BRACE = pose(arm(pitch=4, yaw=4, roll=20, bend=-30), body={"bend": 18}, head={"pitch": -18})
+SURGE = nudge(BRACE, {("body", "bend"): 6, ("arms", "roll"): 7, ("arms", "bend"): -10, ("arms", "pitch"): 6, ("head", "pitch"): -5})
+
+
+def clash_pose(t):
+    if t <= CLASH_IN:
+        return mix({}, BRACE, smooth(t / CLASH_IN))
+    u = t - CLASH_IN
+    surge = 0.5 - 0.5 * math.cos(2 * math.pi * u / LOOP)
+    q = mix(BRACE, SURGE, surge)
+    b = math.sin(2 * math.pi * 2 * u / LOOP)
+    q = nudge(q, {("body", "bend"): 2.0 * b, ("head", "pitch"): -1.5 * b, ("arms", "pitch"): -1.5 * b})
+    a, c, e = wave(u, SHAKE_A), wave(u, SHAKE_B), wave(u, SHAKE_C)
+    amp = 0.6 + 0.4 * surge
+    q["rightArm"]["roll"] += 4.0 * amp * a
+    q["leftArm"]["roll"] -= 4.0 * amp * c
+    q["rightArm"]["bend"] += 3.5 * amp * c
+    q["leftArm"]["bend"] += 3.5 * amp * e
+    q["head"]["roll"] += 2.0 * amp * a
+    q["head"]["yaw"] += 1.4 * amp * c
+    q["head"]["pitch"] += 1.2 * amp * e
+    return q
+
+
+def clash_beats():
+    beats = [(0, "linear", channels({}))]
+    for t in range(1, CLASH_IN + LOOP + 1):
+        beats.append((t, "outquad" if t <= CLASH_IN else "linear", clash_pose(t)))
+    return beats
+
+
 def write(name, beats, end, stop, loop, ret, description):
     """The file: one move a beat holding every channel of the upper body (WRITTEN), one per line."""
     moves = []
@@ -432,6 +470,10 @@ def main():
           "arched, a shaking laugh, then the head drops limp and the arms fall.")
     write(EVIL[2], evil_release(48, 0.6, 20, 26), 48, 48, False, 0,
           "Conqueror's Haki, a partial charge let go (evil): the head snaps up, the arms half spread, a short laugh, then limp.")
+    write(CLASH, clash_beats(), CLASH_IN + LOOP, CLASH_IN + LOOP, True, CLASH_IN,
+          "Conqueror's Haki clash (3.8.2): braced against the other's Haki, the body leaned into it, the fists clenched low and a little "
+          "back, the elbows flared, the head level glaring ahead; straining, a tremor through the arms and head, the breath heaving, a "
+          "surge of effort leaning in harder once a loop. The upper body only; loops until the clash ends.")
     for name in NAMES:
         problems = anim.lint(anim.load(os.path.join(OUT, name + ".json")))
         print(f"{name}: {'clean' if not problems else problems[:6]}")

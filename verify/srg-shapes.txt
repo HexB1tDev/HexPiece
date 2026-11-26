@@ -314,6 +314,7 @@ m_280056_ (Leov;Ljava/lang/String;IIIZ)I
 m_280168_ ()Leij;
 m_280411_ (Lacq;IIIIFFIIII)V
 m_280509_ (IIIII)V
+m_284548_ ()Laif;
 m_286007_ (Ljava/lang/Runnable;)V
 m_35942_ ()F
 m_35943_ (F)V
@@ -328,6 +329,7 @@ m_41783_ ()Lqr;
 m_45547_ (Lclv;)Leee;
 m_45756_ (Lbfj;Leed;)Z
 m_45786_ (Lbfj;)Z
+m_45933_ (Lbfj;Leed;)Ljava/util/List;
 m_46207_ (Lcmi$e;)Z
 m_46467_ ()J
 m_46469_ ()Lcmi;
@@ -450,7 +452,6 @@ m_6084_ ()Z
 m_6095_ ()Lbfn;
 m_6117_ ()Z
 m_6122_ (IIII)Lein;
-m_6144_ ()Z
 m_6147_ ()Z
 m_6162_ ()Z
 m_6263_ (Lbyo;DDDLamg;Lami;FF)V
@@ -610,6 +611,7 @@ m_85915_ ()Leie;
 m_85950_ (FFFF)Lein;
 m_85969_ (I)Lein;
 m_86008_ (I)Lein;
+m_8999_ (Laif;DDDFF)V
 m_90583_ ()Leei;
 m_90612_ ()Z
 m_90832_ (II)Z

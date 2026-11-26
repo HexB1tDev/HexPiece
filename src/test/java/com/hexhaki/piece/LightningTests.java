@@ -422,6 +422,7 @@ public final class LightningTests {
         Check.that(BoltMesh.heavy(false, 12000) && BoltMesh.heavy(true, 7000) && !BoltMesh.heavy(true, 3000) && !BoltMesh.heavy(false, 7000),
             "a frame over the budget makes the next heavy, light again only well under it (no flicker between)");
         heavyStorm();
+        conquerorClash();
         int[] counts = {0, 0};
         BoltMesh.ring(0, -1.6, 0, 6, 100, 0xFFFF1433, 1.0, (glow, v, c) -> {
             counts[glow ? 1 : 0]++;
@@ -431,6 +432,77 @@ public final class LightningTests {
         int[] gone = {0};
         BoltMesh.ring(0, -1.6, 0, BoltMesh.WAVE + 0.5, 100, 0xFFFF1433, 1.0, (glow, v, c) -> gone[0]++);
         Check.that(gone[0] == 0, "the shockwave is gone once it has swept out");
+    }
+
+    /** 3.8.2: the Conqueror's Haki clash's rules and art (haki/ConquerorClashRules, haki/ClashArt). */
+    static void conquerorClash() {
+        Check.that(com.hexhaki.piece.haki.ConquerorClashRules.clashes(40, 40, 10, 20, 15), "two held 2 s within both radii clash");
+        Check.that(!com.hexhaki.piece.haki.ConquerorClashRules.clashes(39, 60, 10, 20, 15)
+            && !com.hexhaki.piece.haki.ConquerorClashRules.clashes(60, 20, 10, 20, 15), "under 2 seconds of charge on either side: no clash");
+        Check.that(!com.hexhaki.piece.haki.ConquerorClashRules.clashes(60, 60, 16, 20, 15), "beyond either's radius: no clash");
+        Check.near(com.hexhaki.piece.haki.ConquerorClashRules.weight(500, 500), 1.0, 1e-9, "even masteries weigh the same");
+        double strong = com.hexhaki.piece.haki.ConquerorClashRules.weight(1000, 0);
+        double weak = com.hexhaki.piece.haki.ConquerorClashRules.weight(0, 1000);
+        Check.that(strong / weak > 5.0 && strong + weak == 2.0, "a master's tap pushes far more than a novice's (" + strong + " vs " + weak + ")");
+        Check.that(com.hexhaki.piece.haki.ConquerorClashRules.drift(1000, 0) > 0 && com.hexhaki.piece.haki.ConquerorClashRules.drift(0, 1000) < 0
+            && com.hexhaki.piece.haki.ConquerorClashRules.drift(300, 300) == 0, "the stronger Haki presses on its own, even ones not at all");
+        // even masteries, equal taps: the bar holds; one side tapping 8 a second against none wins within 4 seconds
+        double v = 0;
+        for (int t = 0; t < 100; t++) {
+            v = com.hexhaki.piece.haki.ConquerorClashRules.step(v, t % 3 == 0 ? 1 : 0, t % 3 == 0 ? 1 : 0, 400, 400);
+        }
+        Check.near(v, 0.0, 1e-9, "equal taps at even masteries hold the bar");
+        v = 0;
+        int won = 0;
+        int ticks = 0;
+        while (won == 0 && ticks < 300) {
+            v = com.hexhaki.piece.haki.ConquerorClashRules.step(v, ticks % 5 < 2 ? 1 : 0, 0, 400, 400);
+            won = com.hexhaki.piece.haki.ConquerorClashRules.winner(v, false, 400, 400);
+            ticks++;
+        }
+        Check.that(won == 1 && ticks <= 80, "tapping alone wins within 4 seconds (" + ticks + " ticks)");
+        // a novice tapping 8 a second against a master who does not tap still loses
+        v = 0;
+        won = 0;
+        ticks = 0;
+        while (won == 0 && ticks < 300) {
+            v = com.hexhaki.piece.haki.ConquerorClashRules.step(v, 0, ticks % 5 < 2 ? 1 : 0, 1000, 0);
+            won = com.hexhaki.piece.haki.ConquerorClashRules.winner(v, false, 1000, 0);
+            ticks++;
+        }
+        Check.that(won != -1, "a novice cannot out-tap an idle master");
+        Check.that(com.hexhaki.piece.haki.ConquerorClashRules.winner(0.2, true, 0, 0) == 1
+            && com.hexhaki.piece.haki.ConquerorClashRules.winner(0.0, true, 100, 900) == -1
+            && com.hexhaki.piece.haki.ConquerorClashRules.winner(0.5, false, 0, 0) == 0, "time up: whoever is ahead, then the greater mastery");
+        Check.near(com.hexhaki.piece.haki.ConquerorClashRules.meeting(0), 0.5, 1e-9, "they meet in the middle at the start");
+        Check.that(com.hexhaki.piece.haki.ConquerorClashRules.meeting(1) > 0.75 && com.hexhaki.piece.haki.ConquerorClashRules.meeting(-1) < 0.25,
+            "the meeting point is pushed toward the one losing");
+        Check.near(com.hexhaki.piece.haki.ConquerorClashRules.bubble(20), 15, 1e-9, "the bubble holds both with room");
+        Check.that(com.hexhaki.piece.haki.ConquerorClashRules.caught(16.5, 15) && !com.hexhaki.piece.haki.ConquerorClashRules.caught(17.5, 15),
+            "the wind takes what comes near its skin");
+        Check.that(com.hexhaki.piece.haki.ConquerorClashRules.loserStun(-100) == 2 * com.hexhaki.piece.haki.ConquerorStun.HOLD_MAX
+            && com.hexhaki.piece.haki.ConquerorClashRules.loserStun(100) == 2 * com.hexhaki.piece.haki.ConquerorStun.GOOD_MAX,
+            "the loser is stunned double the winner's longest Conqueror's stun");
+        // the art: within a small budget, finite, every quad facing the eye or flat
+        int[] quads = {0};
+        boolean[] finite = {true};
+        BoltMesh.Sink sink = (glow, xyz, argb) -> {
+            quads[0]++;
+            for (double x : xyz) {
+                finite[0] &= Double.isFinite(x);
+            }
+        };
+        for (double age = 0; age < 60; age += 7.3) {
+            quads[0] = 0;
+            com.hexhaki.piece.haki.ClashArt.impact(3, 1, 9, -1, 0, 0, age, 0xFF2233, 0x2266FF, 1.0, sink);
+            com.hexhaki.piece.haki.ClashArt.stream(new double[] {-4, 1, 9}, new double[] {3, 1, 9}, age, 0xFF2233, 1.0, sink);
+            com.hexhaki.piece.haki.ClashArt.stream(new double[] {10, 1, 9}, new double[] {3, 1, 9}, age, 0x2266FF, 1.0, sink);
+            com.hexhaki.piece.haki.ClashArt.bubble(new double[] {3, 0, 9}, 12, age, 1.0, sink);
+            Check.that(quads[0] > 100 && quads[0] < 1200, "the clash's art stays within its budget (" + quads[0] + " quads)");
+        }
+        Check.that(finite[0], "the clash's art is finite");
+        Check.that(com.hexhaki.piece.haki.ClashArt.radius(0) > com.hexhaki.piece.haki.ClashArt.radius(40) * 1.8,
+            "the impact bursts big at the collision and settles");
     }
 
     /**
