@@ -285,3 +285,27 @@ Every weapon the owner gives comes with one of these categories and is made with
   draw and sheathing stay.
 - Render: docs/images/saber-yoko-3.8.6.png (the katanas' yoko over the Saber's, three-quarter and side).
 - Next (section 7): the Mace and the Gun from input/newmodels/NewModels.zip, the clothes; the Saber's kesa and makko.
+
+## 10. The owner's Blender files, opened (bpy 5.3 in /tmp/bpy; the scratchpad's inspect_blend.py lists them)
+
+- **First_gun.blend**: a flintlock pistol, cel-shaded by materials only (no images): `Flintlock • grip pivot` (an empty, the grip's
+  pivot: every part its child): `Brass barrel • stepped crown` (1904 verts; 'Cel • lemon brass', 'Front rim • reflected sky'), `Brass
+  collar`, `Recessed collar at stock`, `Chestnut stock` ('Cel • chestnut'), `Gilt side plate` x2, `Wide gilt guard`, `Underslung rod
+  and rolled end`, `Rod end • inset`, `Dark muzzle face` ('Muzzle • inner shadow'), `Rear lock thumb disc`, brass pivot medallions x4,
+  gold lock pins x8, pin markings and pivot recesses ('Ink • sepia'); ~130 CURVE objects drawing the ink lines (Inset lip hatch, Rim
+  hatch, Stock grain, Longitudinal ink, Pivot ink ring, Rod cap mark, Lock accent, Gold lever, Gold trigger silhouette, Inlaid sweeping
+  line): convert them to meshes (bevelled curves) or bake them as dark strips. About 2.2 units long. **`Cast lead ball`** (child of
+  `Round shot • pivot`, 'Cel • round shot', 0.31 across): the owner's bullet ("bullets are also the same model from now on (I'll send
+  it)": this looks like it; confirm with the owner). Cameras: 'Camera', 'Profile • full silhouette'.
+- **First_mace.blend**: `Continuous tapered iron body` (2304 verts, 0.9 x 0.9 x 5.05, 'Blued black iron'), spikes in rows (Spike 01.1
+  to 03.x, 0.18 to 0.31 tall), `Suspension ring` at its end: a black spiked iron club (kanabo-like). Lights and a camera only else.
+- **Clothes_Replacements.blend**: four outfits, each on its own rig (10 bones): Marine uniform, Admiral coat, Straw hat, Blackbeard coat
+  (cameras '0N / <outfit> / Front|Back'; meshes: bare arms, boots and welts, brass buttons with gilt faces, a blind turned hem, ...):
+  replacements for the clothes in game (PieceArmor / armor models): map each to the armor piece it replaces (ask the owner which).
+- The plan for the Mace and the Gun (not started): bake each to the blades' HKM2 mesh (tools/katana_mesh.py's format; write an
+  exporter like tools/leopard_bake.py: bpy -> triangles with per-material colours into a small atlas), add the weapon as a Katana
+  entry of category MACE / GUN (or its own item if the sword system does not fit a gun), its poses and moves (sword_anims.py: the
+  Mace's back carry like Yoru's, the slow draw, the shoulder idle (sword_anims carry() has a shoulder pose), slow cocking then fast
+  swings: its own timing, so its own SwordMoves or a per-category time warp with matching hit windows; the ragdoll on hit:
+  HakiFalls.knockDown), the Gun's (right-hand poses, the relaxed lowered idle, the spin, the run, the reload, one bullet a shot, a
+  bullet entity: the lead ball, black and faster through up to 10 blocks with Haki on).
