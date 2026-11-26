@@ -309,3 +309,8 @@ Every weapon the owner gives comes with one of these categories and is made with
   swings: its own timing, so its own SwordMoves or a per-category time warp with matching hit windows; the ragdoll on hit:
   HakiFalls.knockDown), the Gun's (right-hand poses, the relaxed lowered idle, the spin, the run, the reload, one bullet a shot, a
   bullet entity: the lead ball, black and faster through up to 10 blocks with Haki on).
+
+## 11. The owner, after 3.8.6's summary (verbatim)
+"Never stop i mean it"
+- STANDING: keep working through the list without pausing for a reply (the Mace, the Gun, the clothes, the Saber's kesa and makko,
+  then the Leopard's moves), releasing each step; at 98% weekly usage write the handoff and next prompt first, push and stop.
