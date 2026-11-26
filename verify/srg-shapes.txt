@@ -67,6 +67,7 @@ f_20883_
 f_20884_
 f_20885_
 f_20886_
+f_216232_
 f_22276_
 f_22277_
 f_22278_
@@ -77,6 +78,7 @@ f_233555_
 f_252403_
 f_252436_
 f_252529_
+f_256746_
 f_268419_
 f_268576_
 f_268671_
@@ -248,6 +250,8 @@ m_20674_ ()Lbgc;
 m_20699_ (FF)Lbfn$a;
 m_20702_ (I)Lbfn$a;
 m_20704_ (Lbfn$b;Lbgc;)Lbfn$a;
+m_207113_ ()I
+m_207115_ ()I
 m_20712_ (Ljava/lang/String;)Lbfn;
 m_20717_ (I)Lbfn$a;
 m_21023_ (Lbey;)Z
@@ -268,6 +272,7 @@ m_21552_ ()Lbhf$a;
 m_21557_ (Z)V
 m_21563_ ()Lblx;
 m_21573_ ()Lbpj;
+m_216238_ (Lcom/mojang/serialization/MapCodec;)Laou;
 m_217043_ ()Lapf;
 m_22100_ (D)V
 m_22265_ ()Lbhf;
@@ -511,6 +516,7 @@ m_7106_ (Lit;DDDDDD)V
 m_7200_ ()Lfbf;
 m_7270_ ()Leei;
 m_7292_ (Lbfa;)Z
+m_7328_ ()J
 m_7392_ (Lbfi;FFLeij;Lfjx;I)V
 m_7392_ (Lbfj;FFLeij;Lfjx;I)V
 m_7392_ (Lbfp;FFLeij;Lfjx;I)V

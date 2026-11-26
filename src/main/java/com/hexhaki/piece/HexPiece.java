@@ -23,6 +23,7 @@ public final class HexPiece {
         PieceSounds.register(bus);
         PieceConfig.register();
         PieceEffects.register(bus);
+        com.hexhaki.piece.world.RiverLines.register(bus); // 3.8.3: the archipelago's rivers (hexhaki:river_lines)
         // 2.7.0: the Uo Uo no Mi (the original's fruit enum's UO, PiecePatch.uoFruit) and its kit, the dragon form
         com.hexhaki.fruit.Fruits.register(com.hexhaki.fruit.Fruit.UO, com.hexhaki.piece.server.UoKit::new);
         // 2.7.8: the Pika Pika no Mi rebuilt after Kizaru, in place of the original's LightKit (registered just before this)

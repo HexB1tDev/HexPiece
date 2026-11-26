@@ -7,5 +7,6 @@ public class Registries {
     /** STRUCTURE_TYPE */ public static final net.minecraft.resources.ResourceKey<net.minecraft.core.Registry<net.minecraft.world.level.levelgen.structure.StructureType<?>>> f_256938_ = null;
     /** STRUCTURE (4.1.9) */ public static final net.minecraft.resources.ResourceKey<net.minecraft.core.Registry<net.minecraft.world.level.levelgen.structure.Structure>> f_256944_ = null;
     /** STRUCTURE_SET (4.1.9) */ public static final net.minecraft.resources.ResourceKey<net.minecraft.core.Registry<net.minecraft.world.level.levelgen.structure.StructureSet>> f_256998_ = null;
+    /** DENSITY_FUNCTION_TYPE (3.8.3) */ public static final net.minecraft.resources.ResourceKey<net.minecraft.core.Registry<com.mojang.serialization.Codec<? extends net.minecraft.world.level.levelgen.DensityFunction>>> f_256746_ = null;
     /** BIOME (4.1.1) */ public static final net.minecraft.resources.ResourceKey<net.minecraft.core.Registry<Object>> f_256952_ = null;
 }

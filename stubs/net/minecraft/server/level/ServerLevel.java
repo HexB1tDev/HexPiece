@@ -2,6 +2,8 @@
 package net.minecraft.server.level;
 
 public class ServerLevel extends net.minecraft.world.level.Level {
+    /** 3.8.3: getSeed (WorldGenLevel's) */ public long m_7328_() { throw new UnsupportedOperationException(); }
+
     /** getMinBuildHeight (2.1.4) */ public int m_141937_() { throw new UnsupportedOperationException(); }
     /** getMaxBuildHeight (2.1.4) */ public int m_151558_() { throw new UnsupportedOperationException(); }
     /** getServer */ public net.minecraft.server.MinecraftServer m_7654_() { throw new UnsupportedOperationException(); }

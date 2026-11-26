@@ -1,0 +1,164 @@
+{
+  "type": "minecraft:flat_cache",
+  "argument": {
+    "type": "minecraft:cache_2d",
+    "argument": {
+      "type": "minecraft:add",
+      "argument1": {
+        "type": "minecraft:min",
+        "argument1": {
+          "type": "minecraft:add",
+          "argument1": "hexhaki:vanilla/offset",
+          "argument2": {
+            "type": "minecraft:mul",
+            "argument1": {
+              "type": "minecraft:spline",
+              "spline": {
+                "coordinate": "minecraft:overworld/continents",
+                "points": [
+                  {
+                    "location": -0.27,
+                    "value": 0.0,
+                    "derivative": 0.0
+                  },
+                  {
+                    "location": -0.21,
+                    "value": 1.0,
+                    "derivative": 0.0
+                  },
+                  {
+                    "location": -0.1,
+                    "value": 1.0,
+                    "derivative": 0.0
+                  },
+                  {
+                    "location": -0.035,
+                    "value": 0.0,
+                    "derivative": 0.0
+                  }
+                ]
+              }
+            },
+            "argument2": {
+              "type": "minecraft:add",
+              "argument1": {
+                "type": "minecraft:spline",
+                "spline": {
+                  "coordinate": "minecraft:overworld/continents",
+                  "points": [
+                    {
+                      "location": -0.27,
+                      "value": -0.609375,
+                      "derivative": 0.0
+                    },
+                    {
+                      "location": -0.21,
+                      "value": -0.54296875,
+                      "derivative": 0.0
+                    },
+                    {
+                      "location": -0.17,
+                      "value": -0.5171875,
+                      "derivative": 0.0
+                    },
+                    {
+                      "location": -0.135,
+                      "value": -0.503125,
+                      "derivative": 0.0
+                    },
+                    {
+                      "location": -0.1,
+                      "value": -0.490625,
+                      "derivative": 0.0
+                    },
+                    {
+                      "location": -0.035,
+                      "value": -0.45703125,
+                      "derivative": 0.0
+                    }
+                  ]
+                }
+              },
+              "argument2": {
+                "type": "minecraft:mul",
+                "argument1": -1.0,
+                "argument2": "hexhaki:vanilla/offset"
+              }
+            }
+          }
+        },
+        "argument2": {
+          "type": "minecraft:spline",
+          "spline": {
+            "coordinate": "minecraft:overworld/ridges_folded",
+            "points": [
+              {
+                "location": -1.0,
+                "value": -0.5546875,
+                "derivative": 0.0
+              },
+              {
+                "location": -0.885,
+                "value": -0.546875,
+                "derivative": 0.0
+              },
+              {
+                "location": -0.79,
+                "value": -0.4984375,
+                "derivative": 0.0
+              },
+              {
+                "location": -0.7,
+                "value": -0.375,
+                "derivative": 0.0
+              },
+              {
+                "location": -0.58,
+                "value": 0.171875,
+                "derivative": 0.0
+              }
+            ]
+          }
+        }
+      },
+      "argument2": {
+        "type": "minecraft:spline",
+        "spline": {
+          "coordinate": "minecraft:overworld/continents",
+          "points": [
+            {
+              "location": -1.2,
+              "value": -0.27,
+              "derivative": 0.0
+            },
+            {
+              "location": -0.7,
+              "value": -0.25,
+              "derivative": 0.0
+            },
+            {
+              "location": -0.455,
+              "value": -0.18,
+              "derivative": 0.0
+            },
+            {
+              "location": -0.3,
+              "value": -0.1,
+              "derivative": 0.0
+            },
+            {
+              "location": -0.19,
+              "value": -0.025,
+              "derivative": 0.0
+            },
+            {
+              "location": -0.11,
+              "value": 0.0,
+              "derivative": 0.0
+            }
+          ]
+        }
+      }
+    }
+  }
+}

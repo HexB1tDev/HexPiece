@@ -226,3 +226,31 @@ M net/minecraft/world/entity/EntityType m_20674_ ()Lnet/minecraft/world/entity/M
 #          reads them; Photon's own members keep their names in its Forge jar.
 M com/lowdragmc/photon/client/gameobject/emitter/data/EmissionSetting$Burst getCount ()Lcom/lowdragmc/photon/client/gameobject/emitter/data/number/NumberFunction;   # [photon] EmissionSetting.java:148-152 "@Setter @Getter ... protected NumberFunction count" in the static class Burst (the original calls its setCount)
 M com/lowdragmc/photon/client/gameobject/emitter/data/number/NumberFunction get (FLjava/util/function/Supplier;)Ljava/lang/Number;   # [photon] number/NumberFunction.java:79 "Number get(float t, Supplier<Float> lerp);" (interface method; Constant.java:43 returns its number)
+# --- 3.8.3: the archipelago world generation: the rivers' density function (world/RiverLines) -------------------------------------
+# [srg] MCPConfig 1.20.1 joined.tsrg joined with FabricMC intermediary 1.20.1.tiny on the obfuscated names; the classes named by Yarn
+#       1.20.1 (FabricMC/yarn branch 1.20.1, mappings/...): dhd = class_6910 DensityFunction (Mojang
+#       net/minecraft/world/level/levelgen/DensityFunction), dhd$b = its FunctionContext (yarn NoisePos), dhd$a ContextProvider (yarn
+#       EachApplier), dhd$d SimpleFunction (yarn Base), dhd$f Visitor (yarn DensityFunctionVisitor), aou = class_7243
+#       KeyDispatchDataCodec (yarn CodecHolder), class_7924 Registries (yarn RegistryKeys), class_5281 WorldGenLevel.
+C net/minecraft/world/level/levelgen/DensityFunction                                    # [srg] dhd, intermediary class_6910
+C net/minecraft/world/level/levelgen/DensityFunction$FunctionContext                    # [srg] dhd$b, class_6910$class_6912
+C net/minecraft/world/level/levelgen/DensityFunction$ContextProvider                    # [srg] dhd$a, class_6910$class_6911
+C net/minecraft/world/level/levelgen/DensityFunction$Visitor                            # [srg] dhd$f, class_6910$class_6915
+C net/minecraft/world/level/levelgen/DensityFunction$SimpleFunction                     # [srg] dhd$d, class_6910$class_6913 (defaults fillArray, mapAll)
+M net/minecraft/world/level/levelgen/DensityFunction m_207386_ (Lnet/minecraft/world/level/levelgen/DensityFunction$FunctionContext;)D   # [srg] compute: dhd method_40464 (yarn sample) -> m_207386_
+M net/minecraft/world/level/levelgen/DensityFunction m_207362_ ([DLnet/minecraft/world/level/levelgen/DensityFunction$ContextProvider;)V   # [srg] fillArray: method_40470 (yarn fill) -> m_207362_
+M net/minecraft/world/level/levelgen/DensityFunction m_207456_ (Lnet/minecraft/world/level/levelgen/DensityFunction$Visitor;)Lnet/minecraft/world/level/levelgen/DensityFunction;   # [srg] mapAll: method_40469 (yarn apply) -> m_207456_
+M net/minecraft/world/level/levelgen/DensityFunction m_207402_ ()D                      # [srg] minValue: comp_377 -> m_207402_
+M net/minecraft/world/level/levelgen/DensityFunction m_207401_ ()D                      # [srg] maxValue: comp_378 -> m_207401_
+M net/minecraft/world/level/levelgen/DensityFunction m_214023_ ()Lnet/minecraft/util/KeyDispatchDataCodec;   # [srg] codec: method_41062 (yarn getCodecHolder) -> m_214023_
+M net/minecraft/world/level/levelgen/DensityFunction$FunctionContext m_207115_ ()I      # [srg] blockX: dhd$b comp_371 -> m_207115_
+M net/minecraft/world/level/levelgen/DensityFunction$FunctionContext m_207113_ ()I      # [srg] blockZ: dhd$b comp_373 -> m_207113_
+M net/minecraft/world/level/levelgen/DensityFunction$ContextProvider m_207207_ ([DLnet/minecraft/world/level/levelgen/DensityFunction;)V   # [srg] fillAllDirectly: dhd$a method_40478 (yarn fill) -> m_207207_ (the stub's SimpleFunction default)
+C net/minecraft/util/KeyDispatchDataCodec                                               # [srg] aou, intermediary class_7243 (a record)
+M net/minecraft/util/KeyDispatchDataCodec m_216238_ (Lcom/mojang/serialization/MapCodec;)Lnet/minecraft/util/KeyDispatchDataCodec;   # [srg] of(MapCodec): aou method_42116 -> m_216238_
+M net/minecraft/util/KeyDispatchDataCodec f_216232_ ()Lcom/mojang/serialization/Codec;   # [srg] codec(): the record component comp_640's accessor, SRG f_216232_ (Forge names a record's accessor as its field)
+F net/minecraft/core/registries/Registries f_256746_ Lnet/minecraft/resources/ResourceKey;   # [srg] DENSITY_FUNCTION_TYPE: class_7924 field_41264 -> f_256746_
+M net/minecraft/server/level/ServerLevel m_7328_ ()J                                   # [srg] getSeed: class_5281 (WorldGenLevel) method_8412 -> m_7328_, ServerLevel's own
+C net/minecraftforge/event/level/LevelEvent$Load                                        # [forge] 1.20.1 event/level/LevelEvent.java (Load extends LevelEvent; posted as each ServerLevel is made)
+M net/minecraftforge/event/level/LevelEvent$Load getLevel ()Lnet/minecraft/world/level/LevelAccessor;   # [forge] LevelEvent.getLevel
+M com/mojang/serialization/MapCodec unit (Ljava/lang/Object;)Lcom/mojang/serialization/MapCodec;   # [lib] DataFixerUpper (Mojang/DataFixerUpper, serialization/MapCodec.java "public static <A> MapCodec<A> unit(final A defaultValue)"; static since DFU 4, Minecraft 1.20.1 ships 6.0.8): vanilla's own unit density functions (DensityFunctions.BlendAlpha) are coded with it

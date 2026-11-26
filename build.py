@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.8.2"
+VERSION = "3.8.3"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -149,6 +149,8 @@ NEW_PREFIXES = (
     "assets/hexhaki/sounds/piece/",
     "assets/hexhaki/lang/",
     "data/hexhaki/",
+    # 3.8.3: the archipelago world generation (tools/archipelago_data.py): the overworld's terrain inputs replaced
+    "data/minecraft/worldgen/density_function/overworld/",
     "assets/hexhaki/dragon/",
     # 3.6.8: the owner's phoenix (tools/phoenix_bake.py: input/marco_phoenix.zip baked)
     "assets/hexhaki/phoenix/",
