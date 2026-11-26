@@ -230,7 +230,7 @@ thrown by the ratio) compared. What HexPiece lacked, now done:
 
 ## 7. What to do next (in order)
 
-1. Check 3.8.4's runs (Build and Release on the branch) are green.
+1. 3.8.4 green (Release #175; Build #271 was cancelled by the next push, Build #272 on the same code green). Check 3.8.5's runs.
 2. The owner's word on 3.8.1 (the release's lag), 3.8.2 (the Conqueror's clash), 3.8.3 (the archipelago: needs a new world),
    3.8.4 (the clashes) comes first: write it verbatim here, fix, render, release.
 3. The weapon reworks (section 2; the owner put them after the world and the Conqueror's Haki, both done):
@@ -258,3 +258,12 @@ Every weapon the owner gives comes with one of these categories and is made with
 - **Gun** (pistols): right hand, a badass pose; one bullet a shot, reloads by itself (one bullet into the barrel's mouth); every bullet
   the same model (the owner sends it); Haki on: pure black bullets, much faster, through blocks (10 at most); relaxed lowered poses
   pointing at the floor, spun on the hand, a running animation; these animations for every gun.
+
+## 8. 3.8.5: a drawn blade forces third person (the first weapon rework)
+
+- `client/sword/SwordCamera`: each client tick, one's own blade drawn (SwordClient.katana + SwordAnims.drawn: the guard between
+  cuts counts as drawn) and the view first person -> THIRD_PERSON_BACK (again whenever picked while drawn); sheathed and it came from
+  first person -> FIRST_PERSON. `position(entity, partial)` (asked by client/dragon/DragonCamera.position, the original's camera
+  hook, before Gear 5's giant): third person from behind, eased in by GLIDE 0.2 a tick: SHOULDER 0.85 to the right, UP 0.3, BACK 3.1
+  (the game's 4), clipped by DragonCamera.clip. Nothing rendered (a camera place, not a model or a clip).
+- Next: the categories (THE STANDING RULE), the Saber's more aggressive cuts, the Mace, the Gun, the clothes (section 7).

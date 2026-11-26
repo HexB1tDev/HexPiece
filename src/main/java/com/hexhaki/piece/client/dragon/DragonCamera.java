@@ -58,6 +58,11 @@ public final class DragonCamera {
             if (iron != null) {
                 return iron;
             }
+            // 3.8.5: a swordsman's blade out: over the right shoulder (client/sword/SwordCamera)
+            Vec3 sword = com.hexhaki.piece.client.sword.SwordCamera.position(entity, partial);
+            if (sword != null) {
+                return sword;
+            }
             // 3.4.9: Gear 5's giant has a camera its size (client/gear/GiantCamera)
             return com.hexhaki.piece.client.gear.GiantCamera.position(entity, partial);
         } catch (RuntimeException e) {
