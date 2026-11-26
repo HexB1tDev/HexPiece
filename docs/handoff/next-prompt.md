@@ -18,7 +18,7 @@ the head or unused limbs, a first-person hand move per move, CC0 web sounds); wi
 fruit throws the Conqueror's lightning, out of its end explosion when it has one; ONE Haki lightning in the game, the Conqueror's
 release's (3D tubes with needle tips). Never add another lightning look.
 
-Do next, in this order: (1) check 3.8.5's runs (Build and Release on the branch) are green (3.8.1 to 3.8.4 were); (2) the owner's word on 3.8.1 to 3.8.4 in
+Do next, in this order: (1) check 3.8.6's runs (Build and Release on the branch) are green (3.8.1 to 3.8.5 were); (2) the owner's word on 3.8.1 to 3.8.4 in
 game comes first (write it verbatim into the handoff, fix, render, release; 3.8.3 needs a new world); (3) the weapon reworks (forced
 third person for a drawn blade with a camera for the swings, the categories, the Mace and the Gun from input/newmodels/NewModels.zip,
 the clothes replacements; ask for the bullet model if it has not come); (4) the Leopard's other moves.
@@ -26,6 +26,6 @@ the clothes replacements; ask for the bullet model if it has not come); (4) the 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; write every new request verbatim into
 the handoff the moment it arrives; never claim in-game testing; render and judge every animation, effect and menu yourself; never key the
 head or unused limbs (tools/anim lint must pass); everything alpha-blended, never additive; every sound a CC0 web recording; versions roll
-over at 9 (3.8.6 next); a push is done only when GitHub's runs are green; at 98% weekly usage write the handoff and this prompt first,
+over at 9 (3.8.7 next); a push is done only when GitHub's runs are green; at 98% weekly usage write the handoff and this prompt first,
 commit, push and stop without checking CI. The world generation's preview and data: tools/archipelago_preview.py, tools/archipelago_data.py
 (vanilla 1.20.1 data from misode/mcmeta 1.20.1-data into the scratchpad, never committed).

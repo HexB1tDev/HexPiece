@@ -63,6 +63,11 @@ class Blade:
 KATANA = Blade("katana", "crimson_dawn", "", 20.9, 1.23, 3.6)
 GRYPHON = Blade("gryphon", "gryphon", "_gryphon", 22.44, 3.2, 3.0)
 YORU = Blade("yoru", "yoru", "_yoru", 32.2, 3.07, 0.0)
+# 3.8.6 (the owner's weapon categories: "Saber Caterogy (Similar to Katanas but more aggresion, the idle and unsheath animation stay as it
+# is (Gryphon))"): the Saber's cuts: the katanas' (every cut, the charge, the release, the clash), written again for Gryphon's saber with
+# more aggression (AGGRESSION, below), played by Gryphon in place of the katanas' (SwordAnims.suffix); its idle, guard, draw and
+# sheathing stay the katanas'. Its home pose is the katanas' (the cuts start from and end in the very guard it idles in).
+SABER = Blade("saber", "gryphon", "_saber", 22.44, 3.2, 3.0)
 PROFILE = KATANA
 # the point is kept this far (blocks) over the floor the feet stand on
 FLOOR = 0.12
@@ -727,9 +732,54 @@ def game_blade(move, q, t):
 PENDING = []
 
 
+# 3.8.6: the Saber's aggression, beat by beat (the timing, the blade's path and the easings kept: the hits land on the very ticks the
+# server sweeps): the body twisted harder into each cut and out of each wind-up (its turn x AGG_TURN), hunched lower over it (a forward
+# bend x AGG_BEND + AGG_BEND_ADD), driven further into each lunge (forward x AGG_LUNGE) and lower (crouch x AGG_CROUCH), the head
+# glaring down the cut (AGG_GLARE more pitch)
+AGGRESSIVE = False
+AGG_TURN = 1.22
+AGG_BEND = 1.15
+AGG_BEND_ADD = 2.0
+AGG_LUNGE = 1.22
+AGG_CROUCH = 1.12
+AGG_GLARE = 3.0
+# the cuts the Saber plays as the katanas do (no "_saber" of its own): their choreography, with Gryphon's bigger handle and bell guard,
+# brushes the body (the kesa's wind-up arm 0.8 px into it, the makko's handle 1 px into the brow) even with no aggression at all, so
+# Gryphon keeps playing the katanas' kesa and makko (as before 3.8.6) until they are written for the saber's own grip
+AGG_SKIP = {"sword_kesa", "sword_makko"}
+AGG_EXCEPT = {}
+
+
+def aggress(beat, name=None):
+    """3.8.6: the beat made more aggressive (a copy: a beat shared with the katanas' moves is never changed)."""
+    import copy
+    beat = copy.copy(beat)
+    body = dict(beat.body)
+    rules = AGG_EXCEPT.get(name, {})
+    if "yaw" in body:
+        wind = body["yaw"] < 0.0 and "wind_turn" in rules
+        body["yaw"] = body["yaw"] * (rules["wind_turn"] if wind else rules.get("turn", AGG_TURN))
+    if body.get("bend", 0.0) > 0.0:
+        body["bend"] = body["bend"] * rules.get("bend", AGG_BEND) + rules.get("bend_add", AGG_BEND_ADD)
+    if body.get("z", 0.0) < 0.0:
+        body["z"] = body["z"] * rules.get("lunge", AGG_LUNGE)
+    if body.get("y", 0.0) < 0.0:
+        body["y"] = body["y"] * rules.get("crouch", AGG_CROUCH)
+    beat.body = body
+    head = dict(beat.head)
+    head["pitch"] = head.get("pitch", 0.0) + rules.get("glare", AGG_GLARE)
+    beat.head = head
+    return beat
+
+
 def write(move):
     """Registers a move for the blade being written (PROFILE): its name gets the blade's suffix; it is solved and written by
     run_pending (in parallel: the arms are searched numerically, beat by beat)."""
+    if AGGRESSIVE and move.name in AGG_SKIP:
+        return move
+    if AGGRESSIVE:
+        move.beats = [aggress(beat, move.name) for beat in move.beats]
+        move.description = "(Saber: more aggressive) " + move.description
     move.profile = PROFILE
     move.name = move.name + PROFILE.suffix
     move.noto = sorted((beat.tick, beat.noto) for beat in move.beats if getattr(beat, "noto", None) is not None)
@@ -1373,6 +1423,7 @@ NOTO_PULL = (-1.2, -1.8, -2.2)
 KATANA.noto_p, KATANA.noto_out, KATANA.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
 GRYPHON.noto_p, GRYPHON.noto_out, GRYPHON.noto_pull = NOTO_P, 12.0, NOTO_PULL
 YORU.noto_p, YORU.noto_out, YORU.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
+SABER.noto_p, SABER.noto_out, SABER.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
 
 
 def noto(tick, easing, out, body=None, legs=None, head=None, left="saya"):
@@ -1914,6 +1965,7 @@ def back_beat(tick, easing, lift=0.0, reach_off=None, body=None, legs=None, head
 # 2.3.2: each blade's home pose (where its cuts start and end): a katana low in the right hand, its point at the ground ahead; Gryphon's
 # saber hanging looser and further out to the side; Yoru, a great sword, held low and forward, its point well off the floor
 KATANA.home = LOW_STANCE
+SABER.home = LOW_STANCE
 GRYPHON.home = (H(7.2, 10.2, 2.0), D(0.45, -0.5, 0.74), D(0.2, -0.78, -0.55))
 YORU.home = (H(6.8, 9.0, 3.6), D(0.3, -0.38, 0.88), D(0.1, -0.9, -0.36))
 # carried on the right shoulder: the back of the blade over it, the edge up (the owner: "the blade edge should be facing up"), the
@@ -2274,7 +2326,7 @@ def java_npc_poses():
            " */", "final class SwordPoses {", "    private SwordPoses() {", "    }", "", "    static float[] of(String name) {",
            "        return switch (name) {"]
     # NPCs carry katanas only (never a legendary blade): the katanas' animations
-    names = sorted(n for n in MOVES if not n.endswith(GRYPHON.suffix) and not n.endswith(YORU.suffix)
+    names = sorted(n for n in MOVES if not n.endswith(GRYPHON.suffix) and not n.endswith(YORU.suffix) and not n.endswith(SABER.suffix)
                    and n != "style_swordsman_back_stance")
     for i, name in enumerate(names):
         out.append(f'            case "{name}" -> s{i}();')
@@ -2319,6 +2371,12 @@ def build():
     yoru_stance()
     PROFILE = YORU
     yoru()
+    # 3.8.6: the Saber's cuts (no draws: Gryphon's draw and sheathing, idle and guard stay as they are)
+    global AGGRESSIVE
+    PROFILE = SABER
+    AGGRESSIVE = True
+    moves(False)
+    AGGRESSIVE = False
     PROFILE = KATANA
 
 

@@ -65,7 +65,27 @@ public final class SwordAnims {
             }
         }
         String base = name(own);
-        return base == null ? null : base + suffix(own, katana);
+        if (base == null) {
+            return null;
+        }
+        String own2 = suffix(own, katana);
+        if (own2.isEmpty() && katana.category() == Katana.Category.SABER) {
+            return saber(base); // 3.8.6: the Saber's more aggressive cuts
+        }
+        return base + own2;
+    }
+
+    /** 3.8.6: the Saber's cuts, by the katanas' name: its own "_saber" animation when it has one (sword_anims.py), else the katanas'. */
+    private static final java.util.Map<String, String> SABER = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * 3.8.6 (the owner's categories: "Saber Caterogy (Similar to Katanas but more aggresion, the idle and unsheath animation stay as it is
+     * (Gryphon))"): the animation the Saber plays for the katanas' {@code base}: its own more aggressive cut ("_saber": the same timing
+     * and blade path, the body driven harder into it) where one is written, the katanas' where none is (the draw, the sheathing, the
+     * guard and the idle stay theirs; the kesa and the makko too for now: tools/sword_anims.py AGG_SKIP).
+     */
+    public static String saber(String base) {
+        return SABER.computeIfAbsent(base, b -> BladePaths.of(b + "_saber") != null ? b + "_saber" : b);
     }
 
     /** 2.3.2: the suffix of {@code anim}'s animation with {@code katana}: "_yoru" for Yoru's moves on and off its back, else "". */

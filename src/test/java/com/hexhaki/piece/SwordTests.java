@@ -25,6 +25,7 @@ public final class SwordTests {
     static final Path ANIMATIONS = Path.of("src/main/resources/assets/hexhaki/player_animation");
 
     public static void main(String[] args) throws Exception {
+        categories();
         katanas();
         moves();
         animations();
@@ -1205,5 +1206,43 @@ public final class SwordTests {
     static double distance(double[] a, double[] b) {
         double[] d = sub3(a, b);
         return Math.sqrt(dot3(d, d));
+    }
+
+    /** 3.8.6: every katana a Katana, Gryphon the Saber, Yoru the Yoru; the tooltip says so. */
+    static void categories() {
+        for (com.hexhaki.piece.sword.Katana k : com.hexhaki.piece.sword.Katana.values()) {
+            com.hexhaki.piece.sword.Katana.Category c = k.category();
+            if (k == com.hexhaki.piece.sword.Katana.GRYPHON) {
+                Check.that(c == com.hexhaki.piece.sword.Katana.Category.SABER, "Gryphon is a Saber");
+            } else if (k == com.hexhaki.piece.sword.Katana.YORU) {
+                Check.that(c == com.hexhaki.piece.sword.Katana.Category.YORU, "Yoru is the Yoru");
+            } else {
+                Check.that(c == com.hexhaki.piece.sword.Katana.Category.KATANA, k + " is a Katana");
+            }
+            Check.that(k.kindLine().startsWith(c.label), k + "'s tooltip leads with its category");
+        }
+        // 3.8.6: the Saber (Gryphon) plays its own more aggressive cuts where written; its draw, sheathing, guard stay the katanas'
+        com.hexhaki.piece.sword.Katana g = com.hexhaki.piece.sword.Katana.GRYPHON;
+        int saber = 0;
+        for (com.hexhaki.piece.sword.SwordMove move : com.hexhaki.piece.sword.SwordMove.values()) {
+            int anim = com.hexhaki.piece.sword.SwordAnims.MOVES + move.ordinal();
+            String name = com.hexhaki.piece.sword.SwordAnims.name(anim, g);
+            String plain = com.hexhaki.piece.sword.SwordAnims.name(anim, com.hexhaki.piece.sword.Katana.CRIMSON_DAWN);
+            Check.that(plain == null || !plain.endsWith("_saber"), "a katana never plays a Saber's cut");
+            if (name != null && name.endsWith("_saber")) {
+                saber++;
+                Check.that(com.hexhaki.piece.sword.BladePaths.of(name) != null, name + " has its blade's path (the server sweeps it)");
+                String base = name.substring(0, name.length() - "_saber".length());
+                Check.that(com.hexhaki.piece.sword.BladePaths.drawTick(name) == com.hexhaki.piece.sword.BladePaths.drawTick(base)
+                    && com.hexhaki.piece.sword.BladePaths.of(name).length == com.hexhaki.piece.sword.BladePaths.of(base).length,
+                    name + " keeps the katanas' timing");
+            }
+        }
+        Check.that(saber >= 8, "the Saber plays its own cuts (" + saber + ")");
+        for (int anim : new int[] {com.hexhaki.piece.sword.SwordAnims.GUARD, com.hexhaki.piece.sword.SwordAnims.DRAW,
+            com.hexhaki.piece.sword.SwordAnims.SHEATHE}) {
+            String name = com.hexhaki.piece.sword.SwordAnims.name(anim, g);
+            Check.that(name == null || !name.endsWith("_saber"), "the Saber's guard, draw and sheathing stay as they are");
+        }
     }
 }

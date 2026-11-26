@@ -102,6 +102,32 @@ public enum Katana {
         return this.carry;
     }
 
+    /**
+     * 3.8.6 (the owner's standing rule: "Different Animations for Different Weapons. Katanas Category (stays as it is) Saber Caterogy
+     * (Similar to Katanas but more aggresion, the idle and unsheath animation stay as it is (Gryphon)) Mace Category ... Yoru Category
+     * (Yoru is a one of a kind legendary Blade, stays as it is, and is uncontested the strongest blade that will ever be added) Gun ...
+     * Sort every Katana into the category of katana Gryphon into saber and yoru into yoru"): the weapon categories, each made with its
+     * own animations. Every weapon the owner gives from now on comes with one.
+     */
+    public enum Category {
+        KATANA("Katana"), SABER("Saber"), MACE("Mace"), YORU("Yoru"), GUN("Gun");
+
+        public final String label;
+
+        Category(String label) {
+            this.label = label;
+        }
+    }
+
+    /** 3.8.6: this blade's category: Gryphon a Saber, Yoru the Yoru, every other a Katana. */
+    public Category category() {
+        return switch (this) {
+            case GRYPHON -> Category.SABER;
+            case YORU -> Category.YORU;
+            default -> Category.KATANA;
+        };
+    }
+
     /** 2.2.7: one of the owner's legendary blades (above every graded katana, never carried by a sea patrol, always drawn in a fight). */
     public boolean legend() {
         return this == GRYPHON || this == YORU;
@@ -175,10 +201,11 @@ public enum Katana {
 
     /** 2.2.7: the tooltip's second line ("Hamon: ..." for a katana). */
     public String kindLine() {
+        // 3.8.6: led by its category
         return switch (this) {
             case GRYPHON -> "Saber  ·  the second strongest blade";
-            case YORU -> "Kokuto (black blade)  ·  the strongest blade";
-            default -> "Hamon: " + this.hamon;
+            case YORU -> "Yoru  ·  Kokuto (black blade)  ·  the strongest blade";
+            default -> "Katana  ·  Hamon: " + this.hamon;
         };
     }
 

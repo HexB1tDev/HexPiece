@@ -230,7 +230,7 @@ thrown by the ratio) compared. What HexPiece lacked, now done:
 
 ## 7. What to do next (in order)
 
-1. 3.8.4 green (Release #175; Build #271 was cancelled by the next push, Build #272 on the same code green). Check 3.8.5's runs.
+1. 3.8.4 green (Release #175; Build #272), 3.8.5 green (Build #273, Release #176). Check 3.8.6's runs.
 2. The owner's word on 3.8.1 (the release's lag), 3.8.2 (the Conqueror's clash), 3.8.3 (the archipelago: needs a new world),
    3.8.4 (the clashes) comes first: write it verbatim here, fix, render, release.
 3. The weapon reworks (section 2; the owner put them after the world and the Conqueror's Haki, both done):
@@ -267,3 +267,21 @@ Every weapon the owner gives comes with one of these categories and is made with
   hook, before Gear 5's giant): third person from behind, eased in by GLIDE 0.2 a tick: SHOULDER 0.85 to the right, UP 0.3, BACK 3.1
   (the game's 4), clipped by DragonCamera.clip. Nothing rendered (a camera place, not a model or a clip).
 - Next: the categories (THE STANDING RULE), the Saber's more aggressive cuts, the Mace, the Gun, the clothes (section 7).
+
+## 9. 3.8.6: the categories and the Saber's cuts
+
+- `sword/Katana.Category` {KATANA, SABER, MACE, YORU, GUN} (label), `Katana.category()` (GRYPHON SABER, YORU YORU, every other KATANA);
+  `kindLine()` leads with the label ("Katana  ·  Hamon: ...", "Saber  ·  ...", "Yoru  ·  Kokuto ..."). SwordTests.categories.
+- The Saber's cuts: tools/sword_anims.py `SABER` (Blade "saber", Gryphon's mesh "gryphon", suffix "_saber", the katanas' home pose and
+  noto), build() writes `moves(False)` again with `AGGRESSIVE`: `aggress(beat)` (a copy) body yaw x AGG_TURN 1.22, forward bend x
+  AGG_BEND 1.15 + 2, lunge z x AGG_LUNGE 1.22, crouch y x AGG_CROUCH 1.12, head pitch + AGG_GLARE 3; timing, blade targets and easings
+  kept. AGG_SKIP {sword_kesa, sword_makko}: with Gryphon's mesh those two brush the body (0.8 / 1.0 px) even unaggressed (the katana
+  clips Gryphon plays for them in game already do); to write them for the saber's grip, adjust their wind and overhead beats for
+  the bigger handle. 14 `sword_<cut>_saber.json` solved (`python3 tools/sword_anims.py --only <names>`, ~1 min a move on 4 cores);
+  BladePaths regenerated without re-solving (`SOLVE=False; build(); java_paths(); java_npc_poses()`: the 30 old paths byte-identical,
+  14 added; NPC poses exclude "_saber"). build.py's sword pose check: 44 animations clean.
+- `SwordAnims.name(anim, katana)`: a Saber with no suffix of its own -> `saber(base)` (cached: base + "_saber" where BladePaths has it,
+  else the katanas'). SwordTests: a katana never plays a Saber cut, every Saber cut has its path and the katanas' timing, the guard,
+  draw and sheathing stay.
+- Render: docs/images/saber-yoko-3.8.6.png (the katanas' yoko over the Saber's, three-quarter and side).
+- Next (section 7): the Mace and the Gun from input/newmodels/NewModels.zip, the clothes; the Saber's kesa and makko.
