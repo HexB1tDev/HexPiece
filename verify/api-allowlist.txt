@@ -221,3 +221,8 @@ F net/minecraft/world/entity/projectile/AbstractHurtingProjectile f_36815_ D   #
 # --- 3.5.0: the Ito Ito no Mi's Awakening (tentacles out of the ground and out of trees at hostile creatures) ---------------------------
 F net/minecraftforge/registries/ForgeRegistries BLOCKS Lnet/minecraftforge/registries/IForgeRegistry;   # [forge] 1.20.1 registries/ForgeRegistries.java:68 "public static final IForgeRegistry<Block> BLOCKS" (a trunk known by its name: _log, _wood, _stem, _hyphae)
 M net/minecraft/world/entity/EntityType m_20674_ ()Lnet/minecraft/world/entity/MobCategory;   # [srg] getCategory: joined.tsrg bfn f ()Lbgc; m_20674_ 20674 (bfn = EntityType, bgc = MobCategory); intermediary METHOD bfn ()Lbgc; f method_5891 (yarn getSpawnGroup), the only EntityType method returning a MobCategory
+# --- 3.8.1: the full Conqueror's release's lag: its Photon bursts thinned (client/haki/HakiStorm.thin) ---------------------------------
+# [photon] Photon 1.1.17 sources (Low-Drag-MC/Photon at the v1.1.17 commit 507499f, common/src/main/java), as verify/hexghoul-allowlist.txt
+#          reads them; Photon's own members keep their names in its Forge jar.
+M com/lowdragmc/photon/client/gameobject/emitter/data/EmissionSetting$Burst getCount ()Lcom/lowdragmc/photon/client/gameobject/emitter/data/number/NumberFunction;   # [photon] EmissionSetting.java:148-152 "@Setter @Getter ... protected NumberFunction count" in the static class Burst (the original calls its setCount)
+M com/lowdragmc/photon/client/gameobject/emitter/data/number/NumberFunction get (FLjava/util/function/Supplier;)Ljava/lang/Number;   # [photon] number/NumberFunction.java:79 "Number get(float t, Supplier<Float> lerp);" (interface method; Constant.java:43 returns its number)

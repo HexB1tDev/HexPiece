@@ -395,6 +395,33 @@ public final class LightningTests {
         ledger.finish(second);
         Check.that(ledger.size() == 1 && ledger.contains(2L) && !ledger.contains(1L), "a finished one is gone");
         Check.that(ledger.poll(120).retries() == 1, "a deferral counted");
+        // 3.8.1: a chunk section's torn blocks grow back in the same tick (one mesh rebuild a section)
+        java.util.Set<Long> moments = new java.util.HashSet<>();
+        for (int x = 32; x < 48; x += 3) {
+            for (int y = -16; y < 0; y += 5) {
+                for (int z = -48; z < -32; z += 7) {
+                    long j = com.hexhaki.piece.haki.ScarLedger.sectionJitter(x, y, z, 200);
+                    Check.that(j >= 0 && j < 200, "a section's moment within the span");
+                    moments.add(j);
+                }
+            }
+        }
+        Check.that(moments.size() == 1, "every block of a section grows back at one moment");
+        java.util.Set<Long> spread = new java.util.HashSet<>();
+        for (int sx = 0; sx < 8; sx++) {
+            for (int sz = 0; sz < 8; sz++) {
+                spread.add(com.hexhaki.piece.haki.ScarLedger.sectionJitter(sx * 16 + 5, 64, sz * 16 + 9, 200));
+            }
+        }
+        Check.that(spread.size() > 40, "sections close at their own moments, spread over the span (" + spread.size() + " of 64)");
+        // 3.8.1: the full release's Photon bursts thinned to about a third; small ones whole
+        Check.that(ConquerorStorm.thinned(12) == 12 && ConquerorStorm.thinned(24) == 24,
+            "a small burst is left whole");
+        Check.that(ConquerorStorm.thinned(420) == 147 && ConquerorStorm.thinned(40) == 24,
+            "a big burst keeps about a third, never under the small ones' size");
+        Check.that(BoltMesh.heavy(false, 12000) && BoltMesh.heavy(true, 7000) && !BoltMesh.heavy(true, 3000) && !BoltMesh.heavy(false, 7000),
+            "a frame over the budget makes the next heavy, light again only well under it (no flicker between)");
+        heavyStorm();
         int[] counts = {0, 0};
         BoltMesh.ring(0, -1.6, 0, 6, 100, 0xFFFF1433, 1.0, (glow, v, c) -> {
             counts[glow ? 1 : 0]++;
@@ -404,6 +431,48 @@ public final class LightningTests {
         int[] gone = {0};
         BoltMesh.ring(0, -1.6, 0, BoltMesh.WAVE + 0.5, 100, 0xFFFF1433, 1.0, (glow, v, c) -> gone[0]++);
         Check.that(gone[0] == 0, "the shockwave is gone once it has swept out");
+    }
+
+    /**
+     * 3.8.1: a full release at mastery 1000 seen in third person at its peak: drawn heavy it keeps under two thirds of its quads, every
+     * bolt drawn still (none lost), its first and last points where they were.
+     */
+    static void heavyStorm() {
+        List<Bolt> bolts = new ArrayList<>();
+        for (ConquerorStorm.Strand strand : ConquerorStorm.release(1000, 8L, true)) {
+            bolts.addAll(ConquerorStorm.bolts(strand));
+        }
+        BoltMesh.light(-0.4, 0.8, 0.4);
+        BoltMesh.Frame frame = BoltMesh.Frame.at(5, -4.5, 9);
+        double pixel = 2.0 * Math.tan(Math.toRadians(35.0)) / 1080.0;
+        for (double t : new double[] {10, 16}) {
+            int[] light = new int[bolts.size()];
+            int[] heavy = new int[bolts.size()];
+            for (int pass = 0; pass < 2; pass++) {
+                BoltMesh.heavy = pass == 1;
+                int[] into = pass == 0 ? light : heavy;
+                for (int i = 0; i < bolts.size(); i++) {
+                    int[] q = {0};
+                    BoltMesh.build(bolts.get(i), frame, t - bolts.get(i).delay, pixel, 1.0, (g, v, c) -> q[0]++);
+                    into[i] = q[0];
+                }
+            }
+            BoltMesh.heavy = false;
+            int a = 0;
+            int b = 0;
+            for (int i = 0; i < bolts.size(); i++) {
+                a += light[i];
+                b += heavy[i];
+                Check.that(light[i] == 0 || heavy[i] > 0, "a heavy frame still draws every bolt");
+            }
+            Check.that(a > 15000 && b < a * 0.67, "drawn heavy, the storm's peak takes under two thirds of its quads (" + a + " -> " + b + ")");
+        }
+        int[] keep = new int[bolts.get(0).count()];
+        int n = BoltMesh.coarse(bolts.get(0), BoltMesh.Frame.at(5, -4.5, 9), 2.0 * Math.tan(Math.toRadians(35.0)) / 1080.0, keep);
+        Check.that(keep[0] == 0 && keep[n - 1] == bolts.get(0).count() - 1 && n >= 2, "a coarse bolt keeps its ends");
+        for (int i = 1; i < n; i++) {
+            Check.that(keep[i] > keep[i - 1] && keep[i] - keep[i - 1] <= 8, "a coarse bolt goes on along its own points, at most 8 at a time");
+        }
     }
 
     /** 2.1.8: the lightning goes out over the whole sphere, fresh every time, no blind spots. */

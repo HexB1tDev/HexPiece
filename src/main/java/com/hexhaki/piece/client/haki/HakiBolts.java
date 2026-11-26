@@ -505,6 +505,7 @@ public final class HakiBolts {
             }
         }
         write(Minecraft.m_91087_().m_91269_().m_110104_(), pose.m_85850_().m_252922_(), pose.m_85850_().m_252943_(), 0, 0, 0, true);
+        BoltMesh.heavy = BoltMesh.heavy(BoltMesh.heavy, SOLID.size + GLOW.size); // 3.8.1: the next frame drawn lighter if this one was heavy
     }
 
     /**
@@ -721,5 +722,6 @@ public final class HakiBolts {
         PENDING.clear();
         LIVE.clear();
         alive = 0;
+        BoltMesh.heavy = false;
     }
 }

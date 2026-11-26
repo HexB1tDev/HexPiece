@@ -31,6 +31,21 @@ public final class ScarLedger<S> {
         }
     }
 
+    /**
+     * 3.8.1 (the owner: "Reduce Conqueror's Haki Release (g) end lag, when releasing the full charge of haki it causes a ton of lag for a
+     * bit then stops"): when within {@code span} ticks the block at ({@code x}, {@code y}, {@code z}) grows back: the same for every block of
+     * its 16-block chunk section. Each block was given its own moment (2.2.5): a full release's 4,000 to 5,000 torn blocks came back a
+     * few a tick in every section at once for ten seconds, and every client rebuilt each of those sections' meshes again and again
+     * (some 2,000 rebuilds where 100 do); now a section closes whole, once.
+     */
+    public static long sectionJitter(int x, int y, int z, long span) {
+        long h = (x >> 4) * 0x9E3779B97F4A7C15L ^ (y >> 4) * 0xC2B2AE3D27D4EB4FL ^ (z >> 4) * 0x165667B19E3779F9L;
+        h ^= h >>> 29;
+        h *= 0xBF58476D1CE4E5B9L;
+        h ^= h >>> 32;
+        return Math.floorMod(h, Math.max(1L, span));
+    }
+
     private final Map<Long, Scar<S>> scars = new HashMap<>();
     private final PriorityQueue<Scar<S>> due = new PriorityQueue<>((a, b) -> Long.compare(a.restoreAt, b.restoreAt));
 

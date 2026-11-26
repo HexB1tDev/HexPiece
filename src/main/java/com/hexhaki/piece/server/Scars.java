@@ -176,8 +176,9 @@ public final class Scars {
             }
         }
         long now = this.level.m_46467_();
+        // 3.8.1: a section's blocks grow back together (ScarLedger.sectionJitter: one mesh rebuild a section, not one a block)
         long restoreAt = restoreIn >= 0L ? now + restoreIn + Math.floorMod(key * 0x9E3779B97F4A7C15L, 40L)
-            : now + RESTORE_MIN + Math.floorMod(key * 0x9E3779B97F4A7C15L, RESTORE_JITTER);
+            : now + RESTORE_MIN + ScarLedger.sectionJitter(pos.m_123341_(), pos.m_123342_(), pos.m_123343_(), RESTORE_JITTER);
         if (!this.ledger.record(key, state, restoreAt)) {
             return LEFT;
         }

@@ -68,6 +68,18 @@ public final class ConquerorStorm {
     private ConquerorStorm() {
     }
 
+    /**
+     * 3.8.1: of each burst of the original's soft particles in a full release ({@code client/haki/HakiStorm.thin}) only {@link #THIN}
+     * are kept; a burst of {@link #THIN_FROM} or fewer is left whole, so every part of it still shows, only sparser.
+     */
+    public static final float THIN = 0.35F;
+    public static final int THIN_FROM = 24;
+
+    /** How many particles of a burst of {@code count} a full release keeps. */
+    public static int thinned(int count) {
+        return count <= THIN_FROM ? count : Math.max(THIN_FROM, Math.round(count * THIN));
+    }
+
     /** How far the storm reaches at this Conqueror mastery (0..1000). */
     public static double reach(int mastery) {
         return 60.0 + 60.0 * Math.max(0.0, Math.min(1.0, mastery / 1000.0));

@@ -94,3 +94,31 @@ Gryphon into saber and yoru into yoru."
 - The order now: 3.8.1 (the release's lag), the Conqueror's clash (request 1 item 2), the world generation (request 1 item 3), then
   the clashes as HexGhoul's (request 1 item 4) and the weapon reworks above. (The owner put the reworks after "the world and conqueror
   haki"; the HexGhoul clashes were not ordered against them: ask.)
+
+## 3. 3.8.1: the full Conqueror's release's end lag (request 1 item 1)
+
+Measured outside the game at Conqueror mastery 1000 (the scratchpad's bench/StormBench, prof/Heavy, bench/Fis; the original's
+HakiVfx read with javap):
+- **The fissures' regrowth**: a full release tears 3,600 to 4,700 distinct blocks (51 to 63 chunk columns); each came back at its own
+  moment (Scars: RESTORE_MIN 300 + a per-block jitter over RESTORE_JITTER 200 ticks): a few a tick in every section for ten seconds,
+  about 2,000 section mesh rebuilds on every client near. **Now** `haki/ScarLedger.sectionJitter(x, y, z, span)` gives every block of a
+  16-block chunk section one moment (Scars.tear's default path; the `restoreIn` path, Blast Breath's 30 s ripple, unchanged): ~100
+  rebuilds. Tearing unchanged (DESTROY_BUDGET 240).
+- **The original's Photon particles**: conquerorRelease's bursts (60+80c, 48+52c, 50+95c, 16+28c, 96, 190, 72, 180, 150; its
+  fullChargeConquerorBurst 420+360+460; fullChargeConquerorDome five shells of 125-180 x 4-5 cycles = 3,575; supremePressureFronts;
+  three aftershocks 130+90c each): ~7,000 big soft see-through puffs in two seconds. **Now** `client/haki/HakiStorm.thin(fx)` (the full
+  release's composition as the patch hands it over, and each full aftershock) sets every burst's count to
+  `haki/ConquerorStorm.thinned(n)` (THIN 0.35, bursts of THIN_FROM 24 or fewer whole). Stubs: EmissionSetting.getBursts, Burst (time,
+  cycles, interval, getCount, setCount), NumberFunction.get(float, Supplier); verify/api-allowlist.txt 3.8.1 block ([photon] evidence:
+  Burst.getCount, NumberFunction.get; the rest the original already calls).
+- **The 3D storm**: ~22,000 quads at its peak in third person (tubes 13k along ~4,000 kinks, glow 5k, ink 3k), ~4-10 ms a frame on this
+  machine's CPU. **Now** `haki/BoltMesh.heavy` (set each frame by client/haki/HakiBolts.draw from the last frame's quads:
+  `BoltMesh.heavy(was, quads)`, over BUDGET 9000 -> heavy, back under LIGHT 6000): a heavy frame draws each stroke through
+  `BoltMesh.coarse` (pieces under DETAIL_HEAVY 64 px of a 1080-line screen merged, 2, 4 or 8 points at a time, the ends kept) and
+  tubes with at most ROUND_HEAVY 4 faces: ~12,900 quads at the peak. Rendered side by side at the game's own pixel scale (BoltPreview
+  stormSheet, the scratchpad's bp/fair3.png): the same bolts and zig-zags. Light frames draw exactly as before.
+- Tests (LightningTests): sectionJitter (one moment a section, spread over the span), thinned, BoltMesh.heavy's hysteresis,
+  `heavyStorm` (the peak under two thirds of its quads drawn heavy, every bolt still drawn, coarse keeps the ends and its own points).
+- Not changed: the storm's bolts, the fissures' shape and timing, the release's sounds, stun and throws.
+- Nothing tested in game. Ask the owner how the full release feels now (and whether any lag is left: if so, when: at the release, the
+  next two seconds, or 15-25 s later when the ground grows back).

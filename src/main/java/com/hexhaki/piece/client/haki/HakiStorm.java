@@ -3,6 +3,10 @@ package com.hexhaki.piece.client.haki;
 import com.hexhaki.piece.haki.Bolt;
 import com.hexhaki.piece.haki.ConquerorStorm;
 import com.lowdragmc.photon.client.fx.FX;
+import com.lowdragmc.photon.client.gameobject.IFXObject;
+import com.lowdragmc.photon.client.gameobject.emitter.data.EmissionSetting;
+import com.lowdragmc.photon.client.gameobject.emitter.data.number.NumberFunction;
+import com.lowdragmc.photon.client.gameobject.emitter.particle.ParticleEmitter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,7 +61,36 @@ public final class HakiStorm {
     public static FX aftershock(float power, long seed) {
         FX fx = com.hexhaki.client.vfx.HakiVfx.aftershock(power, seed);
         HakiBolts.silence(fx);
+        if (power >= 0.96F) {
+            thin(fx); // 3.8.1: as the full release's own
+        }
         return fx;
+    }
+
+    /**
+     * 3.8.1 (the owner: "Reduce Conqueror's Haki Release (g) end lag, when releasing the full charge of haki it causes a ton of lag for a
+     * bit then stops"): every burst of {@code fx}'s particle emitters thinned ({@link ConquerorStorm#thinned}): the original's full
+     * release (its range glow, its burst, its dome of five shells, its pressure fronts and horizon) and each of its three aftershocks
+     * threw some 7,000 large see-through puffs within its first two seconds, each ticked and drawn by Photon on the CPU and the screen
+     * painted over and over. What the composition is otherwise is untouched.
+     */
+    static void thin(FX fx) {
+        try {
+            for (IFXObject object : fx.getMainFX().objects()) {
+                if (!(object instanceof ParticleEmitter emitter)) {
+                    continue;
+                }
+                for (EmissionSetting.Burst burst : emitter.config.emission.getBursts()) {
+                    Number count = burst.getCount().get(0.0F, () -> 0.0F);
+                    int n = count == null ? 0 : count.intValue();
+                    if (ConquerorStorm.thinned(n) != n) {
+                        burst.setCount(NumberFunction.constant(ConquerorStorm.thinned(n)));
+                    }
+                }
+            }
+        } catch (RuntimeException failure) {
+            // the composition plays as the original made it
+        }
     }
 
     /** {@code conquerorRelease}'s composition, its charge (0..1), its variant (mastery x 4 + mode) and its seed. */
@@ -66,6 +99,7 @@ public final class HakiStorm {
             if (fx == null || charge < 0.96F) {
                 return;
             }
+            thin(fx);
             int mastery = Math.max(0, variant / 4);
             // 2.2.5 (the owner: "anyone by default at max charge shall be able to do that"): every full-charge release is the
             // supreme (JoyBoy) one, whatever the mastery (the server's releaseConqueror reads the same since this version)

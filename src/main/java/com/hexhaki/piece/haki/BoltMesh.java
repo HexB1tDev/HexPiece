@@ -84,6 +84,15 @@ public final class BoltMesh {
             return new Frame(x, y, z, Math.cos(radians), Math.sin(radians));
         }
 
+        /** 3.8.1: the point at {@code from} of {@code points} (local) into {@code out}. */
+        void place(double[] points, int from, double[] out) {
+            double lx = points[from];
+            double lz = points[from + 2];
+            out[0] = this.x + lx * this.cos + lz * this.sin;
+            out[1] = this.y + points[from + 1];
+            out[2] = this.z - lx * this.sin + lz * this.cos;
+        }
+
         public void place(double[] local, double[] out, int at) {
             double lx = local[0];
             double lz = local[2];
@@ -227,6 +236,59 @@ public final class BoltMesh {
         }
     }
 
+    /**
+     * 3.8.1 (the owner: "Reduce Conqueror's Haki Release (g) end lag, when releasing the full charge of haki it causes a ton of lag for a
+     * bit then stops"): whether the lightning on screen is over its budget this frame (client/haki/HakiBolts sets it from the last
+     * frame's quads, {@link #heavy(boolean, int)}). While it is, a stroke's pieces shorter on screen than {@link #DETAIL_HEAVY} pixels are
+     * drawn as one ({@link #coarse}: the finest kinks of the far bolts go, the big zig-zags stay) and a tube has at most
+     * {@link #ROUND_HEAVY} faces round its near half. A full release at mastery 1000 builds some 22,000 quads a frame at its peak in a
+     * third-person view (13,000 of them tubes along its ~4,000 kinks), drawn heavy some 12,900, its bolts and zig-zags the same to the
+     * eye (pixels here are a 1080-line screen's, as {@code HakiBolts.PIXEL}); every other Haki lightning stays well under the budget.
+     */
+    public static boolean heavy;
+    public static final int BUDGET = 9000;
+    public static final int LIGHT = 6000;
+    public static final double DETAIL_HEAVY = 64.0;
+    public static final int ROUND_HEAVY = 4;
+
+    /** Whether the next frame is drawn heavy, after one of {@code quads} drawn {@code heavy} or not (no flicker between the two). */
+    public static boolean heavy(boolean heavy, int quads) {
+        return quads > BUDGET || heavy && quads >= LIGHT;
+    }
+
+    /**
+     * 3.8.1: the points of {@code bolt} drawn in a heavy frame, into {@code keep} (their number returned): from each kept point on, the
+     * farthest of the next 2, 4 or 8 whose straight piece is under {@link #DETAIL_HEAVY} pixels on screen (from where it is at rest);
+     * the last point always kept.
+     */
+    public static int coarse(Bolt bolt, Frame frame, double pixel, int[] keep) {
+        int full = bolt.count();
+        double[] p = bolt.points;
+        double[] a = S.d(3);
+        double[] b = S.d(3);
+        int n = 0;
+        int j = 0;
+        keep[n++] = 0;
+        while (j < full - 1) {
+            int next = j + 1;
+            frame.place(p, j * 3, a);
+            double away = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+            for (int s = 2; s <= 8 && j + s <= full - 1; s *= 2) {
+                frame.place(p, (j + s) * 3, b);
+                double piece = Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (b[2] - a[2]) * (b[2] - a[2]));
+                // seen from its nearer end, where it looks longest
+                double near = Math.max(0.5, Math.min(away, Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2])));
+                if (piece / (pixel * near) >= DETAIL_HEAVY) {
+                    break;
+                }
+                next = j + s;
+            }
+            keep[n++] = next;
+            j = next;
+        }
+        return n;
+    }
+
     static final Scratch S = new Scratch();
     static final double[] WOUND_V = new double[12];
     static final int[] WOUND_C = new int[4];
@@ -257,14 +319,21 @@ public final class BoltMesh {
             step *= 2;
         }
         int n = (full - 1) / step + 1;
+        int[] keep = S.i(full);
+        for (int i = 0; i < n; i++) {
+            keep[i] = i * step;
+        }
+        if (heavy) {
+            n = coarse(bolt, frame, pixel, keep);
+        }
         double[] all = S.d(n * 3);
         float[] widths = S.f(n);
         double[] local = S.d(3);
         float widest = 0;
         for (int i = 0; i < n; i++) {
-            bolt.dancing(i * step, age, local);
+            bolt.dancing(keep[i], age, local);
             frame.place(local, all, i * 3);
-            widths[i] = bolt.widths[i * step];
+            widths[i] = bolt.widths[keep[i]];
             widest = Math.max(widest, widths[i]);
         }
         // the strike: only the part the bolt has raced along so far
@@ -630,7 +699,7 @@ public final class BoltMesh {
             ribbon(p, count, side, half, lift, c, c, pixel, dist, false, sink);
             return;
         }
-        int k = most < 4 ? 2 : most < 10 ? 4 : most < 26 ? 6 : 8;
+        int k = Math.min(heavy ? ROUND_HEAVY : 8, most < 4 ? 2 : most < 10 ? 4 : most < 26 ? 6 : 8);
         // a coarse ring spreads its rim's colour over the whole of each face: its rims are lit as a little nearer the middle
         double rough = k <= 2 ? 0.5 : k <= 4 ? 0.28 : k <= 6 ? 0.12 : 0.0;
         double[] m = mitres(p, count, side);
