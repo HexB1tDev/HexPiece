@@ -418,3 +418,9 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
   (arms 3 px), the skirt), ArmorClient and PieceArmorItem.getArmorTexture to it, new icons from the meshes, tests; THE OWNER'S WORD
   above: no arm through a coat (the coat must sit outside the arms: its hanging sleeves and sides pushed out of the arms' way or the
   arms' swing kept inside), and walking blows the coat back as if the wind pushed it.
+- The owner, after that (verbatim): "the arms should never interact with the  coat's arms" and "see what I mean?" with two pictures:
+  Garp walking, his coat worn over the shoulders, blown straight back from the shoulders like a flag, its empty sleeves streaming
+  back with it, his arms swinging free under and in front of it. So: the coat's sleeves are the coat's (never on, carried or pushed
+  by the arms); walking, the whole coat, sleeves too, is blown back from the shoulders.
+- The owner, with a crop of the coats' back renders (the collar ringed): "head is clipping through the coat": the standing collars were
+  shaped round the mannequin's smaller, higher head; they must clear the game's 8 x 8 head, and a turned or raised head must not cut them.

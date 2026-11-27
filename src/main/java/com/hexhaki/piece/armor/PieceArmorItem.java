@@ -47,6 +47,7 @@ public final class PieceArmorItem extends ArmorItem {
 
     @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        return this.piece.texture();
+        // 3.8.9: the owner's clothes replacements: one atlas for every piece (tools/clothes_bake.py)
+        return PieceArmor.CLOTHES_TEXTURE;
     }
 }

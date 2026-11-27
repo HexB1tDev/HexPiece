@@ -15,6 +15,9 @@ public enum PieceArmor {
     STRAW_HAT("straw_hat", "Straw Hat", Slot.HEAD, "STRAW_HAT", "straw_hat"),
     BLACKBEARD_COAT("blackbeard_coat", "Blackbeard's Coat", Slot.CHEST, "BLACKBEARD", "blackbeard_coat");
 
+    /** 3.8.9: the owner's clothes replacements' atlas (tools/clothes_bake.py; build.py packs it), every piece's. */
+    public static final String CLOTHES_TEXTURE = "hexhaki:textures/clothes/clothes.png";
+
     /** Where a piece is worn (the game's armor slots, head to feet). */
     public enum Slot {
         HEAD, CHEST, LEGS, FEET

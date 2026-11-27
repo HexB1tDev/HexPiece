@@ -22,6 +22,10 @@ public final class KatanaMesh {
     /** The quads of the blade (part 01_Blade...), drawn again for its highlight. */
     final int bladeFirst;
     final int bladeCount;
+    /** 3.8.9: every named part (the clothes' body parts): its name, its first quad and how many. */
+    public String[] groupNames = new String[0];
+    public int[] groupFirst = new int[0];
+    public int[] groupCount = new int[0];
 
     private KatanaMesh(float[] pos, float[] uv, float[] nrm, int[] quads, int bladeFirst, int bladeCount) {
         this.pos = pos;
@@ -30,6 +34,23 @@ public final class KatanaMesh {
         this.quads = quads;
         this.bladeFirst = bladeFirst;
         this.bladeCount = bladeCount;
+    }
+
+    /** 3.8.9: the vertices' positions (x, y, z model px each), texture coordinates and normals, and the quads (4 vertex indices each). */
+    public float[] positions() {
+        return this.pos;
+    }
+
+    public float[] uvs() {
+        return this.uv;
+    }
+
+    public float[] normals() {
+        return this.nrm;
+    }
+
+    public int[] quadIndices() {
+        return this.quads;
     }
 
     public int quadCount() {
@@ -183,12 +204,18 @@ public final class KatanaMesh {
         int groups = b.getInt();
         int bladeFirst = 0;
         int bladeCount = 0;
+        String[] names = new String[groups];
+        int[] firsts = new int[groups];
+        int[] counts = new int[groups];
         for (int g = 0; g < groups; g++) {
             byte[] raw = new byte[Short.toUnsignedInt(b.getShort())];
             b.get(raw);
             String part = new String(raw, StandardCharsets.UTF_8);
             int first = b.getInt();
             int count = b.getInt();
+            names[g] = part;
+            firsts[g] = first;
+            counts[g] = count;
             if (part.startsWith("01_Blade")) {
                 bladeFirst = first;
                 bladeCount = count;
@@ -216,7 +243,11 @@ public final class KatanaMesh {
             }
             int[] flat = planes(b, quads.length);
             System.arraycopy(flat, 0, quads, 0, quads.length);
-            return new KatanaMesh(pos, uv, nrm, quads, bladeFirst, bladeCount);
+            KatanaMesh mesh = new KatanaMesh(pos, uv, nrm, quads, bladeFirst, bladeCount);
+            mesh.groupNames = names;
+            mesh.groupFirst = firsts;
+            mesh.groupCount = counts;
+            return mesh;
         }
         for (int i = 0; i < vertices; i++) {
             for (int k = 0; k < 3; k++) {

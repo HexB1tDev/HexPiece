@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.8.8"
+VERSION = "3.8.9"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -61,6 +61,9 @@ GUN_TEXTURES = "assets/hexhaki/textures/gun/"
 GUN_MODELS = "assets/hexhaki/models/item/gun_"
 GUN_ICONS = "assets/hexhaki/textures/item/gun/"
 GUN_KEYS = ["flintlock"]
+# 3.8.9: the owner's clothes replacements (art/clothes, baked by tools/clothes_bake.py): every armor piece's mesh and their atlas
+CLOTHES_MESHES = "assets/hexhaki/clothes/"
+CLOTHES_TEXTURE = "assets/hexhaki/textures/clothes/clothes.png"
 # 2.2.6: the katanas' inventory icons, where the item atlas finds them (textures/item/...)
 KATANA_ICONS = "assets/hexhaki/textures/item/katana/"
 ICONS = "src/main/resources/" + KATANA_ICONS
@@ -203,6 +206,8 @@ NEW_PREFIXES = (
     GUN_TEXTURES,
     GUN_MODELS,
     GUN_ICONS,
+    CLOTHES_MESHES,
+    CLOTHES_TEXTURE,
     ARMOR_TEXTURES,
     ARMOR_ICONS,
 ) + tuple(f"assets/hexhaki/models/item/{key}.json" for key in ARMOR_KEYS)
@@ -396,6 +401,18 @@ def gun_assets():
             "perspectives": {"gui": {"parent": "minecraft:item/generated", "textures": {"layer0": icon}}},
         }
         entries[f"{GUN_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
+    return entries
+
+
+def clothes_assets():
+    """3.8.9: {jar entry: bytes} for the owner's clothes replacements (Clothes_Replacements.blend baked by tools/clothes_bake.py into
+    art/clothes): every armor piece's mesh with its levels of detail (its groups, the body parts, kept) and their one atlas."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import katana_mesh
+    if list(katana_mesh.CLOTHES) != ARMOR_KEYS:
+        raise RuntimeError(f"tools/katana_mesh.py CLOTHES {katana_mesh.CLOTHES} differ from build.py ARMOR_KEYS {ARMOR_KEYS}")
+    entries = {f"{CLOTHES_MESHES}{name}.hkm": data for name, data in katana_mesh.pack_clothes().items()}
+    entries[CLOTHES_TEXTURE] = katana_mesh.clothes_texture()
     return entries
 
 
@@ -625,6 +642,10 @@ def assemble():
     for name, data in gun_assets().items():
         if name in entries:
             raise RuntimeError(f"A gun asset would overwrite an entry: {name}")
+        entries[name] = data
+    for name, data in clothes_assets().items():
+        if name in entries:
+            raise RuntimeError(f"A clothes asset would overwrite an entry: {name}")
         entries[name] = data
     for name, data in dragon_assets().items():
         if name in entries:
