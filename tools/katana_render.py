@@ -115,7 +115,7 @@ def load(zip_path=ZIP):
     return meshes, textures
 
 
-def icon(mesh, texture, size=32, widen=1.7, length=28.0, middle=7.1):
+def icon(mesh, texture, size=32, widen=1.7, length=28.0, middle=7.1, ink=(24, 20, 30, 235)):
     """Blade up to the right, the handle down to the left, a little turned so the guard reads: the way Minecraft draws a sword. Item
     art rather than a photo: the blade fills the slot's diagonal, its width drawn 1.7x so it reads at 16 to 64 pixels, a dark outline."""
     vertices, quads, groups = mesh
@@ -129,12 +129,13 @@ def icon(mesh, texture, size=32, widen=1.7, length=28.0, middle=7.1):
     padded = np.pad(alpha, 1)
     grown = alpha | padded[:-2, 1:-1] | padded[2:, 1:-1] | padded[1:-1, :-2] | padded[1:-1, 2:]
     edge = grown & ~alpha
-    a[edge] = (24, 20, 30, 235)
+    a[edge] = ink
     a[alpha, 3] = 255
     return Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA")
 
 
 def main():
+    global GLOSS
     mode, out = sys.argv[1], sys.argv[2]
     if mode == "legend-icons":
         # 2.2.7: Gryphon and Yoru (input/Yoru_Gryphon_Models_Textures_1.20.1.zip, in the katanas' frame); Yoru's cross guard is wide,
@@ -144,9 +145,20 @@ def main():
         textures = {name: Image.open(io.BytesIO(data)) for name, data in km.legend_textures(zip_path).items()}
         os.makedirs(out, exist_ok=True)
         icon(meshes["gryphon"], textures["gryphon"], widen=1.5, length=28.4, middle=8.2).save(os.path.join(out, "gryphon_icon.png"))
-        global GLOSS
         GLOSS = 0.75 * 0.45
         icon(meshes["yoru"], textures["yoru"], widen=1.15, length=44.0, middle=10.2).save(os.path.join(out, "yoru_icon.png"))
+        GLOSS = 0.75
+        return
+    if mode == "mace-icons":
+        # 3.8.7: the mace (art/mace): its head up to the right, its handle down to the left, as a sword's icon
+        meshes = km.mace_meshes()
+        textures = {name: Image.open(io.BytesIO(data)) for name, data in km.mace_textures().items()}
+        os.makedirs(out, exist_ok=True)
+        GLOSS = 1.0
+        for name in meshes:
+            # a black mace on the grey slot: a pale steel-blue outline round it (a dark ink one vanished into it)
+            icon(meshes[name], textures[name], widen=1.25, length=50.0, middle=9.65, ink=(150, 165, 200, 255)).save(
+                os.path.join(out, name + "_icon.png"))
         GLOSS = 0.75
         return
     meshes, textures = load()

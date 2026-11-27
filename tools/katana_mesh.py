@@ -378,6 +378,39 @@ def pack_legends(zip_path):
     return out
 
 
+# 3.8.7: the owner's mace (First_mace.blend), baked by tools/mace_bake.py into art/mace/ in the katanas' frame already (model px,
+# the grip's top at y 0): packed as the legendary blades are, with its levels of detail
+MACES = {"iron_mace": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "mace")}
+
+
+def mace_meshes():
+    """{name: (vertices, quads, groups)} of the maces, in the katanas' frame."""
+    out = {}
+    for name, folder in MACES.items():
+        with open(os.path.join(folder, name + ".obj"), encoding="utf-8") as h:
+            out[name] = parse(h.read())
+    return out
+
+
+def mace_textures():
+    """{name: png bytes} of the maces' atlases."""
+    out = {}
+    for name, folder in MACES.items():
+        with open(os.path.join(folder, name + ".png"), "rb") as h:
+            out[name] = h.read()
+    return out
+
+
+def pack_maces():
+    """{model name: packed mesh bytes} for the maces and their levels of detail."""
+    out = {}
+    for name, mesh in mace_meshes().items():
+        out[name] = encode(*mesh)
+        for lod, (cell, buckets) in LODS.items():
+            out[f"{name}_{lod}"] = encode(*simplify(*mesh, cell, buckets))
+    return out
+
+
 if __name__ == "__main__":
     out = sys.argv[2]
     os.makedirs(out, exist_ok=True)

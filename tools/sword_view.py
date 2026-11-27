@@ -30,7 +30,10 @@ LEGENDS_ZIP = os.path.join(ROOT, "input", "Yoru_Gryphon_Models_Textures_1.20.1.z
 
 def mesh(name):
     if name not in _MESHES:
-        if name in km.LEGENDS:
+        if name in km.MACES:
+            # 3.8.7: the mace (art/mace, baked from the owner's First_mace.blend)
+            v, q, g = km.mace_meshes()[name]
+        elif name in km.LEGENDS:
             # 2.2.7: Gryphon and Yoru, from their own zip, in the katanas' frame
             v, q, g = km.legend_meshes(LEGENDS_ZIP)[name]
         else:
@@ -50,6 +53,8 @@ def mesh(name):
 
 
 def texture(key):
+    if key not in _TEXTURES and key in km.MACES:
+        _TEXTURES[key] = np.asarray(Image.open(io.BytesIO(km.mace_textures()[key])).convert("RGBA"), float) / 255.0
     if key not in _TEXTURES and key in ("gryphon", "yoru"):
         _TEXTURES[key] = np.asarray(Image.open(io.BytesIO(km.legend_textures(LEGENDS_ZIP)[key])).convert("RGBA"), float) / 255.0
     if key not in _TEXTURES:
