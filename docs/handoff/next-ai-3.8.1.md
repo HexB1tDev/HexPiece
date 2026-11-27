@@ -451,3 +451,13 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
   plunge a beat between them (its own Move) to write it. BladePaths regenerated without re-solving (SOLVE False, build(),
   java_paths(), java_slides(), java_npc_poses()): 63 paths. SwordTests: Gryphon's kesa is sword_kesa_saber.
   Renders: docs/images/saber-kesa-3.9.0.png, saber-makko-3.9.0.png, mace-gyaku-yoko-3.9.0.png.
+- The owner, after the mace's backhand render (verbatim): "I think the swing needs more leverage" (taken as the mace's swings: the
+  body loading into them: wound further back round the arc, twisted harder into the coil, lower, turned further through the hit).
+
+## 17. 3.9.1: the mace's leverage
+- tools/sword_anims.py: MACE_ARC 1.18 (strike(): the coil widened ARC_WIND x MACE_ARC round the arc), mace(): the coil's beats
+  (0 < tick < the first cut) yaw x MACE_COIL_TURN 1.32 and crouch x MACE_COIL_CROUCH 1.35, the cut's and after yaw x MACE_THROUGH
+  1.18 (on top of MACE_TURN/BEND/CROUCH). MACE_EXCEPT (rules arc, coil_turn, coil_crouch, through): kesa {arc 1.06, coil_crouch 1.0,
+  coil_turn 1.15} (its arm crossed the body, its end hit the floor), makko {arc 1.0, coil_crouch 1.0}, yoko {arc 1.08, coil_crouch
+  1.0} (the floor), pivot_cut {coil_turn 1.0, coil_crouch 1.0, through 1.0} (the left arm). All 15 mace cuts re-solved and clear.
+  Asked in the notes whether the owner meant the Saber's swings too. Renders: docs/images/mace-gyaku-yoko-3.9.1.png, mace-yoko-3.9.1.png.

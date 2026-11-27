@@ -3068,7 +3068,7 @@
     "tick": 12,
     "easing": "linear",
     "body": {
-     "yaw": -0.967
+     "yaw": -1.141
     }
    },
    {
@@ -3320,7 +3320,7 @@
     "tick": 13,
     "easing": "linear",
     "body": {
-     "yaw": -3.3
+     "yaw": -3.894
     }
    },
    {
@@ -3572,7 +3572,7 @@
     "tick": 14,
     "easing": "linear",
     "body": {
-     "yaw": -5.633
+     "yaw": -6.647
     }
    },
    {
@@ -3824,7 +3824,7 @@
     "tick": 15,
     "easing": "linear",
     "body": {
-     "yaw": -6.6
+     "yaw": -7.788
     }
    },
    {

@@ -775,12 +775,26 @@ MACE_SWING = "inexpo"
 MACE_BEND = 1.2
 MACE_CROUCH = 1.2
 MACE_TURN = 1.1
+# 3.9.1 (the owner: "I think the swing needs more leverage"): the whole body loads into a mace's swing: its coil taken MACE_ARC times
+# further back round the cut's arc than a katana's, the hips and shoulders twisted MACE_COIL_TURN times harder into it and MACE_COIL_CROUCH
+# lower, then turned MACE_THROUGH times further through the hit into the follow-through
+MACE_ARC = 1.18
+MACE_COIL_TURN = 1.32
+MACE_COIL_CROUCH = 1.35
+MACE_THROUGH = 1.18
 # the cut the Mace plays as the katanas do (no "_mace" of its own): the plunge's arm flips between two ticks even with the katanas' body
 # (3.9.0: the gyaku yoko is the mace's own now, from its own coil, MACE_COIL)
 MACE_SKIP = {"sword_plunge"}
 # 3.9.0: the plunge still the katanas' for the mace: between its downward drive's two beats the arm flips (117 degrees between ticks 6
 # and 7) with the mace's grip, even as heavy as the katanas'; to write it, give the mace's plunge a beat between them
-MACE_EXCEPT = {}
+MACE_EXCEPT = {
+    # 3.9.1: where the full leverage took the 2.5-block mace too far: its far end into the floor behind a lower coil (the kesa, the makko,
+    # the yoko), the kesa's arm across the body, the pivot cut's head into the left arm
+    "sword_kesa": {"arc": 1.06, "coil_crouch": 1.0, "coil_turn": 1.15},
+    "sword_makko": {"arc": 1.0, "coil_crouch": 1.0},
+    "sword_yoko": {"arc": 1.08, "coil_crouch": 1.0},
+    "sword_pivot_cut": {"coil_turn": 1.0, "coil_crouch": 1.0, "through": 1.0},
+}
 
 
 def mace(move):
@@ -792,12 +806,15 @@ def mace(move):
     for beat in move.beats:
         beat = copy.copy(beat)
         body = dict(beat.body)
+        coiling = 0 < beat.tick < first
         if "yaw" in body:
-            body["yaw"] = body["yaw"] * rules.get("turn", MACE_TURN)
+            body["yaw"] = body["yaw"] * rules.get("turn", MACE_TURN) * (rules.get("coil_turn", MACE_COIL_TURN) if coiling
+                                                                        else rules.get("through", MACE_THROUGH) if beat.tick >= first
+                                                                        else 1.0)
         if body.get("bend", 0.0) > 0.0:
             body["bend"] = body["bend"] * rules.get("bend", MACE_BEND)
         if body.get("y", 0.0) < 0.0:
-            body["y"] = body["y"] * rules.get("crouch", MACE_CROUCH)
+            body["y"] = body["y"] * rules.get("crouch", MACE_CROUCH) * (rules.get("coil_crouch", MACE_COIL_CROUCH) if coiling else 1.0)
         beat.body = body
         if beat.tick < first and beat.tick > 0:
             beat.easing = MACE_COCK
@@ -1601,7 +1618,7 @@ def strike(name, duration, wind, mid, cut_ticks, description, wind_body, end_bod
     lo, hi = cut_ticks
     # 2.3.5 (the owner: "longer swings", "more range"): the coil taken further back round the cut's arc from its middle (the blade's
     # direction along its great circle, the fist along its line, then held to the arm's reach)
-    wind = widen(wind, mid, ARC_WIND)
+    wind = widen(wind, mid, ARC_WIND * (MACE_EXCEPT.get(name, {}).get("arc", MACE_ARC) if MACING else 1.0))
     if mid_extended:
         mid = extend(mid)
     else:
