@@ -444,6 +444,37 @@ def pack_guns():
     return out
 
 
+# 3.8.9: the owner's clothes (Clothes_Replacements.blend), baked by tools/clothes_bake.py into art/clothes/: one mesh an armor piece, its
+# faces grouped by the body part that carries them (each in that part's frame), all on one atlas
+CLOTHES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "clothes")
+CLOTHES = ("marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat")
+
+
+def clothes_meshes():
+    """{piece: (vertices, quads, groups)} of the clothes."""
+    out = {}
+    for name in CLOTHES:
+        with open(os.path.join(CLOTHES_DIR, name + ".obj"), encoding="utf-8") as h:
+            out[name] = parse(h.read())
+    return out
+
+
+def clothes_texture():
+    """The clothes' atlas (png bytes)."""
+    with open(os.path.join(CLOTHES_DIR, "clothes.png"), "rb") as h:
+        return h.read()
+
+
+def pack_clothes():
+    """{model name: packed mesh bytes} for every piece and its levels of detail (each group simplified on its own: the groups stay)."""
+    out = {}
+    for name, mesh in clothes_meshes().items():
+        out[name] = encode(*mesh)
+        for lod, (cell, buckets) in LODS.items():
+            out[f"{name}_{lod}"] = encode(*simplify(*mesh, cell, buckets))
+    return out
+
+
 if __name__ == "__main__":
     out = sys.argv[2]
     os.makedirs(out, exist_ok=True)

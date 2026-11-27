@@ -393,7 +393,8 @@ Every weapon the owner gives comes with one of these categories and is made with
 "Set a wake up in 1 hour and 5 minutes from now
 The arms cannot clip through the coats, when walking the coat should be pushed back like the wind is pushing it"
 (then: "Atingi meu limite de uso enquanto você trabalhava, mas ele já foi reiniciado. Por favor, continue de onde parou." = their usage
-limit was hit and reset: continue.) Wake-up set: send_later trig_01QHiwUFtkafTzpLkaviZpst, 09:07 UTC 2026-11-27.
+limit was hit and reset: continue.) Then: "reschedule the wake up to 5 hours from now": the 1 h 5 min one deleted; wake-up
+trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
 
 ## 15. 3.8.9 (in progress): the owner's clothes replacements
 - tools/clothes_bake.py (/tmp/bpy/bin/python tools/clothes_bake.py) bakes Clothes_Replacements.blend: the four outfits stand on
