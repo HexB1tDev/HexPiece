@@ -1708,5 +1708,71 @@
         "attenuation_distance": 64
       }
     ]
+  },
+  "piece.gun.shot": {
+    "subtitle": "subtitles.hexhaki.piece.gun.shot",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gear/whip_crack1",
+        "attenuation_distance": 64
+      }
+    ]
+  },
+  "piece.gun.haki_shot": {
+    "subtitle": "subtitles.hexhaki.piece.gun.haki_shot",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/gura/boom1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "hexhaki:piece/gura/boom2",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.gun.load": {
+    "subtitle": "subtitles.hexhaki.piece.gun.load",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/sword/guard_click2",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "piece.gun.cock": {
+    "subtitle": "subtitles.hexhaki.piece.gun.cock",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/sword/guard_click4",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "piece.gun.spin": {
+    "subtitle": "subtitles.hexhaki.piece.gun.spin",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/sword/whoosh1",
+        "attenuation_distance": 16
+      },
+      {
+        "name": "hexhaki:piece/sword/whoosh2",
+        "attenuation_distance": 16
+      }
+    ]
+  },
+  "piece.gun.hit": {
+    "subtitle": "subtitles.hexhaki.piece.gun.hit",
+    "sounds": [
+      {
+        "name": "hexhaki:piece/clash/impact2",
+        "attenuation_distance": 24
+      },
+      {
+        "name": "hexhaki:piece/clash/impact3",
+        "attenuation_distance": 24
+      }
+    ]
   }
 }

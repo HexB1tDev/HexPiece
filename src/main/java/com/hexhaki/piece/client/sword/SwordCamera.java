@@ -19,7 +19,8 @@ import net.minecraftforge.fml.common.Mod;
  * while it is out), and goes back to first person when the blade is sheathed if that is where it was. The third-person camera glides
  * to {@link #SHOULDER} over the right shoulder, {@link #UP} higher and {@link #BACK} behind (the game's own is 4 straight back): the
  * blade's arc and what the crosshair is on both in view, never the back of the head over the target. Its place goes through the
- * original's camera hook (client/dragon/DragonCamera.position), stopped short of any block.
+ * original's camera hook (client/dragon/DragonCamera.position), stopped short of any block. 3.8.8: a gun in the hand too (the owner's
+ * category Gun: aimed from over the shoulder, the crosshair where the ball goes: client/gun/GunInput).
  */
 @Mod.EventBusSubscriber(modid = "hexhaki", value = Dist.CLIENT)
 public final class SwordCamera {
@@ -35,9 +36,12 @@ public final class SwordCamera {
     private SwordCamera() {
     }
 
-    /** Is one's own blade out of its saya now? */
+    /** Is one's own blade out of its saya now (3.8.8: or a gun in the hand)? */
     static boolean drawn(LocalPlayer player) {
         int id = player.m_19879_();
+        if (com.hexhaki.piece.client.gun.GunClient.gun(id) != null) {
+            return true;
+        }
         Katana katana = SwordClient.katana(id);
         return katana != null && SwordAnims.drawn(SwordClient.anim(id), SwordClient.ticks(player, 0.0F), katana);
     }

@@ -146,7 +146,7 @@ public final class SwordFx {
     }
 
     /** A point of the pose's frame in the world (the camera's position and turn undone). */
-    static double[] world(Matrix4f matrix, float x, float y, float z) {
+    public static double[] world(Matrix4f matrix, float x, float y, float z) {
         Vector3f v = new Vector3f(x, y, z);
         matrix.transformPosition(v);
         Camera camera = Minecraft.m_91087_().f_91063_.m_109153_();

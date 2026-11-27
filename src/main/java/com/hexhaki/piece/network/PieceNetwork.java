@@ -23,8 +23,9 @@ public final class PieceNetwork {
      * (19). 14 (3.3.2): C2SNikaJump (20), Gear 5's jump. 15 (3.4.4): C2SNikaWhip (21), Goof Ball let go. 16, 17 (3.5.x): Sky Road's
      * C2SItoSky (22), S2CUoFx's two-byte kind. 18 (3.5.7): Fishman Karate removed and Iron Fist emptied: the styles' and their moves'
      * ordinals changed, S2CWater keeps only the knock-down and the air bullets. 19 (3.5.9): C2SPowers (23), R held: every power off
-     * or on. 20 (3.6.0): C2SCreate carries the Haki colour, S2COpenCreation the colour page alone. */
-    private static final String PROTOCOL = "21";
+     * or on. 20 (3.6.0): C2SCreate carries the Haki colour, S2COpenCreation the colour page alone. 21 (3.8.2): the Conqueror's
+     * clash, S2CConquerorClash (24), C2SConquerorTap (25). 22 (3.8.8): the guns, S2CGun (26), S2CGunShot (27), C2SGun (28). */
+    private static final String PROTOCOL = "22";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -69,6 +70,10 @@ public final class PieceNetwork {
         // 3.8.2: the Conqueror's Haki clash (server/ConquerorClash, client/haki/ConquerorClashFx)
         CHANNEL.registerMessage(24, S2CConquerorClash.class, S2CConquerorClash::encode, S2CConquerorClash::decode, S2CConquerorClash::handle);
         CHANNEL.registerMessage(25, C2SConquerorTap.class, C2SConquerorTap::encode, C2SConquerorTap::decode, C2SConquerorTap::handle);
+        // 3.8.8: the guns (server/GunServer, server/GunShots, client/gun)
+        CHANNEL.registerMessage(26, S2CGun.class, S2CGun::encode, S2CGun::decode, S2CGun::handle);
+        CHANNEL.registerMessage(27, S2CGunShot.class, S2CGunShot::encode, S2CGunShot::decode, S2CGunShot::handle);
+        CHANNEL.registerMessage(28, C2SGun.class, C2SGun::encode, C2SGun::decode, C2SGun::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

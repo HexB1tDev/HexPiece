@@ -93,6 +93,11 @@ public final class PieceSounds {
             String name = event[0];
             BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
         }
+        // 3.8.8: the guns' (CC0 recordings from the web, gun/GunSounds)
+        for (String[] event : com.hexhaki.piece.gun.GunSounds.EVENTS) {
+            String name = event[0];
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
         // 3.2.3: the Nika fruit's transformation drums (CC0 recordings from Freesound.org, gear/GearSounds)
         for (String[] event : com.hexhaki.piece.gear.GearSounds.EVENTS) {
             String name = event[0];

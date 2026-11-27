@@ -1,0 +1,19 @@
+{
+ "version": 3,
+ "name": "gun_walk",
+ "author": "HexPiece 3.8.8",
+ "description": "Gun: walking: the right arm swings as the game swings it, the elbow eased, the gun along it, muzzle down.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 20,
+  "stopTick": 20,
+  "isLoop": true,
+  "returnTick": 0,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {"tick":0,"easing":"linear","rightArm":{"yaw":3.0,"roll":8.0,"bend":-16.0},"rightItem":{"pitch":-14.0,"yaw":0.0,"roll":0.0}},
+   {"tick":20,"easing":"linear","rightArm":{"yaw":3.0,"roll":8.0,"bend":-16.0},"rightItem":{"pitch":-14.0,"yaw":0.0,"roll":0.0}}
+  ]
+ }
+}

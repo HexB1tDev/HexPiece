@@ -6,6 +6,7 @@ the blade's moving highlight (client/sword/KatanaRenderer: a band of light refle
   python3 tools/katana_render.py icons <out dir>          the 25 inventory icons (32x32, blade up to the right as Minecraft draws swords; 2.2.6: they belong in src/main/resources/assets/hexhaki/textures/item/katana, where the item atlas stitches them)
   python3 tools/katana_render.py sheet <out.png>          all 25 blades and their saya side by side, to judge them
   python3 tools/katana_render.py legend-icons <out dir>   2.2.7: Gryphon's and Yoru's icons (from their own zip)
+  python3 tools/katana_render.py gun-icons <out dir>      3.8.8: the guns' icons (art/gun): the pistol side on, its muzzle up to the right
 Both read input/Hex_Katana_Atelier_1.20.1.zip.
 """
 import io
@@ -134,6 +135,28 @@ def icon(mesh, texture, size=32, widen=1.7, length=28.0, middle=7.1, ink=(24, 20
     return Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA")
 
 
+def gun_icon(mesh, texture, size=32, tilt=0.42, turn=0.6, nod=0.12, fill=0.94, ink=(34, 22, 16, 255)):
+    """3.8.8: a gun side on (its lock side), turned turn radians so its muzzle's mouth shows and nod radians down, the muzzle up to the
+    right by tilt radians, the grip down to the left, filling the slot across: item art as the swords' icons are (rendered big, shrunk,
+    a dark outline round it)."""
+    rot = rotation(0.0, 0.0, tilt) @ rotation(nod, -math.pi / 2 - turn, 0.0)
+    pos = np.array([v[:3] for v in mesh[0]], float) @ rot.T
+    lo, hi = pos.min(axis=0), pos.max(axis=0)
+    centre = (lo + hi) / 2.0
+    big_size = size * 8
+    scale = big_size * fill / max(hi[0] - lo[0], hi[1] - lo[1])
+    big = render(mesh, texture, rot, big_size, scale, centre, blade_groups=())
+    small = big.resize((size, size), Image.LANCZOS)
+    a = np.asarray(small, float)
+    alpha = a[..., 3] > 40
+    padded = np.pad(alpha, 1)
+    grown = alpha | padded[:-2, 1:-1] | padded[2:, 1:-1] | padded[1:-1, :-2] | padded[1:-1, 2:]
+    edge = grown & ~alpha
+    a[edge] = ink
+    a[alpha, 3] = 255
+    return Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA")
+
+
 def main():
     global GLOSS
     mode, out = sys.argv[1], sys.argv[2]
@@ -160,6 +183,14 @@ def main():
             icon(meshes[name], textures[name], widen=1.25, length=50.0, middle=9.65, ink=(150, 165, 200, 255)).save(
                 os.path.join(out, name + "_icon.png"))
         GLOSS = 0.75
+        return
+    if mode == "gun-icons":
+        # 3.8.8: the guns (art/gun, baked from the owner's First_gun.blend)
+        meshes = km.gun_meshes()
+        texture = Image.open(io.BytesIO(km.gun_texture()))
+        os.makedirs(out, exist_ok=True)
+        for name in km.GUNS:
+            gun_icon(meshes[name], texture).save(os.path.join(out, name + "_icon.png"))
         return
     meshes, textures = load()
     if mode == "icons":

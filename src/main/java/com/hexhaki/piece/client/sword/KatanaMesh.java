@@ -151,8 +151,13 @@ public final class KatanaMesh {
     }
 
     static KatanaMesh load(String name) throws IOException {
+        return read("/assets/hexhaki/katana/" + name + ".hkm", name);
+    }
+
+    /** 3.8.8: a mesh packed the same way anywhere in the jar (the guns': {@code /assets/hexhaki/gun/<name>.hkm}). */
+    public static KatanaMesh read(String resource, String name) throws IOException {
         byte[] packed;
-        try (InputStream in = KatanaMesh.class.getResourceAsStream("/assets/hexhaki/katana/" + name + ".hkm")) {
+        try (InputStream in = KatanaMesh.class.getResourceAsStream(resource)) {
             if (in == null) {
                 throw new IOException("missing mesh " + name);
             }

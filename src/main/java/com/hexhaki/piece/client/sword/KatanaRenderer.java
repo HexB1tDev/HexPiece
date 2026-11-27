@@ -242,7 +242,7 @@ public final class KatanaRenderer {
         }
     }
 
-    static void quads(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int first, int count, int light) {
+    public static void quads(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int first, int count, int light) {
         if (count <= 0) {
             return;
         }
@@ -257,6 +257,22 @@ public final class KatanaRenderer {
         for (int i = first * 4, end = (first + count) * 4; i < end; i++) {
             int v = q[i];
             com.hexhaki.piece.client.render.Bulk.vertex(buffer, m, nm, p[v * 3], p[v * 3 + 1], p[v * 3 + 2], 1.0F, 1.0F, 1.0F, 1.0F, t[v * 2],
+                t[v * 2 + 1], OverlayTexture.f_118083_, light, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]);
+        }
+    }
+
+    /** 3.8.8: the whole mesh tinted (r, g, b): a gun's Haki ball, pure black. */
+    public static void tinted(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, int light, float r, float g, float b) {
+        float[] m = new float[12];
+        float[] nm = new float[9];
+        com.hexhaki.piece.client.render.Bulk.read(pose, m, nm);
+        int[] q = mesh.quads;
+        float[] p = mesh.pos;
+        float[] t = mesh.uv;
+        float[] n = mesh.nrm;
+        for (int i = 0, end = q.length; i < end; i++) {
+            int v = q[i];
+            com.hexhaki.piece.client.render.Bulk.vertex(buffer, m, nm, p[v * 3], p[v * 3 + 1], p[v * 3 + 2], r, g, b, 1.0F, t[v * 2],
                 t[v * 2 + 1], OverlayTexture.f_118083_, light, n[v * 3], n[v * 3 + 1], n[v * 3 + 2]);
         }
     }

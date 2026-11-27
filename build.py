@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.8.7"
+VERSION = "3.8.8"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -55,6 +55,12 @@ EXPECTED_KATANA_SHA256 = "fece809eb8699a7f5a562b3975da753bb929089d1a93b75896d25b
 KATANA_MESHES = "assets/hexhaki/katana/"
 KATANA_TEXTURES = "assets/hexhaki/textures/katana/"
 KATANA_MODELS = "assets/hexhaki/models/item/katana_"
+# 3.8.8: the guns (art/gun, baked by tools/gun_bake.py from the owner's First_gun.blend): their meshes, atlas, item models and icons
+GUN_MESHES = "assets/hexhaki/gun/"
+GUN_TEXTURES = "assets/hexhaki/textures/gun/"
+GUN_MODELS = "assets/hexhaki/models/item/gun_"
+GUN_ICONS = "assets/hexhaki/textures/item/gun/"
+GUN_KEYS = ["flintlock"]
 # 2.2.6: the katanas' inventory icons, where the item atlas finds them (textures/item/...)
 KATANA_ICONS = "assets/hexhaki/textures/item/katana/"
 ICONS = "src/main/resources/" + KATANA_ICONS
@@ -193,6 +199,10 @@ NEW_PREFIXES = (
     KATANA_TEXTURES,
     KATANA_MODELS,
     KATANA_ICONS,
+    GUN_MESHES,
+    GUN_TEXTURES,
+    GUN_MODELS,
+    GUN_ICONS,
     ARMOR_TEXTURES,
     ARMOR_ICONS,
 ) + tuple(f"assets/hexhaki/models/item/{key}.json" for key in ARMOR_KEYS)
@@ -359,6 +369,33 @@ def mace_assets():
             "perspectives": {"gui": {"parent": "minecraft:item/generated", "textures": {"layer0": icon}}},
         }
         entries[f"{KATANA_MODELS}{name}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
+    return entries
+
+
+def gun_assets():
+    """3.8.8: {jar entry: bytes} for the guns (the owner's First_gun.blend baked by tools/gun_bake.py into art/gun): every gun's mesh
+    with its levels of detail and the bullet's (the lead ball, every gun's), their atlas, each gun's item model and icon (tools/
+    katana_render.py gun-icons)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import katana_mesh
+    if list(katana_mesh.GUNS) != GUN_KEYS:
+        raise RuntimeError(f"tools/katana_mesh.py GUNS {katana_mesh.GUNS} differ from build.py GUN_KEYS {GUN_KEYS}")
+    entries = {}
+    for name, data in katana_mesh.pack_guns().items():
+        entries[f"{GUN_MESHES}{name}.hkm"] = data
+    entries[f"{GUN_TEXTURES}gun.png"] = katana_mesh.gun_texture()
+    for key in GUN_KEYS:
+        icon = f"hexhaki:item/gun/{key}_icon"
+        if not (ROOT / "src/main/resources" / GUN_ICONS / f"{key}_icon.png").exists():
+            raise RuntimeError(f"No inventory icon for the gun {key} (tools/katana_render.py gun-icons)")
+        model = {
+            "loader": "forge:separate_transforms",
+            "gui_light": "front",
+            "textures": {"particle": icon},
+            "base": {"parent": "minecraft:builtin/entity"},
+            "perspectives": {"gui": {"parent": "minecraft:item/generated", "textures": {"layer0": icon}}},
+        }
+        entries[f"{GUN_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
     return entries
 
 
@@ -584,6 +621,10 @@ def assemble():
     for name, data in armor_assets().items():
         if name in entries:
             raise RuntimeError(f"An armor texture would overwrite an entry: {name}")
+        entries[name] = data
+    for name, data in gun_assets().items():
+        if name in entries:
+            raise RuntimeError(f"A gun asset would overwrite an entry: {name}")
         entries[name] = data
     for name, data in dragon_assets().items():
         if name in entries:

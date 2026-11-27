@@ -411,6 +411,39 @@ def pack_maces():
     return out
 
 
+# 3.8.8: the owner's gun (First_gun.blend), baked by tools/gun_bake.py into art/gun/ in the guns' own frame (model px, the grip's pivot
+# at 0, the barrel forward -z, up +y): the flintlock with its levels of detail and the lead ball (every gun's bullet), on one atlas
+GUN_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "gun")
+GUNS = ("flintlock",)
+BULLET = "lead_ball"
+
+
+def gun_meshes():
+    """{name: (vertices, quads, groups)} of the guns and the bullet, in the guns' frame."""
+    out = {}
+    for name in GUNS + (BULLET,):
+        with open(os.path.join(GUN_DIR, name + ".obj"), encoding="utf-8") as h:
+            out[name] = parse(h.read())
+    return out
+
+
+def gun_texture():
+    """The guns' atlas (png bytes): every gun's and the bullet's toon ramps."""
+    with open(os.path.join(GUN_DIR, "gun.png"), "rb") as h:
+        return h.read()
+
+
+def pack_guns():
+    """{model name: packed mesh bytes} for the guns (with their levels of detail) and the bullet."""
+    out = {}
+    for name, mesh in gun_meshes().items():
+        out[name] = encode(*mesh)
+        if name != BULLET:
+            for lod, (cell, buckets) in LODS.items():
+                out[f"{name}_{lod}"] = encode(*simplify(*mesh, cell, buckets))
+    return out
+
+
 if __name__ == "__main__":
     out = sys.argv[2]
     os.makedirs(out, exist_ok=True)

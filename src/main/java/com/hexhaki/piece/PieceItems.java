@@ -26,6 +26,8 @@ public final class PieceItems {
     private static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.f_279569_, HexPiece.MODID);
     public static final Map<Katana, RegistryObject<Item>> KATANAS = new EnumMap<>(Katana.class);
     public static final Map<PieceArmor, RegistryObject<Item>> ARMOR = new EnumMap<>(PieceArmor.class);
+    /** 3.8.8: the owner's guns ({@code hexhaki:gun_<key>}). */
+    public static final Map<com.hexhaki.piece.gun.Gun, RegistryObject<Item>> GUNS = new EnumMap<>(com.hexhaki.piece.gun.Gun.class);
 
     static {
         for (Katana katana : Katana.values()) {
@@ -33,6 +35,9 @@ public final class PieceItems {
         }
         for (PieceArmor piece : PieceArmor.values()) {
             ARMOR.put(piece, ITEMS.register(piece.key(), () -> new PieceArmorItem(piece)));
+        }
+        for (com.hexhaki.piece.gun.Gun gun : com.hexhaki.piece.gun.Gun.values()) {
+            GUNS.put(gun, ITEMS.register("gun_" + gun.key(), () -> new com.hexhaki.piece.gun.GunItem(gun)));
         }
     }
 
@@ -51,6 +56,9 @@ public final class PieceItems {
             output.m_246342_(stack(Katana.GRYPHON));
             output.m_246342_(stack(Katana.YORU));
             output.m_246342_(stack(Katana.IRON_MACE)); // 3.8.7
+            for (com.hexhaki.piece.gun.Gun gun : com.hexhaki.piece.gun.Gun.values()) {
+                output.m_246342_(new ItemStack(GUNS.get(gun).get(), 1)); // 3.8.8
+            }
         })
         .m_257652_());
 

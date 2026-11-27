@@ -647,6 +647,7 @@ public final class SwordTests {
                 || java.util.Arrays.stream(com.hexhaki.piece.horo.HoroSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.ito.ItoSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.mochi.MochiSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
+                || java.util.Arrays.stream(com.hexhaki.piece.gun.GunSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1)))
                 || java.util.Arrays.stream(com.hexhaki.piece.ironfist.IronSounds.EVENTS).anyMatch(e -> e[0].equals(event.group(1))),
                 event.group(1) + ": registered");
         }

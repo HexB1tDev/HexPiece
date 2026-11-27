@@ -1,7 +1,7 @@
 package com.hexhaki.piece.gun;
 
 /**
- * 3.8.8: the guns' rules, pure (tested in WorldTests' gun checks). The owner's category Gun: "Pistols, usually held with one hand (right)
+ * 3.8.8: the guns' rules, pure (tested: GunTests). The owner's category Gun: "Pistols, usually held with one hand (right)
  * in a badass pose, all weapons only shoot 1 bullet at a time, and auto reloads after, bullets are also the same model from now one ...
  * when haki is on, bullets come out black (pure black), those bullets are much much faster and go through blocks (10 blocks max), simple
  * reload animation, put 1 bullet in the hole of the barrel" and "Make sure guns are lowered in a really relaxed way, pointing down at the
@@ -28,6 +28,15 @@ public final class GunRules {
     public static final float HAKI_DAMAGE = 10.5F;
     /** How much a body is grown when the ball's line is tested against it (blocks): the ball's own size. */
     public static final double BALL = 0.12;
+    /**
+     * Where the ball leaves the muzzle, from the eye along the look (blocks): {@link #MUZZLE_AHEAD} ahead, {@link #MUZZLE_RIGHT} to the
+     * right, {@link #MUZZLE_DOWN} below (tools/gun_anims.py's aims put the muzzle there, 1.1 ahead and 0.37 right at every pitch).
+     */
+    public static final double MUZZLE_AHEAD = 1.1;
+    public static final double MUZZLE_RIGHT = 0.37;
+    public static final double MUZZLE_DOWN = 0.17;
+    /** How far (degrees) the aim the client sends may be off the look before the server takes the look itself. */
+    public static final double AIM_SLACK = 25.0;
     /** The relaxed hold's spin of the gun on the hand: after this many ticks standing still with it, now and then. */
     public static final int SPIN_AFTER = 120;
     public static final int SPIN_EVERY = 260;
@@ -43,6 +52,11 @@ public final class GunRules {
     /** How far down a ball has fallen after {@code ticks} (blocks; none for a Haki ball, which flies straight). */
     public static double drop(boolean haki, double ticks) {
         return haki ? 0.0 : 0.5 * GRAVITY * ticks * ticks;
+    }
+
+    /** One coordinate of a ball {@code ticks} into its flight: from {@code start} at {@code velocity} a tick ({@code down}: its height). */
+    public static double at(double start, double velocity, double ticks, boolean haki, boolean down) {
+        return start + velocity * ticks - (down ? drop(haki, ticks) : 0.0);
     }
 
     /** The ticks a ball flies before it is gone (out of range). */

@@ -203,5 +203,12 @@
   "subtitles.hexhaki.piece.gear.goof_pop": "A ball of smoke pops",
   "subtitles.hexhaki.piece.gear.whip_wind": "Rubber twists tight",
   "subtitles.hexhaki.piece.gear.whip_spin": "A body unwinds",
-  "subtitles.hexhaki.piece.gear.whip_crack": "A rubber leg cracks like a whip"
+  "subtitles.hexhaki.piece.gear.whip_crack": "A rubber leg cracks like a whip",
+  "item.hexhaki.gun_flintlock": "Flintlock Pistol",
+  "subtitles.hexhaki.piece.gun.shot": "A pistol fires",
+  "subtitles.hexhaki.piece.gun.haki_shot": "A Haki ball booms out",
+  "subtitles.hexhaki.piece.gun.load": "A ball is pressed into a muzzle",
+  "subtitles.hexhaki.piece.gun.cock": "A hammer clicks back",
+  "subtitles.hexhaki.piece.gun.spin": "A pistol spins",
+  "subtitles.hexhaki.piece.gun.hit": "A ball strikes"
 }

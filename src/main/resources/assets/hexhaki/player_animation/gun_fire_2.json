@@ -1,0 +1,24 @@
+{
+ "version": 3,
+ "name": "gun_fire_2",
+ "author": "HexPiece 3.8.8",
+ "description": "Gun: aimed and fired at a look -20 degrees (up): the arm snapped out straight along the look, side on, the left hand on the hip; the shot; the recoil kicks the muzzle up; it settles.",
+ "emote": {
+  "beginTick": 0,
+  "endTick": 9,
+  "stopTick": 9,
+  "isLoop": false,
+  "returnTick": 0,
+  "degrees": true,
+  "easeBeforeKeyframe": true,
+  "moves": [
+   {"tick":0,"easing":"linear","body":{"bend":1.5},"torso":{"pitch":0.0,"yaw":-3.0,"roll":1.0},"rightArm":{"pitch":-7.0,"yaw":4.0,"roll":9.0,"bend":-12.0},"leftArm":{"pitch":4.0,"yaw":0.0,"roll":-5.0,"bend":-9.0},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-8.0,"yaw":0.0,"roll":0.0}},
+   {"tick":1,"easing":"outquad","body":{"bend":-0.88},"torso":{"pitch":0.0,"yaw":4.92,"roll":0.28},"rightArm":{"pitch":-79.65,"yaw":-1.31,"roll":-4.9,"bend":-7.68},"leftArm":{"pitch":23.66,"yaw":59.46,"roll":-22.01,"bend":-60.44},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":2.08,"yaw":0.0,"roll":0.0}},
+   {"tick":3,"easing":"outquad","body":{"bend":-1.8},"torso":{"pitch":0.0,"yaw":8.0,"roll":0.0},"rightArm":{"pitch":-107.91,"yaw":-3.38,"roll":-10.31,"bend":-6.0},"leftArm":{"pitch":31.31,"yaw":82.59,"roll":-28.62,"bend":-80.44},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":6.0,"yaw":0.0,"roll":0.0}},
+   {"tick":4,"easing":"outexpo","body":{"bend":-4.3},"torso":{"pitch":0.0,"yaw":11.0,"roll":0.0},"rightArm":{"pitch":-120.71,"yaw":-3.38,"roll":-10.31,"bend":-20.0},"leftArm":{"pitch":31.31,"yaw":82.59,"roll":-28.62,"bend":-80.44},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":28.0,"yaw":0.0,"roll":0.0}},
+   {"tick":5,"easing":"inoutsine","body":{"bend":-3.67},"torso":{"pitch":0.0,"yaw":10.25,"roll":0.0},"rightArm":{"pitch":-117.51,"yaw":-3.38,"roll":-10.31,"bend":-16.5},"leftArm":{"pitch":31.31,"yaw":82.59,"roll":-28.62,"bend":-80.44},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":22.5,"yaw":0.0,"roll":0.0}},
+   {"tick":7,"easing":"inoutsine","body":{"bend":-2.1},"torso":{"pitch":0.0,"yaw":8.36,"roll":0.0},"rightArm":{"pitch":-109.44,"yaw":-3.38,"roll":-10.31,"bend":-7.68},"leftArm":{"pitch":31.31,"yaw":82.59,"roll":-28.62,"bend":-80.44},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":8.64,"yaw":0.0,"roll":0.0}},
+   {"tick":9,"easing":"inoutsine","body":{"bend":-1.8},"torso":{"pitch":0.0,"yaw":8.0,"roll":0.0},"rightArm":{"pitch":-107.91,"yaw":-3.38,"roll":-10.31,"bend":-6.0},"leftArm":{"pitch":31.31,"yaw":82.59,"roll":-28.62,"bend":-80.44},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":6.0,"yaw":0.0,"roll":0.0}}
+  ]
+ }
+}

@@ -333,7 +333,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         return null;
     }
 
-    static Vec3f channel(ModifierLayer<IAnimation> layer, String part, TransformType type, float partial) {
+    public static Vec3f channel(ModifierLayer<IAnimation> layer, String part, TransformType type, float partial) {
         if (layer == null || !layer.isActive()) {
             return Vec3f.ZERO;
         }
@@ -341,7 +341,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
         return value == null ? Vec3f.ZERO : value;
     }
 
-    static float[] bend(AbstractClientPlayer player, String part) {
+    public static float[] bend(AbstractClientPlayer player, String part) {
         if (player instanceof IAnimatedPlayer animated) {
             AnimationApplier animation = animated.playerAnimator_getAnimation();
             if (animation != null && animation.isActive()) {
@@ -355,7 +355,7 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
     }
 
     /** Turns the pose by {@code amount} about (cos(-axis), 0, sin(-axis)) at {@code y} blocks down (bendy-lib's and the held item's). */
-    static void bendAbout(PoseStack pose, float y, float axis, float amount) {
+    public static void bendAbout(PoseStack pose, float y, float axis, float amount) {
         if (Math.abs(amount) < 1.0E-5F) {
             return;
         }
