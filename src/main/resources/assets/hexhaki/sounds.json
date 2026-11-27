@@ -2062,5 +2062,24 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "piece.itsu.vanish": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.vanish",
+    "sounds": [
+      {
+        "name": "minecraft:entity.illusioner.mirror_move",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.6,
+        "attenuation_distance": 48
+      },
+      {
+        "name": "minecraft:entity.enderman.teleport",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.5,
+        "attenuation_distance": 48
+      }
+    ]
   }
 }

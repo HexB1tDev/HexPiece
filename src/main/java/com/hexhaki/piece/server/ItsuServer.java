@@ -49,7 +49,11 @@ public final class ItsuServer {
     static final long SCREAM = 49;
     /** 3.9.6: its bones cracking (Minecraft's bone block breaking, pitched down: tools/vanilla_sounds.py ITSU). */
     public static final String CRACK = "piece.itsu.crack";
-    public static final String[] SOUNDS = {CRACK};
+    /** 3.9.7: the passive's vanishing (server/ItsuPassive). */
+    public static final String VANISH = "piece.itsu.vanish";
+    public static final String[] SOUNDS = {CRACK, VANISH};
+    /** 3.9.7: S2CUoFx kinds: black smoke the height bx of a body at the point (the passive's vanishing and its standing again). */
+    public static final int SMOKE = 441;
 
     static boolean contains(long[] ticks, long t) {
         for (long k : ticks) {

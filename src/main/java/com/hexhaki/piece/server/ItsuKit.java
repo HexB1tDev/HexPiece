@@ -45,6 +45,13 @@ public final class ItsuKit extends FruitKit {
     @Override
     public void removed(ServerPlayer player) {
         ItsuServer.restore(player);
+        RyouServer.retell(player); // 3.9.7: its Haki colours go with it
+    }
+
+    /** 3.9.7: eaten (or its kit given back on joining): every client told its Haki's colours (server/RyouServer.ITSU_COLOR). */
+    @Override
+    public void granted(ServerPlayer player) {
+        RyouServer.retell(player);
     }
 
     @Override

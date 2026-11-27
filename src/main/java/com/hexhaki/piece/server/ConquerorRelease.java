@@ -271,8 +271,11 @@ public final class ConquerorRelease {
             if (!body.m_6084_()) {
                 continue;
             }
-            // an evil release's lightning takes half of what each body it strikes has left (once: not again for one hurt in the radius)
-            if (evil && r.hurt.add(body.m_19879_())) {
+            // an evil release's lightning takes half of what each body it strikes has left (once: not again for one hurt in the radius);
+            // 3.9.7: an Itsumade's kills (hurt's own rule)
+            if (RyouServer.itsumade(player) && r.hurt.add(body.m_19879_())) {
+                body.m_6469_(player.m_269291_().m_269075_(player), (r.full ? 1.0F : ITSU_SHARE) * body.m_21223_() + ITSU_BLOW);
+            } else if (evil && r.hurt.add(body.m_19879_())) {
                 halve(body, player.m_269291_().m_269075_(player));
             }
             if (!r.full) {
@@ -392,11 +395,24 @@ public final class ConquerorRelease {
      * 2.4.9: the release's damage ({@code LivingEntity.hurt} in the original's {@code applyConqueror}): a good player's hurts no one,
      * an evil player's takes half of what is left ({@link #halve}), a neutral one's as the original's.
      */
+    /** 3.9.7: an Itsumade's release takes this share of what is left (a full one all of it), and this much on top. */
+    static final float ITSU_SHARE = 0.6F;
+    static final float ITSU_BLOW = 6.0F;
+
     public static boolean hurt(LivingEntity body, DamageSource source, float amount) {
         Release r = current;
         if (r != null && r.tick == body.m_9236_().m_46467_()) {
             if (r.tap && !r.tapped.contains(body)) {
                 r.tapped.add(body); // 2.6.0: the tap stuns it after (apply)
+            }
+            if (RyouServer.itsumade(r.player)) {
+                // 3.9.7 (the owner's Itsumade: "The user's conqueror's haki (G) can now kill"): never spared, whatever the alignment: more
+                // than half of what is left and a blow on top (a full release kills, two of any kind do)
+                if (!r.hurt.add(body.m_19879_())) {
+                    return false;
+                }
+                float health = body.m_21223_();
+                return body.m_6469_(source, Math.max(amount, (r.full ? 1.0F : ITSU_SHARE) * health + ITSU_BLOW));
             }
             if (!ConquerorStun.hurts(r.alignment)) {
                 return false;

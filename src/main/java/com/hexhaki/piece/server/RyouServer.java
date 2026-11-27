@@ -40,9 +40,27 @@ public final class RyouServer {
     private RyouServer() {
     }
 
-    /** The player's Ryou colour (ARGB), or 0 while they have none. */
+    /**
+     * 3.9.7 (the owner's Itsumade: "changes color to the exact color scheme of the reference I attached in the ZIP called Haki_color. This
+     * changes every color of the user's haki including ryou to be a greeish/blueish scary tone"): an Itsumade eater's Haki wears the
+     * reference's colours (its lightning a deep blue-indigo, its glow a sick green) whatever they chose; their own choice comes back with
+     * the fruit gone.
+     */
+    public static final int ITSU_COLOR = 0xFF2B3FD8;
+    public static final int ITSU_AURA = 0xFF22E08A;
+
+    static boolean itsumade(ServerPlayer player) {
+        try {
+            return com.hexhaki.fruit.FruitData.fruit(player) == com.hexhaki.fruit.Fruit.ITSU;
+        } catch (RuntimeException failure) {
+            return false;
+        }
+    }
+
+    /** The player's Ryou colour (ARGB), or 0 while they have none (3.9.7: the Itsumade's for its eater). */
     public static int color(ServerPlayer player) {
-        return ProfileServer.root(player).m_128451_(COLOR);
+        int own = ProfileServer.root(player).m_128451_(COLOR);
+        return own != 0 && itsumade(player) ? ITSU_COLOR : own;
     }
 
     /**
@@ -80,6 +98,9 @@ public final class RyouServer {
 
     /** 3.6.0: {@code player}'s Ryou glow colour (the band of their chosen Ryou colour), or 0 (drawn in their Haki colour). */
     public static int aura(ServerPlayer player) {
+        if (itsumade(player)) {
+            return ITSU_AURA; // 3.9.7: the Itsumade's glow
+        }
         com.hexhaki.piece.haki.RyouColour colour = com.hexhaki.piece.haki.RyouColour.byCode(ProfileServer.root(player).m_128451_(AURA));
         return colour == null ? 0 : 0xFF000000 | colour.band;
     }
@@ -111,6 +132,11 @@ public final class RyouServer {
         if (event.phase == TickEvent.Phase.END && event.player instanceof ServerPlayer player && player.f_19797_ % CHECK_EVERY == 0) {
             ensure(player);
         }
+    }
+
+    /** 3.9.7: every client told {@code player}'s colours again (the Itsumade eaten or lost). */
+    public static void retell(ServerPlayer player) {
+        tell(player);
     }
 
     static void tell(ServerPlayer player) {

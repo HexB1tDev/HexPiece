@@ -162,6 +162,8 @@ MACE = {
 # 3.9.6: the Itsumade's bones cracking as it changes (it borrowed the Gura's crack: that is breaking glass now)
 ITSU = {
     "piece.itsu.crack": [("block.bone_block.break", 1.0, 0.6), ("block.bone_block.break", 1.0, 0.5)],
+    # 3.9.7: the passive: it vanishes in black smoke and stands again ten blocks away
+    "piece.itsu.vanish": [("entity.illusioner.mirror_move", 1.0, 0.6), ("entity.enderman.teleport", 1.0, 0.5)],
 }
 
 

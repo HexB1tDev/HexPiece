@@ -127,6 +127,10 @@ public final class ItsuFx {
 
     /** client/dragon/UoFx hands on the Itsumade's messages (server/ItsuServer: 440 to 459). */
     public static void accept(S2CUoFx m) {
+        if (m.kind() == ItsuServer.SMOKE) {
+            smoke(m.x(), m.y(), m.z(), m.bx());
+            return;
+        }
         if (m.kind() != ItsuServer.PHASE) {
             return;
         }
@@ -152,6 +156,30 @@ public final class ItsuFx {
         entry.start = start;
         if (phase == ItsuForm.FORMING && m.ticks() == 0 && self) {
             out(minecraft);
+        }
+    }
+
+    /**
+     * 3.9.7 (the owner's passive: "he vanishes in a black smoke and appears somewhere safe 10 blocks away"): a burst of black smoke the
+     * height of a body at the point: the dense dark smoke rolling out and up, thinner wisps round it.
+     */
+    static void smoke(double x, double y, double z, double height) {
+        ClientLevel level = Minecraft.m_91087_().f_91073_;
+        if (level == null) {
+            return;
+        }
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 70; i++) {
+            double a = random.nextDouble() * Math.PI * 2.0;
+            double r = 0.15 + random.nextDouble() * 0.5;
+            double h = random.nextDouble() * height;
+            level.m_7106_(net.minecraft.core.particles.ParticleTypes.f_123796_, x + Math.cos(a) * r, y + h, z + Math.sin(a) * r,
+                Math.cos(a) * 0.06, 0.03 + random.nextDouble() * 0.05, Math.sin(a) * 0.06);
+        }
+        for (int i = 0; i < 30; i++) {
+            double a = random.nextDouble() * Math.PI * 2.0;
+            level.m_7106_(net.minecraft.core.particles.ParticleTypes.f_123762_, x + Math.cos(a) * 0.4, y + random.nextDouble() * height,
+                z + Math.sin(a) * 0.4, Math.cos(a) * 0.12, 0.05, Math.sin(a) * 0.12);
         }
     }
 
