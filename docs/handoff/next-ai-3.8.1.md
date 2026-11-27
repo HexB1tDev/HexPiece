@@ -529,3 +529,16 @@ but its one of them.
   spiked mace (Haki on) over the shoulder.
 - Picture 3: the anime's Itsumade head (the target for 8): one head: a long hooked yellow beak open with teeth, a red mask over the
   eyes with a blue eye, the brown mane swept back, an orange flame at the cheek.
+
+## 21. The owner, while the list in 20 was being fixed (verbatim, newest last)
+- "you cannot look at the current gun holding and call it good bro wtf is that, is he holding a dildo?" (with a crop of the gun_idle
+  preview, three-quarter front: the gun tipped forward-down out of the bottom of the fist; a green "7" drawn over it: a short bar
+  across the bottom of the hand, the long stroke down along the leg). Lesson: judge renders as hard as the owner does; a cylinder
+  pointing out of the fist reads wrong.
+- "Gun handle goes where the green circle is" (the same preview, a green circle on the lower front of the right arm, at the fist):
+  the grip in the middle of the fist. Done: tools/gun_anims.py held(): the relaxed holds (idle, walk, run) keep the grip's pivot (the
+  gun's origin, in its handle) at the fist's centre whatever the wrist's cock; idle pitch -25 (walk -31, run 9): the barrel out of the
+  front of the hand, pointing ahead and down at the floor.
+- "also the fiery mane of my model Is wrong I just noticed, it should follow the green line" (with a crop of the back view of the
+  Itsumade: a green line drawn down the middle of the tail's back, from under the body to the tail's fire): the flame-edged dorsal fin
+  and its flicks run down the tail's side edge; they belong on the middle of its back (the dorsal line).
