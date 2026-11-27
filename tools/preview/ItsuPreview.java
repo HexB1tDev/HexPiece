@@ -120,6 +120,14 @@ public final class ItsuPreview {
                 mo.perch = 1.0F;
                 mo.mouth = 1.0F;
             }
+            case "form" -> {
+                mo.perch = 1.0F;
+                ItsuForm.change(ItsuForm.FORMING, t * 20.0F, mo);
+            }
+            case "unform" -> {
+                mo.perch = 1.0F;
+                ItsuForm.change(ItsuForm.UNFORMING, t * 20.0F, mo);
+            }
             default -> {
             }
         }
@@ -139,7 +147,9 @@ public final class ItsuPreview {
         } else {
             ItsuForm.pose(model, shape, pose, mo, t);
         }
-        float s = ItsuForm.SCALE;
+        boolean change = state.equals("form") || state.equals("unform");
+        int phase = state.equals("form") ? ItsuForm.FORMING : ItsuForm.UNFORMING;
+        float s = ItsuForm.SCALE * (change ? ItsuForm.size(phase, t * 20.0F) : 1.0F);
         // the skinned parts, the flowing ones alive; then placed: on the ground its feet on it, in the air its chest 7 blocks up
         List<float[]> skinned = new ArrayList<>();
         float low = Float.MAX_VALUE;
@@ -150,7 +160,7 @@ public final class ItsuPreview {
             pose.skin(part, pos, nrm);
             if (!rest) {
                 float wind = (1.0F - mo.perch) * (0.3F + 0.7F * mo.speed);
-                ItsuForm.flow(shape, i, pos, nrm, t, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, wind, 1.0F);
+                ItsuForm.flow(shape, i, pos, nrm, t, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, wind, mo.grown[ItsuForm.G_FIRE]);
             }
             skinned.add(pos);
             skinned.add(nrm);
@@ -161,6 +171,9 @@ public final class ItsuPreview {
             }
         }
         boolean ground = mo.perch > 0.5F || rest;
+        if (s < 0.001F) {
+            s = 0.001F;
+        }
         float chestY = pose.global[shape.chest * 12 + 7];
         double lift = ground ? -low * s : 7.0 - chestY * s;
         double[] lo = {1e9, 1e9, 1e9};
@@ -191,7 +204,13 @@ public final class ItsuPreview {
             target[2] + dist * Math.cos(pitch) * Math.cos(yaw)};
         Raster ra = new Raster(W * SS, H * SS, eye, target);
         ra.ground(0.0);
-        ra.figure(lo[0] - 1.5, 0.0, 0.0);
+        if (change) {
+            if (!ItsuForm.humanHidden(phase, t * 20.0F)) {
+                ra.figure(0.0, 0.0, 0.0);
+            }
+        } else {
+            ra.figure(lo[0] - 1.5, 0.0, 0.0);
+        }
         for (int i = 0; i < model.parts.length; i++) {
             DragonModel.Part part = model.parts[i];
             float[] wp = placed.get(i);
@@ -220,7 +239,48 @@ public final class ItsuPreview {
             }
             ra.mesh(part, wp, col);
         }
+        // the glow round the fire and the black ribbon (as client/itsumade/ItsuFx: ItsuForm.glow), alpha blended, far to near
+        if (!rest) {
+            double[] fire = anchorPoints(shape.glowFire, placed, eye);
+            double[] ribbon = anchorPoints(shape.glowRibbon, placed, eye);
+            List<double[]> quads = new ArrayList<>();
+            com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
+                double[] q = new double[17];
+                for (int k = 0; k < 12; k++) {
+                    q[k] = xyz[k] + eye[k % 3];
+                }
+                for (int k = 0; k < 4; k++) {
+                    q[12 + k] = argb[k];
+                }
+                double mx = (xyz[0] + xyz[3] + xyz[6] + xyz[9]) / 4;
+                double my = (xyz[1] + xyz[4] + xyz[7] + xyz[10]) / 4;
+                double mz = (xyz[2] + xyz[5] + xyz[8] + xyz[11]) / 4;
+                q[16] = mx * mx + my * my + mz * mz;
+                quads.add(q);
+            };
+            ItsuForm.glow(sink, fire, fire.length / 3, ribbon, ribbon.length / 3, s, t, 1.0F);
+            quads.sort((x, y) -> Double.compare(y[16], x[16]));
+            for (double[] q : quads) {
+                ra.blend(q);
+            }
+            glowQuads = quads.size();
+        }
         return ra.image(W, H);
+    }
+
+    static int glowQuads;
+
+    /** The anchors (part, vertex pairs) placed, camera-relative. */
+    static double[] anchorPoints(int[] an, List<float[]> placed, double[] eye) {
+        double[] out = new double[an.length / 2 * 3];
+        for (int k = 0; k < an.length / 2; k++) {
+            float[] wp = placed.get(an[k * 2]);
+            int v = an[k * 2 + 1];
+            for (int r = 0; r < 3; r++) {
+                out[k * 3 + r] = wp[v * 3 + r] - eye[r];
+            }
+        }
+        return out;
     }
 
     static final class Raster {

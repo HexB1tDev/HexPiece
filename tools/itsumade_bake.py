@@ -534,6 +534,9 @@ def fused_head(face_rgb, face_alpha):
 
 
 MANTLE = "Black cloud  /  continuous open mantle"
+# the ribbon's height range (Blender z) over which it goes from riding the chest to riding the neck
+RIBBON_LOW = 6.0
+RIBBON_HIGH = 9.8
 # a placeholder u for a flowing vertex until its part's reach is known (inside the white square)
 REACH_UV = (WHITE[0] + 0.5) / ATLAS_W
 
@@ -694,9 +697,14 @@ def main():
                 w = span_weights(names, xs, best[1])
                 for i in range(len(weights)):
                     weights[i] = w
-        elif "halo" == parent or kind == 3:
-            for i in range(len(weights)):
-                weights[i] = [("halo", 1.0)]
+        elif kind == 3:
+            # 3.9.4 (the owner: "the fire ribbon has to bend too along with the body"): the black ribbon rides the body: its ends (beside
+            # the hips) on the chest, the neck's turn taken on smoothly toward its arch's top (never the neck's bones outright: the
+            # neck swings 44 degrees round to bring the file's head to the front, and a ribbon split between it and the chest tore)
+            for i, p in enumerate(wv):
+                u = min(1.0, max(0.0, (p[2] - RIBBON_LOW) / (RIBBON_HIGH - RIBBON_LOW)))
+                k = u * u * (3 - 2 * u) * 0.75
+                weights[i] = [("chest", 1.0 - k), ("neck1", k)] if k > 0.002 else [("chest", 1.0)]
         elif o.name.startswith(("L  /", "R  /")) and ("plumage" in o.name or "cuff" in o.name):
             for i in range(len(weights)):
                 weights[i] = [(f"hip{o.name[0]}", 1.0)]

@@ -55,6 +55,8 @@ public final class ItsuForm {
     static float GROUND_PITCH = -62.0F;
     /** The most a tail joint bends from the one before it (degrees). */
     static final float TAIL_BEND = 24.0F;
+    /** The most the neck and head turn back against the body's forward pitch to hold the head level (degrees). */
+    static final float LEVEL_MOST = 58.0F;
 
     // ------------------------------------------------------------------------------------------------------------------ the change
 
@@ -116,8 +118,8 @@ public final class ItsuForm {
     }
 
     /**
-     * 0 to 1 over t in jolts: {@code steps} quick surges (each an ease out with a little overshoot) with a stall between: the disturbing
-     * growth that never runs smooth.
+     * 0 to 1 over t in jolts: {@code steps} quick surges (each a hard ease out, stopping dead) with a stall between: the disturbing
+     * growth that never runs smooth (and never shrinks back).
      */
     public static float lurch(float t, int steps) {
         t = clamp(t);
@@ -127,10 +129,9 @@ public final class ItsuForm {
         float x = t * steps;
         int k = (int) Math.floor(x);
         float f = x - k;
-        // each surge in the first 60% of its step, held the rest
-        float u = clamp(f / 0.6F);
-        float back = 1.70158F;
-        float surge = 1.0F + (back + 1.0F) * (float) Math.pow(u - 1.0F, 3) + back * (float) Math.pow(u - 1.0F, 2);
+        // each surge in the first 45% of its step, stopping dead (never settling back: it never shrinks), held the rest
+        float u = clamp(f / 0.45F);
+        float surge = 1.0F - (float) Math.pow(1.0F - u, 4);
         return Math.min(1.0F, (k + surge) / steps);
     }
 
@@ -162,6 +163,10 @@ public final class ItsuForm {
         public final float[][] phase;
         /** The lowest point of the feet at rest (model y), and the tail's thickness at its root and its tip (units). */
         public final float feet;
+        /** 3.9.4 the glow's anchors (the owner: "The fire all of it also has to glow, black fire glows black, the rest glows orange"):
+         * (part, vertex) pairs spread along the fire and along the black ribbon, GLOW_SPACING apart at rest. */
+        public final int[] glowFire;
+        public final int[] glowRibbon;
 
         public Shape(DragonModel m) {
             this.root = m.bone("root");
@@ -226,6 +231,45 @@ public final class ItsuForm {
                 }
             }
             this.feet = low == Float.MAX_VALUE ? 2.24F : low;
+            this.glowFire = anchors(m, this.kind, FIRE, GLOW_SPACING);
+            this.glowRibbon = anchors(m, this.kind, RIBBON, GLOW_SPACING * 1.2F);
+        }
+
+        /** Vertices of every part of {@code kind}, greedily at least {@code spacing} apart (rest), its reach over 0.15 (on the flame). */
+        static int[] anchors(DragonModel m, int[] kinds, int kind, float spacing) {
+            java.util.List<float[]> picked = new java.util.ArrayList<>();
+            java.util.List<int[]> out = new java.util.ArrayList<>();
+            for (int i = 0; i < m.parts.length; i++) {
+                if (kinds[i] != kind) {
+                    continue;
+                }
+                DragonModel.Part part = m.parts[i];
+                for (int v = 0; v < part.vertices(); v += 3) {
+                    float x = part.pos[v * 3];
+                    float y = part.pos[v * 3 + 1];
+                    float z = part.pos[v * 3 + 2];
+                    boolean near = false;
+                    for (float[] q : picked) {
+                        float dx = q[0] - x;
+                        float dy = q[1] - y;
+                        float dz = q[2] - z;
+                        if (dx * dx + dy * dy + dz * dz < spacing * spacing) {
+                            near = true;
+                            break;
+                        }
+                    }
+                    if (!near) {
+                        picked.add(new float[] {x, y, z});
+                        out.add(new int[] {i, v});
+                    }
+                }
+            }
+            int[] flat = new int[out.size() * 2];
+            for (int k = 0; k < out.size(); k++) {
+                flat[k * 2] = out.get(k)[0];
+                flat[k * 2 + 1] = out.get(k)[1];
+            }
+            return flat;
         }
 
         public float rx(int bone) {
@@ -316,7 +360,8 @@ public final class ItsuForm {
         // the touchdown's dip
         float dip = mo.land;
         // ---- the neck and the head: brought round to face ahead, held level whatever the chest's pitch, following the look
-        float level = -chestPitch;
+        // (never more than LEVEL_MOST: diving, the head looks down into the dive; held level past it, the neck's ruff tore)
+        float level = Math.min(LEVEL_MOST, -chestPitch);
         float look = clampf(mo.look, -50.0F, 50.0F);
         float twitch = mo.perch * twitch(t);
         // searching: the head snapping between still looks (no glide between them: a bird's), wider standing than walking
@@ -336,8 +381,7 @@ public final class ItsuForm {
         mouth = Math.max(mouth, biteMouth(mo.bite));
         turn(pose, sh.jaw, lerp(JAW_SHUT, JAW_WIDE, mouth), JAW_AXIS[0], JAW_AXIS[1], JAW_AXIS[2]);
         // ---- the black ribbon: swaying with the breath and the wind
-        // held upright whatever the body's pitch (a halo round the head and the neck, never a stick through a levelled body)
-        turn(pose, sh.halo, level + 3.0F * (float) Math.sin(t * 0.9) + 6.0F * mo.speed * air, 1, 0, 0);
+        turn(pose, sh.halo, 3.0F * (float) Math.sin(t * 0.9) + 6.0F * mo.speed * air, 1, 0, 0);
         turn(pose, sh.halo, 2.5F * (float) Math.sin(t * 0.7 + 1.0), 0, 0, 1);
         pose.t[sh.halo * 3 + 2] -= RIBBON_AHEAD;
         // ---- the wings
@@ -409,21 +453,47 @@ public final class ItsuForm {
         turn(pose, w[3], sgn * (wrist * 0.6F + mWrist * 0.35F), 0, 0, 1);
     }
 
+    /**
+     * A leg (the owner: "the legs are too stiff"). Walking, a bird's stride: the foot planted and swept back under the body, then lifted
+     * (the tarsus folding up behind, the toes curling shut), swung forward high, the tarsus thrown out and the toes spread wide just
+     * before it plants again, the knee giving as the weight comes on. Standing, the weight shifting from foot to foot, now and then one
+     * foot lifted, its talons clenching and opening (scratching at the ground). In the air: tucked back under the body, the toes curled;
+     * reaching down and ahead, the talons spread, to land; the touchdown's give.
+     */
     static void leg(DragonPose pose, Shape sh, int s, Motion mo, float air, float t) {
         int[] l = sh.leg[s];
-        // in the air: tucked back under the body, the toes curled; reaching down and ahead to land
+        float sideSign = s == 0 ? 1.0F : -1.0F;
+        // ---- the air
         float tuck = air * (1.0F - mo.flare) * (38.0F + 20.0F * mo.speed);
-        float reach = mo.flare * -30.0F;
-        // on the ground: each step lifted high and set down slowly (a bird's stalk), the other bearing the weight
+        float reach = mo.flare * -34.0F;
+        float airAnkle = air * (1.0F - mo.flare) * 30.0F + mo.flare * -12.0F;
+        float airToes = air * (1.0F - mo.flare) * -45.0F + mo.flare * 25.0F;
+        // ---- the ground: the stride
         float step = mo.perch * mo.walk;
         double ph = mo.stride + (s == 0 ? 0.0 : Math.PI);
-        float swing = step * 30.0F * (float) Math.sin(ph);
-        float raise = step * Math.max(0.0F, (float) Math.sin(ph + 0.9)) * 45.0F;
-        // the body's lean on the ground undone at the hips (the legs stand upright under it)
+        float sweep = (float) Math.sin(ph);                                   // + ahead, - behind
+        float lift = Math.max(0.0F, (float) Math.sin(ph + 1.2));             // the swing (foot off the ground)
+        float plant = Math.max(0.0F, (float) Math.cos(ph + 1.2)) * (1.0F - lift);
+        float hip = step * (-26.0F * sweep - 22.0F * lift);
+        float ankle = step * (-58.0F * lift + 10.0F * plant);
+        float toes = step * (62.0F * lift * lift - 8.0F * plant);
+        float splay = step * 6.0F * plant;
+        // ---- standing: the weight shifting, a foot lifted now and then, the talons flexing
+        float still = mo.perch * (1.0F - mo.walk);
+        float shift = still * 4.0F * (float) Math.sin(t * 0.9 + s * Math.PI);
+        float raise = still * smooth(((float) Math.sin(t * 0.47 + s * 2.4) - 0.8F) / 0.2F);
+        float clench = still * (0.5F + 0.5F * (float) Math.sin(t * 5.0 + s)) * raise;
+        hip += shift - 18.0F * raise;
+        ankle += -30.0F * raise;
+        toes += 45.0F * clench - 10.0F * raise * (1.0F - clench);
+        // the touchdown's give: the knees folding under the weight
+        float give = mo.land * 22.0F;
+        // the body's lean on the ground undone at the hips (the legs stand upright under the level body)
         float stand = mo.perch * (-GROUND_PITCH + 6.0F * mo.walk);
-        turn(pose, l[0], tuck + reach + stand - swing - raise * 0.5F, 1, 0, 0);
-        turn(pose, l[1], -raise * 0.9F + air * 25.0F * (1.0F - mo.flare), 1, 0, 0);
-        turn(pose, l[2], raise * 0.6F - air * 35.0F + mo.flare * 20.0F, 1, 0, 0);
+        turn(pose, l[0], tuck + reach + stand + hip - give * 0.6F, 1, 0, 0);
+        turn(pose, l[0], sideSign * (splay + 3.0F * still), 0, 0, 1);
+        turn(pose, l[1], ankle + airAnkle - give, 1, 0, 0);
+        turn(pose, l[2], toes + airToes + give * 0.8F, 1, 0, 0);
     }
 
     /**
@@ -624,6 +694,36 @@ public final class ItsuForm {
             pos[v * 3] += dx * alive;
             pos[v * 3 + 1] += dy * alive;
             pos[v * 3 + 2] += dz * alive;
+        }
+    }
+
+    /** The glow's anchors' spacing at rest (units), each shell's size (units, scaled with the creature) and colours. */
+    static final float GLOW_SPACING = 1.25F;
+    public static final float GLOW_FIRE = 1.5F;
+    public static final float GLOW_RIBBON = 1.7F;
+    static final int GLOW_ORANGE = 0xFF7A1C;
+    static final int GLOW_BLACK = 0x0A0312;
+
+    /**
+     * The glow round every flame (the owner: "The fire all of it also has to glow, black fire glows black, the rest glows orange"):
+     * a soft shell (FireMesh.shell: clear at its rim) at each anchor, pulsing out of step: orange round the fire, a black haze round the
+     * black ribbon (it darkens what is behind it). {@code points}: the anchors placed (camera-relative, 3 a point); {@code blocks}: how
+     * big a model unit is drawn. {@code alive} scales it (the change lights it).
+     */
+    public static void glow(com.hexhaki.piece.dragon.FireMesh.Sink sink, double[] fire, int fires, double[] ribbon, int ribbons, double blocks,
+                            float seconds, float alive) {
+        if (alive <= 0.02F) {
+            return;
+        }
+        for (int k = 0; k < ribbons; k++) {
+            double pulse = 1.0 + 0.15 * Math.sin(seconds * 1.7 + k * 2.1);
+            com.hexhaki.piece.dragon.FireMesh.shell(sink, ribbon[k * 3], ribbon[k * 3 + 1], ribbon[k * 3 + 2], GLOW_RIBBON * blocks * pulse,
+                GLOW_BLACK, 0.34 * alive, 0.0);
+        }
+        for (int k = 0; k < fires; k++) {
+            double pulse = 1.0 + 0.18 * Math.sin(seconds * 3.1 + k * 1.7);
+            com.hexhaki.piece.dragon.FireMesh.shell(sink, fire[k * 3], fire[k * 3 + 1], fire[k * 3 + 2], GLOW_FIRE * blocks * pulse,
+                GLOW_ORANGE, 0.2 * alive, 0.0);
         }
     }
 

@@ -165,6 +165,13 @@ public final class PiecePatch implements Opcodes {
     static final String[] TORI = {"tori", "Tori Tori no Mi, Model: Phoenix", "Phoenix", "3FE0E8",
         "A Mythical Zoan that makes its eater a phoenix: a great bird made of blue fire, whose flames heal its every wound. Marco the"
             + " Phoenix's fruit."};
+    /**
+     * 3.9.4: the Itsumade (the owner: "New Fruit: Name: ???? Rarity: Mythical Type: Zoan", then "Fruit "????" Renamed to "Itsumade""):
+     * a Mythical Zoan, Saint Marcus Mars'.
+     */
+    static final String[] ITSU = {"itsu", "Itsumade", "Itsumade", "8A2BE2",
+        "A Mythical Zoan that makes its eater the Itsumade: a monstrous bird of the old tales with a long serpent's tail, its fire alive"
+            + " and a ribbon of black flame about it. Saint Marcus Mars' fruit."};
     /** 3.3.5: the Supa Supa no Mi (the owner: "Supa Supa No Mi (UnCommon)"): a Paramecia, Daz Bones' (Mr. 1). */
     static final String[] SUPA = {"supa", "Supa Supa no Mi", "Blade", "8FB3DA",
         "A Paramecia that turns any part of its eater's body into steel blades: arms, fingers, feet, the whole body, hard enough that no"
@@ -930,10 +937,11 @@ public final class PiecePatch implements Opcodes {
         // 3.1.9 (the owner: "Can you create the ice fruit, the Aokiji one?"): the Hie Hie no Mi joins after it (ordinal 5); 3.3.4: the
         // Noro Noro no Mi (ordinal 6); 3.3.5: the Supa Supa no Mi (ordinal 7); 3.3.6: the Horo Horo no Mi (ordinal 8); 3.3.7: the Ito Ito
         // no Mi (ordinal 9); 3.5.5: the Mochi Mochi no Mi (ordinal 10)
-        // 3.6.9: the Tori Tori no Mi, Model: Phoenix (ordinal 11)
-        String[][] extra = {UO, HIE, NORO, SUPA, HORO, ITO, MOCHI, TORI};
-        String[] names = {"UO", "HIE", "NORO", "SUPA", "HORO", "ITO", "MOCHI", "TORI"};
-        boolean[] logia = {false, true, false, false, false, false, false, false};
+        // 3.6.9: the Tori Tori no Mi, Model: Phoenix (ordinal 11); 3.9.4: the Itsumade (ordinal 12, free since the Leopard is gone: a
+        // saved Leopard was read by its id, "neko", which no fruit has now)
+        String[][] extra = {UO, HIE, NORO, SUPA, HORO, ITO, MOCHI, TORI, ITSU};
+        String[] names = {"UO", "HIE", "NORO", "SUPA", "HORO", "ITO", "MOCHI", "TORI", "ITSU"};
+        boolean[] logia = {false, true, false, false, false, false, false, false, false};
         String type = "L" + FRUIT + ";";
         for (String name : names) {
             node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, name, type, null, null));

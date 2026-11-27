@@ -960,6 +960,123 @@ public final class DragonTests {
      * about 10k faces); every flight state posed and skinned finite; its fire (the tongues off every fire point, the forming burst) under
      * the effect budget beside the model; 3.7.0: it opens out of the human turned to fire, grows slowly to its size, and closes back into it.
      */
+    /**
+     * 3.9.4: the Itsumade: its rig found whole; its triangles within the phone's budget (the model, and its glow's shells); every pose
+     * of every state, at many moments, finite and torn nowhere (the owner, of the black ribbon: "HOW DOES THIS PASS": no triangle's
+     * edge longer than at rest by more than STRETCH units in any of them); the change grows from nothing to its full size never
+     * shrinking, and goes back down to nothing.
+     */
+    static void itsumade(com.hexhaki.piece.dragon.DragonModel m) {
+        com.hexhaki.piece.itsumade.ItsuForm.Shape sh = new com.hexhaki.piece.itsumade.ItsuForm.Shape(m);
+        Check.that(sh.chest >= 0 && sh.head >= 0 && sh.jaw >= 0 && sh.tail.length == 14 && sh.wing[0][3] >= 0 && sh.wing[1][3] >= 0
+            && sh.leg[0][2] >= 0 && sh.leg[1][2] >= 0, "the Itsumade's rig is whole");
+        int faces = 0;
+        for (com.hexhaki.piece.dragon.DragonModel.Part part : m.parts) {
+            faces += part.quads.length / 4;
+            Check.that(part.col != null, part.name + ": a colour a vertex (version 2)");
+        }
+        Check.that(faces <= 20000, "the Itsumade within the phone's budget (" + faces + " faces)");
+        Check.that(sh.glowFire.length / 2 + sh.glowRibbon.length / 2 <= 60, "the glow's shells few enough ("
+            + (sh.glowFire.length / 2 + sh.glowRibbon.length / 2) + ")");
+        String[] states = {"stand", "walk", "hover", "fly", "fast", "glide", "dive", "flare", "land", "bite", "form", "unform"};
+        com.hexhaki.piece.dragon.DragonPose pose = new com.hexhaki.piece.dragon.DragonPose(m);
+        float worst = 0.0F;
+        String where = "";
+        for (String st : states) {
+            for (int f = 0; f < 16; f++) {
+                float t = f * 0.41F;
+                com.hexhaki.piece.itsumade.ItsuForm.Motion mo = new com.hexhaki.piece.itsumade.ItsuForm.Motion();
+                switch (st) {
+                    case "stand" -> mo.perch = 1;
+                    case "walk" -> {
+                        mo.perch = 1;
+                        mo.walk = 1;
+                        mo.stride = t * 4.2F;
+                    }
+                    case "hover" -> mo.speed = 0;
+                    case "fly" -> mo.speed = 0.45F;
+                    case "fast" -> mo.speed = 1;
+                    case "glide" -> {
+                        mo.speed = 0.8F;
+                        mo.glide = 1;
+                    }
+                    case "dive" -> {
+                        mo.speed = 1;
+                        mo.dive = 1;
+                    }
+                    case "flare" -> {
+                        mo.speed = 0.2F;
+                        mo.flare = 1;
+                    }
+                    case "land" -> {
+                        mo.perch = 1;
+                        mo.land = (float) Math.sin(f / 15.0 * Math.PI);
+                    }
+                    case "bite" -> {
+                        mo.perch = 1;
+                        mo.bite = f / 16.0F;
+                    }
+                    case "form" -> {
+                        mo.perch = 1;
+                        com.hexhaki.piece.itsumade.ItsuForm.change(com.hexhaki.piece.itsumade.ItsuForm.FORMING, f * 4.0F, mo);
+                    }
+                    default -> {
+                        mo.perch = 1;
+                        com.hexhaki.piece.itsumade.ItsuForm.change(com.hexhaki.piece.itsumade.ItsuForm.UNFORMING, f * 2.0F, mo);
+                    }
+                }
+                com.hexhaki.piece.itsumade.ItsuForm.pose(m, sh, pose, mo, t);
+                boolean grown = !st.equals("form") && !st.equals("unform");
+                for (int i = 0; i < m.parts.length; i++) {
+                    com.hexhaki.piece.dragon.DragonModel.Part p = m.parts[i];
+                    float[] pos = new float[p.vertices() * 3];
+                    float[] nrm = new float[p.vertices() * 3];
+                    pose.skin(p, pos, nrm);
+                    com.hexhaki.piece.itsumade.ItsuForm.flow(sh, i, pos, nrm, t, 0, 1, 0, 0, 0, 1, 0.5F, 1.0F);
+                    for (float c : pos) {
+                        Check.that(Float.isFinite(c), st + ": " + p.name + " finite");
+                    }
+                    if (!grown) {
+                        continue; // growing, the parts scale from nothing: their edges shrink, they never tear
+                    }
+                    for (int q = 0; q < p.quads.length; q += 4) {
+                        for (int k = 0; k < 3; k++) {
+                            int a = p.quads[q + k];
+                            int b = p.quads[q + (k + 1) % 3];
+                            float d = len(pos, a, b) - len(p.pos, a, b);
+                            if (d > worst) {
+                                worst = d;
+                                where = st + " " + p.name;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Check.that(worst <= ITSU_STRETCH, "the Itsumade torn nowhere: worst stretch " + worst + " (" + where + ")");
+        float last = 0.0F;
+        for (float t = 0; t <= com.hexhaki.piece.itsumade.ItsuForm.FORM_TICKS; t += 0.5F) {
+            float s = com.hexhaki.piece.itsumade.ItsuForm.size(com.hexhaki.piece.itsumade.ItsuForm.FORMING, t);
+            Check.that(s + 1.0E-4F >= last && s <= 1.0F, "the Itsumade grows, never shrinking, to its size (" + t + ")");
+            last = s;
+        }
+        Check.that(last > 0.999F, "full grown at the change's end");
+        Check.that(com.hexhaki.piece.itsumade.ItsuForm.size(com.hexhaki.piece.itsumade.ItsuForm.UNFORMING,
+            com.hexhaki.piece.itsumade.ItsuForm.UNFORM_TICKS) == 0.0F, "gone at the way back's end");
+        Check.that(!com.hexhaki.piece.itsumade.ItsuForm.humanHidden(com.hexhaki.piece.itsumade.ItsuForm.FORMING, 10.0F)
+            && com.hexhaki.piece.itsumade.ItsuForm.humanHidden(com.hexhaki.piece.itsumade.ItsuForm.ITSU, 0.0F), "the human hidden only once out");
+    }
+
+    /** The most a triangle's edge may grow in any pose (units). */
+    static final float ITSU_STRETCH = 0.9F;
+
+    static float len(float[] p, int a, int b) {
+        float dx = p[a * 3] - p[b * 3];
+        float dy = p[a * 3 + 1] - p[b * 3 + 1];
+        float dz = p[a * 3 + 2] - p[b * 3 + 2];
+        return (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
     static void phoenix(com.hexhaki.piece.dragon.DragonModel m) {
         Check.that(m.parts.length == 213 && m.bones() == 21 && m.clips.containsKey("soar"), "the phoenix: every part, its rig and its take");
         int faces = 0;
@@ -1429,6 +1546,15 @@ public final class DragonTests {
                 && zip.getEntry("assets/hexhaki/textures/piece/phoenix/marco.png") != null, "the Phoenix fruit's icon, model and atlas");
             try (InputStream in = zip.getInputStream(zip.getEntry("assets/hexhaki/phoenix/marco.sry"))) {
                 phoenix(com.hexhaki.piece.dragon.DragonModel.read(in));
+            }
+            // 3.9.4: the owner's Itsumade (tools/itsumade_bake.py), its icon and model
+            Check.that(zip.getEntry("assets/hexhaki/textures/item/itsu_itsu_no_mi.png") != null
+                && zip.getEntry("assets/hexhaki/models/item/itsu_itsu_no_mi.json") != null
+                && zip.getEntry("assets/hexhaki/textures/piece/itsumade/itsumade.png") != null
+                && zip.getEntry("assets/hexhaki/player_animation/itsu_form.json") != null
+                && zip.getEntry("assets/hexhaki/player_animation/itsu_unform.json") != null, "the Itsumade's icon, model, atlas and clips");
+            try (InputStream in = zip.getInputStream(zip.getEntry("assets/hexhaki/itsumade/itsumade.sry"))) {
+                itsumade(com.hexhaki.piece.dragon.DragonModel.read(in));
             }
             {
                 talonLeg(zip);

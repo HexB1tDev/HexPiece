@@ -60,6 +60,9 @@ public final class FruitRanks {
         if (fruit == Fruit.TORI) {
             return Rank.MYTHICAL; // 3.6.9 (the owner: "Mythical Fruit: Tori Tori no Mi, Model: Phoenix")
         }
+        if (fruit == Fruit.ITSU) {
+            return Rank.MYTHICAL; // 3.9.4 (the owner: "New Fruit: Name: ???? Rarity: Mythical Type: Zoan", renamed "Itsumade")
+        }
         if (fruit == Fruit.MOCHI) {
             return Rank.LEGENDARY; // 3.5.5 (the owner: "research katakuris mochi fruit and add it ... Legendary fruit")
         }

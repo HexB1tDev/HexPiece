@@ -81,7 +81,8 @@ public final class CombatMode {
      * 3.7.7: one's own player in a Zoan form (the dragon, the phoenix: from the change to the way back; Gear 5): the fruit's mode only.
      */
     static boolean zoan() {
-        return com.hexhaki.piece.client.dragon.DragonClient.selfOut() || com.hexhaki.piece.client.phoenix.PhoenixFx.selfOut() || GearClientState.gearFive;
+        return com.hexhaki.piece.client.dragon.DragonClient.selfOut() || com.hexhaki.piece.client.phoenix.PhoenixFx.selfOut()
+            || com.hexhaki.piece.client.itsumade.ItsuFx.selfOut() || GearClientState.gearFive;
     }
 
     /** 3.5.9: is every power off (the original's bit, server/Powers)? */

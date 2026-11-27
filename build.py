@@ -25,7 +25,7 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.9.3"
+VERSION = "3.9.4"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
@@ -165,6 +165,7 @@ NEW_PREFIXES = (
     "assets/hexhaki/dragon/",
     # 3.6.8: the owner's phoenix (tools/phoenix_bake.py: input/marco_phoenix.zip baked)
     "assets/hexhaki/phoenix/",
+    "assets/hexhaki/itsumade/",
     "assets/hexhaki/textures/mob_effect/transformed.png",
     "assets/hexhaki/textures/mob_effect/gloom.png",
     # 3.4.5: Broken Bones' icon (tools/bones_icon.py) and the owner's bone-fracture GIF laid out for the X-ray (tools/bones_texture.py)
@@ -193,6 +194,9 @@ NEW_PREFIXES = (
     # 3.6.9: the Tori Tori no Mi, Model: Phoenix's item
     "assets/hexhaki/models/item/tori_tori_no_mi.json",
     "assets/hexhaki/textures/item/tori_tori_no_mi.png",
+    # 3.9.4: the Itsumade's item
+    "assets/hexhaki/models/item/itsu_itsu_no_mi.json",
+    "assets/hexhaki/textures/item/itsu_itsu_no_mi.png",
     KATANA_MESHES,
     KATANA_TEXTURES,
     KATANA_MODELS,

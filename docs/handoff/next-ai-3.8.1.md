@@ -683,3 +683,69 @@ Name "Itsumade" (lang), Mythical Zoan. Stages (one version each, the owner testi
   body and on to the head, nearly level): "plus it's too stiff, why is the bird standing up like a person, ITS A BIRD LIKE MONSTER".
   So: on the ground the body is LEVEL (pitched forward like a bird or a raptor), the legs upright under it, the neck reaching forward and
   up, the tail streaming back nearly level to the ground; and far more motion (never stiff).
+- The owner (verbatim, with a walk frame: a green line along the creature's back from behind the wings over the shoulders to the head):
+  "the fire ribbon has to bend too along with the body so it looks good". So the ribbon is skinned to the body's chain (each vertex by
+  its nearest centreline point: the arch over the head rides the neck and head, the arms down the sides the chest and hips), not held
+  on one bone or upright.
+- The owner (verbatim): "and the legs are too stiff / The fire all of it also has to glow, black fire glows black, the rest glows
+  orange". So: the legs fully alive (a bird's stride: the tarsus folding and the toes curling as each foot lifts, spreading as it
+  plants; standing, the weight shifting, a foot lifted and the talons flexing now and then); every flame glows: the orange fire an
+  orange glow round it, the black ribbon a BLACK glow (a dark haze) round it.
+- The owner (verbatim, with the standing frame where the ribbon's end stretched to the ground; a green hook drawn from the shoulder down
+  round the chest): "jesus whats up with the ribbon here". The bug: the ribbon's lower ends weighted to the tail's bones (their nearest
+  centreline points), dragged off along the tail. Fixed in the bake: the ribbon never weighted past the pelvis.
+- The owner (verbatim, on a walk frame with a dark line from the legs to the ground): "WHAT THE FUCK IS UP WITH THE RIBBON HOW DOES THIS
+  PASS". The line was the ribbon itself: its arch on the neck bones, its arms on the chest, the neck swinging 44 degrees round (the file's
+  head faces aside) tore it into a 3.7-unit band. Fixed: the ribbon blended smoothly from the chest (its ends) to neck1 (toward its top);
+  tools/preview Stretch check (no triangle edge longer than at rest by more than 0.5 units in any pose) run before any render is shown.
+  LESSON: measure stretch numerically in every pose before showing renders; never show a frame with a defect in it.
+- The owner (verbatim): "as soon as the 2d fruit + transformation is done push an update, remember that the 2d fruit is not meant to have
+  a background, yours clearly has a brown background". So 3.9.4 ships as soon as the icon (no background: only the fruit, its leaves and
+  its flames) and the transformation are done.
+- The owner (verbatim, with the second cut-out icon: the transparent one, the husk's hollow middle circled): "Just use this with a red
+  berry in the center". Done: tools/itsu_icon.py (that cut-out: one connected shape, no parchment) + berry(): a red berry filling the
+  hollow between the husk's arms, shaded round with a glint.
+- The owner (verbatim): "uhhh the berry needs more details.. it looks like female genetalia rn..". The berry filled the husk's tall slit.
+  Now: a ROUND berry (a ball drawn over the husk's middle, raspberry drupelets, a dark rim, a glint), the rest of the gap the husk's own
+  shadowed inside: no slit shape left.
+- The owner (verbatim): "push an update now. please, I wanna see it before I get home." -> 3.9.4 pushed as soon as its build passed.
+
+## 27. 3.9.4: the Itsumade, part 1 (the fruit, Z)
+- Fruit ITSU ("itsu", item itsu_itsu_no_mi, lang "§dItsumade", colour 8A2BE2; PiecePatch ITSU after TORI, ordinal 12), FruitRanks
+  MYTHICAL, HexPiece registers server/ItsuKit (FORM [Z] only). Icon tools/itsu_icon.py (the owner's picture cut out + a round berry).
+- server/ItsuServer (from PhoenixServer: PHASE 440, FLY_SPEED 0.06, MARK HexPieceItsuFlight; cracks CRACKS/CRACKS_BACK, the roar at
+  SCREAM 49), clips itsu_form (40) / itsu_unform (34) (tools/itsu_anims.py: body, torso, arms only).
+- itsumade/ItsuForm: FORM_TICKS 64, UNFORM_TICKS 34, SCALE 1.2, the change (GROW/SHRINK per group, lurch(), size(), HUMAN_GONE 30,
+  HUMAN_BACK 16), the poses (GROUND_PITCH -62: level on the ground; wings draped MANTLE_*; legs a bird's stride; the tail chain solver
+  with TAIL_BEND 24 and the posed feet's floor; the head NECK_FRONT 44.4 + HEAD_FRONT 13.3; the jaw JAW_*), flow() (fire, ribbon,
+  hair alive), heat(), glow() (FireMesh.shell: orange 0xFF7A1C round the fire, black 0x0A0312 round the ribbon; anchors GLOW_SPACING
+  1.25 at rest).
+- client/itsumade/ItsuFx (from PhoenixFx: CPU skin, own shading LIGHT/SHADE, world light, fire/ribbon full bright, glow after the
+  particles, hide the human, camera back 4 + 16, up 4.5), ItsuClient; hooks UoFx (440-459), DragonCamera, CombatMode.zoanOut,
+  Transformed.zoan.
+- DragonTests.itsumade: the rig, faces <= 20000, glow shells <= 60, every state's poses finite and stretched <= ITSU_STRETCH 0.9, the
+  growth never shrinking, gone at the end.
+- Previews: tools/preview/ItsuPreview (scratchpad itsuprev.sh, itsugif2.sh); the scratchpad's dbg/Stretch.java (worst stretch per part).
+- NEXT (the owner's spec in 22): the passive, the Haki colours, X Gorosei Stare, C Enormous Presence, V Yokai Blast, B Thy Death, N
+  Hellish Teleport (menu + pentagrams), transformed M1 Wind Gust, M2 talons, X Bow, C Enormous Bite (+ bite clip: ItsuForm.bite), V
+  Yokai Beam; dedicated CC0 sounds; keep judging every pose as GIFs; the wing feathers' small stretch on the beats (0.8).
+
+## 28. The owner's list after 3.9.4 (verbatim, in order; uploads kept as sent in input/armor/)
+- "@Doflamingo_Feather_Coat.blend New coat (I dont think needs any adjusting) called Flamingo Coat" (input/armor/Doflamingo_Feather_Coat.blend)
+- "also theres currently a problem in the swordsman mode, it auto picksup the mace even if I dont tell it to, it should only pull it off
+  when I select the item in the inventory. Also the Mace does not require rope around the body to hold it. Again this applies for all
+  items, when holding literally anything with Ryou + Conqueror's haki the lightning around the body gets transfered to that item, this
+  applies for our weapons especially. the Mace does not have lightning right now, and has sword sounds.."
+- "@Crimson_Brocade_Coat.blend And heres another Armor named "Greatest Swordsman"" (input/armor/Crimson_Brocade_Coat.blend)
+- "The spin of the ambient animation (spin) of the GUN is offcenter, and the left arm is not meant to have animation when firing (its
+  putting the left arm on the hip, another bug, whenever the gun does the spin and it ends, it goes backwards when the animation finishes
+  it should not undo itself... Then make sure every piece of clothing adapts to the animations and GENDER (breasts on female)."
+- "from now on all devil fruits are now gonna have  minecraft sounds, (except explosions and haki related things)"
+- "Now that I'm looking again, Yoru, the blade is also kind of glitching. If you look at the blade, just non-stop, like kind of texture
+  problems. I think the pictures that I sent kind of it's kind of hard to show you exactly what I mean, but you can gather that it's the
+  texture is like bugging. It's only on one side though. The other one seems to be fine. Like strange. Like depends on the perspective
+  you're looking at it. But it's still weird as fuck. Also, all the tabs that we got in the mod in the creative menu, they should all be
+  named hex piece and then whatever." (3 pictures: dark streaks over one face of the Yoru's blade)
+- "Oh boy, now that I get home, I truly see the bugs sometimes. Whenever using a move that it does an animation, sometimes briefly, the
+  the entire cape breaks." (picture: the coat torn, a bubble of cloth)
+- "also the other armors..." (picture: the marine outfit wrong)
