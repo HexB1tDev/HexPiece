@@ -13,7 +13,58 @@ public final class WorldTests {
 
     public static void main(String[] args) {
         rivers();
+        islands();
         Check.done("WorldTests");
+    }
+
+    /**
+     * 3.9.5 (the owner: "the islands are way too fucking close, sometimes merged together"): the placed islands (world/IslandField) are
+     * never closer, coast to coast, than twice the gap (each island's furthest reach, lobes and shelf included, held off its neighbours);
+     * the sea between is open sea; some cells have none; the land is a small share; the field stays within its bounds.
+     */
+    static void islands() {
+        double reach = 1.0 + 0.2 + 0.13 + 0.07;
+        for (long seed : new long[] {0L, 2L, 7L, -42L, 123456789L}) {
+            int empty = 0;
+            int cells = 0;
+            double closest = Double.MAX_VALUE;
+            for (int i = -15; i <= 15; i++) {
+                for (int j = -15; j <= 15; j++) {
+                    cells++;
+                    double[] a = com.hexhaki.piece.world.IslandField.held(i, j, seed);
+                    if (a == null) {
+                        empty++;
+                        continue;
+                    }
+                    for (int di = -2; di <= 2; di++) {
+                        for (int dj = -2; dj <= 2; dj++) {
+                            if (di == 0 && dj == 0) {
+                                continue;
+                            }
+                            double[] b = com.hexhaki.piece.world.IslandField.held(i + di, j + dj, seed);
+                            if (b != null) {
+                                double d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+                                closest = Math.min(closest, d - (a[2] + b[2]) * reach - 2.0 * com.hexhaki.piece.world.IslandField.SHELF);
+                            }
+                        }
+                    }
+                }
+            }
+            Check.that(closest >= 2.0 * com.hexhaki.piece.world.IslandField.GAP - 1.0, "seed " + seed + ": islands never close: the nearest two "
+                + Math.round(closest) + " blocks of open sea apart, shelves and all");
+            Check.that(empty > cells / 10 && empty < cells / 2, "seed " + seed + ": some cells open sea (" + empty + " of " + cells + ")");
+            int land = 0;
+            int n = 0;
+            for (double x = -20000; x < 20000; x += 97) {
+                for (double z = -20000; z < 20000; z += 101) {
+                    double f = com.hexhaki.piece.world.IslandField.field(x, z, seed);
+                    Check.that(f >= com.hexhaki.piece.world.IslandField.SEA - 1e-9 && f <= com.hexhaki.piece.world.IslandField.PEAK + 1e-9, "within bounds");
+                    land += f > com.hexhaki.piece.world.IslandField.COAST ? 1 : 0;
+                    n++;
+                }
+            }
+            Check.that(land > n * 0.015 && land < n * 0.1, "seed " + seed + ": the land a small share (" + (100.0 * land / n) + "%)");
+        }
     }
 
     static void rivers() {

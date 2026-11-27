@@ -31,6 +31,7 @@ public final class ArmorTests {
         items();
         translated();
         clothes();
+        tabs();
         Check.done("ArmorTests");
     }
 
@@ -89,6 +90,22 @@ public final class ArmorTests {
             ours.add(piece.key());
         }
         Check.that(listed.equals(ours), "build.py's ARMOR_KEYS are the pieces: " + listed);
+    }
+
+    /** 3.9.5 (the owner: "all the tabs that we got in the mod in the creative menu, they should all be named hex piece and then whatever"). */
+    static void tabs() throws Exception {
+        String items = Files.readString(Path.of("src/main/java/com/hexhaki/piece/PieceItems.java"));
+        Matcher m = Pattern.compile("m_257941_\\(Component\\.m_237113_\\(\"([^\"]*)\"\\)\\)").matcher(items);
+        int tabs = 0;
+        while (m.find()) {
+            tabs++;
+            Check.that(m.group(1).startsWith("HexPiece "), "the creative tab \"" + m.group(1) + "\" is named HexPiece ...");
+        }
+        Check.that(tabs == 3 && items.split("CreativeModeTab.builder\\(\\)").length - 1 == tabs, "every creative tab is named (" + tabs + ")");
+        Matcher lang = Pattern.compile("\"itemGroup\\.[^\"]*\": \"([^\"]*)\"").matcher(Files.readString(RESOURCES.resolve("lang/en_us.json")));
+        while (lang.find()) {
+            Check.that(lang.group(1).startsWith("HexPiece "), "the tab name \"" + lang.group(1) + "\" is HexPiece ...");
+        }
     }
 
     static void npcs() {
@@ -257,7 +274,16 @@ public final class ArmorTests {
                         inside++;
                     }
                 }
-                Check.that(inside == 0, coat + ": no point of the coat left inside an arm or the head (" + inside + ")");
+                // 3.9.5: an arm swung deep through the coat (a move's) is let through rather than blowing the coat out (the owner's
+                // "the entire cape breaks"): the walking swings (no more than 0.75 rad) still leave nothing inside, and no pose moves the
+                // coat further than the push's most
+                float moved = 0.0F;
+                for (int i = 0; i < model.length; i++) {
+                    moved = Math.max(moved, Math.abs(model[i] - out[i]));
+                }
+                boolean walking = Math.abs(arm[0]) <= 0.75F && Math.abs(arm[2]) <= 0.75F;
+                Check.that(!walking || inside == 0, coat + ": walking, no point of the coat left inside an arm or the head (" + inside + ")");
+                Check.that(moved < 6.0F, coat + ": no pose blows the coat out (moved " + moved + " px)");
             }
         }
     }

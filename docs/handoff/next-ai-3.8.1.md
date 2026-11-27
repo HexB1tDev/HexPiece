@@ -774,3 +774,35 @@ wing poses (folded along the back standing; real flight strokes); (4) the feet s
 moving; (7) slow, heavy wingbeats; (8) landing on the ground, never into it; (9) the ribbon as flames again; (10) the change: the player's
 own body transforming progressively, not the creature growing out of it; (11) the islands with TerraBlender and Biomes O' Plenty: far
 apart, never merged. Then the list in 28.
+
+## 30. 3.9.5: the owner's lists in 28 and 29 (part)
+- Itsumade (29): ItsuForm.glow and its anchors removed (ItsuFx, preview, DragonTests). Wings (ItsuForm.wing): FOLD_* on the ground (a
+  bird's fold: FOLD_DOWN -78 about z, FOLD_ONTO -16 about x, FOLD_ELBOW 78 / FOLD_WRIST -118 / FOLD_FINGER -18 about y in the wing's
+  plane; breath, shrug, rouse shake, walking balance); the air stroke (DOWN_PART 0.56: downstroke spread high 50 to low -36, the
+  recovery flexed at the elbow 40 / wrist -72 / finger -24, the tip bending), BEAT_SLOW 0.42 / BEAT_FAST 0.6 beats a second, heave()
+  (HEAVE 0.22 units, the root raised). Legs (leg): STANCE 0.6, HIP_SWING 30, the planted foot flat (toes = -(hip + ankle)), the swing's
+  tarsus folding -78, toes clenching then opening to plant; the legs' upright term is the real ground pitch (it was GROUND_PITCH even in
+  the change's upright form). GROUND_PITCH -52. Neck: Motion.turn (the look's yaw off the body's), swayYaw/swayPitch, the beats' wave,
+  the dive holding it straight (DragonTests caught 0.94 in the ruff). Hair (flow, HAIR): sway 0.26 with gusts and a side wave, wind on
+  the ground when walking (ItsuFx). Ribbon (flow, RIBBON): flutter 0.06, lick 0.05 (it was a 0.18 roll that melted the tongues).
+  The change: SWAP 24 / UNSWAP 20, humanScale() (HUMAN_BIG 1.7 in lurches; ItsuFx.swell/swellDone push and pop the player's pose
+  in RenderPlayerEvent Pre LOWEST / Post), SWAP_SIZE 0.6, Motion.spread (the wings thrown out wide at the swap, folded at 57-64),
+  ribbonGrown() (the ribbon drawn into the halo: its wisps are skinned to the chest too), the fire unlit (embers) until G_FIRE.
+  ItsuFx: the anchor in the air is the chest less chestHeight() (and less the heave) so it lands on its feet; the camera for
+  THIRD_PERSON_FRONT too, raised by chestHeight. Renders: scratchpad itsu2/ (v1 stand/walk, v2 walk close, v3 the beat, form3).
+- Islands (29): world/IslandField (pure: CELL 2800, JITTER 0.5, EMPTY 0.25, SMALLEST 230 / LARGEST 760, LOBES, held() caps each radius
+  by APART 0.5 of the nearest neighbour less GAP 260 and SHELF 260, so coasts stay >= 520 apart), world/IslandLines (density function
+  type hexhaki:island_field, registered in RiverLines' TYPES), islands.json = island_field + 0.12 vanilla continentalness
+  (archipelago_data.py DETAIL). WorldTests.islands. Map: docs/images/archipelago-map-3.9.5.png (24 km, seed 2).
+- Coat (28): CoatCloth.armsPush PUSH_FULL 0.9 / PUSH_NONE 1.8 (coat_cloth.py the same); ArmorTests: walking swings still leave
+  nothing inside, no pose moves the coat 6 px. The scratchpad's coat/scan.py scans every clip (it found 6-9 px balloons before).
+- Armors (28): client/armor/ClothesUnder hides the skin's outer layers under the clothes (the owner's ghost boxes).
+- Yoru (28): KatanaRenderer.highlight draws the glint GLINT_LIFT 0.9995 toward the eye (it z-fought the steel on one face).
+- Tabs (28): HexPiece Weapons / HexPiece Armor / HexPiece Devil Fruits (+ lang itemGroup.hexhaki.fruits); ArmorTests.tabs.
+- Mace (28): SwordServer.scan never picks a mace that is not the main-hand item; SwordLayer draws no ropes for it; the Conqueror's
+  SPARKS go off the held item (client/haki/HeldLine: SwordLayer records a drawn weapon's line; else a short line out of the fist).
+- NEXT: the mace's own sounds (SwordSounds by category; sounds.json can point an event at a vanilla one: {"name":
+  "minecraft:entity.player.attack.sweep", "type": "event"}; SwordTests' sounds check must allow it), every devil fruit's sounds on
+  vanilla events (the same sounds.json way, explosions and Haki kept), the gun (spin centred, the left arm free when firing, the spin's
+  end not undoing), the Flamingo Coat and Greatest Swordsman (input/armor/*.blend, tools/clothes_bake.py), clothes on female bodies, then
+  the Itsumade's moves (22).

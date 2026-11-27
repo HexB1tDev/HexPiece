@@ -145,6 +145,12 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             KatanaRenderer.draw(pose, buffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F, coat);
             SwordFx.record(player, pose, ticks);
             HakiDraw.held(pose, buffers, player, anim, ticks, partial);
+            if (!firstPerson) {
+                // 3.9.5: where it lies, for the Conqueror's lightning to tear off it (client/haki/HeldLine)
+                org.joml.Matrix4f at = pose.m_85850_().m_252922_();
+                float len = KatanaRenderer.px(katana) * katana.tip();
+                com.hexhaki.piece.client.haki.HeldLine.record(player.m_19879_(), SwordFx.world(at, 0.0F, 0.0F, 0.0F), SwordFx.world(at, 0.0F, len, 0.0F));
+            }
             pose.m_85849_();
         }
     }
@@ -168,7 +174,9 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             pose.m_85836_();
             // the upper body's own bend and turn carry it (unlike the saya at the hips)
             model.f_102810_.m_104299_(pose);
-            KatanaRenderer.ropes(pose, buffers, light);
+            if (katana.category() != Katana.Category.MACE) {
+                KatanaRenderer.ropes(pose, buffers, light); // 3.9.5 (the owner: "the Mace does not require rope around the body")
+            }
             if (lifting || !drawn && glide == null) {
                 pose.m_252880_((float) BackCarry.GUARD[0] * PX, (float) BackCarry.GUARD[1] * PX, (float) BackCarry.GUARD[2] * PX);
                 pose.m_252781_(Axis.f_252403_.m_252977_((float) -BackCarry.TILT));
@@ -195,6 +203,12 @@ public final class SwordLayer extends PlayerItemInHandLayer<AbstractClientPlayer
             KatanaRenderer.draw(pose, buffers, katana, true, false, light, katana.blackens() ? 1.0F : 0.45F, coat);
             SwordFx.record(player, pose, ticks);
             HakiDraw.held(pose, buffers, player, anim, ticks, partial);
+            if (!firstPerson) {
+                // 3.9.5: where it lies, for the Conqueror's lightning to tear off it (client/haki/HeldLine)
+                org.joml.Matrix4f at = pose.m_85850_().m_252922_();
+                float len = KatanaRenderer.px(katana) * katana.tip();
+                com.hexhaki.piece.client.haki.HeldLine.record(player.m_19879_(), SwordFx.world(at, 0.0F, 0.0F, 0.0F), SwordFx.world(at, 0.0F, len, 0.0F));
+            }
             pose.m_85849_();
         }
     }

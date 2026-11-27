@@ -201,6 +201,10 @@ public final class CoatCloth {
         return ways;
     }
 
+    /** 3.9.5: an arm this far into the cloth (px) pushes it out wholly; from there less and less, past PUSH_NONE not at all. */
+    static final float PUSH_FULL = 0.9F;
+    static final float PUSH_NONE = 1.8F;
+
     /** How far a point {@code c} (a box's frame) must go along {@code u} to leave the box lo..hi (the slabs' nearest far side). */
     static float exitAlong(float[] c, float[] u, float[] lo, float[] hi) {
         float t = Float.MAX_VALUE;
@@ -247,7 +251,15 @@ public final class CoatCloth {
                 u[0] = ways[i * 4 + side * 2];
                 u[1] = 0.0F;
                 u[2] = ways[i * 4 + side * 2 + 1];
-                float push = exitAlong(c, u, lo, hi) + (kind[i] == LINING_KIND ? 0.0F : LINING);
+                // 3.9.5 (the owner: "Whenever using a move that it does an animation, sometimes briefly, the the entire cape breaks", a
+                // picture of the coat blown out round the arm like a bubble): an arm only a little into the cloth pushes it out of its way;
+                // one deep in it (a move's arm swung through the coat) pushes it less and less, past PUSH_NONE not at all: never a bubble
+                float need = exitAlong(c, u, lo, hi);
+                float fade = 1.0F - smooth(PUSH_FULL, PUSH_NONE, need);
+                if (fade <= 0.0F) {
+                    continue;
+                }
+                float push = (need + (kind[i] == LINING_KIND ? 0.0F : LINING)) * fade;
                 float lx = c[0] + push * u[0];
                 float lz = c[2] + push * u[2];
                 points[i * 3] = m[0] * lx + m[1] * c[1] + m[2] * lz + m[3];

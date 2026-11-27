@@ -310,6 +310,10 @@ public final class KatanaRenderer {
     }
 
     /** The blade's highlight: each corner as bright as {@link #shine} finds it this frame, added over the steel. */
+    /** 3.9.5: how far toward the eye the glint is drawn (of its distance), and the frame it is then written in (view space as it is). */
+    static final float GLINT_LIFT = 0.9995F;
+    static final Matrix4f IDENTITY = new Matrix4f();
+
     static void highlight(PoseStack.Pose pose, VertexConsumer buffer, KatanaMesh mesh, float strength) {
         Matrix4f matrix = pose.m_252922_();
         Matrix3f normal = pose.m_252943_();
@@ -325,7 +329,12 @@ public final class KatanaRenderer {
             at.set(p[v * 3], p[v * 3 + 1], p[v * 3 + 2]);
             matrix.transformPosition(at);
             float light = shine(view.x, view.y, view.z, at.x, at.y, at.z) * strength;
-            buffer.m_252986_(matrix, p[v * 3], p[v * 3 + 1], p[v * 3 + 2]).m_85950_(1.0F, 1.0F, 0.97F, Math.min(0.85F, light)).m_5752_();
+            // 3.9.5 (the owner, of Yoru's blade: "the texture is like bugging. It's only on one side though ... depends on the perspective"):
+            // the glint lay exactly on the steel, its corners reckoned with other rounding than the steel's, so on one face it lost the
+            // depth test in patches (the dark steel showing through in streaks). Lifted a hair toward the eye (view space: the eye at the
+            // origin), it always lies over the steel; at any distance far less than the thinnest blade's thickness.
+            at.set(at.x * GLINT_LIFT, at.y * GLINT_LIFT, at.z * GLINT_LIFT);
+            buffer.m_252986_(IDENTITY, at.x, at.y, at.z).m_85950_(1.0F, 1.0F, 0.97F, Math.min(0.85F, light)).m_5752_();
         }
     }
 

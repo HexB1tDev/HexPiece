@@ -53,6 +53,8 @@ SLEEVE_LENGTH = 12.0
 FLARE = 0.17
 SLEEVE_BACK = 1.25
 SLEEVE_FLUTTER = 0.16
+PUSH_FULL = 0.9
+PUSH_NONE = 1.8
 
 
 def smooth(a, b, x):
@@ -194,7 +196,10 @@ def arms_push(points, frames, ways, lining, slim=False):
         if not inside.any():
             continue
         u = np.stack([ways[side][:, 0], np.zeros(len(c)), ways[side][:, 1]], axis=1)
-        push = np.where(inside, exit_along(c, u, lo, hi) + np.where(lining, 0.0, LINING), 0.0)
+        # 3.9.5 (the owner: "the entire cape breaks"): a deep arm (a move's, swung through the coat) pushes less and less, never a bubble
+        need = exit_along(c, u, lo, hi)
+        fade = 1.0 - smooth(PUSH_FULL, PUSH_NONE, need)
+        push = np.where(inside, (need + np.where(lining, 0.0, LINING)) * fade, 0.0)
         c = c + u * push[:, None]
         out = np.where(inside[:, None], (np.c_[c, np.ones(len(c))] @ frame.T)[:, :3], out)
     return out

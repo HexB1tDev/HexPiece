@@ -28,6 +28,8 @@ public final class RiverLines implements DensityFunction.SimpleFunction {
 
     static {
         TYPES.register("river_lines", () -> CODEC.f_216232_());
+        // 3.9.5: the placed islands (world/IslandLines)
+        TYPES.register("island_field", () -> IslandLines.CODEC.f_216232_());
     }
 
     private RiverLines() {

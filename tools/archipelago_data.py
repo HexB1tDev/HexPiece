@@ -8,8 +8,8 @@ island MUST have a beach, long.").
 Only the overworld's terrain inputs are replaced (density functions; the biome source, the surface rules, the structures and every
 mod's own worldgen are left as they are, so TerraBlender's regions (Biomes O' Plenty's) place their biomes and every mod's structures
 spawn by biome as on any world):
-  minecraft:overworld/continents  the islands: the island noise (hexhaki:archipelago, islands of a few hundred blocks to over a
-                                  thousand) over the vanilla continents (whole regions of islands, and open seas), lowered (most is sea)
+  minecraft:overworld/continents  the islands: placed (hexhaki:island_field, world/IslandField: one a cell of 2.8 km, some cells
+                                  open sea, never merged), a little of the vanilla continents over them for a ragged coast
   minecraft:overworld/erosion     the vanilla erosion, held flat along the coasts (every coast a beach biome, never a stony shore)
   minecraft:overworld/ridges      the rivers' lines (hexhaki:river_lines: rivers that never close on themselves, so every river runs
                                   coast to coast) signed by the vanilla ridge noise (the biome variants as before)
@@ -27,10 +27,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "src", "main", "resources", "data")
 
 # --- the numbers -----------------------------------------------------------------------------------------------------------------
-# the islands: the island noise's weight, the vanilla continents' weight, and how far it all is lowered (the sea's share)
-ISLANDS = 0.95
-CONTINENTS = 0.35
-LOWER = -0.42
+# 3.9.5 (the owner: "the islands are way too fucking close, sometimes merged together"): the islands are placed (world/IslandField:
+# one a cell, far apart, never merged: hexhaki:island_field), a little of the vanilla continents over them for a ragged coast (DETAIL).
+# The island noise of 3.8.3 to 3.9.4 (hexhaki:archipelago) is left written but no longer used.
+DETAIL = 0.12
 ISLAND_NOISE = {"firstOctave": -9, "amplitudes": [1.0, 1.0, 0.7, 0.4, 0.25]}
 # the coast widened: the raw island value mapped so the coast band (continentalness -0.19 to -0.11, where the game puts its beaches and
 # this the beach's gentle slope) spans a raw range nearly four times its own (-0.30 to 0.0): every beach about four times wider
@@ -83,10 +83,8 @@ def main():
     write("hexhaki/worldgen/noise/archipelago.json", ISLAND_NOISE)
     write("hexhaki/worldgen/density_function/vanilla/offset.json", offset)
     write("hexhaki/worldgen/density_function/vanilla/erosion.json", erosion)
-    raw = {"type": "minecraft:add", "argument1": LOWER, "argument2": {
-        "type": "minecraft:add",
-        "argument1": {"type": "minecraft:mul", "argument1": ISLANDS, "argument2": shifted("hexhaki:archipelago")},
-        "argument2": {"type": "minecraft:mul", "argument1": CONTINENTS, "argument2": shifted("minecraft:continentalness")}}}
+    raw = {"type": "minecraft:add", "argument1": {"type": "hexhaki:island_field"},
+           "argument2": {"type": "minecraft:mul", "argument1": DETAIL, "argument2": shifted("minecraft:continentalness")}}
     write("hexhaki/worldgen/density_function/islands.json", {"type": "minecraft:flat_cache", "argument": raw})
     write("minecraft/worldgen/density_function/overworld/continents.json", {"type": "minecraft:flat_cache", "argument": {
         "type": "minecraft:spline", "spline": {"coordinate": "hexhaki:islands", "points": [

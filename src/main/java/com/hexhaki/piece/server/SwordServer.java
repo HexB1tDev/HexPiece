@@ -186,6 +186,11 @@ public final class SwordServer {
             if (katana == null) {
                 continue;
             }
+            if (katana.category() == Katana.Category.MACE && stack != main) {
+                // 3.9.5 (the owner: "in the swordsman mode, it auto picksup the mace even if I dont tell it to, it should only pull it
+                // off when I select the item in the inventory"): a mace is the weapon only while it is the item in the hand
+                continue;
+            }
             long id = idOf(player, stack);
             if (stack == main) {
                 chosen = id;

@@ -161,6 +161,7 @@ public final class ItsuPreview {
             if (!rest) {
                 float wind = (1.0F - mo.perch) * (0.3F + 0.7F * mo.speed);
                 ItsuForm.flow(shape, i, pos, nrm, t, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, wind, mo.grown[ItsuForm.G_FIRE]);
+                ItsuForm.ribbonGrown(shape, pose, i, pos, mo.grown[ItsuForm.G_RIBBON]);
             }
             skinned.add(pos);
             skinned.add(nrm);
@@ -206,7 +207,10 @@ public final class ItsuPreview {
         ra.ground(0.0);
         if (change) {
             if (!ItsuForm.humanHidden(phase, t * 20.0F)) {
-                ra.figure(0.0, 0.0, 0.0);
+                // 3.9.5: the human swelling as it convulses (ItsuForm.humanScale), its arms thrown wide before the swap
+                double k = ItsuForm.humanScale(phase, t * 20.0F);
+                double raise = phase == ItsuForm.FORMING ? (t * 20.0F >= 16.0F ? 85.0 : 20.0) : 15.0;
+                ra.humanK(k, raise);
             }
         } else {
             ra.figure(lo[0] - 1.5, 0.0, 0.0);
@@ -239,48 +243,7 @@ public final class ItsuPreview {
             }
             ra.mesh(part, wp, col);
         }
-        // the glow round the fire and the black ribbon (as client/itsumade/ItsuFx: ItsuForm.glow), alpha blended, far to near
-        if (!rest) {
-            double[] fire = anchorPoints(shape.glowFire, placed, eye);
-            double[] ribbon = anchorPoints(shape.glowRibbon, placed, eye);
-            List<double[]> quads = new ArrayList<>();
-            com.hexhaki.piece.dragon.FireMesh.Sink sink = (xyz, argb) -> {
-                double[] q = new double[17];
-                for (int k = 0; k < 12; k++) {
-                    q[k] = xyz[k] + eye[k % 3];
-                }
-                for (int k = 0; k < 4; k++) {
-                    q[12 + k] = argb[k];
-                }
-                double mx = (xyz[0] + xyz[3] + xyz[6] + xyz[9]) / 4;
-                double my = (xyz[1] + xyz[4] + xyz[7] + xyz[10]) / 4;
-                double mz = (xyz[2] + xyz[5] + xyz[8] + xyz[11]) / 4;
-                q[16] = mx * mx + my * my + mz * mz;
-                quads.add(q);
-            };
-            ItsuForm.glow(sink, fire, fire.length / 3, ribbon, ribbon.length / 3, s, t, 1.0F);
-            quads.sort((x, y) -> Double.compare(y[16], x[16]));
-            for (double[] q : quads) {
-                ra.blend(q);
-            }
-            glowQuads = quads.size();
-        }
         return ra.image(W, H);
-    }
-
-    static int glowQuads;
-
-    /** The anchors (part, vertex pairs) placed, camera-relative. */
-    static double[] anchorPoints(int[] an, List<float[]> placed, double[] eye) {
-        double[] out = new double[an.length / 2 * 3];
-        for (int k = 0; k < an.length / 2; k++) {
-            float[] wp = placed.get(an[k * 2]);
-            int v = an[k * 2 + 1];
-            for (int r = 0; r < 3; r++) {
-                out[k * 3 + r] = wp[v * 3 + r] - eye[r];
-            }
-        }
-        return out;
     }
 
     static final class Raster {
@@ -356,6 +319,33 @@ public final class ItsuPreview {
          * 3.7.0: a player at the origin facing -Z (their right toward +X), the arms raised {@code raise} degrees out to the sides (the
          * player model's: the shoulders 22 pixels up, the arms 4 square, from 2 over the pivot to 10 under it).
          */
+        /** A player swollen {@code k} (taller more than wider), the arms raised {@code raise} degrees out to the sides. */
+        void humanK(double k, double raise) {
+            double w = Math.pow(k, 0.85);
+            box(-0.25 * w, 0, -0.125 * w, 0.25 * w, 0.75 * k, 0.125 * w, 0x3A4A7A);
+            box(-0.25 * w, 0.75 * k, -0.125 * w, 0.25 * w, 1.5 * k, 0.125 * w, 0x3D8BC4);
+            box(-0.25 * w, 1.5 * k, -0.25 * w, 0.25 * w, 2.0 * k, 0.25 * w, 0xD9A77E);
+            double r = Math.toRadians(raise);
+            for (int side = 0; side < 2; side++) {
+                double sgn = side == 0 ? 1 : -1;
+                double[] d = {sgn * Math.sin(r), -Math.cos(r), 0};
+                double[] q = {sgn * Math.cos(r), Math.sin(r), 0};
+                double[] o = {sgn * 0.375 * w, 1.375 * k, 0};
+                double[][] c = new double[8][];
+                for (int n = 0; n < 8; n++) {
+                    double a = ((n & 1) == 0 ? -0.125 : 0.625) * k;
+                    double b = ((n & 2) == 0 ? -0.125 : 0.125) * w;
+                    double e = ((n & 4) == 0 ? -0.125 : 0.125) * w;
+                    c[n] = new double[] {o[0] + d[0] * a + q[0] * b, o[1] + d[1] * a + q[1] * b, o[2] + e};
+                }
+                int[][] f = {{0, 1, 3, 2}, {4, 5, 7, 6}, {0, 1, 5, 4}, {2, 3, 7, 6}, {0, 2, 6, 4}, {1, 3, 7, 5}};
+                for (int[] face : f) {
+                    tri(c[face[0]], c[face[1]], c[face[2]], null, null, 0xD9A77E);
+                    tri(c[face[0]], c[face[2]], c[face[3]], null, null, 0xD9A77E);
+                }
+            }
+        }
+
         void human(double raise, boolean noArms, boolean noBody, boolean noHead, boolean noLegs) {
             if (!noLegs) {
                 box(OX - 0.25, OY, OZ - 0.125, OX + 0.25, OY + 0.75, OZ + 0.125, 0x3A4A7A);

@@ -33,6 +33,16 @@ public final class ConquerorSparksClient {
                         return;
                     }
                     Vec3 feet = user.m_20182_();
+                    // 3.9.5 (the owner: "when holding literally anything with Ryou + Conqueror's haki the lightning around the body gets
+                    // transfered to that item"): off the held item (a drawn blade or mace along its own line), else off the body
+                    Vec3[] held = user instanceof net.minecraft.world.entity.player.Player player ? HeldLine.of(player) : null;
+                    if (held != null) {
+                        double[] base = {held[0].f_82479_ - feet.f_82479_, held[0].f_82480_ - feet.f_82480_, held[0].f_82481_ - feet.f_82481_};
+                        double[] tip = {held[1].f_82479_ - feet.f_82479_, held[1].f_82480_ - feet.f_82480_, held[1].f_82481_ - feet.f_82481_};
+                        HakiBolts.sparks(level, user, feet.f_82479_, feet.f_82480_, feet.f_82481_,
+                            ConquerorSparks.blade(base, tip, 2 + (int) m.size(), 0.0, m.ticks()), 0.0, m.size() >= 5 ? 0.25F : 0.0F);
+                        return;
+                    }
                     HakiBolts.sparks(level, user, feet.f_82479_, feet.f_82480_, feet.f_82481_,
                         ConquerorSparks.body((int) m.size(), user.m_20206_(), user.m_20205_(), m.ticks()), 0.0, m.size() >= 5 ? 0.25F : 0.0F);
                 }

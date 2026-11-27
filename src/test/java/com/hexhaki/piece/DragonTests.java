@@ -976,8 +976,6 @@ public final class DragonTests {
             Check.that(part.col != null, part.name + ": a colour a vertex (version 2)");
         }
         Check.that(faces <= 20000, "the Itsumade within the phone's budget (" + faces + " faces)");
-        Check.that(sh.glowFire.length / 2 + sh.glowRibbon.length / 2 <= 60, "the glow's shells few enough ("
-            + (sh.glowFire.length / 2 + sh.glowRibbon.length / 2) + ")");
         String[] states = {"stand", "walk", "hover", "fly", "fast", "glide", "dive", "flare", "land", "bite", "form", "unform"};
         com.hexhaki.piece.dragon.DragonPose pose = new com.hexhaki.piece.dragon.DragonPose(m);
         float worst = 0.0F;

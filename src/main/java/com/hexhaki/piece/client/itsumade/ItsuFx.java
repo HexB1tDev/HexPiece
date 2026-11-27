@@ -5,7 +5,6 @@ import com.hexhaki.fruit.client.ClientKits;
 import com.hexhaki.piece.HexPiece;
 import com.hexhaki.piece.dragon.DragonModel;
 import com.hexhaki.piece.dragon.DragonPose;
-import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.itsumade.ItsuForm;
 import com.hexhaki.piece.network.S2CUoFx;
 import com.hexhaki.piece.server.ItsuServer;
@@ -46,11 +45,12 @@ import org.joml.Vector3f;
 /**
  * 3.9.4 (the owner: "New Fruit ... Rarity: Mythical Type: Zoan ... Z - Transforms (DIsturbing progressive transformation)", "Fruit "????"
  * Renamed to "Itsumade"", "Size: 10 blocks tall, big wing span", "All fire should feel alive ... act like Tori Tori No Mi", "The fire
- * all of it also has to glow, black fire glows black, the rest glows orange"): the owner's Itsumade drawn over a player in its form
+ * all of it also has to glow, black fire glows black, the rest glows orange"; then, of the shells round it: "This is not glow. This is
+ * smoke ... I don't like it, and it's ugly": none now, its fire is bright on its own): the owner's Itsumade drawn over a player in its form
  * (server/ItsuServer), as the phoenix is (client/phoenix/PhoenixFx: the model skinned on the CPU each frame, written straight into the
  * game's entity buffers, drawn both sides): its own colours (a colour a vertex and its head's texture, tools/itsumade_bake.py) shaded by a
  * fixed light on its own form and by the world's light where it stands; its fire full bright, alive (ItsuForm.flow) and hot
- * (ItsuForm.heat); its glow after the particles (ItsuForm.glow: orange round the fire, a black haze round the black ribbon). Its pose
+ * (ItsuForm.heat). Its pose
  * follows how the player moves (ItsuForm.pose: hovering, flying slow and fast, gliding, diving, flaring to land, the touchdown, standing
  * level as a bird on the ground and stalking). The change (ItsuForm.change, size): it tears out of the convulsing human in lurches and
  * folds back into it. The human is hidden while it is out; one's own camera pulls back to see it whole.
@@ -63,6 +63,8 @@ public final class ItsuFx {
     private static boolean fromFirstPerson;
     private static DragonModel model;
     private static ItsuForm.Shape shape;
+    /** How high its chest stands over its feet (ItsuForm.chestHeight), found once. */
+    private static float chestHeight = 3.0F;
     private static boolean failed;
     /** Its own shading: a light from above, ahead and to its left (model space), and how dark its shade side goes. */
     static final float[] LIGHT = {0.35F, 0.8F, -0.45F};
@@ -94,11 +96,11 @@ public final class ItsuFx {
         DragonPose pose;
         float[][] pos;
         float[][] nrm;
-        double[] fire;
-        double[] ribbon;
         float drawnScale;
         float alive;
         boolean shown;
+        /** The human's model scaled this frame (RenderPlayerEvent.Pre pushed, Post pops). */
+        boolean scaled;
     }
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
@@ -114,6 +116,7 @@ public final class ItsuFx {
                 }
                 model = DragonModel.read(in);
                 shape = new ItsuForm.Shape(model);
+                chestHeight = ItsuForm.chestHeight(model, shape);
             } catch (java.io.IOException | RuntimeException e) {
                 failed = true;
                 HexPiece.LOGGER.error("HexPiece: the Itsumade's model could not be read", e);
@@ -306,6 +309,42 @@ public final class ItsuFx {
         }
     }
 
+    /**
+     * 3.9.5 (the owner: "Instead of like the player progressively transforming, no. Just coming out of me"): while it is still the
+     * human, the human's own body swells in jolts (ItsuForm.humanScale: taller more than wider) as it convulses, until it is the
+     * creature; going back, it shrinks back to itself. Last of the listeners (nothing cancels the drawing after it), undone in Post.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void swell(RenderPlayerEvent.Pre event) {
+        if (ENTRIES.isEmpty()) {
+            return;
+        }
+        Entry entry = ENTRIES.get(event.getEntity().m_19879_());
+        if (entry == null || entry.scaled) {
+            return;
+        }
+        float k = ItsuForm.humanScale(entry.phase, ticks(entry, event.getPartialTick()));
+        if (k > 1.001F) {
+            PoseStack pose = event.getPoseStack();
+            pose.m_85836_();
+            float wide = (float) Math.pow(k, 0.85);
+            pose.m_85841_(wide, k, wide);
+            entry.scaled = true;
+        }
+    }
+
+    @SubscribeEvent
+    public static void swellDone(RenderPlayerEvent.Post event) {
+        if (ENTRIES.isEmpty()) {
+            return;
+        }
+        Entry entry = ENTRIES.get(event.getEntity().m_19879_());
+        if (entry != null && entry.scaled) {
+            event.getPoseStack().m_85849_();
+            entry.scaled = false;
+        }
+    }
+
     @SubscribeEvent
     public static void hideHands(RenderHandEvent event) {
         Minecraft minecraft = Minecraft.m_91087_();
@@ -371,8 +410,6 @@ public final class ItsuFx {
                 entry.pos[i] = new float[m.parts[i].vertices() * 3];
                 entry.nrm[i] = new float[m.parts[i].vertices() * 3];
             }
-            entry.fire = new double[shape.glowFire.length / 2 * 3];
-            entry.ribbon = new double[shape.glowRibbon.length / 2 * 3];
         }
         ItsuForm.Motion mo = NOW;
         ItsuForm.Motion a = entry.was;
@@ -388,6 +425,8 @@ public final class ItsuFx {
         mo.land = sinceLand < 0.0F || sinceLand > 16.0F ? 0.0F : (float) Math.sin(sinceLand / 16.0 * Math.PI);
         mo.stride = entry.strideO + (entry.stride - entry.strideO) * partial;
         mo.look = player.f_19860_ + (player.m_146909_() - player.f_19860_) * partial;
+        float bodyYaw = entry.yawO + wrap(entry.yaw - entry.yawO) * partial;
+        mo.turn = changing ? 0.0F : wrap(player.m_146908_() - bodyYaw);
         mo.mouth = -1.0F;
         mo.bite = 0.0F;
         ItsuForm.change(entry.phase, t, mo);
@@ -404,7 +443,8 @@ public final class ItsuFx {
         // climbing and dropping tilt it with the look, at speed
         float tilt = -mo.look * 0.35F * mo.speed * (1.0F - mo.perch);
         float s = ItsuForm.SCALE * size;
-        // the anchor: on the ground its feet's middle on the player's feet; in the air its chest at the player's middle
+        // the anchor (3.9.5, the owner: "when you're landing, you go into the ground"): on the ground its feet's middle on the player's
+        // feet; in the air its chest held chestHeight over the player's feet (its heave left to show), so it lands on its feet
         float[] g = entry.pose.global;
         int toeL = shape.leg[0][2];
         int toeR = shape.leg[1][2];
@@ -412,12 +452,11 @@ public final class ItsuFx {
         float ax = (g[toeL * 12 + 3] + g[toeR * 12 + 3]) * 0.5F;
         float az = (g[toeL * 12 + 11] + g[toeR * 12 + 11]) * 0.5F;
         float cx = g[shape.chest * 12 + 3];
-        float cy = g[shape.chest * 12 + 7];
+        float cy = g[shape.chest * 12 + 7] - ItsuForm.heave(mo, seconds) - chestHeight;
         float cz = g[shape.chest * 12 + 11];
         float p = mo.perch;
         float[] anchor = {cx + (ax - cx) * p, cy + (footY - cy) * p, cz + (az - cz) * p};
-        double rise = 0.9 * (1.0F - p);
-        placement(x - camera.f_82479_, y + rise - camera.f_82480_, z - camera.f_82481_, yaw, tilt, bank, s, anchor, PLACE);
+        placement(x - camera.f_82479_, y - camera.f_82480_, z - camera.f_82481_, yaw, tilt, bank, s, anchor, PLACE);
         Matrix4f view = stack.m_85850_().m_252922_();
         Vector3f o = view.transformPosition(new Vector3f(0.0F, 0.0F, 0.0F));
         Vector3f vx = view.transformDirection(new Vector3f(1.0F, 0.0F, 0.0F));
@@ -430,32 +469,17 @@ public final class ItsuFx {
         // the world's light where it stands (its body), full bright for its fire and its black ribbon
         int light = LevelRenderer.m_109541_(level, BlockPos.m_274561_(x, y + 1.0, z));
         float alive = changing ? mo.grown[ItsuForm.G_FIRE] : 1.0F;
-        float wind = (1.0F - mo.perch) * (0.3F + 0.7F * mo.speed);
+        float wind = (1.0F - mo.perch) * (0.3F + 0.7F * mo.speed) + mo.perch * mo.walk * 0.35F;
         for (int i = 0; i < m.parts.length; i++) {
             DragonModel.Part part = m.parts[i];
             entry.pose.skin(part, entry.pos[i], entry.nrm[i]);
             ItsuForm.flow(shape, i, entry.pos[i], entry.nrm[i], seconds, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, wind, alive);
+            ItsuForm.ribbonGrown(shape, entry.pose, i, entry.pos[i], mo.grown[ItsuForm.G_RIBBON]);
             emit(out, i, part, entry.pos[i], entry.nrm[i], mat, up, light, seconds, alive);
         }
-        // the glow's anchors placed (camera-relative) for the shells drawn after the particles
-        place(shape.glowFire, entry.pos, entry.fire);
-        place(shape.glowRibbon, entry.pos, entry.ribbon);
         entry.drawnScale = s;
         entry.alive = alive;
         entry.shown = true;
-    }
-
-    static void place(int[] an, float[][] pos, double[] out) {
-        for (int k = 0; k < an.length / 2; k++) {
-            float[] p = pos[an[k * 2]];
-            int vtx = an[k * 2 + 1];
-            float px = p[vtx * 3];
-            float py = p[vtx * 3 + 1];
-            float pz = p[vtx * 3 + 2];
-            for (int r = 0; r < 3; r++) {
-                out[k * 3 + r] = PLACE[r * 4] * px + PLACE[r * 4 + 1] * py + PLACE[r * 4 + 2] * pz + PLACE[r * 4 + 3];
-            }
-        }
     }
 
     /**
@@ -477,10 +501,12 @@ public final class ItsuFx {
             float g = col == null ? 1.0F : col[k * 3 + 1];
             float b = col == null ? 1.0F : col[k * 3 + 2];
             if (kind == ItsuForm.FIRE) {
+                // embers until it catches (the change), then its living fire
                 float heat = 0.5F * alive * ItsuForm.heat(shape, index, k, seconds);
-                r = Math.min(1.0F, r * 1.1F + heat);
-                g = Math.min(1.0F, g * 1.1F + heat * 0.8F);
-                b = Math.min(1.0F, b * 1.1F + heat * 0.35F);
+                float lit2 = 0.25F + 0.75F * alive;
+                r = Math.min(1.0F, r * 1.1F * lit2 + heat);
+                g = Math.min(1.0F, g * 1.1F * lit2 * lit2 + heat * 0.8F);
+                b = Math.min(1.0F, b * 1.1F * lit2 * lit2 + heat * 0.35F);
             } else if (kind != ItsuForm.RIBBON) {
                 float d = nrm[k * 3] * LIGHT[0] + nrm[k * 3 + 1] * LIGHT[1] + nrm[k * 3 + 2] * LIGHT[2];
                 float shade = SHADE + (1.0F - SHADE) * Math.max(0.0F, d / 1.035F);
@@ -546,59 +572,14 @@ public final class ItsuFx {
         return o;
     }
 
-    /** The house's fire quads (alpha blended, depth tested), camera-relative, through the game's own debugQuads type. */
-    static final class Writer implements FireMesh.Sink {
-        VertexConsumer buffer;
-        Matrix4f matrix;
-
-        @Override
-        public void quad(double[] xyz, int[] argb) {
-            for (int k = 0; k < 4; k++) {
-                int c = argb[k];
-                this.buffer.m_252986_(this.matrix, (float) xyz[k * 3], (float) xyz[k * 3 + 1], (float) xyz[k * 3 + 2])
-                    .m_85950_(((c >>> 16) & 255) / 255.0F, ((c >>> 8) & 255) / 255.0F, (c & 255) / 255.0F, ((c >>> 24) & 255) / 255.0F).m_5752_();
-            }
-        }
-    }
-
-    static final Writer SINK = new Writer();
-
-    /** The glow round every Itsumade's fire and black ribbon, after the particles. */
-    @SubscribeEvent
-    public static void glow(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty() || shape == null) {
-            return;
-        }
-        Minecraft minecraft = Minecraft.m_91087_();
-        PoseStack pose = event.getPoseStack();
-        MultiBufferSource.BufferSource buffers = minecraft.m_91269_().m_110104_();
-        RenderType type = RenderType.m_269166_();
-        SINK.matrix = pose.m_85850_().m_252922_();
-        float partial = event.getPartialTick();
-        try {
-            SINK.buffer = buffers.m_6299_(type);
-            for (Entry entry : ENTRIES.values()) {
-                if (entry.shown) {
-                    ItsuForm.glow(SINK, entry.fire, entry.fire.length / 3, entry.ribbon, entry.ribbon.length / 3, entry.drawnScale,
-                        (clock + partial) / 20.0F, entry.alive);
-                }
-            }
-        } catch (RuntimeException failure) {
-            HexPiece.LOGGER.error("HexPiece: an Itsumade's glow could not be drawn", failure);
-        }
-        if (SINK.buffer != null) {
-            buffers.m_109912_(type);
-        }
-        SINK.buffer = null;
-    }
-
     /**
      * client/dragon/DragonCamera asks: one's own camera, in third person (back) while the Itsumade is out, pulled back and up so it is
      * seen whole (it is ten blocks tall), easing out as it grows and in as it goes; null otherwise.
      */
     public static Vec3 camera(Entity entity, float partial) {
         Minecraft minecraft = Minecraft.m_91087_();
-        if (ENTRIES.isEmpty() || entity != minecraft.f_91074_ || minecraft.f_91066_.m_92176_() != CameraType.THIRD_PERSON_BACK) {
+        CameraType type = minecraft.f_91066_.m_92176_();
+        if (ENTRIES.isEmpty() || entity != minecraft.f_91074_ || type == CameraType.FIRST_PERSON) {
             return null;
         }
         Entry entry = ENTRIES.get(entity.m_19879_());
@@ -609,10 +590,15 @@ public final class ItsuFx {
         if (out <= 0.0F) {
             return null;
         }
+        // 3.9.5 (the owner: "when you switch to one of the modes in third person, you're gonna see just his feet"): both views (behind
+        // and in front, the look turned round), pulled back and raised to its body (its chest stands chestHeight over its feet)
         Vec3 eye = entity.m_20299_(partial);
         Vec3 look = entity.m_20252_(partial);
-        double back = 4.0 + 16.0 * out;
-        double up = 4.5 * out;
+        if (type == CameraType.THIRD_PERSON_FRONT) {
+            look = look.m_82490_(-1.0);
+        }
+        double back = 4.0 + 17.0 * out;
+        double up = (chestHeight * ItsuForm.SCALE - 1.0) * out + 1.5 * out;
         Vec3 raised = com.hexhaki.piece.client.dragon.DragonCamera.clip(entity, eye, eye.m_82520_(0.0, up, 0.0));
         return com.hexhaki.piece.client.dragon.DragonCamera.clip(entity, raised, raised.m_82520_(-look.f_82479_ * back, -look.f_82480_ * back,
             -look.f_82481_ * back));

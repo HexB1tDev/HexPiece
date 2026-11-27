@@ -42,7 +42,7 @@ public final class PieceItems {
     }
 
     public static final RegistryObject<CreativeModeTab> TAB = TABS.register("katanas", () -> CreativeModeTab.builder()
-        .m_257941_(Component.m_237113_("HexPiece Katanas"))
+        .m_257941_(Component.m_237113_("HexPiece Weapons"))
         .m_257737_(() -> stack(Katana.OBSIDIAN_ECLIPSE))
         .m_257501_((parameters, output) -> {
             for (int grade = 0; grade < 4; grade++) {
@@ -64,7 +64,7 @@ public final class PieceItems {
 
     /** 2.3.1: the owner's armor, the Marine outfit head to feet first. */
     public static final RegistryObject<CreativeModeTab> ARMOR_TAB = TABS.register("armor", () -> CreativeModeTab.builder()
-        .m_257941_(Component.m_237113_("One Piece Armor"))
+        .m_257941_(Component.m_237113_("HexPiece Armor"))
         .m_257737_(() -> stack(PieceArmor.STRAW_HAT))
         .m_257501_((parameters, output) -> {
             for (PieceArmor piece : PieceArmor.values()) {
@@ -78,7 +78,7 @@ public final class PieceItems {
      * (FruitRanks: the Legendary ones, then the Mythical, the Nika fruit last), each named in its rank's colour.
      */
     public static final RegistryObject<CreativeModeTab> FRUIT_TAB = TABS.register("fruits", () -> CreativeModeTab.builder()
-        .m_257941_(Component.m_237113_("Devil Fruits"))
+        .m_257941_(Component.m_237113_("HexPiece Devil Fruits"))
         .m_257737_(() -> new ItemStack(com.hexhaki.fruit.Fruits.ITEM.get(com.hexhaki.fruit.Fruit.GURA).get(), 1))
         .m_257501_((parameters, output) -> {
             for (FruitRanks.Rank rank : FruitRanks.Rank.values()) {

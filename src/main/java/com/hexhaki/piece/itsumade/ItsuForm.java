@@ -51,8 +51,8 @@ public final class ItsuForm {
     static final float JAW_WIDE = 16.0F;
     /** The black ribbon held this far ahead of where the file has it (units): clear in front of the wings' roots (the owner's rule). */
     static final float RIBBON_AHEAD = 0.45F;
-    /** The body's pitch on the ground (degrees, forward): level as a bird's. */
-    static float GROUND_PITCH = -62.0F;
+    /** The body's pitch on the ground (degrees, forward): leaning forward on its legs as a great bird stands. */
+    static float GROUND_PITCH = -52.0F;
     /** The most a tail joint bends from the one before it (degrees). */
     static final float TAIL_BEND = 24.0F;
     /** The most the neck and head turn back against the body's forward pitch to hold the head level (degrees). */
@@ -61,59 +61,81 @@ public final class ItsuForm {
     // ------------------------------------------------------------------------------------------------------------------ the change
 
     /**
-     * The change (the owner: "Z - Transforms (DIsturbing progressive transformation)"): the human convulses first (the clip itsu_form:
-     * jerks, the back arching, the arms wrenched out and round, a shudder; tools/itsu_anims.py), then the creature tears its way out of
-     * it in pieces and lurches (never a smooth growth): the black ribbon snaps open behind ({@link #G_RIBBON}), the wings rip out of the
-     * back, the tail unrolls joint by joint down out of the hips, the neck stretches the head up out of the shoulders, the talons come,
-     * the whole of it swelling from the human's size to its own in uneven jolts; the human gone once it is half out ({@link #HUMAN_GONE});
-     * the fire catching last, then the jaw thrown open in a silent scream. Going back: the fire out, the whole shrinking back in lurches
-     * into a hunched human, the pieces drawn in the other way round.
+     * The change (the owner: "Z - Transforms (DIsturbing progressive transformation)"; then, of the creature growing out of the human:
+     * "it's just growing out of me. Instead of like the player progressively transforming"): the human's own body transforms. First the
+     * human convulses (the clip itsu_form: jerks, the back arching, the arms wrenched round, thrown wide, shuddering) and swells in jolts
+     * ({@link #humanScale}: to {@link #HUMAN_BIG} its height); at {@link #SWAP} that swollen body IS the Itsumade, the same height
+     * ({@link #SWAP_SIZE}), standing upright as the human stood, its arms thrown wide now its wings spread wide ({@link Motion#spread});
+     * from there it keeps swelling in jolts to its own size while its body bends over into the bird's, the neck stretching the head up, the
+     * tail unrolling joint by joint, the talons coming, the black ribbon snapping alight, the fire catching last; the jaw thrown open in a
+     * scream, the wings folded at the end. Going back: the fire out, the ribbon gone, the whole shrinking in lurches, its body straightening
+     * upright, until at {@link #UNSWAP} it is the swollen human again, doubled over, shrinking back to itself.
      */
-    public static final float HUMAN_GONE = 30.0F;
-    public static final float HUMAN_BACK = 16.0F;
-    /** Its size as it first shows (the human's), and when it is full grown. */
-    public static final float SMALL = 0.2F;
-    static final float FULL = 50.0F;
-    /** When each group grows out (start and end ticks, FORMING). */
-    static final float[][] GROW = {{4, 14}, {12, 30}, {16, 40}, {22, 42}, {26, 40}, {38, 54}};
-    /** When each group is drawn back in (start and end ticks, UNFORMING). */
-    static final float[][] SHRINK = {{12, 26}, {6, 22}, {4, 24}, {2, 18}, {8, 20}, {0, 6}};
+    public static final float SWAP = 24.0F;
+    public static final float UNSWAP = 20.0F;
+    /** How far the human swells (its height) before it is the creature; the creature's size then (the same height, upright). */
+    public static final float HUMAN_BIG = 1.7F;
+    public static final float SWAP_SIZE = 0.6F;
+    /** When it is full grown (FORMING ticks). */
+    static final float FULL = 54.0F;
+    /** Kept for the server's timings: the human hidden from the swap (FORMING), back at the unswap (UNFORMING). */
+    public static final float HUMAN_GONE = SWAP;
+    public static final float HUMAN_BACK = UNSWAP;
 
-    /** Its size (of its own: 0 not drawn, SMALL to 1), {@code ticks} into {@code phase}: swelling in jolts. */
+    /** Its size (of its own: 0 not drawn, SWAP_SIZE to 1), {@code ticks} into {@code phase}: swelling in jolts. */
     public static float size(int phase, float ticks) {
         return switch (phase) {
-            case FORMING -> ticks < GROW[G_RIBBON][0] ? 0.0F : SMALL + (1.0F - SMALL) * lurch((ticks - 12.0F) / (FULL - 12.0F), 5);
-            case UNFORMING -> ticks >= 26.0F ? 0.0F : 1.0F - (1.0F - SMALL) * lurch(ticks / 22.0F, 4);
+            case FORMING -> ticks < SWAP ? 0.0F : SWAP_SIZE + (1.0F - SWAP_SIZE) * lurch((ticks - SWAP) / (FULL - SWAP), 4);
+            case UNFORMING -> ticks >= UNSWAP ? 0.0F : 1.0F - (1.0F - SWAP_SIZE) * lurch(ticks / UNSWAP, 4);
             case ITSU -> 1.0F;
             default -> 0.0F;
         };
     }
 
-    /** Whether the human is hidden (the creature out, or more than half out of it). */
-    public static boolean humanHidden(int phase, float ticks) {
-        return phase == ITSU || phase == FORMING && ticks >= HUMAN_GONE || phase == UNFORMING && ticks < HUMAN_BACK;
+    /** The human's own size while it is still the human (1 itself): swelling in jolts toward the swap, shrinking back after the unswap. */
+    public static float humanScale(int phase, float ticks) {
+        return switch (phase) {
+            case FORMING -> ticks >= SWAP ? 1.0F : 1.0F + (HUMAN_BIG - 1.0F) * lurch((ticks - 2.0F) / (SWAP - 3.0F), 4);
+            case UNFORMING -> ticks < UNSWAP ? 1.0F : HUMAN_BIG - (HUMAN_BIG - 1.0F) * lurch((ticks - UNSWAP) / 11.0F, 3);
+            default -> 1.0F;
+        };
     }
 
-    /** The change's motion {@code ticks} into {@code phase}: each group's growth, its own shape, the scream. */
+    /** Whether the human is hidden (it is the creature now). */
+    public static boolean humanHidden(int phase, float ticks) {
+        return phase == ITSU || phase == FORMING && ticks >= SWAP || phase == UNFORMING && ticks < UNSWAP;
+    }
+
+    /** The change's motion {@code ticks} into {@code phase}: each group's growth, its own shape, its wings, the scream. */
     public static void change(int phase, float ticks, Motion mo) {
         if (phase == FORMING) {
-            for (int g = 0; g < 6; g++) {
-                mo.grown[g] = lurch((ticks - GROW[g][0]) / (GROW[g][1] - GROW[g][0]), 3);
-            }
-            mo.form = smooth((ticks - 26.0F) / 24.0F);
+            mo.grown[G_RIBBON] = lurch((ticks - 34.0F) / 10.0F, 2);
+            mo.grown[G_WINGS] = lurch((ticks - SWAP) / 24.0F, 3);
+            mo.grown[G_TAIL] = lurch((ticks - 26.0F) / 24.0F, 3);
+            mo.grown[G_NECK] = lurch((ticks - 28.0F) / 16.0F, 3);
+            mo.grown[G_LEGS] = lurch((ticks - SWAP) / 16.0F, 2);
+            mo.grown[G_FIRE] = smooth((ticks - 42.0F) / 12.0F);
+            mo.form = smooth((ticks - 28.0F) / 24.0F);
+            // the arms thrown wide are its wings spread wide, held through the growth and the scream, folded at the end
+            mo.spread = smooth((ticks - SWAP + 4.0F) / 4.0F) * (1.0F - smooth((ticks - 57.0F) / 7.0F));
             float scream = smooth((ticks - 48.0F) / 4.0F) * (1.0F - smooth((ticks - 58.0F) / 6.0F));
             mo.mouth = Math.max(0.12F, scream);
         } else if (phase == UNFORMING) {
-            for (int g = 0; g < 6; g++) {
-                mo.grown[g] = 1.0F - lurch((ticks - SHRINK[g][0]) / (SHRINK[g][1] - SHRINK[g][0]), 3);
-            }
-            mo.form = 1.0F - smooth(ticks / 18.0F);
+            mo.grown[G_FIRE] = 1.0F - smooth(ticks / 6.0F);
+            mo.grown[G_RIBBON] = 1.0F - lurch(ticks / 10.0F, 2);
+            mo.grown[G_TAIL] = 1.0F - lurch((ticks - 2.0F) / 15.0F, 3);
+            mo.grown[G_NECK] = 1.0F - lurch((ticks - 4.0F) / 13.0F, 3);
+            mo.grown[G_WINGS] = 1.0F - lurch(ticks / UNSWAP, 3);
+            mo.grown[G_LEGS] = 1.0F - lurch((ticks - 4.0F) / 14.0F, 2);
+            mo.form = 1.0F - smooth((ticks - 2.0F) / 15.0F);
+            mo.spread = 0.0F;
             mo.mouth = 0.5F * (1.0F - smooth(ticks / 8.0F));
         } else {
             for (int g = 0; g < 6; g++) {
                 mo.grown[g] = 1.0F;
             }
             mo.form = 1.0F;
+            mo.spread = 0.0F;
         }
     }
 
@@ -163,11 +185,6 @@ public final class ItsuForm {
         public final float[][] phase;
         /** The lowest point of the feet at rest (model y), and the tail's thickness at its root and its tip (units). */
         public final float feet;
-        /** 3.9.4 the glow's anchors (the owner: "The fire all of it also has to glow, black fire glows black, the rest glows orange"):
-         * (part, vertex) pairs spread along the fire and along the black ribbon, GLOW_SPACING apart at rest. */
-        public final int[] glowFire;
-        public final int[] glowRibbon;
-
         public Shape(DragonModel m) {
             this.root = m.bone("root");
             this.chest = m.bone("chest");
@@ -231,45 +248,6 @@ public final class ItsuForm {
                 }
             }
             this.feet = low == Float.MAX_VALUE ? 2.24F : low;
-            this.glowFire = anchors(m, this.kind, FIRE, GLOW_SPACING);
-            this.glowRibbon = anchors(m, this.kind, RIBBON, GLOW_SPACING * 1.2F);
-        }
-
-        /** Vertices of every part of {@code kind}, greedily at least {@code spacing} apart (rest), its reach over 0.15 (on the flame). */
-        static int[] anchors(DragonModel m, int[] kinds, int kind, float spacing) {
-            java.util.List<float[]> picked = new java.util.ArrayList<>();
-            java.util.List<int[]> out = new java.util.ArrayList<>();
-            for (int i = 0; i < m.parts.length; i++) {
-                if (kinds[i] != kind) {
-                    continue;
-                }
-                DragonModel.Part part = m.parts[i];
-                for (int v = 0; v < part.vertices(); v += 3) {
-                    float x = part.pos[v * 3];
-                    float y = part.pos[v * 3 + 1];
-                    float z = part.pos[v * 3 + 2];
-                    boolean near = false;
-                    for (float[] q : picked) {
-                        float dx = q[0] - x;
-                        float dy = q[1] - y;
-                        float dz = q[2] - z;
-                        if (dx * dx + dy * dy + dz * dz < spacing * spacing) {
-                            near = true;
-                            break;
-                        }
-                    }
-                    if (!near) {
-                        picked.add(new float[] {x, y, z});
-                        out.add(new int[] {i, v});
-                    }
-                }
-            }
-            int[] flat = new int[out.size() * 2];
-            for (int k = 0; k < out.size(); k++) {
-                flat[k * 2] = out.get(k)[0];
-                flat[k * 2 + 1] = out.get(k)[1];
-            }
-            return flat;
         }
 
         public float rx(int bone) {
@@ -303,16 +281,19 @@ public final class ItsuForm {
         /** The mouth: 0 shut, 1 wide (the ambient's breath opens it now and then); the bite: 0 none, its run from 0 to 1. */
         public float mouth = -1.0F;
         public float bite;
-        /** The look's pitch (degrees, negative up) the head follows; its bank in turns (degrees). */
+        /** The look's pitch (degrees, negative up) the head follows; how far the look is turned from where the body faces (degrees). */
         public float look;
+        public float turn;
         /** 3.9.4 the change: how far it has its own shape (0: the human's, 1: its own); each group's growth (FORMING / UNFORMING). */
         public float form = 1.0F;
         public final float[] grown = {1, 1, 1, 1, 1, 1};
+        /** 3.9.5: its wings spread wide (the change's arms thrown wide; 0 folded as a bird's on the ground). */
+        public float spread;
     }
 
     // ------------------------------------------------------------------------------------------------------------------ the pose
 
-    /** Groups that grow out of the human one after another in the change (Motion.grown). */
+    /** Groups that grow out in the change (Motion.grown). */
     public static final int G_RIBBON = 0;
     public static final int G_WINGS = 1;
     public static final int G_TAIL = 2;
@@ -321,60 +302,86 @@ public final class ItsuForm {
     public static final int G_FIRE = 5;
 
     /**
+     * 3.9.5 (the owner: "the wings are way too fast. He looks like a fucking mosquito"): the beat's rate (beats a second), hovering and
+     * at its fastest: a bird this big beats slowly and heavily (a condor's or a great eagle's pace, slower still); the part of a beat the
+     * downstroke takes (the power stroke, slower than the recovery).
+     */
+    static final float BEAT_SLOW = 0.42F;
+    static final float BEAT_FAST = 0.6F;
+    static final float DOWN_PART = 0.56F;
+    /** How high the body heaves on each downstroke (units). */
+    static final float HEAVE = 0.22F;
+    /** Its body upright as the human's (the change, before it takes its own shape): the chest's pitch (degrees). */
+    static final float UPRIGHT = 2.0F;
+
+    /** The body's rise (units) on the beat now: up through the downstroke, settling through the recovery. */
+    public static float heave(Motion mo, float seconds) {
+        float air = 1.0F - mo.perch;
+        float rate = BEAT_SLOW + (BEAT_FAST - BEAT_SLOW) * mo.speed;
+        float beat = seconds * rate;
+        float flap = air * (1.0F - 0.9F * mo.glide) * (1.0F - 0.5F * mo.flare);
+        return flap * HEAVE * (1.0F - 0.5F * mo.speed) * (float) Math.sin((beat - 0.12F) * Math.PI * 2.0);
+    }
+
+    /**
      * Poses the rig for {@code mo} at {@code seconds} (the creature's own time: its breath, its beats, its twitches): the chest pitched
-     * into the flight (upright hovering, levelled flying, flat out gliding and fast) or leaning on its talons on the ground; the neck
-     * and the head brought round to face ahead and held level, following the look; the wings beating (a hard downstroke, the hand
-     * folding on the way up), gliding spread, flared to land, half folded and held up like a cloak on the ground; the legs tucked in
-     * flight, reaching to land, stalking on the ground; the tail laid along a line by {@link #tail}: streaming back in the air in a
-     * slow wave, down to the ground and dragged behind in a crawling S on it; the jaw; the black ribbon swaying.
+     * into the flight (upright hovering, levelled flying, flat out gliding and fast) or leaning forward on its legs on the ground; the
+     * neck alive (an S that sways and breathes, turning after the look, the head snapping between looks as a bird's, thrust forward
+     * with each step) and the head held level; the wings beating as a bird's (the downstroke with the wing spread, the recovery with it
+     * folded at the elbow and the wrist), gliding spread, flared to land, folded against the body on the ground; the legs tucked in
+     * flight, reaching to land, stalking on the ground; the tail laid along a line by {@link #tail}; the jaw; the black ribbon swaying.
      */
     public static void pose(DragonModel m, Shape sh, DragonPose pose, Motion mo, float seconds) {
         pose.rest();
         float air = 1.0F - mo.perch;
         float t = seconds;
-        // ---- the beat: its rate by the speed (a slow hover, deep and heavy; quicker and shallower fast); gliding stops it
-        float rate = 0.62F + 0.7F * mo.speed;
-        float beat = (float) (t * rate * Math.PI * 2.0);
-        float flap = air * (1.0F - 0.85F * mo.glide) * (1.0F - 0.6F * mo.flare);
+        float rate = BEAT_SLOW + (BEAT_FAST - BEAT_SLOW) * mo.speed;
+        float beat = t * rate;
+        float cyc = beat - (float) Math.floor(beat);
+        float flap = air * (1.0F - 0.9F * mo.glide) * (1.0F - 0.5F * mo.flare);
         // ---- the chest: its pitch into the flight
-        float pitchAir = lerp(-24.0F, -70.0F, smooth(mo.speed * 1.6F));
+        float pitchAir = lerp(-30.0F, -70.0F, smooth(mo.speed * 1.6F));
         pitchAir = lerp(pitchAir, -84.0F, smooth((mo.speed - 0.6F) / 0.4F));
         pitchAir = lerp(pitchAir, -80.0F, mo.glide);
         pitchAir = lerp(pitchAir, -105.0F, mo.dive);
-        pitchAir = lerp(pitchAir, -8.0F, mo.flare);
-        // on the ground (the owner: "why is the bird standing up like a person, ITS A BIRD LIKE MONSTER"): the body level as a bird's or
-        // a raptor's, the legs upright under it (leg()), the neck reaching forward and up, the tail streaming back to the ground
-        float walkLean = GROUND_PITCH - 6.0F * mo.walk;
-        float chestPitch = lerp(walkLean, pitchAir, air);
+        pitchAir = lerp(pitchAir, -14.0F, mo.flare);
+        // on the ground (the owner: "ITS A BIRD LIKE MONSTER"): leaning forward on its legs as a great bird stands, more as it walks;
         // the change: upright as the human was until it takes its own shape
-        chestPitch = lerp(4.0F, chestPitch, mo.form);
-        // the body rises with each downstroke, sinks on the way up
-        float heave = flap * (float) Math.sin(beat + 0.6) * (4.0F - 2.0F * mo.speed);
-        chestPitch += heave;
-        // on the ground: the breath, and (walking) each step's lurch
+        float groundPitch = lerp(UPRIGHT, GROUND_PITCH - 6.0F * mo.walk, mo.form);
+        float chestPitch = lerp(groundPitch, pitchAir, air);
+        // the downstroke rocks the body a little nose up, the recovery nose down; the body rises with it (heave)
+        chestPitch += flap * 3.0F * (float) Math.sin((beat - 0.05F) * Math.PI * 2.0);
+        pose.t[sh.root * 3 + 1] += heave(mo, t);
+        // on the ground: the breath, each step's lurch and roll, the body dipping as each foot takes the weight
         float breath = (float) Math.sin(t * 1.3);
-        chestPitch += mo.perch * (1.5F * breath + mo.walk * 4.0F * (float) Math.sin(mo.stride * 2.0F));
-        float roll = mo.perch * mo.walk * 5.0F * (float) Math.sin(mo.stride);
+        chestPitch += mo.perch * (1.2F * breath + mo.walk * 3.0F * (float) Math.sin(mo.stride * 2.0F));
+        float roll = mo.perch * mo.walk * 4.0F * (float) Math.sin(mo.stride);
+        pose.t[sh.root * 3 + 1] -= mo.perch * mo.walk * 0.12F * (0.5F + 0.5F * (float) Math.cos(mo.stride * 2.0F));
         turn(pose, sh.chest, chestPitch, 1, 0, 0);
         turn(pose, sh.chest, roll, 0, 0, 1);
-        // the touchdown's dip
         float dip = mo.land;
-        // ---- the neck and the head: brought round to face ahead, held level whatever the chest's pitch, following the look
-        // (never more than LEVEL_MOST: diving, the head looks down into the dive; held level past it, the neck's ruff tore)
-        float level = Math.min(LEVEL_MOST, -chestPitch);
+        // ---- the neck and the head (the owner: "His neck is too stiff"): held level whatever the chest's pitch, turned after the look,
+        // an S that sways slowly and breathes, the head snapping between still looks as a bird's (on the ground), thrust forward with
+        // each step (a pigeon's bob, on a monster), undulating with the beats in the air
+        float level = Math.min(LEVEL_MOST, -chestPitch) * mo.form;
         float look = clampf(mo.look, -50.0F, 50.0F);
+        float follow = clampf(mo.turn, -70.0F, 70.0F);
         float twitch = mo.perch * twitch(t);
-        // searching: the head snapping between still looks (no glide between them: a bird's), wider standing than walking
-        float jerkYaw = mo.perch * (jerk(t, 0.9F) * (24.0F - 10.0F * mo.walk) + 6.0F * (float) Math.sin(t * 0.4));
-        float jerkPitch = mo.perch * jerk(t + 37.0F, 1.3F) * 10.0F;
-        // walking: the head held back then thrust forward with each step (a pigeon's bob, on a monster)
+        float jerkYaw = mo.perch * (jerk(t, 0.9F) * (22.0F - 10.0F * mo.walk));
+        float jerkPitch = mo.perch * jerk(t + 37.0F, 1.3F) * 8.0F;
+        float swayYaw = 10.0F * (float) Math.sin(t * 0.37) + 4.0F * (float) Math.sin(t * 0.91 + 1.3);
+        // (diving, the neck held straight down the dive: bent more there, its ruff tore)
+        float swayPitch = 7.0F * (float) Math.sin(t * 0.6) * (0.6F + 0.4F * mo.perch) * (1.0F - 0.85F * mo.dive);
+        float wave = flap * 6.0F * (float) Math.sin((beat - 0.25F) * Math.PI * 2.0) * (1.0F - mo.dive);
         float thrust = mo.perch * mo.walk * thrust(mo.stride * 2.0F);
-        float bob = thrust * 12.0F + jerkPitch;
+        float bob = thrust * 14.0F + jerkPitch;
         float lunge = biteLunge(mo.bite);
-        quat(pose, sh.neck1, NECK_FRONT + jerkYaw * 0.4F, level * 0.5F - look * 0.25F + bob * 0.5F - lunge * 22.0F - 6.0F * dip);
-        quat(pose, sh.neck2, 0.0F, level * 0.3F - look * 0.25F + bob * 0.3F - lunge * 18.0F);
-        // the head: the rest of the turn ahead, the look, a cocked tilt now and then on the ground (the disturbing twitch)
-        quat(pose, sh.head, HEAD_FRONT + jerkYaw * 0.6F, level * 0.2F - look * 0.5F + lunge * 14.0F);
+        quat(pose, sh.neck1, NECK_FRONT + follow * 0.35F + swayYaw * 0.6F + jerkYaw * 0.3F,
+            level * 0.5F - look * 0.25F + bob * 0.5F + swayPitch + wave - lunge * 22.0F - 6.0F * dip);
+        quat(pose, sh.neck2, follow * 0.3F - swayYaw * 0.25F,
+            level * 0.3F - look * 0.25F + bob * 0.3F - swayPitch * 0.8F - wave * 0.7F - lunge * 18.0F);
+        quat(pose, sh.head, HEAD_FRONT + follow * 0.3F + jerkYaw * 0.7F + swayYaw * 0.15F,
+            level * 0.2F - look * 0.5F + lunge * 14.0F - swayPitch * 0.3F);
         turn(pose, sh.head, twitch, 0, 0, 1);
         // ---- the jaw: the mouth as asked, else the breath opening it now and then (on the ground a slow, hungry gape)
         float mouth = mo.mouth >= 0.0F ? mo.mouth : ambientMouth(t, mo.perch);
@@ -386,14 +393,14 @@ public final class ItsuForm {
         pose.t[sh.halo * 3 + 2] -= RIBBON_AHEAD;
         // ---- the wings
         for (int s = 0; s < 2; s++) {
-            wing(pose, sh, s, mo, beat, flap, air, t);
+            wing(pose, sh, s, mo, cyc, flap, air, t);
         }
-        // ---- the legs
+        // ---- the legs (the body's lean on the ground undone at the hips: they stand upright under it)
         for (int s = 0; s < 2; s++) {
-            leg(pose, sh, s, mo, air, t);
+            leg(pose, sh, s, mo, air, t, -groundPitch);
         }
-        // ---- the change: each group grown out of the human (Motion.grown: 0 none, 1 full)
-        if (mo.form < 1.0F || mo.grown[G_WINGS] < 1.0F) {
+        // ---- the change: each group grown (Motion.grown: 0 none, 1 full)
+        if (mo.form < 1.0F || mo.grown[G_WINGS] < 1.0F || mo.grown[G_TAIL] < 1.0F) {
             grow(pose, sh, mo);
         }
         pose.solve();
@@ -403,97 +410,183 @@ public final class ItsuForm {
     }
 
     /**
-     * On the ground (degrees): the wings draped down beside and a little behind the body like a cloak (the shoulders' lift and forward
-     * sweep, the elbows' and the wrists' arch down): never swept forward, so the black ribbon always passes in front of them (the owner:
-     * "the black fire ribbon has to be infront of the wings AT ALL TIMES").
+     * 3.9.5 (the owner: "when you're landing, you go into the ground"): how high its chest stands over its feet on the ground (units). In
+     * the air the player's feet are held that far under its chest (client/itsumade/ItsuFx), so it comes down onto its feet, never into
+     * the ground, and its feet stay where the player's are when it lands.
      */
-    static float MANTLE_LIFT = -20.0F;
-    static float MANTLE_FORWARD = -8.0F;
-    static float MANTLE_ELBOW = -30.0F;
-    static float MANTLE_WRIST = -45.0F;
-
-    static void wing(DragonPose pose, Shape sh, int s, Motion mo, float beat, float flap, float air, float t) {
-        float sgn = s == 0 ? 1.0F : -1.0F;
-        int[] w = sh.wing[s];
-        // the beat (degrees of lift about the body's fore and aft axis: + up): a hard downstroke, a slower recovery, the joints late
-        double phase = beat;
-        float stroke = (float) Math.cos(phase - 0.35 * Math.sin(phase));
-        float amp = lerp(38.0F, 26.0F, mo.speed) * flap;
-        float lift = amp * stroke + 6.0F * flap;
-        float elbow = amp * 0.45F * (float) Math.cos(phase - 0.7);
-        float wrist = amp * 0.55F * (float) Math.cos(phase - 1.25);
-        float fold = flap * Math.max(0.0F, (float) Math.sin(phase)) * (1.0F - 0.5F * mo.speed);
-        // gliding: spread and still, a slow lift; fast: swept back; flaring to land: thrown up and forward
-        float sweep = 22.0F * smooth((mo.speed - 0.4F) / 0.6F) * air * (1.0F - mo.flare) + 12.0F * mo.dive;
-        float glideLift = mo.glide * air * (4.0F + 2.0F * (float) Math.sin(t * 0.8 + s));
-        float flareUp = mo.flare * 35.0F;
-        float flareFwd = 0.0F; // never forward: the ribbon stays in front of the wings
-        // on the ground (the owner, of the folded wings: "look at the wings jesus"): never folded (its rigid feathers on bending membranes
-        // crumple): it MANTLES as a vulture over its prey: the wings held up from the shoulders and arched forward round its body, the
-        // hands hanging down to the ground beside it; walking, each hand lifted and set down again with the other side's talon (a crawl
-        // on its wings' hands); now and then both thrown up and wide (the menace), shaking
-        float ground = mo.perch;
-        double sph = mo.stride + (s == 0 ? Math.PI : 0.0);
-        float hand = ground * mo.walk * Math.max(0.0F, (float) Math.sin(sph));
-        float menace = ground * (1.0F - mo.walk) * smooth(((float) Math.sin(t * 0.31 + s * 0.25) - 0.55F) / 0.35F);
-        float shiver = menace * 2.5F * (float) Math.sin(t * 31.0 + s);
-        float shrug = ground * 9.0F * smooth(((float) Math.sin(t * 0.83 + s * 2.1) - 0.7F) / 0.3F);
-        float mLift = ground * (MANTLE_LIFT + 2.0F * (float) Math.sin(t * 1.3) + 8.0F * hand + 30.0F * menace) + shiver + shrug;
-        float mFwd = ground * (MANTLE_FORWARD - 10.0F * hand - 25.0F * menace);
-        float mElbow = ground * (MANTLE_ELBOW + 10.0F * hand + 20.0F * menace);
-        float mWrist = ground * (MANTLE_WRIST + 22.0F * hand + 35.0F * menace);
-        // the shoulder: lift about the fore and aft axis (its own side up), sweep about the up axis (back)
-        turn(pose, w[0], sgn * (lift + glideLift + flareUp + mLift), 0, 0, 1);
-        turn(pose, w[0], -sgn * (sweep - flareFwd - mFwd), 0, 1, 0);
-        // the elbow and the wrist: the wave out to the tips; the hand folding back on the way up; mantling, the arm arched down
-        turn(pose, w[1], sgn * (elbow + mElbow), 0, 0, 1);
-        turn(pose, w[1], sgn * (fold * 22.0F), 0, 1, 0);
-        turn(pose, w[2], sgn * (wrist + mWrist), 0, 0, 1);
-        turn(pose, w[2], -sgn * (fold * 38.0F), 0, 1, 0);
-        turn(pose, w[3], sgn * (wrist * 0.6F + mWrist * 0.35F), 0, 0, 1);
+    public static float chestHeight(DragonModel m, Shape sh) {
+        DragonPose pose = new DragonPose(m);
+        Motion mo = new Motion();
+        mo.perch = 1.0F;
+        pose(m, sh, pose, mo, 0.0F);
+        float[] g = pose.global;
+        float foot = Float.MAX_VALUE;
+        for (int s = 0; s < 2; s++) {
+            int toe = sh.leg[s][2];
+            foot = Math.min(foot, g[toe * 12 + 7] - (sh.ry(toe) - sh.feet));
+        }
+        return g[sh.chest * 12 + 7] - foot;
     }
 
     /**
-     * A leg (the owner: "the legs are too stiff"). Walking, a bird's stride: the foot planted and swept back under the body, then lifted
-     * (the tarsus folding up behind, the toes curling shut), swung forward high, the tarsus thrown out and the toes spread wide just
-     * before it plants again, the knee giving as the weight comes on. Standing, the weight shifting from foot to foot, now and then one
-     * foot lifted, its talons clenching and opening (scratching at the ground). In the air: tucked back under the body, the toes curled;
-     * reaching down and ahead, the talons spread, to land; the touchdown's give.
+     * 3.9.5 (the owner: "This is not how wings pose of a bird. Please research how a fucking bird uses his wings"): on the ground a
+     * bird's wings are FOLDED against its body: the upper arm laid back and down along the flank ({@link #FOLD_DOWN}, onto the back by
+     * {@link #FOLD_ONTO}), the forearm folded forward beside it at the elbow ({@link #FOLD_ELBOW}), the hand folded back at the wrist
+     * ({@link #FOLD_WRIST}) so the long flight feathers lie along the back and their tips reach past the hips. Degrees, the left wing's
+     * (the right mirrored): about the fore and aft axis (+ up), about the across axis (+ onto the back... - off it), about the up axis
+     * within the wing's own plane (+ the tip forward).
      */
-    static void leg(DragonPose pose, Shape sh, int s, Motion mo, float air, float t) {
+    static float FOLD_DOWN = -78.0F;
+    static float FOLD_ONTO = -16.0F;
+    static float FOLD_ELBOW = 78.0F;
+    static float FOLD_WRIST = -118.0F;
+    static float FOLD_FINGER = -18.0F;
+
+    /**
+     * A wing, as a bird's (the owner, 3.9.5). In the air: the DOWNSTROKE (the first {@link #DOWN_PART} of a beat, the power stroke) with
+     * the wing fully spread, swept from high over the back to low under the body, a little forward, its tip bending up under the load; the
+     * RECOVERY (the rest) with the wing folded at the elbow and the wrist (the hand swept back, the feathers turned to slip through the
+     * air) as it is drawn up close and back, opening again at the top. Fast: shallower, swept back; gliding: spread and still with a
+     * dihedral; diving: half folded; flaring to land: thrown up and spread, the beats braking. On the ground folded ({@link #FOLD_DOWN} and
+     * on), breathing with the body, shrugged now and then, rousing (a shake) now and then; walking, lifted a little for balance; the change's
+     * spread ({@link Motion#spread}): thrown wide and up.
+     */
+    static void wing(DragonPose pose, Shape sh, int s, Motion mo, float cyc, float flap, float air, float t) {
+        float sgn = s == 0 ? 1.0F : -1.0F;
+        int[] w = sh.wing[s];
+        // ---- the air: the stroke
+        float amp = lerp(1.0F, 0.72F, mo.speed);
+        float high = 50.0F * amp;
+        float low = -36.0F * amp;
+        float lift;
+        float flex;
+        float fwd;
+        float tip;
+        if (cyc < DOWN_PART) {
+            float u = cyc / DOWN_PART;
+            lift = high + (low - high) * smooth(u);
+            flex = 0.0F;
+            fwd = 9.0F * (float) Math.sin(Math.PI * u);
+            tip = 10.0F * (float) Math.sin(Math.PI * u);
+        } else {
+            float u = (cyc - DOWN_PART) / (1.0F - DOWN_PART);
+            lift = low + (high - low) * smooth(u);
+            flex = (float) Math.sin(Math.PI * Math.min(1.0F, u * 1.15F));
+            fwd = -14.0F * flex;
+            tip = -12.0F * flex;
+        }
+        lift *= flap;
+        flex *= flap;
+        fwd *= flap;
+        tip *= flap;
+        float sweep = 24.0F * smooth((mo.speed - 0.4F) / 0.6F) * air * (1.0F - mo.flare) + 16.0F * mo.dive;
+        float glide = mo.glide * air * (1.0F - mo.flare);
+        float aLift = lift + air * (4.0F + glide * (3.0F + 2.0F * (float) Math.sin(t * 0.8 + s))) + mo.flare * 28.0F;
+        float aSweep = fwd - sweep + mo.flare * 4.0F;
+        float diveFold = 0.45F * mo.dive;
+        float aElbow = 40.0F * flex + 60.0F * diveFold;
+        float aWrist = -72.0F * flex - 80.0F * diveFold;
+        float aFinger = -24.0F * flex;
+        float aTip = tip;
+        // ---- the ground: folded, breathing, shrugging and rousing now and then, lifted a little with the steps for balance
+        float breath = 2.0F * (float) Math.sin(t * 1.3);
+        float shrug = 8.0F * smooth(((float) Math.sin(t * 0.43 + s * 0.6) - 0.78F) / 0.22F);
+        float rouse = smooth(((float) Math.sin(t * 0.19 + 2.0) - 0.9F) / 0.1F);
+        float shake = rouse * 5.0F * (float) Math.sin(t * 34.0 + s);
+        float balance = mo.walk * 6.0F * Math.max(0.0F, (float) Math.sin(mo.stride + (s == 0 ? Math.PI : 0.0)));
+        float gLift = FOLD_DOWN + breath + shrug + shake + balance + rouse * 10.0F;
+        float gOnto = FOLD_ONTO;
+        float gElbow = FOLD_ELBOW - rouse * 12.0F;
+        float gWrist = FOLD_WRIST + rouse * 18.0F + balance * 1.5F;
+        float gFinger = FOLD_FINGER;
+        // the change's spread: thrown out wide to the sides (as the human's arms were), a great bird's spread, shaking
+        float sp = mo.spread;
+        float spShake = sp * 3.0F * (float) Math.sin(t * 29.0 + s * 1.7);
+        gLift = lerp(gLift, 8.0F + spShake, sp);
+        gOnto = lerp(gOnto, 0.0F, sp);
+        gElbow = lerp(gElbow, 4.0F, sp);
+        gWrist = lerp(gWrist, -4.0F + spShake, sp);
+        gFinger = lerp(gFinger, 0.0F, sp);
+        float p = mo.perch;
+        float shoulderLift = lerp(aLift, gLift, p);
+        float shoulderOnto = lerp(0.0F, gOnto, p);
+        float shoulderSweep = lerp(aSweep, 0.0F, p);
+        float elbow = lerp(aElbow, gElbow, p);
+        float wrist = lerp(aWrist, gWrist, p);
+        float finger = lerp(aFinger, gFinger, p);
+        float tipBend = lerp(aTip, 0.0F, p);
+        turn(pose, w[0], sgn * shoulderLift, 0, 0, 1);
+        turn(pose, w[0], shoulderOnto, 1, 0, 0);
+        turn(pose, w[0], sgn * shoulderSweep, 0, 1, 0);
+        turn(pose, w[1], sgn * elbow, 0, 1, 0);
+        turn(pose, w[2], sgn * wrist, 0, 1, 0);
+        turn(pose, w[2], sgn * tipBend, 0, 0, 1);
+        turn(pose, w[3], sgn * finger, 0, 1, 0);
+        turn(pose, w[3], sgn * tipBend * 0.6F, 0, 0, 1);
+    }
+
+    /** The part of a stride a foot is on the ground (a walk: each foot down more than half the time). */
+    static final float STANCE = 0.6F;
+    /** The hip's swing either way walking (degrees). */
+    static final float HIP_SWING = 30.0F;
+
+    /**
+     * A leg (the owner: "his feet don't move when he walks"). Walking, a bird's stride: the foot planted flat and drawn back under the
+     * body from ahead to behind (the STANCE part of the stride), then lifted: the tarsus folding up behind, the toes clenching shut,
+     * swung forward high, thrown out and spread just before it plants again; the body dipping as each foot takes the weight (pose()).
+     * Standing: the toes flat on the ground, the weight shifting from foot to foot, now and then one foot lifted, its talons clenching
+     * and opening (scratching at the ground). In the air: tucked under the body, the toes curled; reaching down and ahead, the talons
+     * spread, to land; the touchdown's give. {@code stand}: the body's lean on the ground (degrees, undone at the hips).
+     */
+    static void leg(DragonPose pose, Shape sh, int s, Motion mo, float air, float t, float stand) {
         int[] l = sh.leg[s];
         float sideSign = s == 0 ? 1.0F : -1.0F;
         // ---- the air
         float tuck = air * (1.0F - mo.flare) * (38.0F + 20.0F * mo.speed);
-        float reach = mo.flare * -34.0F;
-        float airAnkle = air * (1.0F - mo.flare) * 30.0F + mo.flare * -12.0F;
-        float airToes = air * (1.0F - mo.flare) * -45.0F + mo.flare * 25.0F;
-        // ---- the ground: the stride
+        float reach = mo.flare * -30.0F;
+        float airAnkle = air * (1.0F - mo.flare) * 30.0F + mo.flare * -10.0F;
+        float airToes = air * (1.0F - mo.flare) * -45.0F + mo.flare * 20.0F;
+        // ---- the ground: the stride (+ hip: the foot ahead)
         float step = mo.perch * mo.walk;
         double ph = mo.stride + (s == 0 ? 0.0 : Math.PI);
-        float sweep = (float) Math.sin(ph);                                   // + ahead, - behind
-        float lift = Math.max(0.0F, (float) Math.sin(ph + 1.2));             // the swing (foot off the ground)
-        float plant = Math.max(0.0F, (float) Math.cos(ph + 1.2)) * (1.0F - lift);
-        float hip = step * (-26.0F * sweep - 22.0F * lift);
-        float ankle = step * (-58.0F * lift + 10.0F * plant);
-        float toes = step * (62.0F * lift * lift - 8.0F * plant);
-        float splay = step * 6.0F * plant;
+        float c = (float) (ph / (Math.PI * 2.0));
+        c -= (float) Math.floor(c);
+        float hip;
+        float ankle;
+        float toes;
+        if (c < STANCE) {
+            float u = c / STANCE;
+            hip = HIP_SWING - 2.0F * HIP_SWING * u;
+            ankle = -12.0F * (float) Math.sin(Math.PI * u);
+            toes = -(hip + ankle); // planted flat
+        } else {
+            float u = (c - STANCE) / (1.0F - STANCE);
+            float up = (float) Math.sin(Math.PI * u);
+            hip = -HIP_SWING + 2.0F * HIP_SWING * smooth(u);
+            ankle = -78.0F * up;
+            // clenched shut as it lifts, thrown open as it reaches to plant
+            float open = smooth((u - 0.65F) / 0.35F);
+            toes = 70.0F * up * (1.0F - open) - (hip + ankle) * open;
+        }
+        hip *= step;
+        ankle *= step;
+        toes *= step;
+        float splay = step * 5.0F;
         // ---- standing: the weight shifting, a foot lifted now and then, the talons flexing
         float still = mo.perch * (1.0F - mo.walk);
-        float shift = still * 4.0F * (float) Math.sin(t * 0.9 + s * Math.PI);
+        float shift = still * 3.0F * (float) Math.sin(t * 0.9 + s * Math.PI);
         float raise = still * smooth(((float) Math.sin(t * 0.47 + s * 2.4) - 0.8F) / 0.2F);
         float clench = still * (0.5F + 0.5F * (float) Math.sin(t * 5.0 + s)) * raise;
-        hip += shift - 18.0F * raise;
-        ankle += -30.0F * raise;
-        toes += 45.0F * clench - 10.0F * raise * (1.0F - clench);
+        hip += shift + 22.0F * raise;
+        ankle += -36.0F * raise;
+        toes += 50.0F * clench + (14.0F * raise - shift) * (1.0F - clench);
         // the touchdown's give: the knees folding under the weight
         float give = mo.land * 22.0F;
-        // the body's lean on the ground undone at the hips (the legs stand upright under the level body)
-        float stand = mo.perch * (-GROUND_PITCH + 6.0F * mo.walk);
-        turn(pose, l[0], tuck + reach + stand + hip - give * 0.6F, 1, 0, 0);
+        float upright = mo.perch * stand;
+        turn(pose, l[0], tuck + reach + upright + hip - give * 0.6F, 1, 0, 0);
         turn(pose, l[0], sideSign * (splay + 3.0F * still), 0, 0, 1);
         turn(pose, l[1], ankle + airAnkle - give, 1, 0, 0);
-        turn(pose, l[2], toes + airToes + give * 0.8F, 1, 0, 0);
+        turn(pose, l[2], toes + airToes + give * 1.6F, 1, 0, 0);
     }
 
     /**
@@ -604,20 +697,41 @@ public final class ItsuForm {
 
     // ------------------------------------------------------------------------------------------------------------------ the change
 
-    /** Each group scaled from nothing at its root as it grows out (Motion.grown), shaking as it comes. */
+    /** Each group grown in the change (Motion.grown): the ribbon alight from nothing, the wings, the neck and the legs to their size, the
+     * tail unrolling joint by joint. */
     static void grow(DragonPose pose, Shape sh, Motion mo) {
         scale(pose, sh.halo, mo.grown[G_RIBBON]);
-        scale(pose, sh.wing[0][0], mo.grown[G_WINGS]);
-        scale(pose, sh.wing[1][0], mo.grown[G_WINGS]);
-        // the tail unrolls joint by joint
+        float wings = 0.72F + 0.28F * mo.grown[G_WINGS];
+        scale(pose, sh.wing[0][0], wings);
+        scale(pose, sh.wing[1][0], wings);
         int n = sh.tail.length;
         for (int i = 0; i < n; i++) {
             float k = clamp(mo.grown[G_TAIL] * (n + 3) - i);
-            scale(pose, sh.tail[i], 0.25F + 0.75F * k);
+            scale(pose, sh.tail[i], 0.2F + 0.8F * k);
         }
-        scale(pose, sh.neck1, 0.35F + 0.65F * mo.grown[G_NECK]);
-        scale(pose, sh.leg[0][0], mo.grown[G_LEGS]);
-        scale(pose, sh.leg[1][0], mo.grown[G_LEGS]);
+        scale(pose, sh.neck1, 0.55F + 0.45F * mo.grown[G_NECK]);
+        float legs = 0.75F + 0.25F * mo.grown[G_LEGS];
+        scale(pose, sh.leg[0][0], legs);
+        scale(pose, sh.leg[1][0], legs);
+    }
+
+    /**
+     * The black ribbon drawn in toward the ring's centre (the halo bone) by {@code k} (0 gone, 1 itself): it snaps alight in the change
+     * (Motion.grown[G_RIBBON]); its wisps are skinned to the chest and the neck too, so the halo's own scale cannot hide them.
+     */
+    public static void ribbonGrown(Shape sh, DragonPose pose, int part, float[] pos, float k) {
+        if (k >= 1.0F || sh.kind[part] != RIBBON) {
+            return;
+        }
+        float[] g = pose.global;
+        float cx = g[sh.halo * 12 + 3];
+        float cy = g[sh.halo * 12 + 7];
+        float cz = g[sh.halo * 12 + 11];
+        for (int v = 0; v < pos.length / 3; v++) {
+            pos[v * 3] = cx + (pos[v * 3] - cx) * k;
+            pos[v * 3 + 1] = cy + (pos[v * 3 + 1] - cy) * k;
+            pos[v * 3 + 2] = cz + (pos[v * 3 + 2] - cz) * k;
+        }
     }
 
     static void scale(DragonPose pose, int bone, float s) {
@@ -677,53 +791,29 @@ public final class ItsuForm {
                 dy = (upY * lick + ny * ripple + windY * wind * 0.12F) * k;
                 dz = (upZ * lick + nz * ripple + windZ * wind * 0.12F) * k - flick * k * nx;
             } else if (kind == RIBBON) {
-                float k = (float) Math.pow(r, 1.2);
-                float roll = 0.18F * (float) Math.sin(t * 2.6 - p * Math.PI * 6.0 + r * 3.0);
-                float curl = 0.10F * (float) Math.sin(t * 4.1 + p * 40.0 + r * 5.0);
-                dx = (nx * roll + upX * curl * 0.5F + windX * wind * 0.15F) * k;
-                dy = (ny * roll + upY * (0.06F + curl * 0.5F) + windY * wind * 0.15F) * k;
-                dz = (nz * roll + upZ * curl * 0.5F + windZ * wind * 0.15F) * k;
+                // 3.9.5 (the owner: "The ribbon is completely broken. It doesn't resemble flames anymore"): its tongues keep their shape,
+                // only licking up and fluttering out to their tips, quick and small as a flame's
+                float k = (float) Math.pow(r, 1.4);
+                float flutter = 0.06F * (float) Math.sin(t * 5.3 - r * 6.0 + p * 19.0);
+                float lick = 0.05F + 0.04F * (float) Math.sin(t * 3.9 + p * 11.0 - r * 4.0);
+                dx = (nx * flutter + upX * lick + windX * wind * 0.1F) * k;
+                dy = (ny * flutter + upY * lick + windY * wind * 0.1F) * k;
+                dz = (nz * flutter + upZ * lick + windZ * wind * 0.1F) * k;
             } else {
+                // 3.9.5 (the owner: "His hair doesn't move"): the mane's hair swaying in waves that run out to its tips, in gusts,
+                // blown back by the wind of its going (walking too)
                 float k = r * r;
-                float sway = 0.07F * (float) Math.sin(t * 1.9 + p * 23.0 + r * 2.0);
-                float blow = 0.35F * wind;
-                dx = (nx * sway + windX * blow) * k;
-                dy = (ny * sway * 0.4F + windY * blow) * k;
+                float gust = 0.65F + 0.35F * (float) Math.sin(t * 0.9 + p * 5.0);
+                float sway = 0.26F * gust * (float) Math.sin(t * 2.3 + p * 23.0 - r * 3.5);
+                float side = 0.14F * gust * (float) Math.sin(t * 1.7 + p * 13.0 - r * 2.5);
+                float blow = 0.5F * wind;
+                dx = (nx * sway + side + windX * blow) * k;
+                dy = (ny * sway * 0.5F + windY * blow) * k;
                 dz = (nz * sway + windZ * blow) * k;
             }
             pos[v * 3] += dx * alive;
             pos[v * 3 + 1] += dy * alive;
             pos[v * 3 + 2] += dz * alive;
-        }
-    }
-
-    /** The glow's anchors' spacing at rest (units), each shell's size (units, scaled with the creature) and colours. */
-    static final float GLOW_SPACING = 1.25F;
-    public static final float GLOW_FIRE = 1.5F;
-    public static final float GLOW_RIBBON = 1.7F;
-    static final int GLOW_ORANGE = 0xFF7A1C;
-    static final int GLOW_BLACK = 0x0A0312;
-
-    /**
-     * The glow round every flame (the owner: "The fire all of it also has to glow, black fire glows black, the rest glows orange"):
-     * a soft shell (FireMesh.shell: clear at its rim) at each anchor, pulsing out of step: orange round the fire, a black haze round the
-     * black ribbon (it darkens what is behind it). {@code points}: the anchors placed (camera-relative, 3 a point); {@code blocks}: how
-     * big a model unit is drawn. {@code alive} scales it (the change lights it).
-     */
-    public static void glow(com.hexhaki.piece.dragon.FireMesh.Sink sink, double[] fire, int fires, double[] ribbon, int ribbons, double blocks,
-                            float seconds, float alive) {
-        if (alive <= 0.02F) {
-            return;
-        }
-        for (int k = 0; k < ribbons; k++) {
-            double pulse = 1.0 + 0.15 * Math.sin(seconds * 1.7 + k * 2.1);
-            com.hexhaki.piece.dragon.FireMesh.shell(sink, ribbon[k * 3], ribbon[k * 3 + 1], ribbon[k * 3 + 2], GLOW_RIBBON * blocks * pulse,
-                GLOW_BLACK, 0.34 * alive, 0.0);
-        }
-        for (int k = 0; k < fires; k++) {
-            double pulse = 1.0 + 0.18 * Math.sin(seconds * 3.1 + k * 1.7);
-            com.hexhaki.piece.dragon.FireMesh.shell(sink, fire[k * 3], fire[k * 3 + 1], fire[k * 3 + 2], GLOW_FIRE * blocks * pulse,
-                GLOW_ORANGE, 0.2 * alive, 0.0);
         }
     }
 
