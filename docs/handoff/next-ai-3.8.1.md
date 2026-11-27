@@ -464,3 +464,5 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
 - 3.9.0's runs: Build #280 and Release #181 green. 3.9.1: Build #281, Release #182 (check them).
 - The Mace's plunge stays the katanas': its drive is one tick (6 to 7), so no beat can go between (playerAnimator ticks are whole);
   writing it means its own plunge Move with the drive over two ticks and the server's cut window moved with it (SwordMove timings).
+- The owner (verbatim): "No I did not mean the saber, and yes the fullet is in the first gun model": the leverage is the mace's only
+  (the Saber stays as it is); the bullet is First_gun.blend's "Cast lead ball" (confirmed: every gun's bullet, as 3.8.8 made it).

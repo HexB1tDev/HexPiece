@@ -20,8 +20,8 @@ fruit throws the Conqueror's lightning, out of its end explosion when it has one
 release's (3D tubes with needle tips). Never add another lightning look.
 
 Do next, in this order: (1) check 3.9.1's runs (Build and Release on the branch) are green (3.8.1 to 3.9.0 were); (2) the owner's word
-on 3.8.1 to 3.9.1 in game comes first (write it verbatim into the handoff, fix, render, release; 3.8.3 needs a new world); (3) the Mace's own plunge (section 16); ask the owner whether "Cast lead
-ball" is the bullet model; (4) the Leopard's other moves. Sounds come from Freesound.org: if it is blocked, move the session onto the owner's "HexPiece" environment (it allows it).
+on 3.8.1 to 3.9.1 in game comes first (write it verbatim into the handoff, fix, render, release; 3.8.3 needs a new world); (3) the Mace's own plunge (section 16; its drive over two ticks); (4) the
+Leopard's other moves. Settled: the leverage is the mace's only; the bullet is the owner's "Cast lead ball" (confirmed). Sounds come from Freesound.org: if it is blocked, move the session onto the owner's "HexPiece" environment (it allows it).
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; write every new request verbatim into
 the handoff the moment it arrives; never claim in-game testing; render and judge every animation, effect and menu yourself; never key the
