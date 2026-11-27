@@ -822,3 +822,14 @@ apart, never merged. Then the list in 28.
   (model px: x the wearer's left, y down from the top of the body, z back), groups body_upper/_lower(+_in)/right_sleeve/left_sleeve,
   their own textures (the owner: "I dont think needs any adjusting"), new PieceArmor entries (CHEST), icons, ArmorTests; then clothes on
   female bodies (FemaleBody: the chest's bust); then the Itsumade's moves (22).
+
+## 32. THE OWNER ON THE PREVIEWS (verbatim; with two of the scratchpad's renders: the Greatest Swordsman coat at rest (its sleeves
+## off the arms: the bare arms out at the shoulders and down the sides, the brocade sleeve a flap outside the arm, the cuffs off the
+## forearms) and the Marine outfit in sword_kesa tick 3 (the sleeves loose from the arms, a band of bare body at the waist's split, the
+## trouser legs apart at the knees))
+"Ask you something. Are you fucking retarded? How does this shit pass your tests and you have the balls to say that they pass?
+Truthfully, I looked at so many of your fucking previews. You've passed things that I just cannot understand how this shit passes and
+you're just okay with it. Are you trying to fuck with me? Is this like your goal? Like, are you making your whole purpose to piss me off?"
+- The lesson, for every session: a render is judged by naming every defect in it (each piece of clothing, each joint, each view), never by
+  the one thing being worked on; "tests pass" is never said of a look the tests do not measure. Fit is to be measured: every arm and leg
+  covered by its sleeve or trouser in every clip's every frame, no gap at the waist, elbow or knee seams (to add to ArmorTests).
