@@ -510,3 +510,22 @@ Only the transformation for now.
 Z - Transforms  (DIsturbing progressive transformation)"
 - The files, kept as sent: input/itsumade/Saint_Marcus_Mars_Itsumade.blend, input/itsumade/fruit.webp (the fruit's picture: a carved
   brown fruit with swirls under green leaves, wreathed in black-purple flame).
+
+## 20. The owner's in-game list (verbatim; sent while the new fruit's model was being baked; with three pictures)
+"1. The coat's textures are completely fucked.
+2. The mace right click should  keep the same animation however, instead of a blade slash/cut, it creates a crater (with haki on and
+lightning from conqueror).
+3. The mace's Texture is flickering repeatedly nonstop and you do not need to be a swords man to use the mace or pistol.
+4. Mace swings should be wayyy slower.
+5. The pistol bullets with haki on are not going through any blocks ( I asked to go through at least 10 blocks)
+6. The pistol isnt being held right, it's resting in the hand instead of being held properly
+7. The world generation I asked for I truly dont see it, I created a new world and I see no islands? It could be my phone Im not sure
+but its one of them.
+8. IF you could fix the head of my "????" fruit so it's 1 singular thing instead of a broken looking head id be thankful."
+- Picture 1 (in game, third person from behind): the player holding the pistol at the thigh, the barrel hanging straight down out of
+  the fist like a stick; a green line drawn from the hand: a hook at the hand turning down along the gun (the grip should sit in the
+  hand, the gun held as a pistol is held, not resting in the fist).
+- Picture 2 (in game, from behind): the player in a coat (white, gold and maroon) whose texture is noise (garbled speckles), the black
+  spiked mace (Haki on) over the shoulder.
+- Picture 3: the anime's Itsumade head (the target for 8): one head: a long hooked yellow beak open with teeth, a red mask over the
+  eyes with a blue eye, the brown mane swept back, an orange flame at the cheek.
