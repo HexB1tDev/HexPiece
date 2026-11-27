@@ -440,3 +440,14 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
 - The owner, with a crop of coats-head-arms-3.8.9.png (head turned 50 degrees and raised; the collar crumpled behind it, its lining
   showing in spikes): "the fuck is this mess behind the head". The per-point head push folded the collar: replaced by a ring push
   (the collar moved out as a whole, direction by direction, eased round the neck; cloth and lining together).
+- 3.8.9's runs: Build #279 and Release #180 green.
+
+## 16. 3.9.0: the Saber's kesa and makko, the Mace's gyaku yoko
+- tools/sword_anims.py: SABER_COIL (strike() takes the Saber's own coil for sword_kesa: fist H(6.4, -4.4, 2.0); sword_makko: fist
+  H(6.8, -6.0, 1.6), blade and edge as the katanas'): the katanas' coils put Gryphon's arm 0.8 px through the body (kesa, tick 1.5)
+  and its pommel 1 px into the brow (makko, ticks 4-5) whatever the aggression. AGG_SKIP empty: all 14 Saber cuts its own.
+  MACE_COIL: sword_gyaku_yoko from H(-1.2, 8.0, 6.4) (the katanas' BACKHAND_COIL put the mace's head 0.4 px through the head).
+  MACE_SKIP = {sword_plunge}: its arm flips 117 degrees between ticks 6 and 7 with the mace's grip, heavy or not: give the mace's
+  plunge a beat between them (its own Move) to write it. BladePaths regenerated without re-solving (SOLVE False, build(),
+  java_paths(), java_slides(), java_npc_poses()): 63 paths. SwordTests: Gryphon's kesa is sword_kesa_saber.
+  Renders: docs/images/saber-kesa-3.9.0.png, saber-makko-3.9.0.png, mace-gyaku-yoko-3.9.0.png.

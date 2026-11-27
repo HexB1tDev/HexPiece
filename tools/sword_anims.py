@@ -749,11 +749,21 @@ AGG_BEND_ADD = 2.0
 AGG_LUNGE = 1.22
 AGG_CROUCH = 1.12
 AGG_GLARE = 3.0
-# the cuts the Saber plays as the katanas do (no "_saber" of its own): their choreography, with Gryphon's bigger handle and bell guard,
-# brushes the body (the kesa's wind-up arm 0.8 px into it, the makko's handle 1 px into the brow) even with no aggression at all, so
-# Gryphon keeps playing the katanas' kesa and makko (as before 3.8.6) until they are written for the saber's own grip
-AGG_SKIP = {"sword_kesa", "sword_makko"}
+# 3.9.0: every cut of the Saber its own (the kesa and the makko from the Saber's own coils, SABER_COIL)
+AGG_SKIP = set()
+# 3.8.9: the kesa's wind-up twisted no harder than the katanas' (harder, the arm passed 0.8 px through the body on its way into the
+# coil), the makko's glare lifted instead (Gryphon's bigger handle and bell guard came 1 px into the brow, raised overhead)
 AGG_EXCEPT = {}
+# 3.8.9: the Saber's own coils for the two cuts its bigger handle and bell guard could not make from the katanas' (the kesa's arm passed
+# 0.8 px through the body on its way into the coil, the makko's pommel came 1 px into the brow overhead): the fist taken further out to
+# the right and forward, so the handle clears the head and the arm the body (strike() takes these for the Saber)
+# 3.9.0: the Mace's own backhand coil: the fist lower and further out, so the mace's big head clears the head (the katanas' passed it
+# 0.4 px through)
+MACE_COIL = {"sword_gyaku_yoko": (H(-1.2, 8.0, 6.4), D(-0.42, 0.04, -0.9), D(0.0, 1.0, 0.0))}
+SABER_COIL = {
+    "sword_kesa": (H(6.4, -4.4, 2.0), D(0.3, 0.45, -0.85), D(0.2, 0.85, 0.4)),
+    "sword_makko": (H(6.8, -6.0, 1.6), D(0.22, -0.32, -0.92), D(0.1, 0.94, -0.3)),
+}
 
 
 # 3.8.7: the Mace's cuts: heavy (the body hunched lower and driven further into each blow), and "slow when cocking them, fast on the
@@ -765,9 +775,11 @@ MACE_SWING = "inexpo"
 MACE_BEND = 1.2
 MACE_CROUCH = 1.2
 MACE_TURN = 1.1
-# the cuts the Mace plays as the katanas do (no "_mace" of its own): with the mace's thick head the gyaku yoko passes 0.4 px through the
-# head and the plunge's arm flips between two ticks even with the katanas' body; to write them for the mace, reshape their beats
-MACE_SKIP = {"sword_gyaku_yoko", "sword_plunge"}
+# the cut the Mace plays as the katanas do (no "_mace" of its own): the plunge's arm flips between two ticks even with the katanas' body
+# (3.9.0: the gyaku yoko is the mace's own now, from its own coil, MACE_COIL)
+MACE_SKIP = {"sword_plunge"}
+# 3.9.0: the plunge still the katanas' for the mace: between its downward drive's two beats the arm flips (117 degrees between ticks 6
+# and 7) with the mace's grip, even as heavy as the katanas'; to write it, give the mace's plunge a beat between them
 MACE_EXCEPT = {}
 
 
@@ -1582,6 +1594,10 @@ def strike(name, duration, wind, mid, cut_ticks, description, wind_body, end_bod
     weight of it), and an easy recovery into the stance. wind/mid: (fist, blade, edge) of the coil and the middle of the cut (layer
     frame); 2.4.5: end_blade/end_edge: where the blade points at the end and its edge faces, in the world as the player faces (right,
     up, forward): the lunge (see LUNGE_REACH)."""
+    if AGGRESSIVE and name in SABER_COIL:
+        wind = SABER_COIL[name]
+    if MACING and name in MACE_COIL:
+        wind = MACE_COIL[name]
     lo, hi = cut_ticks
     # 2.3.5 (the owner: "longer swings", "more range"): the coil taken further back round the cut's arc from its middle (the blade's
     # direction along its great circle, the fist along its line, then held to the arm's reach)

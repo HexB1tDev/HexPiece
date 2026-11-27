@@ -124,7 +124,8 @@ public final class SwordTests {
             && "sword_draw".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.GRYPHON))
             && "sword_guard".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.GUARD, Katana.YORU))
             && "sword_draw".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.values()[0]))
-            && "sword_kesa".equals(com.hexhaki.piece.sword.SwordAnims.name(
+            // 3.9.0: the Saber's own kesa (its own coil: the katanas' put Gryphon's handle through the body)
+            && "sword_kesa_saber".equals(com.hexhaki.piece.sword.SwordAnims.name(
                 com.hexhaki.piece.sword.SwordAnims.of(com.hexhaki.piece.sword.SwordMove.KESA), Katana.GRYPHON))
             && "sword_kesa".equals(com.hexhaki.piece.sword.SwordAnims.name(
                 com.hexhaki.piece.sword.SwordAnims.of(com.hexhaki.piece.sword.SwordMove.KESA), Katana.YORU)),
