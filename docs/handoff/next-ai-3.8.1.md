@@ -710,7 +710,7 @@ Name "Itsumade" (lang), Mythical Zoan. Stages (one version each, the owner testi
   shadowed inside: no slit shape left.
 - The owner (verbatim): "push an update now. please, I wanna see it before I get home." -> 3.9.4 pushed as soon as its build passed.
 
-## 27. 3.9.4: the Itsumade, part 1 (the fruit, Z)
+## 27. 3.9.4 (Build #288 and Release #185 GREEN): the Itsumade, part 1 (the fruit, Z)
 - Fruit ITSU ("itsu", item itsu_itsu_no_mi, lang "§dItsumade", colour 8A2BE2; PiecePatch ITSU after TORI, ordinal 12), FruitRanks
   MYTHICAL, HexPiece registers server/ItsuKit (FORM [Z] only). Icon tools/itsu_icon.py (the owner's picture cut out + a round berry).
 - server/ItsuServer (from PhoenixServer: PHASE 440, FLY_SPEED 0.06, MARK HexPieceItsuFlight; cracks CRACKS/CRACKS_BACK, the roar at
@@ -749,3 +749,28 @@ Name "Itsumade" (lang), Mythical Zoan. Stages (one version each, the owner testi
 - "Oh boy, now that I get home, I truly see the bugs sometimes. Whenever using a move that it does an animation, sometimes briefly, the
   the entire cape breaks." (picture: the coat torn, a bubble of cloth)
 - "also the other armors..." (picture: the marine outfit wrong)
+
+## 29. THE OWNER ON THE ITSUMADE IN GAME (verbatim; with four pictures: the tail's back stripe a flat orange band; the wings thrown up
+## in a V seen from above with a grey smoke round the head; standing seen from below: the body floating, the legs hanging, the talons
+## curled like hooks (circled with question marks); flying from behind with a dark smoke cloud round the head and the ribbon)
+"about the Itsumade fruit. This is a little much. Like, the glowing is not what I meant. This is not glow. This is smoke that you create
+around the thing. I don't like it, and it's ugly. Like, a lot of things about this fruit are completely broken. First of all, the third
+person, like, when you switch to one of the modes in third person, you're gonna see just his feet. It's weird. This is not how wings pose
+of a bird. Please research how a fucking bird uses his wings for once. Oh my god, but like this is horrible. Like his feet don't move when
+he walks. His neck is too stiff. His hair doesn't move. Like, what is this shit? Like, I'm truly asking, what is this? The animation of
+flying, the wings are way too fast. He looks like a fucking mosquito. This is honestly a worst work, if I'm being honest. It looks
+horrible. Like, when you're landing, you go into the ground. What the fuck is this shit?
+
+The ribbon is completely broken. It doesn't resemble flames anymore. It looks horrible. It it's dude, you're fucking butchering all this.
+I mean, I'm seriously asking, what the fuck is this shit? And don't you even dream about leaving the transformation animation as it is.
+You better continue and making this shit not be a shrinking animation. The fucking animation is atrocious. I mean, it's just growing out
+of me. Instead of like the player progressively transforming, no. Just coming out of me. The bugs are unending. You're not gonna stop
+until this entire fruit is done. Every bug is addressed, everything is fixed. The world generation is not adapting to Terra Blender and
+Biomes of Plenty well. I don't see like the islands are way too fucking close, sometimes merged together. This is not fucking this cannot
+pass. This is a fucking shame. You should be ashamed of this shit. working faster. This whatever you're doing, it's taking way too long.
+Start getting faster, bro. I swear to God."
+So, in order: (1) no glow shells at all (the fire is bright on its own); (2) the third person cameras show the whole creature; (3) bird
+wing poses (folded along the back standing; real flight strokes); (4) the feet step when it walks; (5) a living neck; (6) the hair
+moving; (7) slow, heavy wingbeats; (8) landing on the ground, never into it; (9) the ribbon as flames again; (10) the change: the player's
+own body transforming progressively, not the creature growing out of it; (11) the islands with TerraBlender and Biomes O' Plenty: far
+apart, never merged. Then the list in 28.
