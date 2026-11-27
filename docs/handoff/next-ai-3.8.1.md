@@ -670,3 +670,16 @@ Name "Itsumade" (lang), Mythical Zoan. Stages (one version each, the owner testi
 - The owner, right after (verbatim): "theres no face paint bro thats part of the beak/head and the blue is the eyes / jesus" — the red is
   the head's own colouring (its texture), the blue shapes ARE the eyes; never call it face paint. The fix stands: the fused head
   textured texel by texel from the owner's surfaces, so the eyes keep their exact shape.
+- The owner: "setup an auto wake up in exactly 4 hours and 34 minutes" -> scheduled trig_01MHMRns1H36p6hqF4fr8UaQ, fires 2026-11-27 18:02 UTC.
+- The owner (verbatim, with the walk previews: the folded wings crumpled, feathers sticking out): "the animation needs to be much much
+  more detailed, the walk/land looks like shit, I mean look at the wings jesus... / and the monster is way too small". So: no deep wing
+  fold on the ground (rigid feathers on blended membranes crumple): the wings mantle (held up, arched forward round the body, the
+  hands hanging to the ground); SCALE raised (bigger than 10 blocks standing); much more secondary motion; judge GIFs, not stills.
+- The owner (verbatim, with the stand preview from the front, two green lines down the body's sides from the shoulders to the hips, in
+  front of the wings): "the black fire ribbon has to be infront of the wings AT ALL TIMES". So: the ribbon's arms always pass in front
+  of the wings (never a wing swept forward past it; the ribbon held a little forward of the wing roots), in every pose and in flight.
+- (The bake's wings re-rigged per vertex along the span, feathers too: they bend with the arm as one sheet instead of sticking out.)
+- The owner (verbatim, with the stand preview from the side, a green line from the tail's tip along the ground rising gently to the
+  body and on to the head, nearly level): "plus it's too stiff, why is the bird standing up like a person, ITS A BIRD LIKE MONSTER".
+  So: on the ground the body is LEVEL (pitched forward like a bird or a raptor), the legs upright under it, the neck reaching forward and
+  up, the tail streaming back nearly level to the ground; and far more motion (never stiff).

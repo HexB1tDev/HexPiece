@@ -673,7 +673,10 @@ def main():
                 weights[i] = [(head_names[parent], 1.0)]
         elif parent.startswith("Port wing") or parent.startswith("Starboard wing"):
             names, xs, joints = wings["L" if parent.startswith("Port") else "R"]
-            membrane = "patagium" in o.name or "leading edge" in o.name or bool(o.get("was_curve"))
+            # 3.9.4 (the owner, of the folded wings: "look at the wings jesus"): every part of the wing (its feathers too) bent with the arm
+            # as one sheet, each vertex by its own place along the span: feathers held rigid at their roots stuck out of the bending
+            # membranes (the crumple)
+            membrane = True
             if membrane:
                 for i, p in enumerate(wv):
                     weights[i] = span_weights(names, xs, p[0])
