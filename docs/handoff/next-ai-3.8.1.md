@@ -833,3 +833,22 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
 - The lesson, for every session: a render is judged by naming every defect in it (each piece of clothing, each joint, each view), never by
   the one thing being worked on; "tests pass" is never said of a look the tests do not measure. Fit is to be measured: every arm and leg
   covered by its sleeve or trouser in every clip's every frame, no gap at the waist, elbow or knee seams (to add to ArmorTests).
+
+## 33. The owner: "forget these clothes for now, focus on the new fruit and world gen" (verbatim). The clothes work, parked
+- Saved, not in the branch: docs/handoff/clothes-wip-3.9.7.patch (git apply it; then /tmp/bpy/bin/python tools/clothes_bake.py to
+  rebake art/clothes). What it holds:
+  - The Flamingo Coat and the Greatest Swordsman as items (PieceArmor OWNER style, ofPack(); build.py ARMOR_KEYS, katana_mesh
+    CLOTHES, lang, item models, icons; ArmorTests skip the pack checks for them; ClothesModel.coat() for both).
+  - tools/clothes_bake.py: OWN_COATS / ImageMaterial / own_coat() (their files in blocks, front -y; their own pixel textures
+    sampled); the Greatest Swordsman's sleeves on the arms (straightened about the "Sleeve" bones, centred on the game's arm).
+  - The fit: around() (a ray test round a box), envelope() (limbs grown LIMB_GROW about their middle, then around()), torso_fit()
+    (shirts); split() cuts every piece at RINGS.
+  - tools/clothes_view.py: share()/bend_about()/bent_points() (each point its share of its part's bend: bendy-lib's three rings) and
+    draw_bendy() (the figure drawn the same way); coats bent the same way.
+  - FemaleBody.bulge/clothZ (not yet used by ClothesModel); the FigureLayer change (draw the bust under the owner's clothes).
+- Measured, with the patch (visible faces, 12 samples a face): the Marine trousers, boots, shirt body and the Greatest Swordsman's sleeves clear
+  the game's boxes by 0.2 to 0.95 px. The Marine upper sleeves still have six faces inside the arm (up to 1.4 px): the sleeve's
+  stretched top band (SLEEVE_STRETCH) slants its side faces in. To fix that, then port bent_points to client/armor/ClothesModel (per
+  vertex, like cloth()), then add the fit measure to ArmorTests over every clip's frames.
+- Defects named in the renders (scratchpad coat/r2.png): the boots' open soles show the leg's bottom; a corner of the arm's top shows
+  over the shoulder.

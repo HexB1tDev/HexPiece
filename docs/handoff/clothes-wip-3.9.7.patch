@@ -1,0 +1,830 @@
+diff --git a/build.py b/build.py
+index 1dd54fc..43dfec1 100644
+--- a/build.py
++++ b/build.py
+@@ -25,7 +25,7 @@ import sys
+ import zipfile
+ 
+ ROOT = Path(__file__).resolve().parent
+-VERSION = "3.9.6"
++VERSION = "3.9.7"
+ INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
+ EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
+ # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
+@@ -41,7 +41,8 @@ EXPECTED_ARMOR_SHA256 = "f3cd6a2abefbe8c02796d23cd58fa70654cab39d9e48a97a9a9e231
+ ARMOR_ROOT = "OnePiece_Armor_1.20.1/forge_1.20.1/src/main/"
+ ARMOR_JAVA = ["OnePieceArmorModel", "OnePieceArmorExtensions"]
+ ARMOR_TEXTURES = "assets/hexhaki/textures/models/armor/"
+-ARMOR_KEYS = ["marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat"]
++ARMOR_KEYS = ["marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat",
++              "flamingo_coat", "greatest_swordsman"]
+ ARMOR_ICONS = "assets/hexhaki/textures/item/armor/"
+ # 2.7.0: the owner's dragon for the Uo Uo no Mi (one FBX, its rig and takes, and its colour map), never altered: packed at build time
+ # by tools/dragon_mesh.py (the file's own units, a block each in game) and cached under build/ by the zip's SHA-256.
+diff --git a/src/main/java/com/hexhaki/piece/FemaleBody.java b/src/main/java/com/hexhaki/piece/FemaleBody.java
+index 2415c43..6cf7f18 100644
+--- a/src/main/java/com/hexhaki/piece/FemaleBody.java
++++ b/src/main/java/com/hexhaki/piece/FemaleBody.java
+@@ -20,6 +20,41 @@ public final class FemaleBody {
+     private FemaleBody() {
+     }
+ 
++    /**
++     * 3.9.7 (the owner: "make sure every piece of clothing adapts to the animations and GENDER (breasts on female)"): how far forward
++     * (model px, negative z) the bust stands off the torso's front at height {@code y} (its tip {@code bounce} px up): 0 above and below
++     * it, the most at its tip.
++     */
++    public static float bulge(float y, float bounce) {
++        float tip = BUST_TIP - bounce;
++        if (y <= BUST_TOP || y >= BUST_BOTTOM) {
++            return 0.0F;
++        }
++        float t = y < tip ? (y - BUST_TOP) / Math.max(0.1F, tip - BUST_TOP) : (BUST_BOTTOM - y) / Math.max(0.1F, BUST_BOTTOM - tip);
++        return (BUST_OUT - BUST_FRONT) * Math.max(0.0F, Math.min(1.0F, t));
++    }
++
++    /**
++     * 3.9.7: a point of clothes (the torso's frame, model px: x across, y down from the top of the body, z back) carried over the bust:
++     * a point of the clothes' front (z ahead of {@link #CLOTH_FRONT}, fully by {@link #CLOTH_FULL}) moved forward by the bust's bulge
++     * there (so the cloth keeps its thickness: its outside and its inside move together), fading out past the torso's sides. Returns
++     * its new z.
++     */
++    public static float clothZ(float x, float y, float z, float bounce) {
++        float bulge = bulge(y, bounce);
++        if (bulge == 0.0F || z > CLOTH_FRONT) {
++            return z;
++        }
++        float front = Math.min(1.0F, (CLOTH_FRONT - z) / (CLOTH_FRONT - CLOTH_FULL));
++        float side = 1.0F - Math.max(0.0F, Math.min(1.0F, (Math.abs(x) - 4.0F) / 0.9F));
++        side = side * side * (3.0F - 2.0F * side);
++        return z + bulge * front * side;
++    }
++
++    /** 3.9.7: the clothes' front (z) is carried over the bust from here forward, fully from CLOTH_FULL. */
++    public static final float CLOTH_FRONT = -1.0F;
++    public static final float CLOTH_FULL = -1.8F;
++
+     /** The bust's lag carried on over {@code ticks} as the body moved {@code moved} blocks up (state: lag, its speed). */
+     public static void jiggle(double[] state, double moved, double ticks) {
+         if (Math.abs(moved) > 1.0 || !(ticks > 0.0)) {
+diff --git a/src/main/java/com/hexhaki/piece/armor/PieceArmor.java b/src/main/java/com/hexhaki/piece/armor/PieceArmor.java
+index 3376df3..62a811c 100644
+--- a/src/main/java/com/hexhaki/piece/armor/PieceArmor.java
++++ b/src/main/java/com/hexhaki/piece/armor/PieceArmor.java
+@@ -13,7 +13,13 @@ public enum PieceArmor {
+     MARINE_BOOTS("marine_boots", "Marine Boots", Slot.FEET, "MARINE", "marine_outfit"),
+     ADMIRAL_COAT("admiral_coat", "Admiral's Coat", Slot.CHEST, "ADMIRAL", "admiral_coat"),
+     STRAW_HAT("straw_hat", "Straw Hat", Slot.HEAD, "STRAW_HAT", "straw_hat"),
+-    BLACKBEARD_COAT("blackbeard_coat", "Blackbeard's Coat", Slot.CHEST, "BLACKBEARD", "blackbeard_coat");
++    BLACKBEARD_COAT("blackbeard_coat", "Blackbeard's Coat", Slot.CHEST, "BLACKBEARD", "blackbeard_coat"),
++    // 3.9.7: the owner's own coats (input/armor/, not of the pack: tools/clothes_bake.py OWN_COATS)
++    FLAMINGO_COAT("flamingo_coat", "Flamingo Coat", Slot.CHEST, "OWNER", "flamingo_coat"),
++    GREATEST_SWORDSMAN("greatest_swordsman", "Greatest Swordsman", Slot.CHEST, "OWNER", "greatest_swordsman");
++
++    /** 3.9.7: the style of a piece the owner made outside the pack (drawn only as clothes). */
++    public static final String OWNER = "OWNER";
+ 
+     /** 3.8.9: the owner's clothes replacements' atlas (tools/clothes_bake.py; build.py packs it), every piece's. */
+     public static final String CLOTHES_TEXTURE = "hexhaki:textures/clothes/clothes.png";
+@@ -50,6 +56,11 @@ public enum PieceArmor {
+         return this.slot;
+     }
+ 
++    /** 3.9.7: one of the pack's pieces (its table, its model style and texture), not one of the owner's own. */
++    public boolean ofPack() {
++        return !this.style.equals(OWNER);
++    }
++
+     /** The pack's {@code OnePieceArmorModel.Style} constant it is drawn with. */
+     public String style() {
+         return this.style;
+diff --git a/src/main/java/com/hexhaki/piece/client/armor/ClothesModel.java b/src/main/java/com/hexhaki/piece/client/armor/ClothesModel.java
+index 2f3fde8..86bd646 100644
+--- a/src/main/java/com/hexhaki/piece/client/armor/ClothesModel.java
++++ b/src/main/java/com/hexhaki/piece/client/armor/ClothesModel.java
+@@ -144,7 +144,8 @@ public final class ClothesModel extends HumanoidModel<LivingEntity> {
+     }
+ 
+     boolean coat() {
+-        return this.piece == PieceArmor.ADMIRAL_COAT || this.piece == PieceArmor.BLACKBEARD_COAT;
++        return this.piece == PieceArmor.ADMIRAL_COAT || this.piece == PieceArmor.BLACKBEARD_COAT || this.piece == PieceArmor.FLAMINGO_COAT
++            || this.piece == PieceArmor.GREATEST_SWORDSMAN; // 3.9.7: the owner's own coats move as coats
+     }
+ 
+     @Override
+diff --git a/src/main/resources/assets/hexhaki/lang/en_us.json b/src/main/resources/assets/hexhaki/lang/en_us.json
+index f40908b..82f735c 100644
+--- a/src/main/resources/assets/hexhaki/lang/en_us.json
++++ b/src/main/resources/assets/hexhaki/lang/en_us.json
+@@ -216,5 +216,7 @@
+   "subtitles.hexhaki.piece.mace.iron": "Iron thuds",
+   "subtitles.hexhaki.piece.mace.draw": "Mace taken up",
+   "subtitles.hexhaki.piece.mace.slam": "Mace slams",
+-  "subtitles.hexhaki.piece.itsu.crack": "Bones crack"
++  "subtitles.hexhaki.piece.itsu.crack": "Bones crack",
++  "item.hexhaki.flamingo_coat": "Flamingo Coat",
++  "item.hexhaki.greatest_swordsman": "Greatest Swordsman"
+ }
+diff --git a/src/main/resources/assets/hexhaki/models/item/flamingo_coat.json b/src/main/resources/assets/hexhaki/models/item/flamingo_coat.json
+new file mode 100644
+index 0000000..777c0b0
+--- /dev/null
++++ b/src/main/resources/assets/hexhaki/models/item/flamingo_coat.json
+@@ -0,0 +1,6 @@
++{
++  "parent": "minecraft:item/generated",
++  "textures": {
++    "layer0": "hexhaki:item/armor/flamingo_coat"
++  }
++}
+diff --git a/src/main/resources/assets/hexhaki/models/item/greatest_swordsman.json b/src/main/resources/assets/hexhaki/models/item/greatest_swordsman.json
+new file mode 100644
+index 0000000..ccb4f8a
+--- /dev/null
++++ b/src/main/resources/assets/hexhaki/models/item/greatest_swordsman.json
+@@ -0,0 +1,6 @@
++{
++  "parent": "minecraft:item/generated",
++  "textures": {
++    "layer0": "hexhaki:item/armor/greatest_swordsman"
++  }
++}
+diff --git a/src/main/resources/assets/hexhaki/textures/item/armor/flamingo_coat.png b/src/main/resources/assets/hexhaki/textures/item/armor/flamingo_coat.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..7ce5e2d6f696c75e882e22de9eebe8f98da98077
+GIT binary patch
+literal 2471
+zcmV;Y30U@tP)<h;3K|Lk000e1NJLTq001BW001Be1^@s6b9#F8000SYNkl<Zc$|%w
+zU2GiJb;p1A&d1Kqev%BS6}hBhTZ$byG2FzqVi=7a6itAlX!AlL2vDGcAJT^+2m&;H
+zXpuGZ))WX(AV^>Yg@8CfTd8Q@-1?!FQ~_-bH<g=4N)$_xMN#CETrPKaW@l&S-nlmq
+z6lv3vkervne4IJwo{#@IfA}?G>Bx3#$+lZd7U2BydFTCih{NAn0nj;p+P!$X<63LQ
+z2X!AN;!!UEY^Ng^UprU4@u@%MW7QVN|Kl$KSnIBe`?~f6R~}~Q$EUtQAp|e{_h0d1
+z_mq2q3&n5bz`pUfp86_p=W8rfXZdJ2OX&GLdF7iA)wz1|>nNl7m+{YdcIG%IDlLpP
+zI6`o1yvgss^L_4Z-WAr`1E(M5fUsB=TgS}z=Kp|}U+1Ro<CaQ1KlM0~O8EJtOYB+P
+zR8vVUx6?k;&1qiX2<tYcS!wWC^#}kP>40mSw`j=<f3)_G`w;}deZ=X7{FXEeERyDm
+zYw10t>(I|4F6xv|))sJM#eep%Asq*0G$kB@beDcJLg$Kdx{X$f$ta>xZ7?59@lWe-
+zKVVCK_(6w`1Xwt-X#b}1dFE<O!kH#F;x4Q44l_ZWo1;xulRnkLrJO@Ak9p2L%4fsJ
+z!I7*Iacy{)pKRPDPR8tx2E42KytMeto{iI;gM&XT1)|+rGH;&x8iQiOPlszv`U6gw
+zCSfUHTo$b9A-&0nEj=RBia@xuRR|>y6*!E>BkFFzTx}XXPQi6}e*Q`3N_Ad*>)YJ@
+z%2`LOte8V7upsDk#Nun`ihuvzzhHYZ;>ON8JH0I)7fm#V8^d+tk;c|aH2jcysY0YD
+zY(zcQ@&Q9(v6F&h{xtK`M|rH(W|+p@UcbZD?OOz1uxD)LAt|`9d|ocTcCPr|XU?(}
+z_qn}shhcArwypA%H_Ma$EDJ%CO07oV`V8{~r4>pSj7^SHEpsfK;p3$_7VC3JU9g=F
+zQ5Y738H!ZVv_Ajv@jqs<b*?zSyzCr`!0gsF0Whxuw9@p4yG)CKYO_HvOW7r3TsF*=
+zr|^v+)g=;>v#m#Xj*G(3OCw5FGN&4xNNYsdgnn4iO9o_)<=&)^X9bsze}$K?yrwN3
+z$K4CR72>kc?bZ@WI^jmNfs-hLqceP@y}+G8m+?-<r)$TEP{gAlBbAV1$k7;U$qPkc
+z4fS$^o|CbzVydajlyNZ4Y5F@odTz?r?k%o~y8xWwy11W$S4F$EWWRf2nfE3;6#W=H
+z$w!=!-o_@=BX}-cWPoBji`Xp^(n660P&fitNCL;B>Xv9$>&SYU|IfR`HfJ^4Mb^s9
+z&b6o-hkA3G+vyGfCr@t)*MbnNm^MpXi`IET%+VJmlA6yGqQRET!GU+;HGaB#2N#Dl
+zn=n;rPz$FiBF#+hk$8rZ^azE=#25^gOUW+@{1Vj-O?&nz-SL1=Rgd%J$(Q)&cW&}B
+zFXM{)khs=e72gNDRQW7}z%W~?ab@==|1-LS7M4vlV%iBwP+$y4YV#ljiOJbj34thK
+zMT(b&xcIoPho>accNuPO^Mj55;&U8D^d*aG7J$!PUeWTP1@B|Rs+*u3uyIN+8c=b3
+z-pl&9(qW9oBEWN)azdgwLTN=g3~^kS!1I}LtHk3mLz~g`Duhmn!1DpP$Ob<g{e(N?
+z-r+VBU^}Nf4#2ZhOZ-+a&vrauzB0wGP05WyATSgtqp5jirbL-ENw5M^qbM+Bw!rFw
+zX#yrFhDA!6=ln3c&MV!s&MV!s&RTa>{Aloh2lL<n2VT950ay?<dRc@cT~cANLh#AP
+z5{?i|dsUi#g_>VxtW%UNsN!?XpTZRmPq@?QqCi?fRR$oy^hN+&=ek&7#Q@?vzkSL*
+z6oC#Mx!5{ayuNsbcau$4$30Hgj<TsnJXK%d>Bb`3TB>dt1U%84C(0)jfL4k$PDoY8
+z_GlMXXsiU^2(-1tp4qE-w)SD)p1JV;P9OoEUcN2>21QD&Gd@wBXG=%))R<l#^Txd&
+z<0IM5N7TzzD&;C$I$|py5_y_?CL+hMPRs;NPzkA&%S>61DKC6r*nCh9jpKR0!ZYDf
+zu12eD<Re;@DXt9O<#)m-crIvj%Z>168}y5Wn4FztM8yv<uEiQnVKft=X;f<%0mpQO
+zNjiZ9I1OBW&;fCNdD;2;mACX8$IsFb0Y6JNcrV!jDbZz#qb<)Cv#3I|7Uo2C$xa$^
+zcc+VQC92TWm1Me9!>fdhL{2FTFvc(yOY%|7UuSQ#)?MANw?k{2Tt0cy0#t<0u1@%6
+zvO_zV;$zM<bA%kXQ+POxYz7q{WeY}=m?WKm5U4`2n?!8Heb$mbxzQN*;B71wp<Ch`
+z<<HP=Et&HyKd^teVr9j&TT5Krxj|wwo~|w6<(6C+W=$EZ6l0N*IhGhjqBD{tVK<M-
+zF%(84$ca@>kxXca8eye^E(#0<WdQ>f0dVd8LVQ00+y|hG{hxE9a)cQX(wjs~WPxiS
+zw*^U&(RXt)qZwx@{XE8X99$tNxjvyAP?rJIUKLL`AVDH90!BiS7W+m2vU$J(i)F35
+zDlXF{R1SBBTdWh&bj##Q0Wh!`ZaKiSau1Y@q3)G&g~XQ*f#>532hVYEtw7s?&?}*B
+zftDb}-oaN`F(2j<lI1h9-CD9gn)yR!M42_U%dzS#xynh6A}<uNTi};Uq_QAN$2h`4
+z3V{#;V-1BT&<+$BJRDpD8UwCGON;M3bobqJ;L_G!Ubc%dSE5_g%T;{gFv=&4i=1Hy
+zPPNQXWDN6!aes&u0#CR|B-U6E5>xi@9hdo_LCH$AEpUV+69(V)4h+6Z=THO=ZuVKt
+z4;H>i(+L@jh9sUv)qOH)h=k(y&OJ8ou5l^sA3DVsY9Hmz=smvFe1?`+#grteCvgji
+z#xbw&{4d|>o^qGDV8n;o@E|sKyJwxn*12M!68c$0!+7YxBheZ74uvU@uEV9U{{Y2$
+z6YN@dRs8)2e*Pzqokm!DFl^3nq1fY&ha2IbF9j<WV4x=adGFttSdGbY9O+PV%ZyaQ
+z-)&yy_ZDXT3tZSQCeZ=;O82Y-h!?x3+&_EvWB?HBl(OTK>Agbk(2)Z10C#+#FZWaN
+zYUL&Fs3Gn45}9lG_AmaGweG6C&qg1~b~_;dwzX7zdGUE_1SI2_*ZWuZk?@gv2Xb+b
+lwH(muUq`PWCBLceuK<QPv2@(#7;pdp002ovPDHLkV1lV^vMm4r
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/main/resources/assets/hexhaki/textures/item/armor/greatest_swordsman.png b/src/main/resources/assets/hexhaki/textures/item/armor/greatest_swordsman.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..08d2edb324a22d4604c53ff6891be64d1b78379a
+GIT binary patch
+literal 1631
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/test/java/com/hexhaki/piece/ArmorTests.java b/src/test/java/com/hexhaki/piece/ArmorTests.java
+index a2e25fc..a5e4089 100644
+--- a/src/test/java/com/hexhaki/piece/ArmorTests.java
++++ b/src/test/java/com/hexhaki/piece/ArmorTests.java
+@@ -54,8 +54,12 @@ public final class ArmorTests {
+             while (row.find()) {
+                 table.put(row.group(1).trim().toLowerCase().replace(' ', '_'), new String[] {row.group(2), row.group(3), row.group(4)});
+             }
+-            Check.that(table.size() == PieceArmor.values().length, "every piece of the pack's table is an item (" + table.size() + ")");
++            long ofPack = java.util.Arrays.stream(PieceArmor.values()).filter(PieceArmor::ofPack).count();
++            Check.that(table.size() == ofPack, "every piece of the pack's table is an item (" + table.size() + ")");
+             for (PieceArmor piece : PieceArmor.values()) {
++                if (!piece.ofPack()) {
++                    continue; // 3.9.7: the owner's own coats (input/armor/) are no piece of the pack
++                }
+                 String[] want = table.get(piece.key());
+                 Check.that(want != null, piece + ": in the pack's table");
+                 Check.that(slotOf(want[0]).equals(piece.slot().name()), piece + ": worn where the pack says (" + want[0] + ")");
+@@ -67,12 +71,18 @@ public final class ArmorTests {
+             }
+             String manifest = new String(zip.getInputStream(zip.getEntry(ROOT + "rig_manifest.json")).readAllBytes(), StandardCharsets.UTF_8);
+             for (PieceArmor piece : PieceArmor.values()) {
++                if (!piece.ofPack()) {
++                    continue;
++                }
+                 Matcher m = Pattern.compile("\"" + piece.key() + "\": \"([A-Z]+)\"").matcher(manifest);
+                 Check.that(m.find() && slotOf(m.group(1)).equals(piece.slot().name()), piece + ": the rig manifest's slot agrees");
+             }
+             String model = new String(zip.getInputStream(zip.getEntry(ROOT + "forge_1.20.1/src/main/java/dev/hexb1t/onepiecearmor/client/OnePieceArmorModel.java"))
+                 .readAllBytes(), StandardCharsets.UTF_8);
+             for (PieceArmor piece : PieceArmor.values()) {
++                if (!piece.ofPack()) {
++                    continue;
++                }
+                 Check.that(model.contains("enum Style { MARINE, ADMIRAL, BLACKBEARD, STRAW_HAT }") && model.contains(piece.style()),
+                     piece + ": its style is one of the pack's model's");
+             }
+@@ -117,7 +127,8 @@ public final class ArmorTests {
+             }
+         }
+         Check.that(issued == 4, "the Marine outfit: cap, shirt, trousers, boots");
+-        Check.that(!PieceArmor.ADMIRAL_COAT.marineIssue() && !PieceArmor.STRAW_HAT.marineIssue() && !PieceArmor.BLACKBEARD_COAT.marineIssue(),
++        Check.that(!PieceArmor.ADMIRAL_COAT.marineIssue() && !PieceArmor.STRAW_HAT.marineIssue() && !PieceArmor.BLACKBEARD_COAT.marineIssue()
++            && !PieceArmor.FLAMINGO_COAT.marineIssue() && !PieceArmor.GREATEST_SWORDSMAN.marineIssue(),
+             "no NPC spawns in the admiral's coat, the straw hat or the black coat");
+         PieceArmor[] outfit = PieceArmor.marineOutfit();
+         String[] order = {"HEAD", "CHEST", "LEGS", "FEET"};
+@@ -178,7 +189,7 @@ public final class ArmorTests {
+         }
+         Check.that(Files.exists(Path.of("art/clothes/clothes.png")), "the clothes' atlas");
+         Check.that(PieceArmor.CLOTHES_TEXTURE.equals("hexhaki:textures/clothes/clothes.png"), "worn with the clothes' atlas");
+-        for (String coat : new String[] {"admiral_coat", "blackbeard_coat"}) {
++        for (String coat : new String[] {"admiral_coat", "blackbeard_coat", "flamingo_coat", "greatest_swordsman"}) {
+             java.util.List<float[]> vs = new java.util.ArrayList<>();
+             Map<Integer, Byte> kinds = new HashMap<>();
+             String group = "";
+diff --git a/tools/clothes_bake.py b/tools/clothes_bake.py
+index 6285d44..cb7acae 100644
+--- a/tools/clothes_bake.py
++++ b/tools/clothes_bake.py
+@@ -47,6 +47,8 @@ CELLS = 1.07
+ SMALL = 1.6
+ DENSITY = 2.0
+ PRINT_DENSITY = 8.0
++# 3.9.7: texels a pixel for the owner's new coats' own pixel textures
++IMAGE_DENSITY = 4.0
+ SHADES = 16
+ ATLAS_W = 1024
+ # the many small faces of the cap, the hat (each decimated to about this many faces: their whole look kept) and the epaulettes' bullion
+@@ -106,6 +108,69 @@ def collar(p):
+     return (x * k, y, z * k)
+ 
+ 
++# 3.9.7 (the owner, of the Marine outfit in a move and the new coat's sleeves: "How does this shit pass"): the mannequin's limbs are not the
++# game's (its arms about 3 px across, its legs a little in): measured, the Marine sleeves spanned 3.9 px round the game's 4 px arm and the
++# trousers' front lay inside the leg, so the skin showed through. Every limb's cloth is now carried out round the game's limb box (4 x 4
++# px; its middle x LIMB_MID from the part's pivot) as the collar is round the head: its box-shaped distance from the limb's axis (the
++# larger of |dx| and |dz| over 2) remapped from LIMB_IN..LIMB_OUT onto 1 + LIMB_CLEAR / 2 .. LIMB_OUT, in order (a piece's outside
++# stays outside its inside, boots stay over trousers), so no pose shows the limb through it
++SLEEVE_BAND = -0.8
++SLEEVE_STRETCH = 1.75
++LIMB_MID = {"right_arm": (-6.0, 0.0), "left_arm": (6.0, 0.0), "right_leg": (-1.9, 0.0), "left_leg": (1.9, 0.0)}
++LIMB_CLEAR = 0.3
++LIMB_IN = 0.5
++LIMB_OUT = 1.6
++
++
++def around(p, cx, cz, hx, hz):
++    """A point of cloth (model px) carried out round a box (its middle cx, cz; its half sizes hx, hz): along its own way from the box's
++    axis, its distance over the distance at which that way leaves the box grown by LIMB_CLEAR (need) remapped from LIMB_IN..LIMB_OUT onto
++    1..LIMB_OUT, in order: every point clear of the box along its way (its faces too, the cloth round it convex), its outside still
++    outside its inside. (The first fit, by the larger of |dx| / hx and |dz| / hz, left a sleeve's side on the arm's side: its corners
++    counted as clear of the back.)"""
++    x, y, z = p
++    dx, dz = x - cx, z - cz
++    r = math.hypot(dx, dz)
++    if r < 1e-6:
++        return p
++    ux, uz = abs(dx) / r, abs(dz) / r
++    need = min((hx + LIMB_CLEAR) / ux if ux > 1e-9 else float("inf"), (hz + LIMB_CLEAR) / uz if uz > 1e-9 else float("inf"))
++    rho = r / need
++    if rho >= LIMB_OUT:
++        return p
++    target = 1.0 + (max(rho, LIMB_IN) - LIMB_IN) / (LIMB_OUT - LIMB_IN) * (LIMB_OUT - 1.0)
++    k = max(target, rho) / rho
++    return (cx + dx * k, y, cz + dz * k)
++
++
++# the owner's sleeves, trousers and boots sit flush on the mannequin's limbs (4 px across, as the game's, the sleeves' sides on the arm's
++# sides): each limb's cloth grown about the limb's middle by LIMB_GROW (its faces LIMB_CLEAR off a 4 px limb, every layer in its order),
++# then around() as a last guard
++LIMB_GROW = (2.0 + LIMB_CLEAR + 0.05) / 2.0
++
++
++def envelope(part, p):
++    """A point of a limb's cloth (model px) carried out round the game's limb box (4 x 4 px)."""
++    cx, cz = LIMB_MID[part]
++    x, y, z = p
++    return around((cx + (x - cx) * LIMB_GROW, y, cz + (z - cz) * LIMB_GROW), cx, cz, 2.0, 2.0)
++
++
++# 3.9.7: a shirt's body (measured: the Marine tunic's back at the torso's own back, 1.94 px from its middle against the torso's 2) carried
++# out round the game's torso (8 x 4 px) as the limbs' cloth is, from just over its top to just under its bottom (a coat hangs off it and is
++# not: client/armor's coat rule keeps a coat off the body)
++TORSO = (-0.5, 12.5)
++TORSO_GROW = ((4.0 + LIMB_CLEAR) / 4.0, (2.0 + LIMB_CLEAR + 0.05) / 2.0)
++
++
++def torso_fit(p):
++    """A point of a shirt's body (model px) grown about the torso's middle (TORSO_GROW, x and z), then around() as a last guard."""
++    x, y, z = p
++    if not TORSO[0] <= y <= TORSO[1]:
++        return p
++    return around((x * TORSO_GROW[0], y, z * TORSO_GROW[1]), 0.0, 0.0, 4.0, 2.0)
++
++
+ def fit(part, p):
+     """A point of the mannequin's part (model px) onto the game's player's part."""
+     x, y, z = p
+@@ -113,13 +178,17 @@ def fit(part, p):
+         return collar(p)
+     if part.endswith("_arm"):
+         side = 1.0 if part.startswith("left") else -1.0
+-        return (x + side * ARM_X, y, (z - ARM_Z[0]) * ARM_Z[1])
++        # the mannequin's sleeves stop 0.4 px under the top of the game's arm (its shoulders are lower): their top band stretched up over it
++        rel = y - 2.0
++        if rel < SLEEVE_BAND:
++            rel = SLEEVE_BAND + (rel - SLEEVE_BAND) * SLEEVE_STRETCH
++        return envelope(part, (x + side * ARM_X, rel + 2.0, (z - ARM_Z[0]) * ARM_Z[1]))
+     if part == "head":
+         (cx, cy, cz), (kx, ky, kz), (tx, ty, tz) = HEAD
+         return ((x - cx) * kx + tx, (y - cy) * ky + ty, (z - cz) * kz + tz)
+     if part.endswith("_leg"):
+         side = 1.0 if part.startswith("left") else -1.0
+-        return (x - side * LEG_X, y, z)
++        return envelope(part, (x - side * LEG_X, y, z))
+     return p
+ 
+ 
+@@ -133,6 +202,107 @@ GROUPS = ["head", "body_upper", "body_upper_in", "body_lower", "body_lower_in",
+           "right_leg_upper", "right_leg_lower", "left_leg_upper", "left_leg_lower"]
+ 
+ 
++# 3.9.7: the owner's two new coats, each a file of its own (input/armor/, kept as sent; the owner: "New coat (I dont think needs any
++# adjusting) called Flamingo Coat", "heres another Armor named "Greatest Swordsman""). Both files stand on a Minecraft-sized figure in
++# blocks (the body's top at 1.5, the face toward -y): a block is 16 px, so a point is (16 x, 24 - 16 z, 16 y) in the game's model space.
++# Their own pixel textures are sampled as they are (ImageMaterial). The figure (the Flamingo file's "Figure" collection) is not clothes.
++OWN_COATS = {
++    "flamingo_coat": ("Doflamingo_Feather_Coat.blend", ("01  |", "02  |", "03  |", "04  |"), ("Rose lining",), ()),
++    "greatest_swordsman": ("Crimson_Brocade_Coat.blend", ("01 ", "02 ", "03 ", "04 ", "05 ", "06 ", "07 ", "08 ", "09 ", "10 ", "11 "),
++                           ("Garnet lining", "Oxblood lining", "Black satin lining"), ("05 ", "06 ")),
++}
++# the Greatest Swordsman's sleeves (and cuffs) are worn on the arms (its file binds them to the arms' bones "Sleeve.L/R", hanging 15
++# degrees out from the shoulder): each turned about its bone's head to hang straight down, its top set at the top of the game's arm
++# (SLEEVE_TOP px over it, so the shoulder is covered), then carried out round the game's arm (envelope)
++SLEEVE_TOP = 0.3
++
++
++class ImageMaterial:
++    """A material of the owner's that is a pixel texture (its image node): every texel as it is (nearest, the texture repeated)."""
++
++    def __init__(self, m):
++        image = next(n for n in m.node_tree.nodes if n.type == "TEX_IMAGE" and n.image is not None).image
++        # (its texels are sRGB, the atlas is written from linear colours: srgb() gives them back exactly)
++        self.px = np.array(image.pixels[:], float).reshape(image.size[1], image.size[0], 4)[..., :3] ** 2.2
++        self.print = "image"
++        self.uv_name = None
++        self.name = m.name
++        self.stops = [(0.0, self.px.reshape(-1, 3).mean(0)), (1.0, self.px.reshape(-1, 3).mean(0))]
++
++    def colour(self, value, uv=None):
++        if uv is None:
++            return np.repeat(self.stops[0][1][None, :], len(value), axis=0)
++        h, w = self.px.shape[:2]
++        x = np.floor(np.mod(uv[:, 0], 1.0) * w).astype(int) % w
++        y = np.floor(np.mod(uv[:, 1], 1.0) * h).astype(int) % h
++        return self.px[y, x]
++
++
++def own_coat(piece):
++    """[(group, material, corners)] of one of the owner's new coats, its materials into MATS."""
++    filename, prefixes, linings, sleeves = OWN_COATS[piece]
++    bpy.ops.wm.open_mainfile(filepath=os.path.join(ROOT, "input", "armor", filename))
++    out = []
++    for o in bpy.data.objects:
++        if o.type != "MESH" or not o.name.startswith(prefixes):
++            continue
++        for m in o.data.materials:
++            key = piece + ":" + m.name
++            if key not in MATS:
++                MATS[key] = ImageMaterial(m)
++        for m in o.modifiers:
++            if m.type in ("BEVEL", "WEIGHTED_NORMAL"):
++                m.show_viewport = False
++        depsgraph = bpy.context.evaluated_depsgraph_get()
++        me = bpy.data.meshes.new_from_object(o.evaluated_get(depsgraph))
++        bm = bmesh.new()
++        bm.from_mesh(me)
++        bmesh.ops.triangulate(bm, faces=bm.faces[:])
++        bm.normal_update()
++        layer = bm.loops.layers.uv.active
++        world = o.matrix_world
++        rot = world.to_3x3()
++        mats = list(o.data.materials)
++        arm = None
++        if o.name.startswith(sleeves):
++            arm = "left_arm" if o.name.endswith(".L") else "right_arm"
++            rig = next(r for r in bpy.data.objects if r.type == "ARMATURE")
++            bone = rig.data.bones["Sleeve." + ("L" if arm == "left_arm" else "R")]
++            head = rig.matrix_world @ bone.head_local
++            tail = rig.matrix_world @ bone.tail_local
++            down = (tail - head).normalized()
++            straight = down.rotation_difference(mathutils.Vector((0.0, 0.0, -1.0))).to_matrix()
++            # the highest point of all the arm's sleeve meshes, turned straight (each side's sleeve and cuff set alike)
++            top = max((straight @ ((rig.matrix_world @ mathutils.Vector(v.co)) - head)).z
++                      for ob in bpy.data.objects if ob.type == "MESH" and ob.name.startswith(sleeves) and ob.name.endswith(o.name[-2:])
++                      for v in ob.data.vertices)
++        for f in bm.faces:
++            mat = mats[f.material_index] if f.material_index < len(mats) else mats[0]
++            corners = []
++            for loop in f.loops:
++                v = loop.vert
++                p = world @ v.co
++                n = (rot @ (v.normal if f.smooth else f.normal)).normalized()
++                if arm is not None:
++                    q = straight @ (p - head)
++                    n = (straight @ n).normalized()
++                    pivot = PIVOT[arm]
++                    # x across, y down from the arm's pivot (its top 2 px over it), z back
++                    pos = envelope(arm, (LIMB_MID[arm][0] + q.x * 16.0, pivot[1] - 2.0 - SLEEVE_TOP - (q.z - top) * 16.0, q.y * 16.0))
++                else:
++                    pos = collar((p.x * 16.0, 24.0 - p.z * 16.0, p.y * 16.0))
++                corners.append((pos, (n.x, -n.z, n.y), tuple(v.co * 16.0), tuple(loop[layer].uv)))
++            mid_y = sum(c[0][1] for c in corners) / 3.0
++            lining = any(mat.name.startswith(l) or l in o.name for l in linings)
++            if arm is not None:
++                group = arm + ("_upper" if mid_y - 2.0 < 4.0 else "_lower")
++            else:
++                group = ("body_upper" if mid_y < 6.0 else "body_lower") + ("_in" if lining else "")
++            out.append((group, piece + ":" + mat.name, corners))
++        bm.free()
++    return out
++
++
+ def load():
+     folder = tempfile.mkdtemp()
+     with zipfile.ZipFile(ZIP) as z:
+@@ -323,7 +493,7 @@ def bake(pieces):
+             a2 = e2 / v
+             size = max(u, v, np.linalg.norm(p[2] - p[1]))
+             material = MATS[mat]
+-            if size < SMALL:
++            if size < SMALL and not isinstance(material, ImageMaterial):
+                 cut = np.mean([np.array(c[2]) for c in corners], axis=0)
+                 value = hash01(np.floor(cut[None, :] * CELLS))[0]
+                 shade = int(min(SHADES - 1, value * SHADES))
+@@ -331,7 +501,7 @@ def bake(pieces):
+                 uvpx = [(shade + 0.5, row + 0.5)] * 3
+                 out[piece].append((group, [(corners[k][0], corners[k][1], uvpx[k]) for k in range(3)]))
+                 continue
+-            density = PRINT_DENSITY if material.print is not None else DENSITY
++            density = IMAGE_DENSITY if isinstance(material, ImageMaterial) else PRINT_DENSITY if material.print is not None else DENSITY
+             umin, umax = min(0.0, cu), max(u, cu)
+             w = int(math.ceil((umax - umin) * density)) + 2
+             h = int(math.ceil(v * density)) + 2
+@@ -377,7 +547,7 @@ def bake(pieces):
+ ARM_FIT = 0.35
+ ARM_LINING = 0.25
+ ARM_BOXES = (((-8.0, 0.0, -2.0), (-4.0, 12.0, 2.0)), ((4.0, 0.0, -2.0), (8.0, 12.0, 2.0)))
+-COAT_PIECES = ("admiral_coat", "blackbeard_coat")
++COAT_PIECES = ("admiral_coat", "blackbeard_coat", "flamingo_coat", "greatest_swordsman")
+ 
+ 
+ def arm_fit(pos, lining):
+@@ -395,6 +565,58 @@ def arm_fit(pos, lining):
+     return (x, y, z)
+ 
+ 
++# 3.9.7: the heights (model px) where the game's bend of each part changes (its ends and its middle ring: bendy-lib): every piece cut
++# there, so its cloth has points where the body folds (client/armor/ClothesModel bends each point by its share)
++RINGS = {"body": (0.0, 6.0, 12.0), "arm": (0.0, 6.0, 12.0), "leg": (12.0, 18.0, 24.0)}
++
++
++def rings_of(group):
++    name = group[:-3] if group.endswith("_in") else group
++    if name.startswith("body") or name.endswith("_sleeve"):
++        return RINGS["body"]
++    if "_arm" in name:
++        return RINGS["arm"]
++    if "_leg" in name:
++        return RINGS["leg"]
++    return ()
++
++
++def lerp_corner(a, b, t):
++    pos = tuple(a[0][k] + (b[0][k] - a[0][k]) * t for k in range(3))
++    n = np.array(a[1]) + (np.array(b[1]) - np.array(a[1])) * t
++    n = tuple(n / max(1e-9, np.linalg.norm(n)))
++    cut = tuple(a[2][k] + (b[2][k] - a[2][k]) * t for k in range(3))
++    uv = None if a[3] is None or b[3] is None else (a[3][0] + (b[3][0] - a[3][0]) * t, a[3][1] + (b[3][1] - a[3][1]) * t)
++    return (pos, n, cut, uv)
++
++
++def split_at(corners, y):
++    """A triangle (its corners) cut by the plane at height y: itself, or the three it becomes."""
++    side = [c[0][1] - y for c in corners]
++    if all(d >= -1e-6 for d in side) or all(d <= 1e-6 for d in side):
++        return [corners]
++    # the lone vertex on its side, the two on the other
++    for i in range(3):
++        a, b, c = corners[i], corners[(i + 1) % 3], corners[(i + 2) % 3]
++        da, db, dc = side[i], side[(i + 1) % 3], side[(i + 2) % 3]
++        if (da > 0) != (db > 0) and (da > 0) != (dc > 0):
++            ab = lerp_corner(a, b, da / (da - db))
++            ac = lerp_corner(a, c, da / (da - dc))
++            return [[a, ab, ac], [ab, b, c], [ab, c, ac]]
++    return [corners]
++
++
++def split(tris):
++    """Every triangle cut at its part's rings (RINGS)."""
++    out = []
++    for group, mat, corners in tris:
++        parts = [corners]
++        for y in rings_of(group):
++            parts = [q for c in parts for q in split_at(c, y)]
++        out += [(group, mat, c) for c in parts]
++    return out
++
++
+ def write(piece, tris, w, h):
+     """The piece's OBJ: its faces group by group (GROUPS' order), each in its part's frame (model px from the part's pivot)."""
+     lines = [f"# HexPiece 3.8.9: the owner's {piece} (Clothes_Replacements.blend) baked by tools/clothes_bake.py: model px from each "
+@@ -438,6 +660,7 @@ def write(piece, tris, w, h):
+ 
+ 
+ def main():
++    own = {piece: own_coat(piece) for piece in OWN_COATS}
+     load()
+     for m in bpy.data.materials:
+         if m.node_tree and any(n.type == "VALTORGB" for n in m.node_tree.nodes):
+@@ -451,6 +674,15 @@ def main():
+             if o.type == "MESH" and wanted(o, outfit, names):
+                 tris += triangles(o, rig_inv)
+         pieces[piece] = tris
++    pieces.update(own)
++    pieces = {piece: split(tris) for piece, tris in pieces.items()}
++    for piece, tris in pieces.items():
++        if piece in COAT_PIECES:
++            continue
++        for i, (group, mat, corners) in enumerate(tris):
++            if group.startswith("body_"):
++                corners = [(torso_fit(c[0]), c[1], c[2], c[3]) for c in corners]
++                tris[i] = (group, mat, corners)
+     out, img = bake(pieces)
+     os.makedirs(OUT, exist_ok=True)
+     from PIL import Image
+diff --git a/tools/clothes_view.py b/tools/clothes_view.py
+index b820909..4767054 100644
+--- a/tools/clothes_view.py
++++ b/tools/clothes_view.py
+@@ -17,7 +17,8 @@ import sword_view as sv  # noqa: E402
+ 
+ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ DIR = os.path.join(ROOT, "art", "clothes")
+-PIECES = ["marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat"]
++PIECES = ["marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat",
++          "flamingo_coat", "greatest_swordsman"]
+ PIVOT = {"head": (0, 0, 0), "body": (0, 0, 0), "right_arm": (-5, 2, 0), "left_arm": (5, 2, 0), "right_leg": (-1.9, 12, 0),
+          "left_leg": (1.9, 12, 0)}
+ PART = {"head": "head", "body": "torso", "right_arm": "rightArm", "left_arm": "leftArm", "right_leg": "rightLeg", "left_leg": "leftLeg"}
+@@ -72,7 +73,56 @@ def group_matrix(pose, group):
+     return rig.layer_to_entity(pose) @ rig.part_matrix(pose, "torso" if part == "body" else "head", (0, 0, 0))
+ 
+ 
+-COATS = ("admiral_coat", "blackbeard_coat")
++COATS = ("admiral_coat", "blackbeard_coat", "flamingo_coat", "greatest_swordsman")
++
++# 3.9.7 (the owner, of the Marine outfit in a move: a band of bare body at the waist, the trousers apart at the knees): the game bends a
++# body part as one piece (bendy-lib's bendable cuboid: its far end turned by the whole bend about the line through its middle, its middle
++# ring by half, its near end not at all, straight between the rings). Each point of a piece takes the same share of its part's bend by
++# its height (share), so the cloth folds as the skin under it does: the body's top turned (its bend lifts the chest), an arm's and a
++# leg's lower end (client/armor/ClothesModel the same; tools/clothes_bake.py cuts every piece at the middle rings).
++
++
++def share(y, top, bottom, far_low):
++    """The share of a part's bend at height y (px) of a part from top to bottom: 0 at its near end, 1/2 at its middle, 1 at its far
++    end (far_low: the far end is the bottom, as a limb's), straight between."""
++    t = np.clip((y - top) / (bottom - top), 0.0, 1.0)
++    return t if far_low else 1.0 - t
++
++
++def bend_about(points, line, angle, axis_deg, shares):
++    """points (n x 3, px) each turned by shares x angle (degrees) about the line through (0, line, 0) along (cos(-axis), 0, sin(-axis))."""
++    a = -math.radians(axis_deg)
++    ax = np.array([math.cos(a), 0.0, math.sin(a)])
++    out = points.copy()
++    for i, k in enumerate(shares):
++        if abs(k * angle) < 1e-6:
++            continue
++        r = rig.raxis(math.radians(k * angle), ax)[:3, :3]
++        q = points[i] - np.array([0.0, line, 0.0])
++        out[i] = r @ q + np.array([0.0, line, 0.0])
++    return out
++
++
++def bent_points(pose, gname, local):
++    """E points (n x 3) of a piece's group's points (its part's frame, px), bent through its joints as the game bends the body."""
++    group = gname[:-3] if gname.endswith("_in") else gname
++    part = group.rsplit("_", 1)[0] if group.endswith(("_upper", "_lower")) else group
++    b = pose.get("body", {})
++    if part == "body":
++        model = apply(rig.part_matrix(pose, "torso", (0, 0, 0)), local)
++        model = bend_about(model, 6.0, b.get("bend", 0.0), b.get("axis", 0.0), share(model[:, 1], 0.0, 12.0, False))
++        return apply(rig.body_to_entity(pose), model)
++    if part.endswith("_arm"):
++        name = PART[part]
++        p = pose.get(name, {})
++        local = bend_about(local, 4.0, p.get("bend", 0.0), p.get("axis", 0.0), share(local[:, 1], -2.0, 10.0, True))
++        return apply(rig.layer_to_entity(pose) @ rig.part_matrix(pose, name, rig.ARM_PIVOT[name]), local)
++    if part.endswith("_leg"):
++        name = PART[part]
++        p = pose.get(name, {})
++        local = bend_about(local, 6.0, p.get("bend", 0.0), 0.0, share(local[:, 1], 0.0, 12.0, True))
++        return apply(rig.body_to_entity(pose) @ rig.part_matrix(pose, name, rig.LEG_PIVOT[name]), local)
++    return apply(group_matrix(pose, gname), local)
+ 
+ 
+ def apply(m, p):
+@@ -111,13 +161,59 @@ def coat_points(pose, verts, groups, quads, wind, slim=False):
+         frames[(side, "fore")] = arm @ rig.forearm_bend(pose, name)
+     pushed = cc.keep_out(model, frames, rig.part_matrix(pose, "head", (0, 0, 0)), rest, cc.rest_ways(rest, slim), lining, slim)
+     model = np.where(body[:, None], pushed, model)  # the sleeves are never touched by the arms
+-    out = np.where(upper[:, None], apply(rig.layer_to_entity(pose), model), apply(rig.body_to_entity(pose), model))
++    # 3.9.7: bent through the body's middle as the skin is (each point its share of the body's bend by its height), not two halves
++    b = pose.get("body", {})
++    model = bend_about(model, 6.0, b.get("bend", 0.0), b.get("axis", 0.0), share(model[:, 1], 0.0, 12.0, False))
++    out = apply(rig.body_to_entity(pose), model)
+     on = body.copy()
+     for idx in sleeves.values():
+         on[idx] = True
+     return out, on
+ 
+ 
++FIGURE = {"torso": ((-4, 0, -2), (4, 12, 2)), "head": ((-4, -8, -4), (4, 0, 4))}
++
++
++def draw_bendy(canvas, cam, pose, arm="wide"):
++    """3.9.7: the player as the game draws it: each bending part one piece of three rings (its near end, its middle at half the bend,
++    its far end at the whole), as bent_points bends the clothes."""
++    parts = [("body", "torso", (-4, 0, -2), (4, 12, 2)), ("head", "head", (-4, -8, -4), (4, 0, 4))]
++    for side, name in (("right", "rightArm"), ("left", "leftArm")):
++        w = 3 if arm == "slim" else 4
++        x0 = (-w + 1) if side == "right" else -1
++        parts.append((side + "_arm", name, (x0, -2, -2), (x0 + w, 10, 2)))
++    for side, name in (("right", "rightLeg"), ("left", "leftLeg")):
++        parts.append((side + "_leg", name, (-2, 0, -2), (2, 12, 2)))
++    for group, colour_part, lo, hi in parts:
++        ys = [lo[1], (lo[1] + hi[1]) / 2.0, hi[1]]
++        rings = []
++        for y in ys:
++            ring = np.array([[lo[0], y, lo[2]], [hi[0], y, lo[2]], [hi[0], y, hi[2]], [lo[0], y, hi[2]]], float)
++            rings.append(bent_points(pose, group + ("_upper" if group != "body" and group != "head" else ""), ring)
++                         if group not in ("body", "head") else bent_points(pose, "body_upper" if group == "body" else "head", ring))
++        c = sv.COLORS[colour_part]
++        faces = []
++        for a, b in ((0, 1), (1, 2)):
++            for k in range(4):
++                faces.append([rings[a][k], rings[a][(k + 1) % 4], rings[b][(k + 1) % 4], rings[b][k]])
++        faces.append(list(rings[0]))
++        faces.append(list(rings[2]))
++        centre = np.mean([pt for r in rings for pt in r], axis=0)
++        for q in faces:
++            q = np.array(q)
++            n = np.cross(q[1] - q[0], q[2] - q[0])
++            ln = np.linalg.norm(n)
++            if ln < 1e-9:
++                continue
++            n /= ln
++            if n @ (q.mean(axis=0) - centre) < 0:
++                n = -n
++            shade = 0.55 + 0.45 * max(0.0, n @ sv.LIGHT)
++            sq = cam.project(q)
++            canvas.tri(sq[[0, 1, 2]], c, shade=shade)
++            canvas.tri(sq[[0, 2, 3]], c, shade=shade)
++
++
+ def draw_piece(canvas, cam, pose, piece, tex, wind=(0.0, 0.0, 0.0)):
+     verts, quads, groups = load(piece)
+     v = np.array(verts, float)
+@@ -126,16 +222,14 @@ def draw_piece(canvas, cam, pose, piece, tex, wind=(0.0, 0.0, 0.0)):
+     if piece in COATS:
+         world, on_body = coat_points(pose, v, groups, quads, wind)
+     for gname, first, count in groups:
+-        m = group_matrix(pose, gname)
++        moving = world is not None and (gname.startswith("body_") or gname.endswith("_sleeve"))
++        idx = sorted({i for quad in quads[first:first + count] for i in quad})
++        bent = {} if moving else dict(zip(idx, bent_points(pose, gname, pos[idx])))
+         for quad in quads[first:first + count]:
+             tri = [quad[0], quad[1], quad[2]]
+-            moving = world is not None and (gname.startswith("body_") or gname.endswith("_sleeve"))
+-            p = world[tri] if moving else np.c_[pos[tri], np.ones(3)] @ m.T
++            p = world[tri] if moving else np.array([bent[i] for i in tri])
+             s = cam.project(p[:, :3])
+-            if moving:
+-                n = np.cross(p[1, :3] - p[0, :3], p[2, :3] - p[0, :3])
+-            else:
+-                n = v[tri, 5:8].mean(axis=0) @ m[:3, :3].T
++            n = np.cross(p[1, :3] - p[0, :3], p[2, :3] - p[0, :3])
+             n /= max(1e-9, np.linalg.norm(n))
+             shade = 0.5 + 0.5 * abs(float(n @ sv.LIGHT))
+             canvas.tri(s, uv=v[tri, 3:5], tex=tex, shade=shade)
+@@ -152,7 +246,7 @@ def render(out, pose=None, pieces=None, views=("front", "three", "side", "back")
+         for c, view in enumerate(views):
+             cam = sv.Camera(yaw_of[view], 10.0, 135.0, w / 2, h * 0.93)
+             cv = sv.Canvas(w, h)
+-            sv.draw_figure(cv, cam, pose)
++            draw_bendy(cv, cam, pose)
+             for piece in group:
+                 draw_piece(cv, cam, pose, piece, tex, wind)
+             tile = cv.image()
+diff --git a/tools/katana_mesh.py b/tools/katana_mesh.py
+index cc58b21..dae2725 100644
+--- a/tools/katana_mesh.py
++++ b/tools/katana_mesh.py
+@@ -447,7 +447,8 @@ def pack_guns():
+ # 3.8.9: the owner's clothes (Clothes_Replacements.blend), baked by tools/clothes_bake.py into art/clothes/: one mesh an armor piece, its
+ # faces grouped by the body part that carries them (each in that part's frame), all on one atlas
+ CLOTHES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "art", "clothes")
+-CLOTHES = ("marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat")
++CLOTHES = ("marine_cap", "marine_shirt", "marine_trousers", "marine_boots", "admiral_coat", "straw_hat", "blackbeard_coat",
++           "flamingo_coat", "greatest_swordsman")
+ 
+ 
+ def clothes_meshes():
+diff --git a/src/main/java/com/hexhaki/piece/client/render/FigureLayer.java b/src/main/java/com/hexhaki/piece/client/render/FigureLayer.java
+index 48de342..4d60a38 100644
+--- a/src/main/java/com/hexhaki/piece/client/render/FigureLayer.java
++++ b/src/main/java/com/hexhaki/piece/client/render/FigureLayer.java
+@@ -15,7 +15,8 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
+ import net.minecraftforge.eventbus.api.SubscribeEvent;
+ import net.minecraftforge.fml.common.Mod;
+ 
+-/** 2.1.1: a female player's bust, painted with her own skin, not drawn under a chestplate nor while she is unseen. */
++/** 2.1.1: a female player's bust, painted with her own skin, not drawn under a chestplate (3.9.7: but drawn under the owner's clothes,
++ * which are carried over it) nor while she is unseen. */
+ public final class FigureLayer extends RenderLayer<AbstractClientPlayer, EntityModel<AbstractClientPlayer>> {
+     public FigureLayer(RenderLayerParent<AbstractClientPlayer, EntityModel<AbstractClientPlayer>> parent) {
+         super(parent);
+@@ -26,7 +27,10 @@ public final class FigureLayer extends RenderLayer<AbstractClientPlayer, EntityM
+                         float partialTick, float ageInTicks, float netHeadYaw, float headPitch) {
+         try {
+             if (!PieceClient.gender(player.m_19879_()).female() || player.m_20145_() || !(this.m_117386_() instanceof PlayerModel<?> model)
+-                || !player.m_6844_(net.minecraft.world.entity.EquipmentSlot.CHEST).m_41619_()) {
++                || !player.m_6844_(net.minecraft.world.entity.EquipmentSlot.CHEST).m_41619_()
++                && !(player.m_6844_(net.minecraft.world.entity.EquipmentSlot.CHEST).m_41720_() instanceof com.hexhaki.piece.armor.PieceArmorItem)) {
++                // 3.9.7: under the owner's clothes the bust stays (a shirt is carried over it: client/armor/ClothesModel; an open coat
++                // shows it)
+                 return;
+             }
+             double y = player.f_19791_ + (player.m_20186_() - player.f_19791_) * partialTick;
