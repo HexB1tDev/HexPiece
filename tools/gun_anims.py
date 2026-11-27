@@ -160,8 +160,9 @@ IDLE = {
     # of the bottom of the fist like a pipe)
     "rightItem": {"pitch": -25.0},
 }
-# 3.8.8: a spin turns the gun beside the hand (fist px: out to the right of the forearm), never through it
-SPIN_SIDE = -2.5
+# 3.8.8: a spin turns the gun beside the hand (fist px: out to the right of the forearm), never through it; 3.9.6 (the owner: "The spin
+# of the ambient animation (spin) of the GUN is offcenter"): just beside the fingers, the gun's own half thickness off the fist's middle
+SPIN_SIDE = -1.2
 # the left hand on the hip (the aim's badass stance), solved below
 HIP = None
 
@@ -365,8 +366,11 @@ def spin_beats(turns, length, raise_to):
         hold = q["rightItem"]["pitch"]
         q["rightItem"]["pitch"] = hold + 360.0 * turns * u if t < length else rest + 360.0 * turns
         beats.append((t, "linear", q))
-    # the spin ends where it began, a whole number of turns round: the clip's last pose is the hold's exactly
-    beats[-1] = (length, "linear", nudge(IDLE, {("rightItem", "pitch"): 360.0 * turns}))
+    # the spin ends where it began, a whole number of turns round; 3.9.6 (the owner: "whenever the gun does the spin and it ends, it goes
+    # backwards when the animation finishes it should not undo itself"): the last tick keys the same angle as the hold's own (turns x 360
+    # less), at once (constant): the clip ends on the hold's angle itself, so nothing after it winds the turns back
+    beats[-2] = (length - 1, "linear", nudge(IDLE, {("rightItem", "pitch"): 360.0 * turns}))
+    beats[-1] = (length, "constant", channels(IDLE))
     return beats
 
 
@@ -452,10 +456,13 @@ def clips():
     out["gun_draw"] = (spin_beats(1, DRAW_TICKS, -30.0), DRAW_TICKS, False, "Gun: taken in hand, spun once round the finger into the "
                        "relaxed hold.", None)
     for b in range(BUCKETS):
+        # 3.9.6 (the owner: "the left arm is not meant to have animation when firing (its putting the left arm on the hip"): the fire
+        # clips key no left arm: it moves as the game moves it
+        fire_parts = {k: v for k, v in PARTS.items() if k != "leftArm"}
         out[f"gun_fire_{b}"] = (fire_beats(b), FIRE_TICKS, False, f"Gun: aimed and fired at a look {HIGHEST + b * STEP} degrees "
                                 f"({'up' if HIGHEST + b * STEP < 0 else 'down' if HIGHEST + b * STEP > 0 else 'level'}): the arm "
-                                "snapped out straight along the look, side on, the left hand on the hip; the shot; the recoil kicks "
-                                "the muzzle up; it settles.", None)
+                                "snapped out straight along the look, side on; the shot; the recoil kicks the muzzle up; it settles "
+                                "(the left arm left as the game moves it).", fire_parts)
     out["gun_reload"] = (reload_beats(), RELOAD, False, "Gun: the reload: the gun brought up before the chest, the muzzle tipped up; the "
                          "left hand takes a ball from the belt and presses it into the muzzle; the gun back down into the hold.", None)
     return out

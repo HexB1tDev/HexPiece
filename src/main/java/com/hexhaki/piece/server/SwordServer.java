@@ -792,7 +792,7 @@ public final class SwordServer {
                 HakiSlashes.launch(player, from, state.aim, height, range, speed, (float) damage, state.releaseColor, state.releaseRyou,
                     PieceConfig.get(PieceConfig.TERRAIN, true), StyleCombat.of(player), other -> FruitUtil.foe(player, other));
                 // 2.2.9: the wave rushing off the blade, louder (and heard farther) the more it was charged
-                PieceSounds.play(player, SwordSounds.SLASH, (float) (0.8 + 0.6 * charge), SwordSounds.pitch(state.katana));
+                PieceSounds.play(player, SwordSounds.of(SwordSounds.SLASH, state.katana), (float) (0.8 + 0.6 * charge), SwordSounds.pitch(state.katana));
                 gain(player, Hit.Weight.FINISHER, 1);
             }
             return;

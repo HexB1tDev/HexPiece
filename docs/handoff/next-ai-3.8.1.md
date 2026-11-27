@@ -775,7 +775,7 @@ moving; (7) slow, heavy wingbeats; (8) landing on the ground, never into it; (9)
 own body transforming progressively, not the creature growing out of it; (11) the islands with TerraBlender and Biomes O' Plenty: far
 apart, never merged. Then the list in 28.
 
-## 30. 3.9.5: the owner's lists in 28 and 29 (part)
+## 30. 3.9.5 (Build #289 and Release #186 GREEN): the owner's lists in 28 and 29 (part)
 - Itsumade (29): ItsuForm.glow and its anchors removed (ItsuFx, preview, DragonTests). Wings (ItsuForm.wing): FOLD_* on the ground (a
   bird's fold: FOLD_DOWN -78 about z, FOLD_ONTO -16 about x, FOLD_ELBOW 78 / FOLD_WRIST -118 / FOLD_FINGER -18 about y in the wing's
   plane; breath, shrug, rouse shake, walking balance); the air stroke (DOWN_PART 0.56: downstroke spread high 50 to low -36, the
@@ -806,3 +806,19 @@ apart, never merged. Then the list in 28.
   vanilla events (the same sounds.json way, explosions and Haki kept), the gun (spin centred, the left arm free when firing, the spin's
   end not undoing), the Flamingo Coat and Greatest Swordsman (input/armor/*.blend, tools/clothes_bake.py), clothes on female bodies, then
   the Itsumade's moves (22).
+
+## 31. 3.9.6: Minecraft's sounds for the fruits, the mace's own, the gun
+- tools/vanilla_sounds.py (VANILLA: 113 fruit events -> minecraft events with volume and pitch; KEEP: the 14 explosions; MACE; ITSU):
+  rewrites those sounds.json entries as {"name": "minecraft:...", "type": "event"} and deletes the recordings nothing plays (148). Every
+  name checked against 1.20.1's sounds.json (misode/mcmeta 1.20.1-assets: all 126 references exist). SwordTests.vanilla(): such an
+  entry plays only Minecraft's events; webSounds/mixedSounds/redone skip them (their least counts no longer apply).
+- SwordSounds.MACE_* (in ALL) and SwordSounds.of(sound, katana) (a mace's own for a blade's: beats and the release's slam).
+- ItsuServer.CRACK "piece.itsu.crack" (bone block breaking) for its cracks (registered in PieceSounds; subtitle "Bones crack").
+- tools/gun_anims.py: SPIN_SIDE -1.2 (was -2.5: off-centre), the spin's last tick keys the hold's own angle with constant easing (no
+  unwinding), the fire clips key no left arm (written = PARTS less leftArm). Previews: scratchpad gunprev/.
+- NEXT: the Flamingo Coat (input/armor/Doflamingo_Feather_Coat.blend: blocks as units, four feather meshes under the empty "COAT |
+  torso attachment", one 256 x 1024 pixel atlas "Plumage and cloth | pixel palette") and the Greatest Swordsman (Crimson_Brocade_Coat.blend:
+  an armature "COAT • pose controls" of 7 bones, 18 meshes, 12 pixel-weave textures 64 x 64): both into tools/clothes_bake.py's frame
+  (model px: x the wearer's left, y down from the top of the body, z back), groups body_upper/_lower(+_in)/right_sleeve/left_sleeve,
+  their own textures (the owner: "I dont think needs any adjusting"), new PieceArmor entries (CHEST), icons, ArmorTests; then clothes on
+  female bodies (FemaleBody: the chest's bust); then the Itsumade's moves (22).

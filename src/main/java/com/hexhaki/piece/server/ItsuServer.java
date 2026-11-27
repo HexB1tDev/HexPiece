@@ -47,6 +47,9 @@ public final class ItsuServer {
     static final long[] CRACKS = {3, 7, 12, 16, 21, 25, 30, 34, 39, 44};
     static final long[] CRACKS_BACK = {2, 8, 13, 19, 24};
     static final long SCREAM = 49;
+    /** 3.9.6: its bones cracking (Minecraft's bone block breaking, pitched down: tools/vanilla_sounds.py ITSU). */
+    public static final String CRACK = "piece.itsu.crack";
+    public static final String[] SOUNDS = {CRACK};
 
     static boolean contains(long[] ticks, long t) {
         for (long k : ticks) {
@@ -95,10 +98,10 @@ public final class ItsuServer {
             player.getPersistentData().m_128379_(MARK, true);
             enter(player, fresh, ItsuForm.FORMING, now);
             fly(player);
-            ItoMoves.sound(player, player.m_20182_(), com.hexhaki.piece.gura.GuraSounds.CRACK, 1.4F, 0.7F);
+            ItoMoves.sound(player, player.m_20182_(), CRACK, 1.4F, 0.7F);
         } else if (phase == ItsuForm.ITSU) {
             enter(player, state, ItsuForm.UNFORMING, now);
-            ItoMoves.sound(player, player.m_20182_(), com.hexhaki.piece.gura.GuraSounds.CRACK, 1.2F, 0.8F);
+            ItoMoves.sound(player, player.m_20182_(), CRACK, 1.2F, 0.8F);
         }
     }
 
@@ -194,11 +197,11 @@ public final class ItsuServer {
         }
         // the change heard: bones cracking with each lurch, the scream as its jaw is thrown open, the bones again going back
         if (state.phase == ItsuForm.FORMING && contains(CRACKS, ticks)) {
-            ItoMoves.sound(player, player.m_20182_(), com.hexhaki.piece.gura.GuraSounds.CRACK, 1.3F, 0.55F + 0.04F * (ticks % 7));
+            ItoMoves.sound(player, player.m_20182_(), CRACK, 1.3F, 0.55F + 0.04F * (ticks % 7));
         } else if (state.phase == ItsuForm.FORMING && ticks == SCREAM) {
             ItoMoves.sound(player, player.m_20182_(), com.hexhaki.piece.dragon.UoSounds.ROAR, 3.0F, 0.62F);
         } else if (state.phase == ItsuForm.UNFORMING && contains(CRACKS_BACK, ticks)) {
-            ItoMoves.sound(player, player.m_20182_(), com.hexhaki.piece.gura.GuraSounds.CRACK, 1.2F, 0.65F + 0.05F * (ticks % 5));
+            ItoMoves.sound(player, player.m_20182_(), CRACK, 1.2F, 0.65F + 0.05F * (ticks % 5));
         }
         if (state.phase == ItsuForm.FORMING && ticks >= ItsuForm.FORM_TICKS) {
             enter(player, state, ItsuForm.ITSU, now);

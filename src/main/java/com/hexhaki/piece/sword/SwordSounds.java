@@ -30,7 +30,29 @@ public final class SwordSounds {
     public static final String CLASH = "piece.sword.clash";
     public static final String SLASH = "piece.sword.slash";
     /** Every sound event, in the order they are registered. */
-    public static final String[] ALL = {DRAW, DRAW_RING, GUARD_CLICK, SHEATHE, SWING, SWING_HEAVY, SHING, CLASH, SLASH};
+    /** 3.9.6 (the owner: the mace "has sword sounds"): a heavy iron club's own (Minecraft's sounds, tools/vanilla_sounds.py MACE). */
+    public static final String MACE_SWING = "piece.mace.swing";
+    public static final String MACE_SWING_HEAVY = "piece.mace.swing_heavy";
+    public static final String MACE_IRON = "piece.mace.iron";
+    public static final String MACE_DRAW = "piece.mace.draw";
+    public static final String MACE_SLAM = "piece.mace.slam";
+    public static final String[] ALL = {DRAW, DRAW_RING, GUARD_CLICK, SHEATHE, SWING, SWING_HEAVY, SHING, CLASH, SLASH, MACE_SWING,
+        MACE_SWING_HEAVY, MACE_IRON, MACE_DRAW, MACE_SLAM};
+
+    /** 3.9.6: what {@code sound} is for {@code katana}: a mace's own for a blade's (no ring of steel, no saya). */
+    public static String of(String sound, Katana katana) {
+        if (katana == null || katana.category() != Katana.Category.MACE) {
+            return sound;
+        }
+        return switch (sound) {
+            case SWING -> MACE_SWING;
+            case SWING_HEAVY -> MACE_SWING_HEAVY;
+            case SHING -> MACE_IRON;
+            case DRAW, DRAW_RING, GUARD_CLICK, SHEATHE -> MACE_DRAW;
+            case SLASH -> MACE_SLAM;
+            default -> sound;
+        };
+    }
 
     /** One beat: {@code tick} ticks into the animation, {@code sound} at {@code volume} and {@code pitch}. */
     public record Beat(int tick, String sound, float volume, float pitch) {
@@ -112,7 +134,7 @@ public final class SwordSounds {
         Beat[] out = new Beat[beats.size()];
         for (int i = 0; i < out.length; i++) {
             Beat b = beats.get(i);
-            out[i] = new Beat(b.tick(), b.sound(), b.volume(), b.pitch() * pitch);
+            out[i] = new Beat(b.tick(), of(b.sound(), katana), b.volume(), b.pitch() * pitch);
         }
         Arrays.sort(out, Comparator.comparingInt(Beat::tick));
         return out;

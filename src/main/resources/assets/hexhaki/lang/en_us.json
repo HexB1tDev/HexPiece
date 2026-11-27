@@ -210,5 +210,11 @@
   "subtitles.hexhaki.piece.gun.load": "A ball is pressed into a muzzle",
   "subtitles.hexhaki.piece.gun.cock": "A hammer clicks back",
   "subtitles.hexhaki.piece.gun.spin": "A pistol spins",
-  "subtitles.hexhaki.piece.gun.hit": "A ball strikes"
+  "subtitles.hexhaki.piece.gun.hit": "A ball strikes",
+  "subtitles.hexhaki.piece.mace.swing": "Mace swings",
+  "subtitles.hexhaki.piece.mace.swing_heavy": "Mace swings heavily",
+  "subtitles.hexhaki.piece.mace.iron": "Iron thuds",
+  "subtitles.hexhaki.piece.mace.draw": "Mace taken up",
+  "subtitles.hexhaki.piece.mace.slam": "Mace slams",
+  "subtitles.hexhaki.piece.itsu.crack": "Bones crack"
 }

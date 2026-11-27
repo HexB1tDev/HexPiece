@@ -38,6 +38,10 @@ public final class PieceSounds {
             com.hexhaki.piece.haki.ConquerorMix.CHARGE_HOLD}) {
             BY_NAME.put(explosion, SOUNDS.register(explosion, () -> SoundEvent.m_262824_(HexHaki.id(explosion))));
         }
+        // 3.9.6: the Itsumade's own (Minecraft's sounds, tools/vanilla_sounds.py)
+        for (String name : com.hexhaki.piece.server.ItsuServer.SOUNDS) {
+            BY_NAME.put(name, SOUNDS.register(name, () -> SoundEvent.m_262824_(HexHaki.id(name))));
+        }
         // 2.8.6: the Uo Uo no Mi's sounds (CC0 recordings from Freesound.org, dragon/UoSounds)
         for (String[] event : com.hexhaki.piece.dragon.UoSounds.EVENTS) {
             String name = event[0];
