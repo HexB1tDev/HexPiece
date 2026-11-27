@@ -483,3 +483,4 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
   6 to 9 window): the arm then flips between 7 and 8 (121 degrees): the flip comes from the mace's final point-down pose itself (its
   grip), not the drive's speed. MACE_SKIP keeps {sword_plunge} (the katanas' plunge); next: a different end pose for the mace (the
   point down with the palm turned the other way, or the left hand on the haft), then re-solve.
+- 3.9.1's runs: Release #182 green; its Build #281 cancelled by the handoff push, Build #282 (the same code) green.

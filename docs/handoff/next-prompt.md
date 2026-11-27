@@ -19,8 +19,8 @@ the head or unused limbs, a first-person hand move per move, CC0 web sounds); wi
 fruit throws the Conqueror's lightning, out of its end explosion when it has one; ONE Haki lightning in the game, the Conqueror's
 release's (3D tubes with needle tips). Never add another lightning look.
 
-Do next, in this order: (1) check 3.9.1's runs (Build and Release on the branch) are green (3.8.1 to 3.9.0 were); (2) the owner's word
-on 3.8.1 to 3.9.1 in game comes first (write it verbatim into the handoff, fix, render, release; 3.8.3 needs a new world); (3) the Mace's own plunge (section 16; its drive over two ticks, started in
+Do next, in this order: (1) check 3.9.2's runs (Build and Release on the branch) are green (3.8.1 to 3.9.1 were); (2) the owner's word
+on 3.8.1 to 3.9.2 in game comes first (write it verbatim into the handoff, fix, render, release; 3.8.3 needs a new world); (3) the Mace's own plunge (section 16; its drive over two ticks, started in
 tools/sword_anims.py, not solved yet). THE LEOPARD IS GONE FOR GOOD (CLAUDE.md, handoff section 18): never its moves again. Settled: the leverage is the mace's only; the bullet is the owner's "Cast lead ball" (confirmed). Sounds come from Freesound.org: if it is blocked, move the session onto the owner's "HexPiece" environment (it allows it).
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; write every new request verbatim into
