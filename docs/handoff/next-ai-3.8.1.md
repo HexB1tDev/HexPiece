@@ -623,7 +623,7 @@ fire."
     MAGENTA-PINK flames; a black stream pours down into its centre; blue spheres full of sparkles; black shapes made of cyan-lit smoke
     with orange eyes rise out of it; pink fire edging everything.
 
-## 24. 3.9.3 (pushed: Build #285, Release #184): the owner's list in 20 fixed
+## 24. 3.9.3 (Build #285 and Release #184 GREEN): the owner's list in 20 fixed
 - 1 coats: client/armor/ClothesModel draws the whole mesh always (lod() removed); katana_mesh.pack_clothes packs no LODs (simplify
   averages uvs across the atlas's patches: the noise).
 - 2 mace right click: server/SwordServer.maceSlam (tickRelease, MACE_SLAM_TICK 2): crater 1.7 + 1.9 x charge (x1.5 with Armament) 2.3
@@ -667,3 +667,6 @@ Name "Itsumade" (lang), Mythical Zoan. Stages (one version each, the owner testi
 - Fix (3.9.4 bake): the eyes fused into the skull too, and the skull TEXTURED: cylindrical uvs about the beak's axis (the seam under the
   jaw), its texture baked texel by texel from the owner's own surfaces (their colours and the painted face, at each texel's nearest
   point): every marking as sharp as the owner painted it.
+- The owner, right after (verbatim): "theres no face paint bro thats part of the beak/head and the blue is the eyes / jesus" — the red is
+  the head's own colouring (its texture), the blue shapes ARE the eyes; never call it face paint. The fix stands: the fused head
+  textured texel by texel from the owner's surfaces, so the eyes keep their exact shape.
