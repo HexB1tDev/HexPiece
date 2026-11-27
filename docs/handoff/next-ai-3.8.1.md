@@ -659,3 +659,11 @@ Name "Itsumade" (lang), Mythical Zoan. Stages (one version each, the owner testi
   recoloured (Haki_Color.gif: deep indigo bolts, violet rims, green sparks; G can kill), X Gorosei Stare, C Enormous Presence,
   V Yokai Blast, B Thy Death, N Hellish Teleport (the menu, 3 slots, the pentagrams, the black-flame beam), transformed M1 Wind Gust,
   M2 talons carry, X Bow, C Enormous Bite (bleed, Gura's broken bones), V Yokai Beam.
+
+## 26. The owner on the fused head (verbatim; with a crop of the head preview: smeared teal patches round dark blobs, and the anime's
+## eye: input/itsumade/pictures/eye_reference_anime.png: a red mask, a sharp narrow angry eye, a blue rim, a black pupil and liner)
+"what's up with the eyes?"
+- Why: the fused skull carried the face paint as vertex colours (too coarse for the markings) and sry_view colours each triangle flat.
+- Fix (3.9.4 bake): the eyes fused into the skull too, and the skull TEXTURED: cylindrical uvs about the beak's axis (the seam under the
+  jaw), its texture baked texel by texel from the owner's own surfaces (their colours and the painted face, at each texel's nearest
+  point): every marking as sharp as the owner painted it.
