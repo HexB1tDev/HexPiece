@@ -484,3 +484,29 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
   grip), not the drive's speed. MACE_SKIP keeps {sword_plunge} (the katanas' plunge); next: a different end pose for the mace (the
   point down with the palm turned the other way, or the left hand on the haft), then re-solve.
 - 3.9.1's runs: Release #182 green; its Build #281 cancelled by the handoff push, Build #282 (the same code) green.
+
+## 19. The owner's new fruit (verbatim, with Saint_Marcus_Mars_Itsumade.blend and a picture of the fruit)
+"New Fruit:
+
+Name: ????
+Rarity: Mythical
+Type: Zoan
+
+Animations needed:
+Open/Close Mouth
+Ambient Animation
+Landing Animation
+Walk animation (scary/disturbing)
+Flying slow
+Flying really fast
+Glide
+Bite
+
+Body changes:
+All fire should feel alive, not particles, the actual model should  act like Tori Tori No Mi (only on the firey mane, black ribbon, tail and cheeks.
+
+Moves:
+Only the transformation for now.
+Z - Transforms  (DIsturbing progressive transformation)"
+- The files, kept as sent: input/itsumade/Saint_Marcus_Mars_Itsumade.blend, input/itsumade/fruit.webp (the fruit's picture: a carved
+  brown fruit with swirls under green leaves, wreathed in black-purple flame).
