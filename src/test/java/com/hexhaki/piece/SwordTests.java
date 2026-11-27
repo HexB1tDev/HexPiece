@@ -725,6 +725,8 @@ public final class SwordTests {
         webSounds("ito", com.hexhaki.piece.ito.ItoSounds.EVENTS, 9);
         // 3.5.5: the Mochi Mochi no Mi's (tools/mochi_sounds.py: two of its own; the rest the mod's own CC0 clips, folder and name)
         mixedSounds("mochi", com.hexhaki.piece.mochi.MochiSounds.EVENTS, 2);
+        // 3.8.8: the guns' (tools/gun_sounds.py: six of their own; a ball striking the mod's own clash impacts)
+        mixedSounds("gun", com.hexhaki.piece.gun.GunSounds.EVENTS, 6);
         // 3.5.8: Iron Fist's: every clip one of the mod's own already (folder and name), each event subtitled
         String sjson = Files.readString(Path.of("src/main/resources/assets/hexhaki/sounds.json"));
         String slang = Files.readString(Path.of("src/main/resources/assets/hexhaki/lang/en_us.json"));

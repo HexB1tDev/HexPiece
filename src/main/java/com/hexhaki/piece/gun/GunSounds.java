@@ -8,11 +8,11 @@ public final class GunSounds {
     private GunSounds() {
     }
 
-    /** The shot: the flint's crack and the powder's bang. */
+    /** The shot: a black-powder musket's bang. */
     public static final String SHOT = "piece.gun.shot";
     /** Under a Haki shot: a deeper boom (the ball leaving pure black). */
     public static final String HAKI_SHOT = "piece.gun.haki_shot";
-    /** The ball pressed home into the muzzle. */
+    /** The ball pressed home into the muzzle (a ramrod's slide and knock, played as the ball reaches the muzzle). */
     public static final String LOAD = "piece.gun.load";
     /** The hammer drawn back at the end of the reload: ready. */
     public static final String COCK = "piece.gun.cock";
@@ -21,9 +21,9 @@ public final class GunSounds {
     /** The ball striking a block or a body. */
     public static final String HIT = "piece.gun.hit";
 
-    /** Every event and its clips (assets/hexhaki/sounds/piece/{clip}.ogg: a folder and a name). */
+    /** Every event and its clips (assets/hexhaki/sounds/piece/{clip}.ogg: a folder and a name; gun/ from tools/gun_sounds.py). */
     public static final String[][] EVENTS = {
-        {SHOT, "gear/whip_crack1"}, {HAKI_SHOT, "gura/boom1", "gura/boom2"}, {LOAD, "sword/guard_click2"}, {COCK, "sword/guard_click4"},
-        {SPIN, "sword/whoosh1", "sword/whoosh2"}, {HIT, "clash/impact2", "clash/impact3"},
+        {SHOT, "gun/shot1", "gun/shot2"}, {HAKI_SHOT, "gun/boom1"}, {LOAD, "gun/load1"}, {COCK, "gun/cock1"}, {SPIN, "gun/spin1"},
+        {HIT, "clash/impact2", "clash/impact3"},
     };
 }

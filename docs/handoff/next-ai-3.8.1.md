@@ -230,7 +230,7 @@ thrown by the ratio) compared. What HexPiece lacked, now done:
 
 ## 7. What to do next (in order)
 
-1. 3.8.4 green (Release #175; Build #272), 3.8.5 green (Build #273, Release #176). Check 3.8.6's runs (Release #177; Build #274 may show cancelled by the handoff push after it: the Build on the handoff commit builds the same code).
+1. 3.8.4 to 3.8.7 green (3.8.7: Build #277, Release #178). Check 3.8.8's runs (the Gun, section 13).
 2. The owner's word on 3.8.1 (the release's lag), 3.8.2 (the Conqueror's clash), 3.8.3 (the archipelago: needs a new world),
    3.8.4 (the clashes) comes first: write it verbatim here, fix, render, release.
 3. The weapon reworks (section 2; the owner put them after the world and the Conqueror's Haki, both done):
@@ -242,7 +242,9 @@ thrown by the ratio) compared. What HexPiece lacked, now done:
      right hand in a badass pose, one bullet a shot and a reload putting one bullet in the barrel's mouth, the bullet model the owner
      will send (ask for it if it has not come), Haki on: pure black bullets, much faster, through up to 10 blocks; relaxed lowered
      poses pointing at the floor, spinning it on the hand, a running animation; for every gun).
-   - The clothes replacements (Clothes_Replacements.blend; more to come).
+   - DONE: forced third person (3.8.5), the categories and the Saber (3.8.6), the Mace (3.8.7), the Gun (3.8.8).
+   - The clothes replacements (Clothes_Replacements.blend; more to come): ask the owner which armor piece each replaces.
+   - The Saber's kesa and makko and the Mace's gyaku yoko and plunge written for their own grips (they fall back to the katanas').
    - The Blender files are in input/newmodels/NewModels.zip (unpack into the scratchpad; Blender's Python module as for the
      leopard: python3 -m venv /tmp/bpy && /tmp/bpy/bin/pip install bpy).
 4. Then the Leopard's other moves (next-ai-3.7.6.md section 6), as before.
@@ -343,3 +345,45 @@ Every weapon the owner gives comes with one of these categories and is made with
   saya for maces. Renders: docs/images/mace-model-3.8.7.png, mace-idle-3.8.7.png, mace-yoko-3.8.7.png.
 - SwordTests: 28 blades; the mace a Mace on the back, never above Yoru (edge, reach), Yoru's draw and sheathing, its idle and guard
   on the shoulder, its draw as slow as Yoru's.
+- 3.8.7's runs: Build #277 and Release #178 green.
+
+## 13. 3.8.8: the Flintlock Pistol (category Gun)
+
+- **Model:** tools/gun_bake.py (/tmp/bpy/bin/python tools/gun_bake.py) bakes First_gun.blend into art/gun/flintlock.obj (4255
+  triangles: every mesh under "Flintlock • grip pivot", MESH_FACES 420 a part, SMALL_FACES 24 under SMALL, pin markings under TINY left
+  out; the ink curves bevelled at least INK_LEAST; frame: the grip's pivot at 0, the barrel forward -z, up +y, SCALE 4.2 px a unit:
+  16.7 px long), art/gun/lead_ball.obj (the bullet: "Cast lead ball", 96 triangles, 1.3 px) and art/gun/gun.png (a 64 atlas: each
+  material a row of its own toon ramp; each corner's u where KEY lights it). katana_mesh GUNS/BULLET/gun_meshes/gun_texture/pack_guns
+  (LODs for the gun); build.py gun_assets -> assets/hexhaki/gun/*.hkm, textures/gun/gun.png, models/item/gun_flintlock.json (icon:
+  katana_render.py gun-icons -> textures/item/gun/flintlock_icon.png). Mesh points: TRIGGER (0, -0.3, -2.8), MUZZLE (0, 2.2, -15.1).
+- **Code:** gun/Gun (enum: FLINTLOCK; SCALE 0.7/16, BULLET_SCALE 2.6/16; category GUN), gun/GunItem (plain Item, anyone's; tooltip
+  category first), gun/GunRules (AIM 3, RELOAD 26, RELOAD_FROM 6, SPEED 3.2, HAKI_SPEED 9.5, GRAVITY 0.012, RANGE 110, PIERCE 10,
+  DAMAGE 7, HAKI_DAMAGE 10.5, the muzzle 1.1 ahead / 0.37 right / 0.17 below the eye, AIM_SLACK 25, the spin SPIN_AFTER 120 /
+  SPIN_EVERY 260), gun/GunAnims (NONE, HOLD, DRAW 16, RELOAD, FIRE + bucket: 7 buckets 20 degrees apart from -60; clip names; the
+  ball in hand BALL_FROM 4..BALL_AT 12, into the muzzle to BALL_HOME 15), gun/GunSounds. server/GunServer (the state machine: draw ->
+  hold; M1 from the hold, loaded -> FIRE bucket; the shot at AIM; RELOAD at FIRE_TICKS 9; loaded at its end; put away empty, it
+  reloads after the draw; sounds LOAD at BALL_AT, COCK at the end), server/GunShots (balls flown on the server: a plain ball's line
+  clipped by blocks, a Haki ball walks its line 0.2 a step through PIERCE solid blocks; the first body on the line is hit; ConquerorAura.
+  mixed at the muzzle and at a Haki ball's impact: POINT ONE). network C2SGun (28: the point under the crosshair), S2CGun (26: state),
+  S2CGunShot (27: FLY / STOP), PROTOCOL "22". Client: client/gun/GunClient (layer piece_gun, priority 925; idle/walk/run/spin by the
+  body; turns the body to the look while firing), GunLayer (the gun in the hand: the same chain as tools/gun_anims.py gun_matrix:
+  fist, FINGER (0, 1.96, 0.21) + the clip's rightItem move, its rightItem turn, Ry(180) Rx(90), the trigger on the finger; the ball
+  in the left fingertips and into the muzzle; muzzle flash: debug quads, alpha-blended; smoke: the game's cloud), GunRenderer,
+  GunBullets (balls drawn as the server flies them, streaks, sparks/puffs at the stop), GunItemRenderer (ground, frame, first-person
+  hand), GunInput (M1 with a gun: the crosshair point from the camera's centre line), GunSight (the third-person sight, the reload
+  bar: rendered mock checked on sky, grass and pale ground). SwordCamera.drawn: a gun in the hand forces third person too.
+  KatanaMesh.read, KatanaRenderer.quads/tinted, SwordLayer.channel/bend/bendAbout, SwordFx.world made public for the gun.
+- **Clips:** tools/gun_anims.py (python3 tools/gun_anims.py [--preview dir]; ~6 s): gun_idle (80, loop), gun_walk and gun_run (the
+  right arm's pitch left to the game's swing: only its yaw/roll/bend and the item keyed), gun_spin (30: two turns round the finger,
+  SPIN_SIDE -2.5 px out beside the forearm, never through it), gun_draw (16: one turn), gun_fire_0..6 (9: solved so the barrel lies
+  along the look; the recoil softer aimed steeply up), gun_reload (26: the right arm solved to hold the muzzle at (-0.05, 1.45, -0.42)
+  tipped up-left; the left hand solved along a path from the belt up before the body to the muzzle and back: rig.solve_left_at, the
+  natural-arm limits). check() fails an aim off the look by 4 degrees, an arm strained past 12 (the spin's hand turns exempt), the
+  ball off the muzzle at BALL_AT. Renders: docs/images/gun-model-3.8.8.png, gun-fire-3.8.8.png, gun-reload-3.8.8.png, gun-spin-3.8.8.png.
+- **Sounds:** tools/gun_sounds.py (CC0, Freesound): shot1 (bruno.auzet "old musket bang", cut on the bang), shot2 (mlsulli "Musket
+  Shot"), boom1 (fennelliott "musket.wav", the Haki shot's boom), cock1 (N3pomuk's old flintlock click), load1 (jriches1's ramrod),
+  spin1 (GrayEpic's gun spin); the hum lines filtered (web_sounds.HUM); tonal_lines: +6 to +8 over noise, as the accepted whip crack
+  and clash impact. A ball striking: the clash impacts. **Network:** this session moved onto the owner's "HexPiece" environment (it
+  allows freesound.org); the Default one blocks it.
+- **Ask the owner:** whether "Cast lead ball" is the bullet model they meant ("I'll send it").
+- Tests: GunTests (the rules, the buckets, the clip names and lengths); SwordTests' sound checks cover sounds/piece/gun.

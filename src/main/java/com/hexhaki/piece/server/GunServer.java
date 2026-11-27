@@ -84,7 +84,7 @@ public final class GunServer {
                 set(player, hold, GunAnims.RELOAD, now);
             }
         } else if (hold.anim == GunAnims.RELOAD) {
-            if (t == GunAnims.BALL_HOME) {
+            if (t == GunAnims.BALL_AT) {
                 PieceSounds.playAt(player, player.m_20185_(), player.m_20186_() + 1.2, player.m_20189_(), GunSounds.LOAD, 0.7F, 1.15F);
             }
             if (t >= GunRules.RELOAD) {

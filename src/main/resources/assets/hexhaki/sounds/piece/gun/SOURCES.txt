@@ -1,0 +1,10 @@
+The guns' sounds (tools/gun_sounds.py). Every recording is CC0 1.0 (public domain) on Freesound.org; the files
+here are cut from its high-quality preview, made mono, peak-normalised and faded (a loop: its end crossfaded into its
+start). Nothing is made by hand. Thanks to every author named.
+
+shot1.ogg: "old musket bang.wav" by bruno.auzet, https://freesound.org/people/bruno.auzet/sounds/538795/ (CC0 1.0), from 0.3 s, 0.95 s long, compressed to sound louder
+shot2.ogg: "Musket Shot.wav" by mlsulli, https://freesound.org/people/mlsulli/sounds/234869/ (CC0 1.0), from 0.7 s, 1.10 s long, the room's hum under 95 Hz filtered out, compressed to sound louder
+boom1.ogg: "musket.wav" by fennelliott, https://freesound.org/people/fennelliott/sounds/347647/ (CC0 1.0), from 0.1 s, 1.40 s long, the room's hum under 95 Hz filtered out, 2.0 dB quieter, compressed to sound louder
+cock1.ogg: "old flintlock primer gun clicking.flac" by N3pomuk, https://freesound.org/people/N3pomuk/sounds/656397/ (CC0 1.0), from 4.9 s, 0.28 s long
+load1.ogg: "Ram rod slide out" by jriches1, https://freesound.org/people/jriches1/sounds/817931/ (CC0 1.0), from 0.5 s, 0.30 s long, 2.0 dB quieter
+spin1.ogg: "L &amp; R GUN SPIN And HOLSTER.mp3" by GrayEpic, https://freesound.org/people/GrayEpic/sounds/697619/ (CC0 1.0), from 1.2 s, 0.85 s long, the room's hum under 95 Hz filtered out, 4.0 dB quieter
