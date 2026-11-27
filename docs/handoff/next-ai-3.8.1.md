@@ -542,3 +542,65 @@ but its one of them.
 - "also the fiery mane of my model Is wrong I just noticed, it should follow the green line" (with a crop of the back view of the
   Itsumade: a green line drawn down the middle of the tail's back, from under the body to the tail's fire): the flame-edged dorsal fin
   and its flicks run down the tail's side edge; they belong on the middle of its back (the dorsal line).
+
+## 22. THE OWNER'S ITSUMADE SPEC (verbatim; sent twice, the second time with "Tente novamente"; with Reference.zip and four pictures)
+Files kept as sent: input/itsumade/Reference.zip (Haki_Color.gif, Yokai Beam.gif, Haki_and_Portalfire.gif) and input/itsumade/pictures/
+(head_from_above_manga.png: the manga's Itsumade from above (the head: a long beak open with teeth, the face with black markings, the
+white mane swept back; the black cloud ribbon; the wings); yokai_beam_frame.png (a cyan glow with dark shapes); pentagram_frame.png (a
+glowing cyan pentagram in a ring of runes on the ground, dark blue lightning round it); haki_lightning_frame.png (a thick dark blue
+lightning bolt with a pale core)).
+
+"1. Fruit "????" Renamed to "Itsumade"
+2. I also  sent an image of the head from above to aid in making it perfect.
+
+
+Itsuamade Modes:
+Passive:
+The user cannot be killed, unless the attacker has Ryou Haki activated, every time the user is about to die he vanishes in a black smoke
+and appears somewhere safe 10 blocks away with full HP and Energy.
+
+The user's conqueror's haki  (G) can now kill and changes color to the exact color scheme of the reference I attached in the ZIP called
+Haki_color. This changes every color of the user's haki including ryou to be a greeish/blueish scary tone.
+
+Untransformed:
+Default minecraft M1
+
+Z - Transform / Untransform
+X -  Gorosei Stare (Focus your sight on a target and send them flying.)
+C - Enourmous Presence (Your body unleashes conqueror's haki automaticly for 10 seconds,  once in a while a lightning comes out of the
+body stunning anything it touches.)
+V - Yokai Blast (Point your hand forward and charge a beam of bright orange/black flames, cannot be aimed after release, beam continues
+for a minimum of 1 second and at max charge 5 seconds, the flames are super clean, beautiful effects like the dragon's breath but more
+intense,  goes through a maximum of 15 blocks at max charge and 5 blocks at minimum then self repairs)
+B- Thy Death: Conqueror's haki lightning fall from the clouds down to the floor (making sure it always hits the ground) for 10 seconds
+in a circle around the player (25 block radius) when touching the floor the lightning explodes into an AOE of a sphere with 3 diameter,
+stun + damage.
+N - Hellish Teleport: a black/scary menu appears on the user's screen, 3 Buttons on the menu(also custom made and cool looking) each
+button acts as a location save point clicking 1 of those buttons will save the current player location then you gotta figure out a way
+to clear a button and reset the location to another spot. rename a teleport area, etc.
+
+When clicking a location a petagram 6x6, will start forming on the floor that adapts to terrain, after it fully forms (takes around 10
+seconds), anything or anyone standing on it is teleported to the saved location.
+
+Teleport style: the people and mobs/ entities, all turn into black flames and all of them come together at one point and blast into
+the sky from the center of the pentagram.
+On Arrival, the beam falls from the sky  onto another landing pentagram on the saved location (the 2 pentagrams form at the same time,
+landing and entry, and everything  is visible like falling from the sky , going up to the clouds etc) has to be a spectacle to behold.
+The pentagram should also have blue/pink fire around it like the reference
+
+
+
+Transformation:
+
+Size: 10 blocks tall, big wing span.
+M1- Wind Gust: a slow move, the user's wings flap to create massive wind gusts that push away every entity backwards that is in the
+cone infront of the user.
+M2- The user grabs with his talons whatever entity and is free to carry them endlessly. (only while flying) (Recasting M2, drops them).
+
+Z - Transform / UnTransform
+X - Bow : The user's massive transformed body start emmiting conqueror's haki lightning stunning anything they hit for a period of 15
+seconds (THe lightning never comes from the inside of the transformation model).
+C - Enourmous bite : The user lunges it's massive neck forward biting where he looked at, causing damage, bleed and broken bones (our
+effect from gura)
+V - Yokai Beam : Same as yokai blast but more concentrated, hotter, goes through more blocks and explodes at the end into a big ball of
+fire."
