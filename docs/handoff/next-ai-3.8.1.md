@@ -622,3 +622,40 @@ fire."
   - Haki_and_Portalfire.gif (300 frames): a glowing cyan pentagram inside a ring of runes on a grid floor, rimmed by cyan and hot
     MAGENTA-PINK flames; a black stream pours down into its centre; blue spheres full of sparkles; black shapes made of cyan-lit smoke
     with orange eyes rise out of it; pink fire edging everything.
+
+## 24. 3.9.3 (pushed: Build #285, Release #184): the owner's list in 20 fixed
+- 1 coats: client/armor/ClothesModel draws the whole mesh always (lod() removed); katana_mesh.pack_clothes packs no LODs (simplify
+  averages uvs across the atlas's patches: the noise).
+- 2 mace right click: server/SwordServer.maceSlam (tickRelease, MACE_SLAM_TICK 2): crater 1.7 + 1.9 x charge (x1.5 with Armament) 2.3
+  ahead on the ground (Craters, PieceConfig.TERRAIN), foes hurt/thrown/knocked down (strike's mace path), IronFist.debris, Impact.quake,
+  ConquerorAura.exploded (POINT ONE), IronSounds.BOOM; no Haki slash for maces; messages "Haki slam"/"Slam".
+- 3 mace: no glint (KatanaRenderer.draw skips highlight for Category.MACE: per-vertex glint on black coarse normals flickered);
+  anyone: SwordServer.ready = swordsman || maceInHand; client/StyleInput.maceInHand sends PRESS/CHARGE whatever the style/combat mode.
+- 4 mace slower: SwordRules.MACE_SLOW 2; SwordAnims.slowed(name) (a mace's own cut clips); the 11 cut clips stretched x2
+  (tools/sword_anims.py slow_clip on write; clearance and java_paths read slowed clips at t x MACE_SLOW (the move's own time));
+  SwordServer.slow/moveTick (cut windows, BladePaths, carry once a clip tick), SwordCombo.buffered(.., slow), the clash window scaled,
+  the sound cursor on the slowed clock.
+- 5 Haki balls: GunShots.punch: each pierced block's break shown (levelEvent 2001) and torn out (Scars, Craters.REPAIR, mobGriefing);
+  bedrock stops the ball.
+- 6 pistol hold: tools/gun_anims.py held() (the grip's pivot at the fist's centre + HANG_FORWARD 1.6 px ahead) and hang_down() (pitch
+  and roll solved so the barrel points HANG_DIR: HANG_AHEAD 22 degrees ahead of straight down, the owner's drawing); IDLE/WALK/RUN.
+- 7 islands: section 23.
+- Lesson (cost a rebuild): never name a local `k` in sword_anims.clearance (its blade loop reuses k).
+
+## 25. The Itsumade: the plan (owner's spec in 19, 20.8, 21, 22)
+Name "Itsumade" (lang), Mythical Zoan. Stages (one version each, the owner testing between):
+- 3.9.4 THE FORM: tools/itsumade_bake.py (bpy) -> assets/hexhaki/itsumade/itsumade.sry (DragonModel version 2: a colour a vertex) +
+  textures/piece/itsumade/itsumade.png; the owner's notes in the bake: the head fused into one skin (HEAD_FUSED: voxel remesh
+  HEAD_VOXEL 0.026, colours from the nearest original surface incl. the face paint), the fiery mane turned onto the tail's back
+  (dorsal_angles/dorsal_turn), ink lines thinner than INK 0.016 left out; the rig (36 bones: root, chest, neck1-2, head, jaw, halo,
+  pelvis, tail1-14, shoulder/elbow/wrist/finger L/R, hip/ankle/toes L/R; the body skinned by the distance along its surface).
+  Then itsumade/ItsuForm (pure: Shape, pose for hover, fly slow, fly fast, glide, landing, scary walk, ambient, mouth open/close,
+  bite; living fire like PhoenixForm.flame/heat on kinds 2 (fire: ruffs, collar, dorsal fin and flicks, tail fire, temple blazes =
+  cheeks) and 3 (the black ribbon: the cloud ring, its wisps)); SCALE ~0.775 blocks a unit (the owner: "10 blocks tall"); the
+  disturbing progressive transformation (Z); server/ItsuServer (like PhoenixServer: creative flight), ItsuKit (fruit kit),
+  client/itsumade/ItsuFx (like PhoenixFx: CPU skin, hide the human, camera), the fruit in PiecePatch (ITSU, Mythical), its icon from
+  input/itsumade/fruit.webp, CC0 sounds; tools/preview/ItsuPreview.java; tests.
+- 3.9.5+ THE KIT: the passive (no death unless Ryou: black smoke, safe spot 10 blocks away, full HP and energy), the user's Haki
+  recoloured (Haki_Color.gif: deep indigo bolts, violet rims, green sparks; G can kill), X Gorosei Stare, C Enormous Presence,
+  V Yokai Blast, B Thy Death, N Hellish Teleport (the menu, 3 slots, the pentagrams, the black-flame beam), transformed M1 Wind Gust,
+  M2 talons carry, X Bow, C Enormous Bite (bleed, Gura's broken bones), V Yokai Beam.
