@@ -8,6 +8,11 @@ package com.hexhaki.piece.sword;
  */
 public final class SwordRules {
     /** Ticks of charge that make a full charge, and the charge under which a release counts as the minimum. */
+    /**
+     * 3.9.3 (the owner: "Mace swings should be wayyy slower"): how many times slower a mace's cuts are than a blade's (its clips are written
+     * this many times longer by tools/sword_anims.py MACE_SLOW; server/SwordServer reads its cuts on a clock this many times slower).
+     */
+    public static final int MACE_SLOW = 2;
     public static final int CHARGE_MAX = 40;
     public static final int CHARGE_MIN = 4;
     /** The physical (no Haki) charged cut: damage and how far past the blade's tip it reaches, at the least and the full charge. */

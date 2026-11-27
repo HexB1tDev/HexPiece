@@ -56,9 +56,38 @@ public final class StyleInput {
         return swordsman() && com.hexhaki.piece.client.sword.SwordClient.katana(minecraft.f_91074_.m_19879_()) == null;
     }
 
+    /**
+     * 3.9.3 (the owner: "you do not need to be a swords man to use the mace or pistol"): a mace in the main hand, whoever holds it and
+     * whether or not combat mode is on (outside Devil Fruit mode): its swings and its slam are sent as a Swordsman's are.
+     */
+    static boolean maceInHand(Minecraft minecraft) {
+        LocalPlayer player = minecraft.f_91074_;
+        if (player == null || minecraft.f_91080_ != null || GearClientState.devilFruitMode()) {
+            return false;
+        }
+        com.hexhaki.piece.sword.Katana held = KatanaItem.of(player.m_21205_());
+        return held != null && held.category() == com.hexhaki.piece.sword.Katana.Category.MACE;
+    }
+
     @SubscribeEvent(priority = EventPriority.LOW)
     public static void interact(InputEvent.InteractionKeyMappingTriggered event) {
         Minecraft minecraft = Minecraft.m_91087_();
+        if (maceInHand(minecraft) && !(ready(minecraft) && swordsman())) {
+            HitResult aimed = minecraft.f_91077_;
+            if (event.isAttack()) {
+                event.setCanceled(true);
+                event.setSwingHand(false);
+                PieceNetwork.toServer(new C2SSword(C2SSword.PRESS));
+            } else if (event.isUseItem() && !(aimed != null && aimed.m_6662_() == HitResult.Type.BLOCK)) {
+                event.setCanceled(true);
+                event.setSwingHand(false);
+                if (!charging) {
+                    charging = true;
+                    PieceNetwork.toServer(new C2SSword(C2SSword.CHARGE));
+                }
+            }
+            return;
+        }
         if (!ready(minecraft) || swordless(minecraft)) {
             return; // the game's own punch and use
         }

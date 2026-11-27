@@ -910,10 +910,35 @@ def solve_and_write(move):
     if move.loop is not None:
         emote["stopTick"] = move.duration
     data = {"version": 3, "name": move.name, "author": "HexPiece 2.3.2", "description": move.description, "emote": emote}
+    if slowed(move.name):
+        data = slow_clip(data)
     with open(os.path.join(OUT, move.name + ".json"), "w", encoding="utf-8") as handle:
         json.dump(data, handle, indent=1)
         handle.write("\n")
     return move.name, text.getvalue(), clearance(move)
+
+
+# 3.9.3 (the owner: "Mace swings should be wayyy slower"): a mace's own cuts are written MACE_SLOW times longer (sword/SwordRules.MACE_SLOW;
+# server/SwordServer reads their cut windows and blade paths on a clock that much slower: the paths stay the clip's own ticks). Its guard,
+# idle, charge, release, clash and quick cut keep the katanas' pace (sword/SwordAnims.slowed says the same).
+MACE_SLOW = 2
+
+
+def slowed(name):
+    return name.endswith("_mace") and not name.startswith(("sword_guard", "sword_idle", "sword_charge", "sword_release", "sword_clash",
+                                                            "sword_quick"))
+
+
+def slow_clip(data):
+    """The clip with every keyframe's tick, its end and its stop MACE_SLOW times later (the easing of each key as it was)."""
+    out = json.loads(json.dumps(data))
+    emote = out["emote"]
+    for m in emote["moves"]:
+        m["tick"] = m["tick"] * MACE_SLOW
+    for k in ("endTick", "stopTick", "returnTick"):
+        emote[k] = emote[k] * MACE_SLOW
+    out["description"] = "(" + str(MACE_SLOW) + " times slower than a katana's) " + out["description"]
+    return out
 
 
 def mirror_arm(move):
@@ -1359,8 +1384,10 @@ def clearance(move):
     # Yoru held where it hangs on the back (taken from its ropes, or put back): it hangs to the floor there by design (sword/BackCarry)
     on_back = [beat.tick for beat in move.beats if getattr(beat, "back_lift", None) is not None]
     t = 0.0
+    # 3.9.3: a mace's own cut is written MACE_SLOW times longer: read at the same moments of its swing (t is the move's own time)
+    slow = MACE_SLOW if slowed(move.name) else 1
     while t <= move.duration + 1e-9:
-        q = a.pose(t)
+        q = a.pose(t * slow)
         hb = head_box(q)
         torso = rig.layer_to_entity(q) @ rig.part_matrix(q, "torso", (0, 0, 0))
         fist = rig.point(rig.layer_to_entity(q) @ rig.fist_frame(q, "right"), (0, 0, 0))
@@ -2340,8 +2367,9 @@ def java_paths():
             a = anim.Anim(json.load(handle))
         values = []
         k = 0
+        slow = MACE_SLOW if slowed(name) else 1  # 3.9.3: the path stays the move's own ticks (the server reads it on its slowed clock)
         while k <= move.duration * 2:
-            q = a.pose(k / 2.0)
+            q = a.pose(k / 2.0 * slow)
             gm = game_blade(move, q, k / 2.0)
             base, tip = rig.point(gm, (0, rig.BLADE_BASE, 0)), rig.point(gm, (0, rig.BLADE_TIP, 0))
             for p in (base, tip):

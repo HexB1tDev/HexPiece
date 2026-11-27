@@ -23,7 +23,6 @@ import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.LivingEntity;
-import org.joml.Vector3f;
 
 /**
  * 3.8.9 (the owner: "I also will be sending clothes replacements for the ones currently in game"): an armor piece drawn as the owner's
@@ -40,8 +39,6 @@ public final class ClothesModel extends HumanoidModel<LivingEntity> {
     private static final Set<String> FAILED = new HashSet<>();
     /** Entity id -> {back, across, flutter phase, last frame's nano time}: each wearer's wind, eased. */
     private static final Map<Integer, double[]> WINDS = new HashMap<>();
-    static final float FULL_WITHIN = 3.0F;
-    static final float MID_WITHIN = 12.0F;
     /** How fast the wind follows the wearer's speed (of the way a second) and the flutter's pace (radians a second, still and running). */
     static final double EASE = 5.0;
     static final double FLUTTER_STILL = 2.0;
@@ -146,13 +143,6 @@ public final class ClothesModel extends HumanoidModel<LivingEntity> {
         return mesh;
     }
 
-    static String lod(PoseStack.Pose pose) {
-        Vector3f origin = new Vector3f(0.0F, 0.0F, 0.0F);
-        pose.m_252922_().transformPosition(origin);
-        float distance = (float) Math.sqrt(origin.x * origin.x + origin.y * origin.y + origin.z * origin.z);
-        return distance < FULL_WITHIN ? "" : distance < MID_WITHIN ? "_mid" : "_far";
-    }
-
     boolean coat() {
         return this.piece == PieceArmor.ADMIRAL_COAT || this.piece == PieceArmor.BLACKBEARD_COAT;
     }
@@ -160,7 +150,10 @@ public final class ClothesModel extends HumanoidModel<LivingEntity> {
     @Override
     public void m_7695_(PoseStack pose, VertexConsumer buffer, int light, int overlay, float red, float green, float blue, float alpha) {
         try {
-            KatanaMesh mesh = mesh(this.piece.key() + lod(pose.m_85850_()));
+            // 3.9.3 (the owner: "The coat's textures are completely fucked"): always the whole mesh. The far levels of detail merged
+            // vertices per cell and averaged their texture coordinates, and the clothes' atlas is made of separate patches: past 3
+            // blocks (the third person camera) every face sampled texels from other patches (noise). They saved a fifth of the faces.
+            KatanaMesh mesh = mesh(this.piece.key());
             if (mesh == null) {
                 return;
             }

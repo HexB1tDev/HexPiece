@@ -29,8 +29,8 @@ DATA = os.path.join(ROOT, "src", "main", "resources", "data")
 # --- the numbers -----------------------------------------------------------------------------------------------------------------
 # the islands: the island noise's weight, the vanilla continents' weight, and how far it all is lowered (the sea's share)
 ISLANDS = 0.95
-CONTINENTS = 0.5
-LOWER = -0.24
+CONTINENTS = 0.35
+LOWER = -0.42
 ISLAND_NOISE = {"firstOctave": -9, "amplitudes": [1.0, 1.0, 0.7, 0.4, 0.25]}
 # the coast widened: the raw island value mapped so the coast band (continentalness -0.19 to -0.11, where the game puts its beaches and
 # this the beach's gentle slope) spans a raw range nearly four times its own (-0.30 to 0.0): every beach about four times wider

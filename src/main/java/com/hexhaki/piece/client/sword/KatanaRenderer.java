@@ -130,7 +130,10 @@ public final class KatanaRenderer {
                     quads(last, solid, bladeMesh, first, bladeMesh.bladeCount, light); // 2.6.5: the bare steel, never a hole
                 }
             }
-            if (shine > 0.0F && bladeMesh.bladeCount > 0) {
+            // 3.9.3 (the owner: "The mace's Texture is flickering repeatedly nonstop"): no glint on a mace. The glint is reckoned per
+            // vertex from the normals, and the mace's iron is black with coarse normals: the white band jumped on and off its faces as
+            // it moved. Its own atlas carries its cold sheen.
+            if (shine > 0.0F && bladeMesh.bladeCount > 0 && katana.category() != Katana.Category.MACE) {
                 // 2.1.9: alpha blended (some setups draw additive geometry opaque: the owner saw the sword's light as dark)
                 // 2.6.3 (the owner: "the haki is not coating the very top of the blade well"): the white glint dimmed on coated steel
                 highlight(last, buffers.m_6299_(RenderType.m_269166_()), bladeMesh, shine * (1.0F - 0.75F * Math.max(0.0F, Math.min(1.0F, coat))));

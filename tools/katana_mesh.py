@@ -466,13 +466,10 @@ def clothes_texture():
 
 
 def pack_clothes():
-    """{model name: packed mesh bytes} for every piece and its levels of detail (each group simplified on its own: the groups stay)."""
-    out = {}
-    for name, mesh in clothes_meshes().items():
-        out[name] = encode(*mesh)
-        for lod, (cell, buckets) in LODS.items():
-            out[f"{name}_{lod}"] = encode(*simplify(*mesh, cell, buckets))
-    return out
+    """{model name: packed mesh bytes} for every piece. 3.9.3: no levels of detail (simplify averages the texture coordinates of the
+    vertices it merges; the clothes' atlas is made of separate patches, so a merged face sampled other patches: the owner's "The coat's
+    textures are completely fucked")."""
+    return {name: encode(*mesh) for name, mesh in clothes_meshes().items()}
 
 
 if __name__ == "__main__":

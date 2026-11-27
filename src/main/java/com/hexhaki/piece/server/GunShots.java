@@ -37,7 +37,8 @@ import net.minecraftforge.fml.common.Mod;
  *       {@link GunRules#RANGE} blocks at most. Each tick the line it flew is tested: the first body it passes (grown by the ball's size,
  *       never its shooter's) is hit and the ball stops in it; a plain ball stops at the first block in its way.</li>
  *   <li>With Armament Haki the ball flies straight and far faster, pure black, and goes through solid blocks, {@link GunRules#PIERCE} of
- *       them at most (each block once, however many ticks it spends in it); the next one stops it. It still stops in the first body.</li>
+ *       them at most (each block once, however many ticks it spends in it), tearing each out of its way ({@link #punch}); the next one
+ *       stops it, as does a block nothing breaks. It still stops in the first body.</li>
  *   <li>A ball never leaves loaded chunks, and every one is gone when the server stops.</li>
  * </ul>
  */
@@ -140,12 +141,13 @@ public final class GunShots {
                     continue;
                 }
                 ball.through.add(key);
-                if (!GunRules.through(true, ball.pierced)) {
+                if (!GunRules.through(true, ball.pierced) || state.m_60800_(ball.level, pos) < 0.0F) {
                     end = p;
-                    struck = S2CGunShot.BLOCK;
+                    struck = S2CGunShot.BLOCK; // the eleventh block, or one nothing breaks (bedrock)
                     break;
                 }
                 ball.pierced++;
+                punch(ball, pos, state);
             }
         }
         // the first body on the line it flew (up to where the blocks stopped it)
@@ -176,6 +178,22 @@ public final class GunShots {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 3.9.3 (the owner: "The pistol bullets with haki on are not going through any blocks ( I asked to go through at least 10 blocks)"):
+     * the balls went through, but inside the blocks, unseen. Now each block a Haki ball goes through bursts (its own break, seen and
+     * heard) and is torn out of its way as a crater's are (server/Scars: nothing dropped, protected and claimed blocks left, grown back
+     * {@link Craters#REPAIR} later; the world's mobGriefing rule obeyed as Craters obeys it): the ball leaves a tunnel.
+     */
+    static void punch(Ball ball, BlockPos pos, BlockState state) {
+        ball.level.m_46796_(2001, pos, net.minecraft.world.level.block.Block.m_49956_(state));
+        if (ball.level.m_46469_().m_46207_(net.minecraft.world.level.GameRules.f_46132_)) {
+            Scars scars = Scars.of(ball.level);
+            if (scars.room()) {
+                scars.tear(ball.owner, pos, java.util.List.of(), Craters.REPAIR);
+            }
+        }
     }
 
     static void strike(Ball ball, LivingEntity other, Vec3 at) {

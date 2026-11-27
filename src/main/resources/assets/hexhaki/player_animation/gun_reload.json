@@ -1,7 +1,7 @@
 {
  "version": 3,
  "name": "gun_reload",
- "author": "HexPiece 3.8.8",
+ "author": "HexPiece 3.9.3",
  "description": "Gun: the reload: the gun brought up before the chest, the muzzle tipped up; the left hand takes a ball from the belt and presses it into the muzzle; the gun back down into the hold.",
  "emote": {
   "beginTick": 0,
@@ -12,7 +12,7 @@
   "degrees": true,
   "easeBeforeKeyframe": true,
   "moves": [
-   {"tick":0,"easing":"linear","body":{"bend":1.5},"torso":{"pitch":0.0,"yaw":-3.0,"roll":1.0},"rightArm":{"pitch":-7.0,"yaw":4.0,"roll":9.0,"bend":-12.0},"leftArm":{"pitch":4.0,"yaw":0.0,"roll":-5.0,"bend":-9.0},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-8.0,"yaw":0.0,"roll":0.0}},
+   {"tick":0,"easing":"linear","body":{"bend":1.5},"torso":{"pitch":0.0,"yaw":-3.0,"roll":1.0},"rightArm":{"pitch":-7.0,"yaw":4.0,"roll":9.0,"bend":-12.0},"leftArm":{"pitch":4.0,"yaw":0.0,"roll":-5.0,"bend":-9.0},"rightItem":{"x":0.0,"y":-0.02,"z":-1.74,"pitch":-4.1,"yaw":0.0,"roll":-9.9}},
    {"tick":4,"easing":"inoutsine","body":{"bend":4.0},"torso":{"pitch":0.0,"yaw":-4.0,"roll":0.0},"rightArm":{"pitch":28.59,"yaw":-44.41,"roll":5.12,"bend":-128.16},"leftArm":{"pitch":25.28,"yaw":5.34,"roll":1.5,"bend":-64.25},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-32.0,"yaw":0.0,"roll":0.0}},
    {"tick":6,"easing":"linear","body":{"bend":4.0},"torso":{"pitch":0.0,"yaw":-4.0,"roll":0.0},"rightArm":{"pitch":28.59,"yaw":-44.41,"roll":5.12,"bend":-128.16},"leftArm":{"pitch":-15.56,"yaw":25.79,"roll":-18.07,"bend":-52.78},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-32.0,"yaw":0.0,"roll":0.0}},
    {"tick":8,"easing":"linear","body":{"bend":4.0},"torso":{"pitch":0.0,"yaw":-4.0,"roll":0.0},"rightArm":{"pitch":28.59,"yaw":-44.41,"roll":5.12,"bend":-128.16},"leftArm":{"pitch":-52.71,"yaw":25.62,"roll":-38.14,"bend":-43.77},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-32.0,"yaw":0.0,"roll":0.0}},
@@ -23,7 +23,7 @@
    {"tick":17,"easing":"linear","body":{"bend":4.0},"torso":{"pitch":0.0,"yaw":-4.0,"roll":0.0},"rightArm":{"pitch":28.59,"yaw":-44.41,"roll":5.12,"bend":-128.16},"leftArm":{"pitch":-57.99,"yaw":3.38,"roll":-147.07,"bend":-74.78},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-32.0,"yaw":0.0,"roll":0.0}},
    {"tick":19,"easing":"inoutsine","body":{"bend":4.0},"torso":{"pitch":0.0,"yaw":-4.0,"roll":0.0},"rightArm":{"pitch":28.59,"yaw":-44.41,"roll":5.12,"bend":-128.16},"leftArm":{"pitch":24.0,"yaw":12.0,"roll":-0.87,"bend":-75.47},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-32.0,"yaw":0.0,"roll":0.0}},
    {"tick":21,"easing":"inoutsine","body":{"bend":4.0},"torso":{"pitch":0.0,"yaw":-4.0,"roll":0.0},"rightArm":{"pitch":28.59,"yaw":-44.41,"roll":5.12,"bend":-128.16},"leftArm":{"pitch":24.0,"yaw":12.0,"roll":-0.87,"bend":-75.47},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-36.0,"yaw":0.0,"roll":0.0}},
-   {"tick":26,"easing":"inoutsine","body":{"bend":1.5},"torso":{"pitch":0.0,"yaw":-3.0,"roll":1.0},"rightArm":{"pitch":-7.0,"yaw":4.0,"roll":9.0,"bend":-12.0},"leftArm":{"pitch":4.0,"yaw":0.0,"roll":-5.0,"bend":-9.0},"rightItem":{"x":0.0,"y":0.0,"z":0.0,"pitch":-8.0,"yaw":0.0,"roll":0.0}}
+   {"tick":26,"easing":"inoutsine","body":{"bend":1.5},"torso":{"pitch":0.0,"yaw":-3.0,"roll":1.0},"rightArm":{"pitch":-7.0,"yaw":4.0,"roll":9.0,"bend":-12.0},"leftArm":{"pitch":4.0,"yaw":0.0,"roll":-5.0,"bend":-9.0},"rightItem":{"x":0.0,"y":-0.02,"z":-1.74,"pitch":-4.1,"yaw":0.0,"roll":-9.9}}
   ]
  }
 }

@@ -604,3 +604,21 @@ C - Enourmous bite : The user lunges it's massive neck forward biting where he l
 effect from gura)
 V - Yokai Beam : Same as yokai blast but more concentrated, hotter, goes through more blocks and explodes at the end into a big ball of
 fire."
+
+## 23. The owner on the islands (verbatim) and 3.9.3's world generation
+- (The tool run that lowered the land share was interrupted by the owner, then:) "should be more apart, you should need to travel to
+  find islands, theres too many"
+- Done: tools/archipelago_data.py ISLAND_NOISE firstOctave -9 (as 3.8.3), CONTINENTS 0.5 -> 0.35, LOWER -0.24 -> -0.42: only the tops of
+  the island noise are land: islands 300 to 1500 blocks, 1.5 to 3 km of deep sea between them, land about 14% (seed 2). Render:
+  docs/images/archipelago-map-3.9.3.png (8 km). (3.8.3's islands, 1 to 3 km and 30% land, read as no islands on a phone: "I created a
+  new world and I see no islands?")
+- The reference GIFs read (scratchpad itsuref/*_sheet.png; 374x211 each):
+  - Haki_Color.gif (286 frames): the Gorosei's Conqueror's Haki: thick deep indigo / blue-violet lightning bolts with darker edges and
+    bright GREEN glints where they fork or flare, over lilac-pink smoke clouds; earlier frames: a cyan pentagram in a ring of runes on a
+    dark floor. The user's Haki colours (Ryou and Conqueror's) take this: deep indigo bolts, violet rims, green sparks.
+  - Yokai Beam.gif (147 frames): the Itsumade's mouth opens, an orange-white ball of fire forms in it, an orange ring with radiating
+    rays (a halo) opens before the face, thin bright orange laser lines and a white-hot core beam shoot out, orange embers streak, the
+    dark wings spread wide (black above, white under-feathers), a huge orange glare at the source.
+  - Haki_and_Portalfire.gif (300 frames): a glowing cyan pentagram inside a ring of runes on a grid floor, rimmed by cyan and hot
+    MAGENTA-PINK flames; a black stream pours down into its centre; blue spheres full of sparkles; black shapes made of cyan-lit smoke
+    with orange eyes rise out of it; pink fire edging everything.

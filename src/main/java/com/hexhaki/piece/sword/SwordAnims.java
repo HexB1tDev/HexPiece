@@ -127,6 +127,16 @@ public final class SwordAnims {
         return drawnIn(name(anim, katana), ticks);
     }
 
+    /**
+     * 3.9.3: whether clip {@code name} is a mace's own cut, written {@link SwordRules#MACE_SLOW} times longer than the katanas' (its guard,
+     * idle, charge, release, clash and quick cut keep the katanas' pace).
+     */
+    public static boolean slowed(String name) {
+        return name != null && name.endsWith("_mace") && !name.startsWith("sword_guard") && !name.startsWith("sword_idle")
+            && !name.startsWith("sword_charge") && !name.startsWith("sword_release") && !name.startsWith("sword_clash")
+            && !name.startsWith("sword_quick");
+    }
+
     /** 2.3.2: how long {@code anim} lasts with {@code katana} (Yoru's draw and sheathing off its back are its own, slower). */
     public static int duration(int anim, Katana katana) {
         if (anim == DRAW) {

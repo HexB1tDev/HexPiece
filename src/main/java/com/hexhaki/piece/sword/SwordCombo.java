@@ -74,10 +74,15 @@ public final class SwordCombo {
      * (too early). {@code started}: when the cut in hand began.
      */
     public static long buffered(SwordMove current, long started, long now) {
-        long cancelAt = started + current.cancel();
+        return buffered(current, started, now, 1);
+    }
+
+    /** 3.9.3: as {@link #buffered(SwordMove, long, long)} for a move whose clip runs {@code slow} times slower (a mace's). */
+    public static long buffered(SwordMove current, long started, long now, int slow) {
+        long cancelAt = started + (long) current.cancel() * slow;
         if (now >= cancelAt) {
             return now;
         }
-        return now >= cancelAt - BUFFER ? cancelAt : -1;
+        return now >= cancelAt - (long) BUFFER * slow ? cancelAt : -1;
     }
 }

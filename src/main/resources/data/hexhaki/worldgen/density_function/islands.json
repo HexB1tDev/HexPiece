@@ -2,7 +2,7 @@
   "type": "minecraft:flat_cache",
   "argument": {
     "type": "minecraft:add",
-    "argument1": -0.24,
+    "argument1": -0.42,
     "argument2": {
       "type": "minecraft:add",
       "argument1": {
@@ -20,7 +20,7 @@
       },
       "argument2": {
         "type": "minecraft:mul",
-        "argument1": 0.5,
+        "argument1": 0.35,
         "argument2": {
           "type": "minecraft:shifted_noise",
           "noise": "minecraft:continentalness",

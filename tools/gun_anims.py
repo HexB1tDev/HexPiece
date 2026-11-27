@@ -154,7 +154,11 @@ IDLE = {
     "torso": {"yaw": -3.0, "roll": 1.0},
     "rightArm": {"pitch": -7.0, "yaw": 4.0, "roll": 9.0, "bend": -12.0},
     "leftArm": {"pitch": 4.0, "yaw": 0.0, "roll": -5.0, "bend": -9.0},
-    "rightItem": {"pitch": -8.0},
+    # 3.9.3 (the owner: "The pistol isnt being held right, it's resting in the hand instead of being held properly"; "Gun handle goes
+    # where the green circle is": the middle of the fist): the grip in the fist (its pivot at the fist's centre, held()), the wrist
+    # cocked so the barrel comes out of the front of the hand pointing ahead and down at the floor (was: the barrel straight down out
+    # of the bottom of the fist like a pipe)
+    "rightItem": {"pitch": -25.0},
 }
 # 3.8.8: a spin turns the gun beside the hand (fist px: out to the right of the forearm), never through it
 SPIN_SIDE = -2.5
@@ -280,8 +284,65 @@ def idle_beats():
     return beats
 
 
-WALK = {"rightArm": {"yaw": 3.0, "roll": 8.0, "bend": -16.0}, "rightItem": {"pitch": -14.0}}
-RUN = {"rightArm": {"yaw": 6.0, "roll": 9.0, "bend": -42.0}, "rightItem": {"pitch": 26.0}}
+WALK = {"rightArm": {"yaw": 3.0, "roll": 8.0, "bend": -16.0}, "rightItem": {"pitch": -31.0}}
+RUN = {"rightArm": {"yaw": 6.0, "roll": 9.0, "bend": -42.0}, "rightItem": {"pitch": 9.0}}
+
+
+def held(q):
+    """3.9.3: the relaxed hold's item move: the gun turned about the trigger finger (FINGER) by the item's pitch and roll is moved back
+    so the grip's pivot (the gun's origin, in its handle) stays at the fist's centre, then HANG_FORWARD px ahead: the handle in the
+    hand, hooking out of its front, the barrel hanging in front of the fist (the owner's drawing)."""
+    out = channels(q)
+    it = out["rightItem"]
+    r = (rig.rz(math.radians(it["roll"])) @ rig.ry(math.radians(it["yaw"])) @ rig.rx(math.radians(it["pitch"])))[:3, :3]
+    pivot = FINGER - r @ FINGER
+    it["y"] = -float(pivot[1])
+    it["z"] = -float(pivot[2]) - HANG_FORWARD
+    return out
+
+
+# 3.9.3 (the owner: "Make the gun point fully down man", with a drawing: the handle out of the fist's front, the barrel down; then
+# "thats too much now up a bit"): how far ahead of the fist's centre the grip sits (px), and the wrist solved so the barrel points at the
+# floor HANG_AHEAD degrees ahead of straight down
+HANG_FORWARD = 1.6
+HANG_AHEAD = 22.0
+HANG_DIR = np.array([0.0, -math.cos(math.radians(HANG_AHEAD)), -math.sin(math.radians(HANG_AHEAD))])
+
+
+def hang_down(q):
+    """The pose with the item's pitch and roll solved so the barrel points along HANG_DIR (E: down, a little ahead), the grip held as
+    held() holds it."""
+    best = None
+    for pitch in np.arange(-40.0, 60.0, 1.0):
+        for roll in np.arange(-30.0, 30.5, 1.0):
+            t = channels(q)
+            t["rightItem"]["pitch"] = float(pitch)
+            t["rightItem"]["roll"] = float(roll)
+            t = held(t)
+            d = muzzle(t)[1]
+            err = 1.0 - float(d @ HANG_DIR)
+            if best is None or err < best[0]:
+                best = (err, float(pitch), float(roll))
+    for _ in range(3):
+        _, p0, r0 = best
+        for pitch in np.arange(p0 - 1.0, p0 + 1.01, 0.1):
+            for roll in np.arange(r0 - 1.0, r0 + 1.01, 0.1):
+                t = channels(q)
+                t["rightItem"]["pitch"] = float(pitch)
+                t["rightItem"]["roll"] = float(roll)
+                t = held(t)
+                err = 1.0 - float(muzzle(t)[1] @ HANG_DIR)
+                if err < best[0]:
+                    best = (err, float(pitch), float(roll))
+    out = channels(q)
+    out["rightItem"]["pitch"] = round(best[1], 1)
+    out["rightItem"]["roll"] = round(best[2], 1)
+    return held(out)
+
+
+IDLE = hang_down(IDLE)
+WALK = hang_down(WALK)
+RUN = hang_down(RUN)
 
 
 def spin_beats(turns, length, raise_to):
@@ -361,7 +422,7 @@ def write(name, beats, end, loop, description, written=None):
             move[part] = {ch: round(q[part][ch], 2) for ch in chs}
         moves.append(move)
     moves.sort(key=lambda m: m["tick"])
-    data = {"version": 3, "name": name, "author": "HexPiece 3.8.8", "description": description,
+    data = {"version": 3, "name": name, "author": "HexPiece 3.9.3", "description": description,
             "emote": {"beginTick": 0, "endTick": end, "stopTick": end, "isLoop": loop, "returnTick": 0, "degrees": True,
                       "easeBeforeKeyframe": True, "moves": []}}
     text = json.dumps(data, indent=1)
@@ -381,7 +442,7 @@ def clips():
     out = {}
     out["gun_idle"] = (idle_beats(), 80, True, "Gun: standing still, the gun hanging in the right hand at the thigh, the muzzle down at the "
                        "floor a little ahead, the weight easy, the breath slow.", None)
-    walk = {"rightArm": ("yaw", "roll", "bend"), "rightItem": ("pitch", "yaw", "roll")}
+    walk = {"rightArm": ("yaw", "roll", "bend"), "rightItem": ("x", "y", "z", "pitch", "yaw", "roll")}
     out["gun_walk"] = ([(0, "linear", WALK), (20, "linear", WALK)], 20, True, "Gun: walking: the right arm swings as the game swings "
                        "it, the elbow eased, the gun along it, muzzle down.", walk)
     out["gun_run"] = ([(0, "linear", RUN), (20, "linear", RUN)], 20, True, "Gun: sprinting: the arm pumps as the game swings it, the "

@@ -241,7 +241,17 @@ public final class SwordServer {
     }
 
     static boolean ready(ServerPlayer player, State state) {
-        return state.katana != null && swordsman(player) && free(player, state);
+        return state.katana != null && (swordsman(player) || maceInHand(player, state)) && free(player, state);
+    }
+
+    /**
+     * 3.9.3 (the owner: "you do not need to be a swords man to use the mace or pistol"): anyone holding a mace in the main hand fights
+     * with it (its swings on M1, its slam on the right button: client/StyleInput sends them whatever the style or combat mode), as
+     * anyone fires a gun.
+     */
+    static boolean maceInHand(ServerPlayer player, State state) {
+        Katana held = KatanaItem.of(player.m_21205_());
+        return held != null && held.category() == Katana.Category.MACE && state.katana == held;
     }
 
     // --- what everyone sees ----------------------------------------------------------------------------------------------------
@@ -401,6 +411,22 @@ public final class SwordServer {
         return state != null && state.katana != null && state.katana.category() == Katana.Category.MACE;
     }
 
+    /**
+     * 3.9.3 (the owner: "Mace swings should be wayyy slower"): a mace's own cuts (its "_mace" clips) run {@link SwordRules#MACE_SLOW}
+     * times slower than a blade's: their clips are written that much longer (tools/sword_anims.py), and the server reads the move's own
+     * tick (its cut windows, its blade's path, its sounds, its clash window) on a clock that runs that much slower. 1 for everything else
+     * (a cut the mace plays as the katanas do keeps their pace: its clip is theirs).
+     */
+    static int slow(State state) {
+        return mace(state) && state.move != null && SwordAnims.slowed(SwordAnims.name(SwordAnims.of(state.move), state.katana))
+            ? SwordRules.MACE_SLOW : 1;
+    }
+
+    /** The move's own tick {@code now} (its clip's tick: slowed for a mace). */
+    static int moveTick(State state, long now) {
+        return (int) ((now - state.moveStart) / slow(state));
+    }
+
     static void press(ServerPlayer player, State state, long now) {
         if (state.chargeStart >= 0 || state.releaseStart >= 0 || state.quickStart >= 0) {
             return;
@@ -416,7 +442,7 @@ public final class SwordServer {
         }
         if (state.move != null) {
             if (state.bufferedAt < 0) {
-                long at = SwordCombo.buffered(state.move, state.moveStart, now);
+                long at = SwordCombo.buffered(state.move, state.moveStart, now, slow(state));
                 if (mace(state) && at >= now) {
                     at += MACE_CHAIN; // 3.8.7: the next blow of a mace cocked slowly
                 }
@@ -469,13 +495,15 @@ public final class SwordServer {
         boolean cooling = haki && now < state.slashReady && !op;
         long ready = haki && !cooling ? state.slashReady : state.cutReady;
         if (now < ready && !op) {
-            player.m_5661_(Component.m_237113_((haki && !cooling ? "Haki slash" : "Charged cut") + ": "
+            player.m_5661_(Component.m_237113_((haki && !cooling ? (mace(state) ? "Haki slam" : "Haki slash")
+                : mace(state) ? "Slam" : "Charged cut") + ": "
                 + String.format(java.util.Locale.ROOT, "%.1f", (ready - now) / 20.0) + "s"), true);
             return;
         }
         if (cooling) {
-            player.m_5661_(Component.m_237113_("Haki slash: " + String.format(java.util.Locale.ROOT, "%.1f", (state.slashReady - now) / 20.0)
-                + "s, the cut is steel alone"), true);
+            player.m_5661_(Component.m_237113_((mace(state) ? "Haki slam: " : "Haki slash: ")
+                + String.format(java.util.Locale.ROOT, "%.1f", (state.slashReady - now) / 20.0)
+                + (mace(state) ? "s, the slam is iron alone" : "s, the cut is steel alone")), true);
         }
         state.chargeDrew = sheathed(state, now);
         state.chargeStart = now;
@@ -636,7 +664,9 @@ public final class SwordServer {
 
     /** 2.2.9: the beats of what the sword is doing now (the draw's slide and ring, each cut's swing...), heard by everyone near. */
     static void hear(ServerPlayer player, State state, long now) {
-        for (SwordSounds.Beat beat : state.heard.advance(anim(state), animStart(state), now, state.katana)) {
+        long start = animStart(state);
+        long clip = start + (now - start) / slow(state); // 3.9.3: a slowed mace's beats on its clip's clock
+        for (SwordSounds.Beat beat : state.heard.advance(anim(state), start, clip, state.katana)) {
             PieceSounds.play(player, beat);
         }
     }
@@ -696,7 +726,7 @@ public final class SwordServer {
 
     static void tickMove(ServerPlayer player, State state, long now) {
         SwordMove move = state.move;
-        int tick = (int) (now - state.moveStart);
+        int tick = moveTick(state, now);
         if (state.bufferedAt >= 0 && now >= state.bufferedAt) {
             begin(player, state, now);
             return;
@@ -708,7 +738,9 @@ public final class SwordServer {
             state.idleSince = now;
             return;
         }
-        StyleCombat.carry(player, move.motion(), tick);
+        if ((now - state.moveStart) % slow(state) == 0) {
+            StyleCombat.carry(player, move.motion(), tick); // a slowed mace steps once a tick of its clip, not twice
+        }
         SwordMove.Cut[] cuts = move.cuts();
         if (move.cutAt(tick) >= 0 && Clashes.landing(player, now, other -> FruitUtil.foe(player, other))) {
             return; // 2.3.6: the cut met a blow coming back at it
@@ -735,6 +767,10 @@ public final class SwordServer {
         }
         StyleCombat.carry(player, Motion.lunge(1, 0.45), tick);
         double charge = state.releaseCharge;
+        if (mace(state)) {
+            maceSlam(player, state, tick);
+            return;
+        }
         if (state.releaseHaki) {
             if (tick == 2) {
                 // 2.2.0: the size grows with the charge squared: a half charge is a big slash, only a full one splits the land
@@ -829,11 +865,15 @@ public final class SwordServer {
         double extend = SwordRules.EXTEND + reach(state);
         if (state.move != null) {
             SwordMove move = state.move;
-            int tick = (int) (now - state.moveStart);
+            int tick = moveTick(state, now);
             SwordMove.Cut[] cuts = move.cuts();
             double reach = ClashBlows.bladeReach(SwordAnims.name(SwordAnims.of(move), state.katana), cuts[0].from() - 1,
                 cuts[cuts.length - 1].to(), extend, 2.6) + BODY_EDGE;
             ClashBlows.Window window = ClashBlows.sword(move, tick, reach);
+            int k = slow(state);
+            if (window != null && k > 1) {
+                window = new ClashBlows.Window(window.began() * k, window.lands() * k, window.reach(), window.hit(), window.kind(), window.shot());
+            }
             return window == null ? null : window.at(state.moveStart, window.hit() * scale, armed, ryou);
         }
         if (state.releaseStart >= 0 && !state.releaseHaki) {
@@ -1009,6 +1049,60 @@ public final class SwordServer {
             }
         }
         return landed;
+    }
+
+    /** 3.9.3: the release's tick the mace's head meets the ground (its clip's downward blow). */
+    static final int MACE_SLAM_TICK = 2;
+
+    /**
+     * 3.9.3 (the owner: "The mace right click should keep the same animation however, instead of a blade slash/cut, it creates a crater
+     * (with haki on and lightning from conqueror)"): the charged blow (the same charge and release clips) brings the mace down on the
+     * ground ahead: a crater torn out there (server/Craters: grown back after 30 seconds; the terrain setting obeyed as the Haki slash
+     * obeys it), wider and harder the longer it was charged and half again with Armament Haki on; everyone in it hurt, thrown up and
+     * out and knocked down as the mace's blows throw; earth thrown up, the ground shaking; with Ryou and the Conqueror's Haki, the
+     * Conqueror's lightning thrown out of the crater (POINT ONE: a move that ends in a blast throws it from the blast). No Haki slash.
+     */
+    static void maceSlam(ServerPlayer player, State state, int tick) {
+        if (tick != MACE_SLAM_TICK || !(player.m_9236_() instanceof ServerLevel level)) {
+            return;
+        }
+        double charge = state.releaseCharge;
+        boolean haki = state.releaseHaki;
+        Vec3 look = StyleCombat.facing(player);
+        Vec3 flat = new Vec3(look.f_82479_, 0.0, look.f_82481_);
+        flat = flat.m_82553_() < 1.0E-6 ? new Vec3(0.0, 0.0, 1.0) : flat.m_82541_();
+        Vec3 ahead = player.m_20182_().m_82549_(flat.m_82490_(2.3)).m_82520_(0.0, 0.6, 0.0);
+        Vec3 ground = IronFist.ground(level, ahead, 1.5, 4.0);
+        double radius = (1.7 + 1.9 * charge) * (haki ? 1.5 : 1.0);
+        float damage = (float) (SwordRules.lerp(PieceConfig.get(PieceConfig.CUT_DAMAGE_MIN, SwordRules.CUT_DAMAGE_MIN),
+            PieceConfig.get(PieceConfig.CUT_DAMAGE_MAX, SwordRules.CUT_DAMAGE_MAX), charge) * edge(state)
+            * PieceRules.masteryDamage(mastery(player)) * (haki ? 1.35 : 1.0));
+        DamageSource source = StyleCombat.of(player);
+        int landed = 0;
+        for (LivingEntity body : ItoMoves.foes(player, ground, radius + 1.0)) {
+            if (!FruitUtil.foe(player, body) || state.releaseStruck.contains(body.m_19879_())) {
+                continue;
+            }
+            state.releaseStruck.add(body.m_19879_());
+            Vec3 away = StyleCombat.middle(body).m_82546_(ground);
+            double d = Math.sqrt(away.f_82479_ * away.f_82479_ + away.f_82481_ * away.f_82481_);
+            double fall = Math.max(0.4, 1.0 - d / (radius + 1.0));
+            Vec3 out = d < 1.0E-3 ? flat : new Vec3(away.f_82479_ / d, 0.0, away.f_82481_ / d);
+            Vec3 launch = out.m_82490_(0.5 + 0.4 * charge).m_82520_(0.0, 0.45 + 0.25 * charge, 0.0).m_82490_(fall);
+            if (strike(player, body, damage * (float) fall, Hit.Weight.FINISHER, launch, 16, source, StyleCombat.middle(body), out)) {
+                landed++;
+            }
+        }
+        if (landed > 0) {
+            gain(player, Hit.Weight.FINISHER, landed);
+        }
+        if (PieceConfig.get(PieceConfig.TERRAIN, true)) {
+            Craters.open(level, player, ground.m_82520_(0.0, -0.4, 0.0), radius);
+        }
+        IronFist.debris(player, ground, radius * 1.6, 0.5 + 0.3 * charge, (int) (8 + 10 * charge));
+        Impact.quake(level, ground, 10.0 + 8.0 * charge, 0.4F + 0.3F * (float) charge, 6);
+        ConquerorAura.exploded(player, level, ground, radius);
+        IronFist.sound(player, ground, com.hexhaki.piece.ironfist.IronSounds.BOOM, 1.1F + 0.5F * (float) charge, 1.05F - 0.2F * (float) charge);
     }
 
     /** One cut lands on {@code target}: hurt, thrown through the original's impact, stunned, seen (a glint and sparks where it hit). */

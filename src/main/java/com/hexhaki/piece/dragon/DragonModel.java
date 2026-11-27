@@ -42,8 +42,15 @@ public final class DragonModel {
         public final byte[] bone;
         public final float[] weight;
         public final int[] quads;
+        /** 3.9.3 (version 2 files: the Itsumade's): each vertex's own colour (r, g, b, 0 to 1), or null (version 1). */
+        public final float[] col;
 
         Part(String name, int kind, float[] pos, float[] uv, float[] nrm, byte[] bone, float[] weight, int[] quads) {
+            this(name, kind, pos, uv, nrm, bone, weight, quads, null);
+        }
+
+        Part(String name, int kind, float[] pos, float[] uv, float[] nrm, byte[] bone, float[] weight, int[] quads, float[] col) {
+            this.col = col;
             this.name = name;
             this.kind = kind;
             this.pos = pos;
@@ -120,8 +127,13 @@ public final class DragonModel {
         DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(raw), 1 << 16));
         byte[] magic = new byte[4];
         in.readFully(magic);
-        if (magic[0] != 'S' || magic[1] != 'R' || magic[2] != 'Y' || magic[3] != '1' || in.readInt() != 1) {
+        if (magic[0] != 'S' || magic[1] != 'R' || magic[2] != 'Y' || magic[3] != '1') {
             throw new IOException("not a dragon model");
+        }
+        // 3.9.3: version 2 (tools/itsumade_bake.py) adds a colour to every vertex (three bytes after its weights)
+        int version = in.readInt();
+        if (version != 1 && version != 2) {
+            throw new IOException("not a dragon model (version " + version + ")");
         }
         int nb = in.readInt();
         String[] names = new String[nb];
@@ -158,6 +170,7 @@ public final class DragonModel {
             float[] nrm = new float[nv * 3];
             byte[] bone = new byte[nv * 4];
             float[] weight = new float[nv * 4];
+            float[] col = version == 2 ? new float[nv * 3] : null;
             for (int v = 0; v < nv; v++) {
                 for (int k = 0; k < 3; k++) {
                     pos[v * 3 + k] = in.readShort() / 32767.0F * EXTENT;
@@ -181,12 +194,17 @@ public final class DragonModel {
                 for (int k = 0; k < 4; k++) {
                     weight[v * 4 + k] = in.readUnsignedByte() / 255.0F;
                 }
+                if (col != null) {
+                    for (int k = 0; k < 3; k++) {
+                        col[v * 3 + k] = in.readUnsignedByte() / 255.0F;
+                    }
+                }
             }
             int[] quads = new int[nq * 4];
             for (int i = 0; i < quads.length; i++) {
                 quads[i] = in.readUnsignedShort();
             }
-            parts[p] = new Part(name, kind, pos, uv, nrm, bone, weight, quads);
+            parts[p] = new Part(name, kind, pos, uv, nrm, bone, weight, quads, col);
         }
         DragonModel model = new DragonModel(names, parent, t, q, s, inv, parts);
         int nc = in.readInt();
