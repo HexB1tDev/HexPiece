@@ -461,3 +461,6 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
   coil_turn 1.15} (its arm crossed the body, its end hit the floor), makko {arc 1.0, coil_crouch 1.0}, yoko {arc 1.08, coil_crouch
   1.0} (the floor), pivot_cut {coil_turn 1.0, coil_crouch 1.0, through 1.0} (the left arm). All 15 mace cuts re-solved and clear.
   Asked in the notes whether the owner meant the Saber's swings too. Renders: docs/images/mace-gyaku-yoko-3.9.1.png, mace-yoko-3.9.1.png.
+- 3.9.0's runs: Build #280 and Release #181 green. 3.9.1: Build #281, Release #182 (check them).
+- The Mace's plunge stays the katanas': its drive is one tick (6 to 7), so no beat can go between (playerAnimator ticks are whole);
+  writing it means its own plunge Move with the drive over two ticks and the server's cut window moved with it (SwordMove timings).
