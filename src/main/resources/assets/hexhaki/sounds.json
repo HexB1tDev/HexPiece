@@ -2081,5 +2081,29 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "piece.itsu.stare": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.stare",
+    "sounds": [
+      {
+        "name": "minecraft:entity.elder_guardian.curse",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.7,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.itsu.thrown": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.thrown",
+    "sounds": [
+      {
+        "name": "minecraft:entity.warden.sonic_boom",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.85,
+        "attenuation_distance": 48
+      }
+    ]
   }
 }

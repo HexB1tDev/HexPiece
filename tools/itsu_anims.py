@@ -8,8 +8,20 @@ ItsuForm.HUMAN_GONE 30; going back, the human back at HUMAN_BACK 16):
                back arched as if hauled up by the chest) and shuddering there in small fast jolts until it is gone
   itsu_unform  the human drawn back out of the creature doubled over, clutching itself, shuddering, then slowly straightening
 
+3.9.8, its moves as a human (server/ItsuSaint):
+
+  itsu_stare         Gorosei Stare: the right fist clenched and drawn up before the chest, shaking as the glare fixes on the target,
+                     then flicked out at it as it is thrown (STARE_AT 8)
+  itsu_presence      Enormous Presence: the chest thrown out, the arms flung down and out from the sides, fists clenched, shuddering
+                     with the Haki let out, then easing back
+  itsu_blast_charge  Yokai Blast held: the right arm pointed straight ahead, the left hand bracing its forearm, shaking harder
+  itsu_blast_fire    let go: the arm kicked up by the beam leaving it, then held out pointing against its push for as long as it pours
+  itsu_blast_end     the arm let down
+  itsu_death         Thy Death: the right hand raised high to the sky, the body leaning back under it, held while the clouds gather,
+                     then let down
+
 Only the body, the torso and the arms are keyed (POINT ONE: no clip keys a leg or the head). Writes src/main/resources/assets/hexhaki/
-player_animation/itsu_form.json and itsu_unform.json.
+player_animation/itsu_*.json.
 
 Usage: python3 tools/itsu_anims.py
 """
@@ -20,6 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from gura_anims import REST  # noqa: E402
 import pika_anims  # noqa: E402
+from gura_anims import tremble  # noqa: E402
 from style_anims import arm, mirror, p  # noqa: E402
 
 PARTS = ("body", "torso", "rightArm", "leftArm")
@@ -78,6 +91,66 @@ def unform():
                            " shuddering, slowly straightening.", PARTS)
 
 
+# ------------------------------------------------------------------------------------------------------ 3.9.8: as a human
+
+TORSO0 = {"pitch": 0, "yaw": 0, "roll": 0}
+REST0 = p(STAND, torso=TORSO0)
+
+
+def stare():
+    focus = p(REST0, rightArm=arm(-30, -14, 10, -62), leftArm=arm(10, 0, -12, -14), body=body(10, 5, 0), torso=TORSO0)
+    jolt = p(REST0, rightArm=arm(-72, -8, 10, -16), leftArm=arm(18, 0, -16, -10), body=body(6, 10, 0), torso=TORSO0)
+    beats = [(0, "linear", REST0), (3, "outsine", focus)]
+    beats += tremble(focus, 4, 7, 1, lambda b, sg: p(b, rightArm={"pitch": -30 + 2.0 * sg, "roll": 10 - 1.5 * sg}))
+    beats += [(9, "outexpo", jolt), (13, "outsine", p(jolt, rightArm={"pitch": -64, "bend": -24})), (24, "inoutsine", REST0)]
+    pika_anims.write_parts("itsu_stare", 24, beats, "Itsumade: Gorosei Stare: the fist clenched before the chest, shaking as the glare fixes"
+                           " on its target, flicked out as the target is thrown.", PARTS)
+
+
+def presence():
+    out = p(REST0, rightArm=arm(10, 0, 40, -14), leftArm=mirror(arm(10, 0, 40, -14)), body=body(0, -4, 0),
+            torso={"pitch": -12, "yaw": 0, "roll": 0})
+    beats = [(0, "linear", REST0), (2, "inexpo", p(REST0, rightArm=arm(-12, 0, 14, -40), leftArm=mirror(arm(-12, 0, 14, -40)),
+                                                    body=body(0, 10, 0))),
+             (5, "outexpo", out)]
+    beats += [(t, "linear", shudder(out, k, 2.0)) for k, t in enumerate(range(6, 18))]
+    beats += [(20, "linear", out), (32, "inoutsine", REST0)]
+    pika_anims.write_parts("itsu_presence", 32, beats, "Itsumade: Enormous Presence: the chest thrown out, the arms flung down and out,"
+                           " shuddering as the Conqueror's Haki pours off the body.", PARTS)
+
+
+POINTED = p(REST0, rightArm=arm(-90, -10, 6, -2), leftArm=arm(-62, 38, 0, -52), body=body(14, 4, 0), torso=TORSO0)
+
+
+def blast():
+    beats = [(0, "linear", REST0), (4, "outsine", POINTED)]
+    beats += tremble(POINTED, 6, 200, 3, lambda b, sg: p(b, rightArm={"pitch": -90 + 1.4 * sg, "yaw": -10 - 0.9 * sg},
+                                                          leftArm={"pitch": -62 + 1.4 * sg}))
+    pika_anims.write_parts("itsu_blast_charge", 200, beats, "Itsumade: Yokai Blast held: the right arm pointed straight ahead, the left hand"
+                           " bracing it, fire gathering in the hand.", PARTS)
+    kick = p(POINTED, rightArm=arm(-80, 12, 16, -26), leftArm=arm(-56, 36, 0, -60), body=body(6, -4, 0))
+    beats = [(0, "constant", POINTED), (1, "outexpo", kick), (4, "outsine", POINTED)]
+    beats += tremble(POINTED, 6, 104, 2, lambda b, sg: p(b, rightArm={"pitch": -88 + 1.0 * sg}, body={"bend": 3 + 0.8 * sg}))
+    pika_anims.write_parts("itsu_blast_fire", 104, beats, "Itsumade: Yokai Blast let go: the arm kicked up by the beam, then held out"
+                           " against its push while it pours.", PARTS)
+    pika_anims.write_parts("itsu_blast_end", 10, [(0, "constant", POINTED), (10, "inoutsine", REST0)],
+                           "Itsumade: Yokai Blast done: the arm let down.", PARTS)
+
+
+def death():
+    sky = p(REST0, rightArm=arm(-170, 6, -10, -2), leftArm=arm(-8, 0, -22, -20), body=body(-6, -8, 0),
+            torso={"pitch": -8, "yaw": 0, "roll": 0})
+    beats = [(0, "linear", REST0), (3, "outback", sky)]
+    beats += tremble(sky, 5, 25, 4, lambda b, sg: p(b, rightArm={"pitch": -170 + 1.0 * sg, "roll": -10 - 1.0 * sg}))
+    beats += [(28, "insine", p(sky, rightArm={"pitch": -150})), (38, "inoutsine", REST0)]
+    pika_anims.write_parts("itsu_death", 38, beats, "Itsumade: Thy Death: the hand raised to the sky, the body leaning back under it while"
+                           " the black clouds gather, then let down.", PARTS)
+
+
 if __name__ == "__main__":
     form()
     unform()
+    stare()
+    presence()
+    blast()
+    death()

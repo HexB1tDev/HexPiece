@@ -238,6 +238,31 @@ public final class FxPreview {
                 UoFire.fireBeam(sink, aim, Double.parseDouble(move[1]), 30 + 40 * c, 2.5 + 11.5 * c, 60 + 100 * c, 7);
             }
             case "hbeam" -> UoFire.fireBeam(sink, aim, Double.parseDouble(move[1]), 30, 1.4, 50, 7);
+            // 3.9.8: the Itsumade's (itsumade/ItsuArt), round the point the shot looks at: iball:radius:time (the hand's ball),
+            // ibeam:age:reach:width (a beam from the hand at 0, 1.38, 0 along +z), iring:radius:width:alpha (flat on the ground),
+            // iwave:k (Gorosei Stare's shockwave rings, the way +z), iclouds:grow (Thy Death's roof at 34 over a 25 block circle),
+            // iburst:k (a bolt's burst on the ground)
+            case "iball" -> com.hexhaki.piece.itsumade.ItsuArt.ball(sink, 0.36 - eye[0], 1.38 - eye[1], 0.8 - eye[2], Double.parseDouble(move[1]),
+                Double.parseDouble(move[2]), 7);
+            case "ibeam" -> com.hexhaki.piece.itsumade.ItsuArt.beam(sink, 0.36 - eye[0], 1.38 - eye[1], 0.8 - eye[2], new double[] {0, 0, 1},
+                Double.parseDouble(move[2]), Double.parseDouble(move[3]), 1.0, Double.parseDouble(move[1]), 7, 2.0);
+            case "iring" -> com.hexhaki.piece.itsumade.ItsuArt.ring(sink, -eye[0], 0.15 - eye[1], -eye[2], 0, 1, 0, Double.parseDouble(move[1]),
+                Double.parseDouble(move[2]), com.hexhaki.piece.itsumade.ItsuArt.NIGHT, com.hexhaki.piece.itsumade.ItsuArt.INDIGO,
+                Double.parseDouble(move[3]));
+            case "iwave" -> {
+                double k = Double.parseDouble(move[1]);
+                for (int i = 0; i < 3; i++) {
+                    double kk = Math.max(0.0, k - i * 0.12);
+                    if (kk > 0.0) {
+                        com.hexhaki.piece.itsumade.ItsuArt.ring(sink, -eye[0], 1.0 - eye[1], 8.0 + i * 0.7 - eye[2], 0, 0, 1,
+                            0.6 + 4.5 * Math.sqrt(kk), 0.35 * (1.0 - kk) + 0.05, com.hexhaki.piece.itsumade.ItsuArt.INDIGO,
+                            com.hexhaki.piece.itsumade.ItsuArt.GREEN, (1.0 - kk) * 0.8);
+                    }
+                }
+            }
+            case "iclouds" -> com.hexhaki.piece.itsumade.ItsuArt.clouds(sink, -eye[0], 34.0 - eye[1], -eye[2], 31.0, Double.parseDouble(move[1]),
+                0.85 * Double.parseDouble(move[1]), 40.0, 7);
+            case "iburst" -> com.hexhaki.piece.itsumade.ItsuArt.burst(sink, -eye[0], -eye[1], -eye[2], 1.5, Double.parseDouble(move[1]), 20.0, 7);
             case "blast", "bolt" -> {
                 // a fireball out of the mouth along the look, {age} ticks after it left (3.6 / 3.2 blocks a tick, as UoMoves throws them)
                 boolean big = move[0].equals("blast");

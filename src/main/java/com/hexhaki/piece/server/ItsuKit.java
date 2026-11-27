@@ -9,14 +9,26 @@ import net.minecraft.server.level.ServerPlayer;
 /**
  * 3.9.4 (the owner: "New Fruit: Name: ???? Rarity: Mythical Type: Zoan ... Moves: Only the transformation for now. Z - Transforms
  * (DIsturbing progressive transformation)"; then "Fruit "????" Renamed to "Itsumade""): Saint Marcus Mars' fruit. Z turns the player
- * into the owner's Itsumade and back (server/ItsuServer). The rest of the owner's kit (the passive, Gorosei Stare, Enormous Presence,
- * Yokai Blast, Thy Death, Hellish Teleport; transformed: Wind Gust, the talons, Bow, Enormous Bite, Yokai Beam) comes after.
+ * into the owner's Itsumade and back (server/ItsuServer). 3.9.7: its passive (server/ItsuPassive) and its moves in its form
+ * (server/ItsuMoves); 3.9.8: its moves as a human (server/ItsuSaint).
  */
 public final class ItsuKit extends FruitKit {
     public static final FruitMove FORM = new FruitMove("Itsumade", "[Z]", 0, null,
         "Your body convulses and tears open as the Itsumade crawls out of it: a monstrous bird ten blocks tall, its fire alive, a ribbon of"
             + " black flame about it. Fly as you fly in creative (jump to rise, sneak to sink, sprint for speed). Z again and it folds back"
             + " into you. The sea takes it away.");
+    // 3.9.8: as a human (the owner's spec)
+    public static final FruitMove STARE = new FruitMove("Gorosei Stare", "[X]", 0, "itsu_stare",
+        "Fix your sight on a foe and glare: a moment later it is thrown far back and felled, as if struck.");
+    public static final FruitMove PRESENCE = new FruitMove("Enormous Presence", "[C]", 0, "itsu_presence",
+        "For 10 seconds your body lets out the Conqueror's Haki on its own: waves of it press down whoever is near, and now and then a bolt"
+            + " of its lightning leaps out of you, stunning whatever it touches.");
+    public static final FruitMove BLAST = new FruitMove("Yokai Blast", "[V] hold", 0, "itsu_blast",
+        "Point your hand and hold to charge; let go and a beam of orange fire wrapped in black flames pours out where you pointed (it"
+            + " cannot be turned): 1 to 5 seconds by the charge, boring through 5 to 15 blocks of ground, which grows back.");
+    public static final FruitMove DEATH = new FruitMove("Thy Death", "[B]", 0, "itsu_death",
+        "Raise your hand: for 10 seconds the Conqueror's lightning falls from the clouds all round you (25 blocks), every bolt bursting"
+            + " where it strikes the ground, hurting and stunning what it catches.");
     // 3.9.7: in its form (the owner's spec, his words in each)
     public static final FruitMove WIND_GUST = new FruitMove("Itsumade: Wind Gust", "[LMB]", 0, "itsu_gust",
         "In its form: a slow move: the great wings raised and brought down in one huge flap, a gust of wind that throws everything in the"
@@ -33,7 +45,7 @@ public final class ItsuKit extends FruitKit {
         "In its form: hold to gather a ball of white-hot fire in the open jaws, let go and it pours out as a beam of orange fire wrapped in"
             + " black flames, hotter and longer the longer you held, burning through what it meets and exploding at its end in a great ball"
             + " of fire.");
-    public static final List<FruitMove> MOVES = List.of(FORM, WIND_GUST, TALONS, BOW, BITE, YOKAI_BEAM);
+    public static final List<FruitMove> MOVES = List.of(FORM, STARE, PRESENCE, BLAST, DEATH, WIND_GUST, TALONS, BOW, BITE, YOKAI_BEAM);
 
     @Override
     public Fruit fruit() {
@@ -50,12 +62,20 @@ public final class ItsuKit extends FruitKit {
     public void action(ServerPlayer player, int kind, int ability, int flags) {
         if (kind == 0 && ability == FORM.slot()) {
             ItsuMoves.forget(player);
+            ItsuSaint.forget(player);
             ItsuServer.toggle(player);
             return;
         }
+        // 3.9.8: the same keys are the human's moves and its form's (ItsuMoves and ItsuSaint each act only in theirs)
         switch (kind) {
-            case 0 -> ItsuMoves.press(player, ability);
-            case 1 -> ItsuMoves.release(player, ability);
+            case 0 -> {
+                ItsuMoves.press(player, ability);
+                ItsuSaint.press(player, ability);
+            }
+            case 1 -> {
+                ItsuMoves.release(player, ability);
+                ItsuSaint.release(player, ability);
+            }
             case 2 -> ItsuMoves.attack(player);
             case 3 -> ItsuMoves.use(player);
             default -> {
@@ -66,17 +86,20 @@ public final class ItsuKit extends FruitKit {
     @Override
     public void tick(ServerPlayer player) {
         ItsuMoves.tick(player);
+        ItsuSaint.tick(player);
     }
 
     @Override
     public void cancel(ServerPlayer player) {
         ItsuMoves.forget(player);
+        ItsuSaint.forget(player);
         ItsuServer.revert(player);
     }
 
     @Override
     public void removed(ServerPlayer player) {
         ItsuMoves.forget(player);
+        ItsuSaint.forget(player);
         ItsuServer.restore(player);
         RyouServer.retell(player); // 3.9.7: its Haki colours go with it
     }

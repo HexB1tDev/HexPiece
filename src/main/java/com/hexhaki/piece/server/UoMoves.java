@@ -81,6 +81,11 @@ public final class UoMoves {
     }
 
     private static final List<Live> LIVE = new ArrayList<>();
+
+    /** 3.9.8: another fruit's lasting work run with these (server/ItsuSaint's Yokai Blast, Thy Death). */
+    static void live(Live live) {
+        LIVE.add(live);
+    }
     /** Who is breathing fire, since when. */
     record Flame(ServerPlayer player, long start) {
     }

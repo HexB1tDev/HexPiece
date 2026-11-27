@@ -20,6 +20,10 @@ public final class SparkPreview {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 1 && args[1].equals("itsu")) {
+            itsu(new File(args[0]));
+            return;
+        }
         String[] rows = {"body 2", "body 6", "blade", "gura burst", "blast 9", "ultimate thick", "release"};
         double[] ages = {1, 3, 6, 10, 16, 22};
         int cw = 300;
@@ -130,9 +134,73 @@ public final class SparkPreview {
         return out;
     }
 
+    /** 3.9.8: a camera of its own (eye, target) when set: the Itsumade's storm seen whole. */
+    static double[] eyeAt;
+    static double[] targetAt;
+
+    /**
+     * 3.9.8: Thy Death (itsumade/ItsuArt.skyStroke) as the game lets it go: five bolts out of the clouds 34 blocks up onto the ground round
+     * the figure, struck 3 ticks apart, their rims in the Itsumade's Haki (server/RyouServer.ITSU_COLOR); and Enormous Presence's bolts
+     * off the body (ConquerorSparks.wifi, 0.8) onto foes 3 to 8 blocks off.
+     */
+    static void itsu(File out) throws Exception {
+        double[][] spots = {{-6, 0, 12}, {5, 0, 18}, {-14, 0, 22}, {10, 0, 9}, {1, 0, 26}};
+        List<Bolt> storm = new ArrayList<>();
+        for (int i = 0; i < spots.length; i++) {
+            double sx = spots[i][0] + (i % 2 == 0 ? 2.0 : -2.5);
+            double sz = spots[i][2] + (i % 3 == 0 ? -1.5 : 2.0);
+            for (Bolt b : com.hexhaki.piece.itsumade.ItsuArt.skyStroke(spots[i][0] - sx, -34.0, spots[i][2] - sz, 100L + i)) {
+                double[] q = b.points.clone();
+                for (int k = 0; k < q.length; k += 3) {
+                    q[k] += sx;
+                    q[k + 1] += 34.0;
+                    q[k + 2] += sz;
+                }
+                storm.add(new Bolt(q, b.widths, 0x2B3FD8, b.kind, b.delay + i * 3.0F, b.duration, b.crawl, b.seed, b.dance));
+            }
+        }
+        List<Bolt> presence = new ArrayList<>();
+        double[][] foes = {{3, 1.0, 4}, {-4, 0.9, 6}, {1, 1.2, 8}};
+        for (int i = 0; i < foes.length; i++) {
+            double[] from = {foes[i][0] > 0 ? 0.4 : -0.4, 1.3, 0.1};
+            for (Bolt b : ConquerorSparks.wifi(new double[3], new double[] {foes[i][0] - from[0], foes[i][1] - from[1], foes[i][2] - from[2]}, 0.8,
+                3, 40L + i)) {
+                double[] q = b.points.clone();
+                for (int k = 0; k < q.length; k += 3) {
+                    q[k] += from[0];
+                    q[k + 1] += from[1];
+                    q[k + 2] += from[2];
+                }
+                presence.add(new Bolt(q, b.widths, 0x2B3FD8, b.kind, b.delay + i * 4.0F, b.duration, b.crawl, b.seed, b.dance));
+            }
+        }
+        double[] ages = {1, 2.5, 4, 7, 10, 14};
+        int cw = 300;
+        int ch = 300;
+        BufferedImage sheet = new BufferedImage(cw * ages.length + 4, (ch + 16) * 2 + 4, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = sheet.createGraphics();
+        g.setColor(new Color(0x202020));
+        g.fillRect(0, 0, sheet.getWidth(), sheet.getHeight());
+        DragonPreview.texture = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        for (int r = 0; r < 2; r++) {
+            eyeAt = r == 0 ? new double[] {14, 9, -22} : new double[] {4.0, 3.0, -4.5};
+            targetAt = r == 0 ? new double[] {0, 14, 14} : new double[] {0, 1.2, 4.0};
+            g.setColor(Color.WHITE);
+            g.drawString(r == 0 ? "Thy Death" : "Enormous Presence", 4, r * (ch + 16) + 13);
+            for (int c = 0; c < ages.length; c++) {
+                g.drawImage(render(r == 0 ? storm : presence, ages[c] + (r == 0 ? ages[c] : 0), cw * 2, ch * 2), c * cw + 2, r * (ch + 16) + 16,
+                    cw - 2, ch - 2, null);
+                g.setColor(Color.BLACK);
+                g.drawString(String.format("t%.1f", ages[c] * (r == 0 ? 2 : 1)), c * cw + 6, r * (ch + 16) + 30);
+            }
+        }
+        eyeAt = null;
+        ImageIO.write(sheet, "png", out);
+    }
+
     static BufferedImage render(List<Bolt> bolts, double age, int w, int h) {
-        double[] eye = far ? new double[] {4.5, 3.4, -5.0} : new double[] {3.2, 1.6, -2.4};
-        double[] target = far ? new double[] {0, 1.5, 7.0} : new double[] {0, 1.0, 0.6};
+        double[] eye = eyeAt != null ? eyeAt : far ? new double[] {4.5, 3.4, -5.0} : new double[] {3.2, 1.6, -2.4};
+        double[] target = eyeAt != null ? targetAt : far ? new double[] {0, 1.5, 7.0} : new double[] {0, 1.0, 0.6};
         DragonPreview.fov = 55;
         DragonPreview.Raster raster = new DragonPreview.Raster(w, h, eye, target);
         raster.ground(0);

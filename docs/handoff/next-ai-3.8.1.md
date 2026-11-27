@@ -877,3 +877,25 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
   YOKAI_BLACK round FireMesh.BAND), gust() particles (POOF over the cone). ItsuPreview states gust, gustair, carry, charge, pour.
 - NEXT: untransformed X Gorosei Stare, C Enormous Presence, V Yokai Blast (UoMoves.beamFrom from the hand, big=false, 5-15 blocks,
   1-5 s), B Thy Death, then N Hellish Teleport (menu, saves in the player's data, pentagrams both ends, the beam up and down).
+
+## 36. 3.9.8: the Itsumade's moves as a human (X, C, V, B)
+
+- server/ItsuSaint (kinds 450-458, routed by client/itsumade/ItsuFx.accept to client/itsumade/ItsuSaintFx): X Gorosei Stare (sighted():
+  the first foe on the eye line within 48, a 0.9 leeway; STARE_AT 8 then glare(): ConquerorRelease.throwBack 6.0 / stun 50, 6 damage,
+  sounds piece.itsu.stare (elder guardian curse) and piece.itsu.thrown (warden sonic boom), ConquerorAura.mixed); C Enormous Presence
+  (200 ticks, pressure() every 40: ConquerorRelease.taken + hold 24 over 12 blocks, PULSE ring; bodyBolt() every 10-18 ticks to a foe
+  within 10, stun 40); V Yokai Blast (charge to 60, Blast is a UoMoves.Live (UoMoves.live() added): fixed way, hand(), front 8 a tick,
+  bores 5-15 blocks past the first wall with Craters.open every 2 ticks, burns every 4, life 20-100); B Thy Death (DEATH_TICKS 200, a
+  bolt every 3 from DEATH_GATHER 20, anywhere in 25, ClipContext down with Fluid.ANY so it always lands, ball 1.5 round: 10 damage,
+  knockDown 50). ItsuKit: STARE/PRESENCE/BLAST/DEATH share X/C/V/B with the form's moves; action calls both ItsuMoves and ItsuSaint
+  (each acts only in its own phase), Z forgets both.
+- itsumade/ItsuArt (pure; FxPreview iball/ibeam/iring/iwave/iclouds/iburst; SparkPreview "<out> itsu" for the bolts): ball, beam (the
+  3.9.7 Yokai Beam's too), ring, clouds, burst, skyStroke. RENDER LESSON: the first ball/beam were all black (a black sheath of puffs
+  0.95 of the width hid the orange heart); now tongues twist round a heat-0.44-0.66 orange body with a white core tube and glows.
+- Clips tools/itsu_anims.py: itsu_stare (fist at the chest, shaking, flicked out on 9), itsu_presence, itsu_blast_charge/fire/end
+  (POINTED: right arm straight, left hand bracing), itsu_death (hand to the sky, body back). HandMoves GLARE, POINT_HELD, RAISED;
+  FirstPersonLight.fist knows itsu_ clips (the Blast's beam leaves the posed fist).
+- NEXT: N Hellish Teleport (section 22's spec): a GUI screen (black/scary, 3 custom buttons: click saves/teleports, a way to clear and
+  rename), saves in the player's persistent data, a 6x6 pentagram drawn on the terrain at both ends forming over ~10 s with blue/pink
+  fire round it, everything standing on it turned to black flames, gathered to the middle, blasted up into the sky, and falling as a
+  beam onto the landing pentagram.

@@ -164,6 +164,9 @@ ITSU = {
     "piece.itsu.crack": [("block.bone_block.break", 1.0, 0.6), ("block.bone_block.break", 1.0, 0.5)],
     # 3.9.7: the passive: it vanishes in black smoke and stands again ten blocks away
     "piece.itsu.vanish": [("entity.illusioner.mirror_move", 1.0, 0.6), ("entity.enderman.teleport", 1.0, 0.5)],
+    # 3.9.8: Gorosei Stare: the glare fixing on its target (the elder guardian's curse, low), and the target thrown (the warden's boom)
+    "piece.itsu.stare": [("entity.elder_guardian.curse", 1.0, 0.7)],
+    "piece.itsu.thrown": [("entity.warden.sonic_boom", 1.0, 0.85)],
 }
 
 

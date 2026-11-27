@@ -94,6 +94,14 @@ public final class HandMoves {
     static final double[][] RECOIL = {{0, -0.12, 0.06, -0.24, 6, 8, 0}, {1, -0.1, 0.16, -0.1, 25, 8, 0}, {3, -0.12, 0.1, -0.18, 12, 8, 0},
         {10, 0, 0, 0, 0, 0, 0}};
     static final double[][] POINT_END = {{0, -0.12, 0.06, -0.24, 6, 8, 0}, {6, 0, 0, 0, 0, 0, 0}};
+    /** 3.9.8: Gorosei Stare: the fist clenched and drawn in, shaking as the glare fixes (to 8), jolted out as the target flies. */
+    static final double[][] GLARE = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.07, -0.05, 0.1, -9, -5, -6}, {5, 0.075, -0.045, 0.1, -8, -6, -7},
+        {7, 0.07, -0.05, 0.1, -9, -5, -6}, {9, -0.06, 0.03, -0.12, 4, 6, 0}, {12, -0.05, 0.02, -0.1, 3, 5, 0}, {20, 0, 0, 0, 0, 0, 0}};
+    /** 3.9.8: Yokai Blast let go: the pointed hand kicked up by the beam leaving it, then held out pointing while it pours. */
+    static final double[][] POINT_HELD = {{0, -0.12, 0.06, -0.24, 6, 8, 0}, {1, -0.1, 0.13, -0.14, 20, 8, 0}, {4, -0.12, 0.07, -0.22, 8, 8, 0}};
+    /** 3.9.8: Thy Death: the hand raised to the sky (3), held while the clouds gather (to 26), let down. */
+    static final double[][] RAISED = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.04, 0.3, -0.02, 45, 0, 0}, {26, 0.04, 0.31, -0.02, 46, 0, 0},
+        {36, 0, 0, 0, 0, 0, 0}};
     static final double[][] PUSH = {{0, 0, 0, 0, 0, 0, 0}, {6, -0.1, -0.04, -0.28, -22, 8, 0}};
     static final double[][] PUSH_END = {{0, -0.1, -0.04, -0.28, -22, 8, 0}, {3, 0.2, 0.16, -0.1, 20, -20, -20}, {12, 0, 0, 0, 0, 0, 0}};
     static final double[][] THRUST = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.05, -0.04, 0.06, 0, 0, 0}, {5, -0.15, 0.05, -0.4, 8, 10, 0}};
@@ -205,6 +213,15 @@ public final class HandMoves {
             case "phoenix_inferno" -> new Move(DOWN, 0);
             case "phoenix_bluebird" -> new Move(DEEP, 1.2);
             case "phoenix_bluebird_throw" -> new Move(PUSH, 0.4);
+            // 3.9.8: the Itsumade's moves as a human (tools/itsu_anims.py): the glare (the fist clenched and drawn in, trembling, then
+            // jolted out as the target is thrown), the presence (the arms thrown open), Yokai Blast (pointed, trembling as it gathers;
+            // held out against the beam's push; let down), Thy Death (raised to the sky, held, let down)
+            case "itsu_stare" -> new Move(GLARE, 0);
+            case "itsu_presence" -> new Move(SIDE_QUICK, 0);
+            case "itsu_blast_charge" -> new Move(POINT, 0.5);
+            case "itsu_blast_fire" -> new Move(POINT_HELD, 0.35);
+            case "itsu_blast_end" -> new Move(POINT_END, 0);
+            case "itsu_death" -> new Move(RAISED, 0);
             default -> null;
         };
     }

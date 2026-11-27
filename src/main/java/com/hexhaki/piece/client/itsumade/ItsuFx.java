@@ -9,6 +9,7 @@ import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.itsumade.ItsuForm;
 import com.hexhaki.piece.network.S2CUoFx;
 import com.hexhaki.piece.server.ItsuMoves;
+import com.hexhaki.piece.server.ItsuSaint;
 import com.hexhaki.piece.server.ItsuServer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -146,6 +147,10 @@ public final class ItsuFx {
 
     /** client/dragon/UoFx hands on the Itsumade's messages (server/ItsuServer: 440 to 459). */
     public static void accept(S2CUoFx m) {
+        if (m.kind() >= ItsuSaint.STARE && m.kind() <= ItsuSaint.PULSE) {
+            ItsuSaintFx.accept(m); // 3.9.8: the human's moves
+            return;
+        }
         if (m.kind() == ItsuServer.SMOKE) {
             smoke(m.x(), m.y(), m.z(), m.bx());
             return;
@@ -772,8 +777,6 @@ public final class ItsuFx {
         return o;
     }
 
-    /** 3.9.7: the Yokai fire's black flames: soot black to the deep violet of its ribbon (FireMesh.palette). */
-    static final int[] YOKAI_BLACK = {0x040205, 0x0A050D, 0x120917, 0x1B0D22, 0x26112E, 0x33163B, 0x431B4A, 0x56225C};
 
     /** The house's fire quads (alpha blended, depth tested), camera-relative, through the game's own debugQuads type. */
     static final class Writer implements FireMesh.Sink {
@@ -847,51 +850,35 @@ public final class ItsuFx {
         SINK.buffer = null;
     }
 
-    /** The ball of fire gathering in the jaws: a white-hot heart, an orange skin, black flames licking out round it. */
+    /** The ball of fire gathering in the jaws: a white-hot heart, an orange skin, black flames licking out round it (itsumade/ItsuArt). */
     static void ball(double x, double y, double z, double radius, float time, int seed) {
-        FireMesh.palette(YOKAI_BLACK);
-        for (int k = 0; k < 6; k++) {
-            double a = time * 0.21 + k * 1.047;
-            double ox = Math.cos(a) * radius * 0.55;
-            double oz = Math.sin(a) * radius * 0.55;
-            FireMesh.puff(SINK, x + ox, y + radius * 0.2, z + oz, radius * 0.85, ox * 0.2, 0.08, oz * 0.2, 0.6, 0.8, 0.55, 0.4, false, 0.85,
-                time, seed * 31 + k);
-        }
-        FireMesh.palette(FireMesh.BAND);
-        FireMesh.puff(SINK, x, y, z, radius, 0.0, 0.02, 0.0, 0.0, 0.5, 1.0, 0.55, true, 0.95, time, seed);
+        com.hexhaki.piece.itsumade.ItsuArt.ball(SINK, x, y, z, radius, time, seed);
     }
 
     /** The beam out of the jaws along its way, as far as the first block (or its length), its front racing out, thinning at its end. */
     static void beam(ClientLevel level, Entry entry, Vec3 camera, double mx, double my, double mz, float age, int seed) {
-        double[] w = entry.beamWay;
-        double front = Math.min(entry.beamLength, age * com.hexhaki.piece.dragon.UoFire.BEAM_SPEED + 2.0);
-        Vec3 from = new Vec3(entry.mouth[0], entry.mouth[1], entry.mouth[2]);
+        beamLine(level, camera, new Vec3(entry.mouth[0], entry.mouth[1], entry.mouth[2]), entry.beamWay, entry.beamLength, entry.beamWidth,
+            entry.beamLife, age, seed, com.hexhaki.piece.dragon.UoFire.BEAM_SPEED, 4.0);
+    }
+
+    /**
+     * 3.9.8: a beam of the Itsumade's fire from {@code from} (world) along {@code w} (unit), as far as the first block (or
+     * {@code length}), its front racing out at {@code speed} blocks a tick, thin for its first {@code flare} blocks, fading out over 6
+     * ticks after {@code life}: a white-hot heart of orange fire wrapped in rolling black flames. The Yokai Beam's and the Yokai Blast's
+     * (client/itsumade/ItsuSaintFx); returns how far it reaches.
+     */
+    static double beamLine(ClientLevel level, Vec3 camera, Vec3 from, double[] w, double length, double widthAt, int life, float age, int seed,
+                           double speed, double flare) {
+        double front = Math.min(length, age * speed + 1.0);
         Vec3 to = from.m_82520_(w[0] * front, w[1] * front, w[2] * front);
         net.minecraft.world.phys.BlockHitResult hit = level.m_45547_(new net.minecraft.world.level.ClipContext(from, to,
             net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null));
         double reach = hit.m_6662_() == net.minecraft.world.phys.HitResult.Type.BLOCK ? hit.m_82450_().m_82554_(from) : front;
-        double fade = age > entry.beamLife ? Math.max(0.0, 1.0 - (age - entry.beamLife) / 6.0) : 1.0;
-        double width = entry.beamWidth * fade * (0.9 + 0.1 * Math.sin(age * 1.7));
-        double step = Math.max(0.5, width * 0.45);
-        int n = (int) Math.min(220, reach / step);
-        for (int i = 0; i <= n; i++) {
-            double d = i * step;
-            double taper = Math.min(1.0, 0.35 + d / 4.0);
-            double px = mx + w[0] * d;
-            double py = my + w[1] * d;
-            double pz = mz + w[2] * d;
-            double jitter = width * 0.18;
-            double jx = Math.sin(age * 0.9 + i * 1.3) * jitter;
-            double jy = Math.cos(age * 1.1 + i * 0.7) * jitter;
-            // black flames rolling round the outside
-            FireMesh.palette(YOKAI_BLACK);
-            FireMesh.puff(SINK, px + jx, py + jy, pz - jx, width * 0.95 * taper, w[0] * 0.6, w[1] * 0.6 + 0.04, w[2] * 0.6, 0.8, 0.9, 0.5, 0.35,
-                false, 0.8 * fade, age + i * 0.37, seed * 977 + i);
-            // the heart of orange fire, white-hot in its middle
-            FireMesh.palette(FireMesh.BAND);
-            FireMesh.puff(SINK, px, py, pz, width * 0.55 * taper, w[0] * 0.8, w[1] * 0.8, w[2] * 0.8, 0.9, 0.6, 0.97, 0.6, false, 0.95 * fade,
-                age + i * 0.29, seed * 613 + i);
-        }
+        double fade = age > life ? Math.max(0.0, 1.0 - (age - life) / 6.0) : 1.0;
+        double width = widthAt * fade * (0.9 + 0.1 * Math.sin(age * 1.7));
+        com.hexhaki.piece.itsumade.ItsuArt.beam(SINK, from.f_82479_ - camera.f_82479_, from.f_82480_ - camera.f_82480_,
+            from.f_82481_ - camera.f_82481_, w, reach, width, fade, age, seed, flare);
+        return reach;
     }
 
     /**

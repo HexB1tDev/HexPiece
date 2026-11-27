@@ -51,7 +51,10 @@ public final class ItsuServer {
     public static final String CRACK = "piece.itsu.crack";
     /** 3.9.7: the passive's vanishing (server/ItsuPassive). */
     public static final String VANISH = "piece.itsu.vanish";
-    public static final String[] SOUNDS = {CRACK, VANISH};
+    /** 3.9.8: Gorosei Stare's glare and its throw (server/ItsuSaint). */
+    public static final String STARE = "piece.itsu.stare";
+    public static final String THROWN = "piece.itsu.thrown";
+    public static final String[] SOUNDS = {CRACK, VANISH, STARE, THROWN};
     /** 3.9.7: S2CUoFx kinds: black smoke the height bx of a body at the point (the passive's vanishing and its standing again). */
     public static final int SMOKE = 441;
 
