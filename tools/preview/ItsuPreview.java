@@ -120,6 +120,26 @@ public final class ItsuPreview {
                 mo.perch = 1.0F;
                 mo.mouth = 1.0F;
             }
+            case "gust" -> {
+                mo.perch = 1.0F;
+                mo.gust = Math.min(1.0F, t / (34.0F / 20.0F));
+            }
+            case "gustair" -> {
+                mo.speed = 0.3F;
+                mo.gust = Math.min(1.0F, t / (34.0F / 20.0F));
+            }
+            case "carry" -> {
+                mo.speed = 0.45F;
+                mo.grip = 1.0F;
+            }
+            case "charge" -> {
+                mo.perch = 1.0F;
+                mo.charge = Math.min(1.0F, t / 4.0F);
+            }
+            case "pour" -> {
+                mo.speed = 0.2F;
+                mo.pour = 1.0F;
+            }
             case "form" -> {
                 mo.perch = 1.0F;
                 ItsuForm.change(ItsuForm.FORMING, t * 20.0F, mo);

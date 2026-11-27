@@ -5,8 +5,10 @@ import com.hexhaki.fruit.client.ClientKits;
 import com.hexhaki.piece.HexPiece;
 import com.hexhaki.piece.dragon.DragonModel;
 import com.hexhaki.piece.dragon.DragonPose;
+import com.hexhaki.piece.dragon.FireMesh;
 import com.hexhaki.piece.itsumade.ItsuForm;
 import com.hexhaki.piece.network.S2CUoFx;
+import com.hexhaki.piece.server.ItsuMoves;
 import com.hexhaki.piece.server.ItsuServer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -101,6 +103,23 @@ public final class ItsuFx {
         boolean shown;
         /** The human's model scaled this frame (RenderPlayerEvent.Pre pushed, Post pops). */
         boolean scaled;
+        /** 3.9.7: its moves (server/ItsuMoves): when the gust and the bite began, the Bow's end, the beam's charge, the beam, the grip. */
+        long gustFrom = -1000;
+        long biteFrom = -1000;
+        long bowUntil = -1;
+        long chargeFrom = -1;
+        long beamFrom = -1;
+        int beamLife;
+        double beamWidth;
+        double beamLength;
+        double beamCharge;
+        double[] beamWay = new double[3];
+        boolean gripping;
+        float grip;
+        /** Its mouth this frame (world) and points on its skin (world, 3 a point) for the Bow's bolts. */
+        final double[] mouth = new double[3];
+        final double[] mouthWay = new double[3];
+        double[] skin = new double[0];
     }
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
@@ -129,6 +148,10 @@ public final class ItsuFx {
     public static void accept(S2CUoFx m) {
         if (m.kind() == ItsuServer.SMOKE) {
             smoke(m.x(), m.y(), m.z(), m.bx());
+            return;
+        }
+        if (m.kind() >= ItsuMoves.GUST && m.kind() <= ItsuMoves.GRIP) {
+            move(m);
             return;
         }
         if (m.kind() != ItsuServer.PHASE) {
@@ -183,6 +206,68 @@ public final class ItsuFx {
         }
     }
 
+    /** 3.9.7: one of its moves (server/ItsuMoves) begun, struck or ended. */
+    static void move(S2CUoFx m) {
+        Entry entry = ENTRIES.get(m.user());
+        Minecraft minecraft = Minecraft.m_91087_();
+        if (entry == null || minecraft.f_91073_ == null) {
+            return;
+        }
+        switch (m.kind()) {
+            case ItsuMoves.GUST -> entry.gustFrom = clock;
+            case ItsuMoves.BITE -> entry.biteFrom = clock;
+            case ItsuMoves.BOW -> entry.bowUntil = m.id() == 1 ? clock + m.ticks() : -1;
+            case ItsuMoves.CHARGE -> entry.chargeFrom = m.id() == 1 ? clock : -1;
+            case ItsuMoves.BEAM -> {
+                entry.chargeFrom = -1;
+                entry.beamFrom = clock;
+                entry.beamLife = m.ticks();
+                entry.beamWidth = m.bx();
+                entry.beamLength = m.by();
+                entry.beamCharge = m.size();
+                double l = Math.sqrt(m.ax() * m.ax() + m.ay() * m.ay() + m.az() * m.az());
+                entry.beamWay[0] = m.ax() / Math.max(1.0E-6, l);
+                entry.beamWay[1] = m.ay() / Math.max(1.0E-6, l);
+                entry.beamWay[2] = m.az() / Math.max(1.0E-6, l);
+            }
+            case ItsuMoves.BEAM_OFF -> entry.beamFrom = -1;
+            case ItsuMoves.GRIP -> entry.gripping = m.bx() > 0.5F;
+            case ItsuMoves.BOLT -> bolt(minecraft.f_91073_, entry, m.user(), m.x(), m.y(), m.z(), m.id());
+            default -> {
+            }
+        }
+    }
+
+    /**
+     * 3.9.7 (the owner's Bow: "THe lightning never comes from the inside of the transformation model"): one bolt of the Conqueror's
+     * lightning from the point of its skin nearest the target (as it was drawn last) out to it.
+     */
+    static void bolt(ClientLevel level, Entry entry, int user, double tx, double ty, double tz, long seed) {
+        double[] skin = entry.skin;
+        if (skin.length < 3) {
+            return;
+        }
+        int best = 0;
+        double bestD = Double.MAX_VALUE;
+        for (int k = 0; k < skin.length / 3; k++) {
+            double dx = skin[k * 3] - tx;
+            double dy = skin[k * 3 + 1] - ty;
+            double dz = skin[k * 3 + 2] - tz;
+            double d = dx * dx + dy * dy + dz * dz;
+            if (d < bestD) {
+                bestD = d;
+                best = k;
+            }
+        }
+        double bx = skin[best * 3];
+        double by = skin[best * 3 + 1];
+        double bz = skin[best * 3 + 2];
+        net.minecraft.world.entity.Entity owner = level.m_6815_(user);
+        com.hexhaki.piece.client.haki.HakiBolts.sparks(level, owner, bx, by, bz, com.hexhaki.piece.haki.ConquerorSparks.wifi(new double[3],
+            new double[] {tx - bx, ty - by, tz - bz}, 0.9, 3, seed), 0.0, 0.0F);
+        com.hexhaki.piece.client.haki.HakiBolts.zap(level, tx, ty, tz, 0.7F);
+    }
+
     /** One's own Itsumade came out: third person (if it was first). */
     static void out(Minecraft minecraft) {
         if (minecraft.f_91066_.m_92176_() == CameraType.FIRST_PERSON) {
@@ -231,6 +316,31 @@ public final class ItsuFx {
                 continue;
             }
             follow(e.getValue(), player);
+            if (clock - e.getValue().gustFrom == ItsuMoves.GUST_AT) {
+                gust(level, player);
+            }
+        }
+    }
+
+    /**
+     * 3.9.7: the Wind Gust's wind as the wings come down: dust and air thrown out over the cone ahead (fifty degrees either side, the
+     * gust's 24 blocks), fast near, slowing as it spreads.
+     */
+    static void gust(ClientLevel level, Player player) {
+        Vec3 look = player.m_20154_();
+        double yaw = Math.atan2(-look.f_82479_, look.f_82481_);
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 90; i++) {
+            double a = yaw + Math.toRadians((random.nextDouble() * 2.0 - 1.0) * 50.0);
+            double fx = -Math.sin(a);
+            double fz = Math.cos(a);
+            double speed = 0.9 + random.nextDouble() * 1.4;
+            double side = (random.nextDouble() * 2.0 - 1.0) * 6.0;
+            double x = player.m_20185_() + fx * 3.0 - fz * side;
+            double z = player.m_20189_() + fz * 3.0 + fx * side;
+            double y = player.m_20186_() + 0.5 + random.nextDouble() * 6.0;
+            level.m_7106_(net.minecraft.core.particles.ParticleTypes.f_123759_, x, y, z, fx * speed, -0.05 + random.nextDouble() * 0.1,
+                fz * speed);
         }
     }
 
@@ -456,7 +566,15 @@ public final class ItsuFx {
         float bodyYaw = entry.yawO + wrap(entry.yaw - entry.yawO) * partial;
         mo.turn = changing ? 0.0F : wrap(player.m_146908_() - bodyYaw);
         mo.mouth = -1.0F;
-        mo.bite = 0.0F;
+        float now = clock + partial;
+        float bite = (now - entry.biteFrom) / ItsuMoves.BITE_TICKS;
+        mo.bite = changing || bite <= 0.0F || bite >= 1.0F ? 0.0F : bite;
+        float gust = (now - entry.gustFrom) / ItsuMoves.GUST_TICKS;
+        mo.gust = changing || gust < 0.0F || gust > 1.0F ? -1.0F : gust;
+        entry.grip += ((entry.gripping ? 1.0F : 0.0F) - entry.grip) * 0.2F;
+        mo.grip = entry.grip;
+        mo.charge = entry.chargeFrom < 0 ? 0.0F : Math.min(1.0F, (now - entry.chargeFrom) / 80.0F);
+        mo.pour = entry.beamFrom >= 0 && now - entry.beamFrom < entry.beamLife ? 1.0F : 0.0F;
         ItsuForm.change(entry.phase, t, mo);
         float seconds = (clock + partial) / 20.0F + (id % 17) * 0.31F;
         ItsuForm.pose(m, shape, entry.pose, mo, seconds);
@@ -505,9 +623,63 @@ public final class ItsuFx {
             ItsuForm.ribbonGrown(shape, entry.pose, i, entry.pos[i], mo.grown[ItsuForm.G_RIBBON]);
             emit(out, i, part, entry.pos[i], entry.nrm[i], mat, up, light, seconds, alive);
         }
+        record(entry, m, camera);
         entry.drawnScale = s;
         entry.alive = alive;
         entry.shown = true;
+    }
+
+    /** Skin points kept for the Bow's bolts (every this many vertices of the body's parts). */
+    static final int SKIN_EVERY = 97;
+
+    /** 3.9.7: where its mouth is (its head bone's place, out along the beak) and points of its skin, in the world, as drawn now. */
+    static void record(Entry entry, DragonModel m, Vec3 camera) {
+        float[] g = entry.pose.global;
+        int head = shape.head;
+        double hx = g[head * 12 + 3];
+        double hy = g[head * 12 + 7];
+        double hz = g[head * 12 + 11];
+        // the beak points along the head's -Z (the face toward -Z at rest), turned as the head is
+        double fx = -g[head * 12 + 2];
+        double fy = -g[head * 12 + 6];
+        double fz = -g[head * 12 + 10];
+        double fl = Math.max(1.0E-6, Math.sqrt(fx * fx + fy * fy + fz * fz));
+        double mx = hx + fx / fl * 1.1;
+        double my = hy + fy / fl * 1.1 - 0.15;
+        double mz = hz + fz / fl * 1.1;
+        for (int r = 0; r < 3; r++) {
+            entry.mouth[r] = PLACE[r * 4] * mx + PLACE[r * 4 + 1] * my + PLACE[r * 4 + 2] * mz + PLACE[r * 4 + 3] + (r == 0 ? camera.f_82479_
+                : r == 1 ? camera.f_82480_ : camera.f_82481_);
+            entry.mouthWay[r] = (PLACE[r * 4] * fx + PLACE[r * 4 + 1] * fy + PLACE[r * 4 + 2] * fz) / fl;
+        }
+        double wl = Math.max(1.0E-6, Math.sqrt(entry.mouthWay[0] * entry.mouthWay[0] + entry.mouthWay[1] * entry.mouthWay[1]
+            + entry.mouthWay[2] * entry.mouthWay[2]));
+        for (int r = 0; r < 3; r++) {
+            entry.mouthWay[r] /= wl;
+        }
+        if (entry.bowUntil < clock) {
+            return;
+        }
+        java.util.List<double[]> points = new java.util.ArrayList<>();
+        for (int i = 0; i < m.parts.length; i++) {
+            if (shape.kind[i] != ItsuForm.BODY) {
+                continue;
+            }
+            float[] pos = entry.pos[i];
+            for (int v = (i * 13) % SKIN_EVERY; v < pos.length / 3; v += SKIN_EVERY) {
+                double[] w = new double[3];
+                for (int r = 0; r < 3; r++) {
+                    w[r] = PLACE[r * 4] * pos[v * 3] + PLACE[r * 4 + 1] * pos[v * 3 + 1] + PLACE[r * 4 + 2] * pos[v * 3 + 2] + PLACE[r * 4 + 3]
+                        + (r == 0 ? camera.f_82479_ : r == 1 ? camera.f_82480_ : camera.f_82481_);
+                }
+                points.add(w);
+            }
+        }
+        double[] skin = new double[points.size() * 3];
+        for (int k = 0; k < points.size(); k++) {
+            System.arraycopy(points.get(k), 0, skin, k * 3, 3);
+        }
+        entry.skin = skin;
     }
 
     /**
@@ -598,6 +770,128 @@ public final class ItsuFx {
             }
         }
         return o;
+    }
+
+    /** 3.9.7: the Yokai fire's black flames: soot black to the deep violet of its ribbon (FireMesh.palette). */
+    static final int[] YOKAI_BLACK = {0x040205, 0x0A050D, 0x120917, 0x1B0D22, 0x26112E, 0x33163B, 0x431B4A, 0x56225C};
+
+    /** The house's fire quads (alpha blended, depth tested), camera-relative, through the game's own debugQuads type. */
+    static final class Writer implements FireMesh.Sink {
+        VertexConsumer buffer;
+        Matrix4f matrix;
+
+        @Override
+        public void quad(double[] xyz, int[] argb) {
+            for (int k = 0; k < 4; k++) {
+                int c = argb[k];
+                this.buffer.m_252986_(this.matrix, (float) xyz[k * 3], (float) xyz[k * 3 + 1], (float) xyz[k * 3 + 2])
+                    .m_85950_(((c >>> 16) & 255) / 255.0F, ((c >>> 8) & 255) / 255.0F, (c & 255) / 255.0F, ((c >>> 24) & 255) / 255.0F).m_5752_();
+            }
+        }
+    }
+
+    static final Writer SINK = new Writer();
+
+    /**
+     * 3.9.7: the moves' fire, after the particles: the Yokai Beam's ball of white-hot fire gathering in the open jaws (black flames
+     * licking round it, bigger the longer the charge), and the beam itself (the owner: "a beam of bright orange/black flames ... the
+     * flames are super clean, beautiful effects like the dragon's breath but more intense"): a white-hot heart of orange fire along it
+     * wrapped in rolling black flames, racing out from the jaws to the first block it meets, thinning away at its end.
+     */
+    @SubscribeEvent
+    public static void effects(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty()) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.m_91087_();
+        ClientLevel level = minecraft.f_91073_;
+        if (level == null) {
+            return;
+        }
+        float partial = event.getPartialTick();
+        Vec3 camera = event.getCamera().m_90583_();
+        MultiBufferSource.BufferSource buffers = minecraft.m_91269_().m_110104_();
+        RenderType type = RenderType.m_269166_();
+        SINK.matrix = event.getPoseStack().m_85850_().m_252922_();
+        boolean any = false;
+        try {
+            SINK.buffer = buffers.m_6299_(type);
+            float now = clock + partial;
+            for (Map.Entry<Integer, Entry> e : ENTRIES.entrySet()) {
+                Entry entry = e.getValue();
+                if (!entry.shown) {
+                    continue;
+                }
+                double s = entry.drawnScale;
+                double mx = entry.mouth[0] - camera.f_82479_;
+                double my = entry.mouth[1] - camera.f_82480_;
+                double mz = entry.mouth[2] - camera.f_82481_;
+                if (entry.chargeFrom >= 0) {
+                    any = true;
+                    double c = Math.min(1.0, (now - entry.chargeFrom) / 80.0);
+                    ball(mx, my, mz, s * (0.25 + 0.7 * c), now, e.getKey());
+                }
+                if (entry.beamFrom >= 0 && now - entry.beamFrom < entry.beamLife + 6) {
+                    any = true;
+                    beam(level, entry, camera, mx, my, mz, now - entry.beamFrom, e.getKey());
+                }
+            }
+        } catch (RuntimeException failure) {
+            HexPiece.LOGGER.error("HexPiece: an Itsumade's fire could not be drawn", failure);
+        } finally {
+            FireMesh.palette(FireMesh.BAND);
+        }
+        if (SINK.buffer != null) {
+            buffers.m_109912_(type);
+        }
+        SINK.buffer = null;
+    }
+
+    /** The ball of fire gathering in the jaws: a white-hot heart, an orange skin, black flames licking out round it. */
+    static void ball(double x, double y, double z, double radius, float time, int seed) {
+        FireMesh.palette(YOKAI_BLACK);
+        for (int k = 0; k < 6; k++) {
+            double a = time * 0.21 + k * 1.047;
+            double ox = Math.cos(a) * radius * 0.55;
+            double oz = Math.sin(a) * radius * 0.55;
+            FireMesh.puff(SINK, x + ox, y + radius * 0.2, z + oz, radius * 0.85, ox * 0.2, 0.08, oz * 0.2, 0.6, 0.8, 0.55, 0.4, false, 0.85,
+                time, seed * 31 + k);
+        }
+        FireMesh.palette(FireMesh.BAND);
+        FireMesh.puff(SINK, x, y, z, radius, 0.0, 0.02, 0.0, 0.0, 0.5, 1.0, 0.55, true, 0.95, time, seed);
+    }
+
+    /** The beam out of the jaws along its way, as far as the first block (or its length), its front racing out, thinning at its end. */
+    static void beam(ClientLevel level, Entry entry, Vec3 camera, double mx, double my, double mz, float age, int seed) {
+        double[] w = entry.beamWay;
+        double front = Math.min(entry.beamLength, age * com.hexhaki.piece.dragon.UoFire.BEAM_SPEED + 2.0);
+        Vec3 from = new Vec3(entry.mouth[0], entry.mouth[1], entry.mouth[2]);
+        Vec3 to = from.m_82520_(w[0] * front, w[1] * front, w[2] * front);
+        net.minecraft.world.phys.BlockHitResult hit = level.m_45547_(new net.minecraft.world.level.ClipContext(from, to,
+            net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null));
+        double reach = hit.m_6662_() == net.minecraft.world.phys.HitResult.Type.BLOCK ? hit.m_82450_().m_82554_(from) : front;
+        double fade = age > entry.beamLife ? Math.max(0.0, 1.0 - (age - entry.beamLife) / 6.0) : 1.0;
+        double width = entry.beamWidth * fade * (0.9 + 0.1 * Math.sin(age * 1.7));
+        double step = Math.max(0.5, width * 0.45);
+        int n = (int) Math.min(220, reach / step);
+        for (int i = 0; i <= n; i++) {
+            double d = i * step;
+            double taper = Math.min(1.0, 0.35 + d / 4.0);
+            double px = mx + w[0] * d;
+            double py = my + w[1] * d;
+            double pz = mz + w[2] * d;
+            double jitter = width * 0.18;
+            double jx = Math.sin(age * 0.9 + i * 1.3) * jitter;
+            double jy = Math.cos(age * 1.1 + i * 0.7) * jitter;
+            // black flames rolling round the outside
+            FireMesh.palette(YOKAI_BLACK);
+            FireMesh.puff(SINK, px + jx, py + jy, pz - jx, width * 0.95 * taper, w[0] * 0.6, w[1] * 0.6 + 0.04, w[2] * 0.6, 0.8, 0.9, 0.5, 0.35,
+                false, 0.8 * fade, age + i * 0.37, seed * 977 + i);
+            // the heart of orange fire, white-hot in its middle
+            FireMesh.palette(FireMesh.BAND);
+            FireMesh.puff(SINK, px, py, pz, width * 0.55 * taper, w[0] * 0.8, w[1] * 0.8, w[2] * 0.8, 0.9, 0.6, 0.97, 0.6, false, 0.95 * fade,
+                age + i * 0.29, seed * 613 + i);
+        }
     }
 
     /**

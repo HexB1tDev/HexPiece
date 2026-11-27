@@ -676,6 +676,15 @@ public final class UoMoves {
         return player.m_146892_().m_82549_(player.m_20154_().m_82490_(0.5)).m_82520_(0.0, -0.12, 0.0);
     }
 
+    /**
+     * 3.9.7: a beam of fire on the server only (its look the caller's to send): from {@code origin}, while {@code keep} holds; {@code big}
+     * the dragon's sizes of explosion and its bomb at the end.
+     */
+    static void beamFrom(ServerPlayer player, boolean big, double width, double length, int life, float damage, double knock, float charge,
+                         java.util.function.Function<ServerPlayer, Vec3> origin, java.util.function.Predicate<ServerPlayer> keep) {
+        LIVE.add(new Beam(player, (ServerLevel) player.m_9236_(), big, width, length, life, damage, knock, charge, origin, keep));
+    }
+
     /** A beam of fire out of the mouth ({@code dragon}'s or the human's): sent to every client, burning on the server ({@link Beam}). */
     static void beam(ServerPlayer player, boolean dragon, double width, double length, int life, float damage, double knock, float charge) {
         ServerLevel level = (ServerLevel) player.m_9236_();
@@ -713,10 +722,20 @@ public final class UoMoves {
         Vec3 last;
         /** The way it burns, fixed when it was let go. */
         final Vec3 aim;
+        /** 3.9.7: where it starts (the Itsumade's mouth, its hand) and while it may burn, when another's than the dragon's or the human's. */
+        java.util.function.Function<ServerPlayer, Vec3> origin;
+        java.util.function.Predicate<ServerPlayer> keep;
 
         Beam(ServerPlayer user, ServerLevel level, boolean dragon, double width, double length, int life, float damage, double knock,
              float charge) {
-            this.aim = toward(user, dragon ? mouth(user) : humanMouth(user), length);
+            this(user, level, dragon, width, length, life, damage, knock, charge, null, null);
+        }
+
+        Beam(ServerPlayer user, ServerLevel level, boolean dragon, double width, double length, int life, float damage, double knock,
+             float charge, java.util.function.Function<ServerPlayer, Vec3> origin, java.util.function.Predicate<ServerPlayer> keep) {
+            this.origin = origin;
+            this.keep = keep;
+            this.aim = toward(user, from(user, dragon), length);
             this.user = user;
             this.level = level;
             this.dragon = dragon;
@@ -731,6 +750,11 @@ public final class UoMoves {
         @Override
         public ServerLevel level() {
             return this.level;
+        }
+
+        /** Where it starts now. */
+        Vec3 from(ServerPlayer user, boolean dragon) {
+            return this.origin != null ? this.origin.apply(user) : dragon ? mouth(user) : humanMouth(user);
         }
 
         /** The last explosion, as big as the charge: where the beam last struck (or its end in the air). */
@@ -762,7 +786,7 @@ public final class UoMoves {
         public boolean tick(long now) {
             this.age++;
             boolean gone = !this.user.m_6084_() || this.user.m_9236_() != this.level
-                || this.dragon && DragonServer.phase(this.user) != DragonForm.DRAGON;
+                || (this.keep != null ? !this.keep.test(this.user) : this.dragon && DragonServer.phase(this.user) != DragonForm.DRAGON);
             if (gone || this.age > this.life) {
                 if (gone) {
                     PieceNetwork.around(this.user, S2CUoFx.of(S2CUoFx.FIRE_BEAM_OFF, 0, this.user.m_19879_()));
@@ -773,7 +797,7 @@ public final class UoMoves {
             }
             // the front races out (UoFire.BEAM_SPEED blocks a tick): nothing past it is reached yet
             double front = this.age * UoFire.BEAM_SPEED + 2.0;
-            Vec3 from = this.dragon ? mouth(this.user) : humanMouth(this.user);
+            Vec3 from = this.from(this.user, this.dragon);
             Vec3 way = this.aim;
             double out = Math.min(this.length, front);
             Vec3 end = from.m_82549_(way.m_82490_(out));

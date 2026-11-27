@@ -863,3 +863,17 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
 - The Itsumade's kit (spec in 22), in this order: the passive (no death but by Ryou; black smoke, 10 blocks away, full health and
   energy), the Haki colours (Haki_Color: deep indigo bolts, violet rims, green sparks; the Conqueror's release can kill), the transformed
   moves (M1 Wind Gust, M2 talons, X Bow, C Enormous Bite, V Yokai Beam), then X / C / V / B, then N (the menu, the pentagrams).
+- DONE in 3.9.7: server/ItsuPassive (LivingDeathEvent HIGHEST: cancelled unless the killer has Ryou or the source is outOfWorld /
+  genericKill; safe() looks 16 ways 10 blocks off for solid-under, two air, no fluid; S2CUoFx ItsuServer.SMOKE 441 black smoke on the
+  clients; sound piece.itsu.vanish); RyouServer.ITSU_COLOR 0xFF2B3FD8 / ITSU_AURA 0xFF22E08A for an Itsumade eater (color(), aura(),
+  retell() from ItsuKit.granted/removed); ConquerorRelease: an Itsumade's release kills (ITSU_SHARE 0.6 of what is left + ITSU_BLOW 6,
+  a full one all of it). server/ItsuMoves (form only): M1 gust (GUST_AT 12 of GUST_TICKS 34, cone 50 degrees / 24 blocks), M2 talons
+  (carried entity held under the player each tick; dropped on landing or M2), X Bow (BOW_TICKS 300, a bolt every 5 ticks to the nearest
+  foe in 16 blocks (stun 40) or the ground), C bite (BITE_AT 9, 24 damage, Gore.bleed 4/160, BrokenBones.struck 60), V Yokai Beam
+  (charge up to 80 ticks; UoMoves.beamFrom with ItsuMoves.mouth and form as keep: the dragon's server beam, its bomb at the end).
+  S2CUoFx kinds 442-449. ItsuForm.Motion gust/grip/charge/pour (gustLift: rear up +40 ground / +30 air, raise 62, flap to -78);
+  client/itsumade/ItsuFx: move() for the kinds, bolt() from the nearest recorded skin point (record(): every 97th body vertex while the
+  Bow lasts, and the mouth from the head bone), effects() (AFTER_PARTICLES: the charge ball and the beam from FireMesh puffs, palette
+  YOKAI_BLACK round FireMesh.BAND), gust() particles (POOF over the cone). ItsuPreview states gust, gustair, carry, charge, pour.
+- NEXT: untransformed X Gorosei Stare, C Enormous Presence, V Yokai Blast (UoMoves.beamFrom from the hand, big=false, 5-15 blocks,
+  1-5 s), B Thy Death, then N Hellish Teleport (menu, saves in the player's data, pentagrams both ends, the beam up and down).

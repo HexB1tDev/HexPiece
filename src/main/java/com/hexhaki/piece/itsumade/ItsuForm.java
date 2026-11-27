@@ -289,6 +289,41 @@ public final class ItsuForm {
         public final float[] grown = {1, 1, 1, 1, 1, 1};
         /** 3.9.5: its wings spread wide (the change's arms thrown wide; 0 folded as a bird's on the ground). */
         public float spread;
+        /** 3.9.7: the Wind Gust's run (-1 none, else 0 to 1), the talons closed on what they carry (0 to 1), the Yokai Beam's charge
+         * gathering in the jaws (0 to 1) and its pouring out (0 or 1). */
+        public float gust = -1.0F;
+        public float grip;
+        public float charge;
+        public float pour;
+    }
+
+    /**
+     * 3.9.7: the Wind Gust's wing lift (degrees, + up) {@code u} through its run (server/ItsuMoves GUST_AT of GUST_TICKS): raised high
+     * and spread over its slow wind-up, brought down in one huge flap, then let back.
+     */
+    public static final float GUST_RAISE = 0.35F;
+    public static final float GUST_FLAP = 0.5F;
+
+    static final float GUST_HIGH = 62.0F;
+    static final float GUST_LOW = -78.0F;
+
+    static float gustLift(float u) {
+        if (u < GUST_RAISE) {
+            return GUST_HIGH * smooth(u / GUST_RAISE);
+        }
+        if (u < GUST_FLAP) {
+            return GUST_HIGH + (GUST_LOW - GUST_HIGH) * outQuad((u - GUST_RAISE) / (GUST_FLAP - GUST_RAISE));
+        }
+        // held down low a moment (the air driven out), then let back
+        return GUST_LOW * (1.0F - smooth((u - GUST_FLAP - 0.12F) / (1.0F - GUST_FLAP - 0.12F)));
+    }
+
+    /** How much of its pose the gust takes {@code u} through it (fading back in at the end). */
+    static float gustWeight(float u) {
+        if (u < 0.0F || u > 1.0F) {
+            return 0.0F;
+        }
+        return Math.min(smooth(u / 0.12F), 1.0F - smooth((u - 0.8F) / 0.2F));
     }
 
     // ------------------------------------------------------------------------------------------------------------------ the pose
@@ -357,6 +392,14 @@ public final class ItsuForm {
         chestPitch += mo.perch * (1.2F * breath + mo.walk * 3.0F * (float) Math.sin(mo.stride * 2.0F));
         float roll = mo.perch * mo.walk * 4.0F * (float) Math.sin(mo.stride);
         pose.t[sh.root * 3 + 1] -= mo.perch * mo.walk * 0.12F * (0.5F + 0.5F * (float) Math.cos(mo.stride * 2.0F));
+        // 3.9.7: the Wind Gust: it rears up (on the ground as a bird does to beat its wings, in the air braking) so the flap drives down
+        // and forward, rocking a little forward with the flap
+        float gw = gustWeight(mo.gust);
+        if (gw > 0.0F) {
+            float rear = mo.perch * 40.0F + air * 30.0F;
+            float rock = mo.gust < GUST_RAISE ? 0.0F : -10.0F * smooth((mo.gust - GUST_RAISE) / 0.15F);
+            chestPitch += gw * (rear * smooth(mo.gust / 0.25F) + rock);
+        }
         turn(pose, sh.chest, chestPitch, 1, 0, 0);
         turn(pose, sh.chest, roll, 0, 0, 1);
         float dip = mo.land;
@@ -386,6 +429,8 @@ public final class ItsuForm {
         // ---- the jaw: the mouth as asked, else the breath opening it now and then (on the ground a slow, hungry gape)
         float mouth = mo.mouth >= 0.0F ? mo.mouth : ambientMouth(t, mo.perch);
         mouth = Math.max(mouth, biteMouth(mo.bite));
+        // 3.9.7: the Yokai Beam: the jaws opening as the fire gathers in them, thrown wide as it pours out
+        mouth = Math.max(mouth, Math.max(0.45F + 0.4F * mo.charge, mo.pour) * (mo.charge > 0.0F || mo.pour > 0.0F ? 1.0F : 0.0F));
         turn(pose, sh.jaw, lerp(JAW_SHUT, JAW_WIDE, mouth), JAW_AXIS[0], JAW_AXIS[1], JAW_AXIS[2]);
         // ---- the black ribbon: swaying with the breath and the wind
         turn(pose, sh.halo, 3.0F * (float) Math.sin(t * 0.9) + 6.0F * mo.speed * air, 1, 0, 0);
@@ -515,6 +560,19 @@ public final class ItsuForm {
         float wrist = lerp(aWrist, gWrist, p);
         float finger = lerp(aFinger, gFinger, p);
         float tipBend = lerp(aTip, 0.0F, p);
+        // 3.9.7: the Wind Gust: the wings opened full and raised, then brought down in one huge flap, a little forward
+        float gw = gustWeight(mo.gust);
+        if (gw > 0.0F) {
+            float u = mo.gust;
+            float flapping = u >= GUST_RAISE && u < GUST_FLAP + 0.1F ? 1.0F : 0.0F;
+            shoulderLift = lerp(shoulderLift, gustLift(u), gw);
+            shoulderOnto = lerp(shoulderOnto, 0.0F, gw);
+            shoulderSweep = lerp(shoulderSweep, 6.0F * flapping - 10.0F * (1.0F - flapping), gw);
+            elbow = lerp(elbow, 0.0F, gw);
+            wrist = lerp(wrist, -6.0F * flapping, gw);
+            finger = lerp(finger, 0.0F, gw);
+            tipBend = lerp(tipBend, 14.0F * flapping, gw);
+        }
         turn(pose, w[0], sgn * shoulderLift, 0, 0, 1);
         turn(pose, w[0], shoulderOnto, 1, 0, 0);
         turn(pose, w[0], sgn * shoulderSweep, 0, 1, 0);
@@ -580,6 +638,10 @@ public final class ItsuForm {
         hip += shift + 22.0F * raise;
         ankle += -36.0F * raise;
         toes += 50.0F * clench + (14.0F * raise - shift) * (1.0F - clench);
+        // 3.9.7: carrying: the legs reached down under it, the talons clenched round what they hold
+        hip -= 24.0F * mo.grip * air;
+        ankle -= 10.0F * mo.grip * air;
+        toes += 55.0F * mo.grip;
         // the touchdown's give: the knees folding under the weight
         float give = mo.land * 22.0F;
         float upright = mo.perch * stand;
