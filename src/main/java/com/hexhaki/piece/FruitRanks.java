@@ -60,9 +60,6 @@ public final class FruitRanks {
         if (fruit == Fruit.TORI) {
             return Rank.MYTHICAL; // 3.6.9 (the owner: "Mythical Fruit: Tori Tori no Mi, Model: Phoenix")
         }
-        if (fruit == Fruit.NEKO) {
-            return Rank.LEGENDARY; // 3.7.9 (the owner: "New Fruit: Legendary Leopard Fruit, Name: Neko Neko No Mi")
-        }
         if (fruit == Fruit.MOCHI) {
             return Rank.LEGENDARY; // 3.5.5 (the owner: "research katakuris mochi fruit and add it ... Legendary fruit")
         }

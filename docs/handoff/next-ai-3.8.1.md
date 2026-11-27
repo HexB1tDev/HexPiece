@@ -247,7 +247,7 @@ thrown by the ratio) compared. What HexPiece lacked, now done:
    - The Saber's kesa and makko and the Mace's gyaku yoko and plunge written for their own grips (they fall back to the katanas').
    - The Blender files are in input/newmodels/NewModels.zip (unpack into the scratchpad; Blender's Python module as for the
      leopard: python3 -m venv /tmp/bpy && /tmp/bpy/bin/pip install bpy).
-4. Then the Leopard's other moves (next-ai-3.7.6.md section 6), as before.
+4. (The Leopard is gone for good: section 18. Never its moves.)
 
 ## THE STANDING RULE: weapon categories (the owner: "Whenever I give you a weapon from now on Ill name one of these categories, write this
 in every handoff")
@@ -466,3 +466,20 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
   writing it means its own plunge Move with the drive over two ticks and the server's cut window moved with it (SwordMove timings).
 - The owner (verbatim): "No I did not mean the saber, and yes the fullet is in the first gun model": the leverage is the mace's only
   (the Saber stays as it is); the bullet is First_gun.blend's "Cast lead ball" (confirmed: every gun's bullet, as 3.8.8 made it).
+
+## 18. THE OWNER: THE LEOPARD IS GONE (verbatim)
+"I said and will say it again Leopard is to fully disappear, entirely, gone"
+- The Neko Neko no Mi, Model: Leopard (3.7.9 on) removed entirely: its item, its moves, its forms, its code, its assets, its names,
+  every mention in game text; never "the Leopard's other moves" again. (Section 7 / next-prompt pointed at its other moves: wrong.)
+- Done as 3.9.2: deleted neko/ (LeopardArt, LeopardForm), client/neko/ (NekoClient, NekoFx), server/NekoKit, NekoMoves, NekoServer,
+  assets/hexhaki/neko/lucci.sry, textures/piece/neko/, the item model and icon, the 7 neko_* animations, the lang name,
+  tools/leopard_bake.py, neko_anims.py, neko_icon.py, tools/preview/LeopardPreview.java; PiecePatch's NEKO fruit (the last added
+  enum constant: no other ordinal moves); its hooks in FruitRanks, HexPiece, CombatMode, DragonCamera, UoFx (kinds 420-439),
+  Transformed, HandMoves; DragonTests' leopard checks; build.py's prefixes. A saved world where someone ate it still loads: the
+  original reads the fruit by id (Fruit.byId) and an unknown id is no fruit; the item, unregistered, drops out of inventories.
+  build.py check_leopard fails if the jar names leopard, neko or lucci anywhere; CLAUDE.md has the rule. The owner's own upload
+  input/neko/ is left untouched (never alter the owner's files): nothing reads it.
+- The mace plunge, tried with its drive over two ticks (tools/sword_anims.py: a beat at 7 when MACING, the drive at 8, inside the server's
+  6 to 9 window): the arm then flips between 7 and 8 (121 degrees): the flip comes from the mace's final point-down pose itself (its
+  grip), not the drive's speed. MACE_SKIP keeps {sword_plunge} (the katanas' plunge); next: a different end pose for the mace (the
+  point down with the palm turned the other way, or the left hand on the haft), then re-solve.

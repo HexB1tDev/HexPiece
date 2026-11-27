@@ -43,11 +43,6 @@ public final class DragonCamera {
             if (phoenix != null) {
                 return phoenix;
             }
-            // 3.7.9: the leopard seen whole (client/neko/NekoFx)
-            Vec3 leopard = com.hexhaki.piece.client.neko.NekoFx.camera(entity, partial);
-            if (leopard != null) {
-                return leopard;
-            }
             // 3.5.8: Galaxy Impact's low shot round its user (client/ironfist/IronFx)
             // 3.6.7: Buzz Cut Mochi's camera rising with the lift (client/mochi/MochiFx; its cutscene is gone at the owner's word)
             Vec3 mochi = com.hexhaki.piece.client.mochi.MochiFx.camera(entity, partial);

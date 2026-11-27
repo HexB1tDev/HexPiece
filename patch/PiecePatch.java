@@ -165,13 +165,6 @@ public final class PiecePatch implements Opcodes {
     static final String[] TORI = {"tori", "Tori Tori no Mi, Model: Phoenix", "Phoenix", "3FE0E8",
         "A Mythical Zoan that makes its eater a phoenix: a great bird made of blue fire, whose flames heal its every wound. Marco the"
             + " Phoenix's fruit."};
-    /**
-     * 3.7.9: the Neko Neko no Mi, Model: Leopard (the owner: "New Fruit: Legendary Leopard Fruit, Name: Neko Neko No Mi, Type: Zoan"): a
-     * Zoan, Rob Lucci's.
-     */
-    static final String[] NEKO = {"neko", "Neko Neko no Mi, Model: Leopard", "Leopard", "E8B020",
-        "A Zoan that makes its eater a leopard: a huge, spotted man-beast five blocks tall, whose mane, fur and ribbon burn with black"
-            + " flames, as fast as it is strong, master of the Six Styles. Rob Lucci's fruit."};
     /** 3.3.5: the Supa Supa no Mi (the owner: "Supa Supa No Mi (UnCommon)"): a Paramecia, Daz Bones' (Mr. 1). */
     static final String[] SUPA = {"supa", "Supa Supa no Mi", "Blade", "8FB3DA",
         "A Paramecia that turns any part of its eater's body into steel blades: arms, fingers, feet, the whole body, hard enough that no"
@@ -938,10 +931,9 @@ public final class PiecePatch implements Opcodes {
         // Noro Noro no Mi (ordinal 6); 3.3.5: the Supa Supa no Mi (ordinal 7); 3.3.6: the Horo Horo no Mi (ordinal 8); 3.3.7: the Ito Ito
         // no Mi (ordinal 9); 3.5.5: the Mochi Mochi no Mi (ordinal 10)
         // 3.6.9: the Tori Tori no Mi, Model: Phoenix (ordinal 11)
-        // 3.7.9: the Neko Neko no Mi, Model: Leopard (ordinal 12)
-        String[][] extra = {UO, HIE, NORO, SUPA, HORO, ITO, MOCHI, TORI, NEKO};
-        String[] names = {"UO", "HIE", "NORO", "SUPA", "HORO", "ITO", "MOCHI", "TORI", "NEKO"};
-        boolean[] logia = {false, true, false, false, false, false, false, false, false};
+        String[][] extra = {UO, HIE, NORO, SUPA, HORO, ITO, MOCHI, TORI};
+        String[] names = {"UO", "HIE", "NORO", "SUPA", "HORO", "ITO", "MOCHI", "TORI"};
+        boolean[] logia = {false, true, false, false, false, false, false, false};
         String type = "L" + FRUIT + ";";
         for (String name : names) {
             node.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, name, type, null, null));

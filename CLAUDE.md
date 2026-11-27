@@ -29,6 +29,10 @@ RULE: the Imu fruit (the Devil Devil fruit) is gone for good. The owner: "Get ri
 but keep it's assets, for future use on other things." Its assets (`textures/item/black_soul.png`, `models/item/black_soul.json`, the
 "Black Soul" name) stay in the jar, unregistered; `build.py` (`check_imu`) fails if any code, text or file name names it again.
 
+RULE: the Leopard (the Neko Neko no Mi, Model: Leopard) is gone for good. The owner: "I said and will say it again Leopard is to fully
+disappear, entirely, gone". Its fruit, moves, forms, model, textures, animations, tools and names are all removed (3.9.2); `build.py`
+(`check_leopard`) fails if anything in the jar names it again. Never plan or add "the Leopard's other moves".
+
 RULE: judge your own renders (the owner's rule from HexGhoul: "the animations always have to be top tier, no excuses whatsoever"). Every
 animation, pose, menu or texture you change, render it (`tools/anim_preview.py`, `tools/ui_preview.py`, `tools/lightning_preview.py`),
 look at it yourself, fix it and render again until it is right. Never claim something was tested in game: only the owner can.

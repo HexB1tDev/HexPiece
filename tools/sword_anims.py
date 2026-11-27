@@ -1887,9 +1887,15 @@ def moves(with_draws=True):
         b(5, "outsine", held(H(7.7, -5.6, 1.2), D(0.25, 0.95, 0.18), D(0, -0.2, 1)), L_AIM, {"bend": -16, "pitch": 8}, LEGS_TUCK,
           {"pitch": -12}),
         b(6, "insine", held(H(4.8, 1.0, 6.8), D(0.1, -0.2, 1), D(0, -1, -0.2)), L_BACK, {"bend": 8}, LEGS_TUCK, {"pitch": 4}),
+    ] + ([
+        # 3.9.1: the mace's drive over two ticks (in one its arm flipped 117 degrees between them): through the middle of the arc at 7,
+        # the point down at 8, inside the same hit window (6 to 9)
+        b(7, "linear", held(H(4.6, 4.4, 7.4), D(0.07, -0.66, 0.75), D(0, -0.75, -0.66)), L_OUT, {"bend": 18, "y": -0.11}, LEGS_DEEP,
+          {"pitch": 10}),
+    ] if MACING else []) + [
         # 2.4.5: driven down with the arm straight out in front (the owner's reach)
-        reaching(b(7, "outexpo", extend((None, D(0.03, -0.96, 0.28), D(0, 0.28, 0.96))), L_OUT, {"bend": 28, "y": -0.22}, LEGS_DEEP,
-                   {"pitch": 16})),
+        reaching(b(8 if MACING else 7, "outexpo", extend((None, D(0.03, -0.96, 0.28), D(0, 0.28, 0.96))), L_OUT, {"bend": 28, "y": -0.22},
+                   LEGS_DEEP, {"pitch": 16})),
         reaching(b(9, "outback", extend((None, D(0.02, -1, 0.1), D(0, 0.1, 1))), L_OUT, {"bend": 32, "y": -0.32}, LEGS_DEEP,
                    {"pitch": 18})),
         reaching(b(12, "linear", extend((None, D(0.02, -1, 0.1), D(0, 0.1, 1))), L_OUT, {"bend": 30, "y": -0.3}, LEGS_DEEP,

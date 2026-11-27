@@ -6,7 +6,7 @@ import com.hexhaki.piece.horo.AstralArt;
 /**
  * 3.4.0: Dawn Pistol's fist through the body (the owner, on 3.3.9's pull: "it looks cool but please get a gif of Gear 5 luffy vs luccy the
  * final blow, its not that... the fist goes through the body, stretching the skin to insane amounts and then causes a catastrophic
- * knockback that destroys all blocks in it's way"; their frames from Egghead: Luffy's arm driven through Lucci, Lucci's own spotted skin
+ * knockback that destroys all blocks in it's way"; their frames from Egghead: Luffy's arm driven through his foe, the foe's own skin
  * stretched out along the arm to the fist, red-hot then white-hot at its end). Pure, previewable (FxPreview {@code |nskin:t}).
  * <ul>
  *   <li>{@link #out}: how far the skin is stretched out of the body, {@code t} ticks after the hit: slower and slower to its limit while
