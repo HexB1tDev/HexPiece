@@ -387,3 +387,33 @@ Every weapon the owner gives comes with one of these categories and is made with
   allows freesound.org); the Default one blocks it.
 - **Ask the owner:** whether "Cast lead ball" is the bullet model they meant ("I'll send it").
 - Tests: GunTests (the rules, the buckets, the clip names and lengths); SwordTests' sound checks cover sounds/piece/gun.
+- 3.8.8's runs: Build #278 and Release #179 green.
+
+## 14. The owner, during the clothes work (verbatim)
+"Set a wake up in 1 hour and 5 minutes from now
+The arms cannot clip through the coats, when walking the coat should be pushed back like the wind is pushing it"
+(then: "Atingi meu limite de uso enquanto você trabalhava, mas ele já foi reiniciado. Por favor, continue de onde parou." = their usage
+limit was hit and reset: continue.) Wake-up set: send_later trig_01QHiwUFtkafTzpLkaviZpst, 09:07 UTC 2026-11-27.
+
+## 15. 3.8.9 (in progress): the owner's clothes replacements
+- tools/clothes_bake.py (/tmp/bpy/bin/python tools/clothes_bake.py) bakes Clothes_Replacements.blend: the four outfits stand on
+  mannequins (rigs of 10 bones in Minecraft pixels, each turned 15 degrees for the file's cameras: everything is taken in the rig's own
+  frame) and each mesh is bound wholly to one bone. Pieces: marine_cap (Marine cap), marine_shirt (Tunic, sleeves, rolled cuffs,
+  sailor collar, neckerchief), marine_trousers (Trouser), marine_boots (Boot), admiral_coat and blackbeard_coat (the coat parts, not
+  the mannequin's Jersey), straw_hat; the mannequins' skin, eyes, hair, nose, lips, neck, jersey stay out. Evaluated with the owner's
+  Solidify (cloth thickness), the Bevels left off (sub-pixel, six times the faces). DECIMATE: cap 900, hat 1300, epaulettes 45%.
+  fit(): the mannequin's arms are 2.9 px deep and 0.3 px in, its head 7.85 wide and 0.68 higher, its legs 0.2 out: each part's
+  cloth is carried onto the game's boxes. Groups (each in its part's frame, model px from its pivot): head, body_upper / body_lower
+  (split at y 6, the body's bend), each arm's upper/lower (4 px down: the elbow), each leg's upper/lower (thigh/shin bones).
+- The look: each material is a two-colour speckle (white noise of the surface's own place floored 1.07 cells a px: Minecraft-sized
+  cloth pixels) and three carry a print (JUSTICE on the admiral coat, MARINE and the gull on the tunic's back, the cap's lettering:
+  their masks mixed by alpha): baked into art/clothes/clothes.png (1024 x 512): big faces their own texel patch (DENSITY 2 a px,
+  PRINT_DENSITY 8), small faces one texel of their material's palette row.
+- tools/clothes_view.py renders them on the rig as the game will (the skirt bend: below the hips each point of a coat turns about
+  the hip line with the legs' swing, blended by side and by depth: no tearing). katana_mesh CLOTHES / clothes_meshes /
+  clothes_texture / pack_clothes (with LODs, the groups kept).
+- Still to do: build.py clothes_assets (assets/hexhaki/clothes/*.hkm, textures/clothes/clothes.png), client/armor/ClothesModel (a
+  HumanoidModel drawing the meshes on its copied parts: the bends (forearm, knee, body bend undone for the lower body), the slim fit
+  (arms 3 px), the skirt), ArmorClient and PieceArmorItem.getArmorTexture to it, new icons from the meshes, tests; THE OWNER'S WORD
+  above: no arm through a coat (the coat must sit outside the arms: its hanging sleeves and sides pushed out of the arms' way or the
+  arms' swing kept inside), and walking blows the coat back as if the wind pushed it.
