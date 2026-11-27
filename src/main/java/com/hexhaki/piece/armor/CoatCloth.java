@@ -262,51 +262,125 @@ public final class CoatCloth {
     static final float HEAD_Y0 = -8.0F;
     static final float HEAD_Y1 = 0.0F;
 
-    /** Only the collar is pushed by the head: the coat's points from this far below the top of the body up. */
+    /** The collar's points from this far below the top of the body up are widened round the head (fading in from there). */
     static final float HEAD_REACH = 2.0F;
+    /**
+     * 3.8.9 (the owner, of the collar crumpled behind a turned head: "the fuck is this mess behind the head"): the collar is a ring round
+     * the neck in SECTORS directions; the head's reach (its box grown by MARGIN, sampled HEAD_SAMPLES a side, at the collar's heights
+     * COLLAR_LOW to COLLAR_HIGH) against the collar's inside at rest in each direction.
+     */
+    static final int SECTORS = 72;
+    static final int NEIGHBOURS = 2;
+    static final float COLLAR_LOW = -3.5F;
+    static final float COLLAR_HIGH = 0.0F;
+    static final int HEAD_SAMPLES = 25;
+    static final float RING_TOLERANCE = 0.25F;
+
+    static int sector(float x, float z) {
+        double a = Math.atan2(z, x);
+        if (a < 0.0) {
+            a += 2.0 * Math.PI;
+        }
+        return Math.min((int) (a / (2.0 * Math.PI) * SECTORS), SECTORS - 1);
+    }
+
+    /** Per direction round the neck: how far out the collar's inside lies at rest (the least radius of its points there; MAX if none). */
+    public static float[] ringRest(float[] rest, int n) {
+        float[] inner = new float[SECTORS];
+        java.util.Arrays.fill(inner, Float.MAX_VALUE);
+        for (int i = 0; i < n; i++) {
+            float x = rest[i * 3];
+            float z = rest[i * 3 + 2];
+            if (rest[i * 3 + 1] < COLLAR_HIGH) {
+                int s = sector(x, z);
+                inner[s] = Math.min(inner[s], (float) Math.sqrt(x * x + z * z));
+            }
+        }
+        return inner;
+    }
+
+    /** Per direction round the neck: how far out the head (its box grown by MARGIN; frame: its frame to model px) reaches at the collar. */
+    static float[] headReach(float[] f) {
+        float[] reach = new float[SECTORS];
+        float h = HEAD_HALF + MARGIN;
+        for (int iy = 0; iy < HEAD_SAMPLES; iy++) {
+            float y = HEAD_Y0 + (HEAD_Y1 - HEAD_Y0) * iy / (HEAD_SAMPLES - 1);
+            for (int it = 0; it < HEAD_SAMPLES; it++) {
+                float t = -1.0F + 2.0F * it / (HEAD_SAMPLES - 1);
+                reachOf(f, t * h, y, -h, reach);
+                reachOf(f, t * h, y, h, reach);
+                reachOf(f, -h, y, t * h, reach);
+                reachOf(f, h, y, t * h, reach);
+                // the bottom (the head's underside, at the neck)
+                float b = -1.0F + 2.0F * iy / (HEAD_SAMPLES - 1);
+                reachOf(f, t * h, HEAD_Y1, b * h, reach);
+            }
+        }
+        return reach;
+    }
+
+    static void reachOf(float[] f, float x, float y, float z, float[] reach) {
+        float my = f[4] * x + f[5] * y + f[6] * z + f[7];
+        if (my <= COLLAR_LOW || my >= COLLAR_HIGH + MARGIN) {
+            return;
+        }
+        float mx = f[0] * x + f[1] * y + f[2] * z + f[3];
+        float mz = f[8] * x + f[9] * y + f[10] * z + f[11];
+        int s = sector(mx, mz);
+        reach[s] = Math.max(reach[s], (float) Math.sqrt(mx * mx + mz * mz));
+    }
 
     /**
-     * 3.8.9 (the owner: "head is clipping through the coat"): the collar ({@code rest} above {@link #HEAD_REACH}) pushed straight out
-     * from the neck (level, model space) until it is out of the head's box ({@code frame}: the head's frame to model px, 3 x 4; the
-     * box grown by MARGIN but below, where the neck is), its lining LINING px less far: a turned or raised head pushes the collar aside.
+     * The collar (the coat's body points above HEAD_REACH, fading in from there) set out level from the neck, direction by direction, at
+     * least as far as its place at rest plus how much the head ({@code frame}) reaches past the collar's inside there ({@code inner},
+     * {@link #ringRest}), eased round the ring: cloth and lining together, so it widens where the head turns into it, never folds.
+     * Idempotent: it alternates with the arms' push.
      */
-    public static void headPush(float[] points, byte[] kind, float[] rest, int n, float[] frame) {
-        float[] inv = invert(frame);
-        float h = HEAD_HALF + MARGIN;
-        float[] lo = {-h, HEAD_Y0 - MARGIN, -h};
-        float[] hi = {h, HEAD_Y1, h};
-        float[] c = new float[3];
-        float[] u = new float[3];
+    public static void ringPush(float[] points, byte[] kind, float[] rest, int n, float[] frame, float[] inner) {
+        float[] reach = headReach(frame);
+        float[] need = new float[SECTORS];
+        for (int s = 0; s < SECTORS; s++) {
+            need[s] = inner[s] == Float.MAX_VALUE ? 0.0F : Math.max(0.0F, reach[s] - inner[s] - RING_TOLERANCE);
+        }
+        float[] wide = new float[SECTORS];
+        for (int s = 0; s < SECTORS; s++) {
+            float m = need[s];
+            for (int k = 1; k <= NEIGHBOURS; k++) {
+                m = Math.max(m, Math.max(need[(s + k) % SECTORS], need[(s - k + SECTORS) % SECTORS]));
+            }
+            wide[s] = m;
+        }
+        float[] eased = new float[SECTORS];
+        for (int s = 0; s < SECTORS; s++) {
+            float e = (wide[(s + SECTORS - 1) % SECTORS] + 2.0F * wide[s] + wide[(s + 1) % SECTORS]) / 4.0F;
+            eased[s] = Math.max(e, need[s]);
+        }
         for (int i = 0; i < n; i++) {
-            if ((kind[i] != BODY && kind[i] != LINING_KIND) || rest[i * 3 + 1] >= HEAD_REACH) {
+            if (kind[i] != BODY && kind[i] != LINING_KIND) {
                 continue;
             }
+            float w = smooth(HEAD_REACH, 0.0F, rest[i * 3 + 1]);
+            if (w <= 0.0F) {
+                continue;
+            }
+            float rx = rest[i * 3];
+            float rz = rest[i * 3 + 2];
+            float target = (float) Math.sqrt(rx * rx + rz * rz) + eased[sector(rx, rz)] * w;
             float x = points[i * 3];
-            float y = points[i * 3 + 1];
             float z = points[i * 3 + 2];
-            c[0] = inv[0] * x + inv[1] * y + inv[2] * z + inv[3];
-            c[1] = inv[4] * x + inv[5] * y + inv[6] * z + inv[7];
-            c[2] = inv[8] * x + inv[9] * y + inv[10] * z + inv[11];
-            if (c[0] <= lo[0] || c[0] >= hi[0] || c[1] <= lo[1] || c[1] >= hi[1] || c[2] <= lo[2] || c[2] >= hi[2]) {
-                continue;
+            float now = (float) Math.sqrt(x * x + z * z);
+            if (now > 1.0E-6F && now < target) {
+                points[i * 3] = x * target / now;
+                points[i * 3 + 2] = z * target / now;
             }
-            float len = (float) Math.sqrt(x * x + z * z);
-            float rx = len > 1.0E-6F ? x / len : 0.0F;
-            float rz = len > 1.0E-6F ? z / len : 1.0F;
-            // the level way out, in the head's frame
-            u[0] = inv[0] * rx + inv[2] * rz;
-            u[1] = inv[4] * rx + inv[6] * rz;
-            u[2] = inv[8] * rx + inv[10] * rz;
-            float push = exitAlong(c, u, lo, hi) + (kind[i] == LINING_KIND ? 0.0F : LINING);
-            points[i * 3] = x + rx * push;
-            points[i * 3 + 2] = z + rz * push;
         }
     }
 
-    /** Rule 3 for the arms and the head together: each pushes the coat out of its way, three times over (one can push into the other). */
-    public static void keepOut(float[] points, byte[] kind, float[] rest, int n, float[] ways, float[][] arms, float[] head, boolean slim) {
+    /** Rule 3: the collar widened round the head as a ring and the arms pushing the coat out of their way, alternately, three times. */
+    public static void keepOut(float[] points, byte[] kind, float[] rest, int n, float[] ways, float[][] arms, float[] head, float[] inner,
+                               boolean slim) {
         for (int round = 0; round < 3; round++) {
-            headPush(points, kind, rest, n, head);
+            ringPush(points, kind, rest, n, head, inner);
             armsPush(points, kind, n, ways, arms, slim);
         }
     }

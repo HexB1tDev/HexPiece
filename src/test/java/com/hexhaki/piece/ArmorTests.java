@@ -221,7 +221,8 @@ public final class ArmorTests {
             float[] still = rest.clone();
             float[][] restFrames = {rigid(-5.0F, 2.0F, 0.0F, 0, 0, 0), rigid(-5.0F, 2.0F, 0.0F, 0, 0, 0), rigid(5.0F, 2.0F, 0.0F, 0, 0, 0),
                 rigid(5.0F, 2.0F, 0.0F, 0, 0, 0)};
-            com.hexhaki.piece.armor.CoatCloth.keepOut(still, kind, rest, n, ways, restFrames, rigid(0, 0, 0, 0, 0, 0), false);
+            float[] inner = com.hexhaki.piece.armor.CoatCloth.ringRest(rest, n);
+            com.hexhaki.piece.armor.CoatCloth.keepOut(still, kind, rest, n, ways, restFrames, rigid(0, 0, 0, 0, 0, 0), inner, false);
             float shift = 0.0F;
             for (int i = 0; i < still.length; i++) {
                 shift = Math.max(shift, Math.abs(still[i] - rest[i]));
@@ -238,7 +239,7 @@ public final class ArmorTests {
                     frames[side * 2 + 1] = f;
                 }
                 float[] head = rigid(0.0F, 0.0F, 0.0F, arm[0] * 0.5F, arm[1] + 0.9F, 0.0F);
-                com.hexhaki.piece.armor.CoatCloth.keepOut(model, kind, rest, n, ways, frames, head, false);
+                com.hexhaki.piece.armor.CoatCloth.keepOut(model, kind, rest, n, ways, frames, head, inner, false);
                 int inside = 0;
                 for (int i = 0; i < n; i++) {
                     if (kind[i] != com.hexhaki.piece.armor.CoatCloth.BODY && kind[i] != com.hexhaki.piece.armor.CoatCloth.LINING_KIND) {
@@ -252,7 +253,7 @@ public final class ArmorTests {
                         }
                     }
                     float[] h = local(head, model, i);
-                    if (rest[i * 3 + 1] < 2.0F && Math.abs(h[0]) < 3.99F && Math.abs(h[2]) < 3.99F && h[1] > -7.99F && h[1] < -0.01F) {
+                    if (rest[i * 3 + 1] < 0.0F && Math.abs(h[0]) < 3.99F && Math.abs(h[2]) < 3.99F && h[1] > -7.99F && h[1] < -0.01F) {
                         inside++;
                     }
                 }

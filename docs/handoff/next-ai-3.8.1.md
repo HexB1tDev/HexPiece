@@ -413,14 +413,30 @@ trig_01BGaVyTLFeBy7CqJDHWdWE9 at 13:03 UTC 2026-11-27.
 - tools/clothes_view.py renders them on the rig as the game will (the skirt bend: below the hips each point of a coat turns about
   the hip line with the legs' swing, blended by side and by depth: no tearing). katana_mesh CLOTHES / clothes_meshes /
   clothes_texture / pack_clothes (with LODs, the groups kept).
-- Still to do: build.py clothes_assets (assets/hexhaki/clothes/*.hkm, textures/clothes/clothes.png), client/armor/ClothesModel (a
-  HumanoidModel drawing the meshes on its copied parts: the bends (forearm, knee, body bend undone for the lower body), the slim fit
-  (arms 3 px), the skirt), ArmorClient and PieceArmorItem.getArmorTexture to it, new icons from the meshes, tests; THE OWNER'S WORD
-  above: no arm through a coat (the coat must sit outside the arms: its hanging sleeves and sides pushed out of the arms' way or the
-  arms' swing kept inside), and walking blows the coat back as if the wind pushed it.
+- DONE as 3.8.9: build.py clothes_assets (assets/hexhaki/clothes/<piece>.hkm with LODs, textures/clothes/clothes.png);
+  client/armor/ClothesModel (a HumanoidModel with an empty part tree, prepare() copies the layer's pose; rigid groups on their parts
+  with the forearm/knee bends (SwordLayer.bend), the body's bend undone for body_lower and the legs, slim arms narrowed 0.75 about
+  the slim box's middle; coats through armor/CoatCloth per vertex in model px, drawn from the root (bent pose for the chest and
+  sleeves, unbent for the hips), face normals recomputed with the owner's winding); ArmorClient returns it;
+  PieceArmorItem.getArmorTexture -> PieceArmor.CLOTHES_TEXTURE. The coat rule (armor/CoatCloth.java = tools/coat_cloth.py):
+  (1) wind: back = forward speed / WIND_SPEED 0.26 (eased, per entity, ClothesModel.wind), each point turned back about the shoulder
+  line by BACK 1.0 x depth^0.75, the open front panels swung out round the sides (OPEN 1.1 about the verticals at x +-8.6), flutter;
+  across for sideways; (2) the torso's front and the legs' wedges keep the cloth off the body; (3) keepOut, three rounds of: the ring push (the collar as a ring round the neck in 72 sectors:
+  the head's box (grown 0.35, sampled 25 a side) reach at the collar's heights against the collar's inside at rest per sector, the
+  difference (less 0.25) max-filtered over 2 sectors and smoothed, each collar point (rest y < 2, fading) set at least that far out
+  past its rest radius: cloth and lining together, no folding; idempotent) and the arms' push (upper and forearm boxes, no margin over
+  the shoulder; each point out along the way it lay from the arm at rest, by ray exit); the sleeves (right_sleeve/left_sleeve groups) are never pushed
+  (the owner: "the arms should never interact with the coat's arms"): hinged at the shoulders, flared 0.17 rad out, blown back
+  SLEEVE_BACK 1.25. The bake fits the coats onto the game's arms at rest (arm_fit) and opens the collars round the game's head
+  (collar()), so at rest the push moves nothing (ArmorTests checks it, and that no pose leaves a coat point in an arm or the head).
+  Icons re-rendered (clothes_view.icons). Renders: docs/images/clothes-3.8.9.png, coats-walking-3.8.9.png, coats-head-arms-3.8.9.png.
+  The old OnePieceArmorModel is still generated (unused).
 - The owner, after that (verbatim): "the arms should never interact with the  coat's arms" and "see what I mean?" with two pictures:
   Garp walking, his coat worn over the shoulders, blown straight back from the shoulders like a flag, its empty sleeves streaming
   back with it, his arms swinging free under and in front of it. So: the coat's sleeves are the coat's (never on, carried or pushed
   by the arms); walking, the whole coat, sleeves too, is blown back from the shoulders.
 - The owner, with a crop of the coats' back renders (the collar ringed): "head is clipping through the coat": the standing collars were
   shaped round the mannequin's smaller, higher head; they must clear the game's 8 x 8 head, and a turned or raised head must not cut them.
+- The owner, with a crop of coats-head-arms-3.8.9.png (head turned 50 degrees and raised; the collar crumpled behind it, its lining
+  showing in spikes): "the fuck is this mess behind the head". The per-point head push folded the collar: replaced by a ring push
+  (the collar moved out as a whole, direction by direction, eased round the neck; cloth and lining together).

@@ -58,6 +58,7 @@ public final class ClothesModel extends HumanoidModel<LivingEntity> {
         final byte[] kind;
         final float[] ways;
         final float[] moved;
+        final float[] inner;
         /** Each quad's winding against the owner's normals (1 or -1), so a bent face is lit on the side it was. */
         final byte[] winding;
 
@@ -79,6 +80,7 @@ public final class ClothesModel extends HumanoidModel<LivingEntity> {
             }
             this.ways = CoatCloth.restWays(this.rest, this.n, slim);
             this.moved = new float[this.n * 3];
+            this.inner = CoatCloth.ringRest(this.rest, this.n);
             float[] nrm = mesh.normals();
             this.winding = new byte[q.length / 4];
             for (int f = 0; f < this.winding.length; f++) {
@@ -251,7 +253,7 @@ public final class ClothesModel extends HumanoidModel<LivingEntity> {
             frames[side * 2] = upper;
             frames[side * 2 + 1] = times(upper, bendFrame(4.0F, bend[0], bend[1]));
         }
-        CoatCloth.keepOut(model, c.kind, c.rest, c.n, c.ways, frames, frame(this.f_102808_), this.slim);
+        CoatCloth.keepOut(model, c.kind, c.rest, c.n, c.ways, frames, frame(this.f_102808_), c.inner, this.slim);
         // the chest and the sleeves bent with the body (the layer's own pose), the hips' cloth out of the bend
         pose.m_85836_();
         pose.m_85841_(1.0F / 16.0F, 1.0F / 16.0F, 1.0F / 16.0F);

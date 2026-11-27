@@ -3,7 +3,7 @@ requests).
 
 Read CLAUDE.md, then docs/handoff/next-ai-3.8.1.md WHOLE (the owner's messages of the last session verbatim; 3.8.1 the full
 Conqueror's release's lag, 3.8.2 the Conqueror's Haki clash with its TAP M1 bar, 3.8.3 the archipelago world generation, 3.8.4 the
-clashes as HexGhoul's, 3.8.5 forced third person, 3.8.6 the categories and the Saber, 3.8.7 the Iron Mace, 3.8.8 the Flintlock Pistol;
+clashes as HexGhoul's, 3.8.5 forced third person, 3.8.6 the categories and the Saber, 3.8.7 the Iron Mace, 3.8.8 the Flintlock Pistol, 3.8.9 the owner's clothes and the coats' wind (sections 14 and 15);
 section 7 what to do next and THE STANDING RULE of the weapon categories). Then docs/handoff/next-ai-3.7.6.md
 (where things stood at 3.8.0, the Leopard, the standing rules of the days before), and the older handoffs it names as needed.
 
@@ -19,15 +19,14 @@ the head or unused limbs, a first-person hand move per move, CC0 web sounds); wi
 fruit throws the Conqueror's lightning, out of its end explosion when it has one; ONE Haki lightning in the game, the Conqueror's
 release's (3D tubes with needle tips). Never add another lightning look.
 
-Do next, in this order: (1) check 3.8.8's runs (Build and Release on the branch) are green (3.8.1 to 3.8.7 were); (2) the owner's word
-on 3.8.1 to 3.8.8 in game comes first (write it verbatim into the handoff, fix, render, release; 3.8.3 needs a new world); (3) the rest
-of the weapon reworks: the clothes replacements (Clothes_Replacements.blend: ask which armor each replaces), the Saber's kesa/makko and
-the Mace's gyaku yoko/plunge on their own grips; ask the owner whether "Cast lead ball" is the bullet model; (4) the Leopard's other
-moves. Sounds come from Freesound.org: if it is blocked, move the session onto the owner's "HexPiece" environment (it allows it).
+Do next, in this order: (1) check 3.8.9's runs (Build and Release on the branch) are green (3.8.1 to 3.8.8 were); (2) the owner's word
+on 3.8.1 to 3.8.9 in game comes first (write it verbatim into the handoff, fix, render, release; 3.8.3 needs a new world); (3) the rest
+of the weapon reworks: the Saber's kesa/makko and the Mace's gyaku yoko/plunge on their own grips; ask the owner whether "Cast lead
+ball" is the bullet model; (4) the Leopard's other moves. Sounds come from Freesound.org: if it is blocked, move the session onto the owner's "HexPiece" environment (it allows it).
 
 The rules that matter most: answer in English and do exactly what the owner asks, nothing unasked; write every new request verbatim into
 the handoff the moment it arrives; never claim in-game testing; render and judge every animation, effect and menu yourself; never key the
 head or unused limbs (tools/anim lint must pass); everything alpha-blended, never additive; every sound a CC0 web recording; versions roll
-over at 9 (3.8.9 next, then 3.9.0); a push is done only when GitHub's runs are green; at 98% weekly usage write the handoff and this prompt first,
+over at 9 (3.9.0 next); a push is done only when GitHub's runs are green; at 98% weekly usage write the handoff and this prompt first,
 commit, push and stop without checking CI. The world generation's preview and data: tools/archipelago_preview.py, tools/archipelago_data.py
 (vanilla 1.20.1 data from misode/mcmeta 1.20.1-data into the scratchpad, never committed).

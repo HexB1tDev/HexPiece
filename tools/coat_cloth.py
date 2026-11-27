@@ -238,3 +238,91 @@ def head_push(points, frame, rest, lining):
     u = r @ inv[:3, :3].T
     push = np.where(inside, exit_along(c, u, lo, hi) + np.where(lining, 0.0, LINING), 0.0)
     return out + r * push[:, None]
+
+
+def keep_out(points, frames, head, rest, ways, lining, slim=False):
+    """Rule 3 for the arms and the head together: each pushes the coat out of its way, three times over (one can push into the other)."""
+    for _ in range(3):
+        points = head_push(points, head, rest, lining)
+        points = arms_push(points, frames, ways, lining, slim)
+    return points
+
+
+# 3.8.9 (the owner, of the collar crumpled behind a turned head: "the fuck is this mess behind the head"): the head no longer pushes the
+# collar point by point (that folded it into spikes); the collar is a ring round the neck: for each of SECTORS directions round it, how
+# far out the head reaches (its box grown by MARGIN, at the collar's heights, COLLAR_BAND) is set against how far out the collar's
+# inside lies at rest in that direction, and the collar's whole column there (cloth and lining together) moves out by the difference,
+# eased round the ring (a max over NEIGHBOURS sectors, then a smoothing): it widens where the head turns into it, never folds
+SECTORS = 72
+NEIGHBOURS = 2
+COLLAR_BAND = (-3.5, 0.0)
+HEAD_SAMPLES = 25
+
+
+def sector_of(x, z):
+    a = np.arctan2(z, x) % (2 * np.pi)
+    return np.minimum((a / (2 * np.pi) * SECTORS).astype(int), SECTORS - 1)
+
+
+def ring_rest(rest):
+    """Per sector: how far out the collar's inside lies at rest (the least radius of the collar's points there; inf if none)."""
+    collar = rest[:, 1] < COLLAR_BAND[1]
+    r = np.hypot(rest[:, 0], rest[:, 2])
+    s = sector_of(rest[:, 0], rest[:, 2])
+    inner = np.full(SECTORS, np.inf)
+    np.minimum.at(inner, s[collar], r[collar])
+    return inner
+
+
+def head_reach(frame):
+    """Per sector: how far out the head (its box grown by MARGIN; frame: its frame -> model px) reaches at the collar's heights."""
+    h = HEAD_HALF + MARGIN
+    g = np.linspace(-1.0, 1.0, HEAD_SAMPLES)
+    ys = np.linspace(HEAD_Y[0], HEAD_Y[1], HEAD_SAMPLES)
+    pts = []
+    for y in ys:
+        for t in g:
+            pts += [(t * h, y, -h), (t * h, y, h), (-h, y, t * h), (h, y, t * h)]
+    for a in g:
+        for b in g:
+            pts += [(a * h, HEAD_Y[1], b * h)]
+    p = (np.c_[np.array(pts), np.ones(len(pts))] @ frame.T)[:, :3]
+    p = p[(p[:, 1] > COLLAR_BAND[0]) & (p[:, 1] < COLLAR_BAND[1] + MARGIN)]
+    reach = np.zeros(SECTORS)
+    if len(p):
+        np.maximum.at(reach, sector_of(p[:, 0], p[:, 2]), np.hypot(p[:, 0], p[:, 2]))
+    return reach
+
+
+RING_TOLERANCE = 0.25
+
+
+def ring_push(points, frame, rest, inner=None):
+    """The collar (the coat's points from HEAD_REACH px below the shoulders up, fading in from there to the top of the body) set out level
+    from the neck, direction by direction, at least as far as its place at rest plus how much the head reaches past the collar's inside
+    there, eased round the ring (idempotent: it may alternate with the arms' push)."""
+    inner = ring_rest(rest) if inner is None else inner
+    need = np.where(np.isfinite(inner), np.maximum(0.0, head_reach(frame) - inner - RING_TOLERANCE), 0.0)
+    wide = need.copy()
+    for k in range(1, NEIGHBOURS + 1):
+        wide = np.maximum(wide, np.maximum(np.roll(need, k), np.roll(need, -k)))
+    eased = (np.roll(wide, 1) + 2 * wide + np.roll(wide, -1)) / 4.0
+    eased = np.maximum(eased, need)
+    s = sector_of(rest[:, 0], rest[:, 2])
+    w = smooth(HEAD_REACH, 0.0, rest[:, 1])
+    target = np.hypot(rest[:, 0], rest[:, 2]) + eased[s] * w
+    now = np.hypot(points[:, 0], points[:, 2])
+    grow = np.where((now > 1e-6) & (now < target), target / np.maximum(now, 1e-6), 1.0)
+    out = points.copy()
+    out[:, 0] *= grow
+    out[:, 2] *= grow
+    return out
+
+
+def keep_out(points, frames, head, rest, ways, lining, slim=False):
+    """Rule 3: the collar widened round the head as a ring and the arms pushing the coat out of their way, alternately, three times."""
+    inner = ring_rest(rest)
+    for _ in range(3):
+        points = ring_push(points, head, rest, inner)
+        points = arms_push(points, frames, ways, lining, slim)
+    return points

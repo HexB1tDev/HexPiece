@@ -167,3 +167,49 @@ if __name__ == "__main__":
         import anim
         pose = anim.load(sys.argv[2]).pose(float(sys.argv[3]))
     render(sys.argv[1], pose)
+
+
+def icon(piece, size=32):
+    """3.8.9: an armor piece's inventory icon from the owner's clothes: at rest (a coat's sleeves hanging as they hang), turned a little
+    to show its side, filling the slot, a dark outline round it (as the blades' icons)."""
+    import coat_cloth as cc
+    import katana_render as kr
+    verts, quads, groups = load(piece)
+    v = np.array(verts, float)
+    pos = v[:, :3].copy()
+    for gname, first, count in groups:
+        idx = sorted({i for quad in quads[first:first + count] for i in quad})
+        name = gname[:-3] if gname.endswith("_in") else gname
+        if name.endswith("_sleeve"):
+            pos[idx] = cc.sleeve(v[idx, :3], name.split("_")[0])
+            continue
+        part = "body" if name.startswith("body") else name.rsplit("_", 1)[0] if name.endswith(("_upper", "_lower")) else name
+        local = v[idx, :3]
+        if part.endswith("_leg"):
+            # laid out as trousers are drawn: each leg spread a little from the hip, so the two read apart
+            a = 0.2 if part.startswith("left") else -0.2
+            local = cc.rot_z(local, np.full(len(local), -a), 0.0, 0.0)
+        pos[idx] = local + np.array(PIVOT[part])
+    shown = [(x, -y, -z, *rest) for (x, y, z), rest in zip(pos, [tuple(r[3:]) for r in verts])]
+    shown = [(a[0], a[1], a[2], a[3], a[4], a[5], -a[6], -a[7]) for a in shown]
+    tex = Image.open(os.path.join(DIR, "clothes.png"))
+    # the trousers and the boots front on (both legs apart), the rest turned a little to show their side
+    rot = kr.rotation(0.12, 0.0, 0.0) if piece in ("marine_trousers", "marine_boots") else kr.rotation(0.3, 0.45, 0.0)
+    p = np.array([s[:3] for s in shown]) @ rot.T
+    lo, hi = p.min(axis=0), p.max(axis=0)
+    big = size * 8
+    scale = big * 0.92 / max(hi[0] - lo[0], hi[1] - lo[1])
+    img = kr.render((shown, quads, groups), tex, rot, big, scale, (lo + hi) / 2.0, blade_groups=())
+    small = img.resize((size, size), Image.LANCZOS)
+    a = np.asarray(small, float)
+    alpha = a[..., 3] > 40
+    pad = np.pad(alpha, 1)
+    grown = alpha | pad[:-2, 1:-1] | pad[2:, 1:-1] | pad[1:-1, :-2] | pad[1:-1, 2:]
+    a[grown & ~alpha] = (28, 24, 30, 255)
+    a[alpha, 3] = 255
+    return Image.fromarray(a.clip(0, 255).astype(np.uint8), "RGBA")
+
+
+def icons(folder):
+    for piece in PIECES:
+        icon(piece).save(os.path.join(folder, piece + ".png"))
