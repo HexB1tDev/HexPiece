@@ -314,3 +314,32 @@ Every weapon the owner gives comes with one of these categories and is made with
 "Never stop i mean it"
 - STANDING: keep working through the list without pausing for a reply (the Mace, the Gun, the clothes, the Saber's kesa and makko,
   then the Leopard's moves), releasing each step; at 98% weekly usage write the handoff and next prompt first, push and stop.
+
+## 12. 3.8.7: the Iron Mace (category Mace)
+
+- **Model:** tools/mace_bake.py (bpy: /tmp/bpy/bin/python tools/mace_bake.py) bakes First_mace.blend (unpacked from
+  input/newmodels/NewModels.zip) into art/mace/iron_mace.obj (2546 triangles: the body decimated to DECIMATE 0.32, each spike to
+  SPIKE_FACES 40, the ring RING_FACES 160; Blender z -> game +y, y 0 at GRIP_Z 1.35 (the handle's top), LENGTH 40 px end to end:
+  y -10.35 to 29.65; groups 01_Blade_iron, 02_Spikes_iron, 03_Ring_iron) and art/mace/iron_mace.png (a 128 atlas: the body round its
+  axis on the left half, blued black iron with grain and a cold sheen; the spikes base to tip worn to steel; the ring). katana_mesh
+  MACES / mace_meshes / mace_textures / pack_maces (with LODs); sword_view.mesh/texture read it; katana_render.py mace-icons (a pale
+  steel-blue outline: a dark one vanished into the black) -> textures/item/katana/iron_mace_icon.png. build.py mace_assets (mesh +
+  _mid + _far, atlas, item model).
+- **Katana.IRON_MACE** ("iron_mace", "Iron Mace", Grade SAIJO_O_WAZAMONO, Carry.BACK, edge 1.65, reach 0.6): category MACE, legend
+  (worn on the back, drawn whenever you fight, never carried by sea patrols), not blackened by Armament, tip 29.65, kindLine "Mace  ·
+  spiked black iron  ·  throws what it hits"; PieceItems' tab after Yoru; lang item.hexhaki.katana_iron_mace.
+- **Back carry generalised from Yoru:** SwordAnims.suffix "_yoru" for every Carry.BACK weapon's draw/sheathe/charge draw (the mace
+  comes off the back with Yoru's slow draw), CHARGE_DRAW mapping, SwordRules.drawTicks/sheatheTicks.
+- **Its clips** (tools/sword_anims.py MACE profile, MACING: `mace(move)`: body yaw x1.1, bend x1.2, crouch x1.2; the beats before the
+  first cut eased "inoutsine" (cocked slowly), the first cut's beat "inexpo" (accelerating into the hit): the hit ticks unchanged;
+  carry() for MACE: sword_guard_mace (walking: on the right shoulder) and sword_idle_mace (140 ticks: on the shoulder, sinking with the
+  breath, heaved up once and let settle); MACE.home = Yoru's; SHOULDER["mace"] = Yoru's). SwordAnims.name -> own(base, "_mace") where
+  BladePaths has it; idle(MACE) -> sword_idle_mace. java_slides skips iron_mace (no saya).
+- **Server (SwordServer):** MACE_CHAIN 5 more ticks before a buffered next blow, MACE_REST 8 after a string (slow to cock); `strike`:
+  a mace's hit thrown MACE_THROW 1.8 harder (at least 0.35 up) and knocked down MACE_DOWN 30 ticks (HakiFalls: the ragdoll).
+- MACE_SKIP {sword_gyaku_yoko, sword_plunge}: with the mace's thick head the gyaku yoko passes 0.4 px through the head, the plunge's
+  arm flips between ticks 6 and 7, even with the katanas' body: the mace plays the katanas' there (SwordAnims.own falls back). 16
+  `_mace` clips (14 cuts, the guard, the idle) solved and clean; BladePaths 60. build.py MACE_KEYS (katana_keys), sword_view skips a
+  saya for maces. Renders: docs/images/mace-model-3.8.7.png, mace-idle-3.8.7.png, mace-yoko-3.8.7.png.
+- SwordTests: 28 blades; the mace a Mace on the back, never above Yoru (edge, reach), Yoru's draw and sheathing, its idle and guard
+  on the shoulder, its draw as slow as Yoru's.

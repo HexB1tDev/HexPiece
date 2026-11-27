@@ -65,7 +65,14 @@ public enum Katana {
             + "war with a single swing, and to have never needed a second.", Carry.HIP, 1.55F, 0.3),
     YORU("yoru", "Yoru", "Kokuto", Grade.SAIJO_O_WAZAMONO,
         "The black blade: a cross-hilted great sword as tall as a man, carried on the back. The finest sword in the world, gone black from a "
-            + "lifetime of Haki: there is no blacker left to give it, and the lightning only runs round it.", Carry.BACK, 1.75F, 0.75);
+            + "lifetime of Haki: there is no blacker left to give it, and the lightning only runs round it.", Carry.BACK, 1.75F, 0.75),
+    // 3.8.7: the owner's first mace (input/newmodels/NewModels.zip: First_mace.blend, baked into art/mace), its category Mace: "Right
+    // handed, rests on the back like Yoru, the pull out is slow, when idle the player rests it on it's right shoulder, has range, hits
+    // ragdoll but are slow when cocking them, fast on the swing"
+    IRON_MACE("iron_mace", "Iron Mace", "Mace", Grade.SAIJO_O_WAZAMONO,
+        "A great club of blued black iron, as long as a man is tall, its head ringed with six rows of spikes and a ring at its pommel. It "
+            + "comes off the back slowly and rests on the shoulder; drawn back, it falls like a landslide and throws whatever it meets.",
+        Carry.BACK, 1.65F, 0.6);
 
     /** 2.2.7: where a blade is worn: in its saya at the left hip, or tied on the back with no saya (Yoru). */
     public enum Carry {
@@ -124,13 +131,14 @@ public enum Katana {
         return switch (this) {
             case GRYPHON -> Category.SABER;
             case YORU -> Category.YORU;
+            case IRON_MACE -> Category.MACE;
             default -> Category.KATANA;
         };
     }
 
     /** 2.2.7: one of the owner's legendary blades (above every graded katana, never carried by a sea patrol, always drawn in a fight). */
     public boolean legend() {
-        return this == GRYPHON || this == YORU;
+        return this == GRYPHON || this == YORU || this == IRON_MACE; // 3.8.7: the mace too (worn on the back, drawn whenever you fight)
     }
 
     /** 2.2.7: what it multiplies a Swordsman cut by (its grade's, or a legendary blade's own). */
@@ -191,12 +199,13 @@ public enum Katana {
             case MIDNIGHT_LOTUS -> 22.40F;
             case GRYPHON -> 22.44F;
             case YORU -> 32.20F;
+            case IRON_MACE -> 29.65F;
         };
     }
 
     /** 2.2.7: whether Armament Haki blackens it (Yoru is black already: only its lightning shows). */
     public boolean blackens() {
-        return this != YORU;
+        return this != YORU && this != IRON_MACE; // 3.8.7: the mace is black iron already
     }
 
     /** 2.2.7: the tooltip's second line ("Hamon: ..." for a katana). */
@@ -205,6 +214,7 @@ public enum Katana {
         return switch (this) {
             case GRYPHON -> "Saber  ·  the second strongest blade";
             case YORU -> "Yoru  ·  Kokuto (black blade)  ·  the strongest blade";
+            case IRON_MACE -> "Mace  ·  spiked black iron  ·  throws what it hits";
             default -> "Katana  ·  Hamon: " + this.hamon;
         };
     }

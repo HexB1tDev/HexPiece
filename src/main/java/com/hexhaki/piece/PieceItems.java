@@ -50,6 +50,7 @@ public final class PieceItems {
             // 2.2.7: the legendary blades last, Yoru at the very end
             output.m_246342_(stack(Katana.GRYPHON));
             output.m_246342_(stack(Katana.YORU));
+            output.m_246342_(stack(Katana.IRON_MACE)); // 3.8.7
         })
         .m_257652_());
 

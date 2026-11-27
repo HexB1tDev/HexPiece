@@ -185,7 +185,8 @@ def draw_figure(canvas, cam, pose, arm="wide", skip=()):
 
 def draw_katana(canvas, cam, key, matrix, saya=False, blade=True, shine=0.7):
     """The katana (or its saya) whose model px map to E by matrix (4x4)."""
-    names = ([key] if blade else []) + ([key + "_sheath"] if saya else [])
+    # (3.8.7: a mace has no saya, as Yoru has none)
+    names = ([key] if blade else []) + ([key + "_sheath"] if saya and key not in km.MACES and key != "yoru" else [])
     tex = texture(key)
     for name in names:
         verts, tris, is_blade = mesh(name)

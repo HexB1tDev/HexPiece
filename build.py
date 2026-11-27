@@ -25,13 +25,15 @@ import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parent
-VERSION = "3.8.6"
+VERSION = "3.8.7"
 INPUT = ROOT / "input" / "hexhaki-2.1.0.jar"
 EXPECTED_INPUT_SHA256 = "cfe23e6723dd81fd2a8286d6899d40966d5d1fc6b3bb85b93d40eaa287944278"
 # 2.2.7: the owner's two legendary blades (Gryphon with its scabbard, Yoru), never altered.
 LEGENDS_ZIP = ROOT / "input" / "Yoru_Gryphon_Models_Textures_1.20.1.zip"
 EXPECTED_LEGENDS_SHA256 = "03669b1bb759458fe873a3ebe225e403a67db2c86aefdb8fab0bac4a0c7a9a2e"
 LEGEND_KEYS = ["gryphon", "yoru"]
+# 3.8.7: the owner's maces (art/mace, baked by tools/mace_bake.py)
+MACE_KEYS = ["iron_mace"]
 # 2.3.1: the owner's One Piece armor (marine outfit, admiral coat, straw hat, blackbeard coat), never altered: its Forge model and
 # client extension (Mojang names) are translated to SRG names at build time (armor_sources), its textures packed under hexhaki.
 ARMOR_ZIP = ROOT / "input" / "OnePiece_Armor_1.20.1.zip"
@@ -275,8 +277,8 @@ def katana_keys():
     from katana_names import KATANAS
     java = (ROOT / "src/main/java/com/hexhaki/piece/sword/Katana.java").read_text(encoding="utf-8")
     keys = re.findall(r'^    [A-Z_]+\("([a-z_]+)", "', java, re.M)
-    if keys != [k for k, _, _ in KATANAS] + LEGEND_KEYS:
-        raise RuntimeError(f"sword/Katana.java lists other blades than tools/katana_names.py and the legendary two: {keys}")
+    if keys != [k for k, _, _ in KATANAS] + LEGEND_KEYS + MACE_KEYS:
+        raise RuntimeError(f"sword/Katana.java lists other blades than tools/katana_names.py, the legendary two and the maces: {keys}")
     return keys[:len(KATANAS)]
 
 
@@ -331,6 +333,32 @@ def katana_assets():
             raise RuntimeError(f"{key}'s icon is outside textures/item: the item atlas would never stitch it (missing texture)")
         entries[f"{KATANA_MODELS}{key}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
     entries.update(legend_assets())
+    entries.update(mace_assets())
+    return entries
+
+
+def mace_assets():
+    """3.8.7: {jar entry: bytes} for the owner's mace (First_mace.blend baked by tools/mace_bake.py into art/mace: its OBJ in the
+    katanas' frame and its atlas): packed as the legendary blades are, with its levels of detail; its item model and icon (tools/
+    katana_render.py mace-icons)."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    import katana_mesh
+    entries = {}
+    for name, data in katana_mesh.pack_maces().items():
+        entries[f"{KATANA_MESHES}{name}.hkm"] = data
+    for name, data in katana_mesh.mace_textures().items():
+        entries[f"{KATANA_TEXTURES}{name}.png"] = data
+        icon = f"hexhaki:item/katana/{name}_icon"
+        if not (ROOT / ICONS / f"{name}_icon.png").exists():
+            raise RuntimeError(f"No inventory icon for {name} (tools/katana_render.py mace-icons)")
+        model = {
+            "loader": "forge:separate_transforms",
+            "gui_light": "front",
+            "textures": {"particle": icon},
+            "base": {"parent": "minecraft:builtin/entity"},
+            "perspectives": {"gui": {"parent": "minecraft:item/generated", "textures": {"layer0": icon}}},
+        }
+        entries[f"{KATANA_MODELS}{name}.json"] = (json.dumps(model, indent=2) + "\n").encode("utf-8")
     return entries
 
 

@@ -88,15 +88,15 @@ public final class SwordRules {
 
     /** 2.3.2: how long {@code katana}'s draw takes (null: a katana's). */
     public static int drawTicks(Katana katana) {
-        if (katana == Katana.YORU) {
-            return YORU_DRAW_TICKS;
+        if (katana != null && katana.carry() == Katana.Carry.BACK) {
+            return YORU_DRAW_TICKS; // 3.8.7: every weapon off the back (the mace's pull-out is slow too)
         }
         return DRAW_TICKS;
     }
 
     /** 2.3.2: how long {@code katana}'s sheathing takes (null: a katana's). */
     public static int sheatheTicks(Katana katana) {
-        if (katana == Katana.YORU) {
+        if (katana != null && katana.carry() == Katana.Carry.BACK) {
             return YORU_SHEATHE_TICKS;
         }
         return SHEATHE_TICKS;

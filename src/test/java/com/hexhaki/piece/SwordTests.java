@@ -80,7 +80,20 @@ public final class SwordTests {
     }
 
     static void katanas() {
-        Check.that(Katana.values().length == 27, "the owner's 25 katanas and 2.2.7's two legendary blades");
+        Check.that(Katana.values().length == 28, "the owner's 25 katanas, 2.2.7's two legendary blades and 3.8.7's mace");
+        // 3.8.7: the Iron Mace (category Mace): on the back like Yoru, off it with Yoru's slow draw, idle on the right shoulder; never
+        // above Yoru (the owner: "Yoru ... is uncontested the strongest blade that will ever be added")
+        Check.that(Katana.IRON_MACE.edge() < Katana.YORU.edge() && Katana.IRON_MACE.reach() < Katana.YORU.reach(), "Yoru stays uncontested");
+        Check.that(Katana.IRON_MACE.carry() == Katana.Carry.BACK && !Katana.IRON_MACE.blackens() && Katana.IRON_MACE.legend(),
+            "the mace on the back, black iron already, drawn whenever one fights");
+        Check.that("sword_draw_yoru".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.DRAW, Katana.IRON_MACE))
+            && "sword_sheathe_yoru".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.SHEATHE,
+                Katana.IRON_MACE)), "the mace comes off the back and goes back on as Yoru does (slowly)");
+        Check.that("sword_idle_mace".equals(com.hexhaki.piece.sword.SwordAnims.idle(Katana.IRON_MACE))
+            && "sword_guard_mace".equals(com.hexhaki.piece.sword.SwordAnims.name(com.hexhaki.piece.sword.SwordAnims.GUARD, Katana.IRON_MACE)),
+            "the mace rests on the right shoulder, standing and walking");
+        Check.that(com.hexhaki.piece.sword.SwordRules.drawTicks(Katana.IRON_MACE) == com.hexhaki.piece.sword.SwordRules.drawTicks(Katana.YORU),
+            "its pull out as slow as Yoru's");
         // 2.2.7: Gryphon and Yoru, the two strongest blades, Yoru the strongest; Yoru on the back, never black, the longest reach
         float best = 0.0F;
         for (Katana katana : Katana.values()) {
@@ -95,7 +108,8 @@ public final class SwordTests {
         Check.that(!Katana.YORU.blackens() && Katana.GRYPHON.blackens(), "Yoru never turns black");
         Check.that(Katana.YORU.reach() > Katana.GRYPHON.reach() && Katana.GRYPHON.reach() >= 0.0, "Yoru reaches furthest");
         reach();
-        Check.that(Katana.YORU.ordinal() == 26 && Katana.GRYPHON.ordinal() == 25, "new blades at the end (saved by key, sent by ordinal)");
+        Check.that(Katana.YORU.ordinal() == 26 && Katana.GRYPHON.ordinal() == 25 && Katana.IRON_MACE.ordinal() == 27,
+            "new blades at the end (saved by key, sent by ordinal)");
         for (int rank = 0; rank < 3; rank++) {
             for (int pick = 0; pick < 60; pick++) {
                 Check.that(!SeaRules.katana(rank, pick).legend(), "no patrol carries a legendary blade");
@@ -1216,6 +1230,9 @@ public final class SwordTests {
                 Check.that(c == com.hexhaki.piece.sword.Katana.Category.SABER, "Gryphon is a Saber");
             } else if (k == com.hexhaki.piece.sword.Katana.YORU) {
                 Check.that(c == com.hexhaki.piece.sword.Katana.Category.YORU, "Yoru is the Yoru");
+            } else if (k == com.hexhaki.piece.sword.Katana.IRON_MACE) {
+                Check.that(c == com.hexhaki.piece.sword.Katana.Category.MACE && k.carry() == com.hexhaki.piece.sword.Katana.Carry.BACK,
+                    "the Iron Mace is a Mace, worn on the back");
             } else {
                 Check.that(c == com.hexhaki.piece.sword.Katana.Category.KATANA, k + " is a Katana");
             }

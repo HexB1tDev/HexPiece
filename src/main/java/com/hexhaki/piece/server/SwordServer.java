@@ -19,6 +19,7 @@ import com.hexhaki.piece.style.Hit;
 import com.hexhaki.piece.style.Motion;
 import com.hexhaki.piece.sword.BladePaths;
 import com.hexhaki.piece.sword.Katana;
+import net.minecraft.server.level.ServerLevel;
 import com.hexhaki.piece.sword.KatanaItem;
 import com.hexhaki.piece.sword.SwordAnims;
 import com.hexhaki.piece.sword.SwordCombo;
@@ -385,9 +386,27 @@ public final class SwordServer {
         return true;
     }
 
+    /**
+     * 3.8.7 (the owner's Mace: "slow when cocking them, fast on the swing"): a mace's next blow waits {@link #MACE_CHAIN} ticks more
+     * than a blade's to follow the one before, and {@link #MACE_REST} after a string ends: the weight cocked back each time (its swing
+     * itself as fast as a blade's).
+     */
+    static final int MACE_CHAIN = 5;
+    static final int MACE_REST = 8;
+    /** 3.8.7 (the owner's Mace: "hits ragdoll"): how long one struck by a mace lies thrown (ticks), and how much harder it is thrown. */
+    static final int MACE_DOWN = 30;
+    static final double MACE_THROW = 1.8;
+
+    static boolean mace(State state) {
+        return state != null && state.katana != null && state.katana.category() == Katana.Category.MACE;
+    }
+
     static void press(ServerPlayer player, State state, long now) {
         if (state.chargeStart >= 0 || state.releaseStart >= 0 || state.quickStart >= 0) {
             return;
+        }
+        if (mace(state) && state.move == null && now < state.lastEnd + MACE_REST) {
+            return; // 3.8.7: the mace cocked back again first
         }
         if (state.move == null && drawFirst(state, now)) {
             if (now - state.drawStart > 0) {
@@ -398,6 +417,9 @@ public final class SwordServer {
         if (state.move != null) {
             if (state.bufferedAt < 0) {
                 long at = SwordCombo.buffered(state.move, state.moveStart, now);
+                if (mace(state) && at >= now) {
+                    at += MACE_CHAIN; // 3.8.7: the next blow of a mace cocked slowly
+                }
                 if (at > now) {
                     state.bufferedAt = at; // one kept, thrown at the cancel tick
                 } else if (at == now) {
@@ -996,7 +1018,14 @@ public final class SwordServer {
         if (!target.m_6469_(source, damage)) {
             return false;
         }
-        Impact.hit(user, target, StyleCombat.spec(weight, launch));
+        if (user instanceof ServerPlayer player && mace(STATES.get(player.m_20148_())) && target.m_9236_() instanceof ServerLevel level) {
+            // 3.8.7 (the owner's Mace: "hits ragdoll"): thrown harder and down, ragdolled (HakiFalls), as a blunt blow should
+            Vec3 thrown = new Vec3(launch.f_82479_ * MACE_THROW, Math.max(0.35, launch.f_82480_ * MACE_THROW), launch.f_82481_ * MACE_THROW);
+            Impact.hit(user, target, StyleCombat.spec(Hit.Weight.HEAVY, thrown));
+            HakiFalls.knockDown(level, target, MACE_DOWN, false);
+        } else {
+            Impact.hit(user, target, StyleCombat.spec(weight, launch));
+        }
         if (stun > 0) {
             target.m_7292_(new MobEffectInstance(MobEffects.f_19597_, stun, 3, false, false, false));
         }

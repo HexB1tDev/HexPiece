@@ -56,7 +56,7 @@ public final class SwordAnims {
         int own = anim;
         if (anim == QUICK_DRAW) {
             own = QUICK_CUT;
-        } else if (anim == CHARGE_DRAW && katana != Katana.YORU) {
+        } else if (anim == CHARGE_DRAW && katana.carry() != Katana.Carry.BACK) {
             own = CHARGE;
         } else if (anim >= MOVES) {
             SwordMove move = SwordMove.byOrdinal(anim - MOVES);
@@ -72,6 +72,9 @@ public final class SwordAnims {
         if (own2.isEmpty() && katana.category() == Katana.Category.SABER) {
             return saber(base); // 3.8.6: the Saber's more aggressive cuts
         }
+        if (own2.isEmpty() && katana.category() == Katana.Category.MACE) {
+            return own(base, "_mace"); // 3.8.7: the Mace's heavy cuts, its guard on the shoulder
+        }
         return base + own2;
     }
 
@@ -84,13 +87,21 @@ public final class SwordAnims {
      * and blade path, the body driven harder into it) where one is written, the katanas' where none is (the draw, the sheathing, the
      * guard and the idle stay theirs; the kesa and the makko too for now: tools/sword_anims.py AGG_SKIP).
      */
+    public static String own(String base, String suffix) {
+        return OWN.computeIfAbsent(base + suffix, n -> BladePaths.of(n) != null ? n : base);
+    }
+
+    private static final java.util.Map<String, String> OWN = new java.util.concurrent.ConcurrentHashMap<>();
+
     public static String saber(String base) {
         return SABER.computeIfAbsent(base, b -> BladePaths.of(b + "_saber") != null ? b + "_saber" : b);
     }
 
     /** 2.3.2: the suffix of {@code anim}'s animation with {@code katana}: "_yoru" for Yoru's moves on and off its back, else "". */
     public static String suffix(int anim, Katana katana) {
-        return katana == Katana.YORU && back(anim) ? "_yoru" : "";
+        // 3.8.7: every weapon worn on the back comes off it and goes back onto it as Yoru does (the mace: "rests on the back like Yoru,
+        // the pull out is slow")
+        return katana != null && katana.carry() == Katana.Carry.BACK && back(anim) ? "_yoru" : "";
     }
 
     /** 2.3.2: the moves Yoru does its own way (off its back, onto it): its draw, its sheathing, its draw into the charge. */
@@ -105,6 +116,9 @@ public final class SwordAnims {
      * the blade alive in the hand, the head still free. One for every blade.
      */
     public static String idle(Katana katana) {
+        if (katana != null && katana.category() == Katana.Category.MACE) {
+            return own("sword_idle", "_mace"); // 3.8.7 (the owner: "when idle the player rests it on it's right shoulder")
+        }
         return "sword_idle";
     }
 

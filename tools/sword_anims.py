@@ -68,6 +68,12 @@ YORU = Blade("yoru", "yoru", "_yoru", 32.2, 3.07, 0.0)
 # more aggression (AGGRESSION, below), played by Gryphon in place of the katanas' (SwordAnims.suffix); its idle, guard, draw and
 # sheathing stay the katanas'. Its home pose is the katanas' (the cuts start from and end in the very guard it idles in).
 SABER = Blade("saber", "gryphon", "_saber", 22.44, 3.2, 3.0)
+# 3.8.7 (the owner's categories: "Mace Category (Right handed, rests on the back like Yoru, the pull out is slow, when idle the player
+# rests it on it's right shoulder, has range, hits ragdoll but are slow when cocking them, fast on the swing)"): the owner's mace
+# (First_mace.blend, baked by tools/mace_bake.py into art/mace): its cuts the katanas' with MACING (below), its guard and idle rested on
+# the right shoulder; drawn off the back and put back there with Yoru's own draw and sheathing (SwordAnims: "_yoru" for every weapon
+# carried on the back)
+MACE = Blade("mace", "iron_mace", "_mace", 29.65, 0.0, 0.0)
 PROFILE = KATANA
 # the point is kept this far (blocks) over the floor the feet stand on
 FLOOR = 0.12
@@ -750,6 +756,46 @@ AGG_SKIP = {"sword_kesa", "sword_makko"}
 AGG_EXCEPT = {}
 
 
+# 3.8.7: the Mace's cuts: heavy (the body hunched lower and driven further into each blow), and "slow when cocking them, fast on the
+# swing": into the cocked pose eased slowly (MACE_COCK), out of it into the blow accelerating to the very tick it strikes (MACE_SWING:
+# slow out of the cock, fastest at the hit); the hits on the very ticks the server sweeps, as every blade's
+MACING = False
+MACE_COCK = "inoutsine"
+MACE_SWING = "inexpo"
+MACE_BEND = 1.2
+MACE_CROUCH = 1.2
+MACE_TURN = 1.1
+# the cuts the Mace plays as the katanas do (no "_mace" of its own): with the mace's thick head the gyaku yoko passes 0.4 px through the
+# head and the plunge's arm flips between two ticks even with the katanas' body; to write them for the mace, reshape their beats
+MACE_SKIP = {"sword_gyaku_yoko", "sword_plunge"}
+MACE_EXCEPT = {}
+
+
+def mace(move):
+    """3.8.7: {@code move} made the Mace's (its beats copied): heavier, cocked slowly, swung fast into its first cut."""
+    import copy
+    first = move.cuts[0][0]
+    rules = MACE_EXCEPT.get(move.name, {})
+    beats = []
+    for beat in move.beats:
+        beat = copy.copy(beat)
+        body = dict(beat.body)
+        if "yaw" in body:
+            body["yaw"] = body["yaw"] * rules.get("turn", MACE_TURN)
+        if body.get("bend", 0.0) > 0.0:
+            body["bend"] = body["bend"] * rules.get("bend", MACE_BEND)
+        if body.get("y", 0.0) < 0.0:
+            body["y"] = body["y"] * rules.get("crouch", MACE_CROUCH)
+        beat.body = body
+        if beat.tick < first and beat.tick > 0:
+            beat.easing = MACE_COCK
+        elif beat.tick == first:
+            beat.easing = MACE_SWING
+        beats.append(beat)
+    move.beats = beats
+    move.description = "(Mace: heavy, cocked slowly, swung fast) " + move.description
+
+
 def aggress(beat, name=None):
     """3.8.6: the beat made more aggressive (a copy: a beat shared with the katanas' moves is never changed)."""
     import copy
@@ -777,6 +823,10 @@ def write(move):
     run_pending (in parallel: the arms are searched numerically, beat by beat)."""
     if AGGRESSIVE and move.name in AGG_SKIP:
         return move
+    if MACING and move.name in MACE_SKIP:
+        return move
+    if MACING and move.cuts:
+        mace(move)
     if AGGRESSIVE:
         move.beats = [aggress(beat, move.name) for beat in move.beats]
         move.description = "(Saber: more aggressive) " + move.description
@@ -1424,6 +1474,7 @@ KATANA.noto_p, KATANA.noto_out, KATANA.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
 GRYPHON.noto_p, GRYPHON.noto_out, GRYPHON.noto_pull = NOTO_P, 12.0, NOTO_PULL
 YORU.noto_p, YORU.noto_out, YORU.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
 SABER.noto_p, SABER.noto_out, SABER.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
+MACE.noto_p, MACE.noto_out, MACE.noto_pull = NOTO_P, NOTO_OUT, NOTO_PULL
 
 
 def noto(tick, easing, out, body=None, legs=None, head=None, left="saya"):
@@ -1968,12 +2019,15 @@ KATANA.home = LOW_STANCE
 SABER.home = LOW_STANCE
 GRYPHON.home = (H(7.2, 10.2, 2.0), D(0.45, -0.5, 0.74), D(0.2, -0.78, -0.55))
 YORU.home = (H(6.8, 9.0, 3.6), D(0.3, -0.38, 0.88), D(0.1, -0.9, -0.36))
+# 3.8.7: the mace held as Yoru is between cuts (low and forward, its head well off the floor)
+MACE.home = YORU.home
 # carried on the right shoulder: the back of the blade over it, the edge up (the owner: "the blade edge should be facing up"), the
 # point high behind; the hand up in front of the shoulder, the elbow down, so the blade passes over the top of the arm, not along it
 # (the owner: "the sword handle clipping through the shoulder?")
 SHOULDER = {"gryphon": (H(6.2, 0.6, 4.6), D(0.0, 0.5, -0.87), D(0.0, 0.87, 0.5)),
             "yoru": (H(6.2, 0.2, 4.8), D(0.0, 0.56, -0.83), D(0.0, 0.83, 0.56))}
 # Yoru presented: low at the right hip, its long blade angled up across the front (the owner's unsheath reference ends so)
+SHOULDER["mace"] = SHOULDER["yoru"]
 PRESENT = (H(3.4, 8.6, 3.6), D(-0.48, 0.52, 0.72), D(0.0, 0.84, -0.55))
 
 
@@ -2053,6 +2107,23 @@ def carry():
             b(160, "inoutsine", held(*home), L_REST, easy, LEGS_EASY),
         ]
         duration = 160
+    elif PROFILE is MACE:
+        # 3.8.7 (the owner: "when idle the player rests it on it's right shoulder"): the mace on the right shoulder the whole time, its
+        # weight felt: the shoulder sinking under it with each breath, once a while heaved up off it and let settle again
+        sh = SHOULDER["mace"]
+        heave = shifted(sh, (0.0, -1.2, 0.3))
+        beats = [
+            b(0, "linear", held(*sh), l_sway, {"yaw": -4, "bend": 1}, shift_legs),
+            b(24, "inoutsine", held(*shifted(sh, (0.0, 0.4, 0.0))), l_breath, {"yaw": -5, "bend": 2}, shift_legs),
+            b(48, "inoutsine", held(*sh), l_sway, {"yaw": -4, "bend": 1}, shift_legs),
+            b(70, "inoutsine", held(*shifted(sh, (0.0, 0.4, 0.0))), l_breath, {"yaw": -5, "bend": 2}, shift_legs),
+            b(84, "outsine", held(*heave), l_sway, {"yaw": -6, "bend": -1}, shift_legs),
+            b(90, "inquad", held(*shifted(sh, (0.0, 0.5, 0.0))), l_breath, {"yaw": -4, "bend": 2.5}, shift_legs),
+            b(96, "outback", held(*sh), l_sway, {"yaw": -4, "bend": 1}, shift_legs),
+            b(120, "inoutsine", held(*shifted(sh, (0.0, 0.4, 0.0))), l_breath, {"yaw": -5, "bend": 2}, shift_legs),
+            b(140, "inoutsine", held(*sh), l_sway, {"yaw": -4, "bend": 1}, shift_legs),
+        ]
+        duration = 140
     else:
         sh = SHOULDER["yoru"]
         upright = (H(7.8, 3.6, 5.4), D(0.28, 1.0, 0.05), D(0.95, -0.25, -0.2))
@@ -2283,7 +2354,8 @@ def java_slides():
     import re
     import saya_slide
     src = open(os.path.join(ROOT, "src/main/java/com/hexhaki/piece/sword/Katana.java"), encoding="utf-8").read()
-    keys = [k for k in re.findall(r'^\s+[A-Z_]+\("([a-z_]+)"', src, re.M) if k != "yoru"]
+    # (3.8.7: nor the mace: whatever is worn on the back has no saya to slide out of)
+    keys = [k for k in re.findall(r'^\s+[A-Z_]+\("([a-z_]+)"', src, re.M) if k not in ("yoru", "iron_mace")]
     cases, bodies = [], []
     for i, key in enumerate(keys):
         rows = saya_slide.table(key)
@@ -2327,6 +2399,7 @@ def java_npc_poses():
            "        return switch (name) {"]
     # NPCs carry katanas only (never a legendary blade): the katanas' animations
     names = sorted(n for n in MOVES if not n.endswith(GRYPHON.suffix) and not n.endswith(YORU.suffix) and not n.endswith(SABER.suffix)
+                   and not n.endswith(MACE.suffix)
                    and n != "style_swordsman_back_stance")
     for i, name in enumerate(names):
         out.append(f'            case "{name}" -> s{i}();')
@@ -2377,6 +2450,13 @@ def build():
     AGGRESSIVE = True
     moves(False)
     AGGRESSIVE = False
+    # 3.8.7: the Mace's cuts, and its guard and idle on the right shoulder (no draws: it comes off the back as Yoru does)
+    global MACING
+    PROFILE = MACE
+    MACING = True
+    moves(False)
+    MACING = False
+    carry()
     PROFILE = KATANA
 
 
