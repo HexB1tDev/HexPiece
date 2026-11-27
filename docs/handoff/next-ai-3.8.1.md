@@ -852,3 +852,14 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
   vertex, like cloth()), then add the fit measure to ArmorTests over every clip's frames.
 - Defects named in the renders (scratchpad coat/r2.png): the boots' open soles show the leg's bottom; a corner of the arm's top shows
   over the shoulder.
+
+## 34. 3.9.7 (in progress): the world generation checked on its real terrain; the Itsumade's kit
+- tools/archipelago_preview.py now evaluates hexhaki:island_field through the game's own IslandField (tools/preview/RiverDump
+  "islands"); vanilla data in the scratchpad's wg/vanilla. Seed 2, 24 km: land 3.6%, the sea floor ~y 3, every island ringed by its
+  beach and a shallow shelf. The rivers were 35-56 blocks wide (they cut the smaller islands to pieces): RiverField.NARROW 3 -> 6
+  (17-28 blocks; every river still coast to coast). Seen and left: a small island where two rivers meet at a shallow angle holds a
+  wide water patch (a bay); hills along some rivers; low hills on the deep sea floor (the 0.12 of vanilla continents). Render:
+  docs/images/archipelago-islands-3.9.7.png (three 3 km views).
+- The Itsumade's kit (spec in 22), in this order: the passive (no death but by Ryou; black smoke, 10 blocks away, full health and
+  energy), the Haki colours (Haki_Color: deep indigo bolts, violet rims, green sparks; the Conqueror's release can kill), the transformed
+  moves (M1 Wind Gust, M2 talons, X Bow, C Enormous Bite, V Yokai Beam), then X / C / V / B, then N (the menu, the pentagrams).

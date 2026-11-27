@@ -176,6 +176,8 @@ class World:
             return self.spline(node["spline"])
         if t == "river_lines":
             return river_lines(self.x, self.z, self.seed)
+        if t == "island_field":
+            return river_lines(self.x, self.z, self.seed, "islands")
         raise ValueError("unsupported density function " + t)
 
     def spline(self, s):
@@ -207,12 +209,13 @@ class World:
         return out
 
 
-def river_lines(x, z, seed):
-    """hexhaki:river_lines through the game's own RiverField (Java), for every point."""
+def river_lines(x, z, seed, what="rivers"):
+    """hexhaki:river_lines (or 3.9.5 hexhaki:island_field) through the game's own RiverField (IslandField) (Java), for every point."""
     pts = np.stack([x.ravel(), z.ravel()], axis=1).astype(">f8")
     data = struct.pack(">qi", seed, len(pts)) + pts.tobytes()
     cp = os.pathsep.join([os.path.join(ROOT, "build", "classes"), os.path.join(ROOT, "build", "preview")])
-    out = subprocess.run(["java", "-cp", cp, "RiverDump"], input=data, capture_output=True, check=True).stdout
+    out = subprocess.run(["java", "-cp", cp, "RiverDump"] + (["islands"] if what == "islands" else []), input=data, capture_output=True,
+                         check=True).stdout
     return np.frombuffer(out, dtype=">f8").astype(np.float64).reshape(x.shape)
 
 

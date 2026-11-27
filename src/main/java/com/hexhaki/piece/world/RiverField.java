@@ -23,7 +23,7 @@ public final class RiverField {
     public static final double SPACING_B = 1900.0;
     public static final double SPACING_C = 2400.0;
     /** How much narrower the rivers' valleys are than the plain triangle between them (the value reaches 1 sooner). */
-    public static final double NARROW = 3.0;
+    public static final double NARROW = 6.0;
     /** The bends' waves: wavelengths (blocks) and each one's share of the slope budget (all together {@link #BENDS}). */
     static final double[] WAVES = {3100.0, 1650.0, 880.0, 430.0, 210.0};
     static final double[] SHARE = {0.30, 0.22, 0.16, 0.10, 0.07};
