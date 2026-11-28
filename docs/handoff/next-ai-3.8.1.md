@@ -959,3 +959,62 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
   game. The Itsumade's kit is complete per section 22; 4.0.0 fixed N's key number, its energy costs, POINT ONE on its gust/bite/talons/
   teleport; 4.0.1 redid the rivers per island (section 41). The clothes stay parked (docs/handoff/clothes-wip-3.9.7.patch). Next
   version: 4.0.2.
+
+## 43. THE OWNER ON THE ITSUMADE IN GAME AFTER 4.0.1 (verbatim; five pictures kept in input/itsumade/feedback-4.0.1/: 28 the
+## Itsumade standing, the ribbon's arch over its head and both talons circled in green; 29 its back from behind; 30 flying from behind,
+## the wings level and stiff, the tail a straight purple stick with its orange stripe; 31 Thy Death seen from under it: black blobs of
+## "cloud" round the player, flat double-line bolts; 32 Enormous Presence: a purple ring on the sand round the player, a flat blue bolt)
+"bunch of problems off the bat already that I want you to try to fix. Okay, so you just shed on everything I said, basically. The
+Itsumade fruit, the Gorosei one, the one that we just added, like, you shit on this. Let me be very clear with what I say. You just
+didn't give a fuck or two shits about what I said. Like, you just didn't, and that's very clear in the presentation you gave me for the
+mod. Carrying on. The talons are still not animated, and I'm going to be very blunt with you. This is a shit show. Like, this is a
+fucking, or every single ability is wrong. Let me get this straight. Everything looks lifeless. The fucking model, the fire is
+completely botched. Like, the wings are, I don't even know what to call these wings if I'm being truthful with you. This looks like
+shit. The black ribbon of fire no longer looks like a ribbon. It looks like a misshapen algae type shit. The moves are not centered.
+Like, they're not in the beak or anything. The Conqueror Lightning is not the same as the one in the mod, and it appears to be the old
+version for some reason. Yokai Blast, I asked for a ball of fire specifically different from Kaido, and what did you give me? You gave
+me the same thing, literally the same thing as the Dragon Fruit that I told you specifically not to do. I asked for a big ball of fire
+at the explosion, and I asked not to be able to move or look around while firing it after releasing the beam. I can move, though. I
+can clearly move, and I can look around even if the beam is stuck. The beam is shot from the fucking belly of the player instead of
+from the arms. Should I go on? I mean, shit. Like, let's go on. I keep telling you to improve the model and get reference of the real
+birds and like shit, and you just did not give a shit. And I'm gonna send you all the previews so you see the piece of shit that you
+did. The teleportation, the hellish teleport, this is bullshit. I mean, I'm sorry, but I asked to be able to see exactly where it is,
+like where you teleport, you go, like, you should be able to see yourself going into the beam of fire into the sky. Like, your vision,
+you should be able to see it. And then falling down from the sky into the other beam. Into the other circle, I mean. But no, it's
+instant. Like, it's fucking instant. This is horrible. Like, it's fucking horrible. Enormous presence. It's shooting like lightning way
+too often. When I said it's something that it's just occurs randomly, just like the Conqueror's Haki. It should just be random
+lightning strikes. But very clearly, not only is the lightning not the same model as the one in Conqueror, but it's the same one that I
+told you specifically multiple times not to use. Yet here it is again. Once again. For the 11th time, I keep saying I don't want this
+lightning. I want the one from Conqueror. The Conqueror with the the model with the tubes that creates the real 3D lightning. And you
+keep shitting on everything I say, and you keep giving me the same 2D lightning that I told you specifically multiple times to get rid
+of. Yet you just don't seem to give much of a shit and just do whatever you want. Which is the typical theme with you. You just do
+whatever the fuck you want and fuck whatever I say. When transformed, oh boy, that's where it gets. There's no particles on the
+transformation. The walking animation is okay, but the hair, again, is stiff instead of having animations that I specifically asked
+for multiple times on the head of the monster. The neck should be more free, and it's still like a stiff fucking stick. It feels
+horrible. It feels like a dead bird that I'm commanding. The fly animations is like a mosquito. The wings are beating non-stop for like
+a mosquito. That's all I can say. Like a mosquito. It doesn't feel good. The legs don't move while flying. There's no grab animation on
+the talons. There's nothing. This is the worst fucking shit you've ever given me. You piece of fucking shit. I'm not even gonna mention
+the fact that even when not transformed, as if this couldn't get any worse, not only is it like, bro, you can see your abilities from
+Itsumade in the normal form in the HUD for some reason. Like, something that never happens in this mod, you can't fucking see it in
+this one. It's like, you purposely left the shit here to piss me off. The tail also has no physics when flying. It looks like a stiff
+cardboard instead of turning with the player. No, it's a stick that flies in the air. A misshapen stick that looks like shit. The
+bmove and transform is meant to be a cloud over a specific area that I aimed at. But no, instead it's a fucking cloud surrounding me
+that keeps following me. That's very realistic. I love it. God damn. And if you can detect, which I think you can't, it's sarcasm. It
+looks like shit and it should be it should be in the area I aimed at. And the clouds should be fucking clouds or not whatever the fuck
+this is. Oh, and look again, shooting from the cloud, guess what it is? The old outdated lighting, the 2D lighting that I specifically
+keep asking to remove. Huh, that's adorable. Another thing that is pissing me off is that a lot of moves seem to have things I don't
+ask for. For example, the C move, like enormous presence. Why is there a little area around the player like that is highlighted in
+purple? I didn't ask for this. Gear 5 also has these rings showing up around the player when I don't ask for them. Yet you just fucking
+add them just because. God, you fucking pissing me off"
+
+THE LIST (in their order; every point to be fixed, rendered and judged): 1 talons animated (grab, legs moving in flight); 2 the model
+alive (fire, wings: real bird references); 3 the black ribbon a ribbon again (not "algae"); 4 the moves from the beak (centred);
+5 THE ONE 3D TUBE LIGHTNING of the Conqueror's release everywhere (Presence, Thy Death, Bow, POINT ONE): never the flat 2D one;
+6 Yokai Beam/Blast: a big ball of fire at the explosion, NOT Kaido's (the dragon's) explosion; after release the user can neither
+move nor look around until the beam ends; the human's beam from the arm/hand, not the belly; 7 Hellish Teleport: the player SEES the
+trip: carried up into the beam to the sky, then falling from the sky down the other beam onto the other circle (not instant);
+8 Enormous Presence: lightning rare and random (as the Conqueror's Haki's), 3D tube lightning, NO purple ring; 9 transformation
+particles; 10 hair animated; 11 neck free; 12 flight: slow powerful beats with glides, not a mosquito; 13 the HUD: only the moves of
+the form the player is in; 14 the tail's physics in flight (turning with the player); 15 Thy Death: the cloud over the AIMED area
+(fixed there, not following), real-looking clouds, 3D tube lightning; 16 nothing unasked: no purple ring (Presence), no rings round the
+player in Gear 5.
