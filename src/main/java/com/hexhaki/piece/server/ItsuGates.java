@@ -53,7 +53,8 @@ public final class ItsuGates {
      * how long it takes to come down the other beam onto the far circle; how much of the climb it takes to be drawn into the middle.
      */
     public static final int RISE = 50;
-    public static final int FALL = 50;
+    /** 4.0.3 (the owner: "it falls down slowly onto the circle"): six seconds down the far beam. */
+    public static final int FALL = 120;
     static final double GATHER = 0.3;
     /** How high the pillars reach (blocks over the pentagram). */
     public static final double SKY = 90.0;

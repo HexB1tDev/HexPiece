@@ -835,10 +835,8 @@ public final class ItsuArt {
     }
 
     /**
-     * A pillar of black flames from {@code y0} to {@code y1} over ({@code x, z}), {@code radius} round, at {@code alpha}: 4.0.2 (the owner:
-     * "you should be able to see yourself going into the beam of fire into the sky"): hollow, never a solid column: four ribbons of black
-     * flame twisting up (or down, when {@code down}) round an open core lit a faint violet, slim black tongues licking off them, the gate's
-     * cyan and pink fire among them now and then: whatever is carried up its middle shows through.
+     * A pillar of black flames from {@code y0} to {@code y1} over ({@code x, z}): {@code radius} round, rolling up (or down when
+     * {@code down}) as {@code age} runs, a violet-pink heart showing through, at {@code alpha}.
      */
     public static void pillar(FireMesh.Sink sink, double x, double y0, double y1, double z, double radius, double age, double alpha,
                               boolean down, int seed) {
@@ -846,41 +844,34 @@ public final class ItsuArt {
             return;
         }
         double h = y1 - y0;
-        double flow = down ? -age * 0.9 : age * 0.9;
+        double step = Math.max(0.6, radius * 0.7);
+        int n = (int) Math.min(160, h / step);
+        double flow = (age * 0.9) % step;
         try {
-            // the ribbons
-            int pieces = (int) Math.min(120, Math.max(8, h / 1.0));
-            for (int k = 0; k < 6; k++) {
-                double[] prev = null;
-                for (int i = 0; i <= pieces; i++) {
-                    double d = h * i / pieces;
-                    double a = (d - flow) / (radius * (1.8 + 0.25 * k)) + k * Math.PI / 3.0;
-                    double r = radius * (1.0 + 0.12 * Math.sin(d * 0.7 + k + age * 0.3));
-                    double[] p = {x + Math.cos(a) * r, y0 + d, z + Math.sin(a) * r};
-                    if (prev != null) {
-                        double flick = 0.45 + 0.55 * Math.abs(Math.sin(age * 1.3 + i * 0.6 + k * 2.0));
-                        FireMesh.tube(sink, prev[0], prev[1], prev[2], p[0], p[1], p[2], radius * 0.08 * flick, radius * 0.08 * flick, 0x1B0D22,
-                            0x0A050D, 0x56225C, 0.35, 0.9 * alpha, 0.0, age, seed * 31 + i * 4 + k);
-                    }
-                    prev = p;
+            for (int i = 0; i <= n; i++) {
+                double d = i * step + (down ? step - flow : flow);
+                if (d > h) {
+                    continue;
                 }
-            }
-            // slim tongues off them, and the gate's fire now and then
-            int tongues = (int) Math.min(140, h / 0.8);
-            for (int i = 0; i < tongues; i++) {
-                double d = ((i * 0.8 - flow * 0.5) % h + h) % h;
-                double a = i * 2.39 + age * 0.05;
-                double tx = x + Math.cos(a) * radius * 1.1;
-                double tz = z + Math.sin(a) * radius * 1.1;
-                FireMesh.palette(i % 7 == 3 ? GATE_FIRE : YOKAI_BLACK);
-                FireMesh.puff(sink, tx, y0 + d, tz, radius * 0.2, Math.cos(a) * 0.2, down ? 1.0 : -1.0, Math.sin(a) * 0.2, 2.4, 1.0,
-                    i % 7 == 3 ? 0.86 : 0.5, 0.35, false, 0.85 * alpha, age + i * 0.37, seed * 977 + i);
-            }
-            // the open core's faint violet light
-            int lights = (int) Math.max(2, Math.min(14, h / (radius * 3.0)));
-            for (int i = 0; i < lights; i++) {
-                double d = h * (i + 0.5) / lights;
-                FireMesh.shell(sink, x, y0 + d, z, radius * 1.4, LINE_GLOW, 0.12 * alpha, 0.0);
+                double y = y0 + d;
+                double up = d / h;
+                double rr = radius * (0.85 + 0.25 * Math.sin(age * 0.5 + i * 1.7)) * (1.0 + 0.6 * up);
+                double ox = Math.sin(age * 0.3 + i * 2.1) * rr * 0.2;
+                double oz = Math.cos(age * 0.37 + i * 1.3) * rr * 0.2;
+                FireMesh.palette(YOKAI_BLACK);
+                FireMesh.puff(sink, x + ox, y, z + oz, rr, ox * 0.2, down ? 1.0 : -1.0, oz * 0.2, 1.8, 1.3, 0.5, 0.35, false, alpha * 0.85,
+                    age + i * 0.37, seed * 977 + i);
+                if (i % 3 == 0) {
+                    com.hexhaki.piece.dragon.UoFire.glow(sink, x, y, z, rr * 2.4, LINE_GLOW, 0.22 * alpha);
+                }
+                // pink and blue tongues twisting up (or down) round it: the pentagram's fire carried with it
+                if (i % 2 == 0) {
+                    double ta = age * 0.35 + i * 2.4;
+                    double tr = rr * 1.02;
+                    FireMesh.palette(GATE_FIRE);
+                    FireMesh.puff(sink, x + Math.cos(ta) * tr, y, z + Math.sin(ta) * tr, rr * 0.3, 0.0, down ? 1.0 : -1.0, 0.0, 2.6, 1.0, 0.86,
+                        0.7, false, alpha * 0.9, age + i * 0.53, seed * 397 + i);
+                }
             }
         } finally {
             FireMesh.palette(FireMesh.BAND);
@@ -888,9 +879,8 @@ public final class ItsuArt {
     }
 
     /**
-     * A body in black flames ({@code x, y, z} its feet, {@code height} tall), {@code k} 0 to 1: slim tongues of black flame licking up all
-     * round it (rising over it in its first third), the body showing between them, then (past 0.35) burning down and away. 4.0.2: tongues,
-     * never a lump over it (the owner: you see yourself going up into the beam). {@code toward} is no longer used: the body is carried.
+     * A body swallowed by black flames ({@code x, y, z} its feet, {@code height} tall), {@code k} 0 to 1: the flames rising over it
+     * and then (when {@code toward} is given, camera-relative) drawn off it to that point, the pentagram's middle.
      */
     public static void engulf(FireMesh.Sink sink, double x, double y, double z, double height, double k, double[] toward, double age, int seed) {
         if (k >= 1.0) {
@@ -898,18 +888,23 @@ public final class ItsuArt {
         }
         double over = clamp01(k * 3.0);
         double gone = clamp01((k - 0.35) / 0.65);
+        double cx = x;
+        double cz = z;
+        double cy = y;
+        if (toward != null) {
+            cx = x + (toward[0] - x) * gone;
+            cy = y + (toward[1] - y) * gone;
+            cz = z + (toward[2] - z) * gone;
+        }
         try {
             FireMesh.palette(YOKAI_BLACK);
-            int n = 7;
+            int n = 5;
             for (int i = 0; i < n; i++) {
-                double a = i * 2.39 + age * 0.15;
-                double up = height * ((i * 0.37) % 1.0) * over;
-                double r = 0.42 + 0.06 * Math.sin(age * 0.7 + i);
-                double size = (0.11 + 0.04 * Math.sin(age * 0.9 + i * 1.7)) * (1.0 - gone * 0.7);
-                FireMesh.puff(sink, x + Math.cos(a) * r, y + 0.1 + up, z + Math.sin(a) * r, size, Math.cos(a) * 0.15, -1.0, Math.sin(a) * 0.15,
-                    2.6, 1.0, 0.5, 0.35, false, 0.9 * (1.0 - gone * gone), age + i, seed * 71 + i);
+                double u = (i + 0.5) / n;
+                double hy = cy + height * u * over * (1.0 - gone * 0.8);
+                double rr = (0.45 + 0.2 * Math.sin(age * 0.6 + i)) * (1.0 - gone * 0.5);
+                FireMesh.puff(sink, cx, hy, cz, rr, 0.0, 0.3, 0.0, 1.2, 0.9, 0.5, 0.35, false, 0.92 * (1.0 - gone * gone), age + i, seed * 71 + i);
             }
-            FireMesh.shell(sink, x, y + height * 0.5, z, height * 0.7, LINE_GLOW, 0.14 * (1.0 - gone), 0.0);
         } finally {
             FireMesh.palette(FireMesh.BAND);
         }
