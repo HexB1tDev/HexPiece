@@ -59,6 +59,7 @@ public final class ItsuSaintFx {
         double[] stareAt = new double[3];
         double[] stareWay = new double[3];
         long presenceUntil = -1;
+        long nextArc;
         long pulseFrom = -1000;
         double pulseRadius;
         double[] pulseAt = new double[3];
@@ -74,6 +75,9 @@ public final class ItsuSaintFx {
         long stormUntil = -1;
         double cloudY;
         double stormRadius;
+        /** 4.0.2: where the storm stands (the spot aimed at; it stays there). */
+        double stormX;
+        double stormZ;
         /** Its bolts' bursts still glowing: x, y, z, the tick it struck. */
         final java.util.List<double[]> bursts = new java.util.ArrayList<>();
     }
@@ -123,6 +127,11 @@ public final class ItsuSaintFx {
             case ItsuSaint.BODY_BOLT -> bodyBolt(level, m.user(), m.x(), m.y(), m.z(), m.id());
             case ItsuSaint.CHARGE -> s.chargeFrom = m.id() == 1 ? now : -1;
             case ItsuSaint.BLAST -> {
+                // 4.0.2 (the owner: "I asked not to be able to move or look around while firing it after releasing the beam"): one's own
+                // view and body held on the way it was let go until it ends (client/dragon/AimLock)
+                double hl = Math.sqrt(m.ax() * m.ax() + m.az() * m.az());
+                com.hexhaki.piece.client.dragon.AimLock.beam(m.user(), (float) Math.toDegrees(Math.atan2(-m.ax(), m.az())),
+                    (float) -Math.toDegrees(Math.atan2(m.ay(), hl)), m.ticks());
                 s.chargeFrom = -1;
                 s.blastFrom = now;
                 s.blastLife = m.ticks();
@@ -135,6 +144,7 @@ public final class ItsuSaintFx {
                 s.blastWay[2] = m.az() / Math.max(1.0E-6, l);
             }
             case ItsuSaint.BLAST_OFF -> {
+                com.hexhaki.piece.client.dragon.AimLock.off(m.user());
                 if (s.blastFrom >= 0) {
                     s.blastLife = (int) Math.min(s.blastLife, now - s.blastFrom); // it fades from now
                 }
@@ -144,6 +154,8 @@ public final class ItsuSaintFx {
                     s.stormFrom = now;
                     s.stormUntil = now + m.ticks();
                     s.cloudY = m.bx();
+                    s.stormX = m.x();
+                    s.stormZ = m.z();
                     s.stormRadius = m.by();
                 } else {
                     s.stormUntil = Math.min(s.stormUntil, now);
@@ -190,8 +202,9 @@ public final class ItsuSaintFx {
             return;
         }
         double[] b = nearestOnBody(owner, tx, ty, tz);
-        HakiBolts.sparks(level, owner, b[0], b[1], b[2], ConquerorSparks.wifi(new double[3], new double[] {tx - b[0], ty - b[1], tz - b[2]}, 0.8,
-            3, seed), 0.0, 0.0F);
+        // 4.0.2 (the owner: "I want the one from Conqueror ... the model with the tubes"): the release's very bolt (ConquerorStorm.between)
+        HakiBolts.sparks(level, owner, b[0], b[1], b[2], com.hexhaki.piece.haki.ConquerorStorm.between(new double[3],
+            new double[] {tx - b[0], ty - b[1], tz - b[2]}, 0.55, 0.0F, seed), 0.0, 0.0F);
         HakiBolts.zap(level, tx, ty, tz, 0.6F);
     }
 
@@ -251,7 +264,7 @@ public final class ItsuSaintFx {
                 continue;
             }
             if (s.presenceUntil > now && body instanceof Player player) {
-                crackle(level, player, now);
+                crackle(level, player, now, s);
             }
             Entity target = level.m_6815_(s.stareTarget);
             if (now - s.stareFrom < ItsuSaint.STARE_AT && target != null) {
@@ -271,25 +284,24 @@ public final class ItsuSaintFx {
                 // a little rain of soot under the clouds
                 double a = RANDOM.nextDouble() * Math.PI * 2.0;
                 double r = s.stormRadius * Math.sqrt(RANDOM.nextDouble());
-                level.m_7106_(ParticleTypes.f_123762_, player.m_20185_() + Math.cos(a) * r, s.cloudY - 2.0, player.m_20189_() + Math.sin(a) * r,
+                level.m_7106_(ParticleTypes.f_123762_, s.stormX + Math.cos(a) * r, s.cloudY - 2.0, s.stormZ + Math.sin(a) * r,
                     0.0, -0.05, 0.0);
             }
         }
     }
 
-    /** Enormous Presence: short arcs of the Conqueror's lightning crawling off the body, a dark haze rising off it. */
-    static void crackle(ClientLevel level, Player player, long now) {
-        if (now % 3 == 0) {
-            double h = 0.3 + RANDOM.nextDouble() * 1.4;
-            double a = RANDOM.nextDouble() * Math.PI * 2.0;
-            double bx = player.m_20185_() + Math.cos(a) * 0.3;
-            double by = player.m_20186_() + h;
-            double bz = player.m_20189_() + Math.sin(a) * 0.3;
-            double out = 0.7 + RANDOM.nextDouble() * 0.9;
-            HakiBolts.sparks(level, player, bx, by, bz, ConquerorSparks.wifi(new double[3], new double[] {Math.cos(a) * out,
-                (RANDOM.nextDouble() - 0.4) * out, Math.sin(a) * out}, 0.35, 2, RANDOM.nextLong()), 0.0, 0.0F);
+    /**
+     * Enormous Presence: the Conqueror's Haki let out on the body: 4.0.2 (the owner: "It should just be random lightning strikes ... the
+     * one from Conqueror"): the mod's own arcs off a body with the Conqueror's Haki (haki/ConquerorSparks.body, as client/haki/
+     * ConquerorSparksClient draws them for a player moving with it), at random now and then, a dark haze rising off it.
+     */
+    static void crackle(ClientLevel level, Player player, long now, Saint s) {
+        if (now >= s.nextArc) {
+            s.nextArc = now + 14 + RANDOM.nextInt(22);
+            HakiBolts.sparks(level, player, player.m_20185_(), player.m_20186_(), player.m_20189_(),
+                ConquerorSparks.body(3, player.m_20206_(), player.m_20205_(), RANDOM.nextLong()), 0.0, 0.0F);
         }
-        if (now % 2 == 0) {
+        if (now % 3 == 0) {
             double a = RANDOM.nextDouble() * Math.PI * 2.0;
             level.m_7106_(ParticleTypes.f_123762_, player.m_20185_() + Math.cos(a) * 0.4, player.m_20186_() + RANDOM.nextDouble() * 1.6,
                 player.m_20189_() + Math.sin(a) * 0.4, Math.cos(a) * 0.02, 0.04, Math.sin(a) * 0.02);
@@ -354,7 +366,9 @@ public final class ItsuSaintFx {
                     if (s.chargeFrom >= 0) {
                         Vec3 h = hand(player, partial).m_82546_(camera);
                         double c = Math.min(1.0, (now - s.chargeFrom) / ItsuSaint.BLAST_FULL);
-                        ItsuFx.ball(h.f_82479_, h.f_82480_, h.f_82481_, 0.12 + 0.3 * c, now, seed);
+                        Vec3 look = player.m_20252_(partial);
+                        ItsuArt.ball(ItsuFx.SINK, h.f_82479_, h.f_82480_, h.f_82481_, 0.12 + 0.3 * c, now, seed, look.f_82479_, look.f_82480_,
+                            look.f_82481_);
                     }
                     if (s.blastFrom >= 0 && now - s.blastFrom < s.blastLife + 6) {
                         s.blastReach = ItsuFx.beamLine(level, camera, hand(player, partial), s.blastWay, s.blastLength, s.blastWidth, s.blastLife,
@@ -365,35 +379,7 @@ public final class ItsuSaintFx {
                     }
                 }
                 Entity target = level.m_6815_(s.stareTarget);
-                if (now - s.stareFrom < ItsuSaint.STARE_AT + 1 && target != null) {
-                    Vec3 t = target.m_20318_(partial).m_82520_(0.0, target.m_20206_() * 0.5, 0.0).m_82546_(camera);
-                    double k = (now - s.stareFrom) / ItsuSaint.STARE_AT;
-                    // a dark ring closing in round it, level with its middle
-                    ring(t.f_82479_, t.f_82480_, t.f_82481_, 0, 1, 0, 2.4 - 1.6 * k, 0.18 + 0.1 * k, 0x07051A, INDIGO, 0.25 + 0.55 * k);
-                }
-                if (now - s.stareHit < 12) {
-                    double k = (now - s.stareHit) / 12.0;
-                    double[] w = s.stareWay;
-                    double x = s.stareAt[0] - camera.f_82479_;
-                    double y = s.stareAt[1] - camera.f_82480_;
-                    double z = s.stareAt[2] - camera.f_82481_;
-                    // the shockwave: rings racing out off it, square to the way it is thrown
-                    for (int i = 0; i < 3; i++) {
-                        double kk = Math.max(0.0, k - i * 0.12);
-                        if (kk <= 0.0) {
-                            continue;
-                        }
-                        double r = 0.6 + 4.5 * Math.sqrt(kk);
-                        ring(x + w[0] * i * 0.7, y + w[1] * i * 0.7, z + w[2] * i * 0.7, w[0], w[1], w[2], r, 0.35 * (1.0 - kk) + 0.05,
-                            INDIGO, GREEN, (1.0 - kk) * 0.8);
-                    }
-                }
-                if (now - s.pulseFrom < 14) {
-                    double k = (now - s.pulseFrom) / 14.0;
-                    double r = s.pulseRadius * Math.sqrt(k);
-                    ring(s.pulseAt[0] - camera.f_82479_, s.pulseAt[1] + 0.15 - camera.f_82480_, s.pulseAt[2] - camera.f_82481_, 0, 1, 0, r,
-                        0.6 + 1.6 * (1.0 - k), 0x07051A, INDIGO, (1.0 - k) * 0.7);
-                }
+                // 4.0.2 (the owner: "a lot of moves seem to have things I don't ask for"): no rings for the stare or the presence
                 for (double[] b : s.bursts) {
                     double age = now - b[3];
                     if (age < 0.0 || age > BURST_LIFE) {
@@ -418,8 +404,7 @@ public final class ItsuSaintFx {
     static void clouds(Player player, Saint s, Vec3 camera, float now, float partial, int seed) {
         double gather = Math.min(1.0, (now - s.stormFrom) / ItsuSaint.DEATH_GATHER);
         double clear = now > s.stormUntil ? Math.max(0.0, 1.0 - (now - s.stormUntil) / STORM_FADE) : 1.0;
-        Vec3 at = player.m_20318_(partial);
-        ItsuArt.clouds(ItsuFx.SINK, at.f_82479_ - camera.f_82479_, s.cloudY - camera.f_82480_, at.f_82481_ - camera.f_82481_,
+        ItsuArt.clouds(ItsuFx.SINK, s.stormX - camera.f_82479_, s.cloudY - camera.f_82480_, s.stormZ - camera.f_82481_,
             s.stormRadius + 6.0, gather, 0.85 * gather * clear, now, seed);
     }
 

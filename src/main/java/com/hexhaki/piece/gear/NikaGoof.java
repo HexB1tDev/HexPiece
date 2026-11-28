@@ -381,7 +381,7 @@ public final class NikaGoof {
         } finally {
             FireMesh.palette(FireMesh.BAND);
         }
-        FireMesh.ring(sink, x, y - MIDDLE * 0.6, z, 0, 1, 0, RADIUS * (0.6 + 2.4 * t), 0.35, 0.12, 0xFFFFFF, 0.8 * fade);
+        // 4.0.2 (the owner: "Gear 5 also has these rings showing up around the player when I don't ask for them"): no ring round it
         if (age < 3.0) {
             FireMesh.shell(sink, x, y, z, RADIUS * (0.8 + 0.4 * age), 0xFFFFFF, 0.25 * (1.0 - age / 3.0), 0.0);
         }

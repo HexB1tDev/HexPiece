@@ -73,6 +73,8 @@ public final class ItsuSaint {
     public static final double DEATH_RADIUS = 25.0;
     public static final double DEATH_BLAST = 1.5;
     public static final double CLOUD_HEIGHT = 34.0;
+    /** How far Thy Death can be aimed (blocks). */
+    static final double DEATH_AIM = 96.0;
     static final float DEATH_DAMAGE = 10.0F;
     static final int DEATH_STUN = 50;
     static final int DEATH_COOL = 900;
@@ -91,6 +93,9 @@ public final class ItsuSaint {
         long chargeFrom = -1;
         long stormFrom = -1;
         double cloudY;
+        double stormX;
+        double stormY;
+        double stormZ;
         Blast blast;
     }
 
@@ -234,7 +239,7 @@ public final class ItsuSaint {
         }
         cool(player, ItsuKit.PRESENCE, PRESENCE_COOL);
         s.presenceUntil = now + PRESENCE_TICKS;
-        s.nextBolt = now + 6;
+        s.nextBolt = now + 20 + player.m_217043_().m_188503_(40);
         ItoMoves.animate(player, "itsu_presence");
         ItoMoves.fx(player, PRESENCE, 1, player.m_20182_(), Vec3.f_82478_, 0, 0, 0, PRESENCE_TICKS);
         play(player, player.m_20182_(), ModSounds.CONQUEROR_RELEASE.get(), 2.0F, 0.7F);
@@ -247,7 +252,8 @@ public final class ItsuSaint {
         for (LivingEntity body : ConquerorRelease.taken(player, level, PRESENCE_RADIUS)) {
             ConquerorRelease.hold(level, body, PRESENCE_HOLD);
         }
-        ItoMoves.fx(player, PULSE, 0, player.m_20182_(), Vec3.f_82478_, PRESENCE_RADIUS, 0, 0, 0);
+        // 4.0.2 (the owner: "Why is there a little area around the player like that is highlighted in purple? I didn't ask for this"): no
+        // ring is drawn for it any more
         play(player, player.m_20182_(), ModSounds.CONQUEROR_CHARGE.get(), 0.9F, 0.6F);
     }
 
@@ -350,6 +356,10 @@ public final class ItsuSaint {
                 }
                 return true;
             }
+            // 4.0.2 (the owner: "I asked not to be able to move or look around while firing it"): held still while it pours (its client
+            // holds the view and drops the movement keys: client/dragon/AimLock)
+            this.user.m_20334_(0.0, 0.0, 0.0);
+            this.user.f_19864_ = true;
             Vec3 from = hand(this.user);
             double out = Math.min(this.length, this.age * BLAST_SPEED + 1.0);
             Vec3 end = from.m_82549_(this.way.m_82490_(out));
@@ -399,9 +409,18 @@ public final class ItsuSaint {
         }
         cool(player, ItsuKit.DEATH, DEATH_COOL);
         s.stormFrom = now;
-        s.cloudY = player.m_20186_() + CLOUD_HEIGHT;
+        // 4.0.2 (the owner: "meant to be a cloud over a specific area that I aimed at ... instead it's a fucking cloud surrounding me that
+        // keeps following me"): the storm stands over the spot looked at (the first block on the look within DEATH_AIM, or its end),
+        // and stays there
+        Vec3 aimed = ItoMoves.looked(player, DEATH_AIM);
+        Vec3 ground = ItoMoves.ground((ServerLevel) player.m_9236_(), aimed, 4.0, 64.0);
+        Vec3 centre = ground != null ? ground : aimed;
+        s.stormX = centre.f_82479_;
+        s.stormZ = centre.f_82481_;
+        s.stormY = centre.f_82480_;
+        s.cloudY = centre.f_82480_ + CLOUD_HEIGHT;
         ItoMoves.animate(player, "itsu_death");
-        ItoMoves.fx(player, STORM, 1, player.m_20182_(), Vec3.f_82478_, s.cloudY, DEATH_RADIUS, 0, DEATH_TICKS);
+        ItoMoves.fx(player, STORM, 1, centre, Vec3.f_82478_, s.cloudY, DEATH_RADIUS, 0, DEATH_TICKS);
         play(player, player.m_20182_(), ModSounds.CONQUEROR_SUPREME_RUMBLE.get(), 2.5F, 0.6F);
     }
 
@@ -412,10 +431,10 @@ public final class ItsuSaint {
     static void skyBolt(ServerPlayer player, ServerLevel level, State s, long now) {
         double a = player.m_217043_().m_188500_() * Math.PI * 2.0;
         double r = DEATH_RADIUS * Math.sqrt(0.04 + 0.96 * player.m_217043_().m_188500_());
-        double x = player.m_20185_() + Math.cos(a) * r;
-        double z = player.m_20189_() + Math.sin(a) * r;
-        double top = Math.max(s.cloudY - 2.0, player.m_20186_() + 8.0);
-        BlockHitResult down = level.m_45547_(new ClipContext(new Vec3(x, top, z), new Vec3(x, player.m_20186_() - 48.0, z),
+        double x = s.stormX + Math.cos(a) * r;
+        double z = s.stormZ + Math.sin(a) * r;
+        double top = s.cloudY - 2.0;
+        BlockHitResult down = level.m_45547_(new ClipContext(new Vec3(x, top, z), new Vec3(x, s.stormY - 48.0, z),
             ClipContext.Block.COLLIDER, ClipContext.Fluid.ANY, null));
         if (down.m_6662_() != HitResult.Type.BLOCK) {
             return; // nothing under it to strike: the next one lands
@@ -459,7 +478,9 @@ public final class ItsuSaint {
                 pressure(player, level);
             }
             if (now >= s.nextBolt) {
-                s.nextBolt = now + 10 + player.m_217043_().m_188503_(9);
+                // 4.0.2 (the owner: "It's shooting like lightning way too often ... It should just be random lightning strikes"): now
+                // and then, at random (two to four seconds apart), as the Conqueror's Haki's own
+                s.nextBolt = now + 40 + player.m_217043_().m_188503_(50);
                 bodyBolt(player, level, now);
             }
         }

@@ -47,6 +47,14 @@ public final class ItsuGates {
     /** The black flames take what stands on it (ticks), and how long the pillars burn. */
     public static final int SWALLOW = 8;
     public static final int PILLAR_LIFE = 44;
+    /**
+     * 4.0.2 (the owner: "you should be able to see yourself going into the beam of fire into the sky ... And then falling down from the
+     * sky ... Into the other circle ... But no, it's instant"): how long what was taken is carried up the pillar into the sky (ticks), and
+     * how long it takes to come down the other beam onto the far circle; how much of the climb it takes to be drawn into the middle.
+     */
+    public static final int RISE = 50;
+    public static final int FALL = 50;
+    static final double GATHER = 0.3;
     /** How high the pillars reach (blocks over the pentagram). */
     public static final double SKY = 90.0;
     /** How far from either end a client is told of it (blocks). */
@@ -280,8 +288,9 @@ public final class ItsuGates {
         @Override
         public boolean tick(long now) {
             this.age++;
-            if (!this.user.m_6084_() || this.user.m_9236_() != this.level) {
+            if (!this.user.m_6084_() || this.user.m_9236_() != this.level || this.age > 100000) {
                 this.both(END, 0, 0, 0, Vec3.f_82478_, 0, 0, 0);
+                this.release();
                 RITUALS.remove(this.user.m_20148_());
                 return true;
             }
@@ -290,16 +299,69 @@ public final class ItsuGates {
                 ItoMoves.sound(this.user, this.from, ItsuServer.GATE_HUM, 1.2F, 0.8F + this.age / 400.0F);
                 this.soundAt(this.to, ItsuServer.GATE_HUM, 1.2F);
             }
+            int up = form + SWALLOW;
+            int top = up + RISE;
+            int down = top + FALL;
             if (this.age == form) {
                 this.swallow();
-            } else if (this.age == form + SWALLOW) {
-                this.through();
-            } else if (this.age >= form + PILLAR_LIFE + 16) {
+            } else if (this.age > up && this.age <= top) {
+                this.carry((this.age - up) / (double) RISE, false);
+                if (this.age == top - SWALLOW) {
+                    // the beam starts falling out of the sky onto the far circle as they reach the top of this one
+                    this.far(this.message(PILLAR, 1, this.to, Vec3.f_82478_, SKY, 0, FALL + SWALLOW + 24));
+                }
+                if (this.age == top) {
+                    this.through();
+                }
+            } else if (this.age > top && this.age <= down) {
+                this.carry((this.age - top) / (double) FALL, true);
+                if (this.age == down) {
+                    this.land();
+                }
+            } else if (this.age >= down + 40) {
                 this.both(END, 0, 0, 0, Vec3.f_82478_, 0, 0, 0);
                 RITUALS.remove(this.user.m_20148_());
                 return true;
             }
             return false;
+        }
+
+        /**
+         * Where what was taken is {@code t} (0 to 1) of the way through the climb up the near pillar ({@code falling} false: from where
+         * it stood, drawn into the middle over the first GATHER of it, up to SKY over the circle) or down the far beam ({@code falling}:
+         * from SKY over the far circle down onto it, spread back out where it stood over the last GATHER).
+         */
+        Vec3 path(Vec3 off, double t, boolean falling) {
+            double ease = t * t * (3.0 - 2.0 * t);
+            if (!falling) {
+                double in = Math.min(1.0, t / GATHER);
+                double keep = 1.0 - in * in * (3.0 - 2.0 * in);
+                return this.from.m_82520_(off.f_82479_ * keep, Math.max(0.0, off.f_82480_) + SKY * ease, off.f_82481_ * keep);
+            }
+            double out = Math.max(0.0, (t - (1.0 - GATHER)) / GATHER);
+            double spread = out * out * (3.0 - 2.0 * out);
+            return this.to.m_82520_(off.f_82479_ * spread, Math.max(0.0, off.f_82480_) + 0.05 + SKY * (1.0 - ease), off.f_82481_ * spread);
+        }
+
+        /** Every taken body moved along its path this tick: by its motion (smooth on its client), put back on it if it strayed. */
+        void carry(double t, boolean falling) {
+            double next = Math.min(1.0, t + 1.0 / (falling ? FALL : RISE));
+            for (int i = 0; i < this.taken.size(); i++) {
+                Entity e = this.taken.get(i);
+                if (!e.m_6084_() || e.m_9236_() != this.level) {
+                    continue;
+                }
+                Vec3 off = this.offsets.get(i);
+                Vec3 now = this.path(off, t, falling);
+                Vec3 then = this.path(off, next, falling);
+                if (e.m_20182_().m_82554_(now) > 3.0) {
+                    e.m_6021_(now.f_82479_, now.f_82480_, now.f_82481_);
+                }
+                e.m_20242_(true);
+                e.m_20334_(then.f_82479_ - e.m_20185_(), then.f_82480_ - e.m_20186_(), then.f_82481_ - e.m_20189_());
+                e.f_19789_ = 0.0F;
+                e.f_19864_ = true;
+            }
         }
 
         /** It has formed: what stands on it swallowed by black flames, drawn to its middle; the pillar up, the beam down. */
@@ -315,18 +377,18 @@ public final class ItsuGates {
                 }
                 this.taken.add(e);
                 this.offsets.add(at.m_82546_(this.from));
-                this.near(this.message(ENGULF, e.m_19879_(), at, this.from, e.m_20206_(), 0, SWALLOW));
+                // the black flames over it the whole climb (its client draws them on the body as it goes)
+                this.near(this.message(ENGULF, e.m_19879_(), at, this.from, e.m_20206_(), 0, SWALLOW + RISE));
                 e.m_20334_(0.0, 0.0, 0.0);
             }
-            this.near(this.message(PILLAR, 0, this.from, Vec3.f_82478_, SKY, 0, PILLAR_LIFE));
-            this.far(this.message(PILLAR, 1, this.to, Vec3.f_82478_, SKY, 0, PILLAR_LIFE));
+            this.near(this.message(PILLAR, 0, this.from, Vec3.f_82478_, SKY, 0, SWALLOW + RISE + 16));
             // 4.0.0 (POINT ONE): the Conqueror's lightning out of the blast up, and (through) out of the landing
             ConquerorAura.mixed(this.user, this.from.m_82520_(0.0, 1.0, 0.0), 3.5, 8, -1.0);
             ItoMoves.sound(this.user, this.from, ItsuServer.GATE_GO, 2.5F, 1.0F);
             this.soundAt(this.to, ItsuServer.GATE_GO, 2.5F);
         }
 
-        /** Everything taken stands on the far one where it stood on the near one, out of the black flames. */
+        /** At the top of the near pillar: everything taken is put at the top of the far beam, in its black flames, to come down it. */
         void through() {
             // the far end loaded (made in full) before anything is put there
             this.level.m_6325_((int) Math.floor(this.to.f_82479_) >> 4, (int) Math.floor(this.to.f_82481_) >> 4);
@@ -335,21 +397,45 @@ public final class ItsuGates {
                 if (!e.m_6084_() || e.m_9236_() != this.level) {
                     continue;
                 }
-                Vec3 off = this.offsets.get(i);
-                Vec3 at = this.to.m_82520_(off.f_82479_, Math.max(0.0, off.f_82480_) + 0.05, off.f_82481_);
+                Vec3 at = this.path(this.offsets.get(i), 0.0, true);
                 e.m_6021_(at.f_82479_, at.f_82480_, at.f_82481_);
                 e.m_20334_(0.0, 0.0, 0.0);
                 e.f_19789_ = 0.0F;
                 e.f_19864_ = true;
-                if (e instanceof ServerPlayer p && p != this.user && p.m_20182_().m_82554_(this.to) <= WATCH) {
+                if (e instanceof ServerPlayer p && p != this.user) {
                     // a player taken along sees the far end too (the user is told of it from the start)
                     PieceNetwork.sendTo(p, this.message(FORM, 1, this.to, Vec3.f_82478_, 0, 0, ItsuArt.GATE_FORM));
-                    PieceNetwork.sendTo(p, this.message(PILLAR, 1, this.to, Vec3.f_82478_, SKY, 0, PILLAR_LIFE - SWALLOW));
+                    PieceNetwork.sendTo(p, this.message(PILLAR, 1, this.to, Vec3.f_82478_, SKY, 0, FALL + 24));
                 }
-                this.far(this.message(ARRIVE, e.m_19879_(), at, Vec3.f_82478_, e.m_20206_(), 0, 12));
+                this.far(this.message(ENGULF, e.m_19879_(), at, this.to, e.m_20206_(), 1, FALL));
+            }
+            ItoMoves.sound(this.user, this.to.m_82520_(0.0, SKY * 0.5, 0.0), ItsuServer.GATE_GO, 2.5F, 1.0F);
+        }
+
+        /** Down on the far circle: gravity given back, the black flames peeling off, the landing heard. */
+        void land() {
+            for (int i = 0; i < this.taken.size(); i++) {
+                Entity e = this.taken.get(i);
+                if (!e.m_6084_()) {
+                    continue;
+                }
+                e.m_20242_(false);
+                e.m_20334_(0.0, 0.0, 0.0);
+                e.f_19789_ = 0.0F;
+                e.f_19864_ = true;
+                this.far(this.message(ARRIVE, e.m_19879_(), e.m_20182_(), Vec3.f_82478_, e.m_20206_(), 0, 14));
             }
             this.soundAt(this.to, ItsuServer.GATE_LAND, 2.5F);
             ConquerorAura.mixed(this.user, this.to.m_82520_(0.0, 1.0, 0.0), 3.5, 8, -1.0);
+        }
+
+        /** Gravity given back to whatever is still being carried (the ritual cut short). */
+        void release() {
+            for (Entity e : this.taken) {
+                if (e.m_6084_()) {
+                    e.m_20242_(false);
+                }
+            }
         }
     }
 

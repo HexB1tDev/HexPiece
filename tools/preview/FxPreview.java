@@ -274,6 +274,11 @@ public final class FxPreview {
             case "iclouds" -> com.hexhaki.piece.itsumade.ItsuArt.clouds(sink, -eye[0], 34.0 - eye[1], -eye[2], 31.0, Double.parseDouble(move[1]),
                 0.85 * Double.parseDouble(move[1]), 40.0, 7);
             case "iburst" -> com.hexhaki.piece.itsumade.ItsuArt.burst(sink, -eye[0], -eye[1], -eye[2], 1.5, Double.parseDouble(move[1]), 20.0, 7);
+            // 4.0.2: ifireball:k:radius (the Yokai Beam's end, on the ground at the point), iball2:radius (the charge, its halo facing +z)
+            case "ifireball" -> com.hexhaki.piece.itsumade.ItsuArt.fireball(sink, -eye[0], 1.0 - eye[1], -eye[2], Double.parseDouble(move[2]),
+                Double.parseDouble(move[1]), 30.0, 7);
+            case "iball2" -> com.hexhaki.piece.itsumade.ItsuArt.ball(sink, 0.36 - eye[0], 1.38 - eye[1], 0.8 - eye[2], Double.parseDouble(move[1]),
+                12.0, 7, 0, 0, 1);
             // 3.9.9: Hellish Teleport: ipenta:age[:rough] (the pentagram forming on flat or stepped ground round the point),
             // ipillar:age:down (the black-flame pillar 40 high), iengulf:k (a body swallowed and drawn to the middle 2 off)
             case "ipenta" -> {
@@ -301,6 +306,25 @@ public final class FxPreview {
             }
             case "ipillar" -> com.hexhaki.piece.itsumade.ItsuArt.pillar(sink, -eye[0], -eye[1], 40.0 - eye[1], -eye[2], 1.4,
                 Double.parseDouble(move[1]), 1.0, move.length > 2 && move[2].equals("1"), 7);
+            // 4.0.2: itrip:t:falling (Hellish Teleport's trip t 0..1: up the near pillar, or down the far beam; the body in its flames,
+            // the circle under it)
+            case "itrip" -> {
+                double t = Double.parseDouble(move[1]);
+                boolean falling = move.length > 2 && move[2].equals("1");
+                double ease = t * t * (3.0 - 2.0 * t);
+                double sky = com.hexhaki.piece.server.ItsuGates.SKY;
+                com.hexhaki.piece.itsumade.ItsuArt.Ground flat = (gx, gz) -> -eye[1];
+                com.hexhaki.piece.itsumade.ItsuArt.pentagram(sink, flat, -eye[0], -eye[2], 220.0, 1.0, 7);
+                double bodyY = falling ? sky * (1.0 - ease) : sky * ease;
+                if (falling) {
+                    com.hexhaki.piece.itsumade.ItsuArt.pillar(sink, -eye[0], Math.max(0.0, bodyY - 6.0) - eye[1], sky - eye[1], -eye[2], 1.5, t * 50.0,
+                        1.0, true, 7);
+                } else {
+                    com.hexhaki.piece.itsumade.ItsuArt.pillar(sink, -eye[0], -eye[1], sky - eye[1], -eye[2], 1.5, t * 50.0, 1.0, false, 7);
+                }
+                com.hexhaki.piece.pika.LightArt.figure(sink, -eye[0], bodyY - eye[1], -eye[2], 0.0, 0.0, 0.0, 1.0, 0);
+                com.hexhaki.piece.itsumade.ItsuArt.engulf(sink, -eye[0], bodyY - eye[1], -eye[2], 1.8, 0.34, null, t * 50.0, 3);
+            }
             case "iengulf" -> com.hexhaki.piece.itsumade.ItsuArt.engulf(sink, 2.0 - eye[0], -eye[1], -eye[2], 1.8, Double.parseDouble(move[1]),
                 new double[] {-eye[0], 0.5 - eye[1], -eye[2]}, 20.0, 7);
             case "blast", "bolt" -> {

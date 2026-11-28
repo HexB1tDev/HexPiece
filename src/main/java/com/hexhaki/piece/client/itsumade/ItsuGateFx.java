@@ -89,8 +89,9 @@ public final class ItsuGateFx {
                     e.down = m.id() == 1;
                 }
             }
-            case ItsuGates.ENGULF -> BURNS.add(new Burn(m.id(), m.x(), m.y(), m.z(), m.bx(), now, m.ticks() + 4,
-                new double[] {m.ax(), m.ay() + 0.5, m.az()}));
+            // 4.0.2: the flames stay on the body the whole climb up the near pillar or down the far beam (it is carried: the server moves
+            // it; drawn where the body is each frame)
+            case ItsuGates.ENGULF -> BURNS.add(new Burn(m.id(), m.x(), m.y(), m.z(), m.bx(), now, m.ticks() + 2, new double[] {m.ax(), m.ay(), m.az()}));
             case ItsuGates.ARRIVE -> BURNS.add(new Burn(m.id(), m.x(), m.y(), m.z(), m.bx(), now, m.ticks(), null));
             case ItsuGates.END -> {
                 End e = ENDS.get(key(m.user(), m.id()));
@@ -189,14 +190,17 @@ public final class ItsuGateFx {
             for (Burn b : BURNS) {
                 double age = now - b.start();
                 double k = age / b.life();
+                net.minecraft.world.entity.Entity body = level.m_6815_(b.entity());
+                Vec3 at = body != null ? body.m_20318_(partial) : new Vec3(b.x(), b.y(), b.z());
+                double x = at.f_82479_ - camera.f_82479_;
+                double y = at.f_82480_ - camera.f_82480_;
+                double z = at.f_82481_ - camera.f_82481_;
                 if (b.to() != null) {
-                    double[] to = {b.to()[0] - camera.f_82479_, b.to()[1] - camera.f_82480_, b.to()[2] - camera.f_82481_};
-                    ItsuArt.engulf(ItsuFx.SINK, b.x() - camera.f_82479_, b.y() - camera.f_82480_, b.z() - camera.f_82481_, b.height(), k, to, now,
-                        b.entity());
+                    // swallowed: the flames rising over it in the first ticks, then held over it as it is carried
+                    ItsuArt.engulf(ItsuFx.SINK, x, y, z, b.height(), 0.34 * Math.min(1.0, age / ItsuGates.SWALLOW), null, now, b.entity());
                 } else {
-                    // arriving: the flames already over it, peeling away
-                    ItsuArt.engulf(ItsuFx.SINK, b.x() - camera.f_82479_, b.y() - camera.f_82480_, b.z() - camera.f_82481_, b.height(),
-                        0.35 + 0.65 * k, null, now, b.entity());
+                    // down: the flames peeling off it
+                    ItsuArt.engulf(ItsuFx.SINK, x, y, z, b.height(), 0.35 + 0.65 * k, null, now, b.entity());
                 }
             }
         } catch (RuntimeException failure) {

@@ -124,6 +124,10 @@ public final class ItsuFx {
     }
 
     static final Map<Integer, Entry> ENTRIES = new HashMap<>();
+    /** 4.0.2: the Yokai Beam's fireballs burning (x, y, z, radius, the tick it began, its life, its user). */
+    static final java.util.List<double[]> FIREBALLS = new java.util.ArrayList<>();
+    static final int FIREBALL_LIFE = 56;
+    static final int HIT_LIFE = 22;
 
     private ItsuFx() {
     }
@@ -153,6 +157,12 @@ public final class ItsuFx {
         }
         if (m.kind() >= ItsuSaint.STARE && m.kind() <= ItsuSaint.PULSE) {
             ItsuSaintFx.accept(m); // 3.9.8: the human's moves
+            return;
+        }
+        if (m.kind() == ItsuMoves.HIT || m.kind() == ItsuMoves.FIREBALL) {
+            // 4.0.2: the Yokai Beam's own fire where it strikes and its big ball of fire at its end (never the dragon's)
+            FIREBALLS.add(new double[] {m.x(), m.y(), m.z(), m.size() * (m.kind() == ItsuMoves.FIREBALL ? 1.0 : 0.45), clock,
+                m.kind() == ItsuMoves.FIREBALL ? FIREBALL_LIFE : HIT_LIFE, m.user()});
             return;
         }
         if (m.kind() == ItsuServer.SMOKE) {
@@ -228,6 +238,10 @@ public final class ItsuFx {
             case ItsuMoves.BOW -> entry.bowUntil = m.id() == 1 ? clock + m.ticks() : -1;
             case ItsuMoves.CHARGE -> entry.chargeFrom = m.id() == 1 ? clock : -1;
             case ItsuMoves.BEAM -> {
+                // 4.0.2 (the owner: "I asked not to be able to move or look around while firing it after releasing the beam")
+                double hl = Math.sqrt(m.ax() * m.ax() + m.az() * m.az());
+                com.hexhaki.piece.client.dragon.AimLock.beam(m.user(), (float) Math.toDegrees(Math.atan2(-m.ax(), m.az())),
+                    (float) -Math.toDegrees(Math.atan2(m.ay(), hl)), m.ticks());
                 entry.chargeFrom = -1;
                 entry.beamFrom = clock;
                 entry.beamLife = m.ticks();
@@ -272,8 +286,9 @@ public final class ItsuFx {
         double by = skin[best * 3 + 1];
         double bz = skin[best * 3 + 2];
         net.minecraft.world.entity.Entity owner = level.m_6815_(user);
-        com.hexhaki.piece.client.haki.HakiBolts.sparks(level, owner, bx, by, bz, com.hexhaki.piece.haki.ConquerorSparks.wifi(new double[3],
-            new double[] {tx - bx, ty - by, tz - bz}, 0.9, 3, seed), 0.0, 0.0F);
+        // 4.0.2 (the owner: "the Conqueror Lightning is not the same as the one in the mod"): the release's very bolt
+        com.hexhaki.piece.client.haki.HakiBolts.sparks(level, owner, bx, by, bz, com.hexhaki.piece.haki.ConquerorStorm.between(new double[3],
+            new double[] {tx - bx, ty - by, tz - bz}, 1.0, 0.0F, seed), 0.0, 0.0F);
         com.hexhaki.piece.client.haki.HakiBolts.zap(level, tx, ty, tz, 0.7F);
     }
 
@@ -807,7 +822,7 @@ public final class ItsuFx {
      */
     @SubscribeEvent
     public static void effects(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty()) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES || ENTRIES.isEmpty() && FIREBALLS.isEmpty()) {
             return;
         }
         Minecraft minecraft = Minecraft.m_91087_();
@@ -816,6 +831,7 @@ public final class ItsuFx {
             return;
         }
         float partial = event.getPartialTick();
+        FIREBALLS.removeIf(f -> clock - (long) f[4] > (long) f[5]);
         Vec3 camera = event.getCamera().m_90583_();
         MultiBufferSource.BufferSource buffers = minecraft.m_91269_().m_110104_();
         RenderType type = RenderType.m_269166_();
@@ -836,12 +852,18 @@ public final class ItsuFx {
                 if (entry.chargeFrom >= 0) {
                     any = true;
                     double c = Math.min(1.0, (now - entry.chargeFrom) / 80.0);
-                    ball(mx, my, mz, s * (0.25 + 0.7 * c), now, e.getKey());
+                    com.hexhaki.piece.itsumade.ItsuArt.ball(SINK, mx, my, mz, s * (0.25 + 0.7 * c), now, e.getKey(), entry.mouthWay[0],
+                        entry.mouthWay[1], entry.mouthWay[2]);
                 }
                 if (entry.beamFrom >= 0 && now - entry.beamFrom < entry.beamLife + 6) {
                     any = true;
                     beam(level, entry, camera, mx, my, mz, now - entry.beamFrom, e.getKey());
                 }
+            }
+            for (double[] f : FIREBALLS) {
+                double k = (now - f[4]) / f[5];
+                com.hexhaki.piece.itsumade.ItsuArt.fireball(SINK, f[0] - camera.f_82479_, f[1] - camera.f_82480_, f[2] - camera.f_82481_, f[3],
+                    k, now, (int) f[6] * 31 + (int) f[4]);
             }
         } catch (RuntimeException failure) {
             HexPiece.LOGGER.error("HexPiece: an Itsumade's fire could not be drawn", failure);
@@ -926,6 +948,7 @@ public final class ItsuFx {
     @SubscribeEvent
     public static void loggedOut(ClientPlayerNetworkEvent.LoggingOut event) {
         ENTRIES.clear();
+        FIREBALLS.clear();
         fromFirstPerson = false;
     }
 }

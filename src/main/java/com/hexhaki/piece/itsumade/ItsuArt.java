@@ -24,94 +24,226 @@ public final class ItsuArt {
     }
 
     /**
-     * A ball of white-hot fire (the Yokai Beam's in the jaws, the Yokai Blast's in the hand): its heart white-hot through yellow to an
-     * orange skin with a deep-red line round it, and black flames licking up round its edge (tongues, never a sheath over it: the fire
-     * must show).
+     * 4.0.2 (the owner: "I asked for a ball of fire specifically different from Kaido"; their Yokai Beam.gif: a blinding white-yellow
+     * ball in the open beak, an orange halo round it, thin red-orange streaks across the view): the Yokai fire's sun, {@code radius} its
+     * white-hot core: glows of yellow, orange and red round it, two lens streaks across the view through it, at {@code alpha}.
+     */
+    public static void sun(FireMesh.Sink sink, double x, double y, double z, double radius, double alpha, double time) {
+        if (radius <= 0.01 || alpha <= 0.01) {
+            return;
+        }
+        double pulse = 1.0 + 0.06 * Math.sin(time * 1.3);
+        // its light round it, thin over its heart (so the heart shows white-hot through it) and thicker toward the edge
+        FireMesh.shell(sink, x, y, z, radius * 3.4 * pulse, 0xFF3A12, 0.06 * alpha, 0.0);
+        FireMesh.shell(sink, x, y, z, radius * 2.1 * pulse, 0xFF8A2A, 0.08 * alpha, 0.3 * alpha);
+        FireMesh.shell(sink, x, y, z, radius * 1.35, 0xFFE27A, 0.1 * alpha, 0.5 * alpha);
+        FireMesh.shell(sink, x, y, z, radius, 0xFFFFF6, alpha, 0.95 * alpha);
+        streaks(sink, x, y, z, radius * 7.0, radius * 0.07, alpha, 0);
+    }
+
+    /**
+     * Lens streaks through ({@code x, y, z}) across the view (level with the horizon as the view has it): a long thin red-orange one and a
+     * shorter yellow one just over it, bright at the point and gone at their ends.
+     */
+    static void streaks(FireMesh.Sink sink, double x, double y, double z, double half, double thick, double alpha, int seed) {
+        double l = Math.sqrt(x * x + y * y + z * z);
+        if (l < 1.0E-3) {
+            return;
+        }
+        // across the view: square to the look at the point and to up
+        double sx = -z / l;
+        double sz = x / l;
+        double sl = Math.hypot(sx, sz);
+        if (sl < 1.0E-4) {
+            sx = 1.0;
+            sz = 0.0;
+            sl = 1.0;
+        }
+        sx /= sl;
+        sz /= sl;
+        streak(sink, x, y, z, sx, sz, half, thick, 0xFF4A1E, alpha * 0.85);
+        streak(sink, x, y + thick * 2.5, z, sx, sz, half * 0.55, thick * 0.6, 0xFFE27A, alpha * 0.9);
+    }
+
+    static void streak(FireMesh.Sink sink, double x, double y, double z, double sx, double sz, double half, double thick, int rgb,
+                       double alpha) {
+        int c = argb(rgb, alpha);
+        int clear = rgb & 0xFFFFFF;
+        for (int side = -1; side <= 1; side += 2) {
+            double ex = x + sx * half * side;
+            double ez = z + sz * half * side;
+            sink.quad(new double[] {x, y + thick, z, ex, y + thick * 0.2, ez, ex, y - thick * 0.2, ez, x, y - thick, z},
+                new int[] {c, clear, clear, c});
+        }
+    }
+
+    /**
+     * The Yokai fire gathering (in the jaws, in the hand): its sun growing, black flames licking round it, and (once it is big) the
+     * orange halo of the reference round it facing ({@code wx, wy, wz}) the way it will pour.
      */
     public static void ball(FireMesh.Sink sink, double x, double y, double z, double radius, double time, int seed) {
+        ball(sink, x, y, z, radius, time, seed, 0.0, 0.0, 0.0);
+    }
+
+    public static void ball(FireMesh.Sink sink, double x, double y, double z, double radius, double time, int seed, double wx, double wy,
+                            double wz) {
         try {
-            FireMesh.palette(FireMesh.BAND);
-            // the white-hot heart, seen through the orange skin round it
-            FireMesh.puff(sink, x, y, z, radius * 0.62, 0.0, 0.02, 0.0, 0.0, 0.35, 0.97, 0.2, false, 1.0, time, seed + 5);
-            FireMesh.puff(sink, x, y, z, radius, 0.0, 0.03, 0.0, 0.0, 0.55, 0.42, 0.25, true, 0.5, time, seed);
-            com.hexhaki.piece.dragon.UoFire.glow(sink, x, y, z, radius * 2.4, 0xFFB84A, 0.35);
-            FireMesh.palette(YOKAI_BLACK);
-            for (int k = 0; k < 5; k++) {
-                double a = time * 0.23 + k * 1.2566;
-                double ox = Math.cos(a) * radius * 0.95;
-                double oz = Math.sin(a) * radius * 0.95;
-                double oy = Math.sin(time * 0.31 + k * 2.1) * radius * 0.35;
-                FireMesh.puff(sink, x + ox, y + oy, z + oz, radius * 0.36, ox * 0.15, 0.12, oz * 0.15, 0.9, 0.9, 0.55, 0.4, false, 0.85,
-                    time, seed * 31 + k);
+            sun(sink, x, y, z, radius * 0.55, 1.0, time);
+            double l = Math.sqrt(wx * wx + wy * wy + wz * wz);
+            if (l > 1.0E-6) {
+                halo(sink, x, y, z, wx / l, wy / l, wz / l, radius * 1.6, 0.8, time);
             }
         } finally {
             FireMesh.palette(FireMesh.BAND);
         }
     }
 
+    /** The reference's orange halo: a thin bright ring square to {@code n}, short rays standing out of it, turning slowly. */
+    public static void halo(FireMesh.Sink sink, double x, double y, double z, double nx, double ny, double nz, double radius, double alpha,
+                            double time) {
+        ring(sink, x, y, z, nx, ny, nz, radius, radius * 0.12, 0xFFB040, 0xFF6A1A, alpha);
+        double[] bb = new double[6];
+        FireMesh.basis(nx, ny, nz, bb);
+        int rays = 16;
+        int c = argb(0xFFC860, alpha * 0.8);
+        int clear = 0xFF6A1A;
+        for (int i = 0; i < rays; i++) {
+            double a = time * 0.05 + i * Math.PI * 2.0 / rays;
+            double ux = bb[0] * Math.cos(a) + bb[3] * Math.sin(a);
+            double uy = bb[1] * Math.cos(a) + bb[4] * Math.sin(a);
+            double uz = bb[2] * Math.cos(a) + bb[5] * Math.sin(a);
+            double vx = -bb[0] * Math.sin(a) + bb[3] * Math.cos(a);
+            double vy = -bb[1] * Math.sin(a) + bb[4] * Math.cos(a);
+            double vz = -bb[2] * Math.sin(a) + bb[5] * Math.cos(a);
+            double r0 = radius * 1.06;
+            double r1 = radius * (i % 2 == 0 ? 1.45 : 1.25);
+            double w = radius * 0.035;
+            sink.quad(new double[] {x + ux * r0 + vx * w, y + uy * r0 + vy * w, z + uz * r0 + vz * w, x + ux * r1, y + uy * r1, z + uz * r1,
+                x + ux * r1, y + uy * r1, z + uz * r1, x + ux * r0 - vx * w, y + uy * r0 - vy * w, z + uz * r0 - vz * w},
+                new int[] {c, clear, clear, c});
+        }
+    }
+
     /**
-     * A beam of its fire from ({@code x, y, z}) along {@code w} (unit) for {@code reach} blocks, {@code width} across (thin for its first
-     * {@code flare} blocks), at {@code fade} (1 burning, to 0 gone): a heart of bright orange fire, white-hot down its middle, black
-     * flames twisting round it in tongues (the owner: "a beam of bright orange/black flames", "super clean"): the fire always shows between
-     * them.
+     * A beam of the Yokai fire from ({@code x, y, z}) along {@code w} (unit) for {@code reach} blocks, {@code width} across (thin for its
+     * first {@code flare} blocks), at {@code fade}: the reference's light first: a white-hot core, an orange glow along it, three thin
+     * orange laser lines turning round it, orange fire rolling along it, black flames twisting round in tongues; its sun and its halo
+     * where it leaves.
      */
     public static void beam(FireMesh.Sink sink, double x, double y, double z, double[] w, double reach, double width, double fade, double age,
                             int seed, double flare) {
         try {
-            // two ways square to the beam, for the tongues twisting round it
-            double ux = -w[2];
-            double uy = 0.0;
-            double uz = w[0];
-            double ul = Math.sqrt(ux * ux + uz * uz);
-            if (ul < 1.0E-4) {
-                ux = 1.0;
-                uz = 0.0;
-                ul = 1.0;
+            double[] bb = new double[6];
+            FireMesh.basis(w[0], w[1], w[2], bb);
+            // the white-hot core
+            FireMesh.tube(sink, x, y, z, x + w[0] * reach, y + w[1] * reach, z + w[2] * reach, width * 0.16, width * 0.26, 0xFFFFF6, 0xFFF4B0,
+                0xFFD25A, 0.4, fade, 0.06, age, seed);
+            // its light along it
+            int glows = (int) Math.max(2, Math.min(24, reach / Math.max(1.0, width * 1.5)));
+            for (int k = 0; k < glows; k++) {
+                double d = reach * (k + 0.5) / glows;
+                com.hexhaki.piece.dragon.UoFire.glow(sink, x + w[0] * d, y + w[1] * d, z + w[2] * d, width * 1.5, 0xFF8A2A, 0.22 * fade);
             }
-            ux /= ul;
-            uz /= ul;
-            double vx = w[1] * uz - w[2] * uy;
-            double vy = w[2] * ux - w[0] * uz;
-            double vz = w[0] * uy - w[1] * ux;
-            // the white-hot core down its middle
-            double core = Math.min(reach, 1.5);
-            FireMesh.tube(sink, x, y, z, x + w[0] * core, y + w[1] * core, z + w[2] * core, width * 0.12, width * 0.3, 0xFFFDF2, 0xFFF29A,
-                0xFFD52B, 0.3, fade, 0.1, age, seed);
-            if (reach > core) {
-                FireMesh.tube(sink, x + w[0] * core, y + w[1] * core, z + w[2] * core, x + w[0] * reach, y + w[1] * reach, z + w[2] * reach,
-                    width * 0.3, width * 0.32, 0xFFFDF2, 0xFFF29A, 0xFFD52B, 0.3, fade, 0.1, age, seed + 1);
+            // three thin laser lines turning round it
+            for (int k = 0; k < 3; k++) {
+                double a = age * 0.25 + k * Math.PI * 2.0 / 3.0;
+                double off = width * 0.55;
+                double ox = (bb[0] * Math.cos(a) + bb[3] * Math.sin(a)) * off;
+                double oy = (bb[1] * Math.cos(a) + bb[4] * Math.sin(a)) * off;
+                double oz = (bb[2] * Math.cos(a) + bb[5] * Math.sin(a)) * off;
+                FireMesh.tube(sink, x + ox, y + oy, z + oz, x + w[0] * reach + ox, y + w[1] * reach + oy, z + w[2] * reach + oz, width * 0.03,
+                    width * 0.03, 0xFFE27A, 0xFF8A2A, 0xFF4A1E, 0.3, 0.85 * fade, 0.0, age, seed + 11 + k);
             }
-            double step = Math.max(0.3, width * 0.45);
-            int n = (int) Math.min(220, reach / step);
+            double step = Math.max(0.35, width * 0.5);
+            int n = (int) Math.min(200, reach / step);
             for (int i = 0; i <= n; i++) {
                 double d = i * step;
                 double taper = Math.min(1.0, 0.35 + d / flare);
                 double px = x + w[0] * d;
                 double py = y + w[1] * d;
                 double pz = z + w[2] * d;
-                // the orange fire round it, see-through enough that the white-hot core shows in it
-                double heat = 0.44 + 0.22 * FireMesh.rand(seed * 613 + i, 4);
-                FireMesh.palette(FireMesh.BAND);
-                FireMesh.puff(sink, px, py, pz, width * 0.66 * taper, w[0] * 0.8, w[1] * 0.8, w[2] * 0.8, 0.9, 0.55, heat, 0.25, false,
-                    0.7 * fade, age + i * 0.29, seed * 613 + i);
-                // a black tongue twisting round it, from side to side, turning as the beam pours
-                FireMesh.palette(YOKAI_BLACK);
-                double a = age * 0.45 + i * 2.3;
-                double off = width * 0.64 * taper;
-                double ox = (ux * Math.cos(a) + vx * Math.sin(a)) * off;
-                double oy = (uy * Math.cos(a) + vy * Math.sin(a)) * off;
-                double oz = (uz * Math.cos(a) + vz * Math.sin(a)) * off;
-                FireMesh.puff(sink, px + ox, py + oy, pz + oz, width * 0.34 * taper, w[0] * 0.7 + ox * 0.2, w[1] * 0.7 + oy * 0.2 + 0.03,
-                    w[2] * 0.7 + oz * 0.2, 1.2, 0.9, 0.5, 0.35, false, 0.9 * fade, age + i * 0.37, seed * 977 + i);
+                // the orange fire rolling along it, see-through enough that the core shows
+                if (i % 2 == 0) {
+                    double heat = 0.6 + 0.2 * FireMesh.rand(seed * 613 + i, 4);
+                    FireMesh.palette(FireMesh.BAND);
+                    FireMesh.puff(sink, px, py, pz, width * 0.55 * taper, w[0] * 0.8, w[1] * 0.8, w[2] * 0.8, 0.9, 0.5, heat, 0.3, false,
+                        0.5 * fade, age + i * 0.29, seed * 613 + i);
+                }
             }
-            // its light
-            for (int k = 0; k < 4; k++) {
-                double d = reach * (k + 0.5) / 4.0;
-                com.hexhaki.piece.dragon.UoFire.glow(sink, x + w[0] * d, y + w[1] * d, z + w[2] * d, width * 2.2, 0xFFB84A, 0.22 * fade);
+            // the black flames: two dark ribbons twisting round it, from thin at the mouth to their full width, flickering along
+            for (int k = 0; k < 2; k++) {
+                double[] prev = null;
+                int pieces = (int) Math.max(6, Math.min(160, reach / Math.max(0.25, width * 0.22)));
+                for (int i = 0; i <= pieces; i++) {
+                    double d = reach * i / pieces;
+                    double taper = Math.min(1.0, 0.3 + d / flare);
+                    double a = age * 0.5 + d / Math.max(0.5, width) * 1.1 + k * Math.PI;
+                    double off = width * 0.6 * taper;
+                    double[] p = {x + w[0] * d + (bb[0] * Math.cos(a) + bb[3] * Math.sin(a)) * off,
+                        y + w[1] * d + (bb[1] * Math.cos(a) + bb[4] * Math.sin(a)) * off,
+                        z + w[2] * d + (bb[2] * Math.cos(a) + bb[5] * Math.sin(a)) * off};
+                    if (prev != null) {
+                        double flick = 0.75 + 0.25 * Math.sin(age * 1.7 + i * 0.9 + k);
+                        FireMesh.tube(sink, prev[0], prev[1], prev[2], p[0], p[1], p[2], width * 0.09 * taper * flick, width * 0.09 * taper * flick,
+                            0x1B0D22, 0x0A050D, 0x431B4A, 0.3, 0.92 * fade, 0.0, age, seed * 31 + i * 2 + k);
+                    }
+                    prev = p;
+                }
             }
+            // where it leaves: its sun and its halo
+            sun(sink, x, y, z, width * 0.45, fade, age);
+            halo(sink, x + w[0] * width * 0.6, y + w[1] * width * 0.6, z + w[2] * width * 0.6, w[0], w[1], w[2], width * 1.4, 0.8 * fade, age);
         } finally {
             FireMesh.palette(FireMesh.BAND);
         }
+    }
+
+    /**
+     * 4.0.2 (the owner: "I asked for a big ball of fire at the explosion"): the Yokai Beam's end, {@code radius} round, {@code k} 0 the
+     * blast to 1 gone: a sun swelling out in its first ticks inside a ball of rolling orange fire, black flames tearing up off it, a glow
+     * far round it and the lens streaks through it; then the fire cools from yellow to red and rises away as dark smoke.
+     */
+    public static void fireball(FireMesh.Sink sink, double x, double y, double z, double radius, double k, double time, int seed) {
+        if (k >= 1.0) {
+            return;
+        }
+        double swell = Math.min(1.0, k * 7.0);
+        double r = radius * (0.35 + 0.65 * swell * swell * (3 - 2 * swell));
+        double fade = k < 0.6 ? 1.0 : Math.max(0.0, 1.0 - (k - 0.6) / 0.4);
+        double cool = clamp01(k / 0.8);
+        double lift = radius * 0.35 * k;
+        try {
+            sun(sink, x, y + lift, z, r * 0.42 * (1.0 - 0.5 * cool), fade * (1.0 - 0.6 * cool), time);
+            FireMesh.palette(FireMesh.BAND);
+            int n = 12;
+            for (int i = 0; i < n; i++) {
+                double[] d = sphere(i, n);
+                double rr = r * (0.52 + 0.1 * FireMesh.rand(seed + i, 1));
+                FireMesh.puff(sink, x + d[0] * r * 0.55, y + lift + d[1] * r * 0.5, z + d[2] * r * 0.55, rr, d[0] * 0.3, 0.25, d[2] * 0.3, 0.5,
+                    0.8, 0.85 - 0.45 * cool, 0.4, true, 0.85 * fade, time + i, seed * 17 + i);
+            }
+            if (k > 0.45) {
+                FireMesh.palette(FireMesh.SMOKE);
+                double smoke = (k - 0.45) / 0.55;
+                for (int i = 0; i < 8; i++) {
+                    double[] d = sphere(i, 8);
+                    FireMesh.puff(sink, x + d[0] * r * 0.6, y + lift + r * (0.4 + smoke * 0.8) + d[1] * r * 0.3, z + d[2] * r * 0.6,
+                        r * (0.4 + 0.3 * smoke), 0.0, 0.2, 0.0, 0.3, 0.6, 0.3, 0.2, false, 0.7 * (1.0 - smoke), time + i, seed * 41 + i);
+                }
+            }
+            com.hexhaki.piece.dragon.UoFire.glow(sink, x, y + lift, z, r * 2.2, 0xFF7A22, 0.35 * fade * (1.0 - cool * 0.7));
+            streaks(sink, x, y + lift, z, r * 4.0 * (1.0 - 0.5 * k), r * 0.05, fade * (1.0 - cool), seed);
+        } finally {
+            FireMesh.palette(FireMesh.BAND);
+        }
+    }
+
+    /** The {@code i}-th of {@code n} points spread over a sphere (unit). */
+    static double[] sphere(int i, int n) {
+        double y = 1.0 - (i + 0.5) * 2.0 / n;
+        double r = Math.sqrt(Math.max(0.0, 1.0 - y * y));
+        double a = i * 2.399963;
+        return new double[] {Math.cos(a) * r, y, Math.sin(a) * r};
     }
 
     /**
@@ -186,26 +318,103 @@ public final class ItsuArt {
     }
 
     /**
-     * Thy Death's clouds over ({@code x, z}) at the height {@code y}: a slow, rolling roof of black cloud {@code radius} round, at
-     * {@code alpha}; {@code grow} (0 to 1) how far they have gathered.
+     * 4.0.2 (the owner: "the clouds should be fucking clouds or not whatever the fuck this is"): Thy Death's storm over ({@code x, z}) at the
+     * height {@code y}, {@code radius} round: soft billows of dark storm cloud, flattened (wider than tall), their tops lit a grey-violet
+     * and their bellies near black, every edge soft (no outline, never a solid lump), a lower layer of darker cloud under them, all
+     * churning slowly; drawn from the furthest to the nearest so each soft edge lies over what is behind it. {@code grow} (0 to 1) how far
+     * they have gathered, {@code alpha} how thick.
      */
     public static void clouds(FireMesh.Sink sink, double x, double y, double z, double radius, double grow, double alpha, double time, int seed) {
         if (alpha <= 0.01) {
             return;
         }
-        try {
-            FireMesh.palette(STORM);
-            Random r = new Random(seed * 7919L);
-            int puffs = 46;
-            for (int i = 0; i < puffs; i++) {
-                double a = r.nextDouble() * Math.PI * 2.0 + time * 0.004 * (i % 2 == 0 ? 1 : -1);
-                double d = radius * Math.sqrt(r.nextDouble());
-                double size = 5.0 + r.nextDouble() * 4.0;
-                FireMesh.puff(sink, x + Math.cos(a) * d, y + (r.nextDouble() - 0.5) * 3.0, z + Math.sin(a) * d, size * (0.6 + 0.4 * grow), 0.02,
-                    0.0, 0.01, 0.2, 0.5, 0.35 + 0.3 * r.nextDouble(), 0.3, false, alpha, time * 0.25 + i * 3.1, seed * 131 + i);
-            }
-        } finally {
-            FireMesh.palette(FireMesh.BAND);
+        Random r = new Random(seed * 7919L);
+        int top = 96;
+        int under = 34;
+        double[][] puffs = new double[top + under][];
+        for (int i = 0; i < top + under; i++) {
+            boolean low = i >= top;
+            double a = r.nextDouble() * Math.PI * 2.0 + time * 0.0025 * (i % 2 == 0 ? 1 : -1);
+            double d = radius * Math.sqrt(r.nextDouble()) * (low ? 0.85 : 1.0);
+            double size = (low ? 7.0 : 5.5) + r.nextDouble() * 5.0;
+            double swell = 0.55 + 0.45 * grow + 0.05 * Math.sin(time * 0.05 + i);
+            puffs[i] = new double[] {x + Math.cos(a) * d, y + (low ? -2.2 : (r.nextDouble() - 0.3) * 3.0), z + Math.sin(a) * d,
+                size * swell, low ? 1 : 0, i};
+        }
+        java.util.Arrays.sort(puffs, (p, q) -> Double.compare(q[0] * q[0] + q[1] * q[1] + q[2] * q[2], p[0] * p[0] + p[1] * p[1] + p[2] * p[2]));
+        for (double[] p : puffs) {
+            boolean low = p[4] > 0.5;
+            softPuff(sink, p[0], p[1], p[2], p[3], p[3] * (low ? 0.42 : 0.55), low ? 0x2A2532 : 0x6A6478, low ? 0x0C0A10 : 0x1C1924,
+                alpha * (low ? 0.9 : 0.82));
+        }
+    }
+
+    /**
+     * A soft billow facing the eye (at the origin): {@code half} wide and {@code tall} high each way from its middle, lit {@code lit} at
+     * its top and {@code dark} at its belly, thickest in its middle and clear at its edge.
+     */
+    static void softPuff(FireMesh.Sink sink, double x, double y, double z, double half, double tall, int lit, int dark, double alpha) {
+        double l = Math.sqrt(x * x + y * y + z * z);
+        if (l < half * 0.5) {
+            return; // the eye inside it: drawn, it would fill the view
+        }
+        double vx = x / l;
+        double vy = y / l;
+        double vz = z / l;
+        // across the view, and up it
+        double rx = -vz;
+        double rz = vx;
+        double rl = Math.hypot(rx, rz);
+        if (rl < 1.0E-4) {
+            rx = 1.0;
+            rz = 0.0;
+            rl = 1.0;
+        }
+        rx /= rl;
+        rz /= rl;
+        // up the view: across x the look (square to both, pointing up)
+        double ux = -rz * vy;
+        double uy = rz * vx - rx * vz;
+        double uz = rx * vy;
+        int mid = argb(mix(dark, lit, 0.5), alpha);
+        int segments = 20;
+        double[] xyz = new double[12];
+        for (int i = 0; i < segments; i++) {
+            double a0 = i * Math.PI * 2.0 / segments;
+            double a1 = (i + 1) * Math.PI * 2.0 / segments;
+            // a lumpy outline (a cloud, not a disc)
+            double k0 = 1.0 + 0.16 * Math.sin(a0 * 3.0 + x) + 0.08 * Math.sin(a0 * 5.0 + z);
+            double k1 = 1.0 + 0.16 * Math.sin(a1 * 3.0 + x) + 0.08 * Math.sin(a1 * 5.0 + z);
+            double c0 = Math.cos(a0) * half * k0;
+            double s0 = Math.sin(a0) * tall * k0;
+            double c1 = Math.cos(a1) * half * k1;
+            double s1 = Math.sin(a1) * tall * k1;
+            // the rim lit by how high it is, and clear
+            int e0 = mix(dark, lit, 0.5 + 0.5 * Math.sin(a0)) & 0xFFFFFF;
+            int e1 = mix(dark, lit, 0.5 + 0.5 * Math.sin(a1)) & 0xFFFFFF;
+            // half way out: still thick
+            int h0 = argb(mix(dark, lit, 0.5 + 0.45 * Math.sin(a0)), alpha * 0.8);
+            int h1 = argb(mix(dark, lit, 0.5 + 0.45 * Math.sin(a1)), alpha * 0.8);
+            double m = 0.55;
+            // inner: middle to half way
+            xyz[0] = x;
+            xyz[1] = y;
+            xyz[2] = z;
+            xyz[3] = x + (rx * c0 + ux * s0) * m;
+            xyz[4] = y + uy * s0 * m;
+            xyz[5] = z + (rz * c0 + uz * s0) * m;
+            xyz[6] = x + (rx * c1 + ux * s1) * m;
+            xyz[7] = y + uy * s1 * m;
+            xyz[8] = z + (rz * c1 + uz * s1) * m;
+            xyz[9] = x;
+            xyz[10] = y;
+            xyz[11] = z;
+            sink.quad(xyz.clone(), new int[] {mid, h0, h1, mid});
+            // outer: half way to the clear edge
+            double[] o = {x + (rx * c0 + ux * s0) * m, y + uy * s0 * m, z + (rz * c0 + uz * s0) * m, x + rx * c0 + ux * s0, y + uy * s0,
+                z + rz * c0 + uz * s0, x + rx * c1 + ux * s1, y + uy * s1, z + rz * c1 + uz * s1, x + (rx * c1 + ux * s1) * m,
+                y + uy * s1 * m, z + (rz * c1 + uz * s1) * m};
+            sink.quad(o, new int[] {h0, e0, e1, h1});
         }
     }
 
@@ -225,34 +434,15 @@ public final class ItsuArt {
         } finally {
             FireMesh.palette(FireMesh.BAND);
         }
-        ring(sink, x, y + 0.1, z, 0, 1, 0, radius * (1.0 + 1.2 * k), 0.3, INDIGO, GREEN, (1.0 - k) * 0.6);
     }
 
-    /** How thick Thy Death's bolts are where they leave the clouds (blocks): a storm's, not a spark's. */
-    public static final float SKY_WIDTH = 0.34F;
-
     /**
-     * One bolt of Thy Death ({@code dx, dy, dz}: blocks from the cloud down to where it strikes): the one Haki lightning's stroke
-     * (haki/ConquerorStorm.strike, its rim tinted to its owner's Haki when it is let go), thick, racing down in 3 ticks, with two or three
-     * forks breaking off it on the way down.
+     * One bolt of Thy Death ({@code dx, dy, dz}: blocks from the cloud down to where it strikes): 4.0.2 (the owner: "shooting from the
+     * cloud, guess what it is? The old outdated lighting, the 2D lighting"): the release's very bolt (haki/ConquerorStorm.between), at the
+     * release's size, its rim tinted to its owner's Haki when it is let go.
      */
     public static java.util.List<com.hexhaki.piece.haki.Bolt> skyStroke(double dx, double dy, double dz, long seed) {
-        Random r = new Random(seed);
-        java.util.List<com.hexhaki.piece.haki.Bolt> out = new java.util.ArrayList<>();
-        double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        out.addAll(com.hexhaki.piece.haki.ConquerorStorm.strike(new double[] {0, 0, 0}, new double[] {dx, dy, dz}, SKY_WIDTH, 0.25F,
-            com.hexhaki.piece.haki.ConquerorSparks.RED, 0.0F, 12, 3.0F, r.nextLong()));
-        int forks = 2 + r.nextInt(2);
-        for (int i = 0; i < forks; i++) {
-            double t = 0.15 + 0.6 * r.nextDouble();
-            double[] mid = {dx * t, dy * t, dz * t};
-            double l = length * (0.12 + 0.15 * r.nextDouble());
-            double a = r.nextDouble() * Math.PI * 2.0;
-            double[] end = {mid[0] + Math.cos(a) * l * 0.7, mid[1] - l * 0.7, mid[2] + Math.sin(a) * l * 0.7};
-            out.addAll(com.hexhaki.piece.haki.ConquerorStorm.strike(mid, end, SKY_WIDTH * 0.45F, 0.2F, com.hexhaki.piece.haki.ConquerorSparks.RED,
-                (float) (3.0 * t), 10, 1.5F, r.nextLong()));
-        }
-        return out;
+        return com.hexhaki.piece.haki.ConquerorStorm.between(new double[] {0, 0, 0}, new double[] {dx, dy, dz}, 1.0, 0.0F, seed);
     }
 
     // ------------------------------------------------------------------------------------------------------ 3.9.9: Hellish Teleport
@@ -645,8 +835,10 @@ public final class ItsuArt {
     }
 
     /**
-     * A pillar of black flames from {@code y0} to {@code y1} over ({@code x, z}): {@code radius} round, rolling up (or down when
-     * {@code down}) as {@code age} runs, a violet-pink heart showing through, at {@code alpha}.
+     * A pillar of black flames from {@code y0} to {@code y1} over ({@code x, z}), {@code radius} round, at {@code alpha}: 4.0.2 (the owner:
+     * "you should be able to see yourself going into the beam of fire into the sky"): hollow, never a solid column: four ribbons of black
+     * flame twisting up (or down, when {@code down}) round an open core lit a faint violet, slim black tongues licking off them, the gate's
+     * cyan and pink fire among them now and then: whatever is carried up its middle shows through.
      */
     public static void pillar(FireMesh.Sink sink, double x, double y0, double y1, double z, double radius, double age, double alpha,
                               boolean down, int seed) {
@@ -654,34 +846,41 @@ public final class ItsuArt {
             return;
         }
         double h = y1 - y0;
-        double step = Math.max(0.6, radius * 0.7);
-        int n = (int) Math.min(160, h / step);
-        double flow = (age * 0.9) % step;
+        double flow = down ? -age * 0.9 : age * 0.9;
         try {
-            for (int i = 0; i <= n; i++) {
-                double d = i * step + (down ? step - flow : flow);
-                if (d > h) {
-                    continue;
+            // the ribbons
+            int pieces = (int) Math.min(120, Math.max(8, h / 1.0));
+            for (int k = 0; k < 6; k++) {
+                double[] prev = null;
+                for (int i = 0; i <= pieces; i++) {
+                    double d = h * i / pieces;
+                    double a = (d - flow) / (radius * (1.8 + 0.25 * k)) + k * Math.PI / 3.0;
+                    double r = radius * (1.0 + 0.12 * Math.sin(d * 0.7 + k + age * 0.3));
+                    double[] p = {x + Math.cos(a) * r, y0 + d, z + Math.sin(a) * r};
+                    if (prev != null) {
+                        double flick = 0.45 + 0.55 * Math.abs(Math.sin(age * 1.3 + i * 0.6 + k * 2.0));
+                        FireMesh.tube(sink, prev[0], prev[1], prev[2], p[0], p[1], p[2], radius * 0.08 * flick, radius * 0.08 * flick, 0x1B0D22,
+                            0x0A050D, 0x56225C, 0.35, 0.9 * alpha, 0.0, age, seed * 31 + i * 4 + k);
+                    }
+                    prev = p;
                 }
-                double y = y0 + d;
-                double up = d / h;
-                double rr = radius * (0.85 + 0.25 * Math.sin(age * 0.5 + i * 1.7)) * (1.0 + 0.6 * up);
-                double ox = Math.sin(age * 0.3 + i * 2.1) * rr * 0.2;
-                double oz = Math.cos(age * 0.37 + i * 1.3) * rr * 0.2;
-                FireMesh.palette(YOKAI_BLACK);
-                FireMesh.puff(sink, x + ox, y, z + oz, rr, ox * 0.2, down ? 1.0 : -1.0, oz * 0.2, 1.8, 1.3, 0.5, 0.35, false, alpha * 0.85,
-                    age + i * 0.37, seed * 977 + i);
-                if (i % 3 == 0) {
-                    com.hexhaki.piece.dragon.UoFire.glow(sink, x, y, z, rr * 2.4, LINE_GLOW, 0.22 * alpha);
-                }
-                // pink and blue tongues twisting up (or down) round it: the pentagram's fire carried with it
-                if (i % 2 == 0) {
-                    double ta = age * 0.35 + i * 2.4;
-                    double tr = rr * 1.02;
-                    FireMesh.palette(GATE_FIRE);
-                    FireMesh.puff(sink, x + Math.cos(ta) * tr, y, z + Math.sin(ta) * tr, rr * 0.3, 0.0, down ? 1.0 : -1.0, 0.0, 2.6, 1.0, 0.86,
-                        0.7, false, alpha * 0.9, age + i * 0.53, seed * 397 + i);
-                }
+            }
+            // slim tongues off them, and the gate's fire now and then
+            int tongues = (int) Math.min(140, h / 0.8);
+            for (int i = 0; i < tongues; i++) {
+                double d = ((i * 0.8 - flow * 0.5) % h + h) % h;
+                double a = i * 2.39 + age * 0.05;
+                double tx = x + Math.cos(a) * radius * 1.1;
+                double tz = z + Math.sin(a) * radius * 1.1;
+                FireMesh.palette(i % 7 == 3 ? GATE_FIRE : YOKAI_BLACK);
+                FireMesh.puff(sink, tx, y0 + d, tz, radius * 0.2, Math.cos(a) * 0.2, down ? 1.0 : -1.0, Math.sin(a) * 0.2, 2.4, 1.0,
+                    i % 7 == 3 ? 0.86 : 0.5, 0.35, false, 0.85 * alpha, age + i * 0.37, seed * 977 + i);
+            }
+            // the open core's faint violet light
+            int lights = (int) Math.max(2, Math.min(14, h / (radius * 3.0)));
+            for (int i = 0; i < lights; i++) {
+                double d = h * (i + 0.5) / lights;
+                FireMesh.shell(sink, x, y0 + d, z, radius * 1.4, LINE_GLOW, 0.12 * alpha, 0.0);
             }
         } finally {
             FireMesh.palette(FireMesh.BAND);
@@ -689,8 +888,9 @@ public final class ItsuArt {
     }
 
     /**
-     * A body swallowed by black flames ({@code x, y, z} its feet, {@code height} tall), {@code k} 0 to 1: the flames rising over it
-     * and then (when {@code toward} is given, camera-relative) drawn off it to that point, the pentagram's middle.
+     * A body in black flames ({@code x, y, z} its feet, {@code height} tall), {@code k} 0 to 1: slim tongues of black flame licking up all
+     * round it (rising over it in its first third), the body showing between them, then (past 0.35) burning down and away. 4.0.2: tongues,
+     * never a lump over it (the owner: you see yourself going up into the beam). {@code toward} is no longer used: the body is carried.
      */
     public static void engulf(FireMesh.Sink sink, double x, double y, double z, double height, double k, double[] toward, double age, int seed) {
         if (k >= 1.0) {
@@ -698,25 +898,21 @@ public final class ItsuArt {
         }
         double over = clamp01(k * 3.0);
         double gone = clamp01((k - 0.35) / 0.65);
-        double cx = x;
-        double cz = z;
-        double cy = y;
-        if (toward != null) {
-            cx = x + (toward[0] - x) * gone;
-            cy = y + (toward[1] - y) * gone;
-            cz = z + (toward[2] - z) * gone;
-        }
         try {
             FireMesh.palette(YOKAI_BLACK);
-            int n = 5;
+            int n = 7;
             for (int i = 0; i < n; i++) {
-                double u = (i + 0.5) / n;
-                double hy = cy + height * u * over * (1.0 - gone * 0.8);
-                double rr = (0.45 + 0.2 * Math.sin(age * 0.6 + i)) * (1.0 - gone * 0.5);
-                FireMesh.puff(sink, cx, hy, cz, rr, 0.0, 0.3, 0.0, 1.2, 0.9, 0.5, 0.35, false, 0.92 * (1.0 - gone * gone), age + i, seed * 71 + i);
+                double a = i * 2.39 + age * 0.15;
+                double up = height * ((i * 0.37) % 1.0) * over;
+                double r = 0.42 + 0.06 * Math.sin(age * 0.7 + i);
+                double size = (0.11 + 0.04 * Math.sin(age * 0.9 + i * 1.7)) * (1.0 - gone * 0.7);
+                FireMesh.puff(sink, x + Math.cos(a) * r, y + 0.1 + up, z + Math.sin(a) * r, size, Math.cos(a) * 0.15, -1.0, Math.sin(a) * 0.15,
+                    2.6, 1.0, 0.5, 0.35, false, 0.9 * (1.0 - gone * gone), age + i, seed * 71 + i);
             }
+            FireMesh.shell(sink, x, y + height * 0.5, z, height * 0.7, LINE_GLOW, 0.14 * (1.0 - gone), 0.0);
         } finally {
             FireMesh.palette(FireMesh.BAND);
         }
     }
+
 }

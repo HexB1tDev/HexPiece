@@ -31,7 +31,7 @@ public final class AimLock {
     }
 
     /** A beam began for {@code user}, aimed at ({@code aimYaw}, {@code aimPitch}), burning {@code ticks}: one's own holds the view. */
-    static void beam(int user, float aimYaw, float aimPitch, int ticks) {
+    public static void beam(int user, float aimYaw, float aimPitch, int ticks) {
         LocalPlayer self = Minecraft.m_91087_().f_91074_;
         if (self == null || self.m_19879_() != user) {
             return;
@@ -44,7 +44,7 @@ public final class AimLock {
     }
 
     /** {@code user}'s beam ended early (the server's FIRE_BEAM_OFF). */
-    static void off(int user) {
+    public static void off(int user) {
         LocalPlayer self = Minecraft.m_91087_().f_91074_;
         if (self != null && self.m_19879_() == user) {
             locked = false;

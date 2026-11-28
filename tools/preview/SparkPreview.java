@@ -163,8 +163,8 @@ public final class SparkPreview {
         double[][] foes = {{3, 1.0, 4}, {-4, 0.9, 6}, {1, 1.2, 8}};
         for (int i = 0; i < foes.length; i++) {
             double[] from = {foes[i][0] > 0 ? 0.4 : -0.4, 1.3, 0.1};
-            for (Bolt b : ConquerorSparks.wifi(new double[3], new double[] {foes[i][0] - from[0], foes[i][1] - from[1], foes[i][2] - from[2]}, 0.8,
-                3, 40L + i)) {
+            for (Bolt b : com.hexhaki.piece.haki.ConquerorStorm.between(new double[3], new double[] {foes[i][0] - from[0], foes[i][1] - from[1],
+                foes[i][2] - from[2]}, 0.55, 0.0F, 40L + i)) {
                 double[] q = b.points.clone();
                 for (int k = 0; k < q.length; k += 3) {
                     q[k] += from[0];

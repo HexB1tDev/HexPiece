@@ -35,6 +35,9 @@ public final class ItsuMoves {
     public static final int BEAM = 447;
     public static final int BEAM_OFF = 448;
     public static final int GRIP = 449;
+    /** 4.0.2: the Yokai Beam's own fire where it strikes, and its big ball of fire at its end (client/itsumade/ItsuFx). */
+    public static final int HIT = 465;
+    public static final int FIREBALL = 466;
 
     /** Wind Gust: the wings' flap lands this many ticks after M1 (its slow wind-up); the cone (degrees either side, blocks). */
     public static final int GUST_AT = 12;

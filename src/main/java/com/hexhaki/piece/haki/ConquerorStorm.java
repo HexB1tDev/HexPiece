@@ -374,6 +374,94 @@ public final class ConquerorStorm {
         }
     }
 
+    /**
+     * 4.0.2 (the owner: "I want the one from Conqueror. The Conqueror with the the model with the tubes that creates the real 3D
+     * lightning", after the Itsumade's moves drew thin single strokes): the release's very bolt from {@code a} to {@code b} (blocks, any
+     * frame): straight runs of about {@link #STEP} kinked {@link #ZIG_LEAST} to {@link #ZIG_MOST} degrees off its line, now one side, now
+     * the other, pulled back when it strays, each run kinked again inside; a branch now and then; its width the release's along its
+     * length at {@code size} (thin out of where it leaves, full by a third, tapering far out), burning as long as a release bolt; drawn as
+     * the release draws its strands ({@link #bolts}: the black tube and its rim, needle tips). It ends exactly on {@code b}.
+     */
+    public static List<Bolt> between(double[] a, double[] b, double size, float delay, long seed) {
+        SplittableRandom random = new SplittableRandom(seed ^ 0x4245_5457L);
+        double[] d = {b[0] - a[0], b[1] - a[1], b[2] - a[2]};
+        double length = Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+        List<Bolt> out = new ArrayList<>();
+        if (length < 0.2) {
+            return out;
+        }
+        double[] dir = {d[0] / length, d[1] / length, d[2] / length};
+        double run = Math.min(STEP, Math.max(0.4, length / 4.0));
+        List<Strand> strands = new ArrayList<>();
+        Builder bl = new Builder();
+        double[] at = a.clone();
+        bl.add(at, 0.0);
+        double walked = 0.0;
+        double[] side = across(dir, Sphere.unit(random));
+        double zig = random.nextBoolean() ? 1.0 : -1.0;
+        List<double[][]> forks = new ArrayList<>();
+        while (walked < length - run * 0.5) {
+            double step = Math.min(length - walked, run * (0.6 + 0.8 * random.nextDouble()));
+            double[] next;
+            if (walked + step >= length - run * 0.5) {
+                next = b.clone(); // the last run lands on the point it was aimed at
+                step = length - walked;
+            } else {
+                double[] wander = Sphere.unit(random);
+                side = across(dir, new double[] {side[0] + wander[0] * 0.5, side[1] + wander[1] * 0.5, side[2] + wander[2] * 0.5});
+                zig = random.nextDouble() < 0.8 ? -zig : zig;
+                double[] rel = {at[0] - a[0], at[1] - a[1], at[2] - a[2]};
+                double along = rel[0] * dir[0] + rel[1] * dir[1] + rel[2] * dir[2];
+                double[] off = {rel[0] - dir[0] * along, rel[1] - dir[1] * along, rel[2] - dir[2] * along};
+                double stray = Math.sqrt(off[0] * off[0] + off[1] * off[1] + off[2] * off[2]);
+                if (stray > 0.6 + 0.1 * walked) {
+                    zig = (off[0] * side[0] + off[1] * side[1] + off[2] * side[2]) > 0.0 ? -1.0 : 1.0;
+                }
+                double k = Math.tan(Math.toRadians(ZIG_LEAST + (ZIG_MOST - ZIG_LEAST) * random.nextDouble()));
+                double[] h = normalise(new double[] {dir[0] + side[0] * zig * k, dir[1] + side[1] * zig * k, dir[2] + side[2] * zig * k});
+                next = new double[] {at[0] + h[0] * step, at[1] + h[1] * step, at[2] + h[2] * step};
+            }
+            double kinkAt = 0.35 + 0.3 * random.nextDouble();
+            double[] o = Sphere.unit(random);
+            double kink = step * 0.3;
+            double[] mid = {at[0] + (next[0] - at[0]) * kinkAt + o[0] * kink, at[1] + (next[1] - at[1]) * kinkAt + o[1] * kink,
+                at[2] + (next[2] - at[2]) * kinkAt + o[2] * kink};
+            bl.add(mid, 0.0);
+            bl.add(next, 0.0);
+            if (walked > length * 0.25 && walked < length * 0.8 && random.nextDouble() < 0.28) {
+                forks.add(new double[][] {next.clone(), dir.clone(), {walked + step}});
+            }
+            walked += step;
+            at = next;
+        }
+        strands.add(bl.build(delay, 24 + random.nextInt(6), size, 1.0, random.nextLong()));
+        for (double[][] fork : forks) {
+            // a branch as the release's (three to five runs peeling off the bolt's heading, thin), free in every direction: no ground in
+            // this frame to hold it to
+            double w = width(Math.min(1.0, fork[2][0] / length), size) * 0.45;
+            double forkLength = Math.min(length * 0.35, 3.0 + random.nextDouble() * length * 0.25);
+            Builder fb = new Builder();
+            double[] p = fork[0];
+            fb.add(p, 0.0);
+            double[] wander = Sphere.unit(random);
+            double[] h = normalise(new double[] {dir[0] + wander[0] * 0.9, dir[1] + wander[1] * 0.9, dir[2] + wander[2] * 0.9});
+            int pieces = 3 + random.nextInt(3);
+            for (int q = 0; q < pieces; q++) {
+                double step = forkLength / pieces;
+                p = new double[] {p[0] + h[0] * step, p[1] + h[1] * step, p[2] + h[2] * step};
+                fb.add(p, 0.0);
+                double[] w2 = Sphere.unit(random);
+                h = normalise(new double[] {dir[0] * 0.5 + h[0] * 0.2 + w2[0] * 0.8, dir[1] * 0.5 + h[1] * 0.2 + w2[1] * 0.8,
+                    dir[2] * 0.5 + h[2] * 0.2 + w2[2] * 0.8});
+            }
+            strands.add(fb.build(delay + (float) (fork[2][0] / SPEED), 18 + random.nextInt(6), 1.0, w / WIDEST, random.nextLong()));
+        }
+        for (Strand strand : strands) {
+            out.addAll(bolts(strand));
+        }
+        return out;
+    }
+
     /** A branch off a bolt at {@code from}: two or three kinked runs peeling away from its heading, thin, never branching again. */
     static void branch(List<Strand> out, SplittableRandom random, double[] from, double[] heading, boolean grounded, double yaw, double length,
                        float delay, double width) {

@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gura_anims import REST  # noqa: E402
 import pika_anims  # noqa: E402
 from gura_anims import tremble  # noqa: E402
-from style_anims import arm, mirror, p  # noqa: E402
+from style_anims import WRITTEN, arm, java_poses, mirror, p  # noqa: E402
 
 PARTS = ("body", "torso", "rightArm", "leftArm")
 
@@ -167,3 +167,7 @@ if __name__ == "__main__":
     blast()
     death()
     gate()
+    # 4.0.2: the clips' keyframes for the game's own posing off the player (client/npc/StylePoser): where the pointed fist is in third
+    # person (the Yokai Blast's beam leaves it; with no table its pose was the rest pose, the fist at the hip: "shot from the belly")
+    java_poses(sorted(n for n in WRITTEN if n.startswith("itsu_")), "ItsuPoses", "tools/itsu_anims.py",
+               "the Itsumade's clips' keyframes, for the fire and the lightning on the fist")

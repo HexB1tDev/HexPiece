@@ -51,6 +51,12 @@ public final class ItsuKit extends FruitKit {
             + " black flames, hotter and longer the longer you held, burning through what it meets and exploding at its end in a great ball"
             + " of fire.");
     public static final List<FruitMove> MOVES = List.of(FORM, STARE, PRESENCE, BLAST, DEATH, TELEPORT, WIND_GUST, TALONS, BOW, BITE, YOKAI_BEAM);
+    /**
+     * 4.0.2 (the owner: "you can see your abilities from Itsumade in the normal form in the HUD ... something that never happens in this
+     * mod"): the moves the panel shows as a human, and in its form (client/itsumade/ItsuClient picks by the form the player is in).
+     */
+    public static final List<FruitMove> HUMAN_MOVES = List.of(FORM, STARE, PRESENCE, BLAST, DEATH, TELEPORT);
+    public static final List<FruitMove> FORM_MOVES = List.of(FORM, WIND_GUST, TALONS, BOW, BITE, YOKAI_BEAM);
 
     @Override
     public Fruit fruit() {

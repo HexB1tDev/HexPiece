@@ -573,7 +573,7 @@ public final class NikaDawn {
                     seed + i, i % 2 == 0 ? 0x6E5A44 : 0x8A8279, fade);
             }
         }
-        FireMesh.ring(sink, x, y + 0.05, z, 0, 1, 0, 0.8 + 0.25 * Math.sin(age), 0.5, 0.1, EARTH[6], 0.55 * fade);
+        // 4.0.2 (the owner: "Gear 5 also has these rings showing up around the player when I don't ask for them"): no ring on the ground
     }
 
     /** The pop's life (ticks). */
@@ -598,7 +598,7 @@ public final class NikaDawn {
         } finally {
             FireMesh.palette(FireMesh.BAND);
         }
-        FireMesh.ring(sink, x, y + 0.08, z, 0, 1, 0, 0.6 + 2.8 * t, 0.5, 0.15, EARTH[7], 0.7 * fade);
+        // 4.0.2: no dust ring on the ground (the owner: rings round the player they did not ask for)
     }
 
     /**

@@ -687,7 +687,9 @@ public final class UoMoves {
      */
     static void beamFrom(ServerPlayer player, boolean big, double width, double length, int life, float damage, double knock, float charge,
                          java.util.function.Function<ServerPlayer, Vec3> origin, java.util.function.Predicate<ServerPlayer> keep) {
-        LIVE.add(new Beam(player, (ServerLevel) player.m_9236_(), big, width, length, life, damage, knock, charge, origin, keep));
+        Beam beam = new Beam(player, (ServerLevel) player.m_9236_(), big, width, length, life, damage, knock, charge, origin, keep);
+        beam.itsu = true; // 4.0.2: its own fire (ItsuMoves.HIT, ItsuMoves.FIREBALL), never the dragon's burst, bomb and aftershocks
+        LIVE.add(beam);
     }
 
     /** A beam of fire out of the mouth ({@code dragon}'s or the human's): sent to every client, burning on the server ({@link Beam}). */
@@ -730,6 +732,8 @@ public final class UoMoves {
         /** 3.9.7: where it starts (the Itsumade's mouth, its hand) and while it may burn, when another's than the dragon's or the human's. */
         java.util.function.Function<ServerPlayer, Vec3> origin;
         java.util.function.Predicate<ServerPlayer> keep;
+        /** 4.0.2 (the owner: "I asked for a big ball of fire at the explosion ... not Kaido's"): the Itsumade's Yokai Beam. */
+        boolean itsu;
 
         Beam(ServerPlayer user, ServerLevel level, boolean dragon, double width, double length, int life, float damage, double knock,
              float charge) {
@@ -774,15 +778,21 @@ public final class UoMoves {
             // block destruction should come from the explosion and residue"): the dragon's ends in the bomb (its cloud and burning
             // ground last 9 s, UoFire.bomb), the crater the beam's own is torn out here, and the ground round it goes on blowing up
             double crater = this.dragon ? BOMB_CRATER + BOMB_CRATER_CHARGE * this.charge : 2.0;
-            PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, 0, this.user.m_19879_(), this.last.f_82479_, this.last.f_82480_,
-                this.last.f_82481_, 0, 1, 0, 0, 0, this.dragon ? S2CUoFx.BOMB : S2CUoFx.BLAST, (float) (this.dragon ? crater : radius), 0));
+            if (this.itsu) {
+                // the Yokai Beam's end: a big ball of fire (client/itsumade/ItsuFx, itsumade/ItsuArt.fireball)
+                PieceNetwork.around(this.user, new S2CUoFx(ItsuMoves.FIREBALL, 0, this.user.m_19879_(), this.last.f_82479_, this.last.f_82480_,
+                    this.last.f_82481_, 0, 1, 0, 0, 0, 0, (float) (radius * 0.9), 0));
+            } else {
+                PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, 0, this.user.m_19879_(), this.last.f_82479_, this.last.f_82480_,
+                    this.last.f_82481_, 0, 1, 0, 0, 0, this.dragon ? S2CUoFx.BOMB : S2CUoFx.BLAST, (float) (this.dragon ? crater : radius), 0));
+            }
             Impact.quake(this.level, this.last, radius * 5.0 + 16.0, (float) Math.min(1.0, 0.5 + radius / 14.0), 30);
             if (this.struck) {
                 Craters.open(this.level, this.user, this.last, crater);
             }
             com.hexhaki.piece.PieceSounds.playAt(this.user, this.last.f_82479_, this.last.f_82480_, this.last.f_82481_, UoSounds.BLAST,
                 3.0F + 3.0F * this.charge, 0.95F - 0.15F * this.charge);
-            if (this.dragon) {
+            if (this.dragon && !this.itsu) {
                 aftershocks(this.user, this.level, this.last, crater, this.damage, this.charge);
             }
         }
@@ -799,6 +809,12 @@ public final class UoMoves {
                     this.last();
                 }
                 return true;
+            }
+            if (this.itsu) {
+                // 4.0.2 (the owner: "I asked not to be able to move or look around while firing it after releasing the beam"): held
+                // still on the server too (its client holds the view and drops the movement keys: client/dragon/AimLock)
+                this.user.m_20334_(0.0, 0.0, 0.0);
+                this.user.f_19864_ = true;
             }
             // the front races out (UoFire.BEAM_SPEED blocks a tick): nothing past it is reached yet
             double front = this.age * UoFire.BEAM_SPEED + 2.0;
@@ -817,8 +833,9 @@ public final class UoMoves {
                 double radius = this.width * 1.5 + 2.0;
                 explode(this.user, this.level, to, way, radius, this.damage * 2.0F, 8, this.knock);
                 blowAway(this.user, this.level, to, radius, this.dragon ? 2.4 + 3.0 * this.charge : 1.8);
-                PieceNetwork.around(this.user, new S2CUoFx(S2CUoFx.BURST, 0, this.user.m_19879_(), to.f_82479_, to.f_82480_, to.f_82481_,
-                    (float) way.f_82479_, (float) way.f_82480_, (float) way.f_82481_, 0, 0, S2CUoFx.BLAST, (float) radius, 0));
+                PieceNetwork.around(this.user, new S2CUoFx(this.itsu ? ItsuMoves.HIT : S2CUoFx.BURST, 0, this.user.m_19879_(), to.f_82479_,
+                    to.f_82480_, to.f_82481_, (float) way.f_82479_, (float) way.f_82480_, (float) way.f_82481_, 0, 0, this.itsu ? 0 : S2CUoFx.BLAST,
+                    (float) radius, 0));
                 Craters.open(this.level, this.user, to, STRIKE_CRATER + this.width * 0.1);
                 Impact.quake(this.level, to, radius * 4.0 + 10.0, (float) Math.min(1.0, 0.3 + this.width / 10.0), 12);
                 com.hexhaki.piece.PieceSounds.playAt(this.user, to.f_82479_, to.f_82480_, to.f_82481_, UoSounds.EXPLODE, 2.5F + this.charge,
