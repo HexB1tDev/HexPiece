@@ -925,3 +925,8 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
   FxPreview ipenta/ipillar/iengulf. Renders: docs/images/pentagram-3.9.9.png, docs/images/gates-menu-3.9.9.png.
 - NEXT: the Itsumade's kit is complete per section 22. After 3.9.9 the version is 4.0.0. Open: the owner's in-game test of 3.9.7-3.9.9,
   world gen (owner focus), the parked clothes (docs/handoff/clothes-wip-3.9.7.patch).
+
+## 39. The owner after 3.9.9 (verbatim)
+
+"Continue auto wake up at 04:02" (a one-shot wake-up of this session set for 2026-11-28 04:02 UTC, trig_01G1LV8GkNjPXyX16Z5WDMqw, as the
+4-hour one before it at 23:02 UTC).
