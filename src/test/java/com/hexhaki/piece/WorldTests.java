@@ -4,8 +4,8 @@ import com.hexhaki.piece.world.RiverField;
 import java.util.SplittableRandom;
 
 /**
- * 3.8.3: the archipelago's rivers (world/RiverField): every river line runs on without end (never a ring), so every river crosses each
- * island from sea to sea (the owner: "every single river IS CONNECTED TO THE SEA no matter what").
+ * 3.8.3: the archipelago's rivers (world/RiverField; 4.0.0 each island's own): every river crosses its island from sea to sea (the
+ * owner: "every single river IS CONNECTED TO THE SEA no matter what").
  */
 public final class WorldTests {
     private WorldTests() {
@@ -67,93 +67,73 @@ public final class WorldTests {
         }
     }
 
+    /**
+     * 4.0.0: each island's own rivers (world/RiverField): every river's two ends are out at sea; along its line it crosses its island's
+     * coast exactly twice (in and out: it never runs along a coast, never makes a ring or a lake); two rivers of one island cross at 60 to
+     * 120 degrees; the field is 0 on a river and within 0..1 everywhere.
+     */
     static void rivers() {
-        Check.that(RiverField.slopeBound() < 1.0 && Math.abs(RiverField.slopeBound() - RiverField.BENDS) < 1e-9, "the bends' slopes add up to under 1");
         SplittableRandom random = new SplittableRandom(7);
-        for (long seed : new long[] {0L, 1L, -42L, 123456789L, Long.MAX_VALUE}) {
-            RiverField.Family[] families = RiverField.families(seed);
-            Check.that(families.length == 3, "three families of rivers");
-            for (RiverField.Family f : families) {
-                // along a family's own way across its rivers its F only ever rises (by at least 1 - 0.85 a block): each of its rivers
-                // (F = k S) crosses every such line exactly once, so it can never close into a ring
-                for (int line = 0; line < 40; line++) {
-                    double x = (random.nextDouble() - 0.5) * 2.0e5;
-                    double z = (random.nextDouble() - 0.5) * 2.0e5;
-                    double last = f.f(x, z);
-                    for (int step = 1; step <= 400; step++) {
-                        double px = x + f.cos() * step * 7.0;
-                        double pz = z + f.sin() * step * 7.0;
-                        double now = f.f(px, pz);
-                        Check.that(now - last >= 7.0 * (1.0 - RiverField.BENDS) - 1e-9, "F rises along its way: no river ever turns back");
-                        last = now;
+        int rivers = 0;
+        int twos = 0;
+        for (long seed : new long[] {0L, 1L, 2L, -42L, 123456789L, Long.MAX_VALUE}) {
+            for (int i = -6; i <= 6; i++) {
+                for (int j = -6; j <= 6; j++) {
+                    RiverField.River[] all = RiverField.rivers(i, j, seed);
+                    double[] is = com.hexhaki.piece.world.IslandField.held(i, j, seed);
+                    Check.that(is == null ? all.length == 0 : all.length >= 1 && all.length <= 2, "an island has one or two rivers, the sea none");
+                    for (RiverField.River river : all) {
+                        rivers++;
+                        int last = river.count() - 1;
+                        Check.that(com.hexhaki.piece.world.IslandField.field(river.x(0), river.z(0), seed) < com.hexhaki.piece.world.IslandField.COAST
+                            && com.hexhaki.piece.world.IslandField.field(river.x(last), river.z(last), seed) < com.hexhaki.piece.world.IslandField.COAST,
+                            "seed " + seed + ": a river's two ends are at sea");
+                        // walked along its line a block at a time: it goes onto land once and off it once
+                        int crossings = 0;
+                        boolean wasLand = false;
+                        for (int k = 0; k < last; k++) {
+                            double dx = river.x(k + 1) - river.x(k);
+                            double dz = river.z(k + 1) - river.z(k);
+                            int steps = (int) Math.ceil(Math.hypot(dx, dz));
+                            for (int s = 0; s < steps; s++) {
+                                double t = (double) s / steps;
+                                boolean land = com.hexhaki.piece.world.IslandField.field(river.x(k) + dx * t, river.z(k) + dz * t, seed)
+                                    > com.hexhaki.piece.world.IslandField.COAST;
+                                if (land != wasLand) {
+                                    crossings++;
+                                    wasLand = land;
+                                }
+                            }
+                        }
+                        Check.that(crossings == 2, "seed " + seed + " cell " + i + "," + j + ": a river crosses its island's coast twice (" + crossings + ")");
+                        Check.near(RiverField.field(river.x(last / 2), river.z(last / 2), seed), 0.0, 1e-9, "the field is 0 on a river's line");
+                    }
+                    if (all.length == 2) {
+                        twos++;
+                        double ax = all[0].x(all[0].count() - 1) - all[0].x(0);
+                        double az = all[0].z(all[0].count() - 1) - all[0].z(0);
+                        double bx = all[1].x(all[1].count() - 1) - all[1].x(0);
+                        double bz = all[1].z(all[1].count() - 1) - all[1].z(0);
+                        double angle = Math.toDegrees(Math.acos(Math.abs(ax * bx + az * bz) / (Math.hypot(ax, az) * Math.hypot(bx, bz))));
+                        Check.that(angle >= Math.min(RiverField.CROSS_LEAST, 180.0 - RiverField.CROSS_MOST) - 1e-6,
+                            "two rivers of an island cross at a wide angle (" + angle + ")");
                     }
                 }
-                // and its slope is never under 0.15 anywhere (no top, no hollow: no ring of a level line round one)
-                for (int k = 0; k < 2000; k++) {
-                    double x = (random.nextDouble() - 0.5) * 2.0e5;
-                    double z = (random.nextDouble() - 0.5) * 2.0e5;
-                    double h = 0.01;
-                    double gx = (f.f(x + h, z) - f.f(x - h, z)) / (2 * h);
-                    double gz = (f.f(x, z + h) - f.f(x, z - h)) / (2 * h);
-                    Check.that(Math.hypot(gx, gz) >= 1.0 - RiverField.BENDS - 1e-6, "F's slope never vanishes");
-                }
             }
-            // the field: 0 on a river (found by halving along a family's way), within 0..1 everywhere
-            RiverField.Family a = families[0];
-            double x = 1234.5;
-            double z = -987.25;
-            double fx = a.f(x, z) / a.spacing() + a.phase();
-            double target = (Math.floor(fx) + 1.0 - a.phase()) * a.spacing();
-            double lo = 0.0;
-            double hi = a.spacing() / (1.0 - RiverField.BENDS);
-            for (int i = 0; i < 80; i++) {
-                double mid = (lo + hi) / 2.0;
-                if (a.f(x + a.cos() * mid, z + a.sin() * mid) < target) {
-                    lo = mid;
-                } else {
-                    hi = mid;
-                }
-            }
-            double rx = x + a.cos() * lo;
-            double rz = z + a.sin() * lo;
-            Check.near(RiverField.field(rx, rz, seed), 0.0, 1e-6, "the field is 0 on a river's line");
             for (int k = 0; k < 3000; k++) {
                 double v = RiverField.field((random.nextDouble() - 0.5) * 1.0e5, (random.nextDouble() - 0.5) * 1.0e5, seed);
                 Check.that(v >= 0.0 && v <= 1.0, "the field stays within 0..1");
             }
         }
-        // a river near the middle of a sampled island runs out to the sea on both sides: walking along it both ways never ends
-        // (its F stays k S while it goes on: the line is followed by stepping across F's slope)
-        RiverField.Family b = RiverField.families(5L)[1];
-        double x = 0.0;
-        double z = 0.0;
-        double k = Math.rint(b.f(x, z) / b.spacing() + b.phase());
-        double level = (k - b.phase()) * b.spacing();
-        for (int way = -1; way <= 1; way += 2) {
-            double px = x;
-            double pz = z;
-            double walked = 0.0;
-            for (int step = 0; step < 4000; step++) {
-                // onto the line, then a block along it
-                for (int i = 0; i < 6; i++) {
-                    double h = 0.01;
-                    double gx = (b.f(px + h, pz) - b.f(px - h, pz)) / (2 * h);
-                    double gz = (b.f(px, pz + h) - b.f(px, pz - h)) / (2 * h);
-                    double g2 = gx * gx + gz * gz;
-                    double err = b.f(px, pz) - level;
-                    px -= err * gx / g2;
-                    pz -= err * gz / g2;
-                }
-                double h = 0.01;
-                double gx = (b.f(px + h, pz) - b.f(px - h, pz)) / (2 * h);
-                double gz = (b.f(px, pz + h) - b.f(px, pz - h)) / (2 * h);
-                double gl = Math.hypot(gx, gz);
-                px += way * -gz / gl;
-                pz += way * gx / gl;
-                walked += 1.0;
+        Check.that(rivers > 200 && twos > 20, "rivers laid (" + rivers + ", " + twos + " islands with two)");
+        boolean differ = false;
+        for (int i = -3; i <= 3 && !differ; i++) {
+            for (int j = -3; j <= 3 && !differ; j++) {
+                RiverField.River[] one = RiverField.rivers(i, j, 1L);
+                RiverField.River[] two = RiverField.rivers(i, j, 2L);
+                differ = one.length != two.length || one.length > 0 && !java.util.Arrays.equals(one[0].points(), two[0].points());
             }
-            Check.that(walked >= 4000 && Math.hypot(px - x, pz - z) > 2500.0, "a river followed 4000 blocks either way goes on, far away");
         }
-        Check.that(RiverField.field(500, 500, 1L) != RiverField.field(500, 500, 2L), "another world, other rivers");
+        Check.that(differ, "another world, other rivers");
     }
 }

@@ -941,3 +941,14 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
   swallow (the near end) and through (the far end). (The Yokai Beam's bombs already had it through UoMoves.explode.)
 - Checked and fine: FruitServer passes the raw key to the kit (no move lookup, so the form's and the human's X/C/V share keys safely);
   FruitData.cooldownLeft is in ticks (the menu's countdown); ItsuServer.phase is HUMAN for a player who never changed.
+
+## 41. 4.0.1: the rivers per island, the ground under the fold, no lagoons, no specks
+- world/RiverField rewritten: rivers(i, j, seed) per IslandField cell (kept in a ConcurrentHashMap by cell): one chord (TWO 380: two,
+  crossing at CROSS_LEAST..CROSS_MOST 60..120 degrees), OFF_MIDDLE 0.3, BEND 0.26 (three waves under a sin(pi t) envelope), ends
+  0.6 SHELF past the furthest coast; field = min(1, distance / VALLEY 140) (the channel width as before). WorldTests.rivers: every river's
+  ends at sea, crosses its coast exactly twice (walked a block at a time), wide crossings, 0 on the line, 0..1, seeds differ.
+- ridges.json: range_choice(ridge noise >= 0: +M, else -M), M = min(river_lines, 0.25 + 0.35 clamp(1.5 |ridge noise|)): the plateau
+  stays under the fold (2/3): no peak band along every river; the sign without clamp(1000 x noise)'s zero band (it made hairline
+  valleys the river cap sank: water specks). offset.json: max(land, spline(continents: -0.13 -> -1.5, -0.08 -> -0.48)) inside the
+  river cap's min: inland ground never under the sea (the lagoons). tools/archipelago_preview.py knows range_choice.
+- Render: docs/images/archipelago-rivers-4.0.1.png (seed 2: 9.6 km, and a two-river island at 4 blocks a pixel).

@@ -148,6 +148,11 @@ class World:
             return np.maximum(self.df(node["argument1"]), self.df(node["argument2"]))
         if t == "abs":
             return np.abs(self.df(node["argument"]))
+        if t == "range_choice":
+            # 4.0.0: as the game: when_in_range where min_inclusive <= input < max_exclusive, else when_out_of_range
+            v = self.df(node["input"])
+            inside = (v >= node["min_inclusive"]) & (v < node["max_exclusive"])
+            return np.where(inside, self.df(node["when_in_range"]), self.df(node["when_out_of_range"]))
         if t == "clamp":
             return np.clip(self.df(node["input"]), node["min"], node["max"])
         if t == "constant":
