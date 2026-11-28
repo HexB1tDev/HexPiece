@@ -2105,5 +2105,96 @@
         "attenuation_distance": 48
       }
     ]
+  },
+  "piece.itsu.gate_menu": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.gate_menu",
+    "sounds": [
+      {
+        "name": "minecraft:block.respawn_anchor.set_spawn",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.7,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.itsu.gate_bind": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.gate_bind",
+    "sounds": [
+      {
+        "name": "minecraft:block.respawn_anchor.charge",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.8,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.itsu.gate_clear": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.gate_clear",
+    "sounds": [
+      {
+        "name": "minecraft:block.respawn_anchor.deplete",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.8,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.itsu.gate_form": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.gate_form",
+    "sounds": [
+      {
+        "name": "minecraft:block.portal.trigger",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.6,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.itsu.gate_hum": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.gate_hum",
+    "sounds": [
+      {
+        "name": "minecraft:block.portal.ambient",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.5,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.itsu.gate_go": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.gate_go",
+    "sounds": [
+      {
+        "name": "minecraft:block.end_portal.spawn",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.7,
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "piece.itsu.gate_land": {
+    "subtitle": "subtitles.hexhaki.piece.itsu.gate_land",
+    "sounds": [
+      {
+        "name": "minecraft:block.end_portal.spawn",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.9,
+        "attenuation_distance": 48
+      },
+      {
+        "name": "minecraft:block.respawn_anchor.deplete",
+        "type": "event",
+        "volume": 1.0,
+        "pitch": 0.6,
+        "attenuation_distance": 48
+      }
+    ]
   }
 }

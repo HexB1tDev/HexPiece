@@ -24,8 +24,9 @@ public final class PieceNetwork {
      * C2SItoSky (22), S2CUoFx's two-byte kind. 18 (3.5.7): Fishman Karate removed and Iron Fist emptied: the styles' and their moves'
      * ordinals changed, S2CWater keeps only the knock-down and the air bullets. 19 (3.5.9): C2SPowers (23), R held: every power off
      * or on. 20 (3.6.0): C2SCreate carries the Haki colour, S2COpenCreation the colour page alone. 21 (3.8.2): the Conqueror's
-     * clash, S2CConquerorClash (24), C2SConquerorTap (25). 22 (3.8.8): the guns, S2CGun (26), S2CGunShot (27), C2SGun (28). */
-    private static final String PROTOCOL = "22";
+     * clash, S2CConquerorClash (24), C2SConquerorTap (25). 22 (3.8.8): the guns, S2CGun (26), S2CGunShot (27), C2SGun (28).
+     * 23 (3.9.9): the Itsumade's Hellish Teleport, S2CGates (29), C2SGate (30). */
+    private static final String PROTOCOL = "23";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(HexHaki.id("piece"), () -> PROTOCOL, PROTOCOL::equals,
         PROTOCOL::equals);
     private static boolean initialized;
@@ -74,6 +75,9 @@ public final class PieceNetwork {
         CHANNEL.registerMessage(26, S2CGun.class, S2CGun::encode, S2CGun::decode, S2CGun::handle);
         CHANNEL.registerMessage(27, S2CGunShot.class, S2CGunShot::encode, S2CGunShot::decode, S2CGunShot::handle);
         CHANNEL.registerMessage(28, C2SGun.class, C2SGun::encode, C2SGun::decode, C2SGun::handle);
+        // 3.9.9: the Itsumade's Hellish Teleport (server/ItsuGates, client/itsumade/GateScreen)
+        CHANNEL.registerMessage(29, S2CGates.class, S2CGates::encode, S2CGates::decode, S2CGates::handle);
+        CHANNEL.registerMessage(30, C2SGate.class, C2SGate::encode, C2SGate::decode, C2SGate::handle);
     }
 
     public static void sendTo(ServerPlayer receiver, Object message) {

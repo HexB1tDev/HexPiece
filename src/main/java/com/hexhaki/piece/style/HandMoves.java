@@ -102,6 +102,9 @@ public final class HandMoves {
     /** 3.9.8: Thy Death: the hand raised to the sky (3), held while the clouds gather (to 26), let down. */
     static final double[][] RAISED = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.04, 0.3, -0.02, 45, 0, 0}, {26, 0.04, 0.31, -0.02, 46, 0, 0},
         {36, 0, 0, 0, 0, 0, 0}};
+    /** 3.9.9: Hellish Teleport: the hand thrust down before the view, palm to the ground (4), held while the pentagram forms. */
+    static final double[][] PALM_DOWN = {{0, 0, 0, 0, 0, 0, 0}, {4, -0.06, -0.12, -0.2, -30, 6, 0}, {40, -0.05, -0.13, -0.2, -32, 4, 0},
+        {52, 0, 0, 0, 0, 0, 0}};
     static final double[][] PUSH = {{0, 0, 0, 0, 0, 0, 0}, {6, -0.1, -0.04, -0.28, -22, 8, 0}};
     static final double[][] PUSH_END = {{0, -0.1, -0.04, -0.28, -22, 8, 0}, {3, 0.2, 0.16, -0.1, 20, -20, -20}, {12, 0, 0, 0, 0, 0, 0}};
     static final double[][] THRUST = {{0, 0, 0, 0, 0, 0, 0}, {3, 0.05, -0.04, 0.06, 0, 0, 0}, {5, -0.15, 0.05, -0.4, 8, 10, 0}};
@@ -222,6 +225,7 @@ public final class HandMoves {
             case "itsu_blast_fire" -> new Move(POINT_HELD, 0.35);
             case "itsu_blast_end" -> new Move(POINT_END, 0);
             case "itsu_death" -> new Move(RAISED, 0);
+            case "itsu_gate" -> new Move(PALM_DOWN, 0.5);
             default -> null;
         };
     }

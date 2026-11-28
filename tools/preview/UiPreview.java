@@ -1,6 +1,7 @@
 import com.hexhaki.piece.Faction;
 import com.hexhaki.piece.Gender;
 import com.hexhaki.piece.style.FightingStyle;
+import com.hexhaki.piece.ui.GateView;
 import com.hexhaki.piece.ui.CreationView;
 import com.hexhaki.piece.ui.LogbookView;
 import com.hexhaki.piece.ui.UiCanvas;
@@ -100,6 +101,47 @@ public class UiPreview {
         }
     }
 
+    /**
+     * 3.9.9: the Hellish Teleport menu (ui/GateView): none bound; two bound (the mouse on OPEN), one in another world; renaming; the gates
+     * closed for a while; at GUI scale 2 on 1080p (960 x 540) and on a small screen (427 x 240).
+     */
+    static void gates(String dir) throws Exception {
+        int[][] sizes = {{480, 270}, {427, 240}};
+        for (int z = 0; z < sizes.length; z++) {
+            int w = sizes[z][0];
+            int h = sizes[z][1];
+            GateView.Layout l = GateView.Layout.of(w, h);
+            GateView.Data none = new GateView.Data();
+            none.here = "minecraft:overworld";
+            GateView.Data some = new GateView.Data();
+            some.here = "minecraft:overworld";
+            some.set = new boolean[] {true, false, true};
+            some.names = new String[] {"Mary Geoise", "", "The Pantheon of the Five Elders"};
+            some.xs = new int[] {1204, 0, -38};
+            some.ys = new int[] {71, 0, 112};
+            some.zs = new int[] {-5530, 0, 288};
+            some.worlds = new String[] {"minecraft:overworld", "", "minecraft:the_nether"};
+            GateView.State plain = new GateView.State();
+            GateView.State renaming = new GateView.State();
+            renaming.renaming = 0;
+            renaming.typed = "Holy Land";
+            GateView.Data closed = new GateView.Data();
+            closed.here = some.here;
+            closed.set = some.set;
+            closed.names = some.names;
+            closed.xs = some.xs;
+            closed.ys = some.ys;
+            closed.zs = some.zs;
+            closed.worlds = some.worlds;
+            closed.cooldown = 860;
+            String tag = z == 0 ? "" : "-small";
+            save(dir, "gates-none" + tag, w, h, c -> GateView.draw(c, l, none, plain, "bind:1", 3.0));
+            save(dir, "gates-some" + tag, w, h, c -> GateView.draw(c, l, some, plain, "open:0", 5.2));
+            save(dir, "gates-rename" + tag, w, h, c -> GateView.draw(c, l, some, renaming, "rename:0", 7.0));
+            save(dir, "gates-closed" + tag, w, h, c -> GateView.draw(c, l, closed, plain, "clear:2", 9.1));
+        }
+    }
+
     static void save(String dir, String name, int w, int h, java.util.function.Consumer<UiCanvas> draw) throws Exception {
         save(dir, name, w, h, 2, draw);
     }
@@ -134,6 +176,10 @@ public class UiPreview {
     public static void main(String[] args) throws Exception {
         String dir = args[0];
         new File(dir).mkdirs();
+        if (args.length > 1 && args[1].equals("gates")) {
+            gates(dir);
+            return;
+        }
         int w = 480;
         int h = 300;
         CreationView.Layout layout = CreationView.Layout.of(w, h);

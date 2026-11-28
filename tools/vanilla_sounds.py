@@ -167,6 +167,14 @@ ITSU = {
     # 3.9.8: Gorosei Stare: the glare fixing on its target (the elder guardian's curse, low), and the target thrown (the warden's boom)
     "piece.itsu.stare": [("entity.elder_guardian.curse", 1.0, 0.7)],
     "piece.itsu.thrown": [("entity.warden.sonic_boom", 1.0, 0.85)],
+    # 3.9.9: Hellish Teleport: the menu opened, a gate bound, cleared; the pentagrams forming, humming; the blast up; the landing
+    "piece.itsu.gate_menu": [("block.respawn_anchor.set_spawn", 1.0, 0.7)],
+    "piece.itsu.gate_bind": [("block.respawn_anchor.charge", 1.0, 0.8)],
+    "piece.itsu.gate_clear": [("block.respawn_anchor.deplete", 1.0, 0.8)],
+    "piece.itsu.gate_form": [("block.portal.trigger", 1.0, 0.6)],
+    "piece.itsu.gate_hum": [("block.portal.ambient", 1.0, 0.5)],
+    "piece.itsu.gate_go": [("block.end_portal.spawn", 1.0, 0.7)],
+    "piece.itsu.gate_land": [("block.end_portal.spawn", 1.0, 0.9), ("block.respawn_anchor.deplete", 1.0, 0.6)],
 }
 
 

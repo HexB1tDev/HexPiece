@@ -19,6 +19,8 @@ ItsuForm.HUMAN_GONE 30; going back, the human back at HUMAN_BACK 16):
   itsu_blast_end     the arm let down
   itsu_death         Thy Death: the right hand raised high to the sky, the body leaning back under it, held while the clouds gather,
                      then let down
+  itsu_gate          3.9.9, Hellish Teleport: both hands thrust down before the body, palms to the ground as the pentagram is called
+                     up under them, spreading slowly apart while it forms, then let down
 
 Only the body, the torso and the arms are keyed (POINT ONE: no clip keys a leg or the head). Writes src/main/resources/assets/hexhaki/
 player_animation/itsu_*.json.
@@ -147,6 +149,16 @@ def death():
                            " the black clouds gather, then let down.", PARTS)
 
 
+def gate():
+    down = p(REST0, rightArm=arm(-52, -16, 10, -10), leftArm=mirror(arm(-52, -16, 10, -10)), body=body(0, 14, 0), torso=TORSO0)
+    spread = p(down, rightArm=arm(-46, 8, 26, -8), leftArm=mirror(arm(-46, 8, 26, -8)), body=body(0, 10, 0))
+    beats = [(0, "linear", REST0), (4, "outexpo", down)]
+    beats += tremble(down, 6, 18, 3, lambda b, sg: p(b, rightArm={"pitch": -52 + 1.2 * sg}, leftArm={"pitch": -52 - 1.2 * sg}))
+    beats += [(34, "inoutsine", spread), (40, "linear", spread), (52, "inoutsine", REST0)]
+    pika_anims.write_parts("itsu_gate", 52, beats, "Itsumade: Hellish Teleport: both hands thrust down, palms to the ground, the pentagram"
+                           " called up under them, spreading slowly apart while it forms.", PARTS)
+
+
 if __name__ == "__main__":
     form()
     unform()
@@ -154,3 +166,4 @@ if __name__ == "__main__":
     presence()
     blast()
     death()
+    gate()

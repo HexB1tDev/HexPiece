@@ -134,6 +134,8 @@ public final class ItsuSaint {
             }
         } else if (slot == ItsuKit.DEATH.slot()) {
             death(player, now);
+        } else if (slot == ItsuKit.TELEPORT.slot()) {
+            ItsuGates.menu(player); // 3.9.9
         }
     }
 

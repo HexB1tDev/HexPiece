@@ -899,3 +899,29 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
   rename), saves in the player's persistent data, a 6x6 pentagram drawn on the terrain at both ends forming over ~10 s with blue/pink
   fire round it, everything standing on it turned to black flames, gathered to the middle, blasted up into the sky, and falling as a
   beam onto the landing pentagram.
+
+## 37. The owner on the Hellish Teleport pentagram (verbatim, while it was being built)
+
+"the summoning circle lacks runes. the color also isn't it, the original is a very dark shade of purple/blue"
+- DONE (pentagram look): itsumade/ItsuArt.pentagram redone from input/itsumade/pictures/pentagram_frame.png: DISC 0x17143F, RING_BAND
+  0x0C0A27 with RUNES 40 (rune(): seeded strokes from a small alphabet), STAR_FILL 0x1C2A74 in the points, pink MARK chevrons, pale
+  LINE 0xA9E6FF over a SOLID violet halo (see-through glows wrote depth and cut the disc away in teeth), GATE_FIRE cyan with pink
+  edges. Render: docs/images/pentagram-3.9.9.png (FxPreview ipenta:age[:1 stepped]).
+
+## 38. 3.9.9: Hellish Teleport (N)
+
+- server/ItsuGates: 3 gates in ProfileServer.root(player) "ItsuGates" {G0..G2: Set, Name, X, Y, Z, World}; menu() -> S2CGates (29,
+  open), act() <- C2SGate (30: BIND 0 (also MOVE), CLEAR 1, RENAME 2 (clean(): 20 chars, no section signs), GO 3). PROTOCOL "23". go():
+  same world only, cooldown 1200 (FruitData.cooldownLeft shown), not when already there; Ritual (UoMoves.Live): FORM (460) to both ends
+  (near: PieceNetwork.around(user); far: every player within WATCH 128 of it and the user), GATE_HUM every 50, at ItsuArt.GATE_FORM 200
+  swallow() (entities within GATE_RADIUS+0.4 round, -1.5..+2.5 high, not passengers: ENGULF 461 each, PILLAR 462 up at the near end, down
+  at the far end), at +SWALLOW 8 through() (m_6325_ loads the far chunk; m_6021_ each to the same offset; a taken player is told the far
+  end's FORM/PILLAR; ARRIVE 463), END 464 at +60.
+- client: itsumade/GateScreen (ui/GateView; S2CGates.handle -> GateScreen.told; rename typed through keyPressed GLFW codes, no
+  charTyped: it is not in the proven API), itsumade/ItsuGateFx (ENDS keyed user<<1|end, ground() ClipContext cache per end, ItsuArt
+  pentagram/pillar/engulf). ItsuFx.accept routes 460-464; UoFx routes 440-479 to ItsuFx.
+- ItsuKit.TELEPORT "[N]" "itsu_gate" (ItsuSaint.press calls ItsuGates.menu), clip itsu_gate (tools/itsu_anims.py), HandMoves PALM_DOWN,
+  sounds piece.itsu.gate_* (vanilla_sounds.py ITSU), previews: UiPreview "<dir> gates" (compile against build/hexpiece-<v>.jar),
+  FxPreview ipenta/ipillar/iengulf. Renders: docs/images/pentagram-3.9.9.png, docs/images/gates-menu-3.9.9.png.
+- NEXT: the Itsumade's kit is complete per section 22. After 3.9.9 the version is 4.0.0. Open: the owner's in-game test of 3.9.7-3.9.9,
+  world gen (owner focus), the parked clothes (docs/handoff/clothes-wip-3.9.7.patch).

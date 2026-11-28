@@ -109,6 +109,17 @@ public final class FxPreview {
         }
     }
 
+    /** 3.9.9: a solid block (camera-relative corners), its sides shaded, for the pentagram's stepped ground. */
+    static void box(FireMesh.Sink sink, double x0, double y0, double z0, double x1, double y1, double z1, int argb) {
+        int top = argb;
+        int side = (argb & 0xFF000000) | (((argb >> 16 & 255) * 3 / 4) << 16) | (((argb >> 8 & 255) * 3 / 4) << 8) | ((argb & 255) * 3 / 4);
+        sink.quad(new double[] {x0, y1, z0, x1, y1, z0, x1, y1, z1, x0, y1, z1}, new int[] {top, top, top, top});
+        sink.quad(new double[] {x0, y0, z0, x1, y0, z0, x1, y1, z0, x0, y1, z0}, new int[] {side, side, side, side});
+        sink.quad(new double[] {x0, y0, z1, x1, y0, z1, x1, y1, z1, x0, y1, z1}, new int[] {side, side, side, side});
+        sink.quad(new double[] {x0, y0, z0, x0, y0, z1, x0, y1, z1, x0, y1, z0}, new int[] {side, side, side, side});
+        sink.quad(new double[] {x1, y0, z0, x1, y0, z1, x1, y1, z1, x1, y1, z0}, new int[] {side, side, side, side});
+    }
+
     static double dist(double[] a, double[] b) {
         return Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]));
     }
@@ -263,6 +274,35 @@ public final class FxPreview {
             case "iclouds" -> com.hexhaki.piece.itsumade.ItsuArt.clouds(sink, -eye[0], 34.0 - eye[1], -eye[2], 31.0, Double.parseDouble(move[1]),
                 0.85 * Double.parseDouble(move[1]), 40.0, 7);
             case "iburst" -> com.hexhaki.piece.itsumade.ItsuArt.burst(sink, -eye[0], -eye[1], -eye[2], 1.5, Double.parseDouble(move[1]), 20.0, 7);
+            // 3.9.9: Hellish Teleport: ipenta:age[:rough] (the pentagram forming on flat or stepped ground round the point),
+            // ipillar:age:down (the black-flame pillar 40 high), iengulf:k (a body swallowed and drawn to the middle 2 off)
+            case "ipenta" -> {
+                boolean rough = move.length > 2 && move[2].equals("1");
+                com.hexhaki.piece.itsumade.ItsuArt.Ground ground = (gx, gz) -> {
+                    if (!rough) {
+                        return -eye[1];
+                    }
+                    double wx = gx + eye[0];
+                    double wz = gz + eye[2];
+                    return (wx > 1.0 ? 1.0 : 0.0) + (wz > 1.5 ? 1.0 : 0.0) - eye[1];
+                };
+                if (rough) {
+                    // the steps drawn as blocks so the lines can be judged lying on them
+                    for (int bx = -4; bx <= 4; bx++) {
+                        for (int bz = -4; bz <= 4; bz++) {
+                            double h = ground.at(bx + 0.5 - eye[0], bz + 0.5 - eye[2]) + eye[1];
+                            if (h > 0.0) {
+                                FxPreview.box(sink, bx - eye[0], -eye[1], bz - eye[2], bx + 1 - eye[0], h - eye[1], bz + 1 - eye[2], 0xFF6E6A62);
+                            }
+                        }
+                    }
+                }
+                com.hexhaki.piece.itsumade.ItsuArt.pentagram(sink, ground, -eye[0], -eye[2], Double.parseDouble(move[1]), 1.0, 7);
+            }
+            case "ipillar" -> com.hexhaki.piece.itsumade.ItsuArt.pillar(sink, -eye[0], -eye[1], 40.0 - eye[1], -eye[2], 1.4,
+                Double.parseDouble(move[1]), 1.0, move.length > 2 && move[2].equals("1"), 7);
+            case "iengulf" -> com.hexhaki.piece.itsumade.ItsuArt.engulf(sink, 2.0 - eye[0], -eye[1], -eye[2], 1.8, Double.parseDouble(move[1]),
+                new double[] {-eye[0], 0.5 - eye[1], -eye[2]}, 20.0, 7);
             case "blast", "bolt" -> {
                 // a fireball out of the mouth along the look, {age} ticks after it left (3.6 / 3.2 blocks a tick, as UoMoves throws them)
                 boolean big = move[0].equals("blast");

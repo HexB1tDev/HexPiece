@@ -29,6 +29,11 @@ public final class ItsuKit extends FruitKit {
     public static final FruitMove DEATH = new FruitMove("Thy Death", "[B]", 0, "itsu_death",
         "Raise your hand: for 10 seconds the Conqueror's lightning falls from the clouds all round you (25 blocks), every bolt bursting"
             + " where it strikes the ground, hurting and stunning what it catches.");
+    // 3.9.9
+    public static final FruitMove TELEPORT = new FruitMove("Hellish Teleport", "[N]", 0, "itsu_gate",
+        "Opens your three gates. Click an empty one to bind it where you stand; rename, move or clear a bound one. Click a bound one and a"
+            + " pentagram forms under you and at the gate at once: ten seconds later everything standing on yours is swallowed by black"
+            + " flames, blasted up into the sky and dropped out of it onto the other.");
     // 3.9.7: in its form (the owner's spec, his words in each)
     public static final FruitMove WIND_GUST = new FruitMove("Itsumade: Wind Gust", "[LMB]", 0, "itsu_gust",
         "In its form: a slow move: the great wings raised and brought down in one huge flap, a gust of wind that throws everything in the"
@@ -45,7 +50,7 @@ public final class ItsuKit extends FruitKit {
         "In its form: hold to gather a ball of white-hot fire in the open jaws, let go and it pours out as a beam of orange fire wrapped in"
             + " black flames, hotter and longer the longer you held, burning through what it meets and exploding at its end in a great ball"
             + " of fire.");
-    public static final List<FruitMove> MOVES = List.of(FORM, STARE, PRESENCE, BLAST, DEATH, WIND_GUST, TALONS, BOW, BITE, YOKAI_BEAM);
+    public static final List<FruitMove> MOVES = List.of(FORM, STARE, PRESENCE, BLAST, DEATH, TELEPORT, WIND_GUST, TALONS, BOW, BITE, YOKAI_BEAM);
 
     @Override
     public Fruit fruit() {
@@ -93,6 +98,7 @@ public final class ItsuKit extends FruitKit {
     public void cancel(ServerPlayer player) {
         ItsuMoves.forget(player);
         ItsuSaint.forget(player);
+        ItsuGates.forget(player);
         ItsuServer.revert(player);
     }
 
@@ -100,6 +106,7 @@ public final class ItsuKit extends FruitKit {
     public void removed(ServerPlayer player) {
         ItsuMoves.forget(player);
         ItsuSaint.forget(player);
+        ItsuGates.forget(player);
         ItsuServer.restore(player);
         RyouServer.retell(player); // 3.9.7: its Haki colours go with it
     }

@@ -254,4 +254,469 @@ public final class ItsuArt {
         }
         return out;
     }
+
+    // ------------------------------------------------------------------------------------------------------ 3.9.9: Hellish Teleport
+
+    /**
+     * The gate's fire (the owner's reference, Haki_and_Portalfire.gif): cyan flames, white-cyan in their hearts, their edges hot pink:
+     * FireMesh pulls a puff's edge toward its RIM band, so pink sits just under the cyan.
+     */
+    public static final int[] GATE_FIRE = {0x2A0630, 0x5A0C55, 0x9A1478, 0xD8249A, 0xFF4FB8, 0xFF6FC8, 0x3FE6F0, 0xC8FFFF};
+    /**
+     * 3.9.9 (the owner: "the summoning circle lacks runes. the color also isn't it, the original is a very dark shade of purple/blue";
+     * input/itsumade/pictures/pentagram_frame.png): the circle's own colours: a very dark purple-blue disc, a darker band round it full of
+     * pale lavender runes, the star's points a deep blue with a pink mark in each, every line thin and pale cyan-white.
+     */
+    public static final int DISC = 0x17143F;
+    public static final int RING_BAND = 0x0C0A27;
+    public static final int STAR_FILL = 0x1C2A74;
+    public static final int LINE_CORE = 0xF2FDFF;
+    public static final int LINE = 0xA9E6FF;
+    public static final int LINE_GLOW = 0x4A3FD0;
+    public static final int RUNE = 0xD9C8FF;
+    public static final int RUNE_GLOW = 0x6A3FD8;
+    public static final int MARK = 0xFF4FC8;
+    public static final int MARK_GLOW = 0x8A1A78;
+
+    /** The ground's height under a point ({@code x, z} camera-relative, as every point here), for the pentagram to lie on. */
+    public interface Ground {
+        double at(double x, double z);
+    }
+
+    /** How long the pentagram takes to form (ticks): its circles traced, then the star drawn point to point, then it burns. */
+    public static final int GATE_FORM = 200;
+    public static final double GATE_RADIUS = 3.0;
+    /** How many runes run round its band. */
+    static final int RUNES = 40;
+
+    /**
+     * The pentagram ({@code GATE_RADIUS} round its middle {@code x, z}; six blocks across) at {@code age} ticks of its forming, laid on
+     * the ground as {@code ground} has it (every piece of it on the top of the block under it, its lines climbing the face of a step), at
+     * {@code alpha}: its dark disc welling up (to 100), the outer circle traced round (to 60), the inner circle (40 to 90), the runes
+     * written one after another round the band (50 to 130), the star's five lines drawn point to point (80 to 160) and its marks (150 to
+     * 175), then all of it burning brighter to {@link #GATE_FORM}; cyan fire with pink edges licking up round the outer circle as it forms.
+     */
+    public static void pentagram(FireMesh.Sink sink, Ground ground, double x, double z, double age, double alpha, int seed) {
+        if (alpha <= 0.01) {
+            return;
+        }
+        double r = GATE_RADIUS;
+        double ri = r * 0.84;
+        double burn = clamp01((age - 150.0) / 50.0);
+        double width = 0.035 + 0.015 * burn;
+        double a = alpha * (0.8 + 0.2 * burn);
+        disc(sink, ground, x, z, r, ri, alpha * clamp01(age / 100.0), clamp01((age - 120.0) / 50.0));
+        // the circles: the outer edge and both edges of the band
+        arcOnGround(sink, ground, x, z, r, 0.0, clamp01(age / 60.0), width * 1.3, a);
+        arcOnGround(sink, ground, x, z, ri, Math.PI, clamp01((age - 40.0) / 50.0), width, a);
+        // the runes round the band, written one after another
+        double rb = (r + ri) * 0.5;
+        for (int j = 0; j < RUNES; j++) {
+            double shown = clamp01((age - 50.0 - j * 80.0 / RUNES) / 6.0);
+            if (shown <= 0.0) {
+                break;
+            }
+            double th = j * Math.PI * 2.0 / RUNES + 0.05;
+            rune(sink, ground, x, z, th, rb, (r - ri) * 0.68, seed * 31 + j, a * shown);
+        }
+        // the star: five points on the inner circle, each joined to the one two along, drawn one after another
+        for (int k = 0; k < 5; k++) {
+            double t = clamp01((age - 80.0 - k * 16.0) / 16.0);
+            if (t <= 0.0) {
+                continue;
+            }
+            double a0 = Math.PI / 2.0 + k * 2.0 * Math.PI * 2.0 / 5.0;
+            double a1 = Math.PI / 2.0 + (k + 1) * 2.0 * Math.PI * 2.0 / 5.0;
+            double x0 = x + Math.cos(a0) * ri;
+            double z0 = z + Math.sin(a0) * ri;
+            double x1 = x + Math.cos(a1) * ri;
+            double z1 = z + Math.sin(a1) * ri;
+            lineOnGround(sink, ground, x0, z0, x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, width, a);
+        }
+        // a pink mark in each point of the star, pointing in to its middle
+        for (int k = 0; k < 5; k++) {
+            double shown = clamp01((age - 150.0 - k * 4.0) / 6.0);
+            if (shown > 0.0) {
+                mark(sink, ground, x, z, Math.PI / 2.0 + k * Math.PI * 2.0 / 5.0, ri, a * shown);
+            }
+        }
+        // the fire round it, as far round as the circle has gone, taller once it burns: tongues of cyan with pink edges licking up
+        double round = clamp01(age / 60.0);
+        int flames = 56;
+        FireMesh.palette(GATE_FIRE);
+        for (int k = 0; k < flames; k++) {
+            double u = (k + 0.5) / flames;
+            if (u > round) {
+                break;
+            }
+            double ang = u * Math.PI * 2.0;
+            double rr = r + 0.22 + 0.12 * Math.sin(k * 1.9);
+            double fx = x + Math.cos(ang) * rr;
+            double fz = z + Math.sin(ang) * rr;
+            double fy = ground.at(fx, fz);
+            double flick = 0.7 + 0.3 * Math.sin(age * 0.9 + k * 2.3);
+            double size = (0.12 + 0.09 * burn) * flick * Math.min(1.0, (round - u) * 12.0);
+            // moving down so FireMesh draws its tongue out behind it, upward: a flame's tip
+            FireMesh.puff(sink, fx, fy + size * 0.8, fz, size, 0.0, -1.0, 0.0, 1.1 + 0.5 * burn, 0.55, 0.86, 0.7, false, alpha,
+                age + k * 1.7, seed * 53 + k);
+        }
+        FireMesh.palette(FireMesh.BAND);
+    }
+
+    /**
+     * The circle's dark disc on the ground: cut into small pieces round its middle (rings of 0.375, pieces of about 0.4 round), each flat
+     * on the block under it, coloured by where it lies (the band, a point of the star, the rest); the star's points fill in at
+     * {@code star}.
+     */
+    static void disc(FireMesh.Sink sink, Ground ground, double x, double z, double r, double ri, double alpha, double star) {
+        if (alpha <= 0.01) {
+            return;
+        }
+        int rings = 8;
+        double[] xyz = new double[12];
+        int[] argb = new int[4];
+        for (int i = 0; i < rings; i++) {
+            double r0 = r * i / rings;
+            double r1 = r * (i + 1) / rings;
+            int segs = (int) Math.max(10, Math.ceil(r1 * Math.PI * 2.0 / 0.4));
+            for (int j = 0; j < segs; j++) {
+                double a0 = j * Math.PI * 2.0 / segs;
+                double a1 = (j + 1) * Math.PI * 2.0 / segs;
+                double rm = (r0 + r1) * 0.5;
+                double am = (a0 + a1) * 0.5;
+                double cx = Math.cos(am) * rm;
+                double cz = Math.sin(am) * rm;
+                double h = ground.at(x + cx, z + cz) + 0.012;
+                int c;
+                if (rm > ri) {
+                    c = argb(RING_BAND, alpha);
+                } else if (star > 0.0 && inStar(cx, cz, ri)) {
+                    c = argb(mix(DISC, STAR_FILL, star), alpha);
+                } else {
+                    c = argb(DISC, alpha);
+                }
+                // each piece a little over its neighbours (the rings' pieces do not meet corner to corner: no hairline between them)
+                double o0 = Math.max(0.0, r0 - 0.03);
+                double o1 = r1 + 0.03;
+                double b0 = a0 - 0.012;
+                double b1 = a1 + 0.012;
+                xyz[0] = x + Math.cos(b0) * o0;
+                xyz[1] = h;
+                xyz[2] = z + Math.sin(b0) * o0;
+                xyz[3] = x + Math.cos(b0) * o1;
+                xyz[4] = h;
+                xyz[5] = z + Math.sin(b0) * o1;
+                xyz[6] = x + Math.cos(b1) * o1;
+                xyz[7] = h;
+                xyz[8] = z + Math.sin(b1) * o1;
+                xyz[9] = x + Math.cos(b1) * o0;
+                xyz[10] = h;
+                xyz[11] = z + Math.sin(b1) * o0;
+                argb[0] = c;
+                argb[1] = c;
+                argb[2] = c;
+                argb[3] = c;
+                sink.quad(xyz, argb);
+            }
+        }
+    }
+
+    /** Whether ({@code px, pz}) lies in the star drawn on the circle {@code ri} round (its ten corners, the points' and the inner ones). */
+    static boolean inStar(double px, double pz, double ri) {
+        double inner = ri * Math.cos(Math.PI * 2.0 / 5.0) / Math.cos(Math.PI / 5.0);
+        boolean in = false;
+        for (int i = 0, j = 9; i < 10; j = i++) {
+            double ai = Math.PI / 2.0 + i * Math.PI / 5.0;
+            double aj = Math.PI / 2.0 + j * Math.PI / 5.0;
+            double rI = i % 2 == 0 ? ri : inner;
+            double rJ = j % 2 == 0 ? ri : inner;
+            double xi = Math.cos(ai) * rI;
+            double zi = Math.sin(ai) * rI;
+            double xj = Math.cos(aj) * rJ;
+            double zj = Math.sin(aj) * rJ;
+            if ((zi > pz) != (zj > pz) && px < (xj - xi) * (pz - zi) / (zj - zi) + xi) {
+                in = !in;
+            }
+        }
+        return in;
+    }
+
+    static int mix(int a, int b, double t) {
+        int r = (int) (((a >> 16) & 255) + (((b >> 16) & 255) - ((a >> 16) & 255)) * t);
+        int g = (int) (((a >> 8) & 255) + (((b >> 8) & 255) - ((a >> 8) & 255)) * t);
+        int bl = (int) ((a & 255) + ((b & 255) - (a & 255)) * t);
+        return (r << 16) | (g << 8) | bl;
+    }
+
+    /**
+     * One rune in the band, its foot toward the middle, read round the circle: two to four strokes out of a little alphabet of bars,
+     * slants, hooks and forks (seeded, so each rune is its own and always the same), pale lavender over a violet glow.
+     */
+    static void rune(FireMesh.Sink sink, Ground ground, double x, double z, double th, double rb, double tall, int seed, double alpha) {
+        // across (along the circle) and up (out from the middle) the rune
+        double tx = -Math.sin(th);
+        double tz = Math.cos(th);
+        double nx = Math.cos(th);
+        double nz = Math.sin(th);
+        double cx = x + nx * rb;
+        double cz = z + nz * rb;
+        double hh = tall * 0.5;
+        double hw = tall * 0.32;
+        // each stroke: from (u0, v0) to (u1, v1), in halves of the rune's width and height
+        double[][] alphabet = {
+            {0, -1, 0, 1}, {-1, -1, 1, 1}, {1, -1, -1, 1}, {-1, 1, 1, 1}, {-1, 0, 1, 0}, {-1, -1, 1, -1}, {0, 1, 1, 0.3},
+            {-1, 1, 0, 0}, {0, 0, 1, 1}, {-1, -1, -1, 1}, {1, -1, 1, 1}, {0, -0.2, 1, -1}, {-1, 0.4, 0, -0.4}};
+        Random r = new Random(seed * 2654435761L);
+        int strokes = 2 + r.nextInt(3);
+        int first = r.nextInt(3); // most runes stand on a stem
+        for (int s = 0; s < strokes; s++) {
+            double[] st = alphabet[s == 0 ? (first == 0 ? 0 : first == 1 ? 9 : 10) : r.nextInt(alphabet.length)];
+            double x0 = cx + tx * st[0] * hw + nx * st[1] * hh;
+            double z0 = cz + tz * st[0] * hw + nz * st[1] * hh;
+            double x1 = cx + tx * st[2] * hw + nx * st[3] * hh;
+            double z1 = cz + tz * st[2] * hw + nz * st[3] * hh;
+            stroke(sink, ground, x0, z0, x1, z1, tall * 0.075, RUNE, RUNE_GLOW, alpha);
+        }
+    }
+
+    /** A pink mark in the point of the star at {@code th}: a chevron pointing in to the middle, a stroke through it. */
+    static void mark(FireMesh.Sink sink, Ground ground, double x, double z, double th, double ri, double alpha) {
+        double nx = Math.cos(th);
+        double nz = Math.sin(th);
+        double tx = -nz;
+        double tz = nx;
+        double tip = ri * 0.42;
+        double back = ri * 0.62;
+        double half = ri * 0.08;
+        stroke(sink, ground, x + nx * back + tx * half, z + nz * back + tz * half, x + nx * tip, z + nz * tip, 0.04, MARK, MARK_GLOW, alpha);
+        stroke(sink, ground, x + nx * back - tx * half, z + nz * back - tz * half, x + nx * tip, z + nz * tip, 0.04, MARK, MARK_GLOW, alpha);
+        stroke(sink, ground, x + nx * (back + ri * 0.08), z + nz * (back + ri * 0.08), x + nx * (tip + ri * 0.04), z + nz * (tip + ri * 0.04),
+            0.03, MARK, MARK_GLOW, alpha);
+    }
+
+    /** A short stroke flat on the ground (the height under its middle): its colour over a soft glow of {@code glow}. */
+    static void stroke(FireMesh.Sink sink, Ground ground, double x0, double z0, double x1, double z1, double width, int colour, int glow,
+                       double alpha) {
+        double dx = x1 - x0;
+        double dz = z1 - z0;
+        double l = Math.hypot(dx, dz);
+        if (l < 1.0E-6 || alpha <= 0.01) {
+            return;
+        }
+        double sx = -dz / l;
+        double sz = dx / l;
+        // the stroke runs a hair past its ends so strokes meet
+        double ex = dx / l * width * 0.5;
+        double ez = dz / l * width * 0.5;
+        double y = ground.at((x0 + x1) * 0.5, (z0 + z1) * 0.5) + 0.03;
+        int g = argb(glow, alpha);
+        double gw = width * 0.95;
+        sink.quad(new double[] {x0 - ex * 2 + sx * gw, y, z0 - ez * 2 + sz * gw, x1 + ex * 2 + sx * gw, y, z1 + ez * 2 + sz * gw,
+            x1 + ex * 2 - sx * gw, y, z1 + ez * 2 - sz * gw, x0 - ex * 2 - sx * gw, y, z0 - ez * 2 - sz * gw}, new int[] {g, g, g, g});
+        int c = argb(colour, alpha);
+        double w = width * 0.5;
+        sink.quad(new double[] {x0 - ex + sx * w, y + 0.004, z0 - ez + sz * w, x1 + ex + sx * w, y + 0.004, z1 + ez + sz * w,
+            x1 + ex - sx * w, y + 0.004, z1 + ez - sz * w, x0 - ex - sx * w, y + 0.004, z0 - ez - sz * w}, new int[] {c, c, c, c});
+    }
+
+    static double clamp01(double v) {
+        return v < 0.0 ? 0.0 : v > 1.0 ? 1.0 : v;
+    }
+
+    /** An arc of a circle on the ground from {@code start} (radians) round {@code part} of the way. */
+    static void arcOnGround(FireMesh.Sink sink, Ground ground, double x, double z, double radius, double start, double part, double width,
+                            double alpha) {
+        if (part <= 0.0) {
+            return;
+        }
+        int n = (int) Math.max(8, Math.ceil(radius * 2.0 * Math.PI * part / 0.35));
+        double px = x + Math.cos(start) * radius;
+        double pz = z + Math.sin(start) * radius;
+        for (int i = 1; i <= n; i++) {
+            double ang = start + part * Math.PI * 2.0 * i / n;
+            double qx = x + Math.cos(ang) * radius;
+            double qz = z + Math.sin(ang) * radius;
+            segment(sink, ground, px, pz, qx, qz, width, alpha);
+            px = qx;
+            pz = qz;
+        }
+    }
+
+    /** A straight line on the ground, cut into short pieces so each lies on its own block. */
+    static void lineOnGround(FireMesh.Sink sink, Ground ground, double x0, double z0, double x1, double z1, double width, double alpha) {
+        double l = Math.hypot(x1 - x0, z1 - z0);
+        int n = (int) Math.max(1, Math.ceil(l / 0.3));
+        for (int i = 0; i < n; i++) {
+            double t0 = (double) i / n;
+            double t1 = (double) (i + 1) / n;
+            segment(sink, ground, x0 + (x1 - x0) * t0, z0 + (z1 - z0) * t0, x0 + (x1 - x0) * t1, z0 + (z1 - z0) * t1, width, alpha);
+        }
+    }
+
+    /**
+     * One short piece of a glowing line flat on the ground (a violet glow, the pink line, its pink-white heart), a hair over the block's
+     * top; where the ground steps between its ends, a piece up (or down) the step's face joins them.
+     */
+    static void segment(FireMesh.Sink sink, Ground ground, double x0, double z0, double x1, double z1, double width, double alpha) {
+        double dx = x1 - x0;
+        double dz = z1 - z0;
+        double l = Math.hypot(dx, dz);
+        if (l < 1.0E-6) {
+            return;
+        }
+        double sx = -dz / l;
+        double sz = dx / l;
+        double y0 = ground.at(x0, z0) + 0.03;
+        double y1 = ground.at(x1, z1) + 0.03;
+        double mx = (x0 + x1) * 0.5;
+        double mz = (z0 + z1) * 0.5;
+        if (Math.abs(y1 - y0) > 0.3) {
+            // a step: each half on its own block, a riser up the face between them
+            flat(sink, x0, y0, z0, mx, mz, sx, sz, width, alpha);
+            flat(sink, mx, y1, mz, x1, z1, sx, sz, width, alpha);
+            riser(sink, mx, mz, y0, y1, sx, sz, width, alpha);
+            return;
+        }
+        segmentAt(sink, x0, y0, z0, x1, y1, z1, sx, sz, width, alpha);
+    }
+
+    static void flat(FireMesh.Sink sink, double x0, double y, double z0, double x1, double z1, double sx, double sz, double width,
+                     double alpha) {
+        segmentAt(sink, x0, y, z0, x1, y, z1, sx, sz, width, alpha);
+    }
+
+    /**
+     * One piece of line from ({@code x0, y0, z0}) to ({@code x1, y1, z1}), {@code sx, sz} across it: a solid violet halo, the pale line,
+     * its white heart, each a hair over the last. Solid, never see-through at its edges: a see-through glow still hides what is drawn
+     * after it under it (the disc showed the grass through in teeth round every line).
+     */
+    static void segmentAt(FireMesh.Sink sink, double x0, double y0, double z0, double x1, double y1, double z1, double sx, double sz,
+                          double width, double alpha) {
+        double[] widths = {width * 2.3, width, width * 0.4};
+        int[] colours = {LINE_GLOW, LINE, LINE_CORE};
+        double[] xyz = new double[12];
+        int[] argb = new int[4];
+        for (int k = 0; k < 3; k++) {
+            double w = widths[k];
+            double lift = k * 0.004;
+            int c = argb(colours[k], alpha);
+            xyz[0] = x0 + sx * w;
+            xyz[1] = y0 + lift;
+            xyz[2] = z0 + sz * w;
+            xyz[3] = x1 + sx * w;
+            xyz[4] = y1 + lift;
+            xyz[5] = z1 + sz * w;
+            xyz[6] = x1 - sx * w;
+            xyz[7] = y1 + lift;
+            xyz[8] = z1 - sz * w;
+            xyz[9] = x0 - sx * w;
+            xyz[10] = y0 + lift;
+            xyz[11] = z0 - sz * w;
+            argb[0] = c;
+            argb[1] = c;
+            argb[2] = c;
+            argb[3] = c;
+            sink.quad(xyz, argb);
+        }
+    }
+
+    /** The glow's half strip: {@code inner} along the line, {@code outer} (clear) {@code w} out to the side. */
+    static void half(FireMesh.Sink sink, double x0, double y0, double z0, double x1, double y1, double z1, double sx, double sz, double w,
+                     int inner, int outer) {
+        double[] xyz = {x0, y0, z0, x1, y1, z1, x1 + sx * w, y1, z1 + sz * w, x0 + sx * w, y0, z0 + sz * w};
+        sink.quad(xyz, new int[] {inner, inner, outer, outer});
+    }
+
+    /** The line up a step's face (vertical, square to the line), from {@code y0} to {@code y1}. */
+    static void riser(FireMesh.Sink sink, double x, double z, double y0, double y1, double sx, double sz, double width, double alpha) {
+        int g = argb(LINE_GLOW, alpha);
+        int c = argb(LINE, alpha);
+        double gw = width * 2.3;
+        sink.quad(new double[] {x + sx * gw, y0, z + sz * gw, x + sx * gw, y1, z + sz * gw, x - sx * gw, y1, z - sz * gw, x - sx * gw, y0,
+            z - sz * gw}, new int[] {g, g, g, g});
+        double w = width;
+        // the line a hair out from its halo on both faces of the step's face
+        sink.quad(new double[] {x + sx * w, y0, z + sz * w, x + sx * w, y1, z + sz * w, x - sx * w, y1, z - sz * w, x - sx * w, y0, z - sz * w},
+            new int[] {c, c, c, c});
+    }
+
+    static int argb(int rgb, double alpha) {
+        return ((int) (Math.max(0.0, Math.min(1.0, alpha)) * 255.0) << 24) | (rgb & 0xFFFFFF);
+    }
+
+    /**
+     * A pillar of black flames from {@code y0} to {@code y1} over ({@code x, z}): {@code radius} round, rolling up (or down when
+     * {@code down}) as {@code age} runs, a violet-pink heart showing through, at {@code alpha}.
+     */
+    public static void pillar(FireMesh.Sink sink, double x, double y0, double y1, double z, double radius, double age, double alpha,
+                              boolean down, int seed) {
+        if (alpha <= 0.01 || y1 <= y0) {
+            return;
+        }
+        double h = y1 - y0;
+        double step = Math.max(0.6, radius * 0.7);
+        int n = (int) Math.min(160, h / step);
+        double flow = (age * 0.9) % step;
+        try {
+            for (int i = 0; i <= n; i++) {
+                double d = i * step + (down ? step - flow : flow);
+                if (d > h) {
+                    continue;
+                }
+                double y = y0 + d;
+                double up = d / h;
+                double rr = radius * (0.85 + 0.25 * Math.sin(age * 0.5 + i * 1.7)) * (1.0 + 0.6 * up);
+                double ox = Math.sin(age * 0.3 + i * 2.1) * rr * 0.2;
+                double oz = Math.cos(age * 0.37 + i * 1.3) * rr * 0.2;
+                FireMesh.palette(YOKAI_BLACK);
+                FireMesh.puff(sink, x + ox, y, z + oz, rr, ox * 0.2, down ? 1.0 : -1.0, oz * 0.2, 1.8, 1.3, 0.5, 0.35, false, alpha * 0.85,
+                    age + i * 0.37, seed * 977 + i);
+                if (i % 3 == 0) {
+                    com.hexhaki.piece.dragon.UoFire.glow(sink, x, y, z, rr * 2.4, LINE_GLOW, 0.22 * alpha);
+                }
+                // pink and blue tongues twisting up (or down) round it: the pentagram's fire carried with it
+                if (i % 2 == 0) {
+                    double ta = age * 0.35 + i * 2.4;
+                    double tr = rr * 1.02;
+                    FireMesh.palette(GATE_FIRE);
+                    FireMesh.puff(sink, x + Math.cos(ta) * tr, y, z + Math.sin(ta) * tr, rr * 0.3, 0.0, down ? 1.0 : -1.0, 0.0, 2.6, 1.0, 0.86,
+                        0.7, false, alpha * 0.9, age + i * 0.53, seed * 397 + i);
+                }
+            }
+        } finally {
+            FireMesh.palette(FireMesh.BAND);
+        }
+    }
+
+    /**
+     * A body swallowed by black flames ({@code x, y, z} its feet, {@code height} tall), {@code k} 0 to 1: the flames rising over it
+     * and then (when {@code toward} is given, camera-relative) drawn off it to that point, the pentagram's middle.
+     */
+    public static void engulf(FireMesh.Sink sink, double x, double y, double z, double height, double k, double[] toward, double age, int seed) {
+        if (k >= 1.0) {
+            return;
+        }
+        double over = clamp01(k * 3.0);
+        double gone = clamp01((k - 0.35) / 0.65);
+        double cx = x;
+        double cz = z;
+        double cy = y;
+        if (toward != null) {
+            cx = x + (toward[0] - x) * gone;
+            cy = y + (toward[1] - y) * gone;
+            cz = z + (toward[2] - z) * gone;
+        }
+        try {
+            FireMesh.palette(YOKAI_BLACK);
+            int n = 5;
+            for (int i = 0; i < n; i++) {
+                double u = (i + 0.5) / n;
+                double hy = cy + height * u * over * (1.0 - gone * 0.8);
+                double rr = (0.45 + 0.2 * Math.sin(age * 0.6 + i)) * (1.0 - gone * 0.5);
+                FireMesh.puff(sink, cx, hy, cz, rr, 0.0, 0.3, 0.0, 1.2, 0.9, 0.5, 0.35, false, 0.92 * (1.0 - gone * gone), age + i, seed * 71 + i);
+            }
+        } finally {
+            FireMesh.palette(FireMesh.BAND);
+        }
+    }
 }

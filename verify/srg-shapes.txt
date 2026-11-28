@@ -165,12 +165,14 @@ m_123341_ ()I
 m_123342_ ()I
 m_123343_ ()I
 m_128356_ (Ljava/lang/String;J)V
+m_128359_ (Ljava/lang/String;Ljava/lang/String;)V
 m_128365_ (Ljava/lang/String;Lrk;)Lrk;
 m_128379_ (Ljava/lang/String;Z)V
 m_128405_ (Ljava/lang/String;I)V
 m_128441_ (Ljava/lang/String;)Z
 m_128451_ (Ljava/lang/String;)I
 m_128454_ (Ljava/lang/String;)J
+m_128461_ (Ljava/lang/String;)Ljava/lang/String;
 m_128469_ (Ljava/lang/String;)Lqr;
 m_128471_ (Ljava/lang/String;)Z
 m_128473_ (Ljava/lang/String;)V
@@ -183,6 +185,7 @@ m_135353_ (Ljava/lang/Class;Labz;)Laby;
 m_135370_ (Laby;)Ljava/lang/Object;
 m_135372_ (Laby;Ljava/lang/Object;)V
 m_135381_ (Laby;Ljava/lang/Object;)V
+m_135782_ ()Lacq;
 m_135815_ ()Ljava/lang/String;
 m_135827_ ()Ljava/lang/String;
 m_141937_ ()I
@@ -465,6 +468,8 @@ m_6147_ ()Z
 m_6162_ ()Z
 m_6263_ (Lbyo;DDDLamg;Lami;FF)V
 m_6299_ (Lfkf;)Lein;
+m_6325_ (II)Lddx;
+m_6325_ (II)Ldei;
 m_6425_ (Lgu;)Ldxe;
 m_6443_ (Ljava/lang/Class;Leed;Ljava/util/function/Predicate;)Ljava/util/List;
 m_6469_ (Lben;F)Z

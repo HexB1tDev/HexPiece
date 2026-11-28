@@ -54,7 +54,16 @@ public final class ItsuServer {
     /** 3.9.8: Gorosei Stare's glare and its throw (server/ItsuSaint). */
     public static final String STARE = "piece.itsu.stare";
     public static final String THROWN = "piece.itsu.thrown";
-    public static final String[] SOUNDS = {CRACK, VANISH, STARE, THROWN};
+    /** 3.9.9: Hellish Teleport (server/ItsuGates): the menu, a gate bound and cleared, the pentagrams forming and humming, the blast up, the landing. */
+    public static final String GATE_MENU = "piece.itsu.gate_menu";
+    public static final String GATE_BIND = "piece.itsu.gate_bind";
+    public static final String GATE_CLEAR = "piece.itsu.gate_clear";
+    public static final String GATE_FORM = "piece.itsu.gate_form";
+    public static final String GATE_HUM = "piece.itsu.gate_hum";
+    public static final String GATE_GO = "piece.itsu.gate_go";
+    public static final String GATE_LAND = "piece.itsu.gate_land";
+    public static final String[] SOUNDS = {CRACK, VANISH, STARE, THROWN, GATE_MENU, GATE_BIND, GATE_CLEAR, GATE_FORM, GATE_HUM, GATE_GO,
+        GATE_LAND};
     /** 3.9.7: S2CUoFx kinds: black smoke the height bx of a body at the point (the passive's vanishing and its standing again). */
     public static final int SMOKE = 441;
 

@@ -147,6 +147,10 @@ public final class ItsuFx {
 
     /** client/dragon/UoFx hands on the Itsumade's messages (server/ItsuServer: 440 to 459). */
     public static void accept(S2CUoFx m) {
+        if (m.kind() >= com.hexhaki.piece.server.ItsuGates.FORM && m.kind() <= com.hexhaki.piece.server.ItsuGates.END) {
+            ItsuGateFx.accept(m); // 3.9.9: Hellish Teleport
+            return;
+        }
         if (m.kind() >= ItsuSaint.STARE && m.kind() <= ItsuSaint.PULSE) {
             ItsuSaintFx.accept(m); // 3.9.8: the human's moves
             return;
