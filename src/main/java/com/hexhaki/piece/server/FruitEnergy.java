@@ -57,6 +57,9 @@ public final class FruitEnergy {
             {"pika_clones", "35"},
             {"uo_air", "15"}, {"uo_breath", "30"}, {"uo_wind", "25"}, {"uo_embers", "20"}, {"uo_flame", "15"}, {"uo_blast", "40"},
             {"uo_bite", "20"},
+            // 4.0.0: the Itsumade's (a Mythical: its strongest as the dragon's and the Ito fruit's Birdcage)
+            {"itsu_gust", "20"}, {"itsu_bite", "25"}, {"itsu_bow", "45"}, {"itsu_beam", "45"}, {"itsu_stare", "25"}, {"itsu_presence", "45"},
+            {"itsu_blast", "35"}, {"itsu_death", "60"}, {"itsu_gate", "40"},
         };
         for (String[] c : costs) {
             COSTS.put(c[0], Integer.parseInt(c[1]));

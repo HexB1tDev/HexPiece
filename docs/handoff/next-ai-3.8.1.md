@@ -930,3 +930,14 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
 
 "Continue auto wake up at 04:02" (a one-shot wake-up of this session set for 2026-11-28 04:02 UTC, trig_01G1LV8GkNjPXyX16Z5WDMqw, as the
 4-hour one before it at 23:02 UTC).
+
+## 40. 4.0.0: the 04:02 wake-up (no word from the owner yet): the Itsumade's code gone over
+- BUG (3.9.9): N never opened the menu: client/FruitKeyN sends N as ability 40, ItsuSaint compared ItsuKit.TELEPORT.slot(). Now
+  ItsuSaint.N_SLOT 40 (as GuraUltimate.SLOT, HieMoves.N_SLOT ...); HudTests checks N_SLOT == FruitKeyN.ABILITY. ANY NEW "[N]" MOVE: the
+  server gets 40, never the move's slot.
+- FruitEnergy.COSTS: itsu_gust 20, itsu_bite 25, itsu_bow 45, itsu_beam 45, itsu_stare 25, itsu_presence 45, itsu_blast 35,
+  itsu_death 60, itsu_gate 40; HudTests' "has its cost listed" loop takes ItsuKit.MOVES.
+- POINT ONE: ConquerorAura.mixed added to ItsuMoves.gust (8 ahead, 4 round, 8 arcs), shut (the jaws), the talons' grab, ItsuGates
+  swallow (the near end) and through (the far end). (The Yokai Beam's bombs already had it through UoMoves.explode.)
+- Checked and fine: FruitServer passes the raw key to the kit (no move lookup, so the form's and the human's X/C/V share keys safely);
+  FruitData.cooldownLeft is in ticks (the menu's countdown); ItsuServer.phase is HUMAN for a player who never changed.

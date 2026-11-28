@@ -320,6 +320,8 @@ public final class ItsuGates {
             }
             this.near(this.message(PILLAR, 0, this.from, Vec3.f_82478_, SKY, 0, PILLAR_LIFE));
             this.far(this.message(PILLAR, 1, this.to, Vec3.f_82478_, SKY, 0, PILLAR_LIFE));
+            // 4.0.0 (POINT ONE): the Conqueror's lightning out of the blast up, and (through) out of the landing
+            ConquerorAura.mixed(this.user, this.from.m_82520_(0.0, 1.0, 0.0), 3.5, 8, -1.0);
             ItoMoves.sound(this.user, this.from, ItsuServer.GATE_GO, 2.5F, 1.0F);
             this.soundAt(this.to, ItsuServer.GATE_GO, 2.5F);
         }
@@ -347,6 +349,7 @@ public final class ItsuGates {
                 this.far(this.message(ARRIVE, e.m_19879_(), at, Vec3.f_82478_, e.m_20206_(), 0, 12));
             }
             this.soundAt(this.to, ItsuServer.GATE_LAND, 2.5F);
+            ConquerorAura.mixed(this.user, this.to.m_82520_(0.0, 1.0, 0.0), 3.5, 8, -1.0);
         }
     }
 

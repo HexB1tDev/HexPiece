@@ -856,6 +856,10 @@ public final class HudTests {
             && com.hexhaki.piece.server.ItoKit.MOVES.size() == 11, "the Ito keys as accepted");
         Check.that(com.hexhaki.piece.client.FruitKeyN.ABILITY_M == 41 && com.hexhaki.piece.client.FruitKeyN.ABILITY_SKY == 42,
             "the M key and the air step reach the kit");
+        // 4.0.0: the N key comes to the server as FruitKeyN.ABILITY, never as an "[N]" move's slot (3.9.9's Hellish Teleport compared
+        // the slot and never opened)
+        Check.that(com.hexhaki.piece.server.ItsuSaint.N_SLOT == com.hexhaki.piece.client.FruitKeyN.ABILITY
+            && com.hexhaki.piece.server.ItsuKit.TELEPORT.key().equals("[N]"), "the Itsumade: N (Hellish Teleport) reaches its kit");
         skyRoad();
         birdcage();
         mochi();
@@ -875,7 +879,7 @@ public final class HudTests {
             com.hexhaki.piece.server.HieKit.MOVES, com.hexhaki.piece.server.MaguKit.MOVES, com.hexhaki.piece.server.NoroKit.MOVES,
             com.hexhaki.piece.server.PikaKit.MOVES, com.hexhaki.piece.server.SupaKit.MOVES, com.hexhaki.piece.server.HoroKit.MOVES,
             com.hexhaki.piece.server.ItoKit.MOVES, com.hexhaki.piece.server.MochiKit.ALL,
-            com.hexhaki.piece.server.UoKit.MOVES)) {
+            com.hexhaki.piece.server.UoKit.MOVES, com.hexhaki.piece.server.ItsuKit.MOVES)) {
             for (com.hexhaki.fruit.FruitMove move : moves) {
                 if (move.cooldown() != null) {
                     Check.that(com.hexhaki.piece.server.FruitEnergy.listed(move), "energy: " + move.name() + " has its cost listed");

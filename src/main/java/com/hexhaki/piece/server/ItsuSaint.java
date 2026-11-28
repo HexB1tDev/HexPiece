@@ -77,6 +77,12 @@ public final class ItsuSaint {
     static final int DEATH_STUN = 50;
     static final int DEATH_COOL = 900;
 
+    /**
+     * 4.0.0: the N key's ability number (client/FruitKeyN.ABILITY, as GuraUltimate.SLOT): N is a key of HexPiece's own, sent as 40, not
+     * as the "[N]" move's slot (3.9.9 compared it with TELEPORT.slot(), so N never opened the menu).
+     */
+    public static final int N_SLOT = 40;
+
     static final class State {
         long stareAt = -1;
         int stared;
@@ -134,7 +140,7 @@ public final class ItsuSaint {
             }
         } else if (slot == ItsuKit.DEATH.slot()) {
             death(player, now);
-        } else if (slot == ItsuKit.TELEPORT.slot()) {
+        } else if (slot == N_SLOT) {
             ItsuGates.menu(player); // 3.9.9
         }
     }

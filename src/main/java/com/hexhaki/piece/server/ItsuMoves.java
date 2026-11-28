@@ -173,6 +173,7 @@ public final class ItsuMoves {
             s.carried = best;
             ItoMoves.fx(player, GRIP, best.m_19879_(), player.m_20182_(), Vec3.f_82478_, 1, 0, 0, 0);
             ItoMoves.sound(player, talons, com.hexhaki.piece.dragon.UoSounds.BITE, 1.6F, 0.6F);
+            ConquerorAura.mixed(player, best.m_20182_().m_82520_(0.0, best.m_20206_() * 0.5, 0.0), 2.0, 4, -1.0); // 4.0.0: POINT ONE
         }
     }
 
@@ -292,6 +293,8 @@ public final class ItsuMoves {
             Vec3 thrown = away.m_82490_(1.2 + 3.2 * k).m_82520_(0.0, 0.4 + 0.5 * k, 0.0);
             Impact.hit(player, body, StyleCombat.spec(com.hexhaki.piece.style.Hit.Weight.HEAVY, thrown));
         }
+        // 4.0.0 (POINT ONE: with Ryou, every move throws the Conqueror's lightning): out over the cone where the gust lands
+        ConquerorAura.mixed(player, from.m_82549_(look.m_82490_(8.0)), 4.0, 8, -1.0);
         ItoMoves.sound(player, from, com.hexhaki.piece.dragon.UoSounds.GUST, 3.2F, 0.55F);
         ItoMoves.sound(player, from, com.hexhaki.piece.dragon.UoSounds.WHOOSH, 3.0F, 0.6F);
     }
@@ -310,6 +313,7 @@ public final class ItsuMoves {
                 }
             }
         }
+        ConquerorAura.mixed(player, jaws, 3.0, 6, -1.0); // 4.0.0: POINT ONE
         ItoMoves.sound(player, jaws, com.hexhaki.piece.dragon.UoSounds.BITE, 2.8F, 0.55F);
     }
 
