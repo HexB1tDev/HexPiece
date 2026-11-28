@@ -952,3 +952,10 @@ you're just okay with it. Are you trying to fuck with me? Is this like your goal
   valleys the river cap sank: water specks). offset.json: max(land, spline(continents: -0.13 -> -1.5, -0.08 -> -0.48)) inside the
   river cap's min: inland ground never under the sea (the lagoons). tools/archipelago_preview.py knows range_choice.
 - Render: docs/images/archipelago-rivers-4.0.1.png (seed 2: 9.6 km, and a two-river island at 4 blocks a pixel).
+
+## 42. The owner after 4.0.1 (verbatim)
+"Prompt + handoff" (the handoff and docs/handoff/next-prompt.md brought up to date and pushed; the prompt given in the reply).
+- State at this handoff: 4.0.1 released (Release green; the Build on the same code green). The owner has not yet tested 3.9.7-4.0.1 in
+  game. The Itsumade's kit is complete per section 22; 4.0.0 fixed N's key number, its energy costs, POINT ONE on its gust/bite/talons/
+  teleport; 4.0.1 redid the rivers per island (section 41). The clothes stay parked (docs/handoff/clothes-wip-3.9.7.patch). Next
+  version: 4.0.2.
